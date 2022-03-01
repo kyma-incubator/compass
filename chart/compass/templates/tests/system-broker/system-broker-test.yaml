@@ -34,8 +34,6 @@ spec:
           command: ["/bin/sh"]
           args: ["-c", "./system-broker.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           env:
-            - name: DOMAIN
-              value: "{{ .Values.global.ingress.domainName }}"
             - name: APP_TENANT
               value: "{{ .Values.global.defaultTenant }}"
             - name: APP_SYSTEM_BROKER_URL
@@ -50,16 +48,6 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.connector.prefix }}/graphql"
             - name: APP_ORD_SERVICE_URL
               value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.staticPrefix }}"
-            - name: USER_EMAIL
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: email
-            - name: USER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: password
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
             - name: APP_EXTERNAL_CLIENT_CERT_KEY

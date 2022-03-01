@@ -142,9 +142,9 @@ func TestConsumerProviderFlow(t *testing.T) {
 
 	providerExtCrtTestSecret, err := k8sClient.CoreV1().Secrets(testConfig.ExternalClientCertTestSecretNamespace).Get(ctx, testConfig.ExternalClientCertTestSecretName, metav1.GetOptions{})
 	require.NoError(t, err)
-	providerKeyBytes := providerExtCrtTestSecret.Data[testConfig.ExternalCA.SecretKeyKey]
+	providerKeyBytes := providerExtCrtTestSecret.Data[testConfig.CertLoaderConfig.ExternalClientCertKeyKey]
 	require.NotEmpty(t, providerKeyBytes)
-	providerCertChainBytes := providerExtCrtTestSecret.Data[testConfig.ExternalCA.SecretCertificateKey]
+	providerCertChainBytes := providerExtCrtTestSecret.Data[testConfig.CertLoaderConfig.ExternalClientCertCertKey]
 	require.NotEmpty(t, providerCertChainBytes)
 
 	// Build graphql director client configured with certificate

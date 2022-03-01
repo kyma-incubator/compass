@@ -39,8 +39,6 @@ spec:
             limits:
               memory: "256Mi"
           env:
-            - name: DIRECTOR_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_SKIP_SSL_VALIDATION
@@ -51,24 +49,12 @@ spec:
               value: "https://{{ .Values.global.connectivity_adapter.mtls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_TENANT
               value: {{ .Values.global.defaultTenant | quote }}
-            - name: DOMAIN
-              value: "{{ .Values.global.ingress.domainName }}"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
             - name: APP_EXTERNAL_CLIENT_CERT_KEY
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
             - name: APP_EXTERNAL_CLIENT_KEY_KEY
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
-            - name: USER_EMAIL
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: email
-            - name: USER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: password
     restartPolicy: Never
 ---
 apiVersion: v1

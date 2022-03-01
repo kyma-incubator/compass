@@ -18,6 +18,7 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg/util"
 	"os"
 	"testing"
 	"time"
@@ -33,7 +34,6 @@ import (
 
 type config struct {
 	DefaultTestTenant                     string
-	DirectorURL                           string
 	DirectorExternalCertSecuredURL        string
 	DirectorGraphqlOauthURL               string
 	ORDServiceURL                         string
@@ -42,10 +42,10 @@ type config struct {
 	ExternalServicesMockUnsecuredURL      string
 	ExternalServicesMockAbsoluteURL       string
 	ExternalServicesMockOrdCertSecuredURL string
+	ExternalServicesMockBasicURL          string
 	ExternalServicesMockOauthURL          string
 	ClientID                              string
 	ClientSecret                          string
-	ExternalServicesMockBasicURL          string
 	BasicUsername                         string
 	BasicPassword                         string
 	ORDServiceDefaultResponseType         string
@@ -70,16 +70,14 @@ func TestMain(m *testing.M) {
 
 	ctx := context.Background()
 
-	cc, err := certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
+	certCache, err = certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	for cc.Get() == nil {
-		log.D().Info("Waiting for certificate cache to load, sleeping for 1 second")
-		time.Sleep(1 * time.Second)
+	if err := util.WaitForCache(certCache); err != nil {
+		log.D().Fatal(err)
 	}
-	certCache = cc
 
 	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, certCache.Get().Certificate, testConfig.SkipSSLValidation)
 

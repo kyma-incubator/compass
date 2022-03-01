@@ -28,8 +28,6 @@ spec:
         env:
           - name: APP_CONNECTOR_URL
             value: 'https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.connector.prefix }}/graphql'
-          - name: APP_DIRECTOR_URL
-            value: 'https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql'
           - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
             value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
           - name: APP_SKIP_SSL_VALIDATION
@@ -50,18 +48,6 @@ spec:
             value: "{{.Values.global.defaultTenant}}"
           - name: APP_APPS_FOR_RUNTIME_TENANT
             value: "{{ (index .Values.global.tenants 13).id }}"
-          - name: DOMAIN
-            value: "{{ .Values.global.ingress.domainName }}"
-          - name: USER_EMAIL
-            valueFrom:
-              secretKeyRef:
-                name: admin-user
-                key: email
-          - name: USER_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: admin-user
-                key: password
           - name: APP_EXTERNAL_CLIENT_CERT_SECRET
             value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
           - name: APP_EXTERNAL_CLIENT_CERT_KEY

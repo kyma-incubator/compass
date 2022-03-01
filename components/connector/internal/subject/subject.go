@@ -12,21 +12,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
+const (
 	RuntimeType           = "Runtime"
 	IntegrationSystemType = "Integration System"
 	ApplicationType       = "Application"
 	SuperAdminType        = "Super Admin"
-
-	// ConsumerTypes is a marker map that provides fast checks for supported and unsupported consumer types.
-	// Note: New consumer type constants should be added here as well.
-	ConsumerTypes = map[string]struct{}{
-		RuntimeType:           {},
-		IntegrationSystemType: {},
-		ApplicationType:       {},
-		SuperAdminType:        {},
-	}
 )
+
+// ConsumerTypes is a marker map that provides fast checks for supported and unsupported consumer types.
+// Note: New consumer type constants should be added here as well.
+var ConsumerTypes = map[string]struct{}{
+	RuntimeType:           {},
+	IntegrationSystemType: {},
+	ApplicationType:       {},
+	SuperAdminType:        {},
+}
 
 type subjectConsumerTypeMapping struct {
 	Subject            string   `json:"subject"`

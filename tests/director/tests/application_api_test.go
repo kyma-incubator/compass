@@ -46,8 +46,6 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
 
-	t.Log("DIRECTOR URL: ", gql.GetDirectorGraphQLURL())
-
 	// WHEN
 	request := fixtures.FixRegisterApplicationRequest(appInputGQL)
 	saveExampleInCustomDir(t, request.Query(), registerApplicationCategory, "register application")

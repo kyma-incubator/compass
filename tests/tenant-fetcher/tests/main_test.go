@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/util"
 	"net/http"
 	"os"
 	"strings"
@@ -32,15 +33,6 @@ type testConfig struct {
 	DependenciesEndpoint           string
 	TenantPathParam                string
 	RegionPathParam                string
-	DbUser                         string
-	DbPassword                     string
-	DbHost                         string
-	DbPort                         string
-	DbName                         string
-	DbSSL                          string
-	DbMaxIdleConnections           string
-	DbMaxOpenConnections           string
-	Tenant                         string
 	SubscriptionCallbackScope      string
 	TenantProviderConfig
 	ExternalServicesMockURL          string
@@ -78,9 +70,8 @@ func TestMain(m *testing.M) {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	for cc.Get() == nil {
-		log.D().Info("Waiting for certificate cache to load, sleeping for 1 second")
-		time.Sleep(1 * time.Second)
+	if err := util.WaitForCache(cc); err != nil {
+		log.D().Fatal(err)
 	}
 
 	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(config.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, config.SkipSSLValidation)

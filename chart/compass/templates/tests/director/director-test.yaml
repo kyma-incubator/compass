@@ -71,24 +71,6 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
-            - name: USER_EMAIL
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: email
-            - name: USER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: password
-            - name: DOMAIN
-              value: "{{ .Values.global.ingress.domainName }}"
-            - name: GATEWAY_OAUTH20_SUBDOMAIN
-              value: "{{ .Values.global.gateway.tls.secure.oauth.host }}"
-            - name: GATEWAY_JWT_SUBDOMAIN
-              value: "{{ .Values.global.gateway.tls.host }}"
-            - name: GATEWAY_CLIENT_CERTS_SUBDOMAIN
-              value: "{{ .Values.global.gateway.mtls.host }}"
             - name: APP_GATEWAY_OAUTH
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
@@ -115,16 +97,10 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
             - name: APP_EXTERNAL_CLIENT_KEY_KEY
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
-            - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
-              value: {{ .Values.global.director.selfRegister.distinguishLabel }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY # This variable get its value from tenant fetcher configuration(in productive charts too) because we need "self register" flow to be executed as part of the consumer-provider test, locally and on real environment as well
               value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
               value: {{ .Values.global.tests.subscriptionProviderIdValue | quote }}
-            - name: APP_CA_SECRET_CERTIFICATE_KEY
-              value: {{ .Values.global.connector.secrets.ca.certificateKey | quote }}
-            - name: APP_CA_SECRET_KEY_KEY
-              value: {{ .Values.global.connector.secrets.ca.keyKey | quote }}
             - name: APP_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation.director }}"
           {{ if .Values.global.isLocalEnv }}
@@ -183,45 +159,6 @@ metadata:
     app.kubernetes.io/name: {{ template "name" . }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: {{ .Chart.Name }}-e2e-director
-  namespace: {{ .Release.Namespace }}
-  labels:
-    app: {{ .Chart.Name }}
-    release: {{ .Release.Name }}
-    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" . }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-rules:
-- apiGroups: ["*"]
-  resources: ["secrets"]
-  resourceNames: ["{{ .Values.global.connector.secrets.ca.name }}" , "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"]
-  verbs: ["get"]
----
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: {{ .Chart.Name }}-e2e-director
-  namespace: {{ .Release.Namespace }}
-  labels:
-    app: {{ .Chart.Name }}
-    release: {{ .Release.Name }}
-    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" . }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-subjects:
-- kind: ServiceAccount
-  name: {{ .Chart.Name }}-e2e-director
-  namespace: {{ .Values.global.tests.namespace }}
-roleRef:
-  kind: Role
-  name: {{ .Chart.Name }}-e2e-director
-  apiGroup: rbac.authorization.k8s.io
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1

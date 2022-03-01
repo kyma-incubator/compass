@@ -2,17 +2,16 @@ package tests
 
 import (
 	"context"
-	"os"
-	"testing"
-	"time"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/kyma-incubator/compass/tests/pkg/util"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
+	"os"
+	"testing"
 )
 
 var (
@@ -29,16 +28,16 @@ func TestMain(m *testing.M) {
 	config.ReadConfig(conf)
 
 	ctx := context.Background()
-	cc, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
+
+	var err error
+	certCache, err = certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	for cc.Get() == nil {
-		log.D().Info("Waiting for certificate cache to load, sleeping for 1 second")
-		time.Sleep(1 * time.Second)
+	if err := util.WaitForCache(certCache); err != nil {
+		log.D().Fatal(err)
 	}
-	certCache = cc
 
 	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, certCache.Get().Certificate, conf.SkipSSLValidation)
 

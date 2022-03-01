@@ -3,23 +3,22 @@ package tests
 import (
 	"context"
 	"crypto/rsa"
-	"os"
-	"path/filepath"
-	"testing"
-	"time"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
+	"github.com/kyma-incubator/compass/tests/pkg/util"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+	"os"
+	"path/filepath"
+	"testing"
 )
 
 var (
@@ -32,7 +31,6 @@ var (
 	configmapCleaner             *k8s.ConfigmapCleaner
 	ctx                          context.Context
 	clientKey                    *rsa.PrivateKey
-	certCache                    certloader.Cache
 	appsForRuntimeTenantID       string
 )
 
@@ -47,11 +45,9 @@ func TestMain(m *testing.M) {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	for cc.Get() == nil {
-		log.D().Info("Waiting for certificate cache to load, sleeping for 1 second")
-		time.Sleep(1 * time.Second)
+	if err := util.WaitForCache(cc); err != nil {
+		log.D().Fatal(err)
 	}
-	certCache = cc
 
 	appsForRuntimeTenantID = cfg.AppsForRuntimeTenant
 
@@ -61,12 +57,12 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 	clientKey = key
-	directorClient, err = clients.NewCertSecuredGraphQLClient(ctx, cfg.DirectorExternalCertSecuredURL, cfg.Tenant, certCache.Get().PrivateKey, cc.Get().Certificate, cfg.SkipSSLValidation)
+	directorClient, err = clients.NewCertSecuredGraphQLClient(ctx, cfg.DirectorExternalCertSecuredURL, cfg.Tenant, cc.Get().PrivateKey, cc.Get().Certificate, cfg.SkipSSLValidation)
 	if err != nil {
 		log.D().Errorf("Failed to create director client: %s", err.Error())
 		os.Exit(1)
 	}
-	directorAppsForRuntimeClient, err = clients.NewCertSecuredGraphQLClient(ctx, cfg.DirectorExternalCertSecuredURL, cfg.AppsForRuntimeTenant, certCache.Get().PrivateKey, cc.Get().Certificate, cfg.SkipSSLValidation)
+	directorAppsForRuntimeClient, err = clients.NewCertSecuredGraphQLClient(ctx, cfg.DirectorExternalCertSecuredURL, cfg.AppsForRuntimeTenant, cc.Get().PrivateKey, cc.Get().Certificate, cfg.SkipSSLValidation)
 	if err != nil {
 		log.D().Errorf("Failed to create director client: %s", err.Error())
 		os.Exit(1)

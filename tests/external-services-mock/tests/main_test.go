@@ -2,23 +2,21 @@ package tests
 
 import (
 	"context"
-	"os"
-	"testing"
-	"time"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	pkgConfig "github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/util"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
+	"os"
+	"testing"
 )
 
 type config struct {
 	Auditlog                           pkgConfig.AuditlogConfig
 	DefaultTestTenant                  string
-	DirectorURL                        string
 	DirectorExternalCertSecuredURL     string
 	ExternalServicesMockBaseURL        string
 	ExternalServicesMockMTLSSecuredURL string `envconfig:"EXTERNAL_SERVICES_MOCK_MTLS_SECURED_URL"`
@@ -33,8 +31,6 @@ type config struct {
 
 var (
 	testConfig               config
-	consumerID               string
-	certCache                certloader.Cache
 	certSecuredGraphQLClient *graphql.Client
 )
 
@@ -50,15 +46,11 @@ func TestMain(m *testing.M) {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	for cc.Get() == nil {
-		log.D().Info("Waiting for certificate cache to load, sleeping for 1 second")
-		time.Sleep(1 * time.Second)
+	if err := util.WaitForCache(cc); err != nil {
+		log.D().Fatal(err)
 	}
-	certCache = cc
 
-	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, certCache.Get().Certificate, testConfig.SkipSSLValidation)
-
-	consumerID = testConfig.ConsumerID
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, testConfig.SkipSSLValidation)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)

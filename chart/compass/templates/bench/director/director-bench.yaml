@@ -38,8 +38,6 @@ spec:
           args: ["-c", "./director.bench -test.v -test.bench=. -test.benchtime 5s -test.count 5; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           restartPolicy: Never
           env:
-            - name: DIRECTOR_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_SKIP_SSL_VALIDATION
@@ -50,8 +48,6 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
             - name: APP_EXTERNAL_CLIENT_KEY_KEY
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
-            - name: DIRECTOR_HEALTHZ_URL
-              value: "{{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.graphql.external.port }}/healthz"
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
@@ -82,18 +78,6 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
-            - name: USER_EMAIL
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: email
-            - name: USER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: password
-            - name: DOMAIN
-              value: "{{ .Values.global.ingress.domainName }}"
             - name: APP_DEFAULT_SCENARIO
               value: "DEFAULT"
 ---
@@ -117,7 +101,7 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: {{ .Chart.Name }}-director-bench-app
-  namespace: {{ .Values.global.tests.namespace }}
+  namespace: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}
   labels:
     app: {{ $.Chart.Name }}
     release: {{ $.Release.Name }}

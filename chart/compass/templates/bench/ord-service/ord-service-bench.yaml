@@ -40,12 +40,8 @@ spec:
           env:
             - name: ORD_SERVICE_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"
-            - name: ORD_SERVICE_HEALTHZ_URL
-              value: "{{ .Values.global.tests.ordServiceFQDN }}:{{ .Values.global.director.graphql.external.port }}/actuator/health"
             - name: ORD_SERVICE_DEFAULT_RESPONSE_TYPE
               value: {{ .Values.global.ordService.defaultResponseType }}
-            - name: DIRECTOR_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: DIRECTOR_EXTERNAL_CERT_SECURED_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: SKIP_SSL_VALIDATION
@@ -86,18 +82,6 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
-            - name: USER_EMAIL
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: email
-            - name: USER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: password
-            - name: DOMAIN
-              value: "{{ .Values.global.ingress.domainName }}"
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -115,7 +99,7 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: {{ .Chart.Name }}-ord-service-bench-app
-  namespace: {{ .Values.global.tests.namespace }}
+  namespace: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}
   labels:
     app: {{ $.Chart.Name }}
     release: {{ $.Release.Name }}

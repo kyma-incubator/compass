@@ -16,7 +16,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
@@ -36,7 +35,7 @@ func TestCallingCompassGateways(t *testing.T) {
 	var (
 		ctx    = context.TODO()
 		err    error
-		tenant = tenant.TestTenants.GetDefaultTenantID()
+		tenant = conf.DefaultTenant
 	)
 
 	authorizedClient := gql.NewCertAuthorizedHTTPClient(certCache.Get().PrivateKey, certCache.Get().Certificate, conf.SkipSSLValidation)

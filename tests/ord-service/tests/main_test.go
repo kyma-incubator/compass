@@ -18,21 +18,17 @@ package tests
 
 import (
 	"context"
-	"os"
-	"testing"
-	"time"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/tests/pkg/certs"
-	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+	"github.com/kyma-incubator/compass/tests/pkg/util"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"os"
+	"testing"
 )
 
 var (
@@ -62,13 +58,10 @@ type SubscriptionConfig struct {
 }
 
 type config struct {
-	ExternalCA certs.CAConfig
-
 	TenantConfig
 	CertLoaderConfig certloader.Config
 	SubscriptionConfig
 	ExternalServicesMockBaseURL           string
-	DirectorURL                           string
 	DirectorExternalCertSecuredURL        string
 	ORDServiceURL                         string
 	ORDExternalCertSecuredServiceURL      string
@@ -108,31 +101,17 @@ func TestMain(m *testing.M) {
 
 	ctx := context.Background()
 
-	k8sClientSet, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
-	if err != nil {
-		log.D().Fatal(errors.Wrap(err, "while initializing k8s client"))
-	}
-	extCrtSecret, err := k8sClientSet.CoreV1().Secrets(testConfig.ExternalCA.SecretNamespace).Get(ctx, testConfig.ExternalCA.SecretName, metav1.GetOptions{})
-	if err != nil {
-		log.D().Fatal(errors.Wrap(err, "while getting k8s secret"))
-	}
-	testConfig.ExternalCA.Key = extCrtSecret.Data[testConfig.ExternalCA.SecretKeyKey]
-	testConfig.ExternalCA.Certificate = extCrtSecret.Data[testConfig.ExternalCA.SecretCertificateKey]
-
-	cc, err := certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
+	certCache, err = certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	for cc.Get() == nil {
-		log.D().Info("Waiting for certificate cache to load, sleeping for 1 second")
-		time.Sleep(1 * time.Second)
+	if err := util.WaitForCache(certCache); err != nil {
+		log.D().Fatal(err)
 	}
-	certCache = cc
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, certCache.Get().Certificate, testConfig.SkipSSLValidation)
 
 	testConfig.TenantFetcherFullRegionalURL = tenantfetcher.BuildTenantFetcherRegionalURL(testConfig.RegionalHandlerEndpoint, testConfig.TenantPathParam, testConfig.RegionPathParam, testConfig.TenantFetcherURL, testConfig.RootAPI)
-
-	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, cc.Get().Certificate, testConfig.SkipSSLValidation)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)

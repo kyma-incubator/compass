@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"crypto/tls"
+	"github.com/kyma-incubator/compass/tests/pkg/util"
 	"net/http"
 	"os"
 	"testing"
@@ -47,9 +48,8 @@ func TestMain(m *testing.M) {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	for cc.Get() == nil {
-		log.D().Info("Waiting for certificate cache to load, sleeping for 1 second")
-		time.Sleep(1 * time.Second)
+	if err := util.WaitForCache(cc); err != nil {
+		log.D().Fatal(err)
 	}
 
 	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(cfg.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, cfg.SkipSSLValidation)

@@ -9,4 +9,5 @@ type IstioConfig struct {
 	RequestPayloadLimit            int    `envconfig:"default=2097152"` //2 MB
 	SkipSSLValidation              bool   `envconfig:"default=false"`
 	CertLoaderConfig               certloader.Config
+	DefaultTenant                  string
 }

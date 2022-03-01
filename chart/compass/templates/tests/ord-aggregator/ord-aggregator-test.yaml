@@ -38,10 +38,6 @@ spec:
           env:
             - name: ORD_SERVICE_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"
-            - name: ORD_SERVICE_HEALTHZ_URL
-              value: "{{ .Values.global.tests.ordServiceFQDN }}:{{ .Values.global.director.graphql.external.port }}/actuator/health"
-            - name: DIRECTOR_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: DIRECTOR_GRAPHQL_OAUTH_URL
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
@@ -92,20 +88,8 @@ spec:
               value: {{ .Values.global.ordService.defaultResponseType }}
             - name: AGGREGATOR_SCHEDULE
               value: "{{ .Values.global.ordAggregator.schedule }}"
-            - name: USER_EMAIL
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: email
-            - name: USER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: password
             - name: DEFAULT_TEST_TENANT
               value: "{{ (index .Values.global.tenants 9).id }}"
-            - name: DOMAIN
-              value: "{{ .Values.global.ingress.domainName }}"
       restartPolicy: Never
 ---
 apiVersion: v1

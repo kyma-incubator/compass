@@ -34,24 +34,8 @@ spec:
           command: ["/bin/sh"]
           args: ["-c", "./system-fetcher.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           env:
-            - name: USER_EMAIL
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: email
-            - name: USER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: password
-            - name: DOMAIN
-              value: "{{ .Values.global.ingress.domainName }}"
-            - name: DIRECTOR_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: DIRECTOR_EXTERNAL_CERT_SECURED_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
-            - name: DIRECTOR_HEALTHZ_URL
-              value: "{{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.graphql.external.port }}/healthz"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
               value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080"
             - name: SYSTEM_FETCHER_PAGE_SIZE

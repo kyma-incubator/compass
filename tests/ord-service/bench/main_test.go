@@ -2,17 +2,16 @@ package bench
 
 import (
 	"context"
-	"os"
-	"testing"
-	"time"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/kyma-incubator/compass/tests/pkg/util"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
+	"os"
+	"testing"
 )
 
 var (
@@ -20,7 +19,6 @@ var (
 )
 
 type config struct {
-	DirectorURL                    string
 	DirectorExternalCertSecuredURL string
 	ORDServiceURL                  string
 	ORDServiceDefaultResponseType  string
@@ -45,9 +43,8 @@ func TestMain(m *testing.M) {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	for cc.Get() == nil {
-		log.D().Info("Waiting for certificate cache to load, sleeping for 1 second")
-		time.Sleep(1 * time.Second)
+	if err := util.WaitForCache(cc); err != nil {
+		log.D().Fatal(err)
 	}
 
 	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, testConfig.SkipSSLValidation)

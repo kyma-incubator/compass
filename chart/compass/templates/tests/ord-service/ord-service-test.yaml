@@ -42,30 +42,10 @@ spec:
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"
             - name: ORD_SERVICE_STATIC_PREFIX
               value: "{{ .Values.global.ordService.staticPrefix }}"
-            - name: ORD_SERVICE_HEALTHZ_URL
-              value: "{{ .Values.global.tests.ordServiceFQDN }}:{{ .Values.global.director.graphql.external.port }}/actuator/health"
             - name: ORD_SERVICE_DEFAULT_RESPONSE_TYPE
               value: {{ .Values.global.ordService.defaultResponseType }}
-            - name: DIRECTOR_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: DIRECTOR_EXTERNAL_CERT_SECURED_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
-            - name: CA_SECRET_NAME
-              value: "{{ .Values.global.connector.secrets.ca.name }}"
-            - name: CA_SECRET_NAMESPACE
-              value: "{{ .Values.global.connector.secrets.ca.namespace }}"
-            - name: CA_SECRET_CERTIFICATE_KEY
-              value: {{ .Values.global.connector.secrets.ca.certificateKey | quote }}
-            - name: CA_SECRET_KEY_KEY
-              value: {{ .Values.global.connector.secrets.ca.keyKey | quote }}
-            - name: EXTERNAL_CA_SECRET_NAME
-              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
-            - name: EXTERNAL_CA_SECRET_NAMESPACE
-              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}"
-            - name: EXTERNAL_CA_SECRET_CERTIFICATE_KEY
-              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
-            - name: EXTERNAL_CA_SECRET_KEY_KEY
-              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation.ordService }}"
             - name: CONSUMER_TOKEN_URL
@@ -145,24 +125,8 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
-            - name: USER_EMAIL
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: email
-            - name: USER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: password
             - name: APP_DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
-            - name: DOMAIN
-              value: "{{ .Values.global.ingress.domainName }}"
-            - name: SKIP_TESTS_REGEX
-              value: {{ .Values.global.tests.ordService.skipPattern }}
-            - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
-              value: {{ .Values.global.director.selfRegister.distinguishLabel }}
             - name: SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.label }}
             - name: SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_VALUE_PREFIX

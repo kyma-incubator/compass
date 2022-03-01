@@ -3,14 +3,12 @@ package broker
 import (
 	"context"
 	"crypto/rsa"
-	"time"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/util"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 )
@@ -42,9 +40,8 @@ func NewSystemBrokerTestContext(cfg config.SystemBrokerTestConfig) (*SystemBroke
 		return nil, errors.Wrap(err, "while starting cert cache")
 	}
 
-	for cc.Get() == nil {
-		log.D().Info("Waiting for certificate cache to load, sleeping for 1 second")
-		time.Sleep(1 * time.Second)
+	if err := util.WaitForCache(cc); err != nil {
+		return nil, err
 	}
 
 	return &SystemBrokerTestContext{
