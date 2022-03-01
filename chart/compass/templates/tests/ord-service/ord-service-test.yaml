@@ -72,7 +72,7 @@ spec:
             - name: CONSUMER_TOKEN_URL
               value: {{ .Values.global.tests.ordService.consumerTokenURL }}
             - name: TOKEN_PATH
-              value: {{ .Values.global.tests.ordService.consumerTokenPath }}
+              value: {{ .Values.global.tests.ordService.tokenPath }}
             - name: PROVIDER_CLIENT_ID
               valueFrom:
                 secretKeyRef:
