@@ -110,7 +110,7 @@ func NewRootResolver(
 		credentials = &authpkg.OAuthCredentials{
 			ClientID:     selfRegConfig.ClientID,
 			ClientSecret: selfRegConfig.ClientSecret,
-			TokenURL:     selfRegConfig.TokenURL + selfRegConfig.OauthTokenPath,
+			TokenURL:     selfRegConfig.URL + selfRegConfig.OauthTokenPath,
 		}
 	} else if selfRegConfig.OAuthMode == oauth.Mtls {
 		mtlsCredentials, err := authpkg.NewOAuthMtlsCredentials(&selfRegConfig)
