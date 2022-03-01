@@ -19,20 +19,17 @@ type Manager interface {
 //go:generate mockery --name=RevokedCertificatesRepository
 type RevokedCertificatesRepository interface {
 	Insert(ctx context.Context, hash string) error
-	Contains(hash string) bool
 }
 
 type revokedCertifiatesRepository struct {
-	configMapManager  Manager
-	configMapName     string
-	revokedCertsCache Cache
+	configMapManager Manager
+	configMapName    string
 }
 
-func NewRepository(configMapManager Manager, configMapName string, revokedCertsCache Cache) RevokedCertificatesRepository {
+func NewRepository(configMapManager Manager, configMapName string) RevokedCertificatesRepository {
 	return &revokedCertifiatesRepository{
-		configMapManager:  configMapManager,
-		configMapName:     configMapName,
-		revokedCertsCache: revokedCertsCache,
+		configMapManager: configMapManager,
+		configMapName:    configMapName,
 	}
 }
 
@@ -57,15 +54,4 @@ func (r *revokedCertifiatesRepository) Insert(ctx context.Context, hash string) 
 	})
 
 	return err
-}
-
-func (r *revokedCertifiatesRepository) Contains(hash string) bool {
-	configMap := r.revokedCertsCache.Get()
-
-	found := false
-	if configMap != nil {
-		_, found = configMap[hash]
-	}
-
-	return found
 }

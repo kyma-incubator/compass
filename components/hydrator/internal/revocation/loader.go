@@ -13,6 +13,13 @@ import (
 
 const revocationListLoaderCorrelationID = "revocation-list-loader"
 
+//go:generate mockery --name=Manager
+type Manager interface {
+	Get(ctx context.Context, name string, options metav1.GetOptions) (*v1.ConfigMap, error)
+	Update(ctx context.Context, configMap *v1.ConfigMap, opts metav1.UpdateOptions) (*v1.ConfigMap, error)
+	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
+}
+
 type Loader interface {
 	Run(ctx context.Context)
 }

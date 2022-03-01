@@ -3,14 +3,12 @@ package istiocertresolver
 import (
 	"regexp"
 
-	"github.com/kyma-incubator/compass/components/connector/pkg/models"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 )
 
 // ExternalCertIssuerSubjectMatcher returns a function matching certificate subjects issued by the external trusted issuer configured
 // It checks Country, Organization as single values and OrganizationalUnit as regex pattern for easier matching of multiple values.
-func ExternalCertIssuerSubjectMatcher(externalSubjectConsts models.ExternalIssuerSubjectConsts) func(subject string) bool {
+func ExternalCertIssuerSubjectMatcher(externalSubjectConsts ExternalIssuerSubjectConfig) func(subject string) bool {
 	return func(subject string) bool {
 		if cert.GetCountry(subject) != externalSubjectConsts.Country || cert.GetOrganization(subject) != externalSubjectConsts.Organization {
 			return false
@@ -30,7 +28,7 @@ func ExternalCertIssuerSubjectMatcher(externalSubjectConsts models.ExternalIssue
 }
 
 // ConnectorCertificateSubjectMatcher returns a function matching certificate subjects issued by compass's connector
-func ConnectorCertificateSubjectMatcher(CSRSubjectConsts models.CSRSubjectConsts) func(subject string) bool {
+func ConnectorCertificateSubjectMatcher(CSRSubjectConsts CSRSubjectConfig) func(subject string) bool {
 	return func(subject string) bool {
 		return cert.GetOrganization(subject) == CSRSubjectConsts.Organization && cert.GetOrganizationalUnit(subject) == CSRSubjectConsts.OrganizationalUnit &&
 			cert.GetCountry(subject) == CSRSubjectConsts.Country && cert.GetLocality(subject) == CSRSubjectConsts.Locality && cert.GetProvince(subject) == CSRSubjectConsts.Province

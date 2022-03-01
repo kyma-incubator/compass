@@ -18,6 +18,12 @@ package main
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
+	"github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
+	"github.com/kyma-incubator/compass/components/director/pkg/namespacedname"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/istiocertresolver"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/revocation"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/subject"
 	"net/http"
 	"os"
 	"time"
@@ -61,11 +67,19 @@ type config struct {
 
 	JWKSSyncPeriod time.Duration `envconfig:"default=5m"`
 
+	KubeConfig kubernetes.Config
+
 	ConfigurationFile       string
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
 
 	StaticUsersSrc  string `envconfig:"default=/data/static-users.yaml"`
 	StaticGroupsSrc string `envconfig:"default=/data/static-groups.yaml"`
+
+	CSRSubject                   istiocertresolver.CSRSubjectConfig
+	ExternalIssuerSubject        istiocertresolver.ExternalIssuerSubjectConfig
+	CertificateDataHeader        string `envconfig:"default=Certificate-Data"`
+	RevocationConfigMapName      string `envconfig:"default=compass-system/revocations-Config"`
+	SubjectConsumerMappingConfig string `envconfig:"default=[]"`
 
 	Log log.Config
 }
@@ -92,7 +106,7 @@ func main() {
 		exitOnError(errors.New("missing handler endpoint"), "Error while loading app handler config")
 	}
 
-	handler := initAPIHandler(ctx, authenticators, cfg)
+	handler := initAPIHandlers(ctx, authenticators, cfg)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
 	go func() {
@@ -104,7 +118,7 @@ func main() {
 	runMainSrv()
 }
 
-func initAPIHandler(ctx context.Context, authenticators []authenticator.Config, cfg config) http.Handler {
+func initAPIHandlers(ctx context.Context, authenticators []authenticator.Config, cfg config) http.Handler {
 	logger := log.C(ctx)
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
@@ -186,10 +200,17 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 	logger.Infof("Registering Connector Token Resolver endpoint on %s...", cfg.Handler.TokenResolverEndpoint)
 	connectorTokenResolverHandlerFunc := getTokenResolverHandler(directorClientProvider)
 
+	logger.Infof("Registering Connector Certificate Resolver endpoint on %s...", cfg.Handler.TokenResolverEndpoint)
+	connectorCertResolverHandlerFunc, revokedCertsLoader, err := getCertificateResolverHandler(ctx, cfg)
+	exitOnError(err, "Error while configuring tenant mapping handler")
+
 	router.HandleFunc(cfg.Handler.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
 	router.HandleFunc(cfg.Handler.TenantMappingEndpoint, tenantMappingHandlerFunc.ServeHTTP)
 	router.HandleFunc(cfg.Handler.RuntimeMappingEndpoint, runtimeMappingHandlerFunc.ServeHTTP)
 	router.HandleFunc(cfg.Handler.TokenResolverEndpoint, connectorTokenResolverHandlerFunc.ServeHTTP)
+	router.HandleFunc(cfg.Handler.ValidationIstioCertEndpoint, connectorCertResolverHandlerFunc.ServeHTTP)
+
+	go revokedCertsLoader.Run(ctx)
 }
 
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {
@@ -238,37 +259,39 @@ func getRuntimeMappingHandlerFunc(ctx context.Context, clientProvider director.C
 		tokenVerifier)
 }
 
-//func getCertificateResolverHandler(cfg Config, CSRSubjectConsts certificates.CSRSubjectConsts, externalSubjectConsts certificates.ExternalIssuerSubjectConsts, revokedCertsRepository revocation.RevokedCertificatesRepository, middlewares ...mux.MiddlewareFunc) (*http.Server, error) {
-//	subjectProcessor, err := subject.NewProcessor(cfg.SubjectConsumerMappingConfig, externalSubjectConsts.OrganizationalUnitPattern)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	validationHydrator := validationhydrator.NewValidationHydrator(revokedCertsRepository, connectorCertHeaderParser, externalCertHeaderParser)
-//
-//	router := mux.NewRouter()
-//	router.Path("/health").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//		w.WriteHeader(http.StatusOK)
-//	})
-//
-//	router.Use(middlewares...)
-//
-//	v1Router := router.PathPrefix("/v1").Subrouter()
-//	v1Router.HandleFunc("/certificate/data/resolve", validationHydrator.ResolveIstioCertHeader)
-//
-//	handlerWithTimeout, err := timeouthandler.WithTimeout(router, cfg.ServerTimeout)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return &http.Server{
-//		Addr:              cfg.HydratorAddress,
-//		Handler:           handlerWithTimeout,
-//		ReadHeaderTimeout: cfg.ServerTimeout,
-//	}, nil
-//}
+func getCertificateResolverHandler(ctx context.Context, cfg config) (istiocertresolver.ValidationHydrator, revocation.Loader, error) {
+	k8sClientSet, err := kubernetes.NewKubernetesClientSet(ctx, cfg.KubeConfig.PollInterval, cfg.KubeConfig.PollTimeout, cfg.KubeConfig.Timeout)
+	if err != nil {
+		return nil, nil, err
+	}
 
-func getTokenResolverHandler(clientProvider director.ClientProvider, middlewares ...mux.MiddlewareFunc) http.Handler {
+	revokedCertsCache := revocation.NewCache()
+
+	revokedCertsConfigMap, err := namespacedname.Parse(cfg.RevocationConfigMapName)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	revokedCertsLoader := revocation.NewRevokedCertificatesLoader(revokedCertsCache,
+		k8sClientSet.CoreV1().ConfigMaps(revokedCertsConfigMap.Namespace),
+		revokedCertsConfigMap.Name,
+		time.Second,
+	)
+
+	subjectProcessor, err := subject.NewProcessor(cfg.SubjectConsumerMappingConfig, cfg.ExternalIssuerSubject.OrganizationalUnitPattern)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	externalCertHeaderParser := istiocertresolver.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ExternalIssuer,
+		istiocertresolver.ExternalCertIssuerSubjectMatcher(cfg.ExternalIssuerSubject), subjectProcessor.AuthIDFromSubjectFunc(), subjectProcessor.AuthSessionExtraFromSubjectFunc())
+	connectorCertHeaderParser := istiocertresolver.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ConnectorIssuer,
+		istiocertresolver.ConnectorCertificateSubjectMatcher(cfg.CSRSubject), cert.GetCommonName, subjectProcessor.EmptyAuthSessionExtraFunc())
+
+	return istiocertresolver.NewValidationHydrator(revokedCertsCache, connectorCertHeaderParser, externalCertHeaderParser), revokedCertsLoader, nil
+}
+
+func getTokenResolverHandler(clientProvider director.ClientProvider) http.Handler {
 	return connectortokenresolver.NewValidationHydrator(clientProvider.Client())
 }
 
