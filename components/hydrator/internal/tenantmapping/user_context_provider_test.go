@@ -3,10 +3,10 @@ package tenantmapping_test
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
 	"net/http"
 	"net/textproto"
-
-	oathkeeper2 "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
@@ -16,9 +16,6 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping/automock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -31,14 +28,14 @@ func TestUserContextProvider(t *testing.T) {
 	expectedScopes := []string{"application:read", "application:write"}
 	userObjCtxType := "Static User"
 
-	jwtAuthDetails := oathkeeper2.AuthDetails{AuthID: username, AuthFlow: oathkeeper2.JWTAuthFlow}
+	jwtAuthDetails := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow}
 
 	t.Run("returns tenant and scopes that are defined in the Extra map of ReqData", func(t *testing.T) {
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper2.ExternalTenantKey: expectedExternalTenantID.String(),
-					oathkeeper2.ScopesKey:         strings.Join(expectedScopes, " "),
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID.String(),
+					oathkeeper.ScopesKey:         strings.Join(expectedScopes, " "),
 				},
 			},
 		}
@@ -73,11 +70,11 @@ func TestUserContextProvider(t *testing.T) {
 	})
 
 	t.Run("returns tenant and scopes that are defined in the Header map of ReqData", func(t *testing.T) {
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ExternalTenantKey): []string{expectedExternalTenantID.String()},
-					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ScopesKey):         []string{strings.Join(expectedScopes, " ")},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ExternalTenantKey): []string{expectedExternalTenantID.String()},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ScopesKey):         []string{strings.Join(expectedScopes, " ")},
 				},
 			},
 		}
@@ -111,13 +108,13 @@ func TestUserContextProvider(t *testing.T) {
 	})
 
 	t.Run("returns tenant which is defined in the Extra map and scopes which is defined in the Header map of ReqData", func(t *testing.T) {
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper2.ExternalTenantKey: expectedExternalTenantID.String(),
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID.String(),
 				},
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ScopesKey): []string{strings.Join(expectedScopes, " ")},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ScopesKey): []string{strings.Join(expectedScopes, " ")},
 				},
 			},
 		}
@@ -151,13 +148,13 @@ func TestUserContextProvider(t *testing.T) {
 	})
 
 	t.Run("returns tenant which is defined in the Header map and scopes which is defined in the Extra map of ReqData", func(t *testing.T) {
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper2.ScopesKey: strings.Join(expectedScopes, " "),
+					oathkeeper.ScopesKey: strings.Join(expectedScopes, " "),
 				},
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ExternalTenantKey): []string{expectedExternalTenantID.String()},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ExternalTenantKey): []string{expectedExternalTenantID.String()},
 				},
 			},
 		}
@@ -191,10 +188,10 @@ func TestUserContextProvider(t *testing.T) {
 	})
 
 	t.Run("returns scopes defined on the StaticUser and tenant from the request", func(t *testing.T) {
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper2.ExternalTenantKey: expectedExternalTenantID.String(),
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID.String(),
 				},
 			},
 		}
@@ -231,11 +228,11 @@ func TestUserContextProvider(t *testing.T) {
 		groupName := "test"
 		expectedGroupScopes := []string{"tennants:read", "application:read"}
 
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper2.ExternalTenantKey: expectedExternalTenantID.String(),
-					oathkeeper2.GroupsKey:         []interface{}{groupName},
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID.String(),
+					oathkeeper.GroupsKey:         []interface{}{groupName},
 				},
 			},
 		}
@@ -286,11 +283,11 @@ func TestUserContextProvider(t *testing.T) {
 		expectedGroupScopes2 := []string{"application:read", "applications:edit"}
 		allExpectedGroupScopes := []string{"tennants:read", "application:read", "applications:edit"}
 
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper2.ExternalTenantKey: expectedExternalTenantID.String(),
-					oathkeeper2.GroupsKey:         []interface{}{groupName1, groupName2},
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID.String(),
+					oathkeeper.GroupsKey:         []interface{}{groupName1, groupName2},
 				},
 			},
 		}
@@ -330,11 +327,11 @@ func TestUserContextProvider(t *testing.T) {
 
 	t.Run("returns scopes defined on the StaticUser when group not present from the request", func(t *testing.T) {
 		groupName := "test"
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper2.ExternalTenantKey: expectedExternalTenantID.String(),
-					oathkeeper2.GroupsKey:         []interface{}{groupName},
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID.String(),
+					oathkeeper.GroupsKey:         []interface{}{groupName},
 				},
 			},
 		}
@@ -375,10 +372,10 @@ func TestUserContextProvider(t *testing.T) {
 
 	t.Run("returns error when tenant from the request does not match any tenants assigned to the static user", func(t *testing.T) {
 		nonExistingExternalTenantID := uuid.New().String()
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper2.ExternalTenantKey: nonExistingExternalTenantID,
+					oathkeeper.ExternalTenantKey: nonExistingExternalTenantID,
 				},
 			},
 		}
@@ -408,10 +405,10 @@ func TestUserContextProvider(t *testing.T) {
 	})
 
 	t.Run("returns error when tenant is specified in Extra map in a non-string format", func(t *testing.T) {
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper2.ExternalTenantKey: []byte{1, 2, 3},
+					oathkeeper.ExternalTenantKey: []byte{1, 2, 3},
 				},
 			},
 		}
@@ -434,10 +431,10 @@ func TestUserContextProvider(t *testing.T) {
 	})
 
 	t.Run("returns error when scopes is specified in Extra map in a non-string format", func(t *testing.T) {
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper2.ScopesKey: []byte{1, 2, 3},
+					oathkeeper.ScopesKey: []byte{1, 2, 3},
 				},
 			},
 		}
@@ -460,7 +457,7 @@ func TestUserContextProvider(t *testing.T) {
 	})
 
 	t.Run("returns error when user repository returns error", func(t *testing.T) {
-		reqData := oathkeeper2.ReqData{}
+		reqData := oathkeeper.ReqData{}
 		username := "non-existing"
 
 		staticUserRepoMock := getStaticUserRepoMock()
@@ -481,8 +478,8 @@ func TestUserContextProvider(t *testing.T) {
 func TestUserContextProviderMatch(t *testing.T) {
 	t.Run("returns ID string and JWTAuthFlow when a name is specified in the Extra map of request body", func(t *testing.T) {
 		username := "some-username"
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
 					"name": username,
 				},
@@ -495,15 +492,15 @@ func TestUserContextProviderMatch(t *testing.T) {
 
 		require.True(t, match)
 		require.NoError(t, err)
-		require.Equal(t, oathkeeper2.JWTAuthFlow, authDetails.AuthFlow)
+		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
 		require.Equal(t, username, authDetails.AuthID)
 	})
 
 	t.Run("returns error when username is specified in Extra map in a non-string format", func(t *testing.T) {
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper2.UsernameKey: []byte{1, 2, 3},
+					oathkeeper.UsernameKey: []byte{1, 2, 3},
 				},
 			},
 		}
@@ -523,8 +520,8 @@ func TestUserContextProviderMatch(t *testing.T) {
 		identityAttributeKey := "identity"
 		authenticatorName := "auth1"
 		username := "some-username"
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
 					authenticator.CoordinatesKey: authenticator.Coordinates{
 						Name:  authenticatorName,
@@ -539,20 +536,20 @@ func TestUserContextProviderMatch(t *testing.T) {
 		reqData.Body.Extra[authenticator.CoordinatesKey] = authenticator.Coordinates{
 			Name: "unknown",
 		}
-		reqData.Body.Extra[oathkeeper2.UsernameKey] = username
+		reqData.Body.Extra[oathkeeper.UsernameKey] = username
 
 		provider := tenantmapping.NewUserContextProvider(nil, nil, nil)
 		match, authDetails, err := provider.Match(context.TODO(), reqData)
 
 		require.True(t, match)
 		require.NoError(t, err)
-		require.Equal(t, oathkeeper2.JWTAuthFlow, authDetails.AuthFlow)
+		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
 		require.Equal(t, username, authDetails.AuthID)
 	})
 
 	t.Run("return nil when does not match", func(t *testing.T) {
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{},
 			},
 		}

@@ -12,7 +12,7 @@ type HandlerConfig struct {
 
 // Validate ensures the constructed Config contains valid property values
 func (c *HandlerConfig) Validate() error {
-	if c.AuthenticationMappingEndpoint == "" || c.TenantMappingEndpoint == "" || c.ValidationIstioCertEndpoint == "" || c.RuntimeMappingEndpoint == "" {
+	if c.AuthenticationMappingEndpoint == "" || c.TenantMappingEndpoint == "" || c.ValidationIstioCertEndpoint == "" || c.RuntimeMappingEndpoint == "" || c.TokenResolverEndpoint == "" {
 		return errors.New("Missing handler configuration")
 	}
 
