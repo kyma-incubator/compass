@@ -63,7 +63,7 @@ func TestAuditlogIntegration(t *testing.T) {
 	timeTo := timeFrom.Add(1 * time.Minute)
 
 	t.Log("Get auditlog service Token")
-	auditlogToken := token.GetClientCredentialsToken(t, context.Background(), testConfig.Auditlog.TokenURL+"/oauth/token", testConfig.Auditlog.ClientID, testConfig.Auditlog.ClientSecret, "")
+	auditlogToken := token.GetClientCredentialsToken(t, context.Background(), testConfig.Auditlog.TokenURL+"/cert/token", testConfig.Auditlog.ClientID, "", "")
 
 	t.Log("Get auditlog from auditlog API")
 	auditlogs := fixtures.SearchForAuditlogByTimestampAndString(t, &httpClient, testConfig.Auditlog, auditlogToken, appName, timeFrom, timeTo)
