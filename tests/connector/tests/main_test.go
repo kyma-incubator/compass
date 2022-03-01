@@ -3,6 +3,10 @@ package tests
 import (
 	"context"
 	"crypto/rsa"
+	"os"
+	"path/filepath"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
@@ -16,9 +20,6 @@ import (
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
-	"os"
-	"path/filepath"
-	"testing"
 )
 
 var (

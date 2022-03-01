@@ -3,6 +3,7 @@ package broker
 import (
 	"context"
 	"crypto/rsa"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"

@@ -1,10 +1,11 @@
 package util
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
-	"time"
 )
 
 func WaitForCache(cache certloader.Cache) error {

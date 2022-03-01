@@ -2,6 +2,9 @@ package tests
 
 import (
 	"context"
+	"os"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	config "github.com/kyma-incubator/compass/tests/pkg/config"
@@ -10,8 +13,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	"os"
-	"testing"
 )
 
 var (

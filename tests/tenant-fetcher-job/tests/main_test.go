@@ -3,11 +3,12 @@ package tests
 import (
 	"context"
 	"crypto/tls"
-	"github.com/kyma-incubator/compass/tests/pkg/util"
 	"net/http"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"

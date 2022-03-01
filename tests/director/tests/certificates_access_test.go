@@ -31,7 +31,8 @@ func TestIntegrationSystemAccess(t *testing.T) {
 			tenant:         tenant.TestTenants.GetIDByName(t, tenant.TestIntegrationSystemManagedSubaccount),
 			resourceSuffix: "subaccount-owned",
 		},
-		{name: "Integration System cannot manage customer tenant entities",
+		{
+			name:           "Integration System cannot manage customer tenant entities",
 			tenant:         tenant.TestTenants.GetIDByName(t, tenant.TestDefaultCustomerTenant),
 			resourceSuffix: "customer-owned",
 			expectErr:      true,
