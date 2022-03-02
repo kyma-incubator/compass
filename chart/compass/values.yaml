@@ -91,7 +91,7 @@ global:
       version: "PR-2166"
     director:
       dir:
-      version: "PR-2223"
+      version: "PR-2197"
     gateway:
       dir:
       version: "PR-2166"
@@ -114,7 +114,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2153"
+      version: "PR-2197"
     console:
       dir:
       version: "PR-59"
@@ -159,11 +159,15 @@ global:
       path: "/v1/info"
     selfRegister:
       secret:
-        name: "compass-external-services-mock-oauth-credentials"
+        name: "compass-self-registration-credentials"
         clientIdKey: client-id
         clientSecretKey: client-secret
         urlKey: url
-      oauthTokenPath: "/secured/oauth/token"
+        tokenUrlKey: token-url
+        clientCertKey: client-cert
+        clientKeyKey: client-key
+      oauthTokenPath: "/cert/token"
+      oauthMode: "oauth-mtls"
       label: "selfRegLabel"
       labelValuePrefix: "self-reg-prefix-"
       responseKey: "self-reg-key"
