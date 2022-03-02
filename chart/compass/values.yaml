@@ -91,7 +91,7 @@ global:
       version: "PR-2212"
     director:
       dir:
-      version: "PR-2212"
+      version: "PR-2231"
     gateway:
       dir:
       version: "PR-2212"
@@ -100,10 +100,10 @@ global:
       version: "PR-2212"
     ord_service:
       dir:
-      version: "PR-62"
+      version: "PR-63"
     schema_migrator:
       dir:
-      version: "PR-2212"
+      version: "PR-2231"
     system_broker:
       dir:
       version: "PR-2212"
