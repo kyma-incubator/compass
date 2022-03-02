@@ -32,7 +32,7 @@ func TestTenantErrors(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), tenantNotFoundMessage)
 
-	_, err = fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, emptyTenant, appInput)
+	_, err = fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, emptyTenant, appInput) // TODO: no longer error
 	require.Error(t, err)
 	require.Contains(t, err.Error(), tenantRequiredMessage)
 
