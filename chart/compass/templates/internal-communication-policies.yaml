@@ -5,7 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   jwtRules:
-    - issuer: kubernetes/serviceaccount
+    - issuer: {{ .Values.global.kubernetes.serviceAccountTokenIssuer }}
       jwksUri: {{ .Values.global.kubernetes.serviceAccountTokenJWKS }}
       forwardOriginalToken: true
       fromHeaders:
@@ -82,7 +82,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: hydra
   jwtRules:
-    - issuer: kubernetes/serviceaccount
+    - issuer: {{ .Values.global.kubernetes.serviceAccountTokenIssuer }}
       jwksUri: {{ .Values.global.kubernetes.serviceAccountTokenJWKS }}
       forwardOriginalToken: true
       fromHeaders:
