@@ -18,6 +18,7 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"os"
 	"testing"
 
@@ -61,32 +62,28 @@ type SubscriptionConfig struct {
 type config struct {
 	TenantConfig
 	CertLoaderConfig certloader.Config
+	certprovider.ExternalCertProviderConfig
 	SubscriptionConfig
-	ExternalServicesMockBaseURL           string
-	DirectorExternalCertSecuredURL        string
-	ORDServiceURL                         string
-	ORDExternalCertSecuredServiceURL      string
-	ORDServiceStaticPrefix                string
-	ORDServiceDefaultResponseType         string
-	DefaultScenarioEnabled                bool `envconfig:"default=true"`
-	ConsumerTokenURL                      string
-	TokenPath                             string
-	ProviderClientID                      string
-	ProviderClientSecret                  string
-	SkipSSLValidation                     bool
-	TestExternalCertSubject               string
-	ExternalClientCertTestSecretName      string
-	ExternalClientCertTestSecretNamespace string
-	CertSvcInstanceTestSecretName         string
-	ExternalCertCronjobContainerName      string
-	BasicUsername                         string
-	BasicPassword                         string
-	AccountTenantID                       string
-	SubaccountTenantID                    string
-	TestConsumerAccountID                 string
-	TestProviderSubaccountID              string
-	TestConsumerSubaccountID              string
-	TestConsumerTenantID                  string
+	ExternalServicesMockBaseURL      string
+	DirectorExternalCertSecuredURL   string
+	ORDServiceURL                    string
+	ORDExternalCertSecuredServiceURL string
+	ORDServiceStaticPrefix           string
+	ORDServiceDefaultResponseType    string
+	DefaultScenarioEnabled           bool `envconfig:"default=true"`
+	ConsumerTokenURL                 string
+	TokenPath                        string
+	ProviderClientID                 string
+	ProviderClientSecret             string
+	SkipSSLValidation                bool
+	BasicUsername                    string
+	BasicPassword                    string
+	AccountTenantID                  string
+	SubaccountTenantID               string
+	TestConsumerAccountID            string
+	TestProviderSubaccountID         string
+	TestConsumerSubaccountID         string
+	TestConsumerTenantID             string
 }
 
 var testConfig config

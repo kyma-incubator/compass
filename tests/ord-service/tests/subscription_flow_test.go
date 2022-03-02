@@ -21,6 +21,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -28,11 +29,8 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/pkg/certs"
-	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -40,9 +38,6 @@ import (
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
-	v1 "k8s.io/api/batch/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -128,27 +123,9 @@ func TestConsumerProviderFlow(t *testing.T) {
 	subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
 	subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
 	subscriptionConsumerTenantID := testConfig.TestConsumerTenantID
-	jobName := "external-certificate-rotation-test-job"
 
-	// Prepare provider external client certificate and secret
-	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
-	require.NoError(t, err)
-	createExtCertJob(t, ctx, k8sClient, testConfig, jobName) // Create temporary external certificate job which will save the modified client certificate in temporary secret
-	defer func() {
-		k8s.DeleteJob(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace)
-		k8s.DeleteSecret(t, ctx, k8sClient, testConfig.ExternalClientCertTestSecretName, testConfig.ExternalClientCertTestSecretNamespace)
-	}()
-	k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace)
-
-	providerExtCrtTestSecret, err := k8sClient.CoreV1().Secrets(testConfig.ExternalClientCertTestSecretNamespace).Get(ctx, testConfig.ExternalClientCertTestSecretName, metav1.GetOptions{})
-	require.NoError(t, err)
-	providerKeyBytes := providerExtCrtTestSecret.Data[testConfig.CertLoaderConfig.ExternalClientCertKeyKey]
-	require.NotEmpty(t, providerKeyBytes)
-	providerCertChainBytes := providerExtCrtTestSecret.Data[testConfig.CertLoaderConfig.ExternalClientCertCertKey]
-	require.NotEmpty(t, providerCertChainBytes)
-
-	// Build graphql director client configured with certificate
-	providerClientKey, providerRawCertChain := certs.ClientCertPair(t, providerCertChainBytes, providerKeyBytes)
+	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, testConfig.ExternalCertProviderConfig)
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
 
 	runtimeInput := graphql.RuntimeInput{
@@ -281,53 +258,6 @@ func TestConsumerProviderFlow(t *testing.T) {
 	respBody = makeRequestWithHeaders(t, certHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 	require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
 	t.Log("Successfully validated no application is returned after successful unsubscription request")
-}
-
-// createExtCertJob will schedule a temporary kubernetes job from director-external-certificate-rotation-job cronjob
-// with replaced certificate subject and secret name so the tests can be executed on real environment with the correct values.
-func createExtCertJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, testConfig config, jobName string) {
-	cronjobName := "director-external-certificate-rotation-job"
-
-	cronjob := k8s.GetCronJob(t, ctx, k8sClient, cronjobName, testConfig.ExternalClientCertTestSecretNamespace)
-
-	// change the secret name and certificate subject
-	podContainers := &cronjob.Spec.JobTemplate.Spec.Template.Spec.Containers
-	for cIndex := range *podContainers {
-		container := &(*podContainers)[cIndex]
-		if container.Name == testConfig.ExternalCertCronjobContainerName {
-			for eIndex := range container.Env {
-				env := &container.Env[eIndex]
-				if env.Name == "CLIENT_CERT_SECRET_NAME" {
-					env.Value = testConfig.ExternalClientCertTestSecretName
-				}
-				if env.Name == "CERT_SUBJECT_PATTERN" {
-					env.Value = testConfig.TestExternalCertSubject
-				}
-				if env.Name == "CERT_SVC_CSR_ENDPOINT" || env.Name == "CERT_SVC_CLIENT_ID" || env.Name == "CERT_SVC_CLIENT_SECRET" || env.Name == "CERT_SVC_OAUTH_URL" {
-					env.ValueFrom.SecretKeyRef.Name = testConfig.CertSvcInstanceTestSecretName // external certificate credentials used to execute consumer-provider test
-				}
-			}
-			break
-		}
-	}
-
-	jobDef := &v1.Job{
-		Spec: v1.JobSpec{
-			Parallelism:             cronjob.Spec.JobTemplate.Spec.Parallelism,
-			Completions:             cronjob.Spec.JobTemplate.Spec.Completions,
-			ActiveDeadlineSeconds:   cronjob.Spec.JobTemplate.Spec.ActiveDeadlineSeconds,
-			BackoffLimit:            cronjob.Spec.JobTemplate.Spec.BackoffLimit,
-			Selector:                cronjob.Spec.JobTemplate.Spec.Selector,
-			ManualSelector:          cronjob.Spec.JobTemplate.Spec.ManualSelector,
-			Template:                cronjob.Spec.JobTemplate.Spec.Template,
-			TTLSecondsAfterFinished: cronjob.Spec.JobTemplate.Spec.TTLSecondsAfterFinished,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: jobName,
-		},
-	}
-
-	k8s.CreateJobByGivenJobDefinition(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace, jobDef)
 }
 
 func buildAndExecuteUnsubscribeRequest(t *testing.T, runtime graphql.RuntimeExt, httpClient *http.Client, apiPath, subscriptionToken, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID string) {

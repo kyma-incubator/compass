@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -13,8 +14,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TODO: Those tests aren't correct anymore.
 func TestIntegrationSystemAccess(t *testing.T) {
+	// Build graphql director client configured with certificate
+	ctx := context.Background()
+	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
+	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
+
 	testCases := []struct {
 		name           string
 		tenant         string
@@ -40,11 +45,6 @@ func TestIntegrationSystemAccess(t *testing.T) {
 	}
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			ctx := context.Background()
-
-			// Build graphql director client configured with certificate
-			directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, certCache.Get().Certificate, conf.SkipSSLValidation)
-
 			t.Log(fmt.Sprintf("Trying to create application in account tenant %s", test.tenant))
 			app, err := fixtures.RegisterApplication(t, ctx, directorCertSecuredClient, fmt.Sprintf("app-%s", test.resourceSuffix), test.tenant)
 			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, test.tenant, &app)

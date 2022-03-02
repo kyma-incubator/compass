@@ -114,7 +114,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2153"
+      version: "PR-2222"
     console:
       dir:
       version: "PR-59"
@@ -224,7 +224,7 @@ global:
     # If key and certificate are not provided they will be generated
     caKey: ""
     caCertificate: ""
-    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}]'
+    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"},{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}]'
 
   system_broker:
     enabled: true
@@ -634,6 +634,11 @@ global:
           director: false
           ordService: false
           connectivityAdapter: true
+    director:
+      externalClientCertTestSecretName: "external-client-certificate-integration-system-test-secret"
+      externalClientCertTestSecretNamespace: "compass-system"
+      externalCertIntSystemCN: "integration-system-test"
+      externalCertTestJobName: "external-client-certificate-integration-system-test-job"
     ordService:
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
       consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
@@ -642,6 +647,7 @@ global:
       consumerTenantID: "ba49f1aa-ddc1-43ff-943c-fe949857a34a" # randomly chosen
       externalClientCertTestSecretName: "external-client-certificate-test-secret"
       externalClientCertTestSecretNamespace: "compass-system"
+      externalCertTestJobName: "external-certificate-rotation-test-job"
       certSvcInstanceTestSecretName: "cert-svc-secret"
       consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
       region: "eu-1"
