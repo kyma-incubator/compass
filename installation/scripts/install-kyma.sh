@@ -43,27 +43,30 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 
-INSTALLER_CR_PATH="${ROOT_PATH}"/installation/resources/kyma/kyma-components-minimal.yaml
-OVERRIDES_KYMA_MINIMAL_CFG_LOCAL="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-kyma-minimal-config-local.yaml
+CERT=$(docker exec k3d-kyma-server-0 cat /var/lib/rancher/k3s/server/tls/server-ca.crt)
+CERT="${CERT//$'\n'/\\\\n}"
 
-MINIMAL_OVERRIDES_FILENAME=override-local-minimal.yaml
-MINIMAL_OVERRIDES_CONTENT=$(sed "s~\"__CERT__\"~\"$CERT\"~" "${OVERRIDES_KYMA_MINIMAL_CFG_LOCAL}")
+KYMA_COMPONENTS_MINIMAL="${ROOT_PATH}"/installation/resources/kyma/kyma-components-minimal.yaml
+KYMA_OVERRIDES_MINIMAL="${ROOT_PATH}"/installation/resources/kyma/kyma-overrides-minimal.yaml
 
->"${MINIMAL_OVERRIDES_FILENAME}" cat <<-EOF
+MINIMAL_OVERRIDES_TEMP=overrides-minimal.yaml
+MINIMAL_OVERRIDES_CONTENT=$(sed "s~\"__CERT__\"~\"$CERT\"~" "${KYMA_OVERRIDES_MINIMAL}")
+
+>"${MINIMAL_OVERRIDES_TEMP}" cat <<-EOF
 $MINIMAL_OVERRIDES_CONTENT
 EOF
 
-INSTALLER_CR_FULL_PATH="${ROOT_PATH}"/installation/resources/kyma/kyma-components-full.yaml
-OVERRIDES_KYMA_FULL_CFG_LOCAL="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-kyma-full-config-local.yaml
+KYMA_COMPONENTS_FULL="${ROOT_PATH}"/installation/resources/kyma/kyma-components-full.yaml
+KYMA_OVERRIDES_FULL="${ROOT_PATH}"/installation/resources/kyma/kyma-overrides-full.yaml
 
-FULL_OVERRIDES_FILENAME=override-local-full.yaml
-FULL_OVERRIDES_CONTENT=$(sed "s~\"__CERT__\"~\"$CERT\"~" "${OVERRIDES_KYMA_FULL_CFG_LOCAL}")
+FULL_OVERRIDES_TEMP=overrides-full.yaml
+FULL_OVERRIDES_CONTENT=$(sed "s~\"__CERT__\"~\"$CERT\"~" "${KYMA_OVERRIDES_FULL}")
 
->"${FULL_OVERRIDES_FILENAME}" cat <<-EOF
+>"${FULL_OVERRIDES_TEMP}" cat <<-EOF
 $FULL_OVERRIDES_CONTENT
 EOF
 
-trap "rm -f ${MINIMAL_OVERRIDES_FILENAME} ${FULL_OVERRIDES_FILENAME}" EXIT INT TERM
+trap "rm -f ${MINIMAL_OVERRIDES_TEMP} ${FULL_OVERRIDES_TEMP}" EXIT INT TERM
 
 if [[ $KYMA_RELEASE == *PR-* ]]; then
   KYMA_TAG=$(curl -L https://storage.googleapis.com/kyma-development-artifacts/${KYMA_RELEASE}/kyma-installer-cluster.yaml | grep 'image: eu.gcr.io/kyma-project/kyma-installer:'| sed 's+image: eu.gcr.io/kyma-project/kyma-installer:++g' | tr -d '[:space:]')
@@ -79,10 +82,10 @@ fi
 
 echo "Using Kyma source ${KYMA_SOURCE}"
 
-if [[ $KYMA_INSTALLATION == *full* ]]; then # todo add overrides if possible
+if [[ $KYMA_INSTALLATION == *full* ]]; then
   echo "Installing full Kyma"
-  kyma deploy --components-file $INSTALLER_CR_FULL_PATH --source $KYMA_SOURCE
+  kyma deploy --components-file $KYMA_COMPONENTS_FULL --values-file $FULL_OVERRIDES_TEMP --source $KYMA_SOURCE
 else
   echo "Installing minimal Kyma"
-  kyma deploy --components-file $INSTALLER_CR_PATH  --values-file $OVERRIDES_DIR/kyma-overrides-minimal.yaml --source $KYMA_SOURCE
+  kyma deploy --components-file $KYMA_COMPONENTS_MINIMAL  --values-file $MINIMAL_OVERRIDES_TEMP --source $KYMA_SOURCE
 fi

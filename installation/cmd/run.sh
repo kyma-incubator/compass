@@ -103,6 +103,9 @@ function mount_k3d_ca_to_oathkeeper() {
  -p '{"spec":{"template":{"spec":{"containers":[{"name": "'$OATHKEEPER_CONTAINER_NAME'","volumeMounts": [{ "mountPath": "'/etc/ssl/certs/k3d-ca.crt'","name": "k3d-ca-volume","subPath": "k3d-ca.crt"}]}]}}}}'
 }
 
+trap 'pkill -P $$' EXIT INT TERM
+#trap 'kill $(jobs -p)' EXIT
+
 if [[ ${DUMP_DB} ]]; then
     trap revert_migrator_file EXIT
 fi
@@ -162,6 +165,13 @@ fi
 
 if [[ ! ${SKIP_KYMA_START} ]]; then
   LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh --kyma-release ${KYMA_RELEASE} --kyma-installation ${KYMA_INSTALLATION}
+  kubectl set image -n kyma-system cronjob/oathkeeper-jwks-rotator keys-generator=oryd/oathkeeper:v0.38.23
+  kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "*/1 * * * *"}}'
+  until [[ $(kubectl get cronjob -n kyma-system oathkeeper-jwks-rotator --output=jsonpath={.status.lastScheduleTime}) ]]; do
+      echo "Waiting for cronjob oathkeeper-jwks-rotator to be scheduled"
+      sleep 3
+  done
+  kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "0 0 1 * *"}}'
 fi
 
 mount_k3d_ca_to_oathkeeper
@@ -169,7 +179,6 @@ mount_k3d_ca_to_oathkeeper
 # Currently there is a problem fetching JWKS keys, used to validate JWT token send to hydra. The function bellow patches the RequestAuthentication istio resource
 # with the needed keys, by first getting them using kubectl
 function patchJWKS() {
-  trap "exit" INT TERM
   JWKS="'$(kubectl get --raw '/openid/v1/jwks')'"
   until [[ $(kubectl get requestauthentication kyma-internal-authn -n kyma-system 2>/dev/null) &&
           $(kubectl get requestauthentication compass-internal-authn -n compass-system 2>/dev/null) ]]; do
@@ -188,6 +197,11 @@ STATUS=$(helm status compass -n compass-system -o json | jq .info.status)
 echo "Compass installation status ${STATUS}"
 
 prometheusMTLSPatch
+
+COMPASS_CERT_PATH="${CURRENT_DIR}/../cmd/compass-cert.pem"
+openssl s_client -showcerts -servername compass.local.kyma.dev -connect compass.local.kyma.dev:443 2>/dev/null | openssl x509 -inform pem > "${COMPASS_CERT_PATH}"
+trap "rm -f ${COMPASS_CERT_PATH}" EXIT INT TERM
+sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "${COMPASS_CERT_PATH}"
 
 echo "Adding Compass entries to /etc/hosts..."
 sudo sh -c "echo \"\n127.0.0.1 adapter-gateway.local.kyma.dev adapter-gateway-mtls.local.kyma.dev compass-gateway-mtls.local.kyma.dev compass-gateway-sap-mtls.local.kyma.dev compass-gateway-auth-oauth.local.kyma.dev compass-gateway.local.kyma.dev compass-gateway-int.local.kyma.dev compass.local.kyma.dev compass-mf.local.kyma.dev kyma-env-broker.local.kyma.dev director.local.kyma.dev compass-external-services-mock-sap-mtls.local.kyma.dev\" >> /etc/hosts"

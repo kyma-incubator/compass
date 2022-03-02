@@ -1,3 +1,25 @@
+application-connector:
+  global:
+    domainName: kyma.local.dev
+    disableLegacyConnectivity: true
+    isLocalEnv: true
+cluster-essentials:
+  global:
+    disableLegacyConnectivity: "true"
+  pod-preset:
+    webhook:
+      resources:
+        requests:
+          cpu: 25m
+          memory: 36Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+  limitRange:
+    default:
+      memory: 256Mi
+    defaultRequest:
+      memory: 32Mi
 tracing:
   jaeger:
     spec:
@@ -52,3 +74,95 @@ serverless:
   # TODO: Solve a problem with DNS
   tests:
     enabled: "false"
+istio-configuration:
+  helmValues:
+    pilot:
+      jwksResolverExtraRootCA: "__CERT__"
+      resources:
+        limits:
+          memory: 2048Mi
+    global:
+      jwtPolicy: first-party-jwt
+      proxy:
+        holdApplicationUntilProxyStarts: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 160Mi
+          limits:
+            cpu: 500m
+            memory: 384Mi
+  components:
+    pilot:
+      enabled: true
+      config:
+        affinity:
+          nodeAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - preference:
+                  matchExpressions:
+                    - key: beta.kubernetes.io/arch
+                      operator: In
+                      values:
+                        - arm64
+                        - amd64
+                weight: 2
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: beta.kubernetes.io/arch
+                      operator: In
+                      values:
+                        - arm64
+                        - amd64
+        hpaSpec: # hpaSpec, securityContext and resources are the defaults and taken from: https://github.com/kyma-project/kyma/blob/443ca89e31cb94b9eeecf44afc6811b8da568635/resources/istio-configuration/values.yaml#L64
+          maxReplicas: 5
+          minReplicas: 1
+          metrics:
+            - resource:
+                name: cpu
+                targetAverageUtilization: 80
+              type: Resource
+            - resource:
+                name: memory
+                targetAverageUtilization: 80
+              type: Resource
+        securityContext:
+          runAsUser: 65534
+          runAsNonRoot: true
+          runAsGroup: 65534
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 1024Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        strategy:
+          rollingUpdate:
+            maxSurge: 100%
+            maxUnavailable: 0
+    egressGateways:
+      enabled: false
+    ingressGateways:
+      enabled: true
+      config:
+        affinity:
+          nodeAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - preference:
+                  matchExpressions:
+                    - key: beta.kubernetes.io/arch
+                      operator: In
+                      values:
+                        - arm64
+                        - amd64
+                weight: 2
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: beta.kubernetes.io/arch
+                      operator: In
+                      values:
+                        - arm64
+                        - amd64

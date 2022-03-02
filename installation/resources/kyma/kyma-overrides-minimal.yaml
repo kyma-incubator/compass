@@ -1,4 +1,6 @@
 cluster-essentials:
+  global:
+    disableLegacyConnectivity: "true"
   pod-preset:
     webhook:
       resources:
@@ -30,10 +32,12 @@ helm-broker:
 istio-configuration:
   helmValues:
     pilot:
+      jwksResolverExtraRootCA: "__CERT__"
       resources:
         limits:
           memory: 2048Mi
     global:
+      jwtPolicy: first-party-jwt
       proxy:
         holdApplicationUntilProxyStarts: true
         resources:
@@ -44,27 +48,28 @@ istio-configuration:
             cpu: 500m
             memory: 384Mi
   components:
-    ingressGateways:
+    pilot:
+      enabled: true
       config:
         affinity:
           nodeAffinity:
             preferredDuringSchedulingIgnoredDuringExecution:
-            - preference:
-                matchExpressions:
-                - key: beta.kubernetes.io/arch
-                  operator: In
-                  values:
-                  - arm64
-                  - amd64
-              weight: 2
+              - preference:
+                  matchExpressions:
+                    - key: beta.kubernetes.io/arch
+                      operator: In
+                      values:
+                        - arm64
+                        - amd64
+                weight: 2
             requiredDuringSchedulingIgnoredDuringExecution:
               nodeSelectorTerms:
-              - matchExpressions:
-                - key: beta.kubernetes.io/arch
-                  operator: In
-                  values:
-                  - arm64
-                  - amd64
+                - matchExpressions:
+                    - key: beta.kubernetes.io/arch
+                      operator: In
+                      values:
+                        - arm64
+                        - amd64
         hpaSpec: # hpaSpec, securityContext and resources are the defaults and taken from: https://github.com/kyma-project/kyma/blob/443ca89e31cb94b9eeecf44afc6811b8da568635/resources/istio-configuration/values.yaml#L64
           maxReplicas: 5
           minReplicas: 1
@@ -92,6 +97,30 @@ istio-configuration:
           rollingUpdate:
             maxSurge: 100%
             maxUnavailable: 0
+    egressGateways:
+      enabled: false
+    ingressGateways:
+      enabled: true
+      config:
+        affinity:
+          nodeAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - preference:
+                  matchExpressions:
+                    - key: beta.kubernetes.io/arch
+                      operator: In
+                      values:
+                        - arm64
+                        - amd64
+                weight: 2
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: beta.kubernetes.io/arch
+                      operator: In
+                      values:
+                        - arm64
+                        - amd64
 ory:
   hydra:
     hydra:
@@ -141,28 +170,18 @@ ory:
           cookie_session:
             enabled: false
             config:
-              # REQUIRED IF ENABLED - The session store to forward request method/path/headers to for validation
               check_session_url: https://session-store-host
-              # Optionally set a list of cookie names to look for in incoming requests.
-              # If unset, all requests are forwarded.
-              # If set, only requests that have at least one of the set cookies will be forwarded, others will be passed to the next authenticator
               only:
                 - sessionid
           oauth2_client_credentials:
             enabled: true
             config:
-              # REQUIRED IF ENABLED - The OAuth 2.0 Token Endpoint that will be used to validate the client credentials.
               token_url: http://ory-hydra-public.kyma-system.svc.cluster.local:4444/oauth2/token
           oauth2_introspection:
-            # Set enabled to true if the authenticator should be enabled and false to disable the authenticator. Defaults to false.
             enabled: true
             config:
-              # REQUIRED IF ENABLED - The OAuth 2.0 Token Introspection endpoint.
               introspection_url: http://ory-hydra-admin.kyma-system.svc.cluster.local:4445/oauth2/introspect
-              # Sets the strategy to be used to validate/match the token scope. Supports "hierarchic", "exact", "wildcard", "none". Defaults
-              # to "none".
               scope_strategy: exact
-          # Enable the "jwt" section to allow for jwt authenticator configured for local Dex Id Tokens.
           jwt:
             enabled: true
             config:
@@ -210,6 +229,9 @@ ory:
           api:
             port: 4456
     deployment:
+      autoscaling:
+        minReplicas: "1"
+        maxReplicas: "1"
       resources:
         limits:
           cpu: 100m

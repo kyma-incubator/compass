@@ -159,3 +159,10 @@ global:
         subaccountDeleted: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-delete"
         subaccountUpdated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-update"
         subaccountMoved: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-move"
+
+dex:
+  global:
+    istio:
+      gateway:
+        name: "kyma-gateway"
+        namespace: "kyma-system"
