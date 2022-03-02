@@ -25,7 +25,7 @@ type config struct {
 }
 
 var (
-	conf                     *config
+	conf                     config
 	certSecuredGraphQLClient *graphql.Client
 )
 
@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 	tenant.TestTenants.Init()
 	defer tenant.TestTenants.Cleanup()
 
-	cfg.ReadConfig(conf)
+	cfg.ReadConfig(&conf)
 
 	ctx := context.Background()
 	cc, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
