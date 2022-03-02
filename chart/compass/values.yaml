@@ -311,6 +311,7 @@ global:
         - "x-broker-api-request-identity"
 
   kubernetes:
+    serviceAccountTokenIssuer: kubernetes/serviceaccount
     serviceAccountTokenJWKS: https://kubernetes.default.svc.cluster.local/openid/v1/jwks
 
   ingress:
