@@ -1,6 +1,11 @@
-package runtimemapping
+package runtimemapping_test
 
 import (
+	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/runtimemapping"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/runtimemapping/automock"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -16,20 +21,13 @@ import (
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/pkg/errors"
 	logrustest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
-	"github.com/kyma-incubator/compass/components/director/internal/runtimemapping/automock"
 )
 
 func TestHandler(t *testing.T) {
-	txCtxGenerator := txtest.NewTransactionContextGenerator(errors.New("some-error"))
-
 	authorizationHeader := "Bearer token-value"
 	issuer := "https://dex.domain.local"
 	claimsMock := &jwt.MapClaims{"iss": issuer, "email": "me@domain.local", "groups": "admin-group", "name": "John Doe"}
@@ -41,14 +39,19 @@ func TestHandler(t *testing.T) {
 		extTenantID := uuid.New().String()
 		expectedBody := "{\"subject\":\"\",\"extra\":{\"email\":\"me@domain.local\",\"groups\":\"admin-group\",\"name\":\"John Doe\"},\"header\":{\"Tenant\":[\"" + extTenantID + "\"]}}"
 		reqDataParser := oathkeeper.NewReqDataParser()
-		persistenceMock, transactMock := txCtxGenerator.ThatSucceeds()
 
-		runtimeSvcMock := &automock.RuntimeService{}
-		runtimeSvcMock.On("GetByTokenIssuer", mock.Anything, issuer).Return(&model.Runtime{ID: runtimeID}, nil).Once()
+		runtime := &graphql.Runtime{
+			ID: runtimeID,
+		}
 
-		tenantSvcMock := &automock.TenantService{}
-		tenantSvcMock.On("GetLowestOwnerForResource", mock.Anything, resource.Runtime, runtimeID).Return(tenantID, nil).Once()
-		tenantSvcMock.On("GetExternalTenant", mock.Anything, tenantID).Return(extTenantID, nil).Once()
+		tenant := &graphql.Tenant{
+			ID: extTenantID,
+		}
+
+		directorClient := &automock.DirectorClient{}
+		directorClient.On("GetRuntimeByTokenIssuer", mock.Anything, issuer).Return(runtime, nil).Once()
+		directorClient.On("GetTenantByLowestOwnerForResource", mock.Anything, runtimeID, string(resource.Runtime)).Return(tenantID, nil).Once()
+		directorClient.On("GetTenantByInternalID", mock.Anything, tenantID).Return(tenant, nil).Once()
 
 		tokenVerifierMock := &automock.TokenVerifier{}
 		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(claimsMock, nil).Once()
@@ -62,7 +65,7 @@ func TestHandler(t *testing.T) {
 		req = req.WithContext(ctx)
 
 		// WHEN
-		handler := NewHandler(reqDataParser, transactMock, tokenVerifierMock, runtimeSvcMock, tenantSvcMock)
+		handler := runtimemapping.NewHandler(reqDataParser, directorClient, tokenVerifierMock)
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
 
@@ -73,7 +76,7 @@ func TestHandler(t *testing.T) {
 		require.Equal(t, expectedBody, strings.TrimSpace(string(body)))
 		require.Equal(t, 0, len(hook.Entries))
 
-		mock.AssertExpectationsForObjects(t, transactMock, persistenceMock, tokenVerifierMock, runtimeSvcMock, tenantSvcMock)
+		mock.AssertExpectationsForObjects(t, directorClient, tokenVerifierMock)
 	})
 
 	t.Run("when sending different HTTP verb than POST", func(t *testing.T) {
@@ -82,7 +85,7 @@ func TestHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "http://domain.local", strings.NewReader(""))
 
 		// WHEN
-		handler := NewHandler(nil, nil, nil, nil, nil)
+		handler := runtimemapping.NewHandler(nil, nil, nil)
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
 
@@ -106,7 +109,7 @@ func TestHandler(t *testing.T) {
 		req = req.WithContext(ctx)
 
 		// WHEN
-		handler := NewHandler(reqDataParser, nil, nil, nil, nil)
+		handler := runtimemapping.NewHandler(reqDataParser, nil, nil)
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
 
@@ -126,7 +129,6 @@ func TestHandler(t *testing.T) {
 		// GIVEN
 		expectedBody := "{\"subject\":\"\",\"extra\":{},\"header\":{}}"
 		reqDataParser := oathkeeper.NewReqDataParser()
-		persistenceMock, transactMock := txCtxGenerator.ThatDoesntExpectCommit()
 
 		tokenVerifierMock := &automock.TokenVerifier{}
 		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(nil, errors.New("some-error")).Once()
@@ -135,12 +137,14 @@ func TestHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "http://domain.local", strings.NewReader("{}"))
 		req.Header.Add("Authorization", authorizationHeader)
 
+		directorClient := &automock.DirectorClient{}
+
 		logger, hook := logrustest.NewNullLogger()
 		ctx := log.ContextWithLogger(req.Context(), logrus.NewEntry(logger))
 		req = req.WithContext(ctx)
 
 		// WHEN
-		handler := NewHandler(reqDataParser, transactMock, tokenVerifierMock, nil, nil)
+		handler := runtimemapping.NewHandler(reqDataParser, directorClient, tokenVerifierMock)
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
 
@@ -154,7 +158,7 @@ func TestHandler(t *testing.T) {
 		errMsg, ok := hook.LastEntry().Data["error"].(error)
 		assert.True(t, ok)
 		require.Equal(t, "while verifying the token: some-error", errMsg.Error())
-		mock.AssertExpectationsForObjects(t, transactMock, persistenceMock, tokenVerifierMock)
+		mock.AssertExpectationsForObjects(t, directorClient, tokenVerifierMock)
 	})
 
 	t.Run("when claims have no issuer", func(t *testing.T) {
@@ -162,10 +166,11 @@ func TestHandler(t *testing.T) {
 		claimsMock := &jwt.MapClaims{"email": "me@domain.local", "groups": "admin-group", "name": "John Doe"}
 		expectedBody := "{\"subject\":\"\",\"extra\":{},\"header\":{}}"
 		reqDataParser := oathkeeper.NewReqDataParser()
-		persistenceMock, transactMock := txCtxGenerator.ThatDoesntExpectCommit()
 
 		tokenVerifierMock := &automock.TokenVerifier{}
 		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(claimsMock, nil).Once()
+
+		directorClient := &automock.DirectorClient{}
 
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "http://domain.local", strings.NewReader("{}"))
@@ -176,7 +181,7 @@ func TestHandler(t *testing.T) {
 		req = req.WithContext(ctx)
 
 		// WHEN
-		handler := NewHandler(reqDataParser, transactMock, tokenVerifierMock, nil, nil)
+		handler := runtimemapping.NewHandler(reqDataParser, directorClient, tokenVerifierMock)
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
 
@@ -190,7 +195,7 @@ func TestHandler(t *testing.T) {
 		errMsg, ok := hook.LastEntry().Data["error"].(error)
 		assert.True(t, ok)
 		require.Equal(t, "unable to get the issuer: Internal Server Error: no issuer claim found", errMsg.Error())
-		mock.AssertExpectationsForObjects(t, transactMock, persistenceMock, tokenVerifierMock)
+		mock.AssertExpectationsForObjects(t, directorClient, tokenVerifierMock)
 	})
 
 	t.Run("when runtime verifier returns error", func(t *testing.T) {
@@ -198,10 +203,9 @@ func TestHandler(t *testing.T) {
 		expectedBody := "{\"subject\":\"\",\"extra\":{},\"header\":{}}"
 
 		reqDataParser := oathkeeper.NewReqDataParser()
-		persistenceMock, transactMock := txCtxGenerator.ThatDoesntExpectCommit()
 
-		runtimeSvcMock := &automock.RuntimeService{}
-		runtimeSvcMock.On("GetByTokenIssuer", mock.Anything, issuer).Return(nil, errors.New("some-error")).Once()
+		directorClient := &automock.DirectorClient{}
+		directorClient.On("GetRuntimeByTokenIssuer", mock.Anything, issuer).Return(nil, errors.New("some-error")).Once()
 
 		tokenVerifierMock := &automock.TokenVerifier{}
 		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(claimsMock, nil).Once()
@@ -215,7 +219,7 @@ func TestHandler(t *testing.T) {
 		req = req.WithContext(ctx)
 
 		// WHEN
-		handler := NewHandler(reqDataParser, transactMock, tokenVerifierMock, runtimeSvcMock, nil)
+		handler := runtimemapping.NewHandler(reqDataParser, directorClient, tokenVerifierMock)
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
 
@@ -229,23 +233,25 @@ func TestHandler(t *testing.T) {
 		errMsg, ok := hook.LastEntry().Data["error"].(error)
 		assert.True(t, ok)
 		require.Equal(t, "when getting the runtime: some-error", errMsg.Error())
-		mock.AssertExpectationsForObjects(t, transactMock, persistenceMock, tokenVerifierMock, runtimeSvcMock)
+		mock.AssertExpectationsForObjects(t, directorClient, tokenVerifierMock)
 	})
 
 	t.Run("when GetLowestOwnerForResource returns error", func(t *testing.T) {
 		// GIVEN
 		expectedBody := "{\"subject\":\"\",\"extra\":{},\"header\":{}}"
 		reqDataParser := oathkeeper.NewReqDataParser()
-		persistenceMock, transactMock := txCtxGenerator.ThatDoesntExpectCommit()
+		directorErrMsg := "some-error"
 
-		runtimeSvcMock := &automock.RuntimeService{}
-		runtimeSvcMock.On("GetByTokenIssuer", mock.Anything, issuer).Return(&model.Runtime{ID: runtimeID}, nil).Once()
+		runtime := &graphql.Runtime{
+			ID: runtimeID,
+		}
+
+		directorClient := &automock.DirectorClient{}
+		directorClient.On("GetRuntimeByTokenIssuer", mock.Anything, issuer).Return(runtime, nil).Once()
+		directorClient.On("GetTenantByLowestOwnerForResource", mock.Anything, runtimeID, string(resource.Runtime)).Return("", errors.New(directorErrMsg)).Once()
 
 		tokenVerifierMock := &automock.TokenVerifier{}
 		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(claimsMock, nil).Once()
-
-		tenantSvcMock := &automock.TenantService{}
-		tenantSvcMock.On("GetLowestOwnerForResource", mock.Anything, resource.Runtime, runtimeID).Return("", errors.New("some-error")).Once()
 
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "http://domain.local", strings.NewReader("{}"))
@@ -256,7 +262,7 @@ func TestHandler(t *testing.T) {
 		req = req.WithContext(ctx)
 
 		// WHEN
-		handler := NewHandler(reqDataParser, transactMock, tokenVerifierMock, runtimeSvcMock, tenantSvcMock)
+		handler := runtimemapping.NewHandler(reqDataParser, directorClient, tokenVerifierMock)
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
 
@@ -270,25 +276,27 @@ func TestHandler(t *testing.T) {
 		errMsg, ok := hook.LastEntry().Data["error"].(error)
 		assert.True(t, ok)
 		require.Contains(t, errMsg.Error(), "while getting lowest tenant for runtime")
-		require.Contains(t, errMsg.Error(), "some-error")
-		mock.AssertExpectationsForObjects(t, transactMock, persistenceMock, tokenVerifierMock, runtimeSvcMock, tenantSvcMock)
+		require.Contains(t, errMsg.Error(), directorErrMsg)
+		mock.AssertExpectationsForObjects(t, directorClient, tokenVerifierMock)
 	})
 
 	t.Run("when mapping to external tenant returns error", func(t *testing.T) {
 		// GIVEN
+		directorErrMsg := "some-error"
 		expectedBody := "{\"subject\":\"\",\"extra\":{},\"header\":{}}"
+		expectedErrMsg := fmt.Sprintf("unable to fetch external tenant based on runtime tenant: %s", directorErrMsg)
 		reqDataParser := oathkeeper.NewReqDataParser()
-		persistenceMock, transactMock := txCtxGenerator.ThatDoesntExpectCommit()
+		runtime := &graphql.Runtime{
+			ID: runtimeID,
+		}
 
-		runtimeSvcMock := &automock.RuntimeService{}
-		runtimeSvcMock.On("GetByTokenIssuer", mock.Anything, issuer).Return(&model.Runtime{ID: runtimeID}, nil).Once()
+		directorClient := &automock.DirectorClient{}
+		directorClient.On("GetRuntimeByTokenIssuer", mock.Anything, issuer).Return(runtime, nil).Once()
+		directorClient.On("GetTenantByLowestOwnerForResource", mock.Anything, runtimeID, string(resource.Runtime)).Return(tenantID, nil).Once()
+		directorClient.On("GetTenantByInternalID", mock.Anything, tenantID).Return(nil, errors.New(directorErrMsg)).Once()
 
 		tokenVerifierMock := &automock.TokenVerifier{}
 		tokenVerifierMock.On("Verify", mock.Anything, authorizationHeader).Return(claimsMock, nil).Once()
-
-		tenantSvcMock := &automock.TenantService{}
-		tenantSvcMock.On("GetLowestOwnerForResource", mock.Anything, resource.Runtime, runtimeID).Return(tenantID, nil).Once()
-		tenantSvcMock.On("GetExternalTenant", mock.Anything, tenantID).Return("", errors.New("some-error")).Once()
 
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "http://domain.local", strings.NewReader("{}"))
@@ -299,7 +307,7 @@ func TestHandler(t *testing.T) {
 		req = req.WithContext(ctx)
 
 		// WHEN
-		handler := NewHandler(reqDataParser, transactMock, tokenVerifierMock, runtimeSvcMock, tenantSvcMock)
+		handler := runtimemapping.NewHandler(reqDataParser, directorClient, tokenVerifierMock)
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
 
@@ -312,7 +320,7 @@ func TestHandler(t *testing.T) {
 		require.Equal(t, "An error has occurred while processing the request.", hook.LastEntry().Message)
 		errMsg, ok := hook.LastEntry().Data["error"].(error)
 		assert.True(t, ok)
-		require.Equal(t, "unable to fetch external tenant based on runtime tenant: some-error", errMsg.Error())
-		mock.AssertExpectationsForObjects(t, transactMock, persistenceMock, tokenVerifierMock, runtimeSvcMock, tenantSvcMock)
+		require.Equal(t, expectedErrMsg, errMsg.Error())
+		mock.AssertExpectationsForObjects(t, directorClient, tokenVerifierMock)
 	})
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 )
 
-func systemAuthQuery(authID string) string {
+func SystemAuthQuery(authID string) string {
 	return fmt.Sprintf(`query {
 	  result: systemAuth(id: "%s") {
 		id
@@ -19,7 +19,7 @@ func systemAuthQuery(authID string) string {
 	}`, authID)
 }
 
-func systemAuthByTokenQuery(token string) string {
+func SystemAuthByTokenQuery(token string) string {
 	return fmt.Sprintf(`query {
 		result: systemAuthByToken(token: "%s") {
 			id
@@ -74,20 +74,20 @@ func systemAuthByTokenQuery(token string) string {
 		}`, token)
 }
 
-func tenantByExternalIDQuery(tenantID string) string {
+func TenantByExternalIDQuery(tenantID string) string {
 	return fmt.Sprintf(`query {
-	  	result: tenantByExternalID(id: "%s") {
+		result: tenantByExternalID(id: "%s") {
 			id
 			internalID
 			name
 			type
 			parentID
 			labels
-	  	}
+		}
 	}`, tenantID)
 }
 
-func tenantByInternalIDQuery(tenantID string) string {
+func TenantByInternalIDQuery(tenantID string) string {
 	return fmt.Sprintf(`query {
 		result: tenantByInternalID(id: "%s") {
 			id
@@ -96,17 +96,17 @@ func tenantByInternalIDQuery(tenantID string) string {
 			type
 			parentID
 			labels
-	  	}
+		}
 	}`, tenantID)
 }
 
-func tenantByLowestOwnerForResourceQuery(resourceID, resourceType string) string {
+func TenantByLowestOwnerForResourceQuery(resourceID, resourceType string) string {
 	return fmt.Sprintf(`query {
-	  result: tenantByLowestOwnerForResource(id:"%s", resource:"%s")
+		result: tenantByLowestOwnerForResource(id:"%s", resource:"%s")
 	}`, resourceID, resourceType)
 }
 
-func updateSystemAuthQuery(authID string, gqlAuth graphql.Auth) (string, error) {
+func UpdateSystemAuthQuery(authID string, gqlAuth graphql.Auth) (string, error) {
 	authInput, err := auth.ToGraphQLInput(gqlAuth)
 	if err != nil {
 		return "", err
@@ -125,7 +125,7 @@ func updateSystemAuthQuery(authID string, gqlAuth graphql.Auth) (string, error) 
 	}`, authID, gqlAuthInput), nil
 }
 
-func invalidateSystemAuthOneTimeTokenQuery(authID string) string {
+func InvalidateSystemAuthOneTimeTokenQuery(authID string) string {
 	return fmt.Sprintf(`query {
 		result: invalidateSystemAuthOneTimeToken(authID: "%s") {
 			id
@@ -180,7 +180,7 @@ func invalidateSystemAuthOneTimeTokenQuery(authID string) string {
 		}`, authID)
 }
 
-func runtimeByTokenIssuerQuery(issuer string) string {
+func RuntimeByTokenIssuerQuery(issuer string) string {
 	return fmt.Sprintf(`query {
 		result: runtimeByTokenIssuer(issuer: "%s") {
 			id

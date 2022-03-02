@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/retry"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/machinebox/graphql"
@@ -12,14 +11,14 @@ import (
 
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore
 type Client interface {
-	GetTenantByExternalID(ctx context.Context, tenantID string) (schema.Tenant, apperrors.AppError)
-	GetTenantByInternalID(ctx context.Context, tenantID string) (schema.Tenant, apperrors.AppError)
-	GetTenantByLowestOwnerForResource(ctx context.Context, resourceID, resourceType string) (string, apperrors.AppError)
-	GetSystemAuthByID(ctx context.Context, authID string) (schema.SystemAuth, apperrors.AppError)
-	GetSystemAuthByToken(ctx context.Context, token string) (schema.SystemAuth, apperrors.AppError)
-	UpdateSystemAuth(ctx context.Context, authID string, auth schema.Auth) (UpdateAuthResult, apperrors.AppError)
-	InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (schema.SystemAuth, apperrors.AppError)
-	GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (schema.Runtime, apperrors.AppError)
+	GetTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
+	GetTenantByInternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
+	GetTenantByLowestOwnerForResource(ctx context.Context, resourceID, resourceType string) (string, error)
+	GetSystemAuthByID(ctx context.Context, authID string) (schema.SystemAuth, error)
+	GetSystemAuthByToken(ctx context.Context, token string) (schema.SystemAuth, error)
+	UpdateSystemAuth(ctx context.Context, authID string, auth schema.Auth) (UpdateAuthResult, error)
+	InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (schema.SystemAuth, error)
+	GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (*schema.Runtime, error)
 }
 
 type Config struct {
@@ -40,7 +39,7 @@ type client struct {
 }
 
 type TenantResponse struct {
-	Result schema.Tenant `json:"result"`
+	Result *schema.Tenant `json:"result"`
 }
 
 type TenantByLowestOwnerForResourceResponse struct {
@@ -52,7 +51,7 @@ type SystemAuthResponse struct {
 }
 
 type RuntimeResponse struct {
-	Result schema.Runtime `json:"result"`
+	Result *schema.Runtime `json:"result"`
 }
 
 type UpdateAuthResult struct {
@@ -62,104 +61,104 @@ type UpdateSystemAuthResponse struct {
 	Result UpdateAuthResult `json:"result"`
 }
 
-func (c *client) GetTenantByExternalID(ctx context.Context, tenantID string) (schema.Tenant, apperrors.AppError) {
-	query := tenantByExternalIDQuery(tenantID)
+func (c *client) GetTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error) {
+	query := TenantByExternalIDQuery(tenantID)
 	var response TenantResponse
 
 	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
-		return schema.Tenant{}, apperrors.Internal(err.Error())
+		return nil, err
 	}
 
 	return response.Result, nil
 }
 
-func (c *client) GetTenantByInternalID(ctx context.Context, tenantID string) (schema.Tenant, apperrors.AppError) {
-	query := tenantByInternalIDQuery(tenantID)
+func (c *client) GetTenantByInternalID(ctx context.Context, tenantID string) (*schema.Tenant, error) {
+	query := TenantByInternalIDQuery(tenantID)
 	var response TenantResponse
 
 	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
-		return schema.Tenant{}, apperrors.Internal(err.Error())
+		return nil, err
 	}
 
 	return response.Result, nil
 }
 
-func (c *client) GetTenantByLowestOwnerForResource(ctx context.Context, resourceID, resourceType string) (string, apperrors.AppError) {
-	query := tenantByLowestOwnerForResourceQuery(resourceID, resourceType)
+func (c *client) GetTenantByLowestOwnerForResource(ctx context.Context, resourceID, resourceType string) (string, error) {
+	query := TenantByLowestOwnerForResourceQuery(resourceID, resourceType)
 	var response TenantByLowestOwnerForResourceResponse
 
 	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
-		return "", apperrors.Internal(err.Error())
+		return "", err
 	}
 
 	return response.Result, nil
 }
 
-func (c *client) GetSystemAuthByID(ctx context.Context, authID string) (schema.SystemAuth, apperrors.AppError) {
-	query := systemAuthQuery(authID)
+func (c *client) GetSystemAuthByID(ctx context.Context, authID string) (schema.SystemAuth, error) {
+	query := SystemAuthQuery(authID)
 
 	var response SystemAuthResponse
 
 	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
-		return schema.AppSystemAuth{}, apperrors.Internal(err.Error())
+		return schema.AppSystemAuth{}, err
 	}
 
 	return response.Result, nil
 }
 
-func (c *client) GetSystemAuthByToken(ctx context.Context, token string) (schema.SystemAuth, apperrors.AppError) {
-	query := systemAuthByTokenQuery(token)
+func (c *client) GetSystemAuthByToken(ctx context.Context, token string) (schema.SystemAuth, error) {
+	query := SystemAuthByTokenQuery(token)
 
 	var response SystemAuthResponse
 
 	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
-		return schema.AppSystemAuth{}, apperrors.Internal(err.Error())
+		return schema.AppSystemAuth{}, err
 	}
 
 	return response.Result, nil
 }
 
-func (c *client) UpdateSystemAuth(ctx context.Context, authID string, auth schema.Auth) (UpdateAuthResult, apperrors.AppError) {
-	query, err := updateSystemAuthQuery(authID, auth)
+func (c *client) UpdateSystemAuth(ctx context.Context, authID string, auth schema.Auth) (UpdateAuthResult, error) {
+	query, err := UpdateSystemAuthQuery(authID, auth)
 	if err != nil {
-		return UpdateAuthResult{}, apperrors.Internal(err.Error())
+		return UpdateAuthResult{}, err
 	}
 
 	var response UpdateSystemAuthResponse
 
 	err = c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
-		return UpdateAuthResult{}, apperrors.Internal(err.Error())
+		return UpdateAuthResult{}, err
 	}
 
 	return response.Result, nil
 }
 
-func (c *client) InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (schema.SystemAuth, apperrors.AppError) {
-	query := invalidateSystemAuthOneTimeTokenQuery(authID)
+func (c *client) InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (schema.SystemAuth, error) {
+	query := InvalidateSystemAuthOneTimeTokenQuery(authID)
 
 	var response SystemAuthResponse
 
 	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
-		return schema.AppSystemAuth{}, apperrors.Internal(err.Error())
+		return schema.AppSystemAuth{}, err
 	}
 
 	return response.Result, nil
 }
 
-func (c *client) GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (schema.Runtime, apperrors.AppError) {
-	query := runtimeByTokenIssuerQuery(issuer)
+func (c *client) GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (*schema.Runtime, error) {
+	query := RuntimeByTokenIssuerQuery(issuer)
 	var response RuntimeResponse
 
 	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
-		return schema.Runtime{}, apperrors.Internal(err.Error())
+		return nil, err
 	}
 
 	return response.Result, nil

@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
@@ -18,7 +16,7 @@ import (
 )
 
 // NewCertServiceContextProvider implements the ObjectContextProvider interface by looking for tenant information directly populated in the certificate.
-func NewCertServiceContextProvider(clientProvider director.Client, scopesGetter ScopesGetter) *certServiceContextProvider {
+func NewCertServiceContextProvider(clientProvider DirectorClient, scopesGetter ScopesGetter) *certServiceContextProvider {
 	return &certServiceContextProvider{
 		directorClient: clientProvider,
 		tenantKeys: KeysExtra{
@@ -30,7 +28,7 @@ func NewCertServiceContextProvider(clientProvider director.Client, scopesGetter 
 }
 
 type certServiceContextProvider struct {
-	directorClient director.Client
+	directorClient DirectorClient
 	tenantKeys     KeysExtra
 	scopesGetter   ScopesGetter
 }
@@ -65,7 +63,7 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), p.tenantKeys, scopes, mergeWithOtherScopes,
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), p.tenantKeys, scopes, mergeWithOtherScopes,
 		authDetails.Region, "", getConsumerID(reqData, authDetails), authDetails.AuthFlow, consumer.ConsumerType(consumerType), CertServiceObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 	return objCtx, nil

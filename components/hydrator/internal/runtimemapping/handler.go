@@ -4,9 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"net/http"
-
-	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 
@@ -30,17 +29,25 @@ type ReqDataParser interface {
 	Parse(req *http.Request) (oathkeeper.ReqData, error)
 }
 
+// DirectorClient missing godoc
+//go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore
+type DirectorClient interface {
+	GetTenantByInternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
+	GetTenantByLowestOwnerForResource(ctx context.Context, resourceID, resourceType string) (string, error)
+	GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (*schema.Runtime, error)
+}
+
 // Handler missing godoc
 type Handler struct {
 	reqDataParser  ReqDataParser
-	directorClient director.Client
+	directorClient DirectorClient
 	tokenVerifier  TokenVerifier
 }
 
 // NewHandler missing godoc
 func NewHandler(
 	reqDataParser ReqDataParser,
-	directorClient director.Client,
+	directorClient DirectorClient,
 	tokenVerifier TokenVerifier) *Handler {
 	return &Handler{
 		reqDataParser:  reqDataParser,

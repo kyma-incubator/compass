@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
 	directorErrors "github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -20,7 +19,7 @@ import (
 )
 
 // NewUserContextProvider missing godoc
-func NewUserContextProvider(clientProvider director.Client, staticUserRepo StaticUserRepository, staticGroupRepo StaticGroupRepository) *userContextProvider {
+func NewUserContextProvider(clientProvider DirectorClient, staticUserRepo StaticUserRepository, staticGroupRepo StaticGroupRepository) *userContextProvider {
 	return &userContextProvider{
 		directorClient:  clientProvider,
 		staticUserRepo:  staticUserRepo,
@@ -33,7 +32,7 @@ func NewUserContextProvider(clientProvider director.Client, staticUserRepo Stati
 }
 
 type userContextProvider struct {
-	directorClient  director.Client
+	directorClient  DirectorClient
 	staticUserRepo  StaticUserRepository
 	staticGroupRepo StaticGroupRepository
 	tenantKeys      KeysExtra
@@ -89,7 +88,7 @@ func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oath
 		return ObjectContext{}, apperrors.NewInternalError(fmt.Sprintf("Static tenant with username: %s missmatch external tenant: %s", staticUser.Username, externalTenantID))
 	}
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.User, UserObjectContextProvider)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.User, UserObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
 	return objCtx, nil

@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -23,7 +21,7 @@ import (
 )
 
 // NewSystemAuthContextProvider missing godoc
-func NewSystemAuthContextProvider(clientProvider director.Client, scopesGetter ScopesGetter) *systemAuthContextProvider {
+func NewSystemAuthContextProvider(clientProvider DirectorClient, scopesGetter ScopesGetter) *systemAuthContextProvider {
 	return &systemAuthContextProvider{
 		scopesGetter:   scopesGetter,
 		directorClient: clientProvider,
@@ -37,14 +35,14 @@ func NewSystemAuthContextProvider(clientProvider director.Client, scopesGetter S
 type systemAuthContextProvider struct {
 	scopesGetter   ScopesGetter
 	tenantKeys     KeysExtra
-	directorClient director.Client
+	directorClient DirectorClient
 }
 
 // GetObjectContext missing godoc
 func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	sysAuth, opErr := m.directorClient.GetSystemAuthByID(ctx, authDetails.AuthID)
-	if opErr != nil {
-		return ObjectContext{}, errors.Wrap(opErr, "while retrieving system auth from database")
+	if opErr != nil || sysAuth == nil {
+		return ObjectContext{}, errors.Wrap(opErr, "while retrieving system auth from director")
 	}
 
 	var sysAuthID string
@@ -73,12 +71,13 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 		refObjectID = v.ReferenceObjectID
 		tenantID = v.TenantID
 	default:
-		return ObjectContext{}, errors.New("could not determine SystemAuth type")
+		return ObjectContext{}, errors.Errorf("could not determine system auth type for system auth with id %s", authDetails.AuthID)
 	}
 
 	if refObjectID == nil {
-		return ObjectContext{}, errors.New("while getting reference object id")
+		return ObjectContext{}, errors.Errorf("unknown reference object ID for system auth wit id %s", sysAuthID)
 	}
+
 	log.C(ctx).Debugf("Reference object id is %s", *refObjectID)
 	log.C(ctx).Infof("Reference object type is %s", refObjectType)
 
@@ -186,7 +185,7 @@ func (m *systemAuthContextProvider) getTenantAndScopesForIntegrationSystem(ctx c
 		return TenantContext{}, scopes, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
-	return NewTenantContext(externalTenantID, tenantMapping.ID), scopes, nil
+	return NewTenantContext(externalTenantID, tenantMapping.InternalID), scopes, nil
 }
 
 func (m *systemAuthContextProvider) getTenantAndScopesForApplicationOrRuntime(ctx context.Context, tenantID *string, refObjType systemauth.SystemAuthReferenceObjectType, reqData oathkeeper.ReqData, authFlow oathkeeper.AuthFlow) (TenantContext, string, error) {

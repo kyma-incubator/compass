@@ -4,24 +4,22 @@ import (
 	"context"
 	"fmt"
 
-	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
 type accessLevelContextProvider struct {
-	directorClient director.Client
+	directorClient DirectorClient
 	tenantKeys     KeysExtra
 }
 
 // NewAccessLevelContextProvider implements the ObjectContextProvider interface by looking tenant header and access levels defined in the auth session extra.
-func NewAccessLevelContextProvider(clientProvider director.Client) *accessLevelContextProvider {
+func NewAccessLevelContextProvider(clientProvider DirectorClient) *accessLevelContextProvider {
 	return &accessLevelContextProvider{
 		directorClient: clientProvider,
 		tenantKeys: KeysExtra{

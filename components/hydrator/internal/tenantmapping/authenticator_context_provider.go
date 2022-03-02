@@ -20,8 +20,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/tidwall/gjson"
@@ -39,7 +37,7 @@ import (
 // NewAuthenticatorContextProvider implements the ObjectContextProvider interface by looking for user scopes in the 'scope' token attribute
 // and also extracts the tenant information from the token by using a dedicated TenantAttribute defined for the specified authenticator.
 // It uses its authenticators to extract authentication details from the requestData.
-func NewAuthenticatorContextProvider(clientProvider director.Client, authenticators []authenticator.Config) *authenticatorContextProvider {
+func NewAuthenticatorContextProvider(clientProvider DirectorClient, authenticators []authenticator.Config) *authenticatorContextProvider {
 	return &authenticatorContextProvider{
 		directorClient: clientProvider,
 		tenantKeys: KeysExtra{
@@ -51,7 +49,7 @@ func NewAuthenticatorContextProvider(clientProvider director.Client, authenticat
 }
 
 type authenticatorContextProvider struct {
-	directorClient director.Client
+	directorClient DirectorClient
 	tenantKeys     KeysExtra
 	authenticators []authenticator.Config
 }
@@ -100,7 +98,7 @@ func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, req
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, AuthenticatorObjectContextProvider)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, AuthenticatorObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
 	return objCtx, nil

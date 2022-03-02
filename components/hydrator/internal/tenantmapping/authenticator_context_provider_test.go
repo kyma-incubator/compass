@@ -1,39 +1,38 @@
 /*
- * Copyright 2020 The Compass Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+* Copyright 2020 The Compass Authors
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
  */
 
 package tenantmapping_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/director/automock"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
 
-	oathkeeper2 "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
-
-	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
+	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
 	"strings"
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -48,7 +47,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 	prefixedScopes := []interface{}{scopePrefix + "application:read", scopePrefix + "application:write"}
 	userObjCtxType := "Static User"
 
-	jwtAuthDetails := oathkeeper2.AuthDetails{AuthID: username, AuthFlow: oathkeeper2.JWTAuthFlow, ScopePrefix: scopePrefix}
+	jwtAuthDetails := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, ScopePrefix: scopePrefix}
 
 	t.Run("returns tenant and scopes that are defined in the Extra map of ReqData", func(t *testing.T) {
 		uniqueAttributeKey := "extra.unique"
@@ -56,12 +55,12 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		tenantAttributeKey := "tenant"
 		clientIDAttributeKey := "clientid"
 		clientID := "client_id"
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					tenantAttributeKey:    expectedExternalTenantID.String(),
-					clientIDAttributeKey:  clientID,
-					oathkeeper2.ScopesKey: prefixedScopes,
+					tenantAttributeKey:   expectedExternalTenantID.String(),
+					clientIDAttributeKey: clientID,
+					oathkeeper.ScopesKey: prefixedScopes,
 					"extra": map[string]interface{}{
 						"unique": uniqueAttributeValue,
 					},
@@ -69,13 +68,13 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 			},
 		}
 
-		tenantMappingModel := &model.BusinessTenantMapping{
-			ID:             expectedTenantID.String(),
-			ExternalTenant: expectedExternalTenantID.String(),
+		testTenant := &graphql.Tenant{
+			ID:         expectedExternalTenantID.String(),
+			InternalID: expectedTenantID.String(),
 		}
 
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
+		directorClient := &automock.Client{}
+		directorClient.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(testTenant, nil).Once()
 
 		authn := &authenticator.Config{
 			TrustedIssuers: []authenticator.TrustedIssuer{{
@@ -98,7 +97,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
 		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
+		provider := tenantmapping.NewAuthenticatorContextProvider(directorClient, []authenticator.Config{*authn})
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
@@ -114,8 +113,8 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		uniqueAttributeKey := "extra.unique"
 		uniqueAttributeValue := "value"
 		tenantAttributeKey := "tenant"
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
 					tenantAttributeKey: expectedExternalTenantID.String(),
 					"extra": map[string]interface{}{
@@ -125,13 +124,13 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 			},
 		}
 
-		tenantMappingModel := &model.BusinessTenantMapping{
-			ID:             expectedTenantID.String(),
-			ExternalTenant: expectedExternalTenantID.String(),
+		testTenant := &graphql.Tenant{
+			ID:         expectedExternalTenantID.String(),
+			InternalID: expectedTenantID.String(),
 		}
 
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
+		directorClient := &automock.Client{}
+		directorClient.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(testTenant, nil).Once()
 
 		authn := &authenticator.Config{
 			TrustedIssuers: []authenticator.TrustedIssuer{{
@@ -151,7 +150,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
 		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
+		provider := tenantmapping.NewAuthenticatorContextProvider(directorClient, []authenticator.Config{*authn})
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
@@ -166,11 +165,11 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		uniqueAttributeKey := "extra.unique"
 		uniqueAttributeValue := "value"
 		tenantAttributeKey := "tenant"
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper2.ScopesKey: 1,
-					tenantAttributeKey:    expectedExternalTenantID.String(),
+					oathkeeper.ScopesKey: 1,
+					tenantAttributeKey:   expectedExternalTenantID.String(),
 					"extra": map[string]interface{}{
 						"unique": uniqueAttributeValue,
 					},
@@ -178,13 +177,13 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 			},
 		}
 
-		tenantMappingModel := &model.BusinessTenantMapping{
-			ID:             expectedTenantID.String(),
-			ExternalTenant: expectedExternalTenantID.String(),
+		testTenant := &graphql.Tenant{
+			ID:         expectedExternalTenantID.String(),
+			InternalID: expectedTenantID.String(),
 		}
 
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
+		directorClient := &automock.Client{}
+		directorClient.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(testTenant, nil).Once()
 
 		authn := &authenticator.Config{
 			TrustedIssuers: []authenticator.TrustedIssuer{{
@@ -204,7 +203,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
 		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
+		provider := tenantmapping.NewAuthenticatorContextProvider(directorClient, []authenticator.Config{*authn})
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
@@ -219,11 +218,11 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		uniqueAttributeKey := "extra.unique"
 		uniqueAttributeValue := "value"
 		tenantAttributeKey := "tenant"
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					tenantAttributeKey:    expectedExternalTenantID.String(),
-					oathkeeper2.ScopesKey: prefixedScopes,
+					tenantAttributeKey:   expectedExternalTenantID.String(),
+					oathkeeper.ScopesKey: prefixedScopes,
 					"extra": map[string]interface{}{
 						"unique": uniqueAttributeValue,
 					},
@@ -233,8 +232,8 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 
 		missingTenantErr := apperrors.NewNotFoundError(resource.Tenant, expectedExternalTenantID.String())
 
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(nil, missingTenantErr).Once()
+		directorClient := &automock.Client{}
+		directorClient.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(nil, missingTenantErr).Once()
 
 		authn := &authenticator.Config{
 			TrustedIssuers: []authenticator.TrustedIssuer{{
@@ -254,7 +253,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
 		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
+		provider := tenantmapping.NewAuthenticatorContextProvider(directorClient, []authenticator.Config{*authn})
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
@@ -269,11 +268,11 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		uniqueAttributeKey := "extra.unique"
 		uniqueAttributeValue := "value"
 		tenantAttributeKey := "tenant"
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					tenantAttributeKey:    expectedExternalTenantID.String(),
-					oathkeeper2.ScopesKey: []interface{}{"scope1", "scope2", 123},
+					tenantAttributeKey:   expectedExternalTenantID.String(),
+					oathkeeper.ScopesKey: []interface{}{"scope1", "scope2", 123},
 					"extra": map[string]interface{}{
 						"unique": uniqueAttributeValue,
 					},
@@ -281,13 +280,13 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 			},
 		}
 
-		tenantMappingModel := &model.BusinessTenantMapping{
-			ID:             expectedTenantID.String(),
-			ExternalTenant: expectedExternalTenantID.String(),
+		testTenant := &graphql.Tenant{
+			ID:         expectedExternalTenantID.String(),
+			InternalID: expectedTenantID.String(),
 		}
 
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
+		directorClient := &automock.Client{}
+		directorClient.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(testTenant, nil).Once()
 
 		authn := &authenticator.Config{
 			TrustedIssuers: []authenticator.TrustedIssuer{{
@@ -307,7 +306,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
 		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
+		provider := tenantmapping.NewAuthenticatorContextProvider(directorClient, []authenticator.Config{*authn})
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
@@ -318,10 +317,10 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		uniqueAttributeKey := "extra.unique"
 		uniqueAttributeValue := "value"
 		tenantAttributeKey := "tenant"
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper2.ScopesKey: prefixedScopes,
+					oathkeeper.ScopesKey: prefixedScopes,
 					"extra": map[string]interface{}{
 						"unique": uniqueAttributeValue,
 					},
@@ -329,13 +328,13 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 			},
 		}
 
-		tenantMappingModel := &model.BusinessTenantMapping{
-			ID:             expectedTenantID.String(),
-			ExternalTenant: expectedExternalTenantID.String(),
+		testTenant := &graphql.Tenant{
+			ID:         expectedExternalTenantID.String(),
+			InternalID: expectedTenantID.String(),
 		}
 
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
+		directorClient := &automock.Client{}
+		directorClient.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(testTenant, nil).Once()
 
 		authn := &authenticator.Config{
 			Name: "test-authenticator",
@@ -356,7 +355,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
 		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
+		provider := tenantmapping.NewAuthenticatorContextProvider(directorClient, []authenticator.Config{*authn})
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
@@ -367,11 +366,11 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		uniqueAttributeKey := "extra.unique"
 		uniqueAttributeValue := "value"
 		tenantAttributeKey := "tenant"
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					tenantAttributeKey:    expectedExternalTenantID.String(),
-					oathkeeper2.ScopesKey: prefixedScopes,
+					tenantAttributeKey:   expectedExternalTenantID.String(),
+					oathkeeper.ScopesKey: prefixedScopes,
 					"extra": map[string]interface{}{
 						"unique": uniqueAttributeValue,
 					},
@@ -380,8 +379,9 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		}
 
 		mockErr := errors.New("some-error")
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(nil, mockErr).Once()
+
+		directorClient := &automock.Client{}
+		directorClient.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(nil, mockErr).Once()
 
 		authn := &authenticator.Config{
 			TrustedIssuers: []authenticator.TrustedIssuer{{
@@ -401,7 +401,7 @@ func TestAuthenticatorContextProvider(t *testing.T) {
 		userAuthDetailsWithAuthenticator := jwtAuthDetails
 		userAuthDetailsWithAuthenticator.Authenticator = authn
 
-		provider := tenantmapping.NewAuthenticatorContextProvider(tenantRepoMock, []authenticator.Config{*authn})
+		provider := tenantmapping.NewAuthenticatorContextProvider(directorClient, []authenticator.Config{*authn})
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, userAuthDetailsWithAuthenticator)
 
@@ -419,7 +419,7 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 		authenticatorName    string
 		scopePrefix          string
 		domainURL            string
-		reqData              oathkeeper2.ReqData
+		reqData              oathkeeper.ReqData
 		authn                []authenticator.Config
 	)
 	setup := func() {
@@ -431,8 +431,8 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 		scopePrefix = "prefix"
 		domainURL = "domain.com"
 		username = "some-username"
-		reqData = oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqData = oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
 					authenticator.CoordinatesKey: authenticator.Coordinates{
 						Name:  authenticatorName,
@@ -474,7 +474,7 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 
 		require.True(t, match)
 		require.NoError(t, err)
-		require.Equal(t, oathkeeper2.JWTAuthFlow, authDetails.AuthFlow)
+		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
 		require.Equal(t, username, authDetails.AuthID)
 		require.Equal(t, scopePrefix, authDetails.ScopePrefix)
 		require.Equal(t, region, authDetails.Region)
@@ -511,7 +511,7 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 
 		require.True(t, match)
 		require.NoError(t, err)
-		require.Equal(t, oathkeeper2.JWTAuthFlow, authDetails.AuthFlow)
+		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
 		require.Equal(t, username, authDetails.AuthID)
 		require.Equal(t, scopePrefix, authDetails.ScopePrefix)
 	})
@@ -519,7 +519,7 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 	t.Run("returns ID string and JWTAuthFlow when authenticator identity and also default username attribute is specified in the Extra map of request body", func(t *testing.T) {
 		setup()
 		identityUsername := "some-identity"
-		reqData.Body.Extra[oathkeeper2.UsernameKey] = username
+		reqData.Body.Extra[oathkeeper.UsernameKey] = username
 		reqData.Body.Extra[identityAttributeKey] = identityUsername
 
 		provider := tenantmapping.NewAuthenticatorContextProvider(nil, authn)
@@ -527,7 +527,7 @@ func TestAuthenticatorContextProviderMatch(t *testing.T) {
 
 		require.True(t, match)
 		require.NoError(t, err)
-		require.Equal(t, oathkeeper2.JWTAuthFlow, authDetails.AuthFlow)
+		require.Equal(t, oathkeeper.JWTAuthFlow, authDetails.AuthFlow)
 		require.Equal(t, identityUsername, authDetails.AuthID)
 		require.Equal(t, scopePrefix, authDetails.ScopePrefix)
 	})

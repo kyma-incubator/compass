@@ -13,11 +13,14 @@ import (
 
 const revocationListLoaderCorrelationID = "revocation-list-loader"
 
-//go:generate mockery --name=Manager
+//go:generate mockery --name=Manager --output=automock --outpkg=automock --case=underscore
 type Manager interface {
-	Get(ctx context.Context, name string, options metav1.GetOptions) (*v1.ConfigMap, error)
-	Update(ctx context.Context, configMap *v1.ConfigMap, opts metav1.UpdateOptions) (*v1.ConfigMap, error)
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
+}
+
+//go:generate mockery --name=RevokedCertificatesCache --output=automock --outpkg=automock --case=underscore
+type RevokedCertificatesCache interface {
+	Put(data map[string]string)
 }
 
 type Loader interface {
@@ -25,13 +28,14 @@ type Loader interface {
 }
 
 type revokedCertificatesLoader struct {
-	revokedCertsCache Cache
+	revokedCertsCache RevokedCertificatesCache
 	configMapManager  Manager
 	configMapName     string
 	reconnectInterval time.Duration
 }
 
-func NewRevokedCertificatesLoader(revokedCertsCache Cache,
+func NewRevokedCertificatesLoader(
+	revokedCertsCache RevokedCertificatesCache,
 	configMapManager Manager,
 	configMapName string,
 	reconnectInterval time.Duration,

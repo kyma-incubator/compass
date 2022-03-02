@@ -14,21 +14,21 @@ import (
 	"github.com/pkg/errors"
 )
 
-type jwkCacheEntry struct {
-	key      interface{}
-	cachedAt time.Time
-	expireAt time.Time
+type JwkCacheEntry struct {
+	Key      interface{}
+	CachedAt time.Time
+	ExpireAt time.Time
 }
 
 // IsExpired missing godoc
-func (e jwkCacheEntry) IsExpired() bool {
-	return time.Now().After(e.expireAt)
+func (e JwkCacheEntry) IsExpired() bool {
+	return time.Now().After(e.ExpireAt)
 }
 
 type jwksCache struct {
 	fetch     KeyGetter
 	expPeriod time.Duration
-	cache     map[string]jwkCacheEntry
+	cache     map[string]JwkCacheEntry
 	flag      sync.RWMutex
 }
 
@@ -37,8 +37,12 @@ func NewJWKsCache(fetch KeyGetter, expPeriod time.Duration) *jwksCache {
 	return &jwksCache{
 		fetch:     fetch,
 		expPeriod: expPeriod,
-		cache:     make(map[string]jwkCacheEntry),
+		cache:     make(map[string]JwkCacheEntry),
 	}
+}
+
+func (c *jwksCache) GetSize() int {
+	return len(c.cache)
 }
 
 // GetKey missing godoc
@@ -65,10 +69,10 @@ func (c *jwksCache) GetKey(ctx context.Context, token *jwt.Token) (interface{}, 
 		log.C(ctx).Info(fmt.Sprintf("Adding key %s to cache", keyID))
 
 		c.flag.Lock()
-		c.cache[keyID] = jwkCacheEntry{
-			key:      key,
-			cachedAt: time.Now(),
-			expireAt: time.Now().Add(c.expPeriod),
+		c.cache[keyID] = JwkCacheEntry{
+			Key:      key,
+			CachedAt: time.Now(),
+			ExpireAt: time.Now().Add(c.expPeriod),
 		}
 		c.flag.Unlock()
 
@@ -77,7 +81,7 @@ func (c *jwksCache) GetKey(ctx context.Context, token *jwt.Token) (interface{}, 
 
 	log.C(ctx).Info(fmt.Sprintf("Using key %s from cache", keyID))
 
-	return cachedKey.key, nil
+	return cachedKey.Key, nil
 }
 
 // Cleanup missing godoc

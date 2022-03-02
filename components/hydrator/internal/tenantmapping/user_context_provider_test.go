@@ -3,8 +3,10 @@ package tenantmapping_test
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping/automock"
 	"net/http"
 	"net/textproto"
 
@@ -45,18 +47,18 @@ func TestUserContextProvider(t *testing.T) {
 			Scopes:   expectedScopes,
 		}
 
-		tenantMappingModel := &model.BusinessTenantMapping{
-			ID:             expectedTenantID.String(),
-			ExternalTenant: expectedExternalTenantID.String(),
+		testTenant := &graphql.Tenant{
+			ID:         expectedExternalTenantID.String(),
+			InternalID: expectedTenantID.String(),
 		}
 
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
+		directorClientMock := getDirectorClientMock()
+		directorClientMock.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(testTenant, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(directorClientMock, staticUserRepoMock, nil)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -66,7 +68,7 @@ func TestUserContextProvider(t *testing.T) {
 		require.Equal(t, username, objCtx.ConsumerID)
 		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
 
-		mock.AssertExpectationsForObjects(t, staticUserRepoMock, tenantRepoMock)
+		mock.AssertExpectationsForObjects(t, staticUserRepoMock, directorClientMock)
 	})
 
 	t.Run("returns tenant and scopes that are defined in the Header map of ReqData", func(t *testing.T) {
@@ -83,18 +85,18 @@ func TestUserContextProvider(t *testing.T) {
 			Tenants:  []string{expectedExternalTenantID.String()},
 			Scopes:   expectedScopes,
 		}
-		tenantMappingModel := &model.BusinessTenantMapping{
-			ID:             expectedTenantID.String(),
-			ExternalTenant: expectedExternalTenantID.String(),
+		testTenant := &graphql.Tenant{
+			ID:         expectedExternalTenantID.String(),
+			InternalID: expectedTenantID.String(),
 		}
 
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
+		directorClientMock := getDirectorClientMock()
+		directorClientMock.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(testTenant, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(directorClientMock, staticUserRepoMock, nil)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -104,7 +106,7 @@ func TestUserContextProvider(t *testing.T) {
 		require.Equal(t, username, objCtx.ConsumerID)
 		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
 
-		mock.AssertExpectationsForObjects(t, staticUserRepoMock, tenantRepoMock)
+		mock.AssertExpectationsForObjects(t, staticUserRepoMock, directorClientMock)
 	})
 
 	t.Run("returns tenant which is defined in the Extra map and scopes which is defined in the Header map of ReqData", func(t *testing.T) {
@@ -123,18 +125,18 @@ func TestUserContextProvider(t *testing.T) {
 			Tenants:  []string{expectedExternalTenantID.String()},
 			Scopes:   expectedScopes,
 		}
-		tenantMappingModel := &model.BusinessTenantMapping{
-			ID:             expectedTenantID.String(),
-			ExternalTenant: expectedExternalTenantID.String(),
+		testTenant := &graphql.Tenant{
+			ID:         expectedExternalTenantID.String(),
+			InternalID: expectedTenantID.String(),
 		}
 
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
+		directorClientMock := getDirectorClientMock()
+		directorClientMock.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(testTenant, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(directorClientMock, staticUserRepoMock, nil)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -144,7 +146,7 @@ func TestUserContextProvider(t *testing.T) {
 		require.Equal(t, username, objCtx.ConsumerID)
 		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
 
-		mock.AssertExpectationsForObjects(t, staticUserRepoMock, tenantRepoMock)
+		mock.AssertExpectationsForObjects(t, staticUserRepoMock, directorClientMock)
 	})
 
 	t.Run("returns tenant which is defined in the Header map and scopes which is defined in the Extra map of ReqData", func(t *testing.T) {
@@ -163,18 +165,18 @@ func TestUserContextProvider(t *testing.T) {
 			Tenants:  []string{expectedExternalTenantID.String()},
 			Scopes:   expectedScopes,
 		}
-		tenantMappingModel := &model.BusinessTenantMapping{
-			ID:             expectedTenantID.String(),
-			ExternalTenant: expectedExternalTenantID.String(),
+		testTenant := &graphql.Tenant{
+			ID:         expectedExternalTenantID.String(),
+			InternalID: expectedTenantID.String(),
 		}
 
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
+		directorClientMock := getDirectorClientMock()
+		directorClientMock.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(testTenant, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(directorClientMock, staticUserRepoMock, nil)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -184,7 +186,7 @@ func TestUserContextProvider(t *testing.T) {
 		require.Equal(t, username, objCtx.ConsumerID)
 		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
 
-		mock.AssertExpectationsForObjects(t, staticUserRepoMock, tenantRepoMock)
+		mock.AssertExpectationsForObjects(t, staticUserRepoMock, directorClientMock)
 	})
 
 	t.Run("returns scopes defined on the StaticUser and tenant from the request", func(t *testing.T) {
@@ -200,18 +202,18 @@ func TestUserContextProvider(t *testing.T) {
 			Tenants:  []string{expectedExternalTenantID.String()},
 			Scopes:   expectedScopes,
 		}
-		tenantMappingModel := &model.BusinessTenantMapping{
-			ID:             expectedTenantID.String(),
-			ExternalTenant: expectedExternalTenantID.String(),
+		testTenant := &graphql.Tenant{
+			ID:         expectedExternalTenantID.String(),
+			InternalID: expectedTenantID.String(),
 		}
 
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
+		directorClientMock := getDirectorClientMock()
+		directorClientMock.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(testTenant, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(directorClientMock, staticUserRepoMock, nil)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -221,7 +223,7 @@ func TestUserContextProvider(t *testing.T) {
 		require.Equal(t, username, objCtx.ConsumerID)
 		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
 
-		mock.AssertExpectationsForObjects(t, staticUserRepoMock, tenantRepoMock)
+		mock.AssertExpectationsForObjects(t, staticUserRepoMock, directorClientMock)
 	})
 
 	t.Run("returns scopes defined on the StaticGroup from the request", func(t *testing.T) {
@@ -249,9 +251,9 @@ func TestUserContextProvider(t *testing.T) {
 			Scopes:   expectedScopes,
 		}
 
-		tenantMappingModel := &model.BusinessTenantMapping{
-			ID:             expectedTenantID.String(),
-			ExternalTenant: expectedExternalTenantID.String(),
+		testTenant := &graphql.Tenant{
+			ID:         expectedExternalTenantID.String(),
+			InternalID: expectedTenantID.String(),
 		}
 
 		staticGroupRepoMock := getStaticGroupRepoMock()
@@ -260,10 +262,10 @@ func TestUserContextProvider(t *testing.T) {
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
+		directorClientMock := getDirectorClientMock()
+		directorClientMock.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(testTenant, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, staticGroupRepoMock, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(directorClientMock, staticUserRepoMock, staticGroupRepoMock)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -273,7 +275,7 @@ func TestUserContextProvider(t *testing.T) {
 		require.Equal(t, username, objCtx.ConsumerID)
 		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
 
-		mock.AssertExpectationsForObjects(t, staticGroupRepoMock, tenantRepoMock)
+		mock.AssertExpectationsForObjects(t, staticGroupRepoMock, directorClientMock)
 	})
 
 	t.Run("returns all unique scopes defined on the StaticGroups from the request", func(t *testing.T) {
@@ -301,18 +303,18 @@ func TestUserContextProvider(t *testing.T) {
 			},
 		}
 
-		tenantMappingModel := &model.BusinessTenantMapping{
-			ID:             expectedTenantID.String(),
-			ExternalTenant: expectedExternalTenantID.String(),
+		testTenant := &graphql.Tenant{
+			ID:         expectedExternalTenantID.String(),
+			InternalID: expectedTenantID.String(),
 		}
 
 		staticGroupRepoMock := getStaticGroupRepoMock()
 		staticGroupRepoMock.On("Get", mock.Anything, []string{groupName1, groupName2}).Return(staticGroups, nil).Once()
 
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
+		directorClientMock := getDirectorClientMock()
+		directorClientMock.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(testTenant, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(nil, staticGroupRepoMock, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(directorClientMock, nil, staticGroupRepoMock)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -322,7 +324,7 @@ func TestUserContextProvider(t *testing.T) {
 		require.Equal(t, username, objCtx.ConsumerID)
 		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
 
-		mock.AssertExpectationsForObjects(t, staticGroupRepoMock, tenantRepoMock)
+		mock.AssertExpectationsForObjects(t, staticGroupRepoMock, directorClientMock)
 	})
 
 	t.Run("returns scopes defined on the StaticUser when group not present from the request", func(t *testing.T) {
@@ -343,9 +345,9 @@ func TestUserContextProvider(t *testing.T) {
 			Scopes:   expectedScopes,
 		}
 
-		tenantMappingModel := &model.BusinessTenantMapping{
-			ID:             expectedTenantID.String(),
-			ExternalTenant: expectedExternalTenantID.String(),
+		testTenant := &graphql.Tenant{
+			ID:         expectedExternalTenantID.String(),
+			InternalID: expectedTenantID.String(),
 		}
 
 		staticGroupRepoMock := getStaticGroupRepoMock()
@@ -354,10 +356,10 @@ func TestUserContextProvider(t *testing.T) {
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, expectedExternalTenantID.String()).Return(tenantMappingModel, nil).Once()
+		directorClientMock := getDirectorClientMock()
+		directorClientMock.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(testTenant, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, staticGroupRepoMock, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(directorClientMock, staticUserRepoMock, staticGroupRepoMock)
 
 		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -367,7 +369,7 @@ func TestUserContextProvider(t *testing.T) {
 		require.Equal(t, username, objCtx.ConsumerID)
 		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
 
-		mock.AssertExpectationsForObjects(t, staticGroupRepoMock, tenantRepoMock)
+		mock.AssertExpectationsForObjects(t, staticGroupRepoMock, directorClientMock)
 	})
 
 	t.Run("returns error when tenant from the request does not match any tenants assigned to the static user", func(t *testing.T) {
@@ -384,24 +386,24 @@ func TestUserContextProvider(t *testing.T) {
 			Tenants:  []string{expectedExternalTenantID.String()},
 			Scopes:   expectedScopes,
 		}
-		tenantMappingModel := &model.BusinessTenantMapping{
-			ID:             uuid.New().String(),
-			ExternalTenant: nonExistingExternalTenantID,
+		testTenant := &graphql.Tenant{
+			ID:         nonExistingExternalTenantID,
+			InternalID: uuid.New().String(),
 		}
 
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
-		tenantRepoMock := getTenantRepositoryMock()
-		tenantRepoMock.On("GetByExternalTenant", mock.Anything, nonExistingExternalTenantID).Return(tenantMappingModel, nil).Once()
+		directorClientMock := getDirectorClientMock()
+		directorClientMock.On("GetTenantByExternalID", mock.Anything, nonExistingExternalTenantID).Return(testTenant, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, tenantRepoMock)
+		provider := tenantmapping.NewUserContextProvider(directorClientMock, staticUserRepoMock, nil)
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.EqualError(t, err, apperrors.NewInternalError(fmt.Sprintf("Static tenant with username: some-user missmatch external tenant: %s", nonExistingExternalTenantID)).Error())
 
-		mock.AssertExpectationsForObjects(t, staticUserRepoMock, tenantRepoMock)
+		mock.AssertExpectationsForObjects(t, staticUserRepoMock, directorClientMock)
 	})
 
 	t.Run("returns error when tenant is specified in Extra map in a non-string format", func(t *testing.T) {
@@ -418,10 +420,13 @@ func TestUserContextProvider(t *testing.T) {
 			Scopes:   expectedScopes,
 		}
 
+		directorClientMock := getDirectorClientMock()
+		//directorClientMock.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(testTenant, nil).Once()
+
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, nil)
+		provider := tenantmapping.NewUserContextProvider(directorClientMock, staticUserRepoMock, nil)
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -444,10 +449,13 @@ func TestUserContextProvider(t *testing.T) {
 			Scopes:   expectedScopes,
 		}
 
+		directorClientMock := getDirectorClientMock()
+		//directorClientMock.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(testTenant, nil).Once()
+
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(staticUser, nil).Once()
 
-		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, nil)
+		provider := tenantmapping.NewUserContextProvider(directorClientMock, staticUserRepoMock, nil)
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
@@ -463,7 +471,10 @@ func TestUserContextProvider(t *testing.T) {
 		staticUserRepoMock := getStaticUserRepoMock()
 		staticUserRepoMock.On("Get", username).Return(tenantmapping.StaticUser{}, errors.New("some-error")).Once()
 
-		provider := tenantmapping.NewUserContextProvider(staticUserRepoMock, nil, nil)
+		directorClientMock := getDirectorClientMock()
+		//directorClientMock.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(testTenant, nil).Once()
+
+		provider := tenantmapping.NewUserContextProvider(directorClientMock, staticUserRepoMock, nil)
 
 		jwtAuthDetailsWithMissingUser := jwtAuthDetails
 		jwtAuthDetailsWithMissingUser.AuthID = username

@@ -5,7 +5,6 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/util/retry"
 )
 
@@ -13,7 +12,6 @@ import (
 type Manager interface {
 	Get(ctx context.Context, name string, options metav1.GetOptions) (*v1.ConfigMap, error)
 	Update(ctx context.Context, configMap *v1.ConfigMap, opts metav1.UpdateOptions) (*v1.ConfigMap, error)
-	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 }
 
 //go:generate mockery --name=RevokedCertificatesRepository

@@ -2,6 +2,8 @@ package tenantmapping_test
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping/automock"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -9,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	oathkeeper2 "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 
 	"github.com/tidwall/gjson"
 
@@ -17,13 +19,9 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping/automock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -36,14 +34,12 @@ func TestHandler(t *testing.T) {
 	tenantID := uuid.New()
 	systemAuthID := uuid.New()
 	objID := uuid.New()
-	testError := errors.New("some error")
-	txGen := txtest.NewTransactionContextGenerator(testError)
 
-	jwtAuthDetails := oathkeeper2.AuthDetails{AuthID: username, AuthFlow: oathkeeper2.JWTAuthFlow}
-	oAuthAuthDetails := oathkeeper2.AuthDetails{AuthID: systemAuthID.String(), AuthFlow: oathkeeper2.OAuth2Flow}
-	certAuthDetails := oathkeeper2.AuthDetails{AuthID: systemAuthID.String(), AuthFlow: oathkeeper2.CertificateFlow, CertIssuer: oathkeeper2.ConnectorIssuer}
-	externalCertAuthDetails := oathkeeper2.AuthDetails{AuthID: externalTenantID, AuthFlow: oathkeeper2.CertificateFlow, CertIssuer: oathkeeper2.ExternalIssuer}
-	oneTimeTokenAuthDetails := oathkeeper2.AuthDetails{AuthID: systemAuthID.String(), AuthFlow: oathkeeper2.OneTimeTokenFlow}
+	jwtAuthDetails := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow}
+	oAuthAuthDetails := oathkeeper.AuthDetails{AuthID: systemAuthID.String(), AuthFlow: oathkeeper.OAuth2Flow}
+	certAuthDetails := oathkeeper.AuthDetails{AuthID: systemAuthID.String(), AuthFlow: oathkeeper.CertificateFlow, CertIssuer: oathkeeper.ConnectorIssuer}
+	externalCertAuthDetails := oathkeeper.AuthDetails{AuthID: externalTenantID, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: oathkeeper.ExternalIssuer}
+	oneTimeTokenAuthDetails := oathkeeper.AuthDetails{AuthID: systemAuthID.String(), AuthFlow: oathkeeper.OneTimeTokenFlow}
 
 	t.Run("success for the request parsed as JWT flow", func(t *testing.T) {
 		scopes := "application:read"
@@ -53,10 +49,10 @@ func TestHandler(t *testing.T) {
 			ExternalTenantKey: "externalTenant",
 		}
 
-		reqDataMock := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper2.UsernameKey: username,
+					oathkeeper.UsernameKey: username,
 				},
 			},
 		}
@@ -69,17 +65,15 @@ func TestHandler(t *testing.T) {
 			KeysExtra:    keys,
 			Scopes:       scopes,
 			ConsumerID:   username,
-			AuthFlow:     oathkeeper2.JWTAuthFlow,
+			AuthFlow:     oathkeeper.JWTAuthFlow,
 			ConsumerType: "Static User",
 		}
-		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","flow":"` + string(oathkeeper2.JWTAuthFlow) + `","name":"` + username + `","onBehalfOf":"","region":"","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":""},"header":null}`
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","flow":"` + string(oathkeeper.JWTAuthFlow) + `","name":"` + username + `","onBehalfOf":"","region":"","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":""},"header":null}`
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
-
-		persist, transact := txGen.ThatSucceeds()
 
 		userMockContextProvider := getMockContextProvider()
 		userMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &jwtAuthDetails, nil).Once()
@@ -90,9 +84,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
-		clientInstrumenter.On("InstrumentClient", username, string(oathkeeper2.JWTAuthFlow), mock.Anything)
+		clientInstrumenter.On("InstrumentClient", username, string(oathkeeper.JWTAuthFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -102,7 +96,7 @@ func TestHandler(t *testing.T) {
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, userMockContextProvider)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, userMockContextProvider)
 	})
 
 	t.Run("success for the request parsed as JWT flow with custom authenticator", func(t *testing.T) {
@@ -116,8 +110,8 @@ func TestHandler(t *testing.T) {
 		clientIDAttributeKey := "clientid"
 		scopes := "application:read"
 		authenticatorName := "testAuthenticator"
-		reqDataMock := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
 					uniqueAttributeKey:   uniqueAttributeValue,
 					identityAttributeKey: username,
@@ -140,7 +134,7 @@ func TestHandler(t *testing.T) {
 			Region:          "region",
 			OauthClientID:   "client_id",
 			ConsumerID:      username,
-			AuthFlow:        oathkeeper2.JWTAuthFlow,
+			AuthFlow:        oathkeeper.JWTAuthFlow,
 			ConsumerType:    "Static User",
 			ContextProvider: tenantmapping.AuthenticatorObjectContextProvider,
 		}
@@ -163,16 +157,14 @@ func TestHandler(t *testing.T) {
 			},
 		}
 
-		jwtAuthDetailsWithAuthenticator := oathkeeper2.AuthDetails{AuthID: username, AuthFlow: oathkeeper2.JWTAuthFlow, Authenticator: &authn[0], ScopePrefix: "", Region: "region"}
-		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"` + clientIDAttributeKey + `":"client_id","consumerID":"` + username + `","consumerType":"Static User","flow":"` + string(oathkeeper2.JWTAuthFlow) + `","identity":"` + username + `","onBehalfOf":"","region":"region","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":"client_id","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":null}`
+		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0], ScopePrefix: "", Region: "region"}
+		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"` + clientIDAttributeKey + `":"client_id","consumerID":"` + username + `","consumerType":"Static User","flow":"` + string(oathkeeper.JWTAuthFlow) + `","identity":"` + username + `","onBehalfOf":"","region":"region","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":"client_id","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":null}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
-
-		persist, transact := txGen.ThatSucceeds()
 
 		authenticatorMockContextProvider := getMockContextProvider()
 		authenticatorMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &jwtAuthDetailsWithAuthenticator, nil).Once()
@@ -183,9 +175,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
-		clientInstrumenter.On("InstrumentClient", username, string(oathkeeper2.JWTAuthFlow), mock.Anything)
+		clientInstrumenter.On("InstrumentClient", username, string(oathkeeper.JWTAuthFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -195,7 +187,7 @@ func TestHandler(t *testing.T) {
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, authenticatorMockContextProvider)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, authenticatorMockContextProvider)
 	})
 
 	t.Run("success for the request parsed as JWT flow when both normal user is present and custom authenticator are present", func(t *testing.T) {
@@ -209,12 +201,12 @@ func TestHandler(t *testing.T) {
 		identityUsername := "identityAdmin"
 		scopes := "application:read"
 		authenticatorName := "testAuthenticator"
-		reqDataMock := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper2.UsernameKey: username,
-					uniqueAttributeKey:      uniqueAttributeValue,
-					identityAttributeKey:    identityUsername,
+					oathkeeper.UsernameKey: username,
+					uniqueAttributeKey:     uniqueAttributeValue,
+					identityAttributeKey:   identityUsername,
 					authenticator.CoordinatesKey: authenticator.Coordinates{
 						Name:  authenticatorName,
 						Index: 0,
@@ -233,7 +225,7 @@ func TestHandler(t *testing.T) {
 			OauthClientID:   "client_id",
 			Scopes:          scopes,
 			ConsumerID:      username,
-			AuthFlow:        oathkeeper2.JWTAuthFlow,
+			AuthFlow:        oathkeeper.JWTAuthFlow,
 			ConsumerType:    "Static User",
 			ContextProvider: tenantmapping.AuthenticatorObjectContextProvider,
 		}
@@ -253,16 +245,14 @@ func TestHandler(t *testing.T) {
 			},
 		}
 
-		jwtAuthDetailsWithAuthenticator := oathkeeper2.AuthDetails{AuthID: identityUsername, AuthFlow: oathkeeper2.JWTAuthFlow, Authenticator: &authn[0]}
-		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumerID":"` + username + `","consumerType":"Static User","flow":"` + string(oathkeeper2.JWTAuthFlow) + `","identity":"` + identityUsername + `","name":"` + username + `","onBehalfOf":"","region":"region","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":"client_id","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":null}`
+		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: identityUsername, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0]}
+		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumerID":"` + username + `","consumerType":"Static User","flow":"` + string(oathkeeper.JWTAuthFlow) + `","identity":"` + identityUsername + `","name":"` + username + `","onBehalfOf":"","region":"region","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":"client_id","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":null}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
-
-		persist, transact := txGen.ThatSucceeds()
 
 		userMockContextProvider := getMockContextProvider()
 		userMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &jwtAuthDetailsWithAuthenticator, nil).Once()
@@ -273,9 +263,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
-		clientInstrumenter.On("InstrumentClient", identityUsername, string(oathkeeper2.JWTAuthFlow), mock.Anything)
+		clientInstrumenter.On("InstrumentClient", identityUsername, string(oathkeeper.JWTAuthFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -285,7 +275,7 @@ func TestHandler(t *testing.T) {
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, userMockContextProvider)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, userMockContextProvider)
 	})
 
 	t.Run("success for the request parsed as JWT flow when both normal user is present and custom authenticator are present but no authenticator matches", func(t *testing.T) {
@@ -295,10 +285,10 @@ func TestHandler(t *testing.T) {
 		}
 
 		scopes := "application:read"
-		reqDataMock := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper2.UsernameKey: username,
+					oathkeeper.UsernameKey: username,
 				},
 			},
 		}
@@ -311,19 +301,17 @@ func TestHandler(t *testing.T) {
 			KeysExtra:    keys,
 			Scopes:       scopes,
 			ConsumerID:   username,
-			AuthFlow:     oathkeeper2.JWTAuthFlow,
+			AuthFlow:     oathkeeper.JWTAuthFlow,
 			ConsumerType: "Static User",
 		}
 
-		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","flow":"` + string(oathkeeper2.JWTAuthFlow) + `","name":"` + username + `","onBehalfOf":"","region":"","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":""},"header":null}`
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","flow":"` + string(oathkeeper.JWTAuthFlow) + `","name":"` + username + `","onBehalfOf":"","region":"","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":""},"header":null}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
-
-		persist, transact := txGen.ThatSucceeds()
 
 		userMockContextProvider := getMockContextProvider()
 		userMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &jwtAuthDetails, nil).Once()
@@ -334,9 +322,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
-		clientInstrumenter.On("InstrumentClient", username, string(oathkeeper2.JWTAuthFlow), mock.Anything)
+		clientInstrumenter.On("InstrumentClient", username, string(oathkeeper.JWTAuthFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -346,7 +334,7 @@ func TestHandler(t *testing.T) {
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, userMockContextProvider)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, userMockContextProvider)
 	})
 
 	t.Run("success for the request parsed as OAuth2 flow", func(t *testing.T) {
@@ -355,10 +343,10 @@ func TestHandler(t *testing.T) {
 			ExternalTenantKey: "externalTenant",
 		}
 		scopes := "application:read"
-		reqDataMock := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper2.ClientIDKey: systemAuthID.String(),
+					oathkeeper.ClientIDKey: systemAuthID.String(),
 				},
 			},
 		}
@@ -371,18 +359,16 @@ func TestHandler(t *testing.T) {
 			KeysExtra:    keys,
 			Scopes:       scopes,
 			ConsumerID:   objID.String(),
-			AuthFlow:     oathkeeper2.OAuth2Flow,
+			AuthFlow:     oathkeeper.OAuth2Flow,
 			ConsumerType: "Integration System",
 		}
-		expectedRespPayload := `{"subject":"","extra":{"client_id":"` + systemAuthID.String() + `","consumerID":"` + objID.String() + `","consumerType":"Integration System","flow":"` + string(oathkeeper2.OAuth2Flow) + `","onBehalfOf":"","region":"","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":""},"header":null}`
+		expectedRespPayload := `{"subject":"","extra":{"client_id":"` + systemAuthID.String() + `","consumerID":"` + objID.String() + `","consumerType":"Integration System","flow":"` + string(oathkeeper.OAuth2Flow) + `","onBehalfOf":"","region":"","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":""},"header":null}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
-
-		persist, transact := txGen.ThatSucceeds()
 
 		systemAuthMockContextProvider := getMockContextProvider()
 		systemAuthMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &oAuthAuthDetails, nil).Once()
@@ -393,9 +379,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
-		clientInstrumenter.On("InstrumentClient", systemAuthID.String(), string(oathkeeper2.OAuth2Flow), mock.Anything)
+		clientInstrumenter.On("InstrumentClient", systemAuthID.String(), string(oathkeeper.OAuth2Flow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -405,7 +391,7 @@ func TestHandler(t *testing.T) {
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, systemAuthMockContextProvider)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, systemAuthMockContextProvider)
 	})
 
 	t.Run("success for the request parsed as Certificate flow for Connector issuer", func(t *testing.T) {
@@ -414,12 +400,12 @@ func TestHandler(t *testing.T) {
 			ExternalTenantKey: "externalTenant",
 		}
 		scopes := "application:read"
-		reqDataMock := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: make(map[string]interface{}),
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ClientIDCertKey):    []string{systemAuthID.String()},
-					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ClientIDCertIssuer): []string{oathkeeper2.ConnectorIssuer},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{systemAuthID.String()},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ConnectorIssuer},
 				},
 			},
 		}
@@ -432,18 +418,16 @@ func TestHandler(t *testing.T) {
 			KeysExtra:    keys,
 			Scopes:       scopes,
 			ConsumerID:   objID.String(),
-			AuthFlow:     oathkeeper2.CertificateFlow,
+			AuthFlow:     oathkeeper.CertificateFlow,
 			ConsumerType: "Integration System",
 		}
-		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + objID.String() + `","consumerType":"Integration System","flow":"` + string(oathkeeper2.CertificateFlow) + `","onBehalfOf":"","region":"","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":""},"header":{"Client-Certificate-Issuer":["` + oathkeeper2.ConnectorIssuer + `"],"Client-Id-From-Certificate":["` + systemAuthID.String() + `"]}}`
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + objID.String() + `","consumerType":"Integration System","flow":"` + string(oathkeeper.CertificateFlow) + `","onBehalfOf":"","region":"","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":""},"header":{"Client-Certificate-Issuer":["` + oathkeeper.ConnectorIssuer + `"],"Client-Id-From-Certificate":["` + systemAuthID.String() + `"]}}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
-
-		persist, transact := txGen.ThatSucceeds()
 
 		systemAuthMockContextProvider := getMockContextProvider()
 		systemAuthMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &certAuthDetails, nil).Once()
@@ -454,9 +438,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
-		clientInstrumenter.On("InstrumentClient", systemAuthID.String(), string(oathkeeper2.CertificateFlow), mock.Anything)
+		clientInstrumenter.On("InstrumentClient", systemAuthID.String(), string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -466,7 +450,7 @@ func TestHandler(t *testing.T) {
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, systemAuthMockContextProvider)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, systemAuthMockContextProvider)
 	})
 
 	t.Run("success for the request parsed as Certificate flow for External issuer", func(t *testing.T) {
@@ -474,12 +458,12 @@ func TestHandler(t *testing.T) {
 			TenantKey:         "providerTenant",
 			ExternalTenantKey: "providerExternalTenant",
 		}
-		reqDataMock := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: make(map[string]interface{}),
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ClientIDCertKey):    []string{externalTenantID},
-					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ClientIDCertIssuer): []string{oathkeeper2.ExternalIssuer},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{externalTenantID},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
 				},
 			},
 		}
@@ -491,18 +475,16 @@ func TestHandler(t *testing.T) {
 			},
 			KeysExtra:    keys,
 			ConsumerID:   externalTenantID,
-			AuthFlow:     oathkeeper2.CertificateFlow,
+			AuthFlow:     oathkeeper.CertificateFlow,
 			ConsumerType: consumer.Runtime,
 		}
-		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + externalTenantID + `","consumerType":"Runtime","flow":"` + string(oathkeeper2.CertificateFlow) + `","onBehalfOf":"","region":"","scope":"` + "" + `","tenant":"{\\\"consumerTenant\\\":\\\"` + externalTenantID + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"providerExternalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"providerTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":""},"header":{"Client-Certificate-Issuer":["` + oathkeeper2.ExternalIssuer + `"],"Client-Id-From-Certificate":["` + externalTenantID + `"]}}`
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + externalTenantID + `","consumerType":"Runtime","flow":"` + string(oathkeeper.CertificateFlow) + `","onBehalfOf":"","region":"","scope":"` + "" + `","tenant":"{\\\"consumerTenant\\\":\\\"` + externalTenantID + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"providerExternalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"providerTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":""},"header":{"Client-Certificate-Issuer":["` + oathkeeper.ExternalIssuer + `"],"Client-Id-From-Certificate":["` + externalTenantID + `"]}}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
-
-		persist, transact := txGen.ThatSucceeds()
 
 		certServiceMockContextProvider := getMockContextProvider()
 		certServiceMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &externalCertAuthDetails, nil).Once()
@@ -513,9 +495,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
-		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper2.CertificateFlow), mock.Anything)
+		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -525,7 +507,7 @@ func TestHandler(t *testing.T) {
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, certServiceMockContextProvider)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, certServiceMockContextProvider)
 	})
 
 	t.Run("success for the request parsed as OneTimeToken flow", func(t *testing.T) {
@@ -534,11 +516,11 @@ func TestHandler(t *testing.T) {
 			ExternalTenantKey: "externalTenant",
 		}
 		scopes := "application:read"
-		reqDataMock := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: make(map[string]interface{}),
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ClientIDTokenKey): []string{systemAuthID.String()},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDTokenKey): []string{systemAuthID.String()},
 				},
 			},
 		}
@@ -551,18 +533,16 @@ func TestHandler(t *testing.T) {
 			KeysExtra:    keys,
 			Scopes:       scopes,
 			ConsumerID:   objID.String(),
-			AuthFlow:     oathkeeper2.OneTimeTokenFlow,
+			AuthFlow:     oathkeeper.OneTimeTokenFlow,
 			ConsumerType: "Integration System",
 		}
-		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + objID.String() + `","consumerType":"Integration System","flow":"` + string(oathkeeper2.OneTimeTokenFlow) + `","onBehalfOf":"","region":"","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":""},"header":{"Client-Id-From-Token":["` + systemAuthID.String() + `"]}}`
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + objID.String() + `","consumerType":"Integration System","flow":"` + string(oathkeeper.OneTimeTokenFlow) + `","onBehalfOf":"","region":"","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":""},"header":{"Client-Id-From-Token":["` + systemAuthID.String() + `"]}}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
-
-		persist, transact := txGen.ThatSucceeds()
 
 		systemAuthMockContextProvider := getMockContextProvider()
 		systemAuthMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &oneTimeTokenAuthDetails, nil).Once()
@@ -573,9 +553,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
-		clientInstrumenter.On("InstrumentClient", systemAuthID.String(), string(oathkeeper2.OneTimeTokenFlow), mock.Anything)
+		clientInstrumenter.On("InstrumentClient", systemAuthID.String(), string(oathkeeper.OneTimeTokenFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -585,7 +565,7 @@ func TestHandler(t *testing.T) {
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, systemAuthMockContextProvider)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, systemAuthMockContextProvider)
 	})
 
 	t.Run("success for the request parsed as Certificate flow for External issuer and JWT flow with custom authenticator", func(t *testing.T) {
@@ -604,8 +584,8 @@ func TestHandler(t *testing.T) {
 		identityAttributeKey := "identity"
 		scopes := "application:read test"
 		authenticatorName := "testAuthenticator"
-		reqDataMock := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
 					uniqueAttributeKey:   uniqueAttributeValue,
 					identityAttributeKey: username,
@@ -615,8 +595,8 @@ func TestHandler(t *testing.T) {
 					},
 				},
 				Header: http.Header{
-					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ClientIDCertKey):    []string{externalTenantID},
-					textproto.CanonicalMIMEHeaderKey(oathkeeper2.ClientIDCertIssuer): []string{oathkeeper2.ExternalIssuer},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{externalTenantID},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
 				},
 			},
 		}
@@ -629,7 +609,7 @@ func TestHandler(t *testing.T) {
 			Scopes:          "test",
 			KeysExtra:       certKeys,
 			ConsumerID:      externalTenantID,
-			AuthFlow:        oathkeeper2.CertificateFlow,
+			AuthFlow:        oathkeeper.CertificateFlow,
 			ConsumerType:    consumer.Runtime,
 			ContextProvider: tenantmapping.CertServiceObjectContextProvider,
 		}
@@ -648,7 +628,7 @@ func TestHandler(t *testing.T) {
 			Region:          "region",
 			OauthClientID:   "client_id",
 			ConsumerID:      username,
-			AuthFlow:        oathkeeper2.JWTAuthFlow,
+			AuthFlow:        oathkeeper.JWTAuthFlow,
 			ConsumerType:    "Static User",
 			ContextProvider: tenantmapping.AuthenticatorObjectContextProvider,
 		}
@@ -668,9 +648,9 @@ func TestHandler(t *testing.T) {
 			},
 		}
 
-		jwtAuthDetailsWithAuthenticator := oathkeeper2.AuthDetails{AuthID: username, AuthFlow: oathkeeper2.JWTAuthFlow, Authenticator: &authn[0], ScopePrefix: ""}
+		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0], ScopePrefix: ""}
 
-		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumerID":"` + externalTenantID + `","consumerType":"Runtime","flow":"` + string(oathkeeper2.CertificateFlow) + `","identity":"` + username + `","onBehalfOf":"admin","region":"region","scope":"test","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"providerExternalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"providerTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":"client_id","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":{"Client-Certificate-Issuer":["` + oathkeeper2.ExternalIssuer + `"],"Client-Id-From-Certificate":["` + externalTenantID + `"]}}`
+		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumerID":"` + externalTenantID + `","consumerType":"Runtime","flow":"` + string(oathkeeper.CertificateFlow) + `","identity":"` + username + `","onBehalfOf":"admin","region":"region","scope":"test","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"providerExternalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"providerTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":"client_id","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":{"Client-Certificate-Issuer":["` + oathkeeper.ExternalIssuer + `"],"Client-Id-From-Certificate":["` + externalTenantID + `"]}}`
 
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -682,17 +662,15 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		persist, transact := txGen.ThatSucceeds()
-
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
 			tenantmapping.CertServiceObjectContextProvider:   certServiceMockContextProvider,
 			tenantmapping.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
-		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper2.CertificateFlow), mock.Anything)
+		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -705,14 +683,14 @@ func TestHandler(t *testing.T) {
 		require.Equal(t, gjson.Get(expectedRespPayload, "extra"), gjson.Get(strings.TrimSpace(string(body)), "extra"))
 		require.Equal(t, gjson.Get(expectedRespPayload, "header"), gjson.Get(strings.TrimSpace(string(body)), "header"))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, certServiceMockContextProvider)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, certServiceMockContextProvider)
 	})
 
 	t.Run("error when sending different HTTP verb than POST", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
-		handler := tenantmapping.NewHandler(nil, nil, nil, nil)
+		handler := tenantmapping.NewHandler(nil, nil)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -724,10 +702,10 @@ func TestHandler(t *testing.T) {
 	})
 
 	t.Run("error when object context provider fails to provide object context", func(t *testing.T) {
-		reqDataMock := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
-					oathkeeper2.UsernameKey: username,
+					oathkeeper.UsernameKey: username,
 				},
 			},
 		}
@@ -739,8 +717,6 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		persist, transact := txGen.ThatDoesntExpectCommit()
-
 		expectedError := errors.New("error")
 		userMockContextProvider := getMockContextProvider()
 		userMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &jwtAuthDetails, nil).Once()
@@ -751,9 +727,9 @@ func TestHandler(t *testing.T) {
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
-		clientInstrumenter.On("InstrumentClient", systemAuthID.String(), string(oathkeeper2.JWTAuthFlow), mock.Anything)
+		clientInstrumenter.On("InstrumentClient", systemAuthID.String(), string(oathkeeper.JWTAuthFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -763,7 +739,7 @@ func TestHandler(t *testing.T) {
 
 		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, userMockContextProvider)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, userMockContextProvider)
 	})
 
 	t.Run("error when body parser returns error", func(t *testing.T) {
@@ -771,135 +747,21 @@ func TestHandler(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		reqDataParserMock := &automock.ReqDataParser{}
-		reqDataParserMock.On("Parse", mock.Anything).Return(oathkeeper2.ReqData{}, errors.New("some error")).Once()
+		reqDataParserMock.On("Parse", mock.Anything).Return(oathkeeper.ReqData{}, errors.New("some error")).Once()
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, nil, nil, nil)
+		handler := tenantmapping.NewHandler(reqDataParserMock, nil)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 
-		out := oathkeeper2.ReqData{}
+		out := oathkeeper.ReqData{}
 		err := json.NewDecoder(resp.Body).Decode(&out)
 		require.NoError(t, err)
 
-		assert.Equal(t, oathkeeper2.ReqData{}, out)
+		assert.Equal(t, oathkeeper.ReqData{}, out)
 
 		mock.AssertExpectationsForObjects(t, reqDataParserMock)
-	})
-
-	t.Run("error when transaction commit fails", func(t *testing.T) {
-		username := "admin"
-		scopes := "application:read"
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
-				Extra: map[string]interface{}{
-					oathkeeper2.UsernameKey: username,
-				},
-			},
-		}
-
-		objCtxMock := tenantmapping.ObjectContext{
-			TenantContext: tenantmapping.TenantContext{
-				ExternalTenantID: externalTenantID,
-				TenantID:         tenantID.String(),
-			},
-			Scopes:       scopes,
-			ConsumerID:   username,
-			AuthFlow:     oathkeeper2.OAuth2Flow,
-			ConsumerType: "Static User",
-		}
-
-		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
-		w := httptest.NewRecorder()
-
-		reqDataParserMock := &automock.ReqDataParser{}
-		reqDataParserMock.On("Parse", mock.Anything).Return(reqData, nil).Once()
-
-		persist, transact := txGen.ThatFailsOnCommit()
-
-		userMockContextProvider := getMockContextProvider()
-		userMockContextProvider.On("Match", mock.Anything, reqData).Return(true, &jwtAuthDetails, nil).Once()
-		userMockContextProvider.On("GetObjectContext", mock.Anything, reqData, jwtAuthDetails).Return(objCtxMock, nil).Once()
-
-		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-			tenantmapping.UserObjectContextProvider: userMockContextProvider,
-		}
-
-		clientInstrumenter := &automock.ClientInstrumenter{}
-		clientInstrumenter.On("InstrumentClient", username, string(oathkeeper2.JWTAuthFlow), mock.Anything)
-
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
-		handler.ServeHTTP(w, req)
-
-		resp := w.Result()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
-
-		out := oathkeeper2.ReqBody{}
-		err := json.NewDecoder(resp.Body).Decode(&out)
-		require.NoError(t, err)
-
-		assert.Equal(t, reqData.Body, out)
-
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, userMockContextProvider)
-	})
-
-	t.Run("error when transaction begin fails", func(t *testing.T) {
-		reqData := oathkeeper2.ReqData{
-			Body: oathkeeper2.ReqBody{
-				Extra: map[string]interface{}{
-					oathkeeper2.UsernameKey: "test",
-				},
-			},
-		}
-
-		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader("{}"))
-		w := httptest.NewRecorder()
-
-		reqDataParserMock := &automock.ReqDataParser{}
-		reqDataParserMock.On("Parse", mock.Anything).Return(reqData, nil).Once()
-
-		persist, transact := txGen.ThatFailsOnBegin()
-
-		clientInstrumenter := &automock.ClientInstrumenter{}
-		clientInstrumenter.On("InstrumentClient", "test", string(oathkeeper2.JWTAuthFlow), mock.Anything)
-
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, nil, clientInstrumenter)
-		handler.ServeHTTP(w, req)
-
-		resp := w.Result()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
-
-		out := oathkeeper2.ReqBody{}
-		err := json.NewDecoder(resp.Body).Decode(&out)
-		require.NoError(t, err)
-
-		assert.Equal(t, reqData.Body, out)
-
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact)
-	})
-
-	t.Run("error when GetAuthID returns error when looking for Auth ID", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
-		w := httptest.NewRecorder()
-
-		reqDataParserMock := &automock.ReqDataParser{}
-		reqDataParserMock.On("Parse", mock.Anything).Return(oathkeeper2.ReqData{}, nil).Once()
-
-		persist, transact := txGen.ThatFailsOnBegin()
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, nil, nil)
-		handler.ServeHTTP(w, req)
-
-		resp := w.Result()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
-
-		out := oathkeeper2.ReqBody{}
-		err := json.NewDecoder(resp.Body).Decode(&out)
-		require.NoError(t, err)
-
-		assert.Equal(t, oathkeeper2.ReqBody{}, out)
-
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist)
 	})
 }
 

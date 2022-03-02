@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
 	"net/http"
 	"strings"
 
@@ -35,6 +37,14 @@ const (
 	// ProviderExternalTenantKey key for external provider tenant id in Claims.Tenant
 	ProviderExternalTenantKey = "providerExternalTenant"
 )
+
+// DirectorClient missing godoc
+//go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore
+type DirectorClient interface {
+	GetTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
+	GetSystemAuthByID(ctx context.Context, authID string) (schema.SystemAuth, error)
+	UpdateSystemAuth(ctx context.Context, authID string, auth schema.Auth) (director.UpdateAuthResult, error)
+}
 
 // ScopesGetter missing godoc
 //go:generate mockery --name=ScopesGetter --output=automock --outpkg=automock --case=underscore

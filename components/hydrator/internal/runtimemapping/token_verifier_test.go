@@ -1,8 +1,9 @@
-package runtimemapping
+package runtimemapping_test
 
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/runtimemapping"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -34,7 +35,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		restoreHTTPClient := setHTTPClient(httpClient)
 		defer restoreHTTPClient()
 
-		jwksFetch := NewJWKsFetch()
+		jwksFetch := runtimemapping.NewJWKsFetch()
 		token := createToken()
 
 		// WHEN
@@ -47,7 +48,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 
 	t.Run("should return error when token is nil", func(t *testing.T) {
 		// GIVEN
-		jwksFetch := NewJWKsFetch()
+		jwksFetch := runtimemapping.NewJWKsFetch()
 
 		// WHEN
 		_, err := jwksFetch.GetKey(context.TODO(), nil)
@@ -59,7 +60,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 	t.Run("should return error when unable to cast claims to MapClaims", func(t *testing.T) {
 		// GIVEN
 		token := &jwt.Token{}
-		jwksFetch := NewJWKsFetch()
+		jwksFetch := runtimemapping.NewJWKsFetch()
 
 		// WHEN
 		_, err := jwksFetch.GetKey(context.TODO(), token)
@@ -71,7 +72,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 	t.Run("should return error when claims have no issuer claim", func(t *testing.T) {
 		// GIVEN
 		token := &jwt.Token{Claims: &jwt.MapClaims{}}
-		jwksFetch := NewJWKsFetch()
+		jwksFetch := runtimemapping.NewJWKsFetch()
 
 		// WHEN
 		_, err := jwksFetch.GetKey(context.TODO(), token)
@@ -83,7 +84,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 	t.Run("should return error when claims have non-string issuer claim", func(t *testing.T) {
 		// GIVEN
 		token := &jwt.Token{Claims: &jwt.MapClaims{"iss": byte(1)}}
-		jwksFetch := NewJWKsFetch()
+		jwksFetch := runtimemapping.NewJWKsFetch()
 
 		// WHEN
 		_, err := jwksFetch.GetKey(context.TODO(), token)
@@ -95,7 +96,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 	t.Run("should return error when claims have issuer claim in non-URL format", func(t *testing.T) {
 		// GIVEN
 		token := &jwt.Token{Claims: &jwt.MapClaims{"iss": ":///cdef://"}}
-		jwksFetch := NewJWKsFetch()
+		jwksFetch := runtimemapping.NewJWKsFetch()
 
 		// WHEN
 		_, err := jwksFetch.GetKey(context.TODO(), token)
@@ -107,7 +108,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 	t.Run("should return error when discovery URL does not return proper response", func(t *testing.T) {
 		// GIVEN
 		token := &jwt.Token{Claims: &jwt.MapClaims{"iss": "http://domain.local"}}
-		jwksFetch := NewJWKsFetch()
+		jwksFetch := runtimemapping.NewJWKsFetch()
 
 		// WHEN
 		_, err := jwksFetch.GetKey(context.TODO(), token)
@@ -131,7 +132,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		defer restoreHTTPClient()
 
 		token := &jwt.Token{Claims: &jwt.MapClaims{"iss": "http://domain.local"}}
-		jwksFetch := NewJWKsFetch()
+		jwksFetch := runtimemapping.NewJWKsFetch()
 
 		// WHEN
 		_, err := jwksFetch.GetKey(context.TODO(), token)
@@ -159,7 +160,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		defer restoreHTTPClient()
 
 		token := &jwt.Token{Claims: &jwt.MapClaims{"iss": "http://domain.local"}}
-		jwksFetch := NewJWKsFetch()
+		jwksFetch := runtimemapping.NewJWKsFetch()
 
 		// WHEN
 		_, err := jwksFetch.GetKey(context.TODO(), token)
@@ -194,7 +195,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		defer restoreHTTPClient()
 
 		token := &jwt.Token{Claims: &jwt.MapClaims{"iss": "http://domain.local"}}
-		jwksFetch := NewJWKsFetch()
+		jwksFetch := runtimemapping.NewJWKsFetch()
 
 		// WHEN
 		_, err := jwksFetch.GetKey(context.TODO(), token)
@@ -214,7 +215,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 		defer restoreHTTPClient()
 
 		token := &jwt.Token{Claims: &jwt.MapClaims{"iss": "http://domain.local"}}
-		jwksFetch := NewJWKsFetch()
+		jwksFetch := runtimemapping.NewJWKsFetch()
 
 		// WHEN
 		_, err := jwksFetch.GetKey(context.TODO(), token)
@@ -239,7 +240,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 				"kid": byte(0x88),
 			},
 		}
-		jwksFetch := NewJWKsFetch()
+		jwksFetch := runtimemapping.NewJWKsFetch()
 
 		// WHEN
 		_, err := jwksFetch.GetKey(context.TODO(), token)
@@ -265,7 +266,7 @@ func TestJWKsFetch_GetKey(t *testing.T) {
 			},
 			Method: jwt.GetSigningMethod("RS256"),
 		}
-		jwksFetch := NewJWKsFetch()
+		jwksFetch := runtimemapping.NewJWKsFetch()
 
 		// WHEN
 		_, err := jwksFetch.GetKey(context.TODO(), token)
@@ -289,9 +290,9 @@ func TestTokenVerifier_Verify(t *testing.T) {
 		restoreHTTPClient := setHTTPClient(httpClient)
 		defer restoreHTTPClient()
 
-		jwksFetch := NewJWKsFetch()
-		jwksCache := NewJWKsCache(jwksFetch, cachePeriod)
-		tokenVerifier := NewTokenVerifier(jwksCache)
+		jwksFetch := runtimemapping.NewJWKsFetch()
+		jwksCache := runtimemapping.NewJWKsCache(jwksFetch, cachePeriod)
+		tokenVerifier := runtimemapping.NewTokenVerifier(jwksCache)
 		key, ok := privateKeys.Get(0)
 		assert.True(t, ok)
 
@@ -305,7 +306,7 @@ func TestTokenVerifier_Verify(t *testing.T) {
 
 		// THEN
 		require.NoError(t, err)
-		require.Equal(t, 1, len(jwksCache.cache))
+		require.Equal(t, 1, jwksCache.GetSize())
 		require.NotNil(t, claims)
 		require.Equal(t, 1, len(hook.Entries))
 		require.Equal(t, "Adding key 67bf0153-a6dc-4f06-9ce4-2f203b79adc8 to cache", hook.LastEntry().Message)
@@ -321,8 +322,8 @@ func TestTokenVerifier_Verify(t *testing.T) {
 		restoreHTTPClient := setHTTPClient(httpClient)
 		defer restoreHTTPClient()
 
-		jwksFetch := NewJWKsFetch()
-		tokenVerifier := NewTokenVerifier(jwksFetch)
+		jwksFetch := runtimemapping.NewJWKsFetch()
+		tokenVerifier := runtimemapping.NewTokenVerifier(jwksFetch)
 		key, ok := privateKeys.Get(0)
 		assert.True(t, ok)
 
@@ -337,8 +338,8 @@ func TestTokenVerifier_Verify(t *testing.T) {
 	})
 
 	t.Run("should return error when token is empty", func(t *testing.T) {
-		jwksFetch := NewJWKsFetch()
-		tokenVerifier := NewTokenVerifier(jwksFetch)
+		jwksFetch := runtimemapping.NewJWKsFetch()
+		tokenVerifier := runtimemapping.NewTokenVerifier(jwksFetch)
 		token := ""
 
 		// WHEN
@@ -349,8 +350,8 @@ func TestTokenVerifier_Verify(t *testing.T) {
 	})
 
 	t.Run("should return error when token is invalid", func(t *testing.T) {
-		jwksFetch := NewJWKsFetch()
-		tokenVerifier := NewTokenVerifier(jwksFetch)
+		jwksFetch := runtimemapping.NewJWKsFetch()
+		tokenVerifier := runtimemapping.NewTokenVerifier(jwksFetch)
 		token := "invalid token"
 
 		// WHEN

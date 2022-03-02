@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/revocation"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
@@ -16,14 +15,14 @@ type ValidationHydrator interface {
 	ServeHTTP(w http.ResponseWriter, r *http.Request)
 }
 
-type RevokedCertificatesRepository interface {
-	Insert(ctx context.Context, hash string) error
-	Contains(hash string) bool
+//go:generate mockery --name=RevokedCertificatesCache --output=automock --outpkg=automock --case=underscore
+type RevokedCertificatesCache interface {
+	Get() map[string]string
 }
 
 type validationHydrator struct {
 	certHeaderParsers []certificateHeaderParser
-	revokedCertsCache revocation.Cache
+	revokedCertsCache RevokedCertificatesCache
 }
 
 type CSRSubjectConfig struct {
@@ -40,7 +39,7 @@ type ExternalIssuerSubjectConfig struct {
 	OrganizationalUnitPattern string `envconfig:"default=OrgUnit"`
 }
 
-func NewValidationHydrator(cache revocation.Cache, certHeaderParsers ...certificateHeaderParser) ValidationHydrator {
+func NewValidationHydrator(cache RevokedCertificatesCache, certHeaderParsers ...certificateHeaderParser) ValidationHydrator {
 	return &validationHydrator{
 		certHeaderParsers: certHeaderParsers,
 		revokedCertsCache: cache,

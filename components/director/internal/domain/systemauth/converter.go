@@ -53,7 +53,7 @@ func (c *converter) ToGraphQL(in *systemauth.SystemAuth) (graphql.SystemAuth, er
 
 	switch objectType {
 	case systemauth.ApplicationReference:
-		return &graphql.AppSystemAuth{
+		return graphql.AppSystemAuth{
 			ID:                in.ID,
 			Auth:              auth,
 			Type:              &systemAuthTypeApplication,
@@ -61,7 +61,7 @@ func (c *converter) ToGraphQL(in *systemauth.SystemAuth) (graphql.SystemAuth, er
 			ReferenceObjectID: in.AppID,
 		}, nil
 	case systemauth.IntegrationSystemReference:
-		return &graphql.IntSysSystemAuth{
+		return graphql.IntSysSystemAuth{
 			ID:                in.ID,
 			Auth:              auth,
 			Type:              &systemAuthTypeIntSystem,
@@ -69,7 +69,7 @@ func (c *converter) ToGraphQL(in *systemauth.SystemAuth) (graphql.SystemAuth, er
 			ReferenceObjectID: in.IntegrationSystemID,
 		}, nil
 	case systemauth.RuntimeReference:
-		return &graphql.RuntimeSystemAuth{
+		return graphql.RuntimeSystemAuth{
 			ID:                in.ID,
 			Auth:              auth,
 			Type:              &systemAuthTypeRuntime,
