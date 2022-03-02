@@ -100,7 +100,7 @@ release: verify build-image push-image
 .PHONY: build-image push-image
 build-image: pull-licenses
 	docker buildx create --name multi-arch-builder --use
-	docker buildx build --platform linux/amd64,linux/arm64 -t $(IMG_NAME) .
+	docker buildx build --platform linux/amd64,linux/arm64 -t $(IMG_NAME) --load .
 push-image:
 	docker tag $(IMG_NAME) $(IMG_NAME):$(TAG)
 	docker push $(IMG_NAME):$(TAG)
