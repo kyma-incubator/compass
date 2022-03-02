@@ -47,5 +47,8 @@ func newAuthorizedHTTPClient(timeout time.Duration) *http.Client {
 	return &http.Client{
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(transport)),
 		Timeout:   timeout,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
 	}
 }
