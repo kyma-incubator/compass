@@ -3,8 +3,9 @@ package tests
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"

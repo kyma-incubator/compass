@@ -18,9 +18,10 @@ package tests
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"os"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"

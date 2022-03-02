@@ -3,6 +3,9 @@ package certprovider
 import (
 	"context"
 	"crypto/rsa"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
@@ -10,8 +13,6 @@ import (
 	v1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"testing"
-	"time"
 )
 
 type ExternalCertProviderConfig struct {
