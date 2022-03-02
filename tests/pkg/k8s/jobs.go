@@ -56,13 +56,14 @@ func CreateJobByGivenJobDefinition(t *testing.T, ctx context.Context, k8sClient 
 func DeleteSecret(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, secretName, namespace string) {
 	t.Logf("Deleting test secret %q in %q namespace...", secretName, namespace)
 	err := k8sClient.CoreV1().Secrets(namespace).Delete(ctx, secretName, metav1.DeleteOptions{GracePeriodSeconds: &gracePeriod, PropagationPolicy: nil})
-	if strings.Contains(err.Error(), "not found") {
+	if err != nil && strings.Contains(err.Error(), "not found") {
 		require.Error(t, err)
 		t.Logf("Test secret %q in %q namespace does not exists", secretName, namespace)
-	} else {
-		require.NoError(t, err)
-		t.Logf("Test secret %q in %q namespace was successfully deleted", secretName, namespace)
+		return
 	}
+
+	require.NoError(t, err)
+	t.Logf("Test secret %q in %q namespace was successfully deleted", secretName, namespace)
 }
 
 func DeleteJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace string) {
