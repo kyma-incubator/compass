@@ -41,7 +41,7 @@ spec:
 {{ if contains "local" $adapterName }}
                 value: {{ tpl $config.envs.mappingTemplateExternalURL $global }}
 {{ else }}
-                value: {{ $config.envs.mappingTemplateExternalURL  }}
+                value: {{ $config.envs.mappingTemplateExternalURL }}
 {{ end }}
               - name: MAPPING_TEMPLATE_HEADERS
                 value: {{ $config.envs.mappingTemplateHeaders | quote }}

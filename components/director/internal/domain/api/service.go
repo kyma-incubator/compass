@@ -176,7 +176,8 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 				APIDefaultTargetURL: &defaultTargetURL,
 			}
 			if defaultBundleID != "" && crrBndlID == defaultBundleID {
-				bundleRefInput.IsDefaultBundle = true
+				isDefaultBundle := true
+				bundleRefInput.IsDefaultBundle = &isDefaultBundle
 			}
 			err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, &crrBndlID)
 			if err != nil {
@@ -221,13 +222,13 @@ func (s *service) UpdateInManyBundles(ctx context.Context, id string, in model.A
 			return err
 		}
 	} else {
-		err = s.updateBundleReferences(ctx, &api.ID, defaultTargetURLPerBundleForUpdate, defaultBundleID)
+		err = s.updateBundleReferences(ctx, api, defaultTargetURLPerBundleForUpdate, defaultBundleID)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = s.createBundleReferences(ctx, &api.ID, defaultTargetURLPerBundleForCreation, defaultBundleID)
+	err = s.createBundleReferences(ctx, api, defaultTargetURLPerBundleForCreation, defaultBundleID)
 	if err != nil {
 		return err
 	}
@@ -302,16 +303,17 @@ func (s *service) ListFetchRequests(ctx context.Context, specIDs []string) ([]*m
 	return fetchRequests, nil
 }
 
-func (s *service) updateBundleReferences(ctx context.Context, apiID *string, defaultTargetURLPerBundleForUpdate map[string]string, defaultBundleID string) error {
+func (s *service) updateBundleReferences(ctx context.Context, api *model.APIDefinition, defaultTargetURLPerBundleForUpdate map[string]string, defaultBundleID string) error {
 	for crrBndlID, defaultTargetURL := range defaultTargetURLPerBundleForUpdate {
 		bundleRefInput := &model.BundleReferenceInput{
 			APIDefaultTargetURL: &defaultTargetURL,
 		}
 		if defaultBundleID != "" && defaultBundleID == crrBndlID {
-			bundleRefInput.IsDefaultBundle = true
+			isDefaultBundle := true
+			bundleRefInput.IsDefaultBundle = &isDefaultBundle
 		}
 
-		err := s.bundleReferenceService.UpdateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, apiID, &crrBndlID)
+		err := s.bundleReferenceService.UpdateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, &crrBndlID)
 		if err != nil {
 			return err
 		}
@@ -319,16 +321,17 @@ func (s *service) updateBundleReferences(ctx context.Context, apiID *string, def
 	return nil
 }
 
-func (s *service) createBundleReferences(ctx context.Context, apiID *string, defaultTargetURLPerBundleForCreation map[string]string, defaultBundleID string) error {
+func (s *service) createBundleReferences(ctx context.Context, api *model.APIDefinition, defaultTargetURLPerBundleForCreation map[string]string, defaultBundleID string) error {
 	for crrBndlID, defaultTargetURL := range defaultTargetURLPerBundleForCreation {
 		bundleRefInput := &model.BundleReferenceInput{
 			APIDefaultTargetURL: &defaultTargetURL,
 		}
 		if defaultBundleID != "" && crrBndlID == defaultBundleID {
-			bundleRefInput.IsDefaultBundle = true
+			isDefaultBundle := true
+			bundleRefInput.IsDefaultBundle = &isDefaultBundle
 		}
 
-		err := s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, apiID, &crrBndlID)
+		err := s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, &crrBndlID)
 		if err != nil {
 			return err
 		}

@@ -26,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	oauth "github.com/kyma-incubator/compass/components/director/pkg/oauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 
 	httpdirector "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -84,7 +84,7 @@ func (p *mtlsTokenAuthorizationProvider) Matches(ctx context.Context) bool {
 		return false
 	}
 
-	return credentials.Type() == OAuthCredentialType
+	return credentials.Type() == OAuthMtlsCredentialType
 }
 
 // GetAuthorization crafts an OAuth Bearer token to inject as part of the executing request
@@ -96,7 +96,7 @@ func (p *mtlsTokenAuthorizationProvider) GetAuthorization(ctx context.Context) (
 		return "", err
 	}
 
-	mtlsCredentials, ok := credentials.Get().(*OAuthCredentials)
+	mtlsCredentials, ok := credentials.Get().(*OAuthMtlsCredentials)
 	if !ok {
 		return "", errors.New("failed to cast credentials to mtls oauth credentials type")
 	}
@@ -109,7 +109,7 @@ func (p *mtlsTokenAuthorizationProvider) GetAuthorization(ctx context.Context) (
 	return "Bearer " + token.AccessToken, nil
 }
 
-func (p *mtlsTokenAuthorizationProvider) getToken(ctx context.Context, credentials *OAuthCredentials) (httputils.Token, error) {
+func (p *mtlsTokenAuthorizationProvider) getToken(ctx context.Context, credentials *OAuthMtlsCredentials) (httputils.Token, error) {
 	form := url.Values{}
 	form.Add("grant_type", "client_credentials")
 	form.Add("client_id", credentials.ClientID)

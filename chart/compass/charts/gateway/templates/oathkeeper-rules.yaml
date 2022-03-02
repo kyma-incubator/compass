@@ -140,6 +140,29 @@ spec:
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule
 metadata:
+  name: compass-director-internal
+spec:
+  # Configuration of oathkeeper for secure endpoint internal communication with compass director
+  upstream:
+    url: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}"
+  match:
+    methods: ["GET", "POST", "OPTIONS"]
+    url: <http|https>://{{ .Values.global.director.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>/<.*>
+  authenticators:
+    - handler: jwt
+      config:
+        jwks_urls: [{{ .Values.global.kubernetes.serviceAccountTokenJWKS }}]
+  authorizer:
+    handler: allow
+  mutators:
+    - handler: noop # This will copy all request headers to the oathkeeper's session, making them available in the claims template
+    - handler: id_token
+      config:
+        claims: {{ .Values.global.oathkeeper.idTokenConfig.internalClaims | quote }}
+---
+apiVersion: oathkeeper.ory.sh/v1alpha1
+kind: Rule
+metadata:
   name: compass-director-certs
 spec:
   # Configuration of oathkeeper for secure endpoint of compass gateway
@@ -157,6 +180,10 @@ spec:
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
+  - handler: header
+    config:
+      headers:
+        {{ .Values.global.gateway.headers.rateLimit }}: "{{ .Values.rateLimit.headerValueTemplate }}"
   - handler: id_token
     config:
       claims: {{ .Values.global.oathkeeper.idTokenConfig.claims | quote }}
@@ -249,6 +276,10 @@ spec:
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
+  - handler: header
+    config:
+      headers:
+        {{ .Values.global.gateway.headers.rateLimit }}: "{{ .Values.rateLimit.headerValueTemplate }}"
   - handler: id_token
     config:
       claims: {{ .Values.global.oathkeeper.idTokenConfig.claims | quote }}

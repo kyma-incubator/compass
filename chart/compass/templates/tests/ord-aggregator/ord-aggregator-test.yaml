@@ -18,6 +18,7 @@ spec:
       labels:
         app: {{ .Chart.Name }}-ord-aggregator-tests-app
     spec:
+      serviceAccountName: {{ $.Chart.Name }}-e2e-ord-aggregator
       containers:
         - name: ord-aggregator-tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
@@ -31,38 +32,48 @@ spec:
               value: "{{ .Values.global.tests.ordServiceFQDN }}:{{ .Values.global.director.graphql.external.port }}/actuator/health"
             - name: DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
+            - name: DIRECTOR_GRAPHQL_OAUTH_URL
+              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:8080"
             - name: EXTERNAL_SERVICES_MOCK_UNSECURED_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.unsecuredPort}}/.well-known/open-resource-discovery"
             - name: EXTERNAL_SERVICES_MOCK_ABSOLUTE_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.unsecuredPort}}/test/fullPath"
-            - name: EXTERNAL_SERVICES_MOCK_CERT_SECURED_URL
-              value: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}/.well-known/open-resource-discovery"
+            - name: EXTERNAL_SERVICES_MOCK_ORD_CERT_SECURED_URL
+              value: "https://{{ .Values.global.externalServicesMock.ordCertSecuredHost }}.{{ .Values.global.ingress.domainName }}/.well-known/open-resource-discovery"
             - name: EXTERNAL_SERVICES_MOCK_BASIC_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.basicSecuredPort }}/.well-known/open-resource-discovery"
             - name: EXTERNAL_SERVICES_MOCK_OAUTH_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.oauthSecuredPort }}/.well-known/open-resource-discovery"
+            - name: GLOBAL_REGISTRY_URL
+              value: "{{ .Values.global.ordAggregator.globalRegistryUrl }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: APP_EXTERNAL_CLIENT_KEY_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: BASIC_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.testCredentials.secretName }}
+                  name: {{ .Values.global.tests.basicCredentials.secretName }}
                   key: username
             - name: BASIC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.testCredentials.secretName }}
+                  name: {{ .Values.global.tests.basicCredentials.secretName }}
                   key: password
             - name: CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.externalServicesMock.oauthSecretName }}
-                  key: client-id
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientIdKey }}
             - name: CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.externalServicesMock.oauthSecretName }}
-                  key: client-secret
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientSecretKey }}
             - name: ORD_SERVICE_DEFAULT_RESPONSE_TYPE
               value: {{ .Values.global.ordService.defaultResponseType }}
             - name: AGGREGATOR_SCHEDULE
@@ -86,3 +97,38 @@ spec:
             - name: APP_ADDRESS
               value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
       restartPolicy: Never
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $.Chart.Name }}-e2e-ord-aggregator
+  namespace: {{ .Values.global.tests.namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ $.Chart.Name }}-e2e-ord-aggregator
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $.Chart.Name }}-e2e-ord-aggregator
+    namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+  apiGroup: rbac.authorization.k8s.io
+

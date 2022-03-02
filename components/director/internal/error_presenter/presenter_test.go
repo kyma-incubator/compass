@@ -35,14 +35,12 @@ func TestPresenter_ErrorPresenter(t *testing.T) {
 		err := presenter.Do(ctx, errors.New(errMsg))
 
 		entry := hook.LastEntry()
-		actualErrMsg, ok := entry.Data[logrus.ErrorKey].(error)
-		require.True(t, ok)
 
 		// THEN
 		require.NotNil(t, entry)
 		assert.Equal(t, fmt.Sprintf("Unknown error: %s", errMsg), entry.Message)
-		assert.Equal(t, errMsg, actualErrMsg.Error())
 		assert.Contains(t, err.Error(), "Internal Server Error")
+		assert.Contains(t, err.Error(), fmt.Sprintf("reason: %s", errMsg))
 		hook.Reset()
 	})
 
@@ -56,13 +54,10 @@ func TestPresenter_ErrorPresenter(t *testing.T) {
 		err := presenter.Do(ctx, customErr)
 
 		entry := hook.LastEntry()
-		actualErrMsg, ok := entry.Data[logrus.ErrorKey].(error)
-		require.True(t, ok)
 
 		// THEN
 		require.NotNil(t, entry)
-		assert.Equal(t, fmt.Sprintf("Internal Server Error: %s", actualErrMsg.Error()), entry.Message)
-		assert.Equal(t, fmt.Sprintf("Internal Server Error: %s", errMsg), actualErrMsg.Error())
+		assert.Equal(t, fmt.Sprintf("Internal Server Error: %s", customErr.Error()), entry.Message)
 		assert.Contains(t, err.Error(), "Internal Server Error")
 		hook.Reset()
 	})

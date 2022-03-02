@@ -159,7 +159,7 @@ func (c *converter) FromEntity(entity *Entity) *model.APIDefinition {
 		Successors:                              repo.JSONRawMessageFromNullableString(entity.Successors),
 		ChangeLogEntries:                        repo.JSONRawMessageFromNullableString(entity.ChangeLogEntries),
 		Labels:                                  repo.JSONRawMessageFromNullableString(entity.Labels),
-		Visibility:                              repo.StringPtrFromNullableString(entity.Visibility),
+		Visibility:                              &entity.Visibility,
 		Disabled:                                repo.BoolPtrFromNullableBool(entity.Disabled),
 		PartOfProducts:                          repo.JSONRawMessageFromNullableString(entity.PartOfProducts),
 		LineOfBusiness:                          repo.JSONRawMessageFromNullableString(entity.LineOfBusiness),
@@ -184,6 +184,11 @@ func (c *converter) FromEntity(entity *Entity) *model.APIDefinition {
 
 // ToEntity converts the provided service-layer representation of an APIDefinition to the repository-layer one.
 func (c *converter) ToEntity(apiModel *model.APIDefinition) *Entity {
+	visibility := apiModel.Visibility
+	if visibility == nil {
+		visibility = str.Ptr("public")
+	}
+
 	return &Entity{
 		ApplicationID:                           apiModel.ApplicationID,
 		PackageID:                               repo.NewNullableString(apiModel.PackageID),
@@ -204,7 +209,7 @@ func (c *converter) ToEntity(apiModel *model.APIDefinition) *Entity {
 		Successors:                              repo.NewNullableStringFromJSONRawMessage(apiModel.Successors),
 		ChangeLogEntries:                        repo.NewNullableStringFromJSONRawMessage(apiModel.ChangeLogEntries),
 		Labels:                                  repo.NewNullableStringFromJSONRawMessage(apiModel.Labels),
-		Visibility:                              repo.NewNullableString(apiModel.Visibility),
+		Visibility:                              *visibility,
 		Disabled:                                repo.NewNullableBool(apiModel.Disabled),
 		PartOfProducts:                          repo.NewNullableStringFromJSONRawMessage(apiModel.PartOfProducts),
 		LineOfBusiness:                          repo.NewNullableStringFromJSONRawMessage(apiModel.LineOfBusiness),

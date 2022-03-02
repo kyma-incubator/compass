@@ -205,7 +205,7 @@ func main() {
 
 	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
 
-	rootResolver := domain.NewRootResolver(
+	rootResolver, err := domain.NewRootResolver(
 		&normalizer.DefaultNormalizator{},
 		transact,
 		cfgProvider,
@@ -220,8 +220,8 @@ func main() {
 		cfg.OneTimeToken.Length,
 		adminURL,
 		accessStrategyExecutorProvider,
-		certCache,
 	)
+	exitOnError(err, "Failed to initialize root resolver")
 
 	gqlCfg := graphql.Config{
 		Resolvers: rootResolver,

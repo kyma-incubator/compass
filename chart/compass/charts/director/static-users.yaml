@@ -30,3 +30,4 @@
   - "fetch-request.auth:read"
   - "webhooks.auth:read"
   - "formation:write"
+  - "internal_visibility:read"

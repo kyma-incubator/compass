@@ -488,6 +488,17 @@ func AssertSpecInBundleNotNil(t *testing.T, bndl graphql.BundleExt) {
 	assert.NotNil(t, bndl.APIDefinitions.Data[0].Spec.Data)
 }
 
+func AssertSpecsFromORDService(t *testing.T, respBody string, expectedNumberOfAPIs int, apiSpecsMap map[string]int) []gjson.Result {
+	var specs []gjson.Result
+
+	for i := 0; i < expectedNumberOfAPIs; i++ {
+		crrSpecs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", i)).Array()
+		require.Equal(t, apiSpecsMap[gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()], len(crrSpecs))
+		specs = append(specs, crrSpecs...)
+	}
+	return specs
+}
+
 func AssertSingleEntityFromORDService(t *testing.T, respBody string, expectedNumber int, expectedName, expectedDescription, descriptionField string) {
 	numberOfEntities := len(gjson.Get(respBody, "value").Array())
 	require.Equal(t, expectedNumber, numberOfEntities)
