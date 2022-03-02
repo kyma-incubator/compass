@@ -112,7 +112,7 @@ metadata:
     app.kubernetes.io/instance: {{ $.Release.Name }}
 subjects:
   - kind: ServiceAccount
-    name: {{ .Chart.Name }}-e2e-director
+    name: {{ .Chart.Name }}-director-bench-app
     namespace: {{ .Values.global.tests.namespace }}
 roleRef:
   kind: Role
