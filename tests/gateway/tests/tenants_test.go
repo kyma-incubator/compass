@@ -4,6 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
@@ -23,7 +26,6 @@ func TestTenantErrors(t *testing.T) {
 
 	ctx := context.Background()
 
-	t.Log("Register application as Static User")
 	appInput := graphql.ApplicationRegisterInput{
 		Name:         "app-static-user",
 		ProviderName: ptr.String("compass"),
@@ -31,10 +33,6 @@ func TestTenantErrors(t *testing.T) {
 	_, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, notExistingTenant, appInput)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), tenantNotFoundMessage)
-
-	_, err = fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, emptyTenant, appInput) // TODO: no longer error
-	require.Error(t, err)
-	require.Contains(t, err.Error(), tenantRequiredMessage)
 
 	is, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, "test")
 	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, is)
@@ -51,4 +49,15 @@ func TestTenantErrors(t *testing.T) {
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, emptyTenant, req, &credentials)
 	require.NoError(t, err)
 	require.NotNil(t, credentials)
+
+	intSysOauthCredentialData, ok := credentials.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.DirectorURL)
+
+	_, err = fixtures.RegisterApplicationFromInput(t, ctx, oauthGraphQLClient, emptyTenant, appInput)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), tenantRequiredMessage)
 }
