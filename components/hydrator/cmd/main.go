@@ -39,6 +39,7 @@ import (
 	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/runtimemapping"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
+	tenantmappingconst "github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
@@ -232,11 +233,11 @@ func getTenantMappingHandlerFunc(authenticators []authenticator.Config, clientPr
 	}
 
 	objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-		tenantmapping.UserObjectContextProvider:          tenantmapping.NewUserContextProvider(clientProvider.Client(), staticUsersRepo, staticGroupsRepo),
-		tenantmapping.SystemAuthObjectContextProvider:    tenantmapping.NewSystemAuthContextProvider(clientProvider.Client(), cfgProvider),
-		tenantmapping.AuthenticatorObjectContextProvider: tenantmapping.NewAuthenticatorContextProvider(clientProvider.Client(), authenticators),
-		tenantmapping.CertServiceObjectContextProvider:   tenantmapping.NewCertServiceContextProvider(clientProvider.Client(), cfgProvider),
-		tenantmapping.TenantHeaderObjectContextProvider:  tenantmapping.NewAccessLevelContextProvider(clientProvider.Client()),
+		tenantmappingconst.UserObjectContextProvider:          tenantmapping.NewUserContextProvider(clientProvider.Client(), staticUsersRepo, staticGroupsRepo),
+		tenantmappingconst.SystemAuthObjectContextProvider:    tenantmapping.NewSystemAuthContextProvider(clientProvider.Client(), cfgProvider),
+		tenantmappingconst.AuthenticatorObjectContextProvider: tenantmapping.NewAuthenticatorContextProvider(clientProvider.Client(), authenticators),
+		tenantmappingconst.CertServiceObjectContextProvider:   tenantmapping.NewCertServiceContextProvider(clientProvider.Client(), cfgProvider),
+		tenantmappingconst.TenantHeaderObjectContextProvider:  tenantmapping.NewAccessLevelContextProvider(clientProvider.Client()),
 	}
 	reqDataParser := oathkeeper.NewReqDataParser()
 
