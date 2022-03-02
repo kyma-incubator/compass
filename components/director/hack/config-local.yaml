@@ -142,6 +142,7 @@ clientCredentialsRegistrationScopes:
     - "application.webhooks:read"
     - "application_template.webhooks:read"
     - "formation:write"
+    - "internal_visibility:read"
 applicationHideSelectors:
   applicationHideSelectorKey:
     - "applicationHideSelectorValue"

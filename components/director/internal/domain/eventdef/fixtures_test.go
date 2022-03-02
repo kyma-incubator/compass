@@ -28,6 +28,7 @@ const (
 	extensible       = `{"supported":"automatic","description":"Please find the extensibility documentation"}`
 	successors       = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1"]`
 	resourceHash     = "123456"
+	publicVisibility = "public"
 )
 
 var fixedTimestamp = time.Now()
@@ -36,6 +37,7 @@ func fixEventDefinitionModel(id string, name string) *model.EventDefinition {
 	return &model.EventDefinition{
 		Name:       name,
 		BaseEntity: &model.BaseEntity{ID: id},
+		Visibility: str.Ptr(publicVisibility),
 	}
 }
 
@@ -88,7 +90,7 @@ func fixFullEventDefinitionModelWithID(id, placeholder string) (model.EventDefin
 		Successors:          json.RawMessage(successors),
 		ChangeLogEntries:    json.RawMessage("[]"),
 		Labels:              json.RawMessage("[]"),
-		Visibility:          str.Ptr("visibility"),
+		Visibility:          str.Ptr(publicVisibility),
 		Disabled:            &boolVar,
 		PartOfProducts:      json.RawMessage("[]"),
 		LineOfBusiness:      json.RawMessage("[]"),
@@ -210,6 +212,7 @@ func fixEntityEventDefinition(id string, name string) *event.Entity {
 	return &event.Entity{
 		Name:       name,
 		BaseEntity: &repo.BaseEntity{ID: id},
+		Visibility: publicVisibility,
 	}
 }
 
@@ -231,7 +234,7 @@ func fixFullEntityEventDefinition(eventID, placeholder string) *event.Entity {
 		SunsetDate:          repo.NewValidNullableString("sunsetDate"),
 		Successors:          repo.NewValidNullableString(successors),
 		Labels:              repo.NewValidNullableString("[]"),
-		Visibility:          repo.NewValidNullableString("visibility"),
+		Visibility:          publicVisibility,
 		Disabled:            repo.NewValidNullableBool(false),
 		PartOfProducts:      repo.NewValidNullableString("[]"),
 		LineOfBusiness:      repo.NewValidNullableString("[]"),
@@ -266,7 +269,7 @@ func fixEventDefinitionColumns() []string {
 func fixEventDefinitionRow(id, placeholder string) []driver.Value {
 	boolVar := false
 	return []driver.Value{id, appID, packageID, placeholder, "desc_" + placeholder, "group_" + placeholder, ordID, "shortDescription", &boolVar,
-		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", repo.NewValidNullableString("[]"), "visibility", &boolVar,
+		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "releaseStatus", "sunsetDate", repo.NewValidNullableString("[]"), publicVisibility, &boolVar,
 		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), "v1.1", false, "v1.0", false, true, fixedTimestamp, time.Time{}, time.Time{}, nil, repo.NewValidNullableString(extensible), repo.NewValidNullableString(successors), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]")}
 }
 

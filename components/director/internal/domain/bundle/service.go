@@ -103,6 +103,11 @@ func (s *service) Update(ctx context.Context, id string, in model.BundleUpdateIn
 	}
 
 	bndl, err := s.bndlRepo.GetByID(ctx, tnt, id)
+
+	return updateBundle(ctx, id, in, err, bndl, s, tnt)
+}
+
+func updateBundle(ctx context.Context, id string, in model.BundleUpdateInput, err error, bndl *model.Bundle, s *service, tnt string) error {
 	if err != nil {
 		return errors.Wrapf(err, "while getting Bundle with id %s", id)
 	}

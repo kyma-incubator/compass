@@ -2,6 +2,11 @@ package bundlereferences
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -12,6 +17,10 @@ import (
 const (
 	// BundleReferenceTable represents the db name of the BundleReference table
 	BundleReferenceTable string = `public.bundle_references`
+	// APIDefTable represents the db name of the API Definitions table
+	APIDefTable string = `api_definitions`
+	// EventDefTable represents the db name of the Event Definitions table
+	EventDefTable string = `event_api_definitions`
 
 	// APIDefIDColumn represents the db column of the APIDefinition ID
 	APIDefIDColumn string = "api_def_id"
@@ -19,7 +28,11 @@ const (
 	APIDefURLColumn string = "api_def_url"
 	// EventDefIDColumn represents the db column of the EventDefinition ID
 	EventDefIDColumn string = "event_def_id"
-	bundleIDColumn   string = "bundle_id"
+
+	bundleIDColumn          string = "bundle_id"
+	visibilityColumn        string = "visibility"
+	internalVisibilityScope string = "internal_visibility:read"
+	publicVisibilityValue   string = "public"
 )
 
 var (
@@ -177,7 +190,7 @@ func (r *repository) DeleteByReferenceObjectID(ctx context.Context, bundleID str
 
 // ListByBundleIDs retrieves all BundleReferences matching an array of bundleIDs from the Compass storage.
 func (r *repository) ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error) {
-	columns, err := getSelectedColumnsByObjectType(objectType)
+	objectTable, objectIDCol, columns, err := getDetailsByObjectType(objectType)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -190,9 +203,21 @@ func (r *repository) ListByBundleIDs(ctx context.Context, objectType model.Bundl
 		return nil, nil, err
 	}
 
-	conditions := repo.Conditions{
-		repo.NewNotNullCondition(objectFieldName),
+	isInternalVisibilityScopePresent, err := scope.Contains(ctx, internalVisibilityScope)
+	if err != nil {
+		log.C(ctx).Infof("No scopes are present in the context meaning the flow is not user-initiated. Processing %ss without visibility check...", objectType)
+		isInternalVisibilityScopePresent = true
 	}
+
+	visibilityFilteringSubquery := fmt.Sprintf("(SELECT %s FROM %s WHERE %s.id = %s.%s)", visibilityColumn, objectTable, objectTable, BundleReferenceTable, objectIDCol)
+	var conditions repo.Conditions
+	if !isInternalVisibilityScopePresent {
+		log.C(ctx).Infof("No internal visibility scope is present in the context. Processing only public %ss...", objectType)
+		conditions = append(conditions, repo.NewEqualCondition(visibilityFilteringSubquery, publicVisibilityValue))
+	}
+
+	log.C(ctx).Infof("Internal visibility scope is present in the context. Processing %ss without visibility check...", objectType)
+	conditions = append(conditions, repo.NewNotNullCondition(objectFieldName))
 
 	orderByColumns, err := getOrderByColumnsByObjectType(objectType)
 	if err != nil {
@@ -227,14 +252,14 @@ func (r *repository) referenceObjectFieldName(objectType model.BundleReferenceOb
 	return "", apperrors.NewInternalError("Invalid type of the BundleReference object")
 }
 
-func getSelectedColumnsByObjectType(objectType model.BundleReferenceObjectType) ([]string, error) {
+func getDetailsByObjectType(objectType model.BundleReferenceObjectType) (string, string, []string, error) {
 	switch objectType {
 	case model.BundleAPIReference:
-		return []string{APIDefIDColumn, bundleIDColumn, APIDefURLColumn}, nil
+		return APIDefTable, APIDefIDColumn, []string{APIDefIDColumn, bundleIDColumn, APIDefURLColumn}, nil
 	case model.BundleEventReference:
-		return []string{EventDefIDColumn, bundleIDColumn}, nil
+		return EventDefTable, EventDefIDColumn, []string{EventDefIDColumn, bundleIDColumn}, nil
 	}
-	return []string{""}, apperrors.NewInternalError("Invalid type of the BundleReference object")
+	return "", "", []string{""}, apperrors.NewInternalError("Invalid type of the BundleReference object")
 }
 
 func getOrderByColumnsByObjectType(objectType model.BundleReferenceObjectType) (repo.OrderByParams, error) {

@@ -31,6 +31,7 @@ type OAuth2Config struct {
 	ClientSecret       string `envconfig:"optional,APP_CLIENT_SECRET"`
 	OAuthTokenEndpoint string `envconfig:"APP_OAUTH_TOKEN_ENDPOINT"`
 	TokenPath          string `envconfig:"optional,APP_OAUTH_TOKEN_PATH"`
+	SkipSSLValidation  bool   `envconfig:"APP_OAUTH_SKIP_SSL_VALIDATION,default=false"`
 	X509Config         oauth.X509Config
 }
 
@@ -94,7 +95,8 @@ func NewClient(oAuth2Config OAuth2Config, authMode oauth.AuthMode, apiConfig API
 
 		transport := &http.Transport{
 			TLSClientConfig: &tls.Config{
-				Certificates: []tls.Certificate{*cert},
+				Certificates:       []tls.Certificate{*cert},
+				InsecureSkipVerify: oAuth2Config.SkipSSLValidation,
 			},
 		}
 

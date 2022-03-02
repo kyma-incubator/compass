@@ -148,7 +148,7 @@ func (r *pgRepository) GetByIDGlobal(ctx context.Context, id string) (*model.Ven
 // ListByApplicationID gets a list of Vendors by given application id
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Vendor, error) {
 	vendorCollection := vendorCollection{}
-	if err := r.lister.List(ctx, resource.Vendor, tenantID, &vendorCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Vendor, tenantID, &vendorCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
 		return nil, err
 	}
 	vendors := make([]*model.Vendor, 0, vendorCollection.Len())
@@ -165,7 +165,7 @@ func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID 
 // ListGlobal lists all Global Vendors (with NULL app_id) without tenant isolation.
 func (r *pgRepository) ListGlobal(ctx context.Context) ([]*model.Vendor, error) {
 	vendorCollection := vendorCollection{}
-	if err := r.listerGlobal.ListGlobal(ctx, &vendorCollection, repo.NewNullCondition("app_id")); err != nil {
+	if err := r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &vendorCollection, repo.NewNullCondition("app_id")); err != nil {
 		return nil, err
 	}
 	vendors := make([]*model.Vendor, 0, vendorCollection.Len())

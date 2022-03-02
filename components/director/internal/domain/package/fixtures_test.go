@@ -39,6 +39,7 @@ func fixEntityPackageWithTitle(title string) *ordpackage.Entity {
 		PackageLinks:        repo.NewValidNullableString("{}"),
 		Links:               repo.NewValidNullableString("[]"),
 		LicenseType:         sql.NullString{String: "test", Valid: true},
+		SupportInfo:         sql.NullString{String: "support-info", Valid: true},
 		Tags:                repo.NewValidNullableString("[]"),
 		Countries:           repo.NewValidNullableString("[]"),
 		Labels:              repo.NewValidNullableString("{}"),
@@ -63,6 +64,7 @@ func fixPackageModel() *model.Package {
 func fixPackageModelWithTitle(title string) *model.Package {
 	vendorID := "vendorID"
 	licenceType := "test"
+	supportInfo := "support-info"
 	return &model.Package{
 		ID:                  packageID,
 		ApplicationID:       appID,
@@ -75,6 +77,7 @@ func fixPackageModelWithTitle(title string) *model.Package {
 		PackageLinks:        json.RawMessage("{}"),
 		Links:               json.RawMessage("[]"),
 		LicenseType:         &licenceType,
+		SupportInfo:         &supportInfo,
 		Tags:                json.RawMessage("[]"),
 		Countries:           json.RawMessage("[]"),
 		Labels:              json.RawMessage("{}"),
@@ -91,6 +94,7 @@ func fixPackageModelWithTitle(title string) *model.Package {
 func fixPackageModelInput() *model.PackageInput {
 	vendorID := "vendorID"
 	licenceType := "test"
+	supportInfo := "support-info"
 	return &model.PackageInput{
 		OrdID:               ordID,
 		Vendor:              &vendorID,
@@ -101,6 +105,7 @@ func fixPackageModelInput() *model.PackageInput {
 		PackageLinks:        json.RawMessage("{}"),
 		Links:               json.RawMessage("[]"),
 		LicenseType:         &licenceType,
+		SupportInfo:         &supportInfo,
 		Tags:                json.RawMessage("[]"),
 		Countries:           json.RawMessage("[]"),
 		Labels:              json.RawMessage("{}"),
@@ -116,7 +121,7 @@ func fixPackageModelInput() *model.PackageInput {
 func fixPackageColumns() []string {
 	return []string{"id", "app_id", "ord_id", "vendor", "title", "short_description",
 		"description", "version", "package_links", "links", "licence_type", "tags", "countries", "labels", "policy_level",
-		"custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash", "documentation_labels"}
+		"custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash", "documentation_labels", "support_info"}
 }
 
 func fixPackageRow() []driver.Value {
@@ -126,11 +131,11 @@ func fixPackageRow() []driver.Value {
 func fixPackageRowWithTitle(title string) []driver.Value {
 	return []driver.Value{packageID, appID, ordID, "vendorID", title, "short desc", "desc", "v1.0.5",
 		repo.NewValidNullableString("{}"), repo.NewValidNullableString("[]"), "test", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}"),
-		"test", nil, repo.NewValidNullableString("[\"test\"]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]")}
+		"test", nil, repo.NewValidNullableString("[\"test\"]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]"), "support-info"}
 }
 
 func fixPackageUpdateArgs() []driver.Value {
 	return []driver.Value{"vendorID", "title", "short desc", "desc", "v1.0.5", repo.NewValidNullableString("{}"), repo.NewValidNullableString("[]"),
 		"test", repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString("{}"), "test", nil, repo.NewValidNullableString("[\"test\"]"),
-		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]")}
+		repo.NewValidNullableString("[]"), repo.NewValidNullableString("[]"), repo.NewValidNullableString(resourceHash), repo.NewValidNullableString("[]"), "support-info"}
 }

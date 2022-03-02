@@ -101,6 +101,24 @@ func (r *repository) ListByApplicationID(ctx context.Context, tenant, applicatio
 		return nil, err
 	}
 
+	return convertToWebhooks(entities, r)
+}
+
+func (r *repository) ListByApplicationIDWithSelectForUpdate(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error) {
+	var entities Collection
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("app_id", applicationID),
+	}
+
+	if err := r.lister.ListWithSelectForUpdate(ctx, resource.AppWebhook, tenant, &entities, conditions...); err != nil {
+		return nil, err
+	}
+
+	return convertToWebhooks(entities, r)
+}
+
+func convertToWebhooks(entities Collection, r *repository) ([]*model.Webhook, error) {
 	out := make([]*model.Webhook, 0, len(entities))
 	for _, ent := range entities {
 		w, err := r.conv.FromEntity(&ent)

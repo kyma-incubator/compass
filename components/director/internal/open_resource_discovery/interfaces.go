@@ -17,6 +17,7 @@ type labelRepository interface {
 //go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore
 type WebhookService interface {
 	ListForApplication(ctx context.Context, applicationID string) ([]*model.Webhook, error)
+	ListForApplicationWithSelectForUpdate(ctx context.Context, applicationID string) ([]*model.Webhook, error)
 }
 
 // ApplicationService is responsible for the service-layer Application operations.

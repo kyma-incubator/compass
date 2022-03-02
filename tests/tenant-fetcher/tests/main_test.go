@@ -49,8 +49,6 @@ type testConfig struct {
 	TenantFetcherFullURL             string `envconfig:"-"`
 	TenantFetcherFullRegionalURL     string `envconfig:"-"`
 	TenantFetcherFullDependenciesURL string `envconfig:"-"`
-	SubscriptionProviderLabelKey     string `envconfig:"APP_SUBSCRIPTION_PROVIDER_LABEL_KEY"`
-	ConsumerSubaccountIDsLabelKey    string `envconfig:"APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY"`
 }
 
 type TenantProviderConfig struct {
