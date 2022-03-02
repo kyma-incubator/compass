@@ -18,15 +18,16 @@ package main
 
 import (
 	"context"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	"github.com/kyma-incubator/compass/components/director/pkg/namespacedname"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/istiocertresolver"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/revocation"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/subject"
-	"net/http"
-	"os"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"

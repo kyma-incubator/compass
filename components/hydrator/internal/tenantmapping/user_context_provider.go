@@ -3,6 +3,7 @@ package tenantmapping
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 	"strings"
 
 	directorErrors "github.com/kyma-incubator/compass/components/system-broker/pkg/director"
@@ -25,8 +26,8 @@ func NewUserContextProvider(clientProvider DirectorClient, staticUserRepo Static
 		staticUserRepo:  staticUserRepo,
 		staticGroupRepo: staticGroupRepo,
 		tenantKeys: KeysExtra{
-			TenantKey:         ConsumerTenantKey,
-			ExternalTenantKey: ExternalTenantKey,
+			TenantKey:         tenantmapping.ConsumerTenantKey,
+			ExternalTenantKey: tenantmapping.ExternalTenantKey,
 		},
 	}
 }
@@ -69,7 +70,7 @@ func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oath
 		log.C(ctx).Warningf("Could not get tenant external id, error: %s", err.Error())
 
 		log.C(ctx).Info("Could not create tenant context, returning empty context...")
-		return NewObjectContext(TenantContext{}, m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.User, UserObjectContextProvider), nil
+		return NewObjectContext(TenantContext{}, m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.UserObjectContextProvider), nil
 	}
 
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
@@ -79,7 +80,7 @@ func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oath
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(NewTenantContext(externalTenantID, ""), m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.User, UserObjectContextProvider), nil
+			return NewObjectContext(NewTenantContext(externalTenantID, ""), m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.UserObjectContextProvider), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
@@ -88,7 +89,7 @@ func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oath
 		return ObjectContext{}, apperrors.NewInternalError(fmt.Sprintf("Static tenant with username: %s missmatch external tenant: %s", staticUser.Username, externalTenantID))
 	}
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.User, UserObjectContextProvider)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.UserObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
 	return objCtx, nil

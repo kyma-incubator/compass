@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping/automock"
 	"net/http"
 	"net/textproto"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping/automock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"

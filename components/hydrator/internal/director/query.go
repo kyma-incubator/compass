@@ -119,9 +119,7 @@ func UpdateSystemAuthQuery(authID string, gqlAuth graphql.Auth) (string, error) 
 	}
 
 	return fmt.Sprintf(`mutation {
-	  	result: updateSystemAuth(authID: "%s", in: %s) {
-			id
-	  	}
+		result: updateSystemAuth(authID: "%s", in: %s) { id }
 	}`, authID, gqlAuthInput), nil
 }
 

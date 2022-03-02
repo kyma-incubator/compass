@@ -3,14 +3,15 @@ package tenantmapping_test
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping/automock"
 	"net/http"
 	"net/textproto"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping/automock"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"

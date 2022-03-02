@@ -2,9 +2,10 @@ package istiocertresolver_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/istiocertresolver"
 	"net/http"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/hydrator/internal/istiocertresolver"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"

@@ -1,12 +1,13 @@
 package director_test
 
 import (
+	"strings"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -25,10 +26,10 @@ func TestSystemAuthQuery(t *testing.T) {
 		  }
 		}`
 
-		expectedQuery = trimSpacesAndTabs(expectedQuery)
+		expectedQuery = trimTabsAndNewLine(expectedQuery)
 
 		// when
-		query := trimSpacesAndTabs(director.SystemAuthQuery(authID))
+		query := trimTabsAndNewLine(director.SystemAuthQuery(authID))
 
 		// then
 		assert.Equal(t, expectedQuery, query)
@@ -93,10 +94,10 @@ func TestSystemAuthByTokenQuery(t *testing.T) {
 			}
 		}`
 
-		expectedQuery = trimSpacesAndTabs(expectedQuery)
+		expectedQuery = trimTabsAndNewLine(expectedQuery)
 
 		// when
-		query := trimSpacesAndTabs(director.SystemAuthByTokenQuery(token))
+		query := trimTabsAndNewLine(director.SystemAuthByTokenQuery(token))
 
 		// then
 		assert.Equal(t, expectedQuery, query)
@@ -119,10 +120,10 @@ func TestTenantByExternalIDQuery(t *testing.T) {
 			}
 		}`
 
-		expectedQuery = trimSpacesAndTabs(expectedQuery)
+		expectedQuery = trimTabsAndNewLine(expectedQuery)
 
 		// when
-		query := trimSpacesAndTabs(director.TenantByExternalIDQuery(tenantID))
+		query := trimTabsAndNewLine(director.TenantByExternalIDQuery(tenantID))
 
 		// then
 		assert.Equal(t, expectedQuery, query)
@@ -145,10 +146,10 @@ func TestTenantByInternalIDQuery(t *testing.T) {
 			}
 		}`
 
-		expectedQuery = trimSpacesAndTabs(expectedQuery)
+		expectedQuery = trimTabsAndNewLine(expectedQuery)
 
 		// when
-		query := trimSpacesAndTabs(director.TenantByInternalIDQuery(tenantID))
+		query := trimTabsAndNewLine(director.TenantByInternalIDQuery(tenantID))
 
 		// then
 		assert.Equal(t, expectedQuery, query)
@@ -165,10 +166,10 @@ func TestTenantByLowestOwnerForResourceQuery(t *testing.T) {
 			result: tenantByLowestOwnerForResource(id:"b91b59f7-2563-40b2-aba9-fef726037aa3", resource:"runtime")
 		}`
 
-		expectedQuery = trimSpacesAndTabs(expectedQuery)
+		expectedQuery = trimTabsAndNewLine(expectedQuery)
 
 		// when
-		query := trimSpacesAndTabs(director.TenantByLowestOwnerForResourceQuery(id, resource))
+		query := trimTabsAndNewLine(director.TenantByLowestOwnerForResourceQuery(id, resource))
 
 		// then
 		assert.Equal(t, expectedQuery, query)
@@ -194,24 +195,23 @@ func TestUpdateSystemAuthQuery(t *testing.T) {
 		}
 		id := "b91b59f7-2563-40b2-aba9-fef726037aa3"
 
-		expectedQuery := `query {
-			result: tenantByLowestOwnerForResource(id:"b91b59f7-2563-40b2-aba9-fef726037aa3", resource:"runtime")
-		}`
+		expectedQuery := `mutation {
+			result: updateSystemAuth(authID: "b91b59f7-2563-40b2-aba9-fef726037aa3", in: {credential:  {basic: {username: "user",password: "pass",},},}) { id }}`
 
-		expectedQuery = trimSpacesAndTabs(expectedQuery)
+		expectedQuery = trimTabsAndNewLine(expectedQuery)
 
 		// when
 		rawQuery, err := director.UpdateSystemAuthQuery(id, auth)
 		require.NoError(t, err)
 
-		query := trimSpacesAndTabs(rawQuery)
+		query := trimTabsAndNewLine(rawQuery)
 
 		// then
 		assert.Equal(t, expectedQuery, query)
 	})
 }
 
-func trimSpacesAndTabs(str string) string {
+func trimTabsAndNewLine(str string) string {
 	var res string
 
 	res = strings.Replace(str, "\t", "", -1)

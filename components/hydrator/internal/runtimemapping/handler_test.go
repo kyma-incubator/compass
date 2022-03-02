@@ -2,15 +2,16 @@ package runtimemapping_test
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/runtimemapping"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/runtimemapping/automock"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/runtimemapping"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/runtimemapping/automock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 

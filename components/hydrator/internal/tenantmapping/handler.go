@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 	"net/http"
 	"strings"
+
+	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/pkg/errors"
@@ -15,27 +17,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	// UserObjectContextProvider missing godoc
-	UserObjectContextProvider = "UserObjectContextProvider"
-	// SystemAuthObjectContextProvider missing godoc
-	SystemAuthObjectContextProvider = "SystemAuthObjectContextProvider"
-	// AuthenticatorObjectContextProvider missing godoc
-	AuthenticatorObjectContextProvider = "AuthenticatorObjectContextProvider"
-	// CertServiceObjectContextProvider missing godoc
-	CertServiceObjectContextProvider = "CertServiceObjectContextProvider"
-	// TenantHeaderObjectContextProvider missing godoc
-	TenantHeaderObjectContextProvider = "TenantHeaderObjectContextProvider"
-	// ConsumerTenantKey key for consumer tenant id in Claims.Tenant
-	ConsumerTenantKey = "consumerTenant"
-	// ExternalTenantKey key for external tenant id in Claims.Tenant
-	ExternalTenantKey = "externalTenant"
-	// ProviderTenantKey key for provider tenant id in Claims.Tenant
-	ProviderTenantKey = "providerTenant"
-	// ProviderExternalTenantKey key for external provider tenant id in Claims.Tenant
-	ProviderExternalTenantKey = "providerExternalTenant"
 )
 
 // DirectorClient missing godoc
@@ -183,11 +164,11 @@ func addTenantsToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqDat
 		tenants[objCtx.ExternalTenantKey] = objCtx.ExternalTenantID
 	}
 
-	_, consumerExists := tenants[ConsumerTenantKey]
-	_, externalExists := tenants[ExternalTenantKey]
+	_, consumerExists := tenants[tenantmapping.ConsumerTenantKey]
+	_, externalExists := tenants[tenantmapping.ExternalTenantKey]
 	if !consumerExists && !externalExists {
-		tenants[ConsumerTenantKey] = tenants[ProviderTenantKey]
-		tenants[ExternalTenantKey] = tenants[ProviderExternalTenantKey]
+		tenants[tenantmapping.ConsumerTenantKey] = tenants[tenantmapping.ProviderTenantKey]
+		tenants[tenantmapping.ExternalTenantKey] = tenants[tenantmapping.ProviderExternalTenantKey]
 	}
 
 	tenantsJSON, err := json.Marshal(tenants)
@@ -249,7 +230,7 @@ func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqD
 func getCertServiceObjectContextProviderConsumer(objectContexts []ObjectContext) consumer.Consumer {
 	c := consumer.Consumer{}
 	for _, objCtx := range objectContexts {
-		if objCtx.ContextProvider == CertServiceObjectContextProvider {
+		if objCtx.ContextProvider == tenantmapping.CertServiceObjectContextProvider {
 			c.ConsumerID = objCtx.ConsumerID
 			c.ConsumerType = objCtx.ConsumerType
 			c.Flow = objCtx.AuthFlow
@@ -260,7 +241,7 @@ func getCertServiceObjectContextProviderConsumer(objectContexts []ObjectContext)
 
 func getOnBehalfConsumer(objectContexts []ObjectContext) string {
 	for _, objCtx := range objectContexts {
-		if objCtx.ContextProvider != CertServiceObjectContextProvider {
+		if objCtx.ContextProvider != tenantmapping.CertServiceObjectContextProvider {
 			return objCtx.ConsumerID
 		}
 	}
@@ -269,7 +250,7 @@ func getOnBehalfConsumer(objectContexts []ObjectContext) string {
 
 func getRegionFromConsumerToken(objectContexts []ObjectContext) string {
 	for _, objCtx := range objectContexts {
-		if objCtx.ContextProvider == AuthenticatorObjectContextProvider {
+		if objCtx.ContextProvider == tenantmapping.AuthenticatorObjectContextProvider {
 			return objCtx.Region
 		}
 	}
@@ -278,7 +259,7 @@ func getRegionFromConsumerToken(objectContexts []ObjectContext) string {
 
 func getClientIDFromConsumerToken(objectContexts []ObjectContext) string {
 	for _, objCtx := range objectContexts {
-		if objCtx.ContextProvider == AuthenticatorObjectContextProvider {
+		if objCtx.ContextProvider == tenantmapping.AuthenticatorObjectContextProvider {
 			return objCtx.OauthClientID
 		}
 	}

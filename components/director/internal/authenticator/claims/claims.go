@@ -3,13 +3,12 @@ package claims
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 	"strings"
 
-	oathkeeper2 "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 
 	"github.com/pkg/errors"
-
-	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -27,7 +26,7 @@ type Claims struct {
 	OnBehalfOf    string                `json:"onBehalfOf"`
 	Region        string                `json:"region"`
 	TokenClientID string                `json:"tokenClientID"`
-	Flow          oathkeeper2.AuthFlow  `json:"flow"`
+	Flow          oathkeeper.AuthFlow   `json:"flow"`
 	ZID           string                `json:"zid"`
 	jwt.StandardClaims
 }
@@ -42,7 +41,7 @@ func (c *Claims) UnmarshalJSON(b []byte) error {
 		OnBehalfOf    string                `json:"onBehalfOf"`
 		Region        string                `json:"region"`
 		TokenClientID string                `json:"tokenClientID"`
-		Flow          oathkeeper2.AuthFlow  `json:"flow"`
+		Flow          oathkeeper.AuthFlow   `json:"flow"`
 		ZID           string                `json:"zid"`
 		jwt.StandardClaims
 	}{}

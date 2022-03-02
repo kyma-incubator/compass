@@ -3,8 +3,9 @@ package subject_test
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/subject"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/hydrator/internal/subject"
 
 	"github.com/stretchr/testify/require"
 )

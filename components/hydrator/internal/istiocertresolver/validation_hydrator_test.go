@@ -3,11 +3,12 @@ package istiocertresolver_test
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/istiocertresolver"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/istiocertresolver/automock"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/hydrator/internal/istiocertresolver"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/istiocertresolver/automock"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"

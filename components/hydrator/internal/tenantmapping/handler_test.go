@@ -2,14 +2,15 @@ package tenantmapping_test
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping/automock"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/textproto"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping/automock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 

@@ -3,8 +3,9 @@ package istiocertresolver
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"

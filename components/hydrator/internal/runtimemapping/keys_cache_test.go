@@ -2,10 +2,11 @@ package runtimemapping_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/runtimemapping"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/hydrator/internal/runtimemapping"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/sirupsen/logrus"

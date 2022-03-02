@@ -27,8 +27,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
-
 	"github.com/gorilla/mux"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
@@ -59,12 +57,18 @@ type TokenVerifier interface {
 	Verify(ctx context.Context, token string) (TokenData, error)
 }
 
+// ReqDataParser parses request data
+//go:generate mockery --name=ReqDataParser --output=automock --outpkg=automock --case=underscore
+type ReqDataParser interface {
+	Parse(req *http.Request) (oathkeeper.ReqData, error)
+}
+
 // TokenVerifierProvider defines different ways by which one can provide a TokenVerifier
 type TokenVerifierProvider func(ctx context.Context, metadata OpenIDMetadata) TokenVerifier
 
 // Handler is the base struct definition of the AuthenticationMappingHandler
 type Handler struct {
-	reqDataParser         tenantmapping.ReqDataParser
+	reqDataParser         ReqDataParser
 	httpClient            *http.Client
 	tokenVerifierProvider TokenVerifierProvider
 	verifiers             map[string]TokenVerifier
@@ -99,7 +103,7 @@ func DefaultTokenVerifierProvider(ctx context.Context, metadata OpenIDMetadata) 
 }
 
 // NewHandler constructs the AuthenticationMappingHandler
-func NewHandler(reqDataParser tenantmapping.ReqDataParser, httpClient *http.Client, tokenVerifierProvider TokenVerifierProvider, authenticators []authenticator.Config) *Handler {
+func NewHandler(reqDataParser ReqDataParser, httpClient *http.Client, tokenVerifierProvider TokenVerifierProvider, authenticators []authenticator.Config) *Handler {
 	return &Handler{
 		reqDataParser:         reqDataParser,
 		httpClient:            httpClient,

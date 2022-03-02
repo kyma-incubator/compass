@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/director/automock"
@@ -27,10 +28,11 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"

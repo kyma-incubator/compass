@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
-
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
@@ -20,17 +18,24 @@ type ValidationHydrator interface {
 }
 
 type validationHydrator struct {
-	directorClient director.Client
+	directorClient DirectorClient
+}
+
+// DirectorClient missing godoc
+//go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore
+type DirectorClient interface {
+	GetSystemAuthByToken(ctx context.Context, token string) (graphql.SystemAuth, error)
+	InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (graphql.SystemAuth, error)
 }
 
 // NewValidationHydrator missing godoc
-func NewValidationHydrator(clientProvider director.Client) ValidationHydrator {
+func NewValidationHydrator(clientProvider DirectorClient) ValidationHydrator {
 	return &validationHydrator{
 		directorClient: clientProvider,
 	}
 }
 
-// ResolveConnectorTokenHeader missing godoc
+// ServeHTTP missing godoc
 func (vh *validationHydrator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -76,6 +81,7 @@ func (vh *validationHydrator) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	case graphql.IntSysSystemAuth:
 		sysAuthID = v.ID
 	default:
+		log.C(ctx).Error("Could not determine system auth type")
 		respondWithAuthSession(ctx, w, authSession)
 		return
 	}

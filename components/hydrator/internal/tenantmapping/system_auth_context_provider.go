@@ -3,6 +3,7 @@ package tenantmapping
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
@@ -26,8 +27,8 @@ func NewSystemAuthContextProvider(clientProvider DirectorClient, scopesGetter Sc
 		scopesGetter:   scopesGetter,
 		directorClient: clientProvider,
 		tenantKeys: KeysExtra{
-			TenantKey:         ConsumerTenantKey,
-			ExternalTenantKey: ExternalTenantKey,
+			TenantKey:         tenantmapping.ConsumerTenantKey,
+			ExternalTenantKey: tenantmapping.ExternalTenantKey,
 		},
 	}
 }
@@ -113,7 +114,7 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 		return ObjectContext{}, apperrors.NewInternalError("while mapping reference type to consumer type")
 	}
 
-	objCxt := NewObjectContext(tenantCtx, m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", *refObjectID, authDetails.AuthFlow, consumerType, SystemAuthObjectContextProvider)
+	objCxt := NewObjectContext(tenantCtx, m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", *refObjectID, authDetails.AuthFlow, consumerType, tenantmapping.SystemAuthObjectContextProvider)
 	log.C(ctx).Infof("Object context: %+v", objCxt)
 
 	return objCxt, nil

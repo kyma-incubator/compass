@@ -3,12 +3,13 @@ package tenantmapping_test
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/textproto"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping/automock"
-	"net/http"
-	"net/textproto"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 

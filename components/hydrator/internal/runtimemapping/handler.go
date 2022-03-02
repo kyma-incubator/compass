@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"net/http"
+
+	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 

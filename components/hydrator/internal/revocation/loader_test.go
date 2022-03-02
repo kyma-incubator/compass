@@ -2,10 +2,11 @@ package revocation_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/revocation"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/revocation/automock"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/hydrator/internal/revocation"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/revocation/automock"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

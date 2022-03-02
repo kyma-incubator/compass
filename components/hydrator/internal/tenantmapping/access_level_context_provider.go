@@ -3,6 +3,7 @@ package tenantmapping
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
@@ -23,8 +24,8 @@ func NewAccessLevelContextProvider(clientProvider DirectorClient) *accessLevelCo
 	return &accessLevelContextProvider{
 		directorClient: clientProvider,
 		tenantKeys: KeysExtra{
-			TenantKey:         ConsumerTenantKey,
-			ExternalTenantKey: ExternalTenantKey,
+			TenantKey:         tenantmapping.ConsumerTenantKey,
+			ExternalTenantKey: tenantmapping.ExternalTenantKey,
 		},
 	}
 }
@@ -51,7 +52,7 @@ func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqDa
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
 			return NewObjectContext(NewTenantContext(externalTenantID, ""), p.tenantKeys, "", mergeWithOtherScopes, authDetails.Region,
-				"", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(consumerType), CertServiceObjectContextProvider), nil
+				"", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(consumerType), tenantmapping.CertServiceObjectContextProvider), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
@@ -62,7 +63,7 @@ func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqDa
 	}
 
 	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), p.tenantKeys, "", mergeWithOtherScopes,
-		authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(consumerType), CertServiceObjectContextProvider)
+		authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.ConsumerType(consumerType), tenantmapping.CertServiceObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 	return objCtx, nil
 }
