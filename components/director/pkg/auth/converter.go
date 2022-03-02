@@ -58,10 +58,10 @@ func credentialDataToInput(in graphql.CredentialData) (*graphql.CredentialDataIn
 	var oauthCredentials *graphql.OAuthCredentialData
 
 	switch actual := in.(type) {
-	case *graphql.BasicCredentialData:
-		basicCredentials = actual
-	case *graphql.OAuthCredentialData:
-		oauthCredentials = actual
+	case graphql.BasicCredentialData:
+		basicCredentials = &actual
+	case graphql.OAuthCredentialData:
+		oauthCredentials = &actual
 	default:
 		return nil, errors.New("Could not cast credentials")
 	}

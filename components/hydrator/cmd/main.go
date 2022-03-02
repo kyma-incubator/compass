@@ -272,7 +272,8 @@ func getCertificateResolverHandler(ctx context.Context, cfg config) (istiocertre
 		return nil, nil, err
 	}
 
-	revokedCertsLoader := revocation.NewRevokedCertificatesLoader(revokedCertsCache,
+	revokedCertsLoader := revocation.NewRevokedCertificatesLoader(
+		revokedCertsCache,
 		k8sClientSet.CoreV1().ConfigMaps(revokedCertsConfigMap.Namespace),
 		revokedCertsConfigMap.Name,
 		time.Second,
