@@ -11,6 +11,12 @@ spec:
       fromHeaders:
         - name: X-Authorization
           prefix: "Bearer "
+    - issuer: {{ .Values.global.kubernetes.serviceAccountTokenIssuer }}
+      jwksUri: {{ .Values.global.kubernetes.serviceAccountTokenJWKS }}
+      forwardOriginalToken: true
+      fromHeaders:
+        - name: X-Authorization
+          prefix: "Bearer "
 ---
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
@@ -82,6 +88,12 @@ spec:
     matchLabels:
       app.kubernetes.io/name: hydra
   jwtRules:
+    - issuer: {{ .Values.global.kubernetes.serviceAccountTokenIssuer }}
+      jwksUri: {{ .Values.global.kubernetes.serviceAccountTokenJWKS }}
+      forwardOriginalToken: true
+      fromHeaders:
+        - name: X-Authorization
+          prefix: "Bearer "
     - issuer: {{ .Values.global.kubernetes.serviceAccountTokenIssuer }}
       jwksUri: {{ .Values.global.kubernetes.serviceAccountTokenJWKS }}
       forwardOriginalToken: true
