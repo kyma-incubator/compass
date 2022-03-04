@@ -155,9 +155,9 @@ global:
         name: "compass-subaccount-fetcher-secret"
         oauthMode: "oauth-mtls"
         oauthUrlKey: "url"
-        skipSSLValidation: "true"
+        skipSSLValidation: true
       shouldSyncSubaccounts: true
-      subaccountRegions: "test"
+      subaccountRegions: test
   tests:
     basicCredentials:
       manage: true
