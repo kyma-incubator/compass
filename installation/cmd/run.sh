@@ -198,10 +198,10 @@ echo "Compass installation status ${STATUS}"
 
 prometheusMTLSPatch
 
-COMPASS_CERT_PATH="${CURRENT_DIR}/../cmd/compass-cert.pem"
-openssl s_client -showcerts -servername compass.local.kyma.dev -connect compass.local.kyma.dev:443 2>/dev/null | openssl x509 -inform pem > "${COMPASS_CERT_PATH}"
-trap "rm -f ${COMPASS_CERT_PATH}" EXIT INT TERM
-sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "${COMPASS_CERT_PATH}"
+#COMPASS_CERT_PATH="${CURRENT_DIR}/../cmd/compass-cert.pem"
+#openssl s_client -showcerts -servername compass.local.kyma.dev -connect compass.local.kyma.dev:443 2>/dev/null | openssl x509 -inform pem > "${COMPASS_CERT_PATH}"
+#trap "rm -f ${COMPASS_CERT_PATH}" EXIT INT TERM
+#sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "${COMPASS_CERT_PATH}"
 
 echo "Adding Compass entries to /etc/hosts..."
 sudo sh -c "echo \"\n127.0.0.1 adapter-gateway.local.kyma.dev adapter-gateway-mtls.local.kyma.dev compass-gateway-mtls.local.kyma.dev compass-gateway-sap-mtls.local.kyma.dev compass-gateway-auth-oauth.local.kyma.dev compass-gateway.local.kyma.dev compass-gateway-int.local.kyma.dev compass.local.kyma.dev compass-mf.local.kyma.dev kyma-env-broker.local.kyma.dev director.local.kyma.dev compass-external-services-mock-sap-mtls.local.kyma.dev\" >> /etc/hosts"
