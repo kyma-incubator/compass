@@ -228,10 +228,8 @@ func getBasicCredentials(rawData string) (id string, secret string, err error) {
 }
 
 func (h *handler) isRequestWithCert(r *http.Request) bool {
-	if r.Header.Get(XExternalHost) == h.externalHost {
-		return true
-	}
-	return false
+	xExternalHost := r.Header.Get(XExternalHost)
+	return xExternalHost == h.externalHost || xExternalHost == h.externalHost+":443"
 }
 
 func (h *handler) validateCredentials(isReqWithCert bool, clientId, clientSecret, errMsg string) error {

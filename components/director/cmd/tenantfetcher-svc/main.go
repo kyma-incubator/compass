@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 
@@ -99,7 +101,14 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	handler := initAPIHandler(ctx, cfg, transact)
+	httpClient := &http.Client{
+		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	handler := initAPIHandler(ctx, httpClient, cfg, transact)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
 	go func() {
@@ -111,7 +120,7 @@ func main() {
 	runMainSrv()
 }
 
-func initAPIHandler(ctx context.Context, cfg config, transact persistence.Transactioner) http.Handler {
+func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, transact persistence.Transactioner) http.Handler {
 	logger := log.C(ctx)
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
@@ -119,7 +128,7 @@ func initAPIHandler(ctx context.Context, cfg config, transact persistence.Transa
 	router := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 	healthCheckRouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 
-	configureAuthMiddleware(ctx, router, cfg.SecurityConfig)
+	configureAuthMiddleware(ctx, httpClient, router, cfg.SecurityConfig)
 
 	registerHandler(ctx, router, cfg.Handler, transact)
 
@@ -171,9 +180,9 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func configureAuthMiddleware(ctx context.Context, router *mux.Router, cfg securityConfig) {
+func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg securityConfig) {
 	scopeValidator := claims.NewScopesValidator([]string{cfg.SubscriptionCallbackScope})
-	middleware := auth.New(cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
+	middleware := auth.New(httpClient, cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
 	router.Use(middleware.Handler())
 
 	log.C(ctx).Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
