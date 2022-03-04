@@ -166,3 +166,6 @@ istio-configuration:
                       values:
                         - arm64
                         - amd64
+  meshConfig:
+    defaultConfig:
+      holdApplicationUntilProxyStarts: true

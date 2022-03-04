@@ -39,7 +39,6 @@ istio-configuration:
     global:
       jwtPolicy: first-party-jwt
       proxy:
-        holdApplicationUntilProxyStarts: true
         resources:
           requests:
             cpu: 50m
@@ -121,6 +120,9 @@ istio-configuration:
                       values:
                         - arm64
                         - amd64
+  meshConfig:
+    defaultConfig:
+      holdApplicationUntilProxyStarts: true
 ory:
   hydra:
     hydra:
