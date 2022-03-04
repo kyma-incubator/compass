@@ -81,31 +81,31 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2192"
+      version: "PR-2212"
     connectivity_adapter:
       dir:
-      version: "PR-2166"
+      version: "PR-2212"
     pairing_adapter:
       dir:
-      version: "PR-2166"
+      version: "PR-2212"
     director:
       dir:
       version: "PR-2214"
     gateway:
       dir:
-      version: "PR-2166"
+      version: "PR-2212"
     operations_controller:
       dir:
-      version: "PR-2166"
+      version: "PR-2212"
     ord_service:
       dir:
       version: "PR-62"
     schema_migrator:
       dir:
-      version: "PR-2223"
+      version: "PR-2212"
     system_broker:
       dir:
-      version: "PR-2208"
+      version: "PR-2212"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -113,13 +113,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2153"
+      version: "PR-2212"
     console:
       dir:
       version: "PR-56"
     e2e_tests:
       dir:
-      version: "PR-2221"
+      version: "PR-2212"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -156,11 +156,15 @@ global:
       path: "/v1/info"
     selfRegister:
       secret:
-        name: "compass-external-services-mock-oauth-credentials"
+        name: "compass-self-registration-credentials"
         clientIdKey: client-id
         clientSecretKey: client-secret
         urlKey: url
-      oauthTokenPath: "/secured/oauth/token"
+        tokenUrlKey: token-url
+        clientCertKey: client-cert
+        clientKeyKey: client-key
+      oauthTokenPath: "/cert/token"
+      oauthMode: "oauth-mtls"
       label: "selfRegLabel"
       labelValuePrefix: "self-reg-prefix-"
       responseKey: "self-reg-key"
@@ -291,6 +295,7 @@ global:
           - "x-vcap-request-id"
           - "x-broker-api-request-identity"
   kubernetes:
+    serviceAccountTokenIssuer: kubernetes/serviceaccount
     serviceAccountTokenJWKS: https://kubernetes.default.svc.cluster.local/openid/v1/jwks
   ingress:
     domainName: "kyma.local"
