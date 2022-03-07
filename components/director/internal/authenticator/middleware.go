@@ -41,6 +41,7 @@ type ClaimsValidator interface {
 
 // Authenticator missing godoc
 type Authenticator struct {
+	httpClient          *http.Client
 	jwksEndpoint        string
 	allowJWTSigningNone bool
 	cachedJWKS          jwk.Set
@@ -50,8 +51,9 @@ type Authenticator struct {
 }
 
 // New missing godoc
-func New(jwksEndpoint string, allowJWTSigningNone bool, clientIDHeaderKey string, claimsValidator ClaimsValidator) *Authenticator {
+func New(httpClient *http.Client, jwksEndpoint string, allowJWTSigningNone bool, clientIDHeaderKey string, claimsValidator ClaimsValidator) *Authenticator {
 	return &Authenticator{
+		httpClient:          httpClient,
 		jwksEndpoint:        jwksEndpoint,
 		allowJWTSigningNone: allowJWTSigningNone,
 		clientIDHeaderKey:   clientIDHeaderKey,
@@ -65,7 +67,7 @@ func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 
-	jwks, err := authenticator.FetchJWK(ctx, a.jwksEndpoint)
+	jwks, err := authenticator.FetchJWK(ctx, a.jwksEndpoint, jwk.WithHTTPClient(a.httpClient))
 	if err != nil {
 		return errors.Wrapf(err, "while fetching JWKS from endpoint %s", a.jwksEndpoint)
 	}
