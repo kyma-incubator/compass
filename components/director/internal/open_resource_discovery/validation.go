@@ -1182,10 +1182,10 @@ func validateExtensibleInnerFields(el gjson.Result) error {
 	}
 
 	descriptionProperty := el.Get("description")
-	descriptionValue, _ := descriptionProperty.Value().(string)
+	descriptionValue, ok := descriptionProperty.Value().(string)
 	validLength := len(descriptionValue) >= MinDescriptionLength && len(descriptionValue) <= MaxDescriptionLength
 
-	if supportedProperty.Exists() && (supportedValue == "manual" || supportedValue == "automatic") && !validLength {
+	if supportedProperty.Exists() && (supportedValue == "manual" || supportedValue == "automatic") && (!validLength || !ok) {
 		return errors.New(fmt.Sprintf("if supported field is either 'manual' or 'automatic', description should be provided with length of %d - %d characters", MinDescriptionLength, MaxDescriptionLength))
 	}
 	return nil
