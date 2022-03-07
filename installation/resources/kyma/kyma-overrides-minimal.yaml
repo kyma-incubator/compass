@@ -1,54 +1,39 @@
-cluster-essentials:
-  global:
-    disableLegacyConnectivity: "true"
-  pod-preset:
-    webhook:
-      resources:
-        requests:
-          cpu: 25m
-          memory: 36Mi
-        limits:
-          cpu: 100m
-          memory: 128Mi
-  limitRange:
-    default:
-      memory: 256Mi
-    defaultRequest:
-      memory: 32Mi
 api-gateway:
   deployment:
     resources:
       limits:
         cpu: 200m
+cluster-essentials:
+  global:
+    disableLegacyConnectivity: true
+  limitRange:
+    default:
+      memory: 256Mi
+    defaultRequest:
+      memory: 32Mi
+  pod-preset:
+    webhook:
+      resources:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 25m
+          memory: 36Mi
 helm-broker:
-  ctrl:
-    resources:
-      limits:
-        memory: 256Mi
   broker:
     resources:
       limits:
         memory: 512Mi
+  ctrl:
+    resources:
+      limits:
+        memory: 256Mi
 istio-configuration:
-  helmValues:
-    pilot:
-      jwksResolverExtraRootCA: "__CERT__"
-      resources:
-        limits:
-          memory: 2048Mi
-    global:
-      jwtPolicy: first-party-jwt
-      proxy:
-        resources:
-          requests:
-            cpu: 50m
-            memory: 160Mi
-          limits:
-            cpu: 500m
-            memory: 384Mi
   components:
-    pilot:
-      enabled: true
+    egressGateways:
+      enabled: false
+    ingressGateways:
       config:
         affinity:
           nodeAffinity:
@@ -69,9 +54,30 @@ istio-configuration:
                       values:
                         - arm64
                         - amd64
-        hpaSpec: # hpaSpec, securityContext and resources are the defaults and taken from: https://github.com/kyma-project/kyma/blob/443ca89e31cb94b9eeecf44afc6811b8da568635/resources/istio-configuration/values.yaml#L64
+      enabled: true
+    pilot:
+      config:
+        affinity:
+          nodeAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - preference:
+                  matchExpressions:
+                    - key: beta.kubernetes.io/arch
+                      operator: In
+                      values:
+                        - arm64
+                        - amd64
+                weight: 2
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: beta.kubernetes.io/arch
+                      operator: In
+                      values:
+                        - arm64
+                        - amd64
+        hpaSpec:
           maxReplicas: 5
-          minReplicas: 1
           metrics:
             - resource:
                 name: cpu
@@ -81,10 +87,7 @@ istio-configuration:
                 name: memory
                 targetAverageUtilization: 80
               type: Resource
-        securityContext:
-          runAsUser: 65534
-          runAsNonRoot: true
-          runAsGroup: 65534
+          minReplicas: 1
         resources:
           limits:
             cpu: 2000m
@@ -92,209 +95,43 @@ istio-configuration:
           requests:
             cpu: 100m
             memory: 128Mi
+        securityContext:
+          runAsGroup: 65534
+          runAsNonRoot: true
+          runAsUser: 65534
         strategy:
           rollingUpdate:
             maxSurge: 100%
             maxUnavailable: 0
-    egressGateways:
-      enabled: false
-    ingressGateways:
       enabled: true
-      config:
-        affinity:
-          nodeAffinity:
-            preferredDuringSchedulingIgnoredDuringExecution:
-              - preference:
-                  matchExpressions:
-                    - key: beta.kubernetes.io/arch
-                      operator: In
-                      values:
-                        - arm64
-                        - amd64
-                weight: 2
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-                - matchExpressions:
-                    - key: beta.kubernetes.io/arch
-                      operator: In
-                      values:
-                        - arm64
-                        - amd64
+  helmValues:
+    global:
+      jwtPolicy: first-party-jwt
+      proxy:
+        resources:
+          limits:
+            cpu: 500m
+            memory: 384Mi
+          requests:
+            cpu: 50m
+            memory: 160Mi
+    pilot:
+      jwksResolverExtraRootCA: __CERT__
+      resources:
+        limits:
+          memory: 2048Mi
   meshConfig:
     defaultConfig:
       holdApplicationUntilProxyStarts: true
-ory:
-  hydra:
-    hydra:
-      config:
-        log:
-          level: trace
-          leak_sensitive_values: true
-        serve:
-          public:
-            port: 4444
-          admin:
-            port: 4445
-          tls:
-            allow_termination_from:
-              - 10.0.0.0/8
-              - 172.16.0.0/12
-              - 192.168.0.0/16
-        secrets: { }
-        urls:
-          self: { }
-        dsn: memory
-      # Required for DB autoMigrate: true
-      autoMigrate: true
-      dangerousForceHttp: true
-      dangerousAllowInsecureRedirectUrls: false
-      existingSecret: "ory-hydra-credentials"
-    deployment:
-      resources:
-        limits:
-          cpu: 1000m
-          memory: 400Mi
-        requests:
-          cpu: 100m
-          memory: 128Mi
-  oathkeeper:
-    oathkeeper:
-      config:
-        authenticators:
-          noop:
-            enabled: true
-          unauthorized:
-            enabled: true
-          anonymous:
-            enabled: true
-            config:
-              subject: anonymous
-          cookie_session:
-            enabled: false
-            config:
-              check_session_url: https://session-store-host
-              only:
-                - sessionid
-          oauth2_client_credentials:
-            enabled: true
-            config:
-              token_url: http://ory-hydra-public.kyma-system.svc.cluster.local:4444/oauth2/token
-          oauth2_introspection:
-            enabled: true
-            config:
-              introspection_url: http://ory-hydra-admin.kyma-system.svc.cluster.local:4445/oauth2/introspect
-              scope_strategy: exact
-          jwt:
-            enabled: true
-            config:
-              jwks_urls:
-                - http://dex-service.kyma-system.svc.cluster.local:5556/keys
-              scope_strategy: wildcard
-        authorizers:
-          allow:
-            enabled: true
-          deny:
-            enabled: true
-        mutators:
-          noop:
-            enabled: true
-          id_token:
-            enabled: true
-            config:
-              issuer_url: https://oathkeeper.local.kyma.dev/
-              jwks_url: "file:///etc/secrets/jwks.json"
-              ttl: 60s
-          header:
-            enabled: true
-            config:
-              headers:
-                X-Server: oathkeeper
-          cookie:
-            enabled: true
-            config:
-              cookies:
-                processedWith: oathkeeper
-          hydrator:
-            enabled: true
-            config:
-              api:
-                url: http://compass-director.compass-system.svc.cluster.local:3000/tenant-mapping
-        log:
-          level: trace
-        serve:
-          proxy:
-            port: 4455
-            timeout:
-              read: 120s
-              write: 120s
-              idle: 120s
-          api:
-            port: 4456
-    deployment:
-      autoscaling:
-        minReplicas: "1"
-        maxReplicas: "1"
-      resources:
-        limits:
-          cpu: 100m
-          memory: 512Mi
-        requests:
-          cpu: 20m
-          memory: 128Mi
-    oathkeeper-maester:
-      deployment:
-        resources:
-          limits:
-            cpu: 100m
-            memory: 256Mi
-          requests:
-            cpu: 50m
-            memory: 64Mi
-monitoring:
-  alertmanager:
-    alertmanagerSpec:
-      resources:
-        limits:
-          cpu: 40m
-        requests:
-          cpu: 5m
-  prometheusOperator:
-    configReloaderMemory: 256Mi
-  prometheus-istio:
-    server:
-      resources:
-        limits:
-          memory: "1Gi"
-  grafana:
-    sidecar:
-      resources:
-        limits:
-          memory: 256Mi
-          cpu: 200m
-        requests:
-          memory: 64Mi
-          cpu: 50m
-tracing:
-  kcproxy:
-    resources:
-      limits:
-        memory: 256Mi
-      requests:
-        memory: 32Mi
-  authProxy:
-    resources:
-      limits:
-        memory: 256Mi
-      requests:
-        memory: 32Mi
 kiali:
-  kcproxy:
+  authProxy:
+    enabled: false
     resources:
       limits:
         memory: 256Mi
       requests:
         memory: 32Mi
-  authProxy:
+  kcproxy:
     resources:
       limits:
         memory: 256Mi
@@ -305,3 +142,173 @@ logging:
     resources:
       limits:
         memory: 512Mi
+monitoring:
+  alertmanager:
+    alertmanagerSpec:
+      resources:
+        limits:
+          cpu: 40m
+        requests:
+          cpu: 5m
+  grafana:
+    env:
+      GF_AUTH_ANONYMOUS_ENABLED: true
+      GF_AUTH_GENERIC_OAUTH_ENABLED: false
+    kyma:
+      authProxy:
+        enabled: false
+    sidecar:
+      resources:
+        limits:
+          cpu: 200m
+          memory: 256Mi
+        requests:
+          cpu: 50m
+          memory: 64Mi
+  prometheus-istio:
+    server:
+      resources:
+        limits:
+          memory: 1Gi
+  prometheusOperator:
+    configReloaderMemory: 256Mi
+ory:
+  hydra:
+    deployment:
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 400Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+    hydra:
+      autoMigrate: true
+      config:
+        dsn: memory
+        log:
+          leak_sensitive_values: true
+          level: trace
+        secrets: {}
+        serve:
+          admin:
+            port: 4445
+          public:
+            port: 4444
+          tls:
+            allow_termination_from:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+        urls:
+          self: {}
+      dangerousAllowInsecureRedirectUrls: false
+      dangerousForceHttp: true
+      existingSecret: ory-hydra-credentials
+  oathkeeper:
+    deployment:
+      autoscaling:
+        maxReplicas: "1"
+        minReplicas: "1"
+      resources:
+        limits:
+          cpu: 100m
+          memory: 512Mi
+        requests:
+          cpu: 20m
+          memory: 128Mi
+    oathkeeper:
+      config:
+        authenticators:
+          anonymous:
+            config:
+              subject: anonymous
+            enabled: true
+          cookie_session:
+            config:
+              check_session_url: https://session-store-host
+              only:
+                - sessionid
+            enabled: false
+          jwt:
+            config:
+              jwks_urls:
+                - http://dex-service.kyma-system.svc.cluster.local:5556/keys
+              scope_strategy: wildcard
+            enabled: true
+          noop:
+            enabled: true
+          oauth2_client_credentials:
+            config:
+              token_url: http://ory-hydra-public.kyma-system.svc.cluster.local:4444/oauth2/token
+            enabled: true
+          oauth2_introspection:
+            config:
+              introspection_url: http://ory-hydra-admin.kyma-system.svc.cluster.local:4445/oauth2/introspect
+              scope_strategy: exact
+            enabled: true
+          unauthorized:
+            enabled: true
+        authorizers:
+          allow:
+            enabled: true
+          deny:
+            enabled: true
+        log:
+          level: trace
+        mutators:
+          cookie:
+            config:
+              cookies:
+                processedWith: oathkeeper
+            enabled: true
+          header:
+            config:
+              headers:
+                X-Server: oathkeeper
+            enabled: true
+          hydrator:
+            config:
+              api:
+                url: http://compass-director.compass-system.svc.cluster.local:3000/tenant-mapping
+            enabled: true
+          id_token:
+            config:
+              issuer_url: https://oathkeeper.local.kyma.dev/
+              jwks_url: file:///etc/secrets/jwks.json
+              ttl: 60s
+            enabled: true
+          noop:
+            enabled: true
+        serve:
+          api:
+            port: 4456
+          proxy:
+            port: 4455
+            timeout:
+              idle: 120s
+              read: 120s
+              write: 120s
+    oathkeeper-maester:
+      deployment:
+        resources:
+          limits:
+            cpu: 100m
+            memory: 256Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+tracing:
+  authProxy:
+    enabled: false
+    resources:
+      limits:
+        memory: 256Mi
+      requests:
+        memory: 32Mi
+  kcproxy:
+    resources:
+      limits:
+        memory: 256Mi
+      requests:
+        memory: 32Mi
