@@ -1117,7 +1117,7 @@ func areThereEntryPointDuplicates(entryPoints []gjson.Result) bool {
 
 func isValidDate(d interface{}) error {
 	var err error
-	date, err := convertDate(d)
+	date, err := castDate(d)
 	if err != nil {
 		return err
 	}
@@ -1134,7 +1134,7 @@ func isValidDate(d interface{}) error {
 	return errors.New("invalid date")
 }
 
-func convertDate(d interface{}) (string, error) {
+func castDate(d interface{}) (string, error) {
 	datePtr, ok := d.(*string)
 	if ok {
 		return *datePtr, nil
@@ -1182,7 +1182,7 @@ func validateExtensibleInnerFields(el gjson.Result) error {
 	}
 
 	descriptionProperty := el.Get("description")
-	descriptionValue, ok := descriptionProperty.Value().(string)
+	descriptionValue := descriptionProperty.Value().(string)
 	validLength := len(descriptionValue) >= MinDescriptionLength && len(descriptionValue) <= MaxDescriptionLength
 
 	if supportedProperty.Exists() && (supportedValue == "manual" || supportedValue == "automatic") && !validLength {
