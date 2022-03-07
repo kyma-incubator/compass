@@ -130,6 +130,18 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.A
 	return appModel, nil
 }
 
+// GetByIDForUpdate returns the application with matching ID from the Compass DB and locks it exclusively until the transaction is finished.
+func (r *pgRepository) GetByIDForUpdate(ctx context.Context, tenant, id string) (*model.Application, error) {
+	var appEnt Entity
+	if err := r.singleGetter.GetForUpdate(ctx, resource.Application, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &appEnt); err != nil {
+		return nil, err
+	}
+
+	appModel := r.conv.FromEntity(&appEnt)
+
+	return appModel, nil
+}
+
 // GetByNameAndSystemNumber missing godoc
 func (r *pgRepository) GetByNameAndSystemNumber(ctx context.Context, tenant, name, systemNumber string) (*model.Application, error) {
 	var appEnt Entity
