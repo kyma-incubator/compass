@@ -119,7 +119,7 @@ var (
 	invalidLinkDueToInvalidLengthOfDescription = `[
         {
           "title": "myTitle",
-		  "url": "https://example2.com/en/legal/terms-of-use.html",
+          "url": "https://example2.com/en/legal/terms-of-use.html",
           "description": "%s"
         }
       ]`
@@ -211,9 +211,9 @@ var (
 		  "customDescription": "foo bar"
         }
       ]`
-	invalidCredentialsExchangeStrategyDueToExceedingLenOfCustomDescription = `[
+	invalidCredentialsExchangeStrategyDueToInvalidLenOfCustomDescription = `[
         {
-          "type": "custom",
+		  "type": "custom",
 		  "customType": "ns:credential-exchange:v1",
 		  "customDescription": "%s"
         }
@@ -331,7 +331,7 @@ var (
 		  "description": "%s",
 		  "releaseStatus": "active",
 		  "url": "https://example.com/changelog/v1",
-          "version": "1.0.0"
+		  "version": "1.0.0"
         }
       ]`
 
@@ -1762,10 +1762,19 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			},
 		},
 		{
+			Name: "`type` field is with value `custom` but `customDescription` field is empty for `CredentialExchangeStrategies` field for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(invalidCredentialsExchangeStrategyDueToInvalidLenOfCustomDescription, ""))
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
 			Name: "`type` field is with value `custom` but `customDescription` field is with exceeding length for `CredentialExchangeStrategies` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(invalidCredentialsExchangeStrategyDueToExceedingLenOfCustomDescription, invalidDescriptionFieldWithExceedingMaxLength))
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(invalidCredentialsExchangeStrategyDueToInvalidLenOfCustomDescription, invalidDescriptionFieldWithExceedingMaxLength))
 
 				return []*ord.Document{doc}
 			},
