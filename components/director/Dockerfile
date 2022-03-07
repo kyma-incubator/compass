@@ -36,21 +36,17 @@ RUN mkdir /app && mv ./director /app/director \
   && mv ./systemfetcher /app/systemfetcher \
   && mv ./licenses /app/licenses
 
-FROM alpine:3.15.0
+FROM gcr.io/distroless/static:nonroot
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 
 #
 # Copy binary
 #
-
-RUN apk --no-cache add curl ca-certificates
-
 COPY --from=builder /app /app
 COPY ./examples/ /app/examples/
 
 #
 # Run app
 #
-
 CMD ["/app/director"]
