@@ -206,7 +206,7 @@ if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran o
   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "${COMPASS_CERT_PATH}"
 else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
  cp "${COMPASS_CERT_PATH}" /etc/ssl/certs
- openssl x509 -noout -hash -in ca-certificate-file
+ openssl x509 -noout -hash -in compass-cert.pem
 fi
 
 echo "Adding Compass entries to /etc/hosts..."
