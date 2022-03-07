@@ -85,11 +85,18 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.externalServicesMock.auditlog.secret.name }}
                   key: {{ .Values.global.externalServicesMock.auditlog.secret.clientIdKey }}
-            - name: AUDITLOG_CLIENT_SECRET
+            - name: AUDITLOG_X509_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.global.externalServicesMock.auditlog.secret.name }}
-                  key: {{ .Values.global.externalServicesMock.auditlog.secret.clientSecretKey }}
+                  key: {{ .Values.global.externalServicesMock.auditlog.secret.clientKeyKey }}
+            - name: AUDITLOG_X509_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalServicesMock.auditlog.secret.name }}
+                  key: {{ .Values.global.externalServicesMock.auditlog.secret.clientCertKey }}
+            - name: AUDITLOG_SKIP_SSL_VALIDATION
+              value: "{{ .Values.global.auditlog.skipSSLValidation }}"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
             - name: APP_EXTERNAL_CLIENT_CERT_KEY
