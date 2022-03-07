@@ -524,6 +524,25 @@ func AssertMultipleEntitiesFromORDService(t *testing.T, respBody string, entitie
 	}
 }
 
+func AssertProducts(t *testing.T, respBody string, expectedProductsMap map[string]string, expectedNumber int, descriptionField string) {
+	numberOfProducts := len(gjson.Get(respBody, "value").Array())
+	require.Equal(t, expectedNumber, numberOfProducts)
+
+	actualProductsMap := make(map[string]string, expectedNumber)
+	for i := 0; i < expectedNumber; i++ {
+		entityTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
+		require.NotEmpty(t, entityTitle)
+
+		actualProductsMap[entityTitle] = gjson.Get(respBody, fmt.Sprintf("value.%d.%s", i, descriptionField)).String()
+	}
+
+	for expectedTitle, expectedDescription := range expectedProductsMap {
+		entityDescription, exists := actualProductsMap[expectedTitle]
+		require.True(t, exists)
+		require.Equal(t, expectedDescription, entityDescription)
+	}
+}
+
 func AssertDocumentationLabels(t *testing.T, respBody string, expectedLabelKey string, possibleValues []string, expectedNumber int) {
 	numberOfEntities := len(gjson.Get(respBody, "value").Array())
 	require.Equal(t, expectedNumber, numberOfEntities)
@@ -603,13 +622,18 @@ func AssertTombstoneFromORDService(t *testing.T, respBody string, expectedNumber
 	}
 }
 
-func AssertVendorFromORDService(t *testing.T, respBody string, expectedNumber int, expectedTitle string) {
+func AssertVendorFromORDService(t *testing.T, respBody string, expectedNumber int, expectedNumberCreatedByTest int, expectedTitle string) {
 	numberOfEntities := len(gjson.Get(respBody, "value").Array())
 	require.Equal(t, expectedNumber, numberOfEntities)
 
+	vendorsFromTestsFound := 0
 	for i := 0; i < numberOfEntities; i++ {
-		require.Equal(t, expectedTitle, gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String())
+		if expectedTitle == gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String() {
+			vendorsFromTestsFound++
+		}
 	}
+	// LessOrEqual is needed as there may be vendors in the DB which are not created by the test, and their titles may be equal to "expectedTitle" or they can defer from it.
+	assert.LessOrEqual(t, expectedNumberCreatedByTest, vendorsFromTestsFound)
 }
 
 func AssertApplicationPageContainOnlyIDs(t *testing.T, page graphql.ApplicationPage, ids ...string) {
