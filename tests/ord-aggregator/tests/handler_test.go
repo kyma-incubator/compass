@@ -274,8 +274,8 @@ func TestORDAggregator(t *testing.T) {
 		globalProductsNumber, globalVendorsNumber := getGlobalResourcesNumber(ctx, t, unsecuredHttpClient)
 		t.Logf("Global products number: %d, Global vendors number: %d", globalProductsNumber, globalVendorsNumber)
 
-		expectedNumberOfProducts += globalProductsNumber
-		expectedNumberOfVendors += globalVendorsNumber
+		expectedTotalNumberOfProducts := expectedNumberOfProducts + globalProductsNumber
+		expectedTotalNumberOfVendors := expectedNumberOfVendors + globalVendorsNumber
 
 		// Register systems
 		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
@@ -354,12 +354,12 @@ func TestORDAggregator(t *testing.T) {
 			// Verify products
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/products?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
-			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfProducts {
+			if len(gjson.Get(respBody, "value").Array()) < expectedTotalNumberOfProducts {
 				t.Log("Missing Products...will try again")
 				return false
 			}
-			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfProducts)
-			assertions.AssertMultipleEntitiesFromORDService(t, respBody, productsMap, expectedNumberOfProducts, shortDescriptionField)
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfProducts)
+			assertions.AssertProducts(t, respBody, productsMap, expectedTotalNumberOfProducts, shortDescriptionField)
 			t.Log("Successfully verified products")
 
 			// Verify apis
@@ -436,12 +436,12 @@ func TestORDAggregator(t *testing.T) {
 			// Verify vendors
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/vendors?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
-			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfVendors {
+			if len(gjson.Get(respBody, "value").Array()) < expectedTotalNumberOfVendors {
 				t.Log("Missing Vendors...will try again")
 				return false
 			}
-			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfVendors)
-			assertions.AssertVendorFromORDService(t, respBody, expectedNumberOfVendors, expectedVendorTitle)
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfVendors)
+			assertions.AssertVendorFromORDService(t, respBody, expectedTotalNumberOfVendors, expectedNumberOfVendors, expectedVendorTitle)
 			t.Log("Successfully verified vendors")
 
 			return true
