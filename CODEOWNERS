@@ -7,38 +7,5 @@
 # These are the default owners for the whole content of the `compass` repository. The default owners are automatically added as reviewers when you open a pull request, unless different owners are specified in the file.
 * @kyma-incubator/cmp_team
 
-# All developers working on this repository are able to edit main values.yaml file.
-/chart/compass/values.yaml @PK85 @akgalwas @janmedrek @Szymongib @franpog859 @Maladie @dbadura @piotrmiskiewicz @ksputo @jasiu001 @koala7659 @kyma-incubator/cmp_team
-
-# Director
-/chart/compass/charts/director @PK85 @dbadura @kyma-incubator/cmp_team
-/chart/compass/templates/director-api-test.yaml @PK85 @dbadura @kyma-incubator/cmp_team
-/chart/compass/templates/director-gateway-integration-test.yaml @PK85 @dbadura @kyma-incubator/cmp_team
-/components/schema-migrator/migrations/director @PK85 @dbadura @kyma-incubator/cmp_team
-/components/director @PK85 @dbadura @kyma-incubator/cmp_team
-/docs/director @PK85 @dbadura @kyma-incubator/cmp_team
-/docs/integration-system @PK85 @dbadura @kyma-incubator/cmp_team
-/tests/director @PK85 @dbadura @kyma-incubator/cmp_team
-
-# Tenant Fetcher
-/chart/compass/templates/tenant-fetcher-secret.yaml @PK85 @dbadura @kyma-incubator/cmp_team
-/chart/compass/templates/tenant-fetcher-job.yaml @PK85 @dbadura @kyma-incubator/cmp_team
-
-# Gateway
-/chart/compass/charts/gateway @PK85 @dbadura @kyma-incubator/cmp_team
-/chart/compass/templates/gateway-auditlog-integration-test.yaml @PK85 @dbadura @kyma-incubator/cmp_team
-/components/gateway @PK85 @dbadura @kyma-incubator/cmp_team
-
-# Pairing Adapter
-/chart/compass/charts/paring-adapter @PK85 @dbadura @gvachkov @kyma-incubator/cmp_team
-/components/pairing-adapter @PK85 @dbadura @kyma-incubator/cmp_team
-
-# External Services Mock
-/components/external-services-mock @PK85 @dbadura @kyma-incubator/cmp_team
-/chart/compass/charts/external-services-mock @PK85 @dbadura @kyma-incubator/cmp_team
-
-# Compass UI
-/chart/compass/charts/cockpit @kwiatekus @dariadomagala @parostatkiem @akucharska @Wawrzyn321 @kyma-incubator/cmp_team
-
 # All .md files
 *.md @Peteva @ekaterina-mitova @nkanchev
