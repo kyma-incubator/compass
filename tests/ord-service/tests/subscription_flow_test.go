@@ -312,7 +312,7 @@ func createExtCertJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.C
 				if env.Name == "CERT_SUBJECT_PATTERN" {
 					env.Value = testConfig.TestExternalCertSubject
 				}
-				if env.Name == "CERT_SVC_CSR_ENDPOINT" || env.Name == "CERT_SVC_CLIENT_ID" || env.Name == "CERT_SVC_CLIENT_SECRET" || env.Name == "CERT_SVC_OAUTH_URL" {
+				if env.Name == "CERT_SVC_CSR_ENDPOINT" || env.Name == "CERT_SVC_CLIENT_ID" || env.Name == "CERT_SVC_OAUTH_URL" || env.Name == "CERT_SVC_OAUTH_CLIENT_CERT" || env.Name == "CERT_SVC_OAUTH_CLIENT_KEY" {
 					env.ValueFrom.SecretKeyRef.Name = testConfig.CertSvcInstanceTestSecretName // external certificate credentials used to execute consumer-provider test
 				}
 			}
