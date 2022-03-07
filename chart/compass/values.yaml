@@ -120,7 +120,7 @@ global:
       version: "PR-59"
     e2e_tests:
       dir:
-      version: "PR-2221"
+      version: "PR-2229"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -307,6 +307,7 @@ global:
         - "x-broker-api-request-identity"
 
   kubernetes:
+    serviceAccountTokenIssuer: kubernetes/serviceaccount
     serviceAccountTokenJWKS: https://kubernetes.default.svc.cluster.local/openid/v1/jwks
 
   ingress:
