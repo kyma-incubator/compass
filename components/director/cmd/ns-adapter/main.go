@@ -150,7 +150,7 @@ func main() {
 	})
 
 	subrouter := router.PathPrefix("/api").Subrouter()
-	subrouter.Use(authenticator.New(conf.JwksEndpoint, conf.AllowJWTSigningNone, "", claims.NewClaimsValidator()).NSAdapterHandler())
+	subrouter.Use(authenticator.New(http.DefaultClient, conf.JwksEndpoint, conf.AllowJWTSigningNone, "", claims.NewClaimsValidator()).NSAdapterHandler())
 	subrouter.MethodNotAllowedHandler = methodnotallowed.CreateMethodNotAllowedHandler()
 	subrouter.Methods(http.MethodPut).
 		Path("/v1/notifications").
