@@ -181,7 +181,8 @@ global:
 
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
-    tokenPath: "/cert/token"
+    mtlsTokenPath: "/cert/token"
+    standardTokenPath: "/secured/oauth/token"
     skipSSLValidation: false
     secret:
       name: "compass-gateway-auditlog-secret"
