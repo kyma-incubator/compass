@@ -11,9 +11,6 @@ import (
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
-	"math/big"
-	"time"
-
 	"strings"
 	"testing"
 
@@ -295,49 +292,4 @@ func Cleanup(t *testing.T, configmapCleaner *k8s.ConfigmapCleaner, certification
 	hash := GetCertificateHash(t, certificationResult.ClientCertificate)
 	err := configmapCleaner.CleanRevocationList(ctx, hash)
 	assert.NoError(t, err)
-}
-
-// IssueExternalIssuerCertificate returns client key and raw certificate chain, containing client certificate manually signed by connector's CA and CA certificate itself
-func IssueExternalIssuerCertificate(t require.TestingT, connectorCACert []byte, connectorCACertKey []byte, subTenantID string) (*rsa.PrivateKey, [][]byte) {
-	// Parse the CA cert
-	caPemBlock, _ := pem.Decode(connectorCACert)
-	require.NotNil(t, caPemBlock)
-
-	caCRT, err := x509.ParseCertificate(caPemBlock.Bytes)
-	require.NoError(t, err)
-
-	// Parse the CA key
-	keyPemBlock, _ := pem.Decode(connectorCACertKey)
-	require.NotNil(t, keyPemBlock)
-
-	caPrivateKey, err := x509.ParsePKCS1PrivateKey(keyPemBlock.Bytes)
-	if err != nil {
-		caPrivateKeyPKCS8, err := x509.ParsePKCS8PrivateKey(keyPemBlock.Bytes)
-		require.NoError(t, err)
-		var ok bool
-		caPrivateKey, ok = caPrivateKeyPKCS8.(*rsa.PrivateKey)
-		require.True(t, ok)
-	}
-
-	clientCert := x509.Certificate{
-		SerialNumber: big.NewInt(2),
-		Subject: pkix.Name{
-			Country:            []string{"DE"},
-			Organization:       []string{"SAP SE"},
-			OrganizationalUnit: []string{"SAP Cloud Platform Clients", "Region", subTenantID},
-			Locality:           []string{"locality"},
-			CommonName:         "common-name",
-		},
-		NotBefore:   time.Now(),
-		NotAfter:    time.Now().Add(time.Hour),
-		KeyUsage:    x509.KeyUsageDigitalSignature,
-		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
-	}
-
-	clientKey := CreateKey(t)
-
-	clientCrtRaw, err := x509.CreateCertificate(rand.Reader, &clientCert, caCRT, &clientKey.PublicKey, caPrivateKey)
-	require.NoError(t, err)
-
-	return clientKey, [][]byte{clientCrtRaw, caCRT.Raw}
 }

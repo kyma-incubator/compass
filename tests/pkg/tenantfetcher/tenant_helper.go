@@ -18,6 +18,7 @@ package tenantfetcher
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -54,37 +55,38 @@ type TenantIDProperties struct {
 }
 
 // CreateTenantRequest returns a prepared tenant request with token in the header with the necessary tenant-fetcher claims
-func CreateTenantRequest(t *testing.T, tenantIDs Tenant, tenantProperties TenantIDProperties, httpMethod, tenantFetcherUrl, externalServicesMockURL, clientID, clientSecret string) *http.Request {
+func CreateTenantRequest(t *testing.T, tenants Tenant, tenantProperties TenantIDProperties, httpMethod, tenantFetcherUrl, externalServicesMockURL, clientID, clientSecret string) *http.Request {
 	var (
 		body = "{}"
 		err  error
 	)
 
-	if len(tenantIDs.TenantID) > 0 {
-		body, err = sjson.Set(body, tenantProperties.TenantIDProperty, tenantIDs.TenantID)
+	if len(tenants.TenantID) > 0 {
+		body, err = sjson.Set(body, tenantProperties.TenantIDProperty, tenants.TenantID)
 		require.NoError(t, err)
 	}
-	if len(tenantIDs.SubaccountID) > 0 {
-		body, err = sjson.Set(body, tenantProperties.SubaccountTenantIDProperty, tenantIDs.SubaccountID)
+	if len(tenants.SubaccountID) > 0 {
+		body, err = sjson.Set(body, tenantProperties.SubaccountTenantIDProperty, tenants.SubaccountID)
 		require.NoError(t, err)
 	}
-	if len(tenantIDs.CustomerID) > 0 {
-		body, err = sjson.Set(body, tenantProperties.CustomerIDProperty, tenantIDs.CustomerID)
+	if len(tenants.CustomerID) > 0 {
+		body, err = sjson.Set(body, tenantProperties.CustomerIDProperty, tenants.CustomerID)
 		require.NoError(t, err)
 	}
-	if len(tenantIDs.Subdomain) > 0 {
-		body, err = sjson.Set(body, tenantProperties.SubdomainProperty, tenantIDs.Subdomain)
+	if len(tenants.Subdomain) > 0 {
+		body, err = sjson.Set(body, tenantProperties.SubdomainProperty, tenants.Subdomain)
 		require.NoError(t, err)
 	}
-	if len(tenantIDs.SubscriptionProviderID) > 0 {
-		body, err = sjson.Set(body, tenantProperties.SubscriptionProviderIDProperty, tenantIDs.SubscriptionProviderID)
+	if len(tenants.SubscriptionProviderID) > 0 {
+		body, err = sjson.Set(body, tenantProperties.SubscriptionProviderIDProperty, tenants.SubscriptionProviderID)
 		require.NoError(t, err)
 	}
 
 	request, err := http.NewRequest(httpMethod, tenantFetcherUrl, bytes.NewBuffer([]byte(body)))
 	require.NoError(t, err)
 
-	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, externalServicesMockURL, clientID, clientSecret, DefaultClaims(externalServicesMockURL))))
+	tkn := token.GetClientCredentialsToken(t, context.Background(), externalServicesMockURL+"/secured/oauth/token", clientID, clientSecret, "tenantFetcherClaims")
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tkn))
 
 	return request
 }

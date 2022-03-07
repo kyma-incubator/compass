@@ -16,9 +16,9 @@ const packageTable string = `public.packages`
 var (
 	packageColumns = []string{"id", "app_id", "ord_id", "vendor", "title", "short_description",
 		"description", "version", "package_links", "links", "licence_type", "tags", "countries", "labels", "policy_level",
-		"custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash", "documentation_labels"}
+		"custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash", "documentation_labels", "support_info"}
 	updatableColumns = []string{"vendor", "title", "short_description", "description", "version", "package_links", "links",
-		"licence_type", "tags", "countries", "labels", "policy_level", "custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash", "documentation_labels"}
+		"licence_type", "tags", "countries", "labels", "policy_level", "custom_policy_level", "part_of_products", "line_of_business", "industry", "resource_hash", "documentation_labels", "support_info"}
 )
 
 // EntityConverter missing godoc
@@ -100,7 +100,7 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.P
 // ListByApplicationID missing godoc
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.Package, error) {
 	pkgCollection := pkgCollection{}
-	if err := r.lister.List(ctx, resource.Package, tenantID, &pkgCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Package, tenantID, &pkgCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
 		return nil, err
 	}
 	pkgs := make([]*model.Package, 0, pkgCollection.Len())
