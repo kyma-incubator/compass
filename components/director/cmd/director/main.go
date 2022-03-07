@@ -187,6 +187,9 @@ func main() {
 	httpClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
 	}
 	cfg.SelfRegConfig.ClientTimeout = cfg.ClientTimeout
 
@@ -205,7 +208,7 @@ func main() {
 
 	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
 
-	rootResolver := domain.NewRootResolver(
+	rootResolver, err := domain.NewRootResolver(
 		&normalizer.DefaultNormalizator{},
 		transact,
 		cfgProvider,
@@ -220,8 +223,8 @@ func main() {
 		cfg.OneTimeToken.Length,
 		adminURL,
 		accessStrategyExecutorProvider,
-		certCache,
 	)
+	exitOnError(err, "Failed to initialize root resolver")
 
 	gqlCfg := graphql.Config{
 		Resolvers: rootResolver,
@@ -238,7 +241,7 @@ func main() {
 	claimsValidator := claims.NewValidator(runtimeSvc(cfg), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountIDsLabelKey)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
-	authMiddleware := mp_authenticator.New(cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claimsValidator)
+	authMiddleware := mp_authenticator.New(httpClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claimsValidator)
 
 	if cfg.JWKSSyncPeriod != 0 {
 		logger.Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)

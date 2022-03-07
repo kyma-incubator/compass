@@ -45,6 +45,7 @@ type repoUpserterFunc func(ctx context.Context, tenant string, application *mode
 type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
+	GetByIDForUpdate(ctx context.Context, tenant, id string) (*model.Application, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
 	GetByNameAndSystemNumber(ctx context.Context, tenant, name, systemNumber string) (*model.Application, error)
 	GetByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Application, error)
@@ -241,6 +242,20 @@ func (s *service) Get(ctx context.Context, id string) (*model.Application, error
 	}
 
 	app, err := s.appRepo.GetByID(ctx, appTenant, id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Application with id %s", id)
+	}
+
+	return app, nil
+}
+
+// GetForUpdate returns an application retrieved globally (without tenant required in the context)
+func (s *service) GetForUpdate(ctx context.Context, id string) (*model.Application, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+	app, err := s.appRepo.GetByIDForUpdate(ctx, appTenant, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Application with id %s", id)
 	}

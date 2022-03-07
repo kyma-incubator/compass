@@ -51,10 +51,16 @@ const (
 	fakeJWKSURL     = "file://testdata/invalid.json"
 )
 
+var httpClientWithoutRedirects = &http.Client{
+	CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	},
+}
+
 func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		auth := authenticator.New(PublicJWKSURL, true, ClientIDHeaderKey, claimsValidatorMock())
+		auth := authenticator.New(httpClientWithoutRedirects, PublicJWKSURL, true, ClientIDHeaderKey, claimsValidatorMock())
 		// WHEN
 		err := auth.SynchronizeJWKS(context.TODO())
 
@@ -64,7 +70,7 @@ func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
 
 	t.Run("Error when can't fetch JWKS", func(t *testing.T) {
 		// GIVEN
-		authFake := authenticator.New(fakeJWKSURL, true, ClientIDHeaderKey, nil)
+		authFake := authenticator.New(httpClientWithoutRedirects, fakeJWKSURL, true, ClientIDHeaderKey, nil)
 
 		// WHEN
 		err := authFake.SynchronizeJWKS(context.TODO())
@@ -87,6 +93,15 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	privateJWKS3, err := auths.FetchJWK(context.TODO(), PrivateJWKS3URL)
 	require.NoError(t, err)
+
+	t.Run("http client configured without redirects", func(t *testing.T) {
+		// WHEN
+		jwks, err := auths.FetchJWK(context.TODO(), "https://redirect.com/test", jwk.WithHTTPClient(httpClientWithoutRedirects))
+
+		// THEN
+		require.Nil(t, jwks)
+		require.Contains(t, err.Error(), "failed to fetch remote JWK (status = 302)") // the existing error is due to FetchJWK function logic and checking if response status code is different thann 200, in this case it's 302. But redirect was not performed
+	})
 
 	t.Run("Success - token with signing method", func(t *testing.T) {
 		// GIVEN
@@ -173,7 +188,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Success - retry parsing token with synchronizing JWKS", func(t *testing.T) {
 		// GIVEN
-		auth := authenticator.New(PublicJWKSURL, false, ClientIDHeaderKey, claimsValidatorMock())
+		auth := authenticator.New(httpClientWithoutRedirects, PublicJWKSURL, false, ClientIDHeaderKey, claimsValidatorMock())
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -202,7 +217,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Success - when we have more than one JWKS and use the first key", func(t *testing.T) {
 		// GIVEN
-		auth := authenticator.New(PublicJWKS3URL, false, ClientIDHeaderKey, claimsValidatorMock())
+		auth := authenticator.New(httpClientWithoutRedirects, PublicJWKS3URL, false, ClientIDHeaderKey, claimsValidatorMock())
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -229,7 +244,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Success - when we have more than one JWKS and use the second key", func(t *testing.T) {
 		// GIVEN
-		auth := authenticator.New(PublicJWKS3URL, false, ClientIDHeaderKey, claimsValidatorMock())
+		auth := authenticator.New(httpClientWithoutRedirects, PublicJWKS3URL, false, ClientIDHeaderKey, claimsValidatorMock())
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -256,7 +271,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("Error - retry parsing token with failing synchronizing JWKS", func(t *testing.T) {
 		// GIVEN
-		auth := authenticator.New(PublicJWKSURL, false, ClientIDHeaderKey, claimsValidatorMock())
+		auth := authenticator.New(httpClientWithoutRedirects, PublicJWKSURL, false, ClientIDHeaderKey, claimsValidatorMock())
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 
@@ -421,7 +436,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 	t.Run("Error - after successful parsing claims there are no scopes", func(t *testing.T) {
 		// GIVEN
 		requiredScopes := []string{"wanted-scope"}
-		auth := authenticator.New(PublicJWKSURL, false, ClientIDHeaderKey, claims.NewScopesValidator(requiredScopes))
+		auth := authenticator.New(httpClientWithoutRedirects, PublicJWKSURL, false, ClientIDHeaderKey, claims.NewScopesValidator(requiredScopes))
 		err := auth.SynchronizeJWKS(context.TODO())
 		require.NoError(t, err)
 		middleware := auth.Handler()
@@ -909,7 +924,7 @@ func createTokenWithSigningMethod(t *testing.T, tenant string, scopes string, ke
 }
 
 func createMiddleware(t *testing.T, allowJWTSigningNone bool, claimsValidatorMock authenticator.ClaimsValidator) func(next http.Handler) http.Handler {
-	auth := authenticator.New(PublicJWKSURL, allowJWTSigningNone, ClientIDHeaderKey, claimsValidatorMock)
+	auth := authenticator.New(httpClientWithoutRedirects, PublicJWKSURL, allowJWTSigningNone, ClientIDHeaderKey, claimsValidatorMock)
 	err := auth.SynchronizeJWKS(context.TODO())
 	require.NoError(t, err)
 	return auth.Handler()

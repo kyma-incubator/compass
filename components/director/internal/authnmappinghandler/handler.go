@@ -27,6 +27,8 @@ import (
 	"strings"
 	"sync"
 
+	"golang.org/x/oauth2"
+
 	"github.com/gorilla/mux"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
@@ -121,7 +123,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ctx := req.Context()
+	ctx := context.WithValue(req.Context(), oauth2.HTTPClient, h.httpClient)
 
 	reqData, err := h.reqDataParser.Parse(req)
 	if err != nil {

@@ -35,6 +35,12 @@ spec:
         reqlimit: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit2MBLabel }}
         release: {{ .Release.Name }}
     spec:
+      {{ if .Values.global.isLocalEnv }}
+      hostAliases:
+        - ip: {{ .Values.global.minikubeIP }}
+          hostnames:
+            - "{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}"
+      {{ end }}
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
@@ -199,6 +205,11 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.director.selfRegister.secret.name }}
                   key: {{ .Values.global.director.selfRegister.secret.urlKey }}
+            - name: APP_SELF_REGISTER_TOKEN_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.director.selfRegister.secret.name }}
+                  key: {{ .Values.global.director.selfRegister.secret.tokenUrlKey }}
             - name: APP_SELF_REGISTER_OAUTH_TOKEN_PATH
               value: {{ .Values.global.director.selfRegister.oauthTokenPath }}
             - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY # This variable get its value from tenant fetcher configuration(in tests charts too) because we need "self register" flow to be executed as part of the consumer-provider test, locally and on real environment as well
@@ -221,6 +232,18 @@ spec:
               value: {{ .Values.global.director.selfRegister.requestBodyPattern | quote }}
             - name: APP_SELF_REGISTER_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.http.client.skipSSLValidation }}"
+            - name: APP_SELF_REGISTER_OAUTH_X509_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.director.selfRegister.secret.name }}
+                  key: {{ .Values.global.director.selfRegister.secret.clientCertKey }}
+            - name: APP_SELF_REGISTER_OAUTH_X509_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.director.selfRegister.secret.name }}
+                  key: {{ .Values.global.director.selfRegister.secret.clientKeyKey }}
+            - name: APP_SELF_REGISTER_OAUTH_MODE
+              value: {{ .Values.global.director.selfRegister.oauthMode }}
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
             - name: APP_EXTERNAL_CLIENT_CERT_KEY
