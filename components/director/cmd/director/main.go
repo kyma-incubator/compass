@@ -80,8 +80,7 @@ import (
 const envPrefix = "APP"
 
 type config struct {
-	Address         string `envconfig:"default=127.0.0.1:3000"`
-	HydratorAddress string `envconfig:"default=127.0.0.1:8080"`
+	Address string `envconfig:"default=127.0.0.1:3000"`
 
 	InternalAddress string `envconfig:"default=127.0.0.1:3002"`
 	AppURL          string `envconfig:"APP_URL"`
@@ -109,8 +108,6 @@ type config struct {
 
 	RuntimeJWKSCachePeriod time.Duration `envconfig:"default=5m"`
 
-	StaticUsersSrc    string `envconfig:"default=/data/static-users.yaml"`
-	StaticGroupsSrc   string `envconfig:"default=/data/static-groups.yaml"`
 	PairingAdapterSrc string `envconfig:"optional"`
 
 	OneTimeToken onetimetoken.Config

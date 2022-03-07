@@ -24,3 +24,8 @@ database:
     maxOpenConnections: 2
     maxIdleConnections: 1
 
+adminGroupNames: "mps-superadmin, runtimeAdmin, runtimeNamespaceAdmin"
+operatorGroupNames: "runtimeOperator"
+
+configFile:
+  name: "config.yaml"

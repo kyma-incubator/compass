@@ -59,8 +59,18 @@ spec:
               value: "{{ .Values.global.hydrator.prefix }}"
             - name: APP_DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
-            - name: APP_TENANT_MAPPING_ENDPOINT
-              value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
+            - name: APP_CONFIGURATION_FILE
+              value: /config/config.yaml
+            - name: APP_REVOCATION_CONFIG_MAP_NAME
+              value: "{{ tpl .Values.global.connector.revocation.configmap.namespace . }}/{{ .Values.global.connector.revocation.configmap.name }}"
+            {{- range $authenMappingServiceName, $config := .Values.global.oathkeeper.mutators.authenticationMappingServices }}
+            {{- if eq $config.authenticator.enabled true }}
+            - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_TRUSTED_ISSUERS
+              value: {{ $config.authenticator.trusted_issuers | quote }}
+            - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_ATTRIBUTES
+              value: {{ $config.authenticator.attributes | quote }}
+            {{- end }}
+            {{- end }}
 
           livenessProbe:
             httpGet:
@@ -76,3 +86,22 @@ spec:
             initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}
+          volumeMounts:
+            - mountPath: /config
+              name: hydrator-config
+            - mountPath: /data/static-users.yaml
+              name: static-users
+              subPath: static-users.yaml
+            - mountPath: /data/static-groups.yaml
+              name: static-groups
+              subPath: static-groups.yaml
+      volumes:
+        - name: hydrator-config
+          configMap:
+            name: {{ template "fullname" . }}-config
+        - name: static-users
+          configMap:
+            name: {{ template "fullname" . }}-static-users
+        - name: static-groups
+          configMap:
+            name: {{ template "fullname" . }}-static-groups

@@ -80,7 +80,7 @@ type config struct {
 	CSRSubject                   istiocertresolver.CSRSubjectConfig
 	ExternalIssuerSubject        istiocertresolver.ExternalIssuerSubjectConfig
 	CertificateDataHeader        string `envconfig:"default=Certificate-Data"`
-	RevocationConfigMapName      string `envconfig:"default=compass-system/revocations-Config"`
+	RevocationConfigMapName      string `envconfig:"default=compass-system/revocations-config"`
 	SubjectConsumerMappingConfig string `envconfig:"default=[]"`
 
 	Log log.Config
@@ -126,7 +126,7 @@ func initAPIHandlers(ctx context.Context, authenticators []authenticator.Config,
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 
 	router := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
-	healthCheckRouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
+	healthCheckRouter := mainRouter.NewRoute().Subrouter()
 
 	registerHydratorHandlers(ctx, router, authenticators, cfg)
 

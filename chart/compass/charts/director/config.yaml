@@ -116,6 +116,8 @@ graphql:
       auths: ["runtime.auths:read"]
     integration_system:
       auths: ["integration_system.auths:read"]
+    tenant:
+      externalId: ["internal"]
 
 # Scopes assigned for every new Client Credentials by given object type (Runtime / Application / Integration System)
 # and scopes mapped to a consumer with the given type, then that consumer is using a client certificate
