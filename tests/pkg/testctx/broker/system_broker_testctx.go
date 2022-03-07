@@ -18,10 +18,8 @@ type SystemBrokerTestContext struct {
 	Tenant  string
 	Context context.Context
 
-	SystemBrokerURL                string
-	DirectorURL                    string
-	DirectorExternalCertSecuredURL string
-	ORDServiceURL                  string
+	SystemBrokerURL string
+	ORDServiceURL   string
 
 	ClientKey *rsa.PrivateKey
 
@@ -46,14 +44,12 @@ func NewSystemBrokerTestContext(cfg config.SystemBrokerTestConfig) (*SystemBroke
 	}
 
 	return &SystemBrokerTestContext{
-		Tenant:                         cfg.Tenant,
-		Context:                        context.Background(),
-		SystemBrokerURL:                cfg.SystemBrokerURL,
-		DirectorURL:                    cfg.DirectorURL,
-		DirectorExternalCertSecuredURL: cfg.DirectorExternalCertSecuredURL,
-		ORDServiceURL:                  cfg.ORDServiceURL,
-		ClientKey:                      clientKey,
-		ConnectorTokenSecuredClient:    clients.NewTokenSecuredClient(cfg.ConnectorURL),
-		CertSecuredGraphQLClient:       gql.NewCertAuthorizedGraphQLClientWithCustomURL(cfg.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, cfg.SkipSSLValidation),
+		Tenant:                      cfg.Tenant,
+		Context:                     context.Background(),
+		SystemBrokerURL:             cfg.SystemBrokerURL,
+		ORDServiceURL:               cfg.ORDServiceURL,
+		ClientKey:                   clientKey,
+		ConnectorTokenSecuredClient: clients.NewTokenSecuredClient(cfg.ConnectorURL),
+		CertSecuredGraphQLClient:    gql.NewCertAuthorizedGraphQLClientWithCustomURL(cfg.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, cfg.SkipSSLValidation),
 	}, nil
 }

@@ -47,46 +47,43 @@ func TestConnector(t *testing.T) {
 		},
 	}
 
-	client, err := clients.NewDirectorClient(certSecuredGraphQLClient, testConfig.Tenant, testConfig.DirectorReadyzUrl)
-	require.NoError(t, err)
-
-	appID, err := client.CreateApplication(appInput)
+	appID, err := directorClient.CreateApplication(appInput)
 	defer func() {
-		err = client.CleanupApplication(appID)
+		err = directorClient.CleanupApplication(appID)
 		require.NoError(t, err)
 	}()
 	require.NoError(t, err)
 
-	runtimeID, err := client.CreateRuntime(runtimeInput)
+	runtimeID, err := directorClient.CreateRuntime(runtimeInput)
 	defer func() {
-		err = client.CleanupRuntime(runtimeID)
+		err = directorClient.CleanupRuntime(runtimeID)
 		require.NoError(t, err)
 	}()
 	require.NoError(t, err)
 
-	err = client.SetDefaultEventing(runtimeID, appID, testConfig.EventsBaseURL)
+	err = directorClient.SetDefaultEventing(runtimeID, appID, testConfig.EventsBaseURL)
 	require.NoError(t, err)
 
 	t.Run("Connector Service flow for Application", func(t *testing.T) {
-		certificateGenerationSuite(t, client, appID)
-		certificateRotationSuite(t, client, appID)
-		certificateRevocationSuite(t, client, appID)
+		certificateGenerationSuite(t, directorClient, appID)
+		certificateRotationSuite(t, directorClient, appID)
+		certificateRevocationSuite(t, directorClient, appID)
 
 		for _, shouldNormalizeEventURL := range []bool{true, false} {
-			err := client.SetRuntimeLabel(runtimeID, "isNormalized", strconv.FormatBool(shouldNormalizeEventURL))
+			err := directorClient.SetRuntimeLabel(runtimeID, "isNormalized", strconv.FormatBool(shouldNormalizeEventURL))
 			require.NoError(t, err)
 
 			for _, appNameLabelExists := range []bool{true, false} {
 				var err error
 				if appNameLabelExists {
-					err = client.SetApplicationLabel(appID, "name", defaultAppNameNormalizer.Normalize(TestApp))
+					err = directorClient.SetApplicationLabel(appID, "name", defaultAppNameNormalizer.Normalize(TestApp))
 				} else {
-					err = client.DeleteApplicationLabel(appID, "name")
+					err = directorClient.DeleteApplicationLabel(appID, "name")
 				}
 				require.NoError(t, err)
 
-				appMgmInfoEndpointSuite(t, client, appID, TestApp, appNameLabelExists, shouldNormalizeEventURL)
-				appCsrInfoEndpointSuite(t, client, appID, TestApp, appNameLabelExists, shouldNormalizeEventURL)
+				appMgmInfoEndpointSuite(t, directorClient, appID, TestApp, appNameLabelExists, shouldNormalizeEventURL)
+				appCsrInfoEndpointSuite(t, directorClient, appID, TestApp, appNameLabelExists, shouldNormalizeEventURL)
 			}
 		}
 	})

@@ -43,8 +43,6 @@ spec:
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_SKIP_SSL_VALIDATION
               value: {{ .Values.global.tests.http.client.skipSSLValidation.connectivityAdapter | quote }}
-            - name: APP_CONNECTIVITY_ADAPTER_URL
-              value: "https://{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_CONNECTIVITY_ADAPTER_MTLS_URL
               value: "https://{{ .Values.global.connectivity_adapter.mtls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_TENANT

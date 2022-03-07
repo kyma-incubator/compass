@@ -41,9 +41,7 @@ type BaseDirectorConfig struct {
 }
 
 var (
-	conf = &DirectorConfig{}
-
-	certCache                certloader.Cache
+	conf                     = &DirectorConfig{}
 	certSecuredGraphQLClient *graphql.Client
 )
 
@@ -56,16 +54,16 @@ func TestMain(m *testing.M) {
 	ctx := context.Background()
 
 	var err error
-	certCache, err = certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
+	cc, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	if err := util.WaitForCache(certCache); err != nil {
+	if err := util.WaitForCache(cc); err != nil {
 		log.D().Fatal(err)
 	}
 
-	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, certCache.Get().Certificate, conf.SkipSSLValidation)
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, conf.SkipSSLValidation)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)

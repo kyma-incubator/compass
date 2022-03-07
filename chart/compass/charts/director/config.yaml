@@ -179,7 +179,6 @@ scopesPerConsumerType:
     - "webhooks.auth:read"
     - "formation:write"
     - "internal_visibility:read"
-    - "application.auths:read"
   default:
     - "runtime:read"
     - "runtime:write"

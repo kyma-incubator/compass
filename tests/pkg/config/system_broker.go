@@ -5,7 +5,6 @@ import "github.com/kyma-incubator/compass/components/director/pkg/certloader"
 type SystemBrokerTestConfig struct {
 	Tenant                         string
 	SystemBrokerURL                string
-	DirectorURL                    string
 	DirectorExternalCertSecuredURL string
 	ConnectorURL                   string
 	ORDServiceURL                  string

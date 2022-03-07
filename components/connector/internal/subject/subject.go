@@ -19,15 +19,6 @@ const (
 	SuperAdminType        = "Super Admin"
 )
 
-// ConsumerTypes is a marker map that provides fast checks for supported and unsupported consumer types.
-// Note: New consumer type constants should be added here as well.
-var ConsumerTypes = map[string]struct{}{
-	RuntimeType:           {},
-	IntegrationSystemType: {},
-	ApplicationType:       {},
-	SuperAdminType:        {},
-}
-
 type subjectConsumerTypeMapping struct {
 	Subject            string   `json:"subject"`
 	ConsumerType       string   `json:"consumer_type"`
@@ -39,11 +30,25 @@ func (s *subjectConsumerTypeMapping) validate() error {
 	if len(s.Subject) < 1 {
 		return errors.New("subject is not provided")
 	}
-	if _, ok := ConsumerTypes[s.ConsumerType]; !ok {
+
+	supportedConsumerTypes := map[string]bool{
+		RuntimeType:           true,
+		IntegrationSystemType: true,
+		ApplicationType:       true,
+		SuperAdminType:        true,
+	}
+
+	supportedTenantTypes := map[string]bool{
+		tenantEntity.Customer:   true,
+		tenantEntity.Account:    true,
+		tenantEntity.Subaccount: true,
+	}
+
+	if !supportedConsumerTypes[s.ConsumerType] {
 		return fmt.Errorf("consumer type %s is not valid", s.ConsumerType)
 	}
 	for _, al := range s.TenantAccessLevels {
-		if al != string(tenantEntity.Account) && al != string(tenantEntity.Subaccount) && al != string(tenantEntity.Customer) {
+		if !supportedTenantTypes[al] {
 			return fmt.Errorf("tenant access level %s is not valid", al)
 		}
 	}

@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"os"
 	"testing"
 
@@ -9,19 +10,16 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/util"
-	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 )
 
 var (
-	certSecuredGraphQLClient *graphql.Client
+	directorClient clients.Client
 )
 
 type config struct {
-	ConnectivityAdapterUrl         string `envconfig:"default=https://adapter-gateway.kyma.local"`
 	ConnectivityAdapterMtlsUrl     string `envconfig:"default=https://adapter-gateway-mtls.kyma.local"`
-	DirectorUrl                    string `envconfig:"default=http://compass-director.compass-system.svc.cluster.local:3000/graphql"`
 	DirectorExternalCertSecuredURL string `envconfig:"default=http://compass-director-external-mtls.compass-system.svc.cluster.local:3000/graphql"`
 	SkipSSLValidation              bool   `envconfig:"default=true"`
 	EventsBaseURL                  string `envconfig:"default=https://events.com"`
@@ -48,7 +46,11 @@ func TestMain(m *testing.M) {
 		log.D().Fatal(err)
 	}
 
-	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, testConfig.SkipSSLValidation)
+	certSecuredGraphQLClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, testConfig.SkipSSLValidation)
+	directorClient, err = clients.NewDirectorClient(certSecuredGraphQLClient, testConfig.Tenant, testConfig.DirectorReadyzUrl)
+	if err != nil {
+		log.D().Fatal(err)
+	}
 
 	exitVal := m.Run()
 	os.Exit(exitVal)
