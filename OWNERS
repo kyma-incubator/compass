@@ -1,15 +1,25 @@
 filters:
   ".*":
     approvers:
-     - @kyma-incubator/cmp_team
-  '\.md$|/docs/|^milv\.config\.yaml$':
+    - compass-approvers
+  ".md":
     approvers:
-      - Peteva
-      - ekaterina-mitova
-      - nkanchev
-    reviewers:
-      - Peteva
-      - ekaterina-mitova
-      - nkanchev
+    - documentation-approvers
     labels:
-      - area/documentation
+    - area/documentation
+  emeritus_approvers:
+    - PK85
+    - akgalwas 
+    - janmedrek 
+    - Szymongib 
+    - franpog859 
+    - Maladie 
+    - dbadura 
+    - piotrmiskiewicz 
+    - ksputo 
+    - jasiu001 
+    - koala7659
+    - dpanayotov
+    - ataleksandrov
+    - pankrator
+    - danielgospodinow

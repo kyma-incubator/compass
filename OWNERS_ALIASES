@@ -1,26 +1,21 @@
 aliases:
-  documentation-reviewers:
-    - kazydek
-    - klaudiagrz
-    - bszwarc
-    - mmitoraj
-    - majakurcius
-    - alexandra-simeonova
-    - Peteva
-    - ekaterina-mitova
+  compass-approvers:
+    - gvachkov
+    - KirilKabakchiev
+    - NickyMateev
+    - DimitarPetrov
+    - desislavaa
+    - dzahariev
+    - nyordanoff
+    - krasish
+    - alextargov
+    - PetarTodorovv
+    - StefanCholakov
+    - inaand
+    - StanislavStefanov
+    - SvetlinZarev-SAP
+    - la4ezar
   documentation-approvers:
-    - kazydek
-    - klaudiagrz
-    - bszwarc
-    - mmitoraj
-    - majakurcius
-    - alexandra-simeonova
     - Peteva
     - ekaterina-mitova
     - nkanchev
-  console-approvers:
-    - parostatkiem
-    - Wawrzyn321
-    - kwiatekus
-    - dariadomagala
-    - akucharska
