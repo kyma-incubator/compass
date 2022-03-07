@@ -96,7 +96,7 @@ func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorization
 func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorizationProvider_Matches() {
 	provider := auth.NewMtlsTokenAuthorizationProvider(oauth.Config{}, &automock.CertificateCache{}, auth.DefaultMtlsClientCreator)
 
-	matches := provider.Matches(auth.SaveToContext(context.Background(), &auth.OAuthCredentials{}))
+	matches := provider.Matches(auth.SaveToContext(context.Background(), &auth.OAuthMtlsCredentials{}))
 	suite.Require().Equal(matches, true)
 }
 
@@ -117,7 +117,7 @@ func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorization
 func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorizationProvider_GetAuthorization() {
 	provider := auth.NewMtlsTokenAuthorizationProvider(oauthCfg, nil, getFakeCreator(oauthCfg, suite.Suite, false))
 
-	ctx := auth.SaveToContext(context.Background(), &auth.OAuthCredentials{
+	ctx := auth.SaveToContext(context.Background(), &auth.OAuthMtlsCredentials{
 		ClientID:          oauthCfg.ClientID,
 		TokenURL:          oauthCfg.TokenEndpointProtocol + "://" + oauthCfg.TokenBaseURL + oauthCfg.TokenPath,
 		Scopes:            strings.Join(oauthCfg.ScopesClaim, " "),
@@ -134,7 +134,7 @@ func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorization
 func (suite *MtlsTokenAuthorizationProviderTestSuite) TestMtlsTokenAuthorizationProvider_GetAuthorizationFailsWhenRequestFails() {
 	provider := auth.NewMtlsTokenAuthorizationProvider(oauthCfg, nil, getFakeCreator(oauthCfg, suite.Suite, true))
 
-	ctx := auth.SaveToContext(context.Background(), &auth.OAuthCredentials{
+	ctx := auth.SaveToContext(context.Background(), &auth.OAuthMtlsCredentials{
 		ClientID:          oauthCfg.ClientID,
 		TokenURL:          oauthCfg.TokenEndpointProtocol + "://" + oauthCfg.TokenBaseURL + oauthCfg.TokenPath,
 		Scopes:            strings.Join(oauthCfg.ScopesClaim, " "),

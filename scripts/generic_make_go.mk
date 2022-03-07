@@ -95,14 +95,13 @@ endef
 verify:: test check-imports check-fmt errcheck lint
 format:: imports fmt
 
-release: verify build-image push-image
+release: verify build-image
 
-.PHONY: build-image push-image
+.PHONY: build-image
 build-image: pull-licenses
-	docker build -t $(IMG_NAME) .
-push-image:
-	docker tag $(IMG_NAME) $(IMG_NAME):$(TAG)
-	docker push $(IMG_NAME):$(TAG)
+	docker run --rm --privileged linuxkit/binfmt:v0.8 # https://stackoverflow.com/questions/70066249/docker-random-alpine-packages-fail-to-install
+	docker buildx create --name multi-arch-builder --use
+	docker buildx build --platform linux/amd64,linux/arm64 -t $(IMG_NAME):$(TAG) --push .
 docker-create-opts:
 	@echo $(DOCKER_CREATE_OPTS)
 
