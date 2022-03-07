@@ -9,7 +9,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220104145031-c9120ed20881
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20220104145031-c9120ed20881
-	github.com/kyma-incubator/compass/components/director v0.0.0-20220104145031-c9120ed20881
+	github.com/kyma-incubator/compass/components/director v0.0.0-20220204123004-ea9e9779701a
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20220104145031-c9120ed20881
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20220104145031-c9120ed20881
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220104145031-c9120ed20881
@@ -30,7 +30,7 @@ require (
 )
 
 require (
-	github.com/99designs/gqlgen v0.11.0 // indirect
+	github.com/99designs/gqlgen v0.11.3 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.2 // indirect
@@ -51,7 +51,7 @@ require (
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/kr/pretty v0.2.1 // indirect
-	github.com/lib/pq v1.10.3 // indirect
+	github.com/lib/pq v1.10.4 // indirect
 	github.com/mitchellh/copystructure v1.1.2 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -71,7 +71,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
-	golang.org/x/text v0.3.6 // indirect
+	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
