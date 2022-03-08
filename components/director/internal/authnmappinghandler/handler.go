@@ -245,6 +245,21 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData, a
 		return nil, authenticator.Coordinates{}, aggregatedErr
 	}
 
+	if config.CheckSuffix {
+		c := make(map[string]interface{})
+		if err = claims.Claims(&c); err != nil {
+			return nil, authenticator.Coordinates{}, err
+		}
+		for _, suffix := range config.ClientIDSuffixes {
+			if strings.HasSuffix(c[config.Attributes.ClientID.Key].(string), suffix) {
+				return claims, authenticator.Coordinates{
+					Name:  config.Name,
+					Index: index,
+				}, nil
+			}
+		}
+		return nil, authenticator.Coordinates{}, errors.Wrapf(aggregatedErr, "client suffix mismatch")
+	}
 	return claims, authenticator.Coordinates{
 		Name:  config.Name,
 		Index: index,

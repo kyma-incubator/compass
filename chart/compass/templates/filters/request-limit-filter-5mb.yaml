@@ -1,16 +1,18 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
-  name: {{ .Chart.Name }}-limit-request-payload-size
+  annotations:
+    meta.helm.sh/release-name: compass
+    meta.helm.sh/release-namespace: compass-system
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: {{ .Chart.Name }}-limit-request-payload-5mb
   namespace: {{ .Values.global.istio.namespace }}
 spec:
-  workloadSelector:
-    labels:
-      istio: ingressgateway
   configPatches:
     - applyTo: HTTP_FILTER
       match:
-        context: GATEWAY
+        context: SIDECAR_INBOUND
         listener:
           filterChain:
             filter:
@@ -22,4 +24,7 @@ spec:
           typed_config:
             '@type': type.googleapis.com/udpa.type.v1.TypedStruct
             value:
-              maxRequestBytes: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit }}
+              maxRequestBytes: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit5MB }}
+  workloadSelector:
+    labels:
+      reqlimit: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit5MBLabel }}

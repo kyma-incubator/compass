@@ -33,6 +33,7 @@ metadata:
     kyma-project.io/installation: ""
 data:
   global.isLocalEnv: "true"
+  global.isForTesting: "true"
   global.domainName: "kyma.local"
   global.adminPassword: ""
   global.minikubeIP: ""
@@ -47,6 +48,7 @@ data:
   global.systemFetcher.systemToTemplateMappings: '[{"Name": "temp1", "SourceKey": ["prop"], "SourceValue": ["val1"] }, {"Name": "temp2", "SourceKey": ["prop"], "SourceValue": ["val2"] }]'
   global.oathkeeper.mutators.authenticationMappingServices.tenant-fetcher.authenticator.enabled: "true"
   global.oathkeeper.mutators.authenticationMappingServices.subscriber.authenticator.enabled: "true"
+  global.oathkeeper.mutators.authenticationMappingServices.nsadapter.authenticator.enabled: "true"
   gateway.gateway.auditlog.enabled: "true"
   gateway.gateway.auditlog.authMode: "oauth-mtls"
   system-broker.http.client.skipSSLValidation: "true"
