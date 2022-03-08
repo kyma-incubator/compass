@@ -337,6 +337,7 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Bundles...will try again")
 				return false
 			}
+			time.Sleep(time.Minute)
 			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfBundles)
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, bundlesMap, expectedNumberOfBundles, descriptionField)
 			assertions.AssertBundleCorrelationIds(t, respBody, bundlesCorrelationIDs, expectedNumberOfBundles)
