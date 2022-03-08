@@ -66,6 +66,7 @@ spec:
             hosts:
               - compass.{{ .Values.global.ingress.domainName }}
               - compass-mf.{{ .Values.global.ingress.domainName }}
+              - compass-gateway-sap-mtls.{{ .Values.global.ingress.domainName }}
             {{- if eq .Values.global.externalServicesMock.enabled true }}
               - "compass-external-services-mock.*"
               - "{{ .Values.global.externalServicesMock.certSecuredHost }}.*"

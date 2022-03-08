@@ -455,3 +455,12 @@ func givenID() string {
 func givenTenant() string {
 	return "8f237125-50be-4bb4-96ce-389e2b931f46"
 }
+
+func givenTenantAsUUID() uuid.UUID {
+	parse, err := uuid.Parse("8f237125-50be-4bb4-96ce-389e2b931f46")
+	if err != nil {
+		panic(err)
+	}
+
+	return parse
+}

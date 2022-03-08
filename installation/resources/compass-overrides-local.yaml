@@ -14,6 +14,7 @@ gateway:
       authMode: "oauth-mtls"
       enabled: true
 global:
+  isForTesting: true
   auditlog:
     skipSSLValidation: true
   adminPassword: ""
@@ -46,6 +47,9 @@ global:
           authenticator:
             enabled: true
         tenant-fetcher:
+          authenticator:
+            enabled: true
+        nsadapter:
           authenticator:
             enabled: true
   ordAggregator:

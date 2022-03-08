@@ -31,7 +31,7 @@ spec:
             - name: APP_COMPASS_MTLS_GATEWAY_URL
               value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_REQUEST_PAYLOAD_LIMIT
-              value: {{ (.Values.global.istio.ingressgateway.requestPayloadSizeLimit | int) | quote }}
+              value: {{ (.Values.global.istio.ingressgateway.requestPayloadSizeLimit5MB | int) | quote }}
             - name: DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: APP_DB_USER
