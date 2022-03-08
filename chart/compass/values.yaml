@@ -94,7 +94,7 @@ global:
       version: "PR-2234"
     gateway:
       dir:
-      version: "PR-2212"
+      version: "PR-2198"
     operations_controller:
       dir:
       version: "PR-2212"
@@ -120,7 +120,7 @@ global:
       version: "PR-59"
     e2e_tests:
       dir:
-      version: "PR-2232"
+      version: "PR-2198"
   isLocalEnv: false
   oauth2:
     host: oauth2
@@ -181,12 +181,16 @@ global:
 
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
-    tokenPath: "/oauth/token"
+    mtlsTokenPath: "/cert/token"
+    standardTokenPath: "/secured/oauth/token"
+    skipSSLValidation: false
     secret:
       name: "compass-gateway-auditlog-secret"
       urlKey: url
       clientIdKey: client-id
       clientSecretKey: client-secret
+      clientCertKey: client-cert
+      clientKeyKey: client-key
 
   log:
     format: "kibana"
@@ -631,6 +635,8 @@ global:
         tokenUrlKey: token-url
         clientIdKey: client-id
         clientSecretKey: client-secret
+        clientCertKey: client-cert
+        clientKeyKey: client-key
 
   tests:
     http:
