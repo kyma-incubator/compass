@@ -598,7 +598,7 @@ func AssertDefaultBundleID(t *testing.T, respBody string, numberOfEntities int, 
 
 func AssertRelationBetweenBundleAndEntityFromORDService(t *testing.T, respBody string, entityType string, numberOfEntitiesForBundle map[string]int, entitiesDataForBundle map[string][]string) {
 	numberOfBundles := len(gjson.Get(respBody, "value").Array())
-
+	t.Log(">>>"+respBody)
 	for i := 0; i < numberOfBundles; i++ {
 		bundleTitle := gjson.Get(respBody, fmt.Sprintf("value.%d.title", i)).String()
 		numberOfEntities := len(gjson.Get(respBody, fmt.Sprintf("value.%d.%s", i, entityType)).Array())
