@@ -156,7 +156,7 @@ spec:
             timeoutSeconds: 1
           {{- with .Values.global.tests.securityContext }}
           securityContext:
-          {{- toYaml . | indent 12 }}
+{{ toYaml . | indent 12 }}
           {{- end }}
       {{end}}
       restartPolicy: Never
