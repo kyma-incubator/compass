@@ -6,6 +6,7 @@ CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
 source $SCRIPTS_DIR/utils.sh
 
+COMPASS_OVERRIDES=""
 TIMEOUT=30m0s
 
 POSITIONAL=()
@@ -16,7 +17,7 @@ do
     case ${key} in
         --overrides-file)
             checkInputParameterValue "${2}"
-            COMPASS_OVERRIDES="${2}"
+            COMPASS_OVERRIDES="$COMPASS_OVERRIDES -f ${2}"
             shift # past argument
             shift
         ;;
@@ -41,4 +42,4 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 COMPASS_CHARTS="${CURRENT_DIR}/../../chart/compass"
 CRDS_FOLDER="${CURRENT_DIR}/../resources/crds"
 kubectl apply -f "${CRDS_FOLDER}"
-helm install --wait --timeout "${TIMEOUT}" -f "${COMPASS_CHARTS}"/values.yaml --create-namespace --namespace compass-system compass -f "${COMPASS_OVERRIDES}" "${COMPASS_CHARTS}"
+helm install --wait --timeout "${TIMEOUT}" -f "${COMPASS_CHARTS}"/values.yaml --create-namespace --namespace compass-system compass "${COMPASS_OVERRIDES}" "${COMPASS_CHARTS}"
