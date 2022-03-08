@@ -19,11 +19,11 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jmoiron/sqlx v1.3.4
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20220104122431-99ed924ea212
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20220225151654-65d225649f67
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220104122431-99ed924ea212
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220208132958-a8193aa87b45
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220225151654-65d225649f67
 	github.com/lestrrat-go/iter v1.0.1
-	github.com/lestrrat-go/jwx v1.2.14
+	github.com/lestrrat-go/jwx v1.2.19
 	github.com/lib/pq v1.10.4
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
@@ -35,7 +35,7 @@ require (
 	github.com/prometheus/client_golang v1.11.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
-	github.com/tidwall/gjson v1.12.1
+	github.com/tidwall/gjson v1.14.0
 	github.com/tidwall/sjson v1.2.4
 	github.com/vektah/gqlparser/v2 v2.1.0
 	github.com/vrischmann/envconfig v1.3.0
@@ -71,7 +71,6 @@ require (
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-openapi/validate v0.20.3 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
-	github.com/goccy/go-json v0.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
@@ -84,6 +83,7 @@ require (
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20220302135528-60a022f8069c // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
 	github.com/lestrrat-go/httpcc v1.0.0 // indirect

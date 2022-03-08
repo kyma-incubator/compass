@@ -15,37 +15,35 @@ type ClientProvider interface {
 }
 
 type clientProvider struct {
-	directorURL string
-	timeout     time.Duration
+	directorURL       string
+	timeout           time.Duration
+	skipSSLValidation bool
 }
 
-func NewClientProvider(directorURL string, timeout time.Duration) clientProvider {
+func NewClientProvider(directorURL string, timeout time.Duration, skipSSLValidation bool) clientProvider {
 	return clientProvider{
-		directorURL: directorURL,
-		timeout:     timeout,
+		directorURL:       directorURL,
+		timeout:           timeout,
+		skipSSLValidation: skipSSLValidation,
 	}
 }
 
 func (cp clientProvider) Client() Client {
-	authorizedClient := newAuthorizedHTTPClient(cp.timeout)
+	authorizedClient := newAuthorizedHTTPClient(cp.timeout, cp.skipSSLValidation)
 	gqlClient := gcli.NewClient(cp.directorURL, gcli.WithHTTPClient(authorizedClient))
 
 	return NewClient(gqlClient)
 }
 
-type authenticatedTransport struct {
-	http.Transport
-}
-
-func newAuthorizedHTTPClient(timeout time.Duration) *http.Client {
-	transport := &authenticatedTransport{
-		Transport: http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+func newAuthorizedHTTPClient(timeout time.Duration, skipSSLValidation bool) *http.Client {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: skipSSLValidation,
 		},
 	}
 
 	return &http.Client{
-		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(transport)),
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(tr, "Authorization")),
 		Timeout:   timeout,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse

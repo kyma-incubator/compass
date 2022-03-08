@@ -33,12 +33,20 @@ spec:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
     spec:
+      {{ if .Values.global.isLocalEnv }}
+      # HostAliases are used by Pod to resolve kyma.local domain
+      hostAliases:
+        - ip: {{ .Values.global.minikubeIP }}
+          hostnames:
+            # Used for calls to Director
+            - "{{ .Values.global.director.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}"
+      {{ end }}
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.hydrator.dir }}compass-hydrator:{{ $.Values.global.images.hydrator.version }}
+          image: compass-hydrator:{{ $.Values.global.images.hydrator.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - name: http
@@ -58,7 +66,9 @@ spec:
             - name: APP_ROOT_API
               value: "{{ .Values.global.hydrator.prefix }}"
             - name: APP_DIRECTOR_URL
-              value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
+              value: "https://{{ .Values.global.director.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}/graphql"
+            - name: APP_DIRECTOR_SKIP_SSL_VALIDATION
+              value: {{ .Values.http.client.skipSSLValidation | quote }}
             - name: APP_CONFIGURATION_FILE
               value: /config/config.yaml
             - name: APP_REVOCATION_CONFIG_MAP_NAME

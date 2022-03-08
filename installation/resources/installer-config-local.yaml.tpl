@@ -51,6 +51,7 @@ data:
   gateway.gateway.auditlog.authMode: "oauth"
   system-broker.http.client.skipSSLValidation: "true"
   connector.http.client.skipSSLValidation: "true"
+  hydrator.http.client.skipSSLValidation: "true"
   operations-controller.http.client.skipSSLValidation: "true"
   global.systemFetcher.http.client.skipSSLValidation: "true"
   global.ordAggregator.http.client.skipSSLValidation: "true"
