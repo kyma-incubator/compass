@@ -205,8 +205,8 @@ trap "rm -f ${COMPASS_CERT_PATH}" EXIT INT TERM
 if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines, reference issue: https://stackoverflow.com/questions/4247068/sed-command-with-i-option-failing-on-mac-but
   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "${COMPASS_CERT_PATH}"
 else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
- cp "${COMPASS_CERT_PATH}" /etc/ssl/certs
- openssl x509 -noout -hash -in compass-cert.pem
+  sudo cp "${COMPASS_CERT_PATH}" /usr/local/share/ca-certificates/
+  sudo update-ca-certificates
 fi
 
 echo "Adding Compass entries to /etc/hosts..."
