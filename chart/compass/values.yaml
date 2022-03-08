@@ -68,6 +68,14 @@ global:
       id: 123e4567-e89b-12d3-a456-426614174001
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+    - name: TestNsAdapter
+      id: 08b6da37-e911-48fb-a0cb-fa635a6c5678
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+    - name: TestNsAdapterSubaccountWithApplications
+      id: 08b6da37-e911-48fb-a0cb-fa635a6c4321
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
     - name: TestIntegrationSystemManagedSubaccount
       id: 3cfcdd62-320d-403b-b66a-4ee3cdd06947
       type: subaccount
@@ -93,7 +101,7 @@ global:
       version: "PR-2214"
     gateway:
       dir:
-      version: "PR-2212"
+      version: "PR-2173"
     operations_controller:
       dir:
       version: "PR-2212"
@@ -102,7 +110,7 @@ global:
       version: "PR-62"
     schema_migrator:
       dir:
-      version: "PR-2212"
+      version: "PR-2173"
     system_broker:
       dir:
       version: "PR-2212"
@@ -113,14 +121,15 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2212"
+      version: "PR-2173"
     console:
       dir:
       version: "PR-56"
     e2e_tests:
       dir:
-      version: "PR-2212"
+      version: "PR-2173"
   isLocalEnv: false
+  isForTesting: false
   oauth2:
     host: oauth2
   livenessProbe:
@@ -132,6 +141,32 @@ global:
     timeoutSeconds: 1
     periodSeconds: 2
   agentPreconfiguration: false
+  nsAdapter:
+    external:
+      port: 3005
+    e2eTests:
+      gatewayHost: "compass-gateway-xsuaa"
+    prefix: /nsadapter
+    path: /nsadapter/api/v1/notifications
+    systemToTemplateMappings: '[{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["abapSys"]},{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["nonSAPsys"]},{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["hana"]}]'
+    secret:
+      name: nsadapter-secret
+      subaccountKey: subaccount
+      local:
+        subaccountValue: subaccount
+    authSecret:
+      name: "compass-external-services-mock-oauth-credentials"
+      clientIdKey: client-id
+      clientSecretKey: client-secret
+      tokenUrlKey: url
+      instanceUrlKey: url
+      certKey: cert
+      keyKey: key
+    registerPath: "/register"
+    tokenPath: "/secured/oauth/token"
+    createClonePattern: '{"key": "%s"}'
+    createBindingPattern: '{}'
+    useClone: "false"
   director:
     host: compass-director.compass-system.svc.cluster.local
     prefix: /director
@@ -176,12 +211,16 @@ global:
     suggestTokenHeaderKey: suggest_token
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
-    tokenPath: "/oauth/token"
+    mtlsTokenPath: "/cert/token"
+    standardTokenPath: "/secured/oauth/token"
+    skipSSLValidation: false
     secret:
       name: "compass-gateway-auditlog-secret"
       urlKey: url
       clientIdKey: client-id
       clientSecretKey: client-secret
+      clientCertKey: client-cert
+      clientKeyKey: client-key
   log:
     format: "kibana"
   enableCompassDefaultScenarioAssignment: true
@@ -237,6 +276,7 @@ global:
     port: 3000
     tls:
       host: compass-gateway
+      adapterHost: compass-ns-adapter
       secure:
         internal:
           host: compass-gateway-internal
@@ -285,7 +325,10 @@ global:
     namespace: istio-system
     ingressgateway:
       workloadLabel: istio-ingressgateway
-      requestPayloadSizeLimit: 2097152 # 2 MB
+      requestPayloadSizeLimit2MB: 2097152
+      requestPayloadSizeLimit2MBLabel: "2MB"
+      requestPayloadSizeLimit5MB: 5097152
+      requestPayloadSizeLimit5MBLabel: "5MB"
       correlationHeaderRewriteFilter:
         expectedHeaders:
           - "x-request-id"
@@ -337,6 +380,23 @@ global:
               give_up_after: 6s
               max_delay: 2000ms
       authenticationMappingServices:
+        nsadapter:
+          cfg:
+            config:
+              api:
+                url: http://compass-director.compass-system.svc.cluster.local:3000/authn-mapping/nsadapter
+                retry:
+                  give_up_after: 6s
+                  max_delay: 2000ms
+          authenticator:
+            enabled: false
+            createRule: true
+            gatewayHost: "compass-gateway-xsuaa"
+            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
+            attributes: '{"uniqueAttribute": { "key": "ns-adapter-test", "value": "ns-adapter-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" }, "clientid": { "key": "client_id" } }'
+            path: /nsadapter/api/v1/notifications
+            upstreamComponent: "compass-gateway"
+            checkSuffix: true
         tenant-fetcher:
           cfg:
             config:
@@ -353,6 +413,7 @@ global:
             attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
             path: /tenants/<.*>
             upstreamComponent: "compass-tenant-fetcher"
+            checkSuffix: false
         subscriber:
           cfg:
             config:
@@ -368,6 +429,7 @@ global:
             trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
             attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
             path: /<.*>
+            checkSuffix: false
       tenantMappingService:
         config:
           api:
@@ -420,7 +482,7 @@ global:
       consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
-    issuerLocality: "" # It's empty because in local setup we use connector CA which didn't have Locality property
+    issuerLocality: "local" # In local setup we have manually created connector CA certificate with 'local' Locality property
     subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=%s/L=%s/CN=%s"
     ouCertSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd"
     commonName: "compass"
@@ -609,6 +671,8 @@ global:
         tokenUrlKey: token-url
         clientIdKey: client-id
         clientSecretKey: client-secret
+        clientCertKey: client-cert
+        clientKeyKey: client-key
   tests:
     http:
       client:

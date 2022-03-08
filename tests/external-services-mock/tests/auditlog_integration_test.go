@@ -3,12 +3,15 @@ package tests
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/kyma-incubator/compass/tests/pkg/token"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -27,7 +30,17 @@ import (
 
 func TestAuditlogIntegration(t *testing.T) {
 	ctx := context.Background()
-	httpClient := http.Client{}
+	crt, err := cert.ParseCertificate(testConfig.Auditlog.X509Cert, testConfig.Auditlog.X509Key)
+	require.NoError(t, err)
+
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				Certificates:       []tls.Certificate{*crt},
+				InsecureSkipVerify: testConfig.Auditlog.SkipSSLValidation,
+			},
+		},
+	}
 	appName := "app-for-testing-auditlog-mock"
 	appInput := graphql.ApplicationRegisterInput{
 		Name:         appName,
@@ -50,13 +63,13 @@ func TestAuditlogIntegration(t *testing.T) {
 	timeTo := timeFrom.Add(1 * time.Minute)
 
 	t.Log("Get auditlog service Token")
-	auditlogToken := token.GetClientCredentialsToken(t, context.Background(), testConfig.Auditlog.TokenURL+"/oauth/token", testConfig.Auditlog.ClientID, testConfig.Auditlog.ClientSecret, "")
+	auditlogToken := token.GetClientCredentialsTokenWithClient(t, context.Background(), httpClient, testConfig.Auditlog.TokenURL+"/cert/token", testConfig.Auditlog.ClientID, "", "")
 
 	t.Log("Get auditlog from auditlog API")
-	auditlogs := fixtures.SearchForAuditlogByTimestampAndString(t, &httpClient, testConfig.Auditlog, auditlogToken, appName, timeFrom, timeTo)
+	auditlogs := fixtures.SearchForAuditlogByTimestampAndString(t, httpClient, testConfig.Auditlog, auditlogToken, appName, timeFrom, timeTo)
 
 	assert.Eventually(t, func() bool {
-		auditlogs = fixtures.SearchForAuditlogByTimestampAndString(t, &httpClient, testConfig.Auditlog, auditlogToken, appName, timeFrom, timeTo)
+		auditlogs = fixtures.SearchForAuditlogByTimestampAndString(t, httpClient, testConfig.Auditlog, auditlogToken, appName, timeFrom, timeTo)
 		t.Logf("Waiting for auditlog items to be %d, but currently are: %d", 2, len(auditlogs))
 		return len(auditlogs) == 2
 	}, time.Minute, time.Millisecond*500)
