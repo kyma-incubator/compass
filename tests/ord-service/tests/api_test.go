@@ -18,7 +18,7 @@ package tests
 
 import (
 	"context"
-	"crypto/rsa"
+	"crypto"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -28,7 +28,6 @@ import (
 	"time"
 
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
@@ -98,34 +97,34 @@ func TestORDService(t *testing.T) {
 		eventsMapInScenario[eventDefinition.Name] = *eventDefinition
 	}
 
-	app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, defaultTestTenant, appInput)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, defaultTestTenant, &app)
+	app, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appInput)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, defaultTestTenant, &app)
 	require.NoError(t, err)
 
-	app2, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, secondaryTenant, appInput2)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, secondaryTenant, &app2)
+	app2, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, secondaryTenant, appInput2)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, secondaryTenant, &app2)
 	require.NoError(t, err)
 
-	appInScenario, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantFilteringTenant, appInputInScenario)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantFilteringTenant, &appInScenario)
+	appInScenario, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, appInputInScenario)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, &appInScenario)
 	require.NoError(t, err)
 
-	appNotInScenario, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantFilteringTenant, appInputNotInScenario)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantFilteringTenant, &appNotInScenario)
+	appNotInScenario, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, appInputNotInScenario)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, &appNotInScenario)
 	require.NoError(t, err)
 
-	appAPIProtocolFiltering, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantAPIProtocolFiltering, appInputAPIProtocolFiltering)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantAPIProtocolFiltering, &appAPIProtocolFiltering)
+	appAPIProtocolFiltering, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenantAPIProtocolFiltering, appInputAPIProtocolFiltering)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantAPIProtocolFiltering, &appAPIProtocolFiltering)
 	require.NoError(t, err)
 
 	t.Log("Create integration system")
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "", "test-int-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys)
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", "test-int-system")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSys)
 	require.NoError(t, err)
 	require.NotEmpty(t, intSys.ID)
 
-	intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys.ID)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, dexGraphQLClient, intSystemCredentials.ID)
+	intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSys.ID)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSystemCredentials.ID)
 
 	unsecuredHttpClient := http.DefaultClient
 	unsecuredHttpClient.Transport = &http.Transport{
@@ -137,8 +136,7 @@ func TestORDService(t *testing.T) {
 	intSystemHttpClient, err := clients.NewIntegrationSystemClient(ctx, intSystemCredentials)
 	require.NoError(t, err)
 
-	clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
-	extIssuerCertHttpClient := createHttpClientWithCert(clientKey, rawCertChain, testConfig.SkipSSLValidation)
+	extIssuerCertHttpClient := createHttpClientWithCert(certCache.Get().PrivateKey, certCache.Get().Certificate, testConfig.SkipSSLValidation)
 
 	t.Run("401 when requests to ORD Service are unsecured", func(t *testing.T) {
 		makeRequestWithStatusExpect(t, unsecuredHttpClient, testConfig.ORDServiceURL+"/$metadata?$format=json", http.StatusUnauthorized)
@@ -265,13 +263,13 @@ func TestORDService(t *testing.T) {
 	}
 
 	// create label definition
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantFilteringTenant, []string{"DEFAULT", scenarioName})
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantFilteringTenant, []string{"DEFAULT"})
+	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, []string{"DEFAULT", scenarioName})
+	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, []string{"DEFAULT"})
 
 	// create automatic scenario assigment for subTenant
 	asaInput := fixtures.FixAutomaticScenarioAssigmentInput(scenarioName, selectorKey, subTenantID)
-	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, tenantFilteringTenant)
-	defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, tenantFilteringTenant, scenarioName)
+	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, certSecuredGraphQLClient, asaInput, tenantFilteringTenant)
+	defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, scenarioName)
 
 	// assert no system instances are visible without formation
 	respBody := makeRequestWithHeaders(t, intSystemHttpClient, testConfig.ORDServiceURL+"/systemInstances?$format=json", map[string][]string{tenantHeader: {subTenantID}})
@@ -279,8 +277,8 @@ func TestORDService(t *testing.T) {
 
 	// assign application to scenario
 	appLabelRequest := fixtures.FixSetApplicationLabelRequest(appInScenario.ID, scenariosLabel, []string{scenarioName})
-	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantFilteringTenant, appLabelRequest, nil))
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, tenantFilteringTenant, appInScenario.ID, testConfig.DefaultScenarioEnabled)
+	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantFilteringTenant, appLabelRequest, nil))
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, appInScenario.ID, testConfig.DefaultScenarioEnabled)
 
 	for _, testData := range []struct {
 		msg       string
@@ -692,8 +690,8 @@ func TestORDService(t *testing.T) {
 			},
 		}
 
-		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, dexGraphQLClient, defaultTestTenant, appTmplInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, defaultTestTenant, &appTmpl)
+		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTmplInput)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, &appTmpl)
 		require.NoError(t, err)
 
 		appFromTmpl := directorSchema.ApplicationFromTemplateInput{
@@ -711,8 +709,8 @@ func TestORDService(t *testing.T) {
 		createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
 		outputApp := directorSchema.ApplicationExt{}
 		//WHEN
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, defaultTestTenant, createAppFromTmplRequest, &outputApp)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, defaultTestTenant, &outputApp)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, defaultTestTenant, createAppFromTmplRequest, &outputApp)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, defaultTestTenant, &outputApp)
 		require.NoError(t, err)
 
 		getSystemInstanceURL := fmt.Sprintf("%s/systemInstances(%s)?$format=json", testConfig.ORDServiceURL, outputApp.ID)
@@ -741,7 +739,7 @@ func makeRequestWithStatusExpect(t require.TestingT, httpClient *http.Client, ur
 }
 
 // createHttpClientWithCert returns http client configured with provided client certificate and key
-func createHttpClientWithCert(clientKey *rsa.PrivateKey, rawCertChain [][]byte, skipSSLValidation bool) *http.Client {
+func createHttpClientWithCert(clientKey crypto.PrivateKey, rawCertChain [][]byte, skipSSLValidation bool) *http.Client {
 	return &http.Client{
 		Timeout: 20 * time.Second,
 		Transport: &http.Transport{

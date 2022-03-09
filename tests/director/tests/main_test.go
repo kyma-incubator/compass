@@ -4,24 +4,45 @@ import (
 	"context"
 	"os"
 	"testing"
-	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/clients"
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 
-	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/kyma-incubator/compass/tests/pkg/util"
 	"github.com/machinebox/graphql"
-	log "github.com/sirupsen/logrus"
+	"github.com/pkg/errors"
 )
 
+type DirectorConfig struct {
+	BaseDirectorConfig
+	DirectorUrl                    string
+	HealthUrl                      string `envconfig:"default=https://director.kyma.local/healthz"`
+	WebhookUrl                     string `envconfig:"default=https://kyma-project.io"`
+	InfoUrl                        string `envconfig:"APP_INFO_API_ENDPOINT,default=https://director.kyma.local/v1/info"`
+	CertIssuer                     string `envconfig:"APP_INFO_CERT_ISSUER"`
+	CertSubject                    string `envconfig:"APP_INFO_CERT_SUBJECT"`
+	DefaultScenarioEnabled         bool   `envconfig:"default=true"`
+	DefaultNormalizationPrefix     string `envconfig:"default=mp-"`
+	GatewayOauth                   string
+	DirectorExternalCertSecuredURL string
+	SkipSSLValidation              bool `envconfig:"default=false"`
+	CertLoaderConfig               certloader.Config
+	certprovider.ExternalCertProviderConfig
+	SelfRegDistinguishLabelKey   string
+	SelfRegDistinguishLabelValue string
+}
+
+type BaseDirectorConfig struct {
+	DefaultScenario string `envconfig:"default=DEFAULT"`
+}
+
 var (
-	conf             = &config.DirectorConfig{}
-	dexGraphQLClient *graphql.Client
+	conf                     = &DirectorConfig{}
+	certSecuredGraphQLClient *graphql.Client
 )
 
 func TestMain(m *testing.M) {
@@ -30,25 +51,19 @@ func TestMain(m *testing.M) {
 
 	config.ReadConfig(conf)
 
-	dexToken := server.Token()
-
-	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
-
 	ctx := context.Background()
-	k8sClientSet, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+
+	cc, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	if err != nil {
-		log.Fatal(errors.Wrap(err, "while initializing k8s client"))
+		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	extCrtSecret, err := k8sClientSet.CoreV1().Secrets(conf.ExternalCA.SecretNamespace).Get(ctx, conf.ExternalCA.SecretName, metav1.GetOptions{})
-	if err != nil {
-		log.Fatal(errors.Wrap(err, "while getting k8s secret"))
+	if err := util.WaitForCache(cc); err != nil {
+		log.D().Fatal(err)
 	}
 
-	conf.ExternalCA.Key = extCrtSecret.Data[conf.ExternalCA.SecretKeyKey]
-	conf.ExternalCA.Certificate = extCrtSecret.Data[conf.ExternalCA.SecretCertificateKey]
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, conf.SkipSSLValidation)
 
 	exitVal := m.Run()
-
 	os.Exit(exitVal)
 }

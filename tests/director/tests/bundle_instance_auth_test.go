@@ -20,13 +20,13 @@ func TestRequestBundleInstanceAuthCreation(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, "bndl-app-1")
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
 	authCtx, inputParams := fixtures.FixBundleInstanceAuthContextAndInputParams(t)
 	bndlInstanceAuthRequestInput := fixtures.FixBundleInstanceAuthRequestInput(authCtx, inputParams)
@@ -38,7 +38,7 @@ func TestRequestBundleInstanceAuthCreation(t *testing.T) {
 
 	// WHEN
 	t.Log("Request bundle instance auth creation")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, bndlInstanceAuthCreationRequestReq, &output)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, bndlInstanceAuthCreationRequestReq, &output)
 
 	// THEN
 	require.NoError(t, err)
@@ -52,7 +52,7 @@ func TestRequestBundleInstanceAuthCreation(t *testing.T) {
 	bundlesForApplicationReq := fixtures.FixGetBundlesRequest(application.ID)
 	bndlFromAPI := graphql.ApplicationExt{}
 
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, bundlesForApplicationReq, &bndlFromAPI)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, bundlesForApplicationReq, &bndlFromAPI)
 	require.NoError(t, err)
 
 	// Assert the bundle instance auths exists
@@ -63,7 +63,7 @@ func TestRequestBundleInstanceAuthCreation(t *testing.T) {
 	instanceAuthID := bndlFromAPI.Bundles.Data[0].InstanceAuths[0].ID
 	bundlesForApplicationWithInstanceAuthReq := fixtures.FixGetBundleWithInstanceAuthRequest(application.ID, bndl.ID, instanceAuthID)
 
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, bundlesForApplicationWithInstanceAuthReq, &bndlFromAPI)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, bundlesForApplicationWithInstanceAuthReq, &bndlFromAPI)
 	require.NoError(t, err)
 
 	// Assert the bundle instance auth exist
@@ -78,18 +78,18 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 
 	input := fixtures.FixRuntimeInput("runtime-test")
 
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, "bndl-app-1")
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
 	authCtx, inputParams := fixtures.FixBundleInstanceAuthContextAndInputParams(t)
 	bndlInstanceAuthRequestInput := fixtures.FixBundleInstanceAuthRequestInput(authCtx, inputParams)
@@ -100,10 +100,10 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 	output := graphql.BundleInstanceAuth{}
 
 	scenarios := []string{conf.DefaultScenario, "test-scenario"}
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantId, scenarios)
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantId, scenarios[:1])
+	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, scenarios)
+	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, scenarios[:1])
 
-	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, tenantId, runtime.ID)
+	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), certSecuredGraphQLClient, tenantId, runtime.ID)
 	rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
 	require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
@@ -117,12 +117,12 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 
 	t.Run("When runtime is in the same scenario as application", func(t *testing.T) {
 		// set application scenarios label
-		fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[1:])
-		defer fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[:1])
+		fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, application.ID, ScenariosLabel, scenarios[1:])
+		defer fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, application.ID, ScenariosLabel, scenarios[:1])
 
 		// set runtime scenarios label
-		fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
-		defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[:1])
+		fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
+		defer fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[:1])
 
 		t.Log("Request bundle instance auth creation")
 		err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, oauthGraphQLClient, &output)
@@ -159,11 +159,11 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 
 	t.Run("When runtime is NOT in the same scenario as application", func(t *testing.T) {
 		// set application scenarios label
-		fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[:1])
+		fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, application.ID, ScenariosLabel, scenarios[:1])
 
 		// set runtime scenarios label
-		fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
-		defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[:1])
+		fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
+		defer fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[:1])
 
 		output = graphql.BundleInstanceAuth{}
 		t.Log("Request bundle instance auth creation")
@@ -182,13 +182,13 @@ func TestRuntimeIdInBundleInstanceAuthIsSetToNullWhenDeletingRuntime(t *testing.
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	input := fixtures.FixRuntimeInput("runtime-test")
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -200,8 +200,8 @@ func TestRuntimeIdInBundleInstanceAuthIsSetToNullWhenDeletingRuntime(t *testing.
 	addBndlRequest := fixtures.FixAddBundleRequest(application.ID, bndl)
 	bndlAddOutput := graphql.Bundle{}
 
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, addBndlRequest, &bndlAddOutput)
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndlAddOutput.ID)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addBndlRequest, &bndlAddOutput)
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndlAddOutput.ID)
 	require.NoError(t, err)
 
 	authCtx, inputParams := fixtures.FixBundleInstanceAuthContextAndInputParams(t)
@@ -212,7 +212,7 @@ func TestRuntimeIdInBundleInstanceAuthIsSetToNullWhenDeletingRuntime(t *testing.
 	bndlInstanceAuthCreationRequestReq := fixtures.FixRequestBundleInstanceAuthCreationRequest(bndlAddOutput.ID, bndlInstanceAuthRequestInputStr)
 	bndlInstanceAuth := graphql.BundleInstanceAuth{}
 
-	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, tenantId, runtime.ID)
+	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), certSecuredGraphQLClient, tenantId, runtime.ID)
 	rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
 	require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
@@ -225,15 +225,15 @@ func TestRuntimeIdInBundleInstanceAuthIsSetToNullWhenDeletingRuntime(t *testing.
 	runtimeConsumer := testctx.Tc.NewOperation(ctx)
 
 	scenarios := []string{conf.DefaultScenario, "test-scenario"}
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantId, scenarios)
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantId, scenarios[:1])
+	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, scenarios)
+	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, scenarios[:1])
 
 	// set application scenarios label
-	fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[1:])
-	defer fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[:1])
+	fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, application.ID, ScenariosLabel, scenarios[1:])
+	defer fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, application.ID, ScenariosLabel, scenarios[:1])
 
 	// set runtime scenarios label
-	fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
+	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
 
 	t.Log("Request bundle instance auth creation")
 	err = runtimeConsumer.Run(bndlInstanceAuthCreationRequestReq, oauthGraphQLClient, &bndlInstanceAuth)
@@ -264,12 +264,12 @@ func TestRuntimeIdInBundleInstanceAuthIsSetToNullWhenDeletingRuntime(t *testing.
 
 	t.Log("Unregister runtime")
 	delReq := fixtures.FixUnregisterRuntimeRequest(runtime.ID)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, delReq, nil)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, delReq, nil)
 	require.NoError(t, err)
 
 	appExt = graphql.ApplicationExt{}
 	t.Log("Fetch application with bundles after deleting runtime")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, bundlesForApplicationReq, &appExt)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, bundlesForApplicationReq, &appExt)
 	require.NoError(t, err)
 
 	t.Log("Assert that the runtime_id column in the bundle instance auth table is set to null after deleting runtime")
@@ -285,8 +285,8 @@ func TestRequestBundleInstanceAuthCreationWithDefaultAuth(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -299,8 +299,8 @@ func TestRequestBundleInstanceAuthCreationWithDefaultAuth(t *testing.T) {
 	addBndlRequest := fixtures.FixAddBundleRequest(application.ID, bndl)
 	bndlAddOutput := graphql.Bundle{}
 
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, addBndlRequest, &bndlAddOutput)
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndlAddOutput.ID)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addBndlRequest, &bndlAddOutput)
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndlAddOutput.ID)
 	require.NoError(t, err)
 
 	bndlInstanceAuthRequestInput := fixtures.FixBundleInstanceAuthRequestInput(nil, nil)
@@ -312,7 +312,7 @@ func TestRequestBundleInstanceAuthCreationWithDefaultAuth(t *testing.T) {
 
 	// WHEN
 	t.Log("Request bundle instance auth creation")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, bndlInstanceAuthCreationRequestReq, &authOutput)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, bndlInstanceAuthCreationRequestReq, &authOutput)
 
 	// THEN
 	require.NoError(t, err)
@@ -321,7 +321,7 @@ func TestRequestBundleInstanceAuthCreationWithDefaultAuth(t *testing.T) {
 	bundlesForApplicationReq := fixtures.FixGetBundlesRequest(application.ID)
 	bndlFromAPI := graphql.ApplicationExt{}
 
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, bundlesForApplicationReq, &bndlFromAPI)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, bundlesForApplicationReq, &bndlFromAPI)
 	require.NoError(t, err)
 
 	// Assert the bundle instance auths exists
@@ -332,7 +332,7 @@ func TestRequestBundleInstanceAuthCreationWithDefaultAuth(t *testing.T) {
 	instanceAuthID := bndlFromAPI.Bundles.Data[0].InstanceAuths[0].ID
 	bundlesForApplicationWithInstanceAuthReq := fixtures.FixGetBundleWithInstanceAuthRequest(application.ID, bndlAddOutput.ID, instanceAuthID)
 
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, bundlesForApplicationWithInstanceAuthReq, &bndlFromAPI)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, bundlesForApplicationWithInstanceAuthReq, &bndlFromAPI)
 	require.NoError(t, err)
 
 	// Assert the bundle instance auth exist
@@ -347,22 +347,22 @@ func TestRequestBundleInstanceAuthDeletion(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, "bndl-app-1")
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
-	bndlInstanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, dexGraphQLClient, bndl.ID)
+	bndlInstanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, certSecuredGraphQLClient, bndl.ID)
 
 	bndlInstanceAuthDeletionRequestReq := fixtures.FixRequestBundleInstanceAuthDeletionRequest(bndlInstanceAuth.ID)
 	output := graphql.BundleInstanceAuth{}
 
 	// WHEN
 	t.Log("Request bundle instance auth deletion")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, bndlInstanceAuthDeletionRequestReq, &output)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, bndlInstanceAuthDeletionRequestReq, &output)
 
 	// THEN
 	require.NoError(t, err)
@@ -377,28 +377,28 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 
 	input := fixtures.FixRuntimeInput("runtime-test")
 
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &input)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, "bndl-app-1")
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
-	bndlInstanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, dexGraphQLClient, bndl.ID)
+	bndlInstanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, certSecuredGraphQLClient, bndl.ID)
 
 	bndlInstanceAuthDeletionRequestReq := fixtures.FixRequestBundleInstanceAuthDeletionRequest(bndlInstanceAuth.ID)
 
 	scenarios := []string{conf.DefaultScenario, "test-scenario"}
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantId, scenarios)
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenantId, scenarios[:1])
+	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, scenarios)
+	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, scenarios[:1])
 
-	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), dexGraphQLClient, tenantId, runtime.ID)
+	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), certSecuredGraphQLClient, tenantId, runtime.ID)
 	rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
 	require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
@@ -412,12 +412,12 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 
 	t.Run("When runtime is in the same scenario as application", func(t *testing.T) {
 		// set application scenarios label
-		fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[1:])
-		defer fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[:1])
+		fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, application.ID, ScenariosLabel, scenarios[1:])
+		defer fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, application.ID, ScenariosLabel, scenarios[:1])
 
 		// set runtime scenarios label
-		fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
-		defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[:1])
+		fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
+		defer fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[:1])
 
 		// WHEN
 		t.Log("Request bundle instance auth deletion")
@@ -430,11 +430,11 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 
 	t.Run("When runtime is NOT in the same scenario as application", func(t *testing.T) {
 		// set application scenarios label
-		fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, application.ID, ScenariosLabel, scenarios[:1])
+		fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, application.ID, ScenariosLabel, scenarios[:1])
 
 		// set runtime scenarios label
-		fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
-		defer fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[:1])
+		fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[1:])
+		defer fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, ScenariosLabel, scenarios[:1])
 
 		// WHEN
 		t.Log("Request bundle instance auth deletion")
@@ -452,15 +452,15 @@ func TestSetBundleInstanceAuth(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, "bndl-app-1")
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
-	bndlInstanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, dexGraphQLClient, bndl.ID)
+	bndlInstanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, certSecuredGraphQLClient, bndl.ID)
 
 	authInput := fixtures.FixBasicAuth(t)
 	bndlInstanceAuthSetInput := fixtures.FixBundleInstanceAuthSetInputSucceeded(authInput)
@@ -472,7 +472,7 @@ func TestSetBundleInstanceAuth(t *testing.T) {
 
 	// WHEN
 	t.Log("Set bundle instance auth")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, setBundleInstanceAuthReq, &output)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, setBundleInstanceAuthReq, &output)
 
 	// THEN
 	require.NoError(t, err)
@@ -487,22 +487,22 @@ func TestDeleteBundleInstanceAuth(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, "bndl-app-1")
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
-	bndlInstanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, dexGraphQLClient, bndl.ID)
+	bndlInstanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, certSecuredGraphQLClient, bndl.ID)
 
 	deleteBundleInstanceAuthReq := fixtures.FixDeleteBundleInstanceAuthRequest(bndlInstanceAuth.ID)
 	output := graphql.BundleInstanceAuth{}
 
 	// WHEN
 	t.Log("Delete bundle instance auth")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteBundleInstanceAuthReq, &output)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteBundleInstanceAuthReq, &output)
 
 	// THEN
 	require.NoError(t, err)

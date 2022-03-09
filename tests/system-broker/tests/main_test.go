@@ -4,31 +4,27 @@ import (
 	"os"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
-	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx/broker"
-
-	log "github.com/sirupsen/logrus"
 )
 
 var testCtx *broker.SystemBrokerTestContext
 
 func TestMain(m *testing.M) {
-	log.Info("Starting System Broker Tests")
+	log.D().Info("Starting System Broker Tests")
 
 	cfg := config.SystemBrokerTestConfig{}
 	config.ReadConfig(&cfg)
 
-	dexToken := server.Token()
-
-	ctx, err := broker.NewSystemBrokerTestContext(cfg, dexToken)
+	ctx, err := broker.NewSystemBrokerTestContext(cfg)
 	if err != nil {
-		log.Errorf("Failed to create test context: %s", err.Error())
+		log.D().Errorf("Failed to create test context: %s", err.Error())
 		os.Exit(1)
 	}
 
 	testCtx = ctx
 	exitCode := m.Run()
-	log.Info("Tests finished. Exit code: ", exitCode)
+	log.D().Info("Tests finished. Exit code: ", exitCode)
 	os.Exit(exitCode)
 }
