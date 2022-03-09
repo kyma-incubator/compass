@@ -14,6 +14,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/tests/pkg/util"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
@@ -21,10 +25,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/machinebox/graphql"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/pkg/errors"
 
@@ -32,42 +34,54 @@ import (
 )
 
 type config struct {
-	ExternalServicesMockURL string        `envconfig:"EXTERNAL_SERVICES_MOCK_URL"`
-	ClientID                string        `envconfig:"CLIENT_ID"`
-	ClientSecret            string        `envconfig:"CLIENT_SECRET"`
-	TokenURL                string        `envconfig:"TOKEN_URL,optional"`
-	InstanceURL             string        `envconfig:"INSTANCE_URL,optional"`
-	TokenPath               string        `envconfig:"TOKEN_PATH,optional"`
-	RegisterPath            string        `envconfig:"REGISTER_PATH,optional"`
-	Subaccount              string        `envconfig:"NS_SUBACCOUNT,optional"`
-	CreateClonePattern      string        `envconfig:"CREATE_CLONE_PATTERN,optional"`
-	CreateBindingPattern    string        `envconfig:"CREAT_BINDING_PATTERN,optional"`
-	DefaultTestTenant       string        `envconfig:"DEFAULT_TEST_TENANT"`
-	Domain                  string        `envconfig:"DOMAIN"`
-	DirectorURL             string        `envconfig:"DIRECTOR_URL"`
-	AdapterURL              string        `envconfig:"ADAPTER_URL"`
-	Timeout                 time.Duration `envconfig:"default=60s"`
-	X509Config              oauth.X509Config
-	UseClone                bool `envconfig:"default=false,USE_CLONE"`
+	ExternalServicesMockURL        string        `envconfig:"EXTERNAL_SERVICES_MOCK_URL"`
+	ClientID                       string        `envconfig:"CLIENT_ID"`
+	ClientSecret                   string        `envconfig:"CLIENT_SECRET"`
+	TokenURL                       string        `envconfig:"TOKEN_URL,optional"`
+	InstanceURL                    string        `envconfig:"INSTANCE_URL,optional"`
+	TokenPath                      string        `envconfig:"TOKEN_PATH,optional"`
+	RegisterPath                   string        `envconfig:"REGISTER_PATH,optional"`
+	Subaccount                     string        `envconfig:"NS_SUBACCOUNT,optional"`
+	CreateClonePattern             string        `envconfig:"CREATE_CLONE_PATTERN,optional"`
+	CreateBindingPattern           string        `envconfig:"CREAT_BINDING_PATTERN,optional"`
+	DefaultTestTenant              string        `envconfig:"DEFAULT_TEST_TENANT"`
+	Domain                         string        `envconfig:"DOMAIN"`
+	DirectorURL                    string        `envconfig:"DIRECTOR_URL"`
+	AdapterURL                     string        `envconfig:"ADAPTER_URL"`
+	Timeout                        time.Duration `envconfig:"default=60s"`
+	X509Config                     oauth.X509Config
+	CertLoaderConfig               certloader.Config
+	DirectorExternalCertSecuredURL string
+	SkipSSLValidation              bool `envconfig:"default=false"`
+	UseClone                       bool `envconfig:"default=false,USE_CLONE"`
 }
 
 var (
-	testConfig       config
-	dexGraphQLClient *graphql.Client
+	testConfig               config
+	certSecuredGraphQLClient *graphql.Client
 )
 
 func TestMain(m *testing.M) {
 	err := envconfig.Init(&testConfig)
 	if err != nil {
-		log.Fatal(errors.Wrap(err, "while initializing envconfig"))
+		log.D().Fatal(errors.Wrap(err, "while initializing envconfig"))
 	}
 	testConfig.DirectorURL = fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", testConfig.Domain)
 
 	tenant.TestTenants.Init()
 
-	dexToken := server.Token()
+	ctx := context.Background()
 
-	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
+	cc, err := certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
+	if err != nil {
+		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
+	}
+
+	if err := util.WaitForCache(cc); err != nil {
+		log.D().Fatal(err)
+	}
+
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, testConfig.SkipSSLValidation)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)
