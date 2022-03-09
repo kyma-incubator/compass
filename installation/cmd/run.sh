@@ -2,6 +2,7 @@
 
 set -o errexit
 
+RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
@@ -12,6 +13,9 @@ source $SCRIPTS_DIR/utils.sh
 source $SCRIPTS_DIR/prom-mtls-patch.sh
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
+PATH_TO_VALUES="$CURRENT_DIR/../../chart/compass/values.yaml"
+PATH_TO_DIRECTOR_VALUES="$CURRENT_DIR/../../chart/compass/charts/director/values.yaml"
+PATH_TO_COMPASS_OIDC_CONFIG_FILE="$HOME/.compass.yaml"
 MIGRATOR_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/migrator-job.yaml)
 UPDATE_EXPECTED_SCHEMA_VERSION_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/update-expected-schema-version-job.yaml)
 
@@ -19,6 +23,7 @@ MINIKUBE_MEMORY=8192
 MINIKUBE_TIMEOUT=25m
 MINIKUBE_CPUS=5
 APISERVER_VERSION=1.19.16
+DEFAULT_OIDC_ADMIN_GROUPS="$(yq ".adminGroupNames" "$PATH_TO_DIRECTOR_VALUES")"
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -90,6 +95,12 @@ do
             shift # past argument
             shift # past value
         ;;
+        --oidc-admin-group)
+            checkInputParameterValue "${2}"
+            OIDC_ADMIN_GROUP="${2}"
+            shift # past argument
+            shift # past value
+        ;;
         --*)
             echo "Unknown flag ${1}"
             exit 1
@@ -108,22 +119,27 @@ function revert_migrator_file() {
 }
 
 function set_oidc_config() {
-  PATH_TO_VALUES="$CURRENT_DIR/../../chart/compass/values.yaml"
   yq -i ".global.cockpit.auth.idpHost = \"$1\"" "$PATH_TO_VALUES"
   yq -i ".global.cockpit.auth.clientID = \"$2\"" "$PATH_TO_VALUES"
+  if [[ -n ${3}  ]]; then
+   yq -i ".adminGroupNames = \"$3\"" "$PATH_TO_DIRECTOR_VALUES"
+  fi
 }
 
 function cleanup_trap() {
-   rm -f mk-ca.crt
-   # Not passing arguments to the function invocation will result in resetting the values to empty strings
-   set_oidc_config
+  if [[ -f mk-ca.crt ]]; then
+    rm -f mk-ca.crt
+  fi
+  if [[ ${DUMP_DB} ]]; then
+      revert_migrator_file
+  fi
+  set_oidc_config "" "" "$DEFAULT_OIDC_ADMIN_GROUPS"
 }
 
 function mount_minikube_ca_to_oathkeeper() {
   echo "Mounting minikube CA cert into oathkeeper's container..."
 
   cat $HOME/.minikube/ca.crt > mk-ca.crt
-  trap "cleanup_trap" RETURN EXIT INT TERM
 
   kubectl create configmap -n kyma-system minikube-ca --from-file mk-ca.crt --dry-run -o yaml | kubectl apply -f -
 
@@ -138,15 +154,28 @@ function mount_minikube_ca_to_oathkeeper() {
 }
 
 if [[ -z ${OIDC_HOST} || -z ${OIDC_CLIENT_ID} ]]; then
-  echo "OIDC host and client-id were not provided. Exiting..."
-  exit 1
+  if [[ -f ${PATH_TO_COMPASS_OIDC_CONFIG_FILE} ]]; then
+    echo -e "${YELLOW}OIDC configuration not provided. Configuration from default config file will be used.${NC}"
+    OIDC_HOST=$(yq ".idpHost" "$PATH_TO_COMPASS_OIDC_CONFIG_FILE")
+    OIDC_CLIENT_ID=$(yq ".clientID" "$PATH_TO_COMPASS_OIDC_CONFIG_FILE")
+    OIDC_GROUPS=$(yq ".adminGroupNames" "$PATH_TO_COMPASS_OIDC_CONFIG_FILE")
+    set_oidc_config "$OIDC_HOST" "$OIDC_CLIENT_ID" "$OIDC_GROUPS"
+  else
+    echo -e "${RED}OIDC configuration not provided and config file was found. JWT flows will not work!${NC}"
+  fi
 else
-  set_oidc_config "$OIDC_HOST" "$OIDC_CLIENT_ID"
+  if [[ -z ${OIDC_ADMIN_GROUP} ]]; then
+    echo -e "${GREEN}Using provided OIDC host and client-id.${NC}"
+    echo -e "${YELLOW}OIDC admin group was not provided. Will use default values.${NC}"
+    set_oidc_config "$OIDC_HOST" "$OIDC_CLIENT_ID"
+  else
+    echo -e "${GREEN}Using provided OIDC host, client-id and admin group.${NC}"
+    OIDC_GROUPS="$DEFAULT_OIDC_ADMIN_GROUPS , $OIDC_ADMIN_GROUP"
+    set_oidc_config "$OIDC_HOST" "$OIDC_CLIENT_ID" "$OIDC_GROUPS"
+  fi
 fi
 
-if [[ ${DUMP_DB} ]]; then
-    trap revert_migrator_file EXIT
-fi
+trap "cleanup_trap" RETURN EXIT INT TERM
 
 if [ -z "$KYMA_RELEASE" ]; then
   KYMA_RELEASE=$(<"${ROOT_PATH}"/installation/resources/KYMA_VERSION)
