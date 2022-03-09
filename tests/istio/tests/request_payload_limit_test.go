@@ -78,7 +78,7 @@ func TestCallingCompassGateways(t *testing.T) {
 		{
 			negativeDescription: "fails when request is over 2MB and reaches director",
 			positiveDescription: "succeeds for a regular applications request reaching director",
-			url:                 conf.CompassGatewayURL + directorPath,
+			url:                 conf.DirectorExternalCertSecuredURL,
 			client:              authorizedClient,
 			requestSize:         2097152,
 		},
