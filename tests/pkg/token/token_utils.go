@@ -2,6 +2,7 @@ package token
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
@@ -13,6 +14,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/tidwall/gjson"
 
@@ -27,22 +30,42 @@ type HydraToken struct {
 	TokenType   string `json:"token_type"`
 }
 
+type OauthConfig struct {
+	TokenURL     string
+	ClientID     string
+	ClientSecret string
+	Data         url.Values
+}
+
 const (
 	RuntimeScopes                                    = "runtime:read runtime:write application:read runtime.auths:read bundle.instance_auths:read"
 	ApplicationScopes                                = "application:read application:write application.auths:read application.webhooks:read bundle.instance_auths:read document.fetch_request:read event_spec.fetch_request:read api_spec.fetch_request:read fetch-request.auth:read"
-	IntegrationSystemScopes                          = "application:read application:write application_template:read application_template:write runtime:read runtime:write integration_system:read label_definition:read label_definition:write automatic_scenario_assignment:read automatic_scenario_assignment:write integration_system.auths:read application_template.webhooks:read internal_visibility:read"
+	IntegrationSystemScopes                          = "application:read application:write application_template:read application_template:write runtime:read runtime:write integration_system:read label_definition:read label_definition:write automatic_scenario_assignment:read automatic_scenario_assignment:write integration_system.auths:read application_template.webhooks:read internal_visibility:read application.auths:read"
 	IntegrationSystemScopesWithoutInternalVisibility = "application:read application:write application_template:read application_template:write runtime:read runtime:write integration_system:read label_definition:read label_definition:write automatic_scenario_assignment:read automatic_scenario_assignment:write integration_system.auths:read application_template.webhooks:read"
+
+	contentTypeHeader                = "Content-Type"
+	contentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
+
+	grantTypeFieldName   = "grant_type"
+	passwordGrantType    = "password"
+	credentialsGrantType = "client_credentials"
+	claimsKey            = "claims_key"
+
+	clientIDKey = "client_id"
+	scopeKey    = "scope"
+	userNameKey = "username"
+	passwordKey = "password"
 )
 
 func FetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL string, scopes string) (*HydraToken, error) {
 	form := url.Values{}
-	form.Set("grant_type", "client_credentials")
-	form.Set("scope", scopes)
+	form.Set(grantTypeFieldName, credentialsGrantType)
+	form.Set(scopeKey, scopes)
 
 	req, err := http.NewRequest("POST", tokenURL, strings.NewReader(form.Encode()))
 	require.NoError(t, err)
 
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Add(contentTypeHeader, contentTypeApplicationURLEncoded)
 	req.Header.Add("Authorization", fmt.Sprintf("Basic %s", encodedCredentials))
 
 	transport := &http.Transport{
@@ -82,33 +105,96 @@ func HttpRequestBodyCloser(t *testing.T, resp *http.Response) {
 	require.NoError(t, err)
 }
 
-func FromExternalServicesMock(t *testing.T, externalServicesMockURL string, clientID string, clientSecret string, claims map[string]interface{}) string {
-	data, err := json.Marshal(claims)
-	require.NoError(t, err)
+func GetClientCredentialsToken(t *testing.T, ctx context.Context, tokenURL, clientID, clientSecret, staticMappingClaimsKey string) string {
+	log.C(ctx).Info("Issuing client_credentials token...")
+	data := url.Values{}
+	data.Add(grantTypeFieldName, credentialsGrantType)
+	data.Add(clientIDKey, clientID)
+	data.Add(claimsKey, staticMappingClaimsKey)
 
-	req, err := http.NewRequest(http.MethodPost, externalServicesMockURL+"/secured/oauth/token", bytes.NewBuffer(data))
-	req.SetBasicAuth(clientID, clientSecret)
-	require.NoError(t, err)
+	token := GetToken(t, ctx, tokenURL, clientID, clientSecret, data)
+	log.C(ctx).Info("Successfully issued client_credentials token")
 
+	return token
+}
+
+func GetClientCredentialsTokenWithClient(t *testing.T, ctx context.Context, client *http.Client, tokenURL, clientID, clientSecret, staticMappingClaimsKey string) string {
+	log.C(ctx).Info("Issuing client_credentials token...")
+	data := url.Values{}
+	data.Add(grantTypeFieldName, credentialsGrantType)
+	data.Add(clientIDKey, clientID)
+	data.Add(claimsKey, staticMappingClaimsKey)
+
+	oauthConfig := OauthConfig{
+		TokenURL:     tokenURL,
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		Data:         data,
+	}
+
+	token := GetTokenWithClient(t, ctx, client, oauthConfig)
+	log.C(ctx).Info("Successfully issued client_credentials token")
+
+	return token
+}
+
+func GetUserToken(t *testing.T, ctx context.Context, tokenURL, clientID, clientSecret, username, password, staticMappingClaimsKey string) string {
+	log.C(ctx).Info("Issuing user token...")
+	data := url.Values{}
+	data.Add(grantTypeFieldName, passwordGrantType)
+	data.Add(clientIDKey, clientID)
+	data.Add(claimsKey, staticMappingClaimsKey)
+	data.Add(userNameKey, username)
+	data.Add(passwordKey, password)
+
+	token := GetToken(t, ctx, tokenURL, clientID, clientSecret, data)
+	log.C(ctx).Info("Successfully issued user token")
+
+	return token
+}
+
+func GetToken(t *testing.T, ctx context.Context, tokenURL, clientID, clientSecret string, data url.Values) string {
 	httpClient := &http.Client{
-		Timeout: 15 * time.Second,
+		Timeout: 10 * time.Second,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 	}
 
-	resp, err := httpClient.Do(req)
-	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode)
+	oauthConfig := OauthConfig{
+		TokenURL:     tokenURL,
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		Data:         data,
+	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	return GetTokenWithClient(t, ctx, httpClient, oauthConfig)
+}
+
+func GetTokenWithClient(t *testing.T, ctx context.Context, client *http.Client, oauthConfig OauthConfig) string {
+	req, err := http.NewRequest(http.MethodPost, oauthConfig.TokenURL, bytes.NewBuffer([]byte(oauthConfig.Data.Encode())))
+	if err != nil {
+		fmt.Println(err)
+	}
+	req.SetBasicAuth(oauthConfig.ClientID, oauthConfig.ClientSecret)
+	req.Header.Add(contentTypeHeader, contentTypeApplicationURLEncoded)
+
+	resp, err := client.Do(req)
 	require.NoError(t, err)
 	defer func() {
-		require.NoError(t, resp.Body.Close())
+		if err := resp.Body.Close(); err != nil {
+			log.C(ctx).WithError(err).Errorf("An error has occurred while closing response body: %v", err)
+		}
 	}()
 
-	token := gjson.GetBytes(body, "access_token")
-	require.True(t, token.Exists())
+	require.Equal(t, http.StatusOK, resp.StatusCode, fmt.Sprintf("failed to get token: unexpected status code: expected: %d, actual: %d", http.StatusOK, resp.StatusCode))
+	require.NotEmpty(t, resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
 
-	return token.String()
+	tkn := gjson.GetBytes(body, "access_token")
+	require.True(t, tkn.Exists())
+	require.NotEmpty(t, tkn)
+
+	return tkn.String()
 }

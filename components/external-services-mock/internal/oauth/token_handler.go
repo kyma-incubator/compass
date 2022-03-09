@@ -4,9 +4,8 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
-	"io/ioutil"
+	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -16,11 +15,37 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	AuthorizationHeader              = "Authorization"
+	ContentTypeHeader                = "Content-Type"
+	XExternalHost                    = "X-External-Host"
+	ContentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"
+	ContentTypeApplicationJson       = "application/json"
+
+	GrantTypeFieldName   = "grant_type"
+	CredentialsGrantType = "client_credentials"
+	PasswordGrantType    = "password"
+	ScopesFieldName      = "scopes"
+	ClaimsKey            = "claims_key"
+
+	ClientIDKey     = "client_id"
+	ClientSecretKey = "client_secret"
+	UserNameKey     = "username"
+	PasswordKey     = "password"
+	ZidKey          = "x-zid"
+)
+
+type ClaimsGetterFunc func() map[string]interface{}
+
 type handler struct {
-	expectedSecret   string
-	expectedID       string
-	tenantHeaderName string
-	signingKey       *rsa.PrivateKey
+	expectedSecret      string
+	expectedID          string
+	expectedUsername    string
+	expectedPassword    string
+	tenantHeaderName    string
+	externalHost        string
+	signingKey          *rsa.PrivateKey
+	staticMappingClaims map[string]ClaimsGetterFunc
 }
 
 func NewHandler(expectedSecret, expectedID string) *handler {
@@ -30,117 +55,127 @@ func NewHandler(expectedSecret, expectedID string) *handler {
 	}
 }
 
-func NewHandlerWithSigningKey(expectedSecret, expectedID, tenantHeaderName string, signingKey *rsa.PrivateKey) *handler {
+func NewHandlerWithSigningKey(expectedSecret, expectedID, expectedUsername, expectedPassword, tenantHeaderName, externalHost string, signingKey *rsa.PrivateKey, staticMappingClaims map[string]ClaimsGetterFunc) *handler {
 	return &handler{
-		expectedSecret:   expectedSecret,
-		expectedID:       expectedID,
-		tenantHeaderName: tenantHeaderName,
-		signingKey:       signingKey,
+		expectedSecret:      expectedSecret,
+		expectedID:          expectedID,
+		expectedUsername:    expectedUsername,
+		expectedPassword:    expectedPassword,
+		tenantHeaderName:    tenantHeaderName,
+		externalHost:        externalHost,
+		signingKey:          signingKey,
+		staticMappingClaims: staticMappingClaims,
 	}
 }
 
 func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
-	authorization := r.Header.Get("authorization")
-	id, secret, err := getBasicCredentials(authorization)
-	if err != nil {
-		log.C(r.Context()).Errorf("client secret not found in header: %s", err.Error())
-		httphelpers.WriteError(writer, errors.Wrap(err, "client secret not found in header"), http.StatusBadRequest)
+	ctx := r.Context()
+
+	if r.Header.Get(ContentTypeHeader) != ContentTypeApplicationURLEncoded {
+		log.C(ctx).Errorf("Unsupported media type, expected: application/x-www-form-urlencoded got: %s", r.Header.Get(ContentTypeHeader))
+		writer.WriteHeader(http.StatusUnsupportedMediaType)
 		return
 	}
 
-	if h.expectedID != id || h.expectedSecret != secret {
-		log.C(r.Context()).Error("client secret or client id doesn't match expected")
-		httphelpers.WriteError(writer, errors.New("client secret or client id doesn't match expected"), http.StatusBadRequest)
+	if err := r.ParseForm(); err != nil {
+		log.C(ctx).WithError(err).Error("An error occurred while parsing query")
+		httphelpers.WriteError(writer, errors.New("An error occurred while parsing query"), http.StatusInternalServerError)
 		return
 	}
-	h.GenerateWithoutCredentials(writer, r)
+
+	switch r.FormValue(GrantTypeFieldName) {
+	case CredentialsGrantType:
+		if err := h.authenticateClientCredentialsRequest(r); err != nil {
+			log.C(ctx).Error(err)
+			httphelpers.WriteError(writer, err, http.StatusBadRequest)
+			return
+		}
+	case PasswordGrantType:
+		if err := h.authenticatePasswordCredentialsRequest(r); err != nil {
+			log.C(ctx).Error(err)
+			httphelpers.WriteError(writer, err, http.StatusBadRequest)
+			return
+		}
+	default:
+		log.C(ctx).Errorf("The grant_type should be %s or %s but we got: %s", CredentialsGrantType, PasswordGrantType, r.FormValue(GrantTypeFieldName))
+		httphelpers.WriteError(writer, errors.New("An error occurred while parsing query"), http.StatusBadRequest)
+		return
+	}
+
+	claims := make(map[string]interface{})
+	claimsFunc, ok := h.staticMappingClaims[r.FormValue(ClaimsKey)]
+	if ok { // If the request contains claims key, use the corresponding claims in the static mapping for that key
+		claims = claimsFunc()
+	} else { // If there is no claims key provided use default claims
+		log.C(ctx).Info("Did not find claims key in the request. Proceeding with default claims...")
+		claims[ClientIDKey] = r.FormValue(ClientIDKey)
+		claims[ScopesFieldName] = r.Form.Get(ScopesFieldName)
+	}
+
+	claims[ZidKey] = r.Header.Get(h.tenantHeaderName)
+	respond(writer, r, claims, h.signingKey)
 }
 
-func (h *handler) GenerateWithoutCredentials(writer http.ResponseWriter, r *http.Request) {
-	claims := map[string]interface{}{}
-
-	tenant := r.Header.Get(h.tenantHeaderName)
-	claims["x-zid"] = tenant
-
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.C(r.Context()).Errorf("while reading request body: %s", err.Error())
-		httphelpers.WriteError(writer, errors.Wrap(err, "while reading request body"), http.StatusInternalServerError)
-		return
-	}
-
-	if len(body) > 0 {
-		err = json.Unmarshal(body, &claims)
-		if err != nil {
-			log.C(r.Context()).WithError(err).Infof("Cannot json unmarshal the request body. Error: %s. Proceeding with empty claims", err)
+func (h *handler) authenticateClientCredentialsRequest(r *http.Request) error {
+	ctx := r.Context()
+	log.C(ctx).Info("Validating client credentials token request...")
+	authorization := r.Header.Get("authorization")
+	isReqWithCert := h.isRequestWithCert(r)
+	if id, secret, err := getBasicCredentials(authorization); err != nil {
+		log.C(ctx).Info("Did not find client_id or client_secret in the authorization header. Checking the request body...")
+		if err = h.validateCredentials(isReqWithCert, r.FormValue(ClientIDKey), r.FormValue(ClientSecretKey), "from request body doesn't match the expected one"); err != nil {
+			return err
+		}
+	} else {
+		if err = h.validateCredentials(isReqWithCert, id, secret, "from authorization header doesn't match the expected one"); err != nil {
+			return err
 		}
 	}
 
-	var output string
-	if h.signingKey != nil {
-		token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims(claims))
-		output, err = token.SignedString(h.signingKey)
-	} else {
-		token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims(claims))
-		output, err = token.SigningString()
-	}
-
-	if err != nil {
-		log.C(r.Context()).Errorf("while creating oauth token: %s", err.Error())
-		httphelpers.WriteError(writer, errors.Wrap(err, "while creating oauth token"), http.StatusInternalServerError)
-		return
-	}
-
-	response := createResponse(output)
-	payload, err := json.Marshal(response)
-	if err != nil {
-		log.C(r.Context()).Errorf("while marshalling response: %s", err.Error())
-		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling response"), http.StatusInternalServerError)
-		return
-	}
-
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-	_, err = writer.Write(payload)
-	if err != nil {
-		log.C(r.Context()).Errorf("while writing response: %s", err.Error())
-		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
-		return
-	}
+	log.C(ctx).Info("Successfully validated client credentials token request")
+	return nil
 }
 
-func (h *handler) GenerateWithCredentialsFromReqBody(writer http.ResponseWriter, r *http.Request) {
-	claims := map[string]interface{}{}
-
-	body, err := ioutil.ReadAll(r.Body)
+func (h *handler) authenticatePasswordCredentialsRequest(r *http.Request) error {
+	ctx := r.Context()
+	log.C(ctx).Info("Validating password grant type token request...")
+	authorization := r.Header.Get("authorization")
+	id, secret, err := getBasicCredentials(authorization)
 	if err != nil {
-		log.C(r.Context()).Errorf("while reading request body: %s", err.Error())
-		httphelpers.WriteError(writer, errors.Wrap(err, "while reading request body"), http.StatusInternalServerError)
-		return
+		return errors.Wrap(err, "client_id or client_secret doesn't match the expected one")
 	}
 
-	if form, err := url.ParseQuery(string(body)); err != nil {
-		log.C(r.Context()).Errorf("Cannot parse form. Error: %s", err)
-	} else {
-		client := form.Get("client_id")
-		scopes := form.Get("scopes")
-		tenant := r.Header.Get(h.tenantHeaderName)
-		claims["client_id"] = client
-		claims["scopes"] = scopes
-		claims["x-zid"] = tenant
+	if err = h.validateCredentials(h.isRequestWithCert(r), id, secret, "doesn't match the expected one"); err != nil {
+		return err
 	}
 
-	var output string
-	if h.signingKey != nil {
+	username := r.FormValue(UserNameKey)
+	password := r.FormValue(PasswordKey)
+	if username != h.expectedUsername || password != h.expectedPassword {
+		return errors.New("username or password doesn't match the expected one")
+	}
+
+	log.C(ctx).Info("Successfully validated password grant type token request")
+
+	return nil
+}
+
+func respond(writer http.ResponseWriter, r *http.Request, claims map[string]interface{}, signingKey *rsa.PrivateKey) {
+	var (
+		output string
+		err    error
+	)
+	if signingKey != nil {
 		token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims(claims))
-		output, err = token.SignedString(h.signingKey)
+		output, err = token.SignedString(signingKey)
 	} else {
 		token := jwt.NewWithClaims(jwt.SigningMethodNone, jwt.MapClaims(claims))
 		output, err = token.SigningString()
 	}
 
+	ctx := r.Context()
 	if err != nil {
-		log.C(r.Context()).Errorf("while creating oauth token: %s", err.Error())
+		log.C(ctx).Errorf("while creating oauth token: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while creating oauth token"), http.StatusInternalServerError)
 		return
 	}
@@ -148,15 +183,14 @@ func (h *handler) GenerateWithCredentialsFromReqBody(writer http.ResponseWriter,
 	response := createResponse(output)
 	payload, err := json.Marshal(response)
 	if err != nil {
-		log.C(r.Context()).Errorf("while marshalling response: %s", err.Error())
+		log.C(ctx).Errorf("while marshalling response: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while marshalling response"), http.StatusInternalServerError)
 		return
 	}
-	writer.Header().Set("Content-Type", "application/json")
+	writer.Header().Set(ContentTypeHeader, ContentTypeApplicationJson)
 	writer.WriteHeader(http.StatusOK)
-	_, err = writer.Write(payload)
-	if err != nil {
-		log.C(r.Context()).Errorf("while writing response: %s", err.Error())
+	if _, err := writer.Write(payload); err != nil {
+		log.C(ctx).Errorf("while writing response: %s", err.Error())
 		httphelpers.WriteError(writer, errors.Wrap(err, "while writing response"), http.StatusInternalServerError)
 		return
 	}
@@ -171,7 +205,15 @@ func createResponse(token string) TokenResponse {
 }
 
 func getBasicCredentials(rawData string) (id string, secret string, err error) {
+	if len(rawData) == 0 {
+		return "", "", errors.New("missing authorization header")
+	}
+
 	encodedCredentials := strings.TrimPrefix(rawData, "Basic ")
+	if len(encodedCredentials) == 0 {
+		return "", "", errors.New("the credentials cannot be empty")
+	}
+
 	output, err := base64.URLEncoding.DecodeString(encodedCredentials)
 	if err != nil {
 		return "", "", errors.Wrap(err, "while decoding basic credentials")
@@ -183,4 +225,23 @@ func getBasicCredentials(rawData string) (id string, secret string, err error) {
 	}
 
 	return credentials[0], credentials[1], nil
+}
+
+func (h *handler) isRequestWithCert(r *http.Request) bool {
+	xExternalHost := r.Header.Get(XExternalHost)
+	return xExternalHost == h.externalHost || xExternalHost == h.externalHost+":443"
+}
+
+func (h *handler) validateCredentials(isReqWithCert bool, clientId, clientSecret, errMsg string) error {
+	if isReqWithCert {
+		if clientId != h.expectedID {
+			return errors.New(fmt.Sprintf("client_id %s", errMsg))
+		}
+	} else {
+		if clientId != h.expectedID || clientSecret != h.expectedSecret {
+			return errors.New(fmt.Sprintf("client_id or client_secret %s", errMsg))
+		}
+	}
+
+	return nil
 }

@@ -68,6 +68,14 @@ global:
       id: 123e4567-e89b-12d3-a456-426614174001
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+    - name: TestNsAdapter
+      id: 08b6da37-e911-48fb-a0cb-fa635a6c5678
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+    - name: TestNsAdapterSubaccountWithApplications
+      id: 08b6da37-e911-48fb-a0cb-fa635a6c4321
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
     - name: TestIntegrationSystemManagedSubaccount
       id: 3cfcdd62-320d-403b-b66a-4ee3cdd06947
       type: subaccount
@@ -82,31 +90,31 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2192"
+      version: "PR-2222"
     connectivity_adapter:
       dir:
-      version: "PR-2166"
+      version: "PR-2212"
     pairing_adapter:
       dir:
-      version: "PR-2166"
+      version: "PR-2212"
     director:
       dir:
-      version: "PR-2207"
+      version: "PR-2231"
     gateway:
       dir:
-      version: "PR-2166"
+      version: "PR-2173"
     operations_controller:
       dir:
-      version: "PR-2166"
+      version: "PR-2212"
     ord_service:
       dir:
-      version: "PR-59"
+      version: "PR-63"
     schema_migrator:
       dir:
-      version: "PR-2207"
+      version: "PR-2231"
     system_broker:
       dir:
-      version: "PR-2208"
+      version: "PR-2212"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -114,14 +122,15 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2207"
+      version: "PR-2222"
     console:
       dir:
-      version: "PR-54"
+      version: "PR-59"
     e2e_tests:
       dir:
-      version: "PR-2217"
+      version: "PR-2222"
   isLocalEnv: false
+  isForTesting: false
   oauth2:
     host: oauth2
   livenessProbe:
@@ -134,6 +143,33 @@ global:
     periodSeconds: 2
 
   agentPreconfiguration: false
+
+  nsAdapter:
+    external:
+      port: 3005
+    e2eTests:
+      gatewayHost: "compass-gateway-xsuaa"
+    prefix: /nsadapter
+    path: /nsadapter/api/v1/notifications
+    systemToTemplateMappings: '[{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["abapSys"]},{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["nonSAPsys"]},{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["hana"]}]'
+    secret:
+      name: nsadapter-secret
+      subaccountKey: subaccount
+      local:
+        subaccountValue: subaccount
+    authSecret:
+      name: "compass-external-services-mock-oauth-credentials"
+      clientIdKey: client-id
+      clientSecretKey: client-secret
+      tokenUrlKey: url
+      instanceUrlKey: url
+      certKey: cert
+      keyKey: key
+    registerPath: "/register"
+    tokenPath: "/secured/oauth/token"
+    createClonePattern: '{"key": "%s"}'
+    createBindingPattern: '{}'
+    useClone: "false"
 
   director:
     host: compass-director.compass-system.svc.cluster.local
@@ -159,12 +195,15 @@ global:
       path: "/v1/info"
     selfRegister:
       secret:
-        name: "compass-external-services-mock-oauth-credentials"
+        name: "compass-self-registration-credentials"
         clientIdKey: client-id
         clientSecretKey: client-secret
         urlKey: url
-      oauthTokenPath: "/secured/oauth/token"
-      distinguishLabel: "distinguishingLabel"
+        tokenUrlKey: token-url
+        clientCertKey: client-cert
+        clientKeyKey: client-key
+      oauthTokenPath: "/cert/token"
+      oauthMode: "oauth-mtls"
       label: "selfRegLabel"
       labelValuePrefix: "self-reg-prefix-"
       responseKey: "self-reg-key"
@@ -178,18 +217,19 @@ global:
 
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
-    tokenPath: "/oauth/token"
+    mtlsTokenPath: "/cert/token"
+    standardTokenPath: "/secured/oauth/token"
+    skipSSLValidation: false
     secret:
       name: "compass-gateway-auditlog-secret"
       urlKey: url
       clientIdKey: client-id
       clientSecretKey: client-secret
+      clientCertKey: client-cert
+      clientKeyKey: client-key
 
   log:
     format: "kibana"
-
-  testCredentials:
-    secretName: "test-credentials-secret"
 
   enableCompassDefaultScenarioAssignment: true
 
@@ -228,7 +268,7 @@ global:
     # If key and certificate are not provided they will be generated
     caKey: ""
     caCertificate: ""
-    subjectConsumerMappingConfig: '[{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}]'
+    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"},{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}]'
 
   system_broker:
     enabled: true
@@ -248,6 +288,7 @@ global:
     port: 3000
     tls:
       host: compass-gateway
+      adapterHost: compass-ns-adapter
       secure:
         internal:
           host: compass-gateway-internal
@@ -300,7 +341,10 @@ global:
     namespace: istio-system
     ingressgateway:
       workloadLabel: istio-ingressgateway
-      requestPayloadSizeLimit: 2097152 # 2 MB
+      requestPayloadSizeLimit2MB: 2097152
+      requestPayloadSizeLimit2MBLabel: "2MB"
+      requestPayloadSizeLimit5MB: 5097152
+      requestPayloadSizeLimit5MBLabel: "5MB"
       correlationHeaderRewriteFilter:
         expectedHeaders:
         - "x-request-id"
@@ -311,6 +355,7 @@ global:
         - "x-broker-api-request-identity"
 
   kubernetes:
+    serviceAccountTokenIssuer: kubernetes/serviceaccount
     serviceAccountTokenJWKS: https://kubernetes.default.svc.cluster.local/openid/v1/jwks
 
   ingress:
@@ -356,6 +401,23 @@ global:
               give_up_after: 6s
               max_delay: 2000ms
       authenticationMappingServices:
+        nsadapter:
+          cfg:
+            config:
+              api:
+                url: http://compass-director.compass-system.svc.cluster.local:3000/authn-mapping/nsadapter
+                retry:
+                  give_up_after: 6s
+                  max_delay: 2000ms
+          authenticator:
+            enabled: false
+            createRule: true
+            gatewayHost: "compass-gateway-xsuaa"
+            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
+            attributes: '{"uniqueAttribute": { "key": "ns-adapter-test", "value": "ns-adapter-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" }, "clientid": { "key": "client_id" } }'
+            path: /nsadapter/api/v1/notifications
+            upstreamComponent: "compass-gateway"
+            checkSuffix: true
         tenant-fetcher:
           cfg:
             config:
@@ -372,6 +434,7 @@ global:
             attributes: '{"uniqueAttribute": { "key": "test", "value": "tenant-fetcher" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
             path: /tenants/<.*>
             upstreamComponent: "compass-tenant-fetcher"
+            checkSuffix: false
         subscriber:
           cfg:
             config:
@@ -387,6 +450,7 @@ global:
             trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
             attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
             path: /<.*>
+            checkSuffix: false
       tenantMappingService:
         config:
           api:
@@ -422,7 +486,7 @@ global:
       subaccountTenantIdProperty: "subaccountTenantId"
       subdomainProperty: "subdomain"
       name: "provider"
-      subscriptionProviderIdProperty: "subscriptionProviderId"
+      subscriptionProviderIdProperty: "subscriptionProviderIdProperty"
     server:
       handlerEndpoint: "/v1/callback/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
@@ -434,21 +498,24 @@ global:
 
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
-    issuerLocality: "" # It's empty because in local setup we use connector CA which didn't have Locality property
+    issuerLocality: "local" # In local setup we have manually created connector CA certificate with 'local' Locality property
     subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=%s/L=%s/CN=%s"
     ouCertSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd"
     commonName: "compass"
     locality: "local"
     certSvcApiPath: "/cert"
-    tokenPath: "/secured/oauth/token"
+    tokenPath: "/cert/token"
     secrets:
       externalCertSvcSecret:
-        manage: true
+        manage: false
         name: "cert-svc-secret"
         clientIdKey: client-id
         clientSecretKey: client-secret
         oauthUrlKey: url
         csrEndpointKey: csr-endpoint
+        clientCert: client-cert
+        clientKey: client-key
+        skipSSLValidationFlag: "-k"
       externalClientCertSecret:
         name: "external-client-certificate"
         namespace: compass-system
@@ -459,6 +526,7 @@ global:
       schedule: "*/1 * * * *" # Executes every minute
       certValidity: "7"
       clientCertRetryAttempts: "8"
+      containerName: "certificate-rotation"
 
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local
@@ -553,6 +621,11 @@ global:
         clientIdKey: client-id
         clientSecretKey: client-secret
         oauthUrlKey: url
+        oauthMode: "oauth-mtls"
+        clientCertKey: client-cert
+        clientKeyKey: client-key
+        skipSSLValidation: true
+
       endpoints:
         accountCreated: "127.0.0.1/events?type=account-created"
         accountDeleted: "127.0.0.1/events?type=account-deleted"
@@ -605,7 +678,13 @@ global:
     ordCertSecuredHost: compass-external-services-mock-sap-mtls-ord
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
-    oauthSecretName: compass-external-services-mock-oauth-credentials
+    oauthSecret:
+      manage: false
+      name: compass-external-services-mock-oauth-credentials
+      clientIdKey: client-id
+      clientSecretKey: client-secret
+      oauthUrlKey: url
+      oauthTokenPath: "/secured/oauth/token"
     auditlog:
       applyMockConfiguration: false
       managementApiPath: /audit-log/v2/configuration-changes/search
@@ -615,17 +694,36 @@ global:
         tokenUrlKey: token-url
         clientIdKey: client-id
         clientSecretKey: client-secret
+        clientCertKey: client-cert
+        clientKeyKey: client-key
 
   tests:
     http:
       client:
-        skipSSLValidation:
-          director: false
-          ordService: false
-          connectivityAdapter: true
+        skipSSLValidation: false
+    director:
+      externalClientCertTestSecretName: "external-client-certificate-integration-system-test-secret"
+      externalClientCertTestSecretNamespace: "compass-system"
+      externalCertIntSystemCN: "integration-system-test"
+      externalCertTestJobName: "external-client-certificate-integration-system-test-job"
     ordService:
-      skipPattern: ""
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
+      consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
+      providerSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd" # TestProviderSubaccount from our testing tenants
+      consumerSubaccountID: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae" # randomly chosen
+      consumerTenantID: "ba49f1aa-ddc1-43ff-943c-fe949857a34a" # randomly chosen
+      externalClientCertTestSecretName: "external-client-certificate-test-secret"
+      externalClientCertTestSecretNamespace: "compass-system"
+      externalCertTestJobName: "external-certificate-rotation-test-job"
+      certSvcInstanceTestSecretName: "cert-svc-secret"
+      consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+      region: "eu-1"
+      subscriptionOauthSecret:
+        manage: false
+        name: compass-subscription-secret
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        oauthUrlKey: url
     externalServicesMock:
       skipPattern: ""
     namespace: kyma-system
@@ -636,13 +734,14 @@ global:
     ordServiceFQDN: http://compass-ord-service.compass-system.svc.cluster.local
     systemBrokerFQDN: http://compass-system-broker.compass-system.svc.cluster.local
     tenantFetcherFQDN: http://compass-tenant-fetcher.compass-system.svc.cluster.local
+    basicCredentials:
+      manage: false
+      secretName: "test-basic-credentials-secret"
+    subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+    subscriptionProviderIdValue: "id-value!t12345"
     db:
       maxOpenConnections: 3
       maxIdleConnections: 1
-    token:
-      server:
-        enabled: false
-        port: 5000
     securityContext: # Set on container level
       runAsUser: 2000
       allowPrivilegeEscalation: false

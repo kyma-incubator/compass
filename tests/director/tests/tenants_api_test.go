@@ -25,7 +25,7 @@ func TestQueryTenantsPage(t *testing.T) {
 
 	// WHEN
 	t.Log("List tenants with page size")
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getTenantsRequest, &actualTenantPage)
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenantsRequest, &actualTenantPage)
 	require.NoError(t, err)
 
 	//THEN
@@ -44,7 +44,7 @@ func TestQueryTenantsSearch(t *testing.T) {
 
 	// WHEN
 	t.Log("List tenants with search term")
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getTenantsRequest, &actualTenantPage)
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenantsRequest, &actualTenantPage)
 	require.NoError(t, err)
 
 	//THEN
@@ -62,7 +62,7 @@ func TestQueryTenantsPageSearch(t *testing.T) {
 
 	// WHEN
 	t.Log("List tenants with search term and page size")
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getTenantsRequest, &actualTenantPage)
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenantsRequest, &actualTenantPage)
 	require.NoError(t, err)
 
 	//THEN

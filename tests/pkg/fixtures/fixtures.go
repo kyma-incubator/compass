@@ -1,12 +1,10 @@
 package fixtures
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -25,12 +23,6 @@ import (
 
 const timeFormat = "%d-%02d-%02dT%02d:%02d:%02d"
 
-type Token struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresIn   int    `json:"expires_in"`
-}
-
 func FixEventDefinitionInBundleRequest(appID, bndlID, eventID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
@@ -44,30 +36,7 @@ func FixEventDefinitionInBundleRequest(appID, bndlID, eventID string) *gcli.Requ
 			}`, appID, bndlID, eventID, testctx.Tc.GQLFieldsProvider.ForEventDefinition()))
 }
 
-func GetAuditlogToken(t require.TestingT, client *http.Client, auditlogConfig config.AuditlogConfig) Token {
-	form := url.Values{}
-	form.Add("grant_type", "client_credentials")
-	reqBody := strings.NewReader(form.Encode())
-	req, err := http.NewRequest(http.MethodPost, auditlogConfig.TokenURL+"/oauth/token", reqBody)
-	require.NoError(t, err)
-
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Add("Authorization", "Basic "+base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", auditlogConfig.ClientID, auditlogConfig.ClientSecret))))
-	resp, err := client.Do(req)
-	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode, fmt.Sprintf("failed to get token: unexpected status code: expected: %d, actual: %d", http.StatusOK, resp.StatusCode))
-
-	var auditlogToken Token
-	body, err := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err)
-
-	err = json.Unmarshal(body, &auditlogToken)
-	require.NoError(t, err)
-
-	return auditlogToken
-}
-
-func SearchForAuditlogByTimestampAndString(t require.TestingT, client *http.Client, auditlogConfig config.AuditlogConfig, auditlogToken Token, search string, timeFrom, timeTo time.Time) []model.ConfigurationChange {
+func SearchForAuditlogByTimestampAndString(t require.TestingT, client *http.Client, auditlogConfig config.AuditlogConfig, auditlogToken string, search string, timeFrom, timeTo time.Time) []model.ConfigurationChange {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s%s", auditlogConfig.ManagementURL, auditlogConfig.ManagementAPIPath), nil)
 	require.NoError(t, err)
 
@@ -80,7 +49,7 @@ func SearchForAuditlogByTimestampAndString(t require.TestingT, client *http.Clie
 		timeTo.Hour(), timeTo.Minute(), timeTo.Second())
 
 	req.URL.RawQuery = fmt.Sprintf("time_from=%s&time_to=%s", timeFromStr, timeToStr)
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auditlogToken.AccessToken))
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auditlogToken))
 	resp, err := client.Do(req)
 	require.NoError(t, err)
 	require.True(t, resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNoContent, fmt.Sprintf("failed to fetch auditlogs: unexpected status code: expected: %d or %d, actual: %d", http.StatusOK, http.StatusNoContent, resp.StatusCode))

@@ -46,10 +46,10 @@ func TestOnboardingHandler(t *testing.T) {
 		// WHEN
 		addTenantExpectStatusCode(t, tenantWithCustomer, http.StatusOK)
 
-		tenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, tenantWithCustomer.TenantID)
+		tenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, tenantWithCustomer.TenantID)
 		require.NoError(t, err)
 
-		parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, tenantWithCustomer.CustomerID)
+		parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, tenantWithCustomer.CustomerID)
 		require.NoError(t, err)
 
 		// THEN
@@ -66,7 +66,7 @@ func TestOnboardingHandler(t *testing.T) {
 
 		addTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
 
-		tnt, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenantIDs.TenantID)
+		tnt, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenantIDs.TenantID)
 		require.NoError(t, err)
 
 		// THEN
@@ -84,7 +84,7 @@ func TestOnboardingHandler(t *testing.T) {
 
 		addTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
 
-		tnt, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenantIDs.TenantID)
+		tnt, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenantIDs.TenantID)
 		require.NoError(t, err)
 
 		// THEN
@@ -102,7 +102,7 @@ func TestOnboardingHandler(t *testing.T) {
 
 		addTenantExpectStatusCode(t, tenant, http.StatusOK)
 
-		tnt, err := fixtures.GetTenantByExternalID(dexGraphQLClient, tenant.TenantID)
+		tnt, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, tenant.TenantID)
 		require.NoError(t, err)
 
 		// THEN
@@ -119,7 +119,7 @@ func TestOnboardingHandler(t *testing.T) {
 			SubscriptionProviderID: uuid.New().String(),
 		}
 		//GIVEN
-		oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
+		oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 		require.NoError(t, err)
 
 		//WHEN
@@ -127,7 +127,7 @@ func TestOnboardingHandler(t *testing.T) {
 			addTenantExpectStatusCode(t, tenantWithCustomer, http.StatusOK)
 		}
 
-		tenants, err := fixtures.GetTenants(dexGraphQLClient)
+		tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
 		require.NoError(t, err)
 
 		// THEN
@@ -142,12 +142,12 @@ func TestOnboardingHandler(t *testing.T) {
 			SubscriptionProviderID: uuid.New().String(),
 		}
 
-		oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
+		oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 		require.NoError(t, err)
 
 		addTenantExpectStatusCode(t, providedTenantIDs, http.StatusBadRequest)
 
-		tenants, err := fixtures.GetTenants(dexGraphQLClient)
+		tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
 		require.NoError(t, err)
 
 		// THEN
@@ -161,12 +161,12 @@ func TestOnboardingHandler(t *testing.T) {
 			SubscriptionProviderID: uuid.New().String(),
 		}
 
-		oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
+		oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 		require.NoError(t, err)
 
 		addTenantExpectStatusCode(t, providedTenantIDs, http.StatusBadRequest)
 
-		tenants, err := fixtures.GetTenants(dexGraphQLClient)
+		tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
 		require.NoError(t, err)
 
 		// THEN
@@ -180,12 +180,12 @@ func TestOnboardingHandler(t *testing.T) {
 			Subdomain:  tenantfetcher.DefaultSubdomain,
 		}
 
-		oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
+		oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 		require.NoError(t, err)
 
 		addTenantExpectStatusCode(t, providedTenantIDs, http.StatusBadRequest)
 
-		tenants, err := fixtures.GetTenants(dexGraphQLClient)
+		tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
 		require.NoError(t, err)
 
 		// THEN
@@ -208,7 +208,7 @@ func TestOnboardingHandler(t *testing.T) {
 
 		addTenantExpectStatusCode(t, parentTenant, http.StatusOK)
 
-		parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
+		parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, parentTenant.TenantID)
 		require.NoError(t, err)
 		assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
 
@@ -227,12 +227,12 @@ func TestDecommissioningHandler(t *testing.T) {
 
 		addTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
 
-		oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
+		oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 		require.NoError(t, err)
 
 		removeTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
 
-		newTenantState, err := fixtures.GetTenants(dexGraphQLClient)
+		newTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 		require.NoError(t, err)
 
 		// THEN
@@ -254,7 +254,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			addRegionalTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
 
 			// THEN
-			tenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenantIDs.TenantID)
+			tenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenantIDs.TenantID)
 			require.NoError(t, err)
 			assertTenant(t, tenant, providedTenantIDs.TenantID, providedTenantIDs.Subdomain)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, tenant.Labels[tenantfetcher.RegionKey])
@@ -278,7 +278,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 
 			addRegionalTenantExpectStatusCode(t, parentTenant, http.StatusOK)
 
-			parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
+			parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, parentTenant.TenantID)
 			require.NoError(t, err)
 			assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, parent.Labels[tenantfetcher.RegionKey])
@@ -287,12 +287,12 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			addRegionalTenantExpectStatusCode(t, childTenant, http.StatusOK)
 
 			// THEN
-			tenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, childTenant.SubaccountID)
+			tenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, childTenant.SubaccountID)
 			require.NoError(t, err)
 			assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, tenant.Labels[tenantfetcher.RegionKey])
 
-			parentTenantAfterInsert, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
+			parentTenantAfterInsert, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, parentTenant.TenantID)
 			require.NoError(t, err)
 			assertTenant(t, parentTenantAfterInsert, parentTenant.TenantID, parentTenant.Subdomain)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, parentTenantAfterInsert.Labels[tenantfetcher.RegionKey])
@@ -312,17 +312,17 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			addRegionalTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
 
 			// THEN
-			childTenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenantIDs.SubaccountID)
+			childTenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenantIDs.SubaccountID)
 			require.NoError(t, err)
 			assertTenant(t, childTenant, providedTenantIDs.SubaccountID, providedTenantIDs.Subdomain)
 			require.Equal(t, tenantfetcher.RegionPathParamValue, childTenant.Labels[tenantfetcher.RegionKey])
 
-			parentTenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenantIDs.TenantID)
+			parentTenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenantIDs.TenantID)
 			require.NoError(t, err)
 			assertTenant(t, parentTenant, providedTenantIDs.TenantID, "")
 			require.Empty(t, parentTenant.Labels)
 
-			customerTenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, providedTenantIDs.CustomerID)
+			customerTenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenantIDs.CustomerID)
 			require.NoError(t, err)
 			assertTenant(t, customerTenant, providedTenantIDs.CustomerID, "")
 			require.Empty(t, customerTenant.Labels)
@@ -342,11 +342,11 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				Subdomain:              tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID: uuid.New().String(),
 			}
-			oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
+			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 			require.NoError(t, err)
 
 			addTenantExpectStatusCode(t, parentTenant, http.StatusOK)
-			parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, parentTenant.TenantID)
+			parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, parentTenant.TenantID)
 			require.NoError(t, err)
 			assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
 
@@ -355,10 +355,10 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				addRegionalTenantExpectStatusCode(t, childTenant, http.StatusOK)
 			}
 
-			tenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, childTenant.SubaccountID)
+			tenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, childTenant.SubaccountID)
 			require.NoError(t, err)
 
-			tenants, err := fixtures.GetTenants(dexGraphQLClient)
+			tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
 			require.NoError(t, err)
 
 			// THEN
@@ -374,14 +374,14 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				Subdomain:              tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID: uuid.New().String(),
 			}
-			oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
+			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 			require.NoError(t, err)
 
 			// WHEN
 			addRegionalTenantExpectStatusCode(t, providedTenantIDs, http.StatusBadRequest)
 
 			// THEN
-			tenants, err := fixtures.GetTenants(dexGraphQLClient)
+			tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
 			require.NoError(t, err)
 			assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
 		})
@@ -394,14 +394,14 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				CustomerID:             uuid.New().String(),
 				SubscriptionProviderID: uuid.New().String(),
 			}
-			oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
+			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 			require.NoError(t, err)
 
 			// WHEN
 			addRegionalTenantExpectStatusCode(t, providedTenantIDs, http.StatusBadRequest)
 
 			// THEN
-			tenants, err := fixtures.GetTenants(dexGraphQLClient)
+			tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
 			require.NoError(t, err)
 			assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
 		})
@@ -413,14 +413,14 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				SubaccountID: uuid.New().String(),
 				CustomerID:   uuid.New().String(),
 			}
-			oldTenantState, err := fixtures.GetTenants(dexGraphQLClient)
+			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 			require.NoError(t, err)
 
 			// WHEN
 			addRegionalTenantExpectStatusCode(t, providedTenantIDs, http.StatusBadRequest)
 
 			// THEN
-			tenants, err := fixtures.GetTenants(dexGraphQLClient)
+			tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
 			require.NoError(t, err)
 			assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
 		})
@@ -433,8 +433,8 @@ func TestGetDependenciesHandler(t *testing.T) {
 		request, err := http.NewRequest(http.MethodGet, config.TenantFetcherFullDependenciesURL, nil)
 		require.NoError(t, err)
 
-		externalSvcMockUrl := config.ExternalServicesMockURL
-		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token.FromExternalServicesMock(t, externalSvcMockUrl, config.ClientID, config.ClientSecret, tenantfetcher.DefaultClaims(externalSvcMockUrl))))
+		tkn := token.GetClientCredentialsToken(t, context.Background(), config.ExternalServicesMockURL+"/secured/oauth/token", config.ClientID, config.ClientSecret, "tenantFetcherClaims")
+		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", tkn))
 
 		// WHEN
 		response, err := httpClient.Do(request)
@@ -487,7 +487,7 @@ func assertTenantExists(ctx context.Context, t *testing.T, tenantID string) {
 
 	t.Logf("List tenants with tenantID %s", tenantID)
 
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, getTenantsRequest, &tenantsPage)
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenantsRequest, &tenantsPage)
 	require.NoError(t, err)
 
 	if tenantsPage.TotalCount > 0 {

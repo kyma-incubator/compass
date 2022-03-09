@@ -43,8 +43,15 @@ func NewHandler(CACert, CAKey string) *handler {
 
 func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 	authorization := r.Header.Get("authorization")
-	if len(authorization) == 0 || !strings.HasPrefix(authorization, "Bearer ") {
+
+	if len(authorization) == 0 {
 		httphelpers.WriteError(writer, errors.New("authorization header is required"), http.StatusBadRequest)
+		return
+	}
+
+	token := strings.TrimPrefix(authorization, "Bearer ")
+	if !strings.HasPrefix(authorization, "Bearer ") || len(token) == 0 {
+		httphelpers.WriteError(writer, errors.New("token value is required"), http.StatusBadRequest)
 		return
 	}
 
@@ -115,6 +122,11 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	cn := "compass"
+	if clientCSR.Subject.CommonName != "" {
+		cn = clientCSR.Subject.CommonName
+	}
+
 	if len(tenant) == 0 {
 		httphelpers.WriteError(writer, errors.New("tenant is required"), http.StatusBadRequest)
 		return
@@ -128,7 +140,7 @@ func (h *handler) Generate(writer http.ResponseWriter, r *http.Request) {
 			Organization:       []string{"SAP SE"},
 			OrganizationalUnit: []string{"SAP Cloud Platform Clients", "Region", tenant},
 			Locality:           []string{"local"},
-			CommonName:         "compass",
+			CommonName:         cn,
 		},
 		NotBefore:   time.Now(),
 		NotAfter:    time.Now().Add(time.Hour),
