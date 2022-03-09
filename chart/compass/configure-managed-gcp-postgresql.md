@@ -28,12 +28,12 @@ To install Compass with GCP managed Postgres database, set the **database.embedd
 The access to the database is possible using [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/concepts/workload-identity).
 It allows a Kubernetes service account to act as an IAM service account.
 Pods that use the configured Kubernetes service account automatically authenticate as the GCP service account when accessing Google Cloud APIs. 
-All kubernetes service accounts, which are used by workloads to access the database, have annotation "iam.gke.io/gcp-service-account" pointing to the `sqlProxyServiceAccount` - the IAM Service Account in GCP that will be used by the K8s workloads.
+All Kubernetes service accounts, which are used by workloads to access the database, have annotation "iam.gke.io/gcp-service-account" pointing to the `sqlProxyServiceAccount`. The `sqlProxyServiceAccount` is the IAM service account in GCP that is used by the service accounts of the Kubernetes workloads.
 
-When adding a workload (deployment, job, etc.) which needs access to the database, the following steps have to be done:
-  - Ensure that the workload has kubernetes service account associated to it
-  - Ensure that this service account has annotation "iam.gke.io/gcp-service-account" pointing to the `sqlProxyServiceAccount`
-  - Ensure that there is IAM policy binding for `sqlProxyServiceAccount` which contains the kubernetes service account as a member
+When you add a workload (deployment, job, etc.) that needs access to the database, you must perform the following steps:
+  - Ensure that the workload has a Kubernetes service account associated with it.
+  - Ensure that the Kubernetes service account has an annotation "iam.gke.io/gcp-service-account" that points to the `sqlProxyServiceAccount`.
+  - Ensure that there is an IAM policy binding for `sqlProxyServiceAccount`, which contains the Kubernetes service account as a member.
 
 To connect to managed database, we use [cloudsql-proxy](https://cloud.google.com/sql/docs/postgres/sql-proxy) provided by Google, which consumes `instanceConnectionName` value.
 
