@@ -23,9 +23,9 @@ import (
 const applicationTable string = `public.applications`
 
 var (
-	applicationColumns    = []string{"id", "app_template_id", "system_number", "name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "documentation_labels"}
-	updatableColumns      = []string{"name", "description", "status_condition", "status_timestamp", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "documentation_labels"}
-	upsertableColumns     = []string{"name", "description", "status_condition", "provider_name", "base_url", "labels"}
+	applicationColumns    = []string{"id", "app_template_id", "system_number", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "documentation_labels"}
+	updatableColumns      = []string{"name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "documentation_labels"}
+	upsertableColumns     = []string{"name", "description", "status_condition", "system_status", "provider_name", "base_url", "labels"}
 	matchingSystemColumns = []string{"system_number"}
 )
 
@@ -166,6 +166,34 @@ func (r *pgRepository) GetGlobalByID(ctx context.Context, id string) (*model.App
 	return appModel, nil
 }
 
+// GetByFilter retrieves Application matching on the given label filters
+func (r *pgRepository) GetByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Application, error) {
+	var appEnt Entity
+
+	tenantID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing tenant as UUID")
+	}
+
+	filterSubquery, args, err := label.FilterQuery(model.ApplicationLabelableObject, label.IntersectSet, tenantID, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
+	var conditions repo.Conditions
+	if filterSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	if err = r.singleGetter.Get(ctx, resource.Application, tenant, conditions, repo.NoOrderBy, &appEnt); err != nil {
+		return nil, err
+	}
+
+	appModel := r.conv.FromEntity(&appEnt)
+
+	return appModel, nil
+}
+
 // ListAll missing godoc
 func (r *pgRepository) ListAll(ctx context.Context, tenantID string) ([]*model.Application, error) {
 	var entities EntityCollection
@@ -173,6 +201,32 @@ func (r *pgRepository) ListAll(ctx context.Context, tenantID string) ([]*model.A
 	err := r.lister.List(ctx, resource.Application, tenantID, &entities)
 
 	if err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
+}
+
+// ListAllByFilter retrieves all applications matching on the given label filters
+func (r *pgRepository) ListAllByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Application, error) {
+	var entities EntityCollection
+
+	tenantID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing tenant as UUID")
+	}
+
+	filterSubquery, args, err := label.FilterQuery(model.ApplicationLabelableObject, label.IntersectSet, tenantID, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
+	var conditions repo.Conditions
+	if filterSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	if err = r.lister.List(ctx, resource.Application, tenant, &entities, conditions...); err != nil {
 		return nil, err
 	}
 
@@ -314,15 +368,15 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.A
 }
 
 // Upsert inserts application for given tenant or update it if it already exists
-func (r *pgRepository) Upsert(ctx context.Context, tenant string, model *model.Application) error {
+func (r *pgRepository) Upsert(ctx context.Context, tenant string, model *model.Application) (string, error) {
 	if model == nil {
-		return apperrors.NewInternalError("model can not be empty")
+		return "", apperrors.NewInternalError("model can not be empty")
 	}
 
 	log.C(ctx).Debugf("Converting Application model with id %s to entity", model.ID)
 	appEnt, err := r.conv.ToEntity(model)
 	if err != nil {
-		return errors.Wrap(err, "while converting to Application entity")
+		return "", errors.Wrap(err, "while converting to Application entity")
 	}
 
 	log.C(ctx).Debugf("Upserting Application entity with id %s to db", model.ID)

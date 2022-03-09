@@ -20,8 +20,16 @@ spec:
         restartOnNewInstallationMarker: {{ randAlphaNum 5 | quote }} # Restarts the deployment on a new Helm installation. (https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments)
       labels:
         app: {{ .Chart.Name }}
+        reqlimit: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit5MBLabel }}
         release: {{ .Release.Name }}
     spec:
+      {{ if $.Values.global.isLocalEnv }}
+      # HostAliases are used by Pod to resolve kyma.local domain
+      hostAliases:
+        - ip: {{ $.Values.global.minikubeIP }}
+          hostnames:
+            - "{{ $.Values.global.externalServicesMock.certSecuredHost }}.{{ $.Values.global.ingress.domainName }}"
+      {{ end }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
@@ -42,6 +50,8 @@ spec:
               value: "0.0.0.0:{{ .Values.global.gateway.port }}"
             - name: APP_DIRECTOR_ORIGIN
               value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}"
+            - name: APP_NSADAPTER_ORIGIN
+              value: "http://compass-ns-adapter.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.nsAdapter.external.port }}"
             - name: APP_METRICS_ADDRESS
               value: "0.0.0.0:{{ .Values.metrics.port }}"
             - name: APP_CONNECTOR_ORIGIN
@@ -88,7 +98,46 @@ spec:
                   name: {{ .Values.global.auditlog.secret.name }}
                   key: {{ .Values.global.auditlog.secret.urlKey }}
             - name: APP_AUDITLOG_TOKEN_PATH
-              value: {{ .Values.global.auditlog.tokenPath }}
+              value: {{ .Values.global.auditlog.standardTokenPath }}
+            - name: APP_AUDITLOG_OAUTH_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.global.auditlog.configMapName }}
+                  key: auditlog-oauth-user-var
+                  optional: true
+            - name: APP_AUDITLOG_OAUTH_TENANT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.global.auditlog.configMapName }}
+                  key: auditlog-oauth-tenant-var
+                  optional: true
+            {{ else if eq .Values.gateway.auditlog.authMode "oauth-mtls" }}
+            - name: APP_AUDITLOG_AUTH_MODE
+              value: "oauth-mtls"
+            - name: APP_AUDITLOG_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.auditlog.secret.name }}
+                  key: {{ .Values.global.auditlog.secret.clientIdKey }}
+            - name: APP_AUDITLOG_SKIP_SSL_VALIDATION
+              value: "{{ .Values.global.auditlog.skipSSLValidation }}"
+            - name: APP_AUDITLOG_X509_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.auditlog.secret.name }}
+                  key: {{ .Values.global.auditlog.secret.clientCertKey }}
+            - name: APP_AUDITLOG_X509_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.auditlog.secret.name }}
+                  key: {{ .Values.global.auditlog.secret.clientKeyKey }}
+            - name: APP_AUDITLOG_OAUTH_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.auditlog.secret.name }}
+                  key: {{ .Values.global.auditlog.secret.urlKey }}
+            - name: APP_AUDITLOG_TOKEN_PATH
+              value: {{ .Values.global.auditlog.mtlsTokenPath }}
             - name: APP_AUDITLOG_OAUTH_USER
               valueFrom:
                 configMapKeyRef:
@@ -129,7 +178,7 @@ spec:
                   name: {{ .Values.global.auditlog.configMapName }}
                   key: auditlog-channel-timeout
                   optional: true
-{{ end }}
+            {{ end }}
 {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}

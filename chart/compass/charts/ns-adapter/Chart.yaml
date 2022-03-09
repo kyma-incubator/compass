@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart for Compass Notification Service Adapter
+name: ns-adapter
+version: 0.1.0

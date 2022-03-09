@@ -1,0 +1,142 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    reqlimit: big
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.deployment.minReplicas }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      release: {{ .Release.Name }}
+  strategy:
+    {{- toYaml .Values.deployment.strategy | nindent 4 }}
+  template:
+    metadata:
+      annotations:
+        {{ if .Values.deployment.resourcesIstioProxy.requests.cpu }}
+        sidecar.istio.io/proxyCPU: {{ .Values.deployment.resourcesIstioProxy.requests.cpu }}
+        {{ end }}
+        {{ if .Values.deployment.resourcesIstioProxy.requests.memory }}
+        sidecar.istio.io/proxyMemory: {{ .Values.deployment.resourcesIstioProxy.requests.memory }}
+        {{ end }}
+        {{ if .Values.deployment.resourcesIstioProxy.limits.cpu }}
+        sidecar.istio.io/proxyCPULimit: {{ .Values.deployment.resourcesIstioProxy.limits.cpu }}
+        {{ end }}
+        {{ if .Values.deployment.resourcesIstioProxy.limits.memory }}
+        sidecar.istio.io/proxyMemoryLimit: {{ .Values.deployment.resourcesIstioProxy.limits.memory }}
+        {{ end }}
+      labels:
+        app: {{ .Chart.Name }}
+        reqlimit: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit5MBLabel }}
+        release: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ template "fullname" . }}
+      nodeSelector:
+        {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
+          imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+          command:
+            - "/bin/sh"
+          args:
+              - "-c"
+              - "./ns-adapter; exit_code=$?; echo '# KILLING PILOT-AGENT #'; pkill -INT cloud_sql_proxy; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 5; exit $exit_code;"
+          ports:
+            - name: http
+              containerPort: {{ .Values.global.nsAdapter.external.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.deployment.resources | nindent 12 }}
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          env:
+            - name: APP_ADDRESS
+              value: "0.0.0.0:{{ .Values.global.nsAdapter.external.port }}"
+            - name: APP_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-username
+            - name: APP_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-password
+            - name: APP_DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-serviceName
+            - name: APP_DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-servicePort
+            - name: APP_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-db-name
+            - name: APP_DB_SSL
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-sslMode
+            - name: APP_DB_MAX_OPEN_CONNECTIONS
+              value: "{{.Values.deployment.dbPool.maxOpenConnections}}"
+            - name: APP_DB_MAX_IDLE_CONNECTIONS
+              value: "{{.Values.deployment.dbPool.maxIdleConnections}}"
+            - name: APP_LOG_FORMAT
+              value: {{.Values.global.log.format | quote }}
+            - name: APP_CONFIGURATION_FILE
+              value: /config/config.yaml
+            - name: APP_DEFAULT_SCENARIO_ENABLED
+              value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
+            - name: APP_SCHEMA_MIGRATION_VERSION
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.global.expectedSchemaVersionUpdateJob.cm.name }}
+                  key: schemaVersion
+            - name: APP_SYSTEM_TO_TEMPLATE_MAPPINGS
+              value: {{ .Values.global.nsAdapter.systemToTemplateMappings | quote }}
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: APP_EXTERNAL_CLIENT_KEY_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+            - name: APP_JWKS_ENDPOINT
+              value: http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json
+          livenessProbe:
+            httpGet:
+              port: {{ .Values.global.nsAdapter.external.port }}
+              path: "/healthz"
+            initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
+            periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
+          volumeMounts:
+        {{if eq .Values.global.database.embedded.enabled false}}
+        - name: cloudsql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
+          command: ["/cloud_sql_proxy",
+                    "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
+                    "-term_timeout=2s"]
+          resources:
+          {{- toYaml .Values.deployment.resourcesCloudsqlProxy | nindent 12 }}
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          {{end}}
+      volumes:
+        - name: director-config
+          configMap:
+            name: {{ template "fullname" . }}-config

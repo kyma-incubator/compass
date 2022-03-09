@@ -32,6 +32,7 @@ spec:
         {{ end }}
       labels:
         app: {{ .Chart.Name }}
+        reqlimit: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit2MBLabel }}
         release: {{ .Release.Name }}
     spec:
       {{ if .Values.global.isLocalEnv }}
@@ -170,6 +171,8 @@ spec:
               value: {{ $config.authenticator.trusted_issuers | quote }}
             - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_ATTRIBUTES
               value: {{ $config.authenticator.attributes | quote }}
+            - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_CHECK_CLIENT_ID_SUFFIX
+              value: {{ $config.authenticator.checkSuffix | quote }}
             {{- end }}
             {{- end }}
             - name: APP_HEALTH_CONFIG_INDICATORS
@@ -264,9 +267,6 @@ spec:
           volumeMounts:
             - mountPath: /config
               name: director-config
-            - mountPath: /data/static-users.yaml
-              name: static-users
-              subPath: static-users.yaml
             - mountPath: /data/static-groups.yaml
               name: static-groups
               subPath: static-groups.yaml
@@ -292,9 +292,6 @@ spec:
         - name: director-config
           configMap:
             name: {{ template "fullname" . }}-config
-        - name: static-users
-          configMap:
-            name: {{ template "fullname" . }}-static-users
         - name: static-groups
           configMap:
             name: {{ template "fullname" . }}-static-groups

@@ -731,6 +731,7 @@ type Application {
 	createdAt: Timestamp
 	updatedAt: Timestamp
 	deletedAt: Timestamp
+	systemStatus: String
 	error: String
 }
 
