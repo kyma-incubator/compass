@@ -24,7 +24,7 @@ spec:
           hostnames:
             - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - "{{ .Values.global.nsAdapter.e2eTests.gatewayHost }}.{{ .Values.global.ingress.domainName }}"
-            - "dex.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
       {{ end }}
       serviceAccountName: {{ .Chart.Name }}-e2e-ns-adapter
       containers:
@@ -112,7 +112,7 @@ spec:
                   key: {{ .Values.global.nsAdapter.secret.subaccountKey }}
             - name: CREATE_CLONE_PATTERN
               value: {{ .Values.global.nsAdapter.createClonePattern | quote }}
-            - name: CREAT_BINDING_PATTERN
+            - name: CREATE_BINDING_PATTERN
               value: {{ .Values.global.nsAdapter.createBindingPattern | quote }}
             - name: APP_OAUTH_X509_CERT
               valueFrom:

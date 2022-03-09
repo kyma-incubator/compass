@@ -43,10 +43,8 @@ type config struct {
 	RegisterPath                   string        `envconfig:"REGISTER_PATH,optional"`
 	Subaccount                     string        `envconfig:"NS_SUBACCOUNT,optional"`
 	CreateClonePattern             string        `envconfig:"CREATE_CLONE_PATTERN,optional"`
-	CreateBindingPattern           string        `envconfig:"CREAT_BINDING_PATTERN,optional"`
+	CreateBindingPattern           string        `envconfig:"CREATE_BINDING_PATTERN,optional"`
 	DefaultTestTenant              string        `envconfig:"DEFAULT_TEST_TENANT"`
-	Domain                         string        `envconfig:"DOMAIN"`
-	DirectorURL                    string        `envconfig:"DIRECTOR_URL"`
 	AdapterURL                     string        `envconfig:"ADAPTER_URL"`
 	Timeout                        time.Duration `envconfig:"default=60s"`
 	X509Config                     oauth.X509Config
@@ -66,7 +64,6 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while initializing envconfig"))
 	}
-	testConfig.DirectorURL = fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", testConfig.Domain)
 
 	tenant.TestTenants.Init()
 
