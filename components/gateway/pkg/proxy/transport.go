@@ -85,7 +85,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 
 	preAuditLogger := t.auditlogSvc
 
-	claims, err := t.getClaims(req.Header)
+	claims, err := getClaims(req.Context(), req.Header)
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing JWT")
 	}
@@ -159,7 +159,7 @@ func (c Claims) Valid() error {
 	return nil
 }
 
-func (t *Transport) getClaims(headers http.Header) (Claims, error) {
+func getClaims(ctx context.Context, headers http.Header) (Claims, error) {
 	tokenClaims := struct {
 		TenantString string `json:"tenant"`
 		Scopes       string `json:"scopes"`
@@ -186,7 +186,7 @@ func (t *Transport) getClaims(headers http.Header) (Claims, error) {
 	tenants := make(map[string]string, 0)
 	err = json.Unmarshal([]byte(tokenClaims.TenantString), &tenants)
 	if err != nil {
-		return Claims{}, errors.Wrap(err, "while extracting tenants from token")
+		log.C(ctx).WithError(err).Errorf("failed to extract tenants from token, proceeding with empty tenants: %v", err)
 	}
 
 	claims := Claims{

@@ -20,13 +20,18 @@ const (
 	HeaderContentTypeValue = "application/json;charset=UTF-8"
 )
 
-// WithTimeout missing godoc
+// WithTimeout returns timeout http.Handler
 func WithTimeout(h http.Handler, timeout time.Duration) (http.Handler, error) {
 	msg, err := json.Marshal(apperrors.NewOperationTimeoutError())
 	if err != nil {
 		return nil, err
 	}
 
+	return WithTimeoutWithErrorMessage(h, timeout, msg)
+}
+
+// WithTimeoutWithErrorMessage returns timeout http.Handler with provided error message
+func WithTimeoutWithErrorMessage(h http.Handler, timeout time.Duration, msg []byte) (http.Handler, error) {
 	preTimoutLoggingHandler := newTimeoutLoggingHandler(h, timeout, msg)
 	timeoutHandler := http.TimeoutHandler(preTimoutLoggingHandler, timeout, string(msg))
 	postTimeoutLoggingHandler := newTimeoutLoggingHandler(timeoutHandler, timeout, msg)

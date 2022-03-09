@@ -42,7 +42,7 @@ spec:
             - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_REQUEST_PAYLOAD_LIMIT
-              value: {{ (.Values.global.istio.ingressgateway.requestPayloadSizeLimit | int) | quote }}
+              value: {{ (.Values.global.istio.ingressgateway.requestPayloadSizeLimit5MB | int) | quote }}
             - name: APP_DEFAULT_TENANT
               value: "{{.Values.global.defaultTenant}}"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET

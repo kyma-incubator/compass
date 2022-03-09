@@ -20,6 +20,7 @@ spec:
         restartOnNewInstallationMarker: {{ randAlphaNum 5 | quote }} # Restarts the deployment on a new Helm installation. (https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments)
       labels:
         app: {{ .Chart.Name }}
+        reqlimit: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit5MBLabel }}
         release: {{ .Release.Name }}
     spec:
       {{ if $.Values.global.isLocalEnv }}
@@ -49,6 +50,8 @@ spec:
               value: "0.0.0.0:{{ .Values.global.gateway.port }}"
             - name: APP_DIRECTOR_ORIGIN
               value: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}"
+            - name: APP_NSADAPTER_ORIGIN
+              value: "http://compass-ns-adapter.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.nsAdapter.external.port }}"
             - name: APP_METRICS_ADDRESS
               value: "0.0.0.0:{{ .Values.metrics.port }}"
             - name: APP_CONNECTOR_ORIGIN
@@ -175,7 +178,7 @@ spec:
                   name: {{ .Values.global.auditlog.configMapName }}
                   key: auditlog-channel-timeout
                   optional: true
-{{ end }}
+            {{ end }}
 {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}

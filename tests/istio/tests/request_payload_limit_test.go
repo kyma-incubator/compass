@@ -66,25 +66,35 @@ func TestCallingCompassGateways(t *testing.T) {
 		positiveDescription string
 		client              *http.Client
 		url                 string
+		requestSize         int
 	}{
 		{
-			negativeDescription: "fails when request is too big and passes through gateway",
+			negativeDescription: "fails when request is over 5MB and passes through gateway",
 			positiveDescription: "succeeds for a regular applications request passing through gateway",
 			url:                 conf.DirectorExternalCertSecuredURL,
 			client:              authorizedClient,
+			requestSize:         conf.RequestPayloadLimit,
 		},
 		{
-			negativeDescription: "fails when request is too big and passes through MTLS gateway",
+			negativeDescription: "fails when request is over 2MB and reaches director",
+			positiveDescription: "succeeds for a regular applications request reaching director",
+			url:                 conf.CompassGatewayURL + directorPath,
+			client:              authorizedClient,
+			requestSize:         2097152,
+		},
+		{
+			negativeDescription: "fails when request is over 5MB and passes through MTLS gateway",
 			positiveDescription: "succeeds for a regular applications request passing through MTLS gateway",
 			url:                 conf.CompassMTLSGatewayURL + directorPath,
 			client:              certSecuredClient,
+			requestSize:         conf.RequestPayloadLimit,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.negativeDescription, func(t *testing.T) {
 			t.Log("Creating a request with big payload...")
-			bigBodyPOSTRequest := getHTTPBigBodyPOSTRequest(t, test.url, tenant, conf.RequestPayloadLimit)
+			bigBodyPOSTRequest := getHTTPBigBodyPOSTRequest(t, test.url, tenant, test.requestSize)
 
 			t.Log("Executing request with big payload...")
 			resp, err := test.client.Do(bigBodyPOSTRequest)
@@ -134,12 +144,25 @@ func getHTTPBigBodyPOSTRequest(t *testing.T, url, tenant string, bodySize int) *
 		b.WriteByte('a')
 	}
 	s := b.String()
-	applicationRequest := fixtures.FixGetApplicationRequest(s)
-	reader := strings.NewReader(applicationRequest.Query())
-	req, err := http.NewRequest(http.MethodPost, url, reader)
+	applicationsGQLRequest := fixtures.FixGetApplicationRequest(s)
+	requestBodyObj := struct {
+		Query     string                 `json:"query"`
+		Variables map[string]interface{} `json:"variables"`
+	}{
+		Query:     applicationsGQLRequest.Query(),
+		Variables: applicationsGQLRequest.Vars(),
+	}
+
+	var requestBuffer bytes.Buffer
+	err := json.NewEncoder(&requestBuffer).Encode(requestBodyObj)
+	require.NoError(t, err)
+
+	req, err := http.NewRequest(http.MethodPost, url, &requestBuffer)
 	require.NoError(t, err)
 
 	req.Header.Set("Tenant", tenant)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	req.Header.Set("Accept", "application/json; charset=utf-8")
 	req = req.WithContext(context.TODO())
 	return req
 }
