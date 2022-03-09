@@ -110,7 +110,7 @@ func TestDeltaReport(stdT *testing.T) {
 		require.Equal(t, 1, len(apps))
 
 		app := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
 
 		validateApplication(t, app, "nonSAPsys", "http", "", expectedLabel, "reachable")
 	})
@@ -166,13 +166,13 @@ func TestDeltaReport(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		appOne := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appOne)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appOne)
 
 		apps, err = retrieveApps(t, ctx, sccLabelFilterWithLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		appTwo := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appTwo)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appTwo)
 
 		validateApplication(t, appOne, "nonSAPsys", "http", "system_one", expectedLabel, "reachable")
 		validateApplication(t, appTwo, "nonSAPsys", "http", "system_two", expectedLabelWithLocId, "reachable")
@@ -229,13 +229,13 @@ func TestDeltaReport(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		appOne := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appOne)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appOne)
 
 		apps, err = retrieveApps(t, ctx, sccLabelFilterWithLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		appTwo := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appTwo)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appTwo)
 
 		validateApplication(t, appOne, "nonSAPsys", "http", "system_one", expectedLabel, "reachable")
 		validateApplication(t, appTwo, "nonSAPsys", "http", "system_two", expectedLabelWithLocId, "reachable")
@@ -296,8 +296,8 @@ func TestDeltaReport(stdT *testing.T) {
 		//WHEN
 
 		outputApp := graphql.ApplicationExt{}
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", createAppFromTmplRequest, &outputApp)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", &outputApp)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", createAppFromTmplRequest, &outputApp)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", &outputApp)
 		require.NoError(t, err)
 		require.NotEmpty(t, outputApp.ID)
 
@@ -344,8 +344,8 @@ func TestDeltaReport(stdT *testing.T) {
 		outputApp := graphql.ApplicationExt{}
 		//WHEN
 
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", createAppFromTmplRequest, &outputApp)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", &outputApp)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", createAppFromTmplRequest, &outputApp)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", &outputApp)
 		require.NoError(t, err)
 		require.NotEmpty(t, outputApp.ID)
 
@@ -404,7 +404,7 @@ func TestDeltaReport(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		app := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
 
 		validateApplication(t, app, "nonSAPsys", "http", "", expectedLabel, "reachable")
 	})
@@ -439,7 +439,7 @@ func TestDeltaReport(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		app := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
 
 		report = Report{
 			ReportType: "notification service",
@@ -580,6 +580,6 @@ func retrieveApps(t *testing.T, ctx context.Context, labelFilter graphql.LabelFi
 
 	query := fixtures.FixApplicationsFilteredPageableRequest(labelFilterGQL, 100, "")
 	applicationPage := graphql.ApplicationPageExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, query, &applicationPage)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, query, &applicationPage)
 	return applicationPage.Data, err
 }

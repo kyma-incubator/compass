@@ -27,25 +27,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/clients"
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
-	"github.com/kyma-incubator/compass/tests/pkg/token"
-
-	gcli "github.com/machinebox/graphql"
-
-	"github.com/kyma-incubator/compass/tests/pkg/k8s"
-	v1 "k8s.io/api/batch/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-
-	"github.com/kyma-incubator/compass/tests/pkg/certs"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
+	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
 )
@@ -65,13 +56,9 @@ func TestSelfRegisterFlow(t *testing.T) {
 	ctx := context.Background()
 	accountTenantID := testConfig.AccountTenantID // accountTenantID is parent of the tenant/subaccountID of the configured certificate client's tenant below
 
-	// Build graphql director client configured with certificate
-	clientKey, rawCertChain := certs.ClientCertPair(t, testConfig.ExternalCA.Certificate, testConfig.ExternalCA.Key)
-	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, clientKey, rawCertChain, testConfig.SkipSSLValidation)
-
 	// Register application
-	app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", accountTenantID)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, accountTenantID, &app)
+	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "testingApp", accountTenantID)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, accountTenantID, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 
@@ -104,8 +91,8 @@ func TestSelfRegisterFlow(t *testing.T) {
 		Description: ptr.String("selfRegisterRuntime-description"),
 		Labels:      graphql.Labels{testConfig.ProviderLabelKey: testConfig.ProviderID},
 	}
-	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
-	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
+	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtimeInput)
+	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtime)
 	require.NotEmpty(t, runtime.ID)
 	strLbl, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
 	require.True(t, ok)
@@ -114,11 +101,11 @@ func TestSelfRegisterFlow(t *testing.T) {
 	// Verify that the label returned cannot be modified
 	setLabelRequest := fixtures.FixSetRuntimeLabelRequest(runtime.ID, testConfig.SelfRegisterLabelKey, "value")
 	label := graphql.Label{}
-	err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, setLabelRequest, &label)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, setLabelRequest, &label)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), fmt.Sprintf("could not set unmodifiable label with key %s", testConfig.SelfRegisterLabelKey))
 
-	labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, dexGraphQLClient, accountTenantID)
+	labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, certSecuredGraphQLClient, accountTenantID)
 	require.NoError(t, err)
 	numOfScenarioLabelDefinitions := 0
 	for _, ld := range labelDefinitions {
@@ -137,27 +124,9 @@ func TestConsumerProviderFlow(t *testing.T) {
 	subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
 	subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
 	subscriptionConsumerTenantID := testConfig.TestConsumerTenantID
-	jobName := "external-certificate-rotation-test-job"
 
-	// Prepare provider external client certificate and secret
-	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
-	require.NoError(t, err)
-	createExtCertJob(t, ctx, k8sClient, testConfig, jobName) // Create temporary external certificate job which will save the modified client certificate in temporary secret
-	defer func() {
-		k8s.DeleteJob(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace)
-		k8s.DeleteSecret(t, ctx, k8sClient, testConfig.ExternalClientCertTestSecretName, testConfig.ExternalClientCertTestSecretNamespace)
-	}()
-	k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace)
-
-	providerExtCrtTestSecret, err := k8sClient.CoreV1().Secrets(testConfig.ExternalClientCertTestSecretNamespace).Get(ctx, testConfig.ExternalClientCertTestSecretName, metav1.GetOptions{})
-	require.NoError(t, err)
-	providerKeyBytes := providerExtCrtTestSecret.Data[testConfig.ExternalCA.SecretKeyKey]
-	require.NotEmpty(t, providerKeyBytes)
-	providerCertChainBytes := providerExtCrtTestSecret.Data[testConfig.ExternalCA.SecretCertificateKey]
-	require.NotEmpty(t, providerCertChainBytes)
-
-	// Build graphql director client configured with certificate
-	providerClientKey, providerRawCertChain := certs.ClientCertPair(t, providerCertChainBytes, providerKeyBytes)
+	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, testConfig.ExternalCertProviderConfig)
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
 
 	runtimeInput := graphql.RuntimeInput{
@@ -171,14 +140,14 @@ func TestConsumerProviderFlow(t *testing.T) {
 	require.NotEmpty(t, runtime.ID)
 
 	// Register application
-	app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "testingApp", secondaryTenant)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, secondaryTenant, &app)
+	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "testingApp", secondaryTenant)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, secondaryTenant, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 
 	// Register consumer application
-	consumerApp, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "consumerApp", secondaryTenant)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, secondaryTenant, &consumerApp)
+	consumerApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "consumerApp", secondaryTenant)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, secondaryTenant, &consumerApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, consumerApp.ID)
 	require.NotEmpty(t, consumerApp.Name)
@@ -292,53 +261,6 @@ func TestConsumerProviderFlow(t *testing.T) {
 	t.Log("Successfully validated no application is returned after successful unsubscription request")
 }
 
-// createExtCertJob will schedule a temporary kubernetes job from director-external-certificate-rotation-job cronjob
-// with replaced certificate subject and secret name so the tests can be executed on real environment with the correct values.
-func createExtCertJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, testConfig config, jobName string) {
-	cronjobName := "director-external-certificate-rotation-job"
-
-	cronjob := k8s.GetCronJob(t, ctx, k8sClient, cronjobName, testConfig.ExternalClientCertTestSecretNamespace)
-
-	// change the secret name and certificate subject
-	podContainers := &cronjob.Spec.JobTemplate.Spec.Template.Spec.Containers
-	for cIndex := range *podContainers {
-		container := &(*podContainers)[cIndex]
-		if container.Name == testConfig.ExternalCertCronjobContainerName {
-			for eIndex := range container.Env {
-				env := &container.Env[eIndex]
-				if env.Name == "CLIENT_CERT_SECRET_NAME" {
-					env.Value = testConfig.ExternalClientCertTestSecretName
-				}
-				if env.Name == "CERT_SUBJECT_PATTERN" {
-					env.Value = testConfig.TestExternalCertSubject
-				}
-				if env.Name == "CERT_SVC_CSR_ENDPOINT" || env.Name == "CERT_SVC_CLIENT_ID" || env.Name == "CERT_SVC_OAUTH_URL" || env.Name == "CERT_SVC_OAUTH_CLIENT_CERT" || env.Name == "CERT_SVC_OAUTH_CLIENT_KEY" {
-					env.ValueFrom.SecretKeyRef.Name = testConfig.CertSvcInstanceTestSecretName // external certificate credentials used to execute consumer-provider test
-				}
-			}
-			break
-		}
-	}
-
-	jobDef := &v1.Job{
-		Spec: v1.JobSpec{
-			Parallelism:             cronjob.Spec.JobTemplate.Spec.Parallelism,
-			Completions:             cronjob.Spec.JobTemplate.Spec.Completions,
-			ActiveDeadlineSeconds:   cronjob.Spec.JobTemplate.Spec.ActiveDeadlineSeconds,
-			BackoffLimit:            cronjob.Spec.JobTemplate.Spec.BackoffLimit,
-			Selector:                cronjob.Spec.JobTemplate.Spec.Selector,
-			ManualSelector:          cronjob.Spec.JobTemplate.Spec.ManualSelector,
-			Template:                cronjob.Spec.JobTemplate.Spec.Template,
-			TTLSecondsAfterFinished: cronjob.Spec.JobTemplate.Spec.TTLSecondsAfterFinished,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: jobName,
-		},
-	}
-
-	k8s.CreateJobByGivenJobDefinition(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace, jobDef)
-}
-
 func buildAndExecuteUnsubscribeRequest(t *testing.T, runtime graphql.RuntimeExt, httpClient *http.Client, apiPath, subscriptionToken, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID string) {
 	unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte{}))
 	require.NoError(t, err)
@@ -405,7 +327,7 @@ func unassignFromFormation(t *testing.T, ctx context.Context, objectID, objectTy
 
 func executeGQLRequest(t *testing.T, ctx context.Context, gqlRequest *gcli.Request, formationName, tenantID string) {
 	var formation graphql.Formation
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, gqlRequest, &formation)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, gqlRequest, &formation)
 	require.NoError(t, err)
 	require.Equal(t, formationName, formation.Name)
 }
