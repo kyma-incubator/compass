@@ -74,11 +74,11 @@ func (vh *validationHydrator) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	var sysAuthID string
 
 	switch v := systemAuth.(type) {
-	case graphql.AppSystemAuth:
+	case *graphql.AppSystemAuth:
 		sysAuthID = v.ID
-	case graphql.RuntimeSystemAuth:
+	case *graphql.RuntimeSystemAuth:
 		sysAuthID = v.ID
-	case graphql.IntSysSystemAuth:
+	case *graphql.IntSysSystemAuth:
 		sysAuthID = v.ID
 	default:
 		log.C(ctx).Error("Could not determine system auth type")

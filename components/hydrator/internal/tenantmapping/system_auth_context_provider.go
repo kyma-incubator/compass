@@ -46,47 +46,29 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 		return ObjectContext{}, errors.Wrap(opErr, "while retrieving system auth from director")
 	}
 
-	var sysAuthID string
 	var refObjectType systemauth.SystemAuthReferenceObjectType
-	var auth *graphql.Auth
-	var refObjectID *string
-	var tenantID *string
 
-	switch v := sysAuth.(type) {
-	case graphql.AppSystemAuth:
-		sysAuthID = v.ID
+	if sysAuth.ReferenceObjectID == nil {
+		return ObjectContext{}, errors.Errorf("unknown reference object ID for system auth with id %s", sysAuth.ID)
+	}
+
+	switch *sysAuth.Type {
+	case graphql.SystemAuthReferenceTypeApplication:
 		refObjectType = systemauth.ApplicationReference
-		auth = v.Auth
-		refObjectID = v.ReferenceObjectID
-		tenantID = v.TenantID
-	case graphql.RuntimeSystemAuth:
-		sysAuthID = v.ID
+	case graphql.SystemAuthReferenceTypeRuntime:
 		refObjectType = systemauth.RuntimeReference
-		auth = v.Auth
-		refObjectID = v.ReferenceObjectID
-		tenantID = v.TenantID
-	case graphql.IntSysSystemAuth:
-		sysAuthID = v.ID
+	case graphql.SystemAuthReferenceTypeIntegrationSystem:
 		refObjectType = systemauth.IntegrationSystemReference
-		auth = v.Auth
-		refObjectID = v.ReferenceObjectID
-		tenantID = v.TenantID
-	default:
-		return ObjectContext{}, errors.Errorf("could not determine system auth type for system auth with id %s", authDetails.AuthID)
 	}
 
-	if refObjectID == nil {
-		return ObjectContext{}, errors.Errorf("unknown reference object ID for system auth wit id %s", sysAuthID)
-	}
+	log.C(ctx).Debugf("Reference object id is %s", *sysAuth.ReferenceObjectID)
+	log.C(ctx).Infof("Reference object type is %s", sysAuth.Type)
 
-	log.C(ctx).Debugf("Reference object id is %s", *refObjectID)
-	log.C(ctx).Infof("Reference object type is %s", refObjectType)
+	if authDetails.AuthFlow.IsCertFlow() && sysAuth.Auth != nil && str.PtrStrToStr(sysAuth.Auth.CertCommonName) != authDetails.AuthID {
+		sysAuth.Auth.OneTimeToken = nil
+		sysAuth.Auth.CertCommonName = str.Ptr(authDetails.AuthID)
 
-	if authDetails.AuthFlow.IsCertFlow() && auth != nil && str.PtrStrToStr(auth.CertCommonName) != authDetails.AuthID {
-		auth.OneTimeToken = nil
-		auth.CertCommonName = str.Ptr(authDetails.AuthID)
-
-		if _, err := m.directorClient.UpdateSystemAuth(ctx, authDetails.AuthID, *auth); err != nil {
+		if _, err := m.directorClient.UpdateSystemAuth(ctx, authDetails.AuthID, *sysAuth.Auth); err != nil {
 			return ObjectContext{}, errors.Wrap(err, "while updating system auth")
 		}
 	}
@@ -95,17 +77,17 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 	var tenantCtx TenantContext
 	var err error
 
-	switch refObjectType {
-	case systemauth.IntegrationSystemReference:
+	switch *sysAuth.Type {
+	case graphql.SystemAuthReferenceTypeIntegrationSystem:
 		tenantCtx, scopes, err = m.getTenantAndScopesForIntegrationSystem(ctx, reqData)
-	case systemauth.ApplicationReference, systemauth.RuntimeReference:
-		tenantCtx, scopes, err = m.getTenantAndScopesForApplicationOrRuntime(ctx, tenantID, refObjectType, reqData, authDetails.AuthFlow)
+	case graphql.SystemAuthReferenceTypeApplication, graphql.SystemAuthReferenceTypeRuntime:
+		tenantCtx, scopes, err = m.getTenantAndScopesForApplicationOrRuntime(ctx, sysAuth.TenantID, refObjectType, reqData, authDetails.AuthFlow)
 	default:
 		return ObjectContext{}, errors.Errorf("unsupported reference object type (%s)", refObjectType)
 	}
 
 	if err != nil {
-		return ObjectContext{}, errors.Wrapf(err, "while fetching the tenant and scopes for system auth with id: %s, object type: %s, using auth flow: %s", sysAuthID, refObjectType, authDetails.AuthFlow)
+		return ObjectContext{}, errors.Wrapf(err, "while fetching the tenant and scopes for system auth with id: %s, object type: %s, using auth flow: %s", sysAuth.ID, refObjectType, authDetails.AuthFlow)
 	}
 	log.C(ctx).Debugf("Successfully got tenant context - external ID: %s, internal ID: %s", tenantCtx.ExternalTenantID, tenantCtx.TenantID)
 
@@ -114,7 +96,7 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 		return ObjectContext{}, apperrors.NewInternalError("while mapping reference type to consumer type")
 	}
 
-	objCxt := NewObjectContext(tenantCtx, m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", *refObjectID, authDetails.AuthFlow, consumerType, tenantmapping.SystemAuthObjectContextProvider)
+	objCxt := NewObjectContext(tenantCtx, m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", *sysAuth.ReferenceObjectID, authDetails.AuthFlow, consumerType, tenantmapping.SystemAuthObjectContextProvider)
 	log.C(ctx).Infof("Object context: %+v", objCxt)
 
 	return objCxt, nil
@@ -214,6 +196,12 @@ func (m *systemAuthContextProvider) getTenantAndScopesForApplicationOrRuntime(ct
 		scopes = strings.Join(declaredScopes, " ")
 	}
 	log.C(ctx).Debugf("Found scopes are: %s", scopes)
+
+	log.D().Infof("ALEX,  :::: %+v %+v %+v", reqData.Body.Extra, reqData.Body.Header.Get("tenant"), reqData.Header.Get("tenant"))
+	for k, v := range reqData.Body.Extra {
+		log.D().Infof("ALEX, %+v :::: %+v", k, v)
+
+	}
 
 	externalTenantID, err = reqData.GetExternalTenantID()
 	if err != nil {

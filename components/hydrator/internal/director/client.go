@@ -14,7 +14,7 @@ type Client interface {
 	GetTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetTenantByInternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetTenantByLowestOwnerForResource(ctx context.Context, resourceID, resourceType string) (string, error)
-	GetSystemAuthByID(ctx context.Context, authID string) (schema.SystemAuth, error)
+	GetSystemAuthByID(ctx context.Context, authID string) (*schema.AppSystemAuth, error)
 	GetSystemAuthByToken(ctx context.Context, token string) (schema.SystemAuth, error)
 	UpdateSystemAuth(ctx context.Context, authID string, auth schema.Auth) (UpdateAuthResult, error)
 	InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (schema.SystemAuth, error)
@@ -48,7 +48,11 @@ type TenantByLowestOwnerForResourceResponse struct {
 }
 
 type SystemAuthResponse struct {
-	Result schema.SystemAuth `json:"result"`
+	Result *interface{} `json:"result"`
+}
+
+type SystemAuthResponse1 struct {
+	Result *schema.AppSystemAuth `json:"result"`
 }
 
 type RuntimeResponse struct {
@@ -98,27 +102,32 @@ func (c *client) GetTenantByLowestOwnerForResource(ctx context.Context, resource
 	return response.Result, nil
 }
 
-func (c *client) GetSystemAuthByID(ctx context.Context, authID string) (schema.SystemAuth, error) {
+func (c *client) GetSystemAuthByID(ctx context.Context, authID string) (*schema.AppSystemAuth, error) {
 	query := SystemAuthQuery(authID)
 
-	var response SystemAuthResponse
+	var response SystemAuthResponse1
 
 	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
-		return schema.AppSystemAuth{}, err
+		return nil, err
+	}
+
+	if response.Result == nil {
+		return nil, nil
 	}
 
 	return response.Result, nil
+
 }
 
 func (c *client) GetSystemAuthByToken(ctx context.Context, token string) (schema.SystemAuth, error) {
 	query := SystemAuthByTokenQuery(token)
 
-	var response SystemAuthResponse
+	var response SystemAuthResponse1
 
 	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
-		return schema.AppSystemAuth{}, err
+		return nil, err
 	}
 
 	return response.Result, nil
@@ -143,7 +152,7 @@ func (c *client) UpdateSystemAuth(ctx context.Context, authID string, auth schem
 func (c *client) InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (schema.SystemAuth, error) {
 	query := InvalidateSystemAuthOneTimeTokenQuery(authID)
 
-	var response SystemAuthResponse
+	var response SystemAuthResponse1
 
 	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {

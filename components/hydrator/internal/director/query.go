@@ -10,19 +10,69 @@ import (
 
 func SystemAuthQuery(authID string) string {
 	return fmt.Sprintf(`query {
-	  result: systemAuth(id: "%s") {
-		id
-		auth {
-		  certCommonName
-		}
-	  }
-	}`, authID)
+	  	result: systemAuth(id: "%s") {
+			id
+			tenantId
+			referenceObjectId
+			type
+			auth {
+				credential {
+				  ... on BasicCredentialData {
+					username
+					password
+				  }
+				  ... on OAuthCredentialData {
+					clientId
+					clientSecret
+					url
+				  }
+				}
+				oneTimeToken {
+				  __typename
+				  token
+				  used
+				  expiresAt
+				  connectorURL
+				  rawEncoded
+				  raw
+				  usedAt
+				  type
+				  createdAt
+				}
+				certCommonName
+				accessStrategy
+				additionalHeaders
+				additionalQueryParams
+				requestAuth {
+				  csrf {
+					tokenEndpointURL
+					credential {
+					  ... on BasicCredentialData {
+						username
+						password
+					  }
+					  ... on OAuthCredentialData {
+						clientId
+						clientSecret
+						url
+					  }
+					}
+					additionalHeaders
+					additionalQueryParams
+				  }
+				}
+			  }
+			}
+		}`, authID)
 }
 
 func SystemAuthByTokenQuery(token string) string {
 	return fmt.Sprintf(`query {
 		result: systemAuthByToken(token: "%s") {
 			id
+			tenantId
+			referenceObjectId
+			type
 			auth {
 				credential {
 				  ... on BasicCredentialData {
@@ -124,7 +174,7 @@ func UpdateSystemAuthQuery(authID string, gqlAuth graphql.Auth) (string, error) 
 }
 
 func InvalidateSystemAuthOneTimeTokenQuery(authID string) string {
-	return fmt.Sprintf(`query {
+	return fmt.Sprintf(`mutation {
 		result: invalidateSystemAuthOneTimeToken(authID: "%s") {
 			id
 			auth {

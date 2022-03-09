@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -186,7 +187,7 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 	}
 
-	directorClientProvider := director.NewClientProvider(cfg.Director.DirectorURL, cfg.Director.ClientTimeout)
+	directorClientProvider := director.NewClientProvider(cfg.Director.URL, cfg.Director.ClientTimeout, cfg.Director.SkipSSLValidation)
 	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 
 	logger.Infof("Registering Authentication Mapping endpoint on %s...", cfg.Handler.AuthenticationMappingEndpoint)
