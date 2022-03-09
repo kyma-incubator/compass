@@ -47,7 +47,7 @@ spec:
             - name: DIRECTOR_EXTERNAL_CERT_SECURED_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: SKIP_SSL_VALIDATION
-              value: "{{ .Values.global.tests.http.client.skipSSLValidation.ordService }}"
+              value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
             - name: CONSUMER_TOKEN_URL
               value: {{ .Values.global.tests.ordService.consumerTokenURL }}
             - name: TOKEN_PATH

@@ -77,7 +77,7 @@ spec:
             - name: APP_EXTERNAL_CLIENT_KEY_KEY
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: SKIP_SSL_VALIDATION
-              value: "{{ .Values.global.tests.http.client.skipSSLValidation.director }}"
+              value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.19.1-alpine

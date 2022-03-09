@@ -31,7 +31,7 @@ spec:
           - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
             value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
           - name: APP_SKIP_SSL_VALIDATION
-            value: "{{ .Values.global.tests.http.client.skipSSLValidation.director }}"
+            value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
           - name: APP_DIRECTOR_MTLS_URL
             value: 'https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql'
           - name: APP_CONNECTOR_HYDRATOR_URL

@@ -700,10 +700,7 @@ global:
   tests:
     http:
       client:
-        skipSSLValidation:
-          director: false
-          ordService: false
-          connectivityAdapter: true
+        skipSSLValidation: false
     director:
       externalClientCertTestSecretName: "external-client-certificate-integration-system-test-secret"
       externalClientCertTestSecretNamespace: "compass-system"

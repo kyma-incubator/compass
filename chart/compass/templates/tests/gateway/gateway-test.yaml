@@ -55,7 +55,7 @@ spec:
             - name: APP_EXTERNAL_CLIENT_KEY_KEY
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: SKIP_SSL_VALIDATION
-              value: "{{ .Values.global.tests.http.client.skipSSLValidation.director }}"
+              value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
       restartPolicy: Never
 ---
 apiVersion: v1

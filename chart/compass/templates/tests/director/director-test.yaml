@@ -102,7 +102,7 @@ spec:
             - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
               value: {{ .Values.global.tests.subscriptionProviderIdValue | quote }}
             - name: APP_SKIP_SSL_VALIDATION
-              value: "{{ .Values.global.tests.http.client.skipSSLValidation.director }}"
+              value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
             - name: TEST_EXTERNAL_CERT_SUBJECT
               value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.externalCertConfiguration.ouCertSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.tests.director.externalCertIntSystemCN }}
             - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME
