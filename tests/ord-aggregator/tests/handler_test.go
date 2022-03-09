@@ -321,7 +321,8 @@ func TestORDAggregator(t *testing.T) {
 
 			// Verify packages
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-
+			t.Log("GET PACKAGES: " + respBody)
+			t.Log(fmt.Sprintf("PACKAGES LEN: %d", len(gjson.Get(respBody, "value").Array())))
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfPackages {
 				t.Log("Missing Packages...will try again")
 				return false
@@ -332,12 +333,13 @@ func TestORDAggregator(t *testing.T) {
 
 			// Verify bundles
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/consumptionBundles?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-
+			t.Log("GET BUNDLES: " + respBody)
+			t.Log(fmt.Sprintf("BUNDLES LEN: %d", len(gjson.Get(respBody, "value").Array())))
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfBundles {
 				t.Log("Missing Bundles...will try again")
 				return false
 			}
-			time.Sleep(time.Minute)
+
 			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfBundles)
 			assertions.AssertMultipleEntitiesFromORDService(t, respBody, bundlesMap, expectedNumberOfBundles, descriptionField)
 			assertions.AssertBundleCorrelationIds(t, respBody, bundlesCorrelationIDs, expectedNumberOfBundles)
