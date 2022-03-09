@@ -643,6 +643,7 @@ global:
     ordServiceFQDN: http://compass-ord-service.compass-system.svc.cluster.local
     systemBrokerFQDN: http://compass-system-broker.compass-system.svc.cluster.local
     tenantFetcherFQDN: http://compass-tenant-fetcher.compass-system.svc.cluster.local
+    hydratorFQDN: http://compass-hydrator.compass-system.svc.cluster.local
     db:
       maxOpenConnections: 3
       maxIdleConnections: 1
