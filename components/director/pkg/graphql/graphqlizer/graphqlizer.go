@@ -418,7 +418,7 @@ func (g *Graphqlizer) LabelFilterToGQL(in graphql.LabelFilter) (string, error) {
 	return g.genericToGQL(in, `{
 		key: "{{.Key}}",
 		{{- if .Query }}
-		query: "{{.Query}}",
+		query: "{{- js .Query -}}",
 		{{- end }}
 	}`)
 }

@@ -112,6 +112,7 @@ type ComplexityRoot struct {
 		ProviderName          func(childComplexity int) int
 		Status                func(childComplexity int) int
 		SystemNumber          func(childComplexity int) int
+		SystemStatus          func(childComplexity int) int
 		UpdatedAt             func(childComplexity int) int
 		Webhooks              func(childComplexity int) int
 	}
@@ -1013,6 +1014,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.SystemNumber(childComplexity), true
+
+	case "Application.systemStatus":
+		if e.complexity.Application.SystemStatus == nil {
+			break
+		}
+
+		return e.complexity.Application.SystemStatus(childComplexity), true
 
 	case "Application.updatedAt":
 		if e.complexity.Application.UpdatedAt == nil {
@@ -4374,6 +4382,7 @@ type Application {
 	createdAt: Timestamp
 	updatedAt: Timestamp
 	deletedAt: Timestamp
+	systemStatus: String
 	error: String
 }
 
@@ -8847,6 +8856,37 @@ func (ec *executionContext) _Application_deletedAt(ctx context.Context, field gr
 	res := resTmp.(*Timestamp)
 	fc.Result = res
 	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Application_systemStatus(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SystemStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_error(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -24604,6 +24644,8 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._Application_updatedAt(ctx, field, obj)
 		case "deletedAt":
 			out.Values[i] = ec._Application_deletedAt(ctx, field, obj)
+		case "systemStatus":
+			out.Values[i] = ec._Application_systemStatus(ctx, field, obj)
 		case "error":
 			out.Values[i] = ec._Application_error(ctx, field, obj)
 		default:

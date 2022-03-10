@@ -18,7 +18,7 @@ spec:
       labels:
         app: {{ .Chart.Name }}-connector-tests-app
     spec:
-      serviceAccountName: {{ .Chart.Name }}-connector-tests
+      serviceAccountName: {{ .Chart.Name }}-e2e-connector
       containers:
       - name: connector-tests
         image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
@@ -28,8 +28,10 @@ spec:
         env:
           - name: APP_CONNECTOR_URL
             value: 'https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.connector.prefix }}/graphql'
-          - name: APP_DIRECTOR_URL
-            value: 'https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql'
+          - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
+            value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
+          - name: APP_SKIP_SSL_VALIDATION
+            value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
           - name: APP_DIRECTOR_MTLS_URL
             value: 'https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql'
           - name: APP_CONNECTOR_HYDRATOR_URL
@@ -46,28 +48,90 @@ spec:
             value: "{{.Values.global.defaultTenant}}"
           - name: APP_APPS_FOR_RUNTIME_TENANT
             value: "{{ (index .Values.global.tenants 13).id }}"
-          - name: DOMAIN
-            value: "{{ .Values.global.ingress.domainName }}"
-          - name: USER_EMAIL
-            valueFrom:
-              secretKeyRef:
-                name: admin-user
-                key: email
-          - name: USER_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: admin-user
-                key: password
-          - name: APP_IS_WITH_TOKEN
-            value: "{{.Values.global.tests.token.server.enabled}}"
-          - name: APP_ADDRESS
-            value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
+          - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+            value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+          - name: APP_EXTERNAL_CLIENT_CERT_KEY
+            value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+          - name: APP_EXTERNAL_CLIENT_KEY_KEY
+            value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}" 
       restartPolicy: Never
       {{ if .Values.global.isLocalEnv }}
       hostAliases:
         - ip: {{ .Values.global.minikubeIP }}
           hostnames:
-            - "dex.{{ .Values.global.ingress.domainName }}"
             - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - "{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
       {{ end }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Chart.Name }}-e2e-connector
+  namespace: {{ .Values.global.tests.namespace }}
+  labels:
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}-tests
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ template "fullname" . }}-{{ .Values.global.connector.revocation.configmap.name }}-tests
+  namespace: {{ tpl .Values.global.connector.revocation.configmap.namespace . }}
+  labels:
+    app: connector-tests
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}-tests
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+rules:
+  - apiGroups: ["*"]
+    resources: ["configmaps"]
+    resourceNames: ["{{ .Values.global.connector.revocation.configmap.name }}"]
+    verbs: ["get", "update"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "fullname" . }}-{{ .Values.global.connector.revocation.configmap.name }}-tests
+  namespace: {{ tpl .Values.global.connector.revocation.configmap.namespace . }}
+  labels:
+    app: connector-tests
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}-tests
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Chart.Name }}-e2e-connector
+    namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: {{ template "fullname" . }}-{{ .Values.global.connector.revocation.configmap.name }}-tests
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Chart.Name }}-e2e-connector-client-cert
+  namespace: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Chart.Name }}-e2e-connector
+    namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+  apiGroup: rbac.authorization.k8s.io

@@ -1,41 +1,54 @@
 package tests
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/server"
+	"github.com/kyma-incubator/compass/tests/pkg/util"
 	"github.com/machinebox/graphql"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/pkg/errors"
-
 	"github.com/vrischmann/envconfig"
 )
 
 type config struct {
-	DefaultTestTenant string
-	Domain            string
-	DirectorURL       string
+	DefaultTestTenant              string
+	Domain                         string
+	DirectorExternalCertSecuredURL string
+	SkipSSLValidation              bool `envconfig:"default=false"`
+	CertLoaderConfig               certloader.Config
+
+	DirectorURL string `envconfig:"-"`
 }
 
 var (
-	testConfig       config
-	dexGraphQLClient *graphql.Client
+	testConfig               config
+	certSecuredGraphQLClient *graphql.Client
 )
 
 func TestMain(m *testing.M) {
 	err := envconfig.Init(&testConfig)
 	if err != nil {
-		log.Fatal(errors.Wrap(err, "while initializing envconfig"))
+		log.D().Fatal(errors.Wrap(err, "while initializing envconfig"))
 	}
 	testConfig.DirectorURL = fmt.Sprintf("https://compass-gateway-auth-oauth.%s/director/graphql", testConfig.Domain)
 
-	dexToken := server.Token()
+	ctx := context.Background()
 
-	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
+	cc, err := certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
+	if err != nil {
+		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
+	}
+
+	if err := util.WaitForCache(cc); err != nil {
+		log.D().Fatal(err)
+	}
+
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, testConfig.SkipSSLValidation)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)
