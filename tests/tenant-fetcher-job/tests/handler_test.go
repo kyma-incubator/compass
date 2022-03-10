@@ -114,11 +114,11 @@ func TestGlobalAccounts(t *testing.T) {
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, globalAccountsJobName, namespace)
 
-	tenant1, err := fixtures.GetTenantByExternalID(dexGraphQLClient, externalTenantIDs[0])
+	tenant1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, externalTenantIDs[0])
 	assert.Error(t, err)
 	assert.Nil(t, tenant1)
 
-	tenant2, err := fixtures.GetTenantByExternalID(dexGraphQLClient, externalTenantIDs[1])
+	tenant2, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, externalTenantIDs[1])
 	assert.NoError(t, err)
 	assert.Equal(t, names[1], *tenant2.Name)
 }
@@ -184,9 +184,9 @@ func TestMoveSubaccounts(t *testing.T) {
 	assert.NoError(t, err)
 	defer cleanupTenants(t, ctx, directorInternalGQLClient, append(gaExternalTenantIDs, subaccountExternalTenants...))
 
-	subaccount1, err := fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenants[0])
+	subaccount1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[0])
 	assert.NoError(t, err)
-	subaccount2, err := fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenants[1])
+	subaccount2, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[1])
 	assert.NoError(t, err)
 
 	runtime1 := registerRuntime(t, ctx, runtimeNames[0], subaccount1.InternalID)
@@ -205,14 +205,14 @@ func TestMoveSubaccounts(t *testing.T) {
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, subaccountsJobName, namespace)
 
-	tenant2, err := fixtures.GetTenantByExternalID(dexGraphQLClient, gaExternalTenantIDs[1])
+	tenant2, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, gaExternalTenantIDs[1])
 	assert.NoError(t, err)
 
-	subaccount1, err = fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenants[0])
+	subaccount1, err = fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[0])
 	assert.NoError(t, err)
 	assert.Equal(t, tenant2.InternalID, subaccount1.ParentID)
 
-	subaccount2, err = fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenants[1])
+	subaccount2, err = fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[1])
 	assert.NoError(t, err)
 	assert.Equal(t, tenant2.InternalID, subaccount2.ParentID)
 
@@ -242,7 +242,7 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 	runtimeNames := []string{"runtime1"}
 
 	defaultTenantID := tnt.TestTenants.GetDefaultTenantID()
-	defaultTenant, err := fixtures.GetTenantByExternalID(dexGraphQLClient, defaultTenantID)
+	defaultTenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, defaultTenantID)
 	assert.NoError(t, err)
 
 	tenants := []graphql.BusinessTenantMappingInput{
@@ -270,21 +270,21 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 	assert.NoError(t, err)
 	defer cleanupTenants(t, ctx, directorInternalGQLClient, append(gaExternalTenantIDs, subaccountExternalTenants...))
 
-	subaccount1, err := fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenants[0])
+	subaccount1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[0])
 	assert.NoError(t, err)
 
 	runtime1 := registerRuntime(t, ctx, runtimeNames[0], subaccount1.InternalID)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, defaultTenantID, &runtime1)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, defaultTenantID, &runtime1)
 
 	// Add the subaccount to formation
 	scenarioName := "testMoveSubaccountScenario"
 
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, defaultTenantID, []string{"DEFAULT", scenarioName})
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, defaultTenantID, []string{"DEFAULT"})
+	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, defaultTenantID, []string{"DEFAULT", scenarioName})
+	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, defaultTenantID, []string{"DEFAULT"})
 
 	asaInput := fixtures.FixAutomaticScenarioAssigmentInput(scenarioName, "global_subaccount_id", subaccountExternalTenants[0])
-	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, dexGraphQLClient, asaInput, defaultTenantID)
-	defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, dexGraphQLClient, defaultTenantID, scenarioName)
+	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, certSecuredGraphQLClient, asaInput, defaultTenantID)
+	defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, certSecuredGraphQLClient, defaultTenantID, scenarioName)
 
 	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, directoryParentGUID, defaultTenantID, defaultTenantID, gaExternalTenantIDs[0], subaccountRegion)
 	setMockTenantEvents(t, []byte(genMockPage(strings.Join([]string{event1}, ","), 1)), subaccountMoveSubPath)
@@ -298,10 +298,10 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 
 	k8s.WaitForJobToFail(t, ctx, k8sClient, subaccountsJobName, namespace)
 
-	tenant1, err := fixtures.GetTenantByExternalID(dexGraphQLClient, defaultTenantID)
+	tenant1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, defaultTenantID)
 	assert.NoError(t, err)
 
-	subaccount1, err = fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenants[0])
+	subaccount1, err = fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[0])
 	assert.NoError(t, err)
 	assert.Equal(t, tenant1.InternalID, subaccount1.ParentID)
 
@@ -367,14 +367,14 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, subaccountsJobName, namespace)
 
-	subaccount1, err := fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenants[0])
+	subaccount1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[0])
 	assert.Error(t, err)
 	assert.Nil(t, subaccount1)
 
-	subaccount2, err := fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenants[1])
+	subaccount2, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[1])
 	assert.NoError(t, err)
 	assert.Equal(t, subaccountNames[1], *subaccount2.Name)
-	parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountParent)
+	parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountParent)
 	assert.NoError(t, err)
 	assert.Equal(t, parent.InternalID, subaccount2.ParentID)
 }
@@ -405,12 +405,12 @@ func TestMoveMissingSubaccounts(t *testing.T) {
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, subaccountsJobName, namespace)
 
-	parent, err := fixtures.GetTenantByExternalID(dexGraphQLClient, gaExternalTenantIDs[1])
+	parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, gaExternalTenantIDs[1])
 	assert.NoError(t, err)
 	assert.Equal(t, *parent.Name, gaExternalTenantIDs[1])
 	assert.Equal(t, parent.ID, gaExternalTenantIDs[1])
 
-	subaccount, err := fixtures.GetTenantByExternalID(dexGraphQLClient, subaccountExternalTenant)
+	subaccount, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenant)
 	assert.NoError(t, err)
 	assert.Equal(t, subaccount.ID, subaccountExternalTenant)
 	assert.Equal(t, subaccount.ParentID, parent.InternalID)

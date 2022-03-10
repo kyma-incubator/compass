@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"os"
@@ -37,6 +38,7 @@ type config struct {
 
 	DirectorOrigin  string `envconfig:"default=http://127.0.0.1:3001"`
 	ConnectorOrigin string `envconfig:"default=http://127.0.0.1:3002"`
+	NsadapterOrigin string `envconfig:"default=http://127.0.0.1:3005"`
 	MetricsAddress  string `envconfig:"default=127.0.0.1:3003"`
 	AuditlogEnabled bool   `envconfig:"default=false"`
 }
@@ -75,12 +77,16 @@ func main() {
 
 	correlationTr := httputil.NewCorrelationIDTransport(http.DefaultTransport)
 	tr := proxy.NewTransport(auditlogSink, auditlogSvc, correlationTr)
+	adapterTr := proxy.NewAdapterTransport(auditlogSink, auditlogSvc, correlationTr)
 
 	err = proxyRequestsForComponent(ctx, router, "/connector", cfg.ConnectorOrigin, tr)
 	exitOnError(err, "Error while initializing proxy for Connector")
 
 	err = proxyRequestsForComponent(ctx, router, "/director", cfg.DirectorOrigin, tr)
 	exitOnError(err, "Error while initializing proxy for Director")
+
+	err = proxyRequestsForComponent(ctx, router, "/nsadapter", cfg.NsadapterOrigin, adapterTr)
+	exitOnError(err, "Error while initializing proxy for NSAdapter")
 
 	router.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(200)
@@ -107,6 +113,7 @@ func main() {
 
 func proxyRequestsForComponent(ctx context.Context, router *mux.Router, path string, targetOrigin string, transport http.RoundTripper, middleware ...mux.MiddlewareFunc) error {
 	log.C(ctx).Infof("Proxying requests on path `%s` to `%s`", path, targetOrigin)
+
 	componentProxy, err := proxy.New(targetOrigin, path, transport)
 	if err != nil {
 		return errors.Wrapf(err, "while initializing proxy for component")
@@ -190,8 +197,6 @@ func initAuditLogs(ctx context.Context, collector *metrics.AuditlogCollector) (p
 	var httpClient auditlog.HttpClient
 	var msgFactory auditlog.AuditlogMessageFactory
 
-	tr := httputil.NewCorrelationIDTransport(http.DefaultTransport)
-
 	switch cfg.AuthMode {
 	case auditlog.Basic:
 		{
@@ -201,7 +206,7 @@ func initAuditLogs(ctx context.Context, collector *metrics.AuditlogCollector) (p
 				return nil, nil, errors.Wrap(err, "while loading auditlog basic auth configuration")
 			}
 			baseHttpClient := &http.Client{
-				Transport: tr,
+				Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 				Timeout:   cfg.ClientTimeout,
 			}
 
@@ -220,7 +225,7 @@ func initAuditLogs(ctx context.Context, collector *metrics.AuditlogCollector) (p
 
 			ccCfg := fillJWTCredentials(oauthCfg)
 			baseClient := &http.Client{
-				Transport: tr,
+				Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 				Timeout:   cfg.ClientTimeout,
 			}
 			ctx := context.WithValue(context.Background(), oauth2.HTTPClient, baseClient)
@@ -230,6 +235,38 @@ func initAuditLogs(ctx context.Context, collector *metrics.AuditlogCollector) (p
 			httpClient = client
 
 			msgFactory = auditlog.NewMessageFactory(oauthCfg.User, oauthCfg.Tenant, uuidSvc, timeSvc)
+		}
+	case auditlog.OAuthMtls:
+		{
+			var mtlsConfig auditlog.OAuthMtlsConfig
+			if err = envconfig.InitWithPrefix(&mtlsConfig, "APP"); err != nil {
+				return nil, nil, errors.Wrap(err, "while loading auditlog oauth-mTLS configuration")
+			}
+
+			cert, err := mtlsConfig.ParseCertificate()
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "while loading x509 cert for mTLS")
+			}
+
+			transport := httputil.NewCorrelationIDTransport(&http.Transport{
+				TLSClientConfig: &tls.Config{
+					Certificates:       []tls.Certificate{*cert},
+					InsecureSkipVerify: mtlsConfig.SkipSSLValidation,
+				},
+			})
+
+			mtlsClient := &http.Client{
+				Transport: transport,
+				Timeout:   cfg.ClientTimeout,
+			}
+
+			ctx := context.WithValue(context.Background(), oauth2.HTTPClient, mtlsClient)
+			ccCfg := fillOAuthMtlsCredentials(mtlsConfig)
+			client := ccCfg.Client(ctx)
+			collector.InstrumentAuditlogHTTPClient(client)
+
+			httpClient = client
+			msgFactory = auditlog.NewMessageFactory(mtlsConfig.User, mtlsConfig.Tenant, uuidSvc, timeSvc)
 		}
 	default:
 		return nil, nil, fmt.Errorf("invalid auditlog auth mode: %s", cfg.AuthMode)
@@ -255,6 +292,15 @@ func fillJWTCredentials(cfg auditlog.OAuthConfig) clientcredentials.Config {
 		ClientSecret: cfg.ClientSecret,
 		TokenURL:     cfg.OAuthURL + cfg.TokenPath,
 		AuthStyle:    oauth2.AuthStyleAutoDetect,
+	}
+}
+
+func fillOAuthMtlsCredentials(cfg auditlog.OAuthMtlsConfig) clientcredentials.Config {
+	return clientcredentials.Config{
+		ClientID:     cfg.ClientID,
+		ClientSecret: "",
+		TokenURL:     cfg.OAuthURL + cfg.TokenPath,
+		AuthStyle:    oauth2.AuthStyleInParams,
 	}
 }
 

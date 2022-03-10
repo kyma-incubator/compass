@@ -64,6 +64,11 @@ const (
 	CustomTypeCredentialExchangeStrategyRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	// SAPProductOrdIDNamespaceRegex represents the valid structure of a SAP Product OrdID Namespace part
 	SAPProductOrdIDNamespaceRegex = "^(sap)((\\.)([a-z0-9-]+(?:[.][a-z0-9-]+)*))*$"
+
+	// MinDescriptionLength represents the minimal accepted length of the Description field
+	MinDescriptionLength = 1
+	// MaxDescriptionLength represents the minimal accepted length of the Description field
+	MaxDescriptionLength = 5000
 )
 
 const (
@@ -112,8 +117,6 @@ const (
 	// APIImplementationStandardCustom is one of the available api implementation standard options
 	APIImplementationStandardCustom = custom
 
-	// SapTitle is a valid SAP title
-	SapTitle = "SAP SE"
 	// SapVendor is a valid Vendor ordID
 	SapVendor = "sap:vendor:SAP:"
 	// PartnerVendor is a valid partner Vendor ordID
@@ -171,15 +174,11 @@ var (
 )
 
 var shortDescriptionRules = []validation.Rule{
-	validation.Required, validation.Length(1, 255), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
+	validation.Required, validation.Length(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
 }
 
 var optionalShortDescriptionRules = []validation.Rule{
-	validation.Length(0, 255), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
-}
-
-var optionalDescriptionRules = []validation.Rule{
-	validation.Length(0, 255), validation.NewStringRule(noNewLines, "description should not contain line breaks"),
+	validation.NilOrNotEmpty, validation.Length(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
 }
 
 // ValidateSystemInstanceInput validates the given SystemInstance
@@ -203,7 +202,7 @@ func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*mo
 		validation.Field(&pkg.OrdID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
 		validation.Field(&pkg.Title, validation.Required),
 		validation.Field(&pkg.ShortDescription, shortDescriptionRules...),
-		validation.Field(&pkg.Description, validation.Required),
+		validation.Field(&pkg.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
 		validation.Field(&pkg.SupportInfo, validation.NilOrNotEmpty),
 		validation.Field(&pkg.Version, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
 			return validatePackageVersionInput(value, *pkg, packagesFromDB, resourceHashes)
@@ -254,7 +253,7 @@ func validateBundleInput(bndl *model.BundleCreateInput) error {
 		validation.Field(&bndl.OrdID, validation.Required, validation.Match(regexp.MustCompile(BundleOrdIDRegex))),
 		validation.Field(&bndl.Name, validation.Required),
 		validation.Field(&bndl.ShortDescription, optionalShortDescriptionRules...),
-		validation.Field(&bndl.Description, optionalDescriptionRules...),
+		validation.Field(&bndl.Description, validation.NilOrNotEmpty, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
 		validation.Field(&bndl.Links, validation.By(validateORDLinks)),
 		validation.Field(&bndl.Labels, validation.By(validateORDLabels)),
 		validation.Field(&bndl.CredentialExchangeStrategies, validation.By(func(value interface{}) error {
@@ -280,7 +279,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.OrdID, validation.Required, validation.Match(regexp.MustCompile(APIOrdIDRegex))),
 		validation.Field(&api.Name, validation.Required),
 		validation.Field(&api.ShortDescription, shortDescriptionRules...),
-		validation.Field(&api.Description, validation.Required),
+		validation.Field(&api.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
 		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
 			return validateAPIDefinitionVersionInput(value, *api, apisFromDB, apiHashes)
 		})),
@@ -322,7 +321,7 @@ func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[str
 		validation.Field(&api.APIResourceLinks, validation.By(validateAPILinks)),
 		validation.Field(&api.Links, validation.By(validateORDLinks)),
 		validation.Field(&api.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
-		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate(api.SunsetDate)))),
+		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate))),
 		validation.Field(&api.Successors, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(APIOrdIDRegex))
 		})),
@@ -350,7 +349,7 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		validation.Field(&event.OrdID, validation.Required, validation.Match(regexp.MustCompile(EventOrdIDRegex))),
 		validation.Field(&event.Name, validation.Required),
 		validation.Field(&event.ShortDescription, shortDescriptionRules...),
-		validation.Field(&event.Description, validation.Required),
+		validation.Field(&event.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
 		validation.Field(&event.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error {
 			return validateEventDefinitionVersionInput(value, *event, eventsFromDB, eventHashes)
 		})),
@@ -390,7 +389,7 @@ func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels m
 		})),
 		validation.Field(&event.Links, validation.By(validateORDLinks)),
 		validation.Field(&event.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
-		validation.Field(&event.SunsetDate, validation.When(*event.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(event.SunsetDate != nil, validation.By(isValidDate(event.SunsetDate)))),
+		validation.Field(&event.SunsetDate, validation.When(*event.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(event.SunsetDate != nil, validation.By(isValidDate))),
 		validation.Field(&event.Successors, validation.When(*event.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(EventOrdIDRegex))
 		})),
@@ -444,7 +443,7 @@ func validateVendorInput(vendor *model.VendorInput) error {
 func validateTombstoneInput(tombstone *model.TombstoneInput) error {
 	return validation.ValidateStruct(tombstone,
 		validation.Field(&tombstone.OrdID, validation.Required, validation.Match(regexp.MustCompile(TombstoneOrdIDRegex))),
-		validation.Field(&tombstone.RemovalDate, validation.Required, validation.Date(time.RFC3339)))
+		validation.Field(&tombstone.RemovalDate, validation.Required, validation.By(isValidDate)))
 }
 
 func validateORDLabels(val interface{}) error {
@@ -554,7 +553,11 @@ func validateORDChangeLogEntries(value interface{}) error {
 		},
 		"date": {
 			validation.Required,
-			validation.Date("2006-01-02"),
+			validation.By(isValidDate),
+		},
+		"description": {
+			validation.NilOrNotEmpty,
+			validation.Length(MinDescriptionLength, MaxDescriptionLength),
 		},
 		"url": {
 			is.RequestURI,
@@ -570,6 +573,10 @@ func validateORDLinks(value interface{}) error {
 		"url": {
 			validation.Required,
 			is.RequestURI,
+		},
+		"description": {
+			validation.NilOrNotEmpty,
+			validation.Length(MinDescriptionLength, MaxDescriptionLength),
 		},
 	})
 }
@@ -975,6 +982,9 @@ func validateCustomDescription(el gjson.Result) error {
 	if el.Get("customDescription").Exists() && el.Get("type").String() != custom {
 		return errors.New("if customDescription is provided, type should be set to 'custom'")
 	}
+	if el.Get("customDescription").Exists() && el.Get("type").String() == custom && (len(el.Get("customDescription").String()) < MinDescriptionLength || len(el.Get("customDescription").String()) > MaxDescriptionLength) {
+		return errors.New(fmt.Sprintf("if customDescription is provided and type is 'custom', then the accepted length of customDescription is between %d - %d characters", MinDescriptionLength, MaxDescriptionLength))
+	}
 	return nil
 }
 
@@ -1105,16 +1115,37 @@ func areThereEntryPointDuplicates(entryPoints []gjson.Result) bool {
 	return false
 }
 
-func isValidDate(date *string) validation.RuleFunc {
-	return func(value interface{}) error {
-		var err error
-		if _, err = time.Parse("2006-01-02T15:04:05Z0700", *date); err == nil {
-			return nil
-		} else if _, err = time.Parse("2006-01-02T15:04:05Z07:00", *date); err == nil {
-			return nil
-		}
-		return errors.New("invalid date")
+func isValidDate(d interface{}) error {
+	var err error
+	date, err := castDate(d)
+	if err != nil {
+		return err
 	}
+
+	if _, err = time.Parse(time.RFC3339, date); err == nil { // RFC3339 -> "2006-01-02T15:04:05Z" or "2006-01-02T15:04:05+07:00"
+		return nil
+	} else if _, err = time.Parse("2006-01-02", date); err == nil { // RFC3339 date without time extension
+		return nil
+	} else if _, err = time.Parse("2006-01-02T15:04:05", date); err == nil { // ISO8601 without Z/00+00
+		return nil
+	} else if _, err = time.Parse("2006-01-02T15:04:05Z0700", date); err == nil { // ISO8601 with skipped ':' in offset (e.g.: 2006-01-02T15:04:05+0700)
+		return nil
+	}
+	return errors.New("invalid date")
+}
+
+func castDate(d interface{}) (string, error) {
+	datePtr, ok := d.(*string)
+	if ok {
+		return *datePtr, nil
+	}
+
+	date, ok := d.(string)
+	if ok {
+		return date, nil
+	}
+
+	return "", errors.New(fmt.Sprintf("expected string or *string value for date, found %T", d))
 }
 
 func notPartOfConsumptionBundles(partOfConsumptionBundles []*model.ConsumptionBundleReference) validation.RuleFunc {
@@ -1152,9 +1183,10 @@ func validateExtensibleInnerFields(el gjson.Result) error {
 
 	descriptionProperty := el.Get("description")
 	descriptionValue, ok := descriptionProperty.Value().(string)
+	validLength := len(descriptionValue) >= MinDescriptionLength && len(descriptionValue) <= MaxDescriptionLength
 
-	if supportedProperty.Exists() && (supportedValue == "manual" || supportedValue == "automatic") && (descriptionValue == "" || !ok) {
-		return errors.New("if supported is either 'manual' or 'automatic', description should be provided")
+	if supportedProperty.Exists() && (supportedValue == "manual" || supportedValue == "automatic") && (!validLength || !ok) {
+		return errors.New(fmt.Sprintf("if supported field is either 'manual' or 'automatic', description should be provided with length of %d - %d characters", MinDescriptionLength, MaxDescriptionLength))
 	}
 	return nil
 }

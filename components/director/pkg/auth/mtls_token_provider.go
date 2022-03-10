@@ -72,6 +72,13 @@ func NewMtlsTokenAuthorizationProvider(oauthCfg oauth.Config, cache CertificateC
 	}
 }
 
+// NewMtlsTokenAuthorizationProviderWithClient constructs an TokenAuthorizationProvider using the provided mtls client
+func NewMtlsTokenAuthorizationProviderWithClient(client *http.Client) *mtlsTokenAuthorizationProvider {
+	return &mtlsTokenAuthorizationProvider{
+		httpClient: client,
+	}
+}
+
 // Name specifies the name of the AuthorizationProvider
 func (p *mtlsTokenAuthorizationProvider) Name() string {
 	return "MtlsTokenAuthorizationProvider"

@@ -18,18 +18,18 @@ const (
 
 func TestAppsForRuntimeWithCertificates(t *testing.T) {
 	scenarios := []string{DefaultScenario, TestScenario}
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, scenarios)
+	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, scenarios)
 
 	appIdToCommonName := make(map[string]string)
 
 	// Register first Application
-	firstApp, err := fixtures.RegisterApplicationFromInput(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, graphql.ApplicationRegisterInput{
+	firstApp, err := fixtures.RegisterApplicationFromInput(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, graphql.ApplicationRegisterInput{
 		Name:   "test-first-app",
 		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}},
 	})
 	defer func() {
-		fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, firstApp.ID, true)
-		fixtures.CleanupApplication(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, &firstApp)
+		fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, firstApp.ID, true)
+		fixtures.CleanupApplication(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, &firstApp)
 	}()
 	require.NoError(t, err)
 	require.NotEmpty(t, firstApp.ID)
@@ -45,11 +45,11 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 	defer certs.Cleanup(t, configmapCleaner, certResult)
 
 	// Register Runtime
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, &graphql.RuntimeInput{
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, &graphql.RuntimeInput{
 		Name:   "test-runtime",
 		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}},
 	})
-	defer fixtures.CleanupRuntime(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, &runtime)
+	defer fixtures.CleanupRuntime(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
@@ -61,13 +61,13 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 	defer certs.Cleanup(t, configmapCleaner, rtCertResult)
 
 	// Register second Application
-	secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, graphql.ApplicationRegisterInput{
+	secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, graphql.ApplicationRegisterInput{
 		Name:   "test-second-app",
 		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}},
 	})
 	defer func() {
-		fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, secondApp.ID, true)
-		fixtures.CleanupApplication(t, ctx, directorAppsForRuntimeClient.DexGraphqlClient, appsForRuntimeTenantID, &secondApp)
+		fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, secondApp.ID, true)
+		fixtures.CleanupApplication(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, &secondApp)
 	}()
 	require.NoError(t, err)
 	require.NotEmpty(t, secondApp.ID)

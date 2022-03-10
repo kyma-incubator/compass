@@ -6,17 +6,15 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
-	"github.com/kyma-incubator/compass/tests/pkg/server"
-
+	"github.com/kyma-incubator/compass/tests/pkg/util"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
-
 	"k8s.io/client-go/kubernetes"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	restclient "k8s.io/client-go/rest"
@@ -24,15 +22,10 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-const (
-	apiAccessTimeout  = 60 * time.Second
-	apiAccessInterval = 2 * time.Second
-)
-
 var (
 	cfg                          config.ConnectorTestConfig
-	directorClient               *clients.StaticUserClient
-	directorAppsForRuntimeClient *clients.StaticUserClient
+	directorClient               *clients.CertSecuredGraphQLClient
+	directorAppsForRuntimeClient *clients.CertSecuredGraphQLClient
 	connectorHydratorClient      *clients.HydratorClient
 	directorHydratorClient       *clients.HydratorClient
 	connectorClient              *clients.TokenSecuredClient
@@ -43,29 +36,36 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	log.Info("Starting Connector Test")
+	log.D().Info("Starting Connector Test")
 	cfg = config.ConnectorTestConfig{}
 	config.ReadConfig(&cfg)
 	ctx = context.Background()
 
-	dexToken := server.Token()
+	cc, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	if err != nil {
+		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
+	}
+
+	if err := util.WaitForCache(cc); err != nil {
+		log.D().Fatal(err)
+	}
 
 	appsForRuntimeTenantID = cfg.AppsForRuntimeTenant
 
 	key, err := certs.GenerateKey()
 	if err != nil {
-		log.Errorf("Failed to generate private key: %s", err.Error())
+		log.D().Errorf("Failed to generate private key: %s", err.Error())
 		os.Exit(1)
 	}
 	clientKey = key
-	directorClient, err = clients.NewStaticUserClient(ctx, cfg.DirectorURL, cfg.Tenant, dexToken)
+	directorClient, err = clients.NewCertSecuredGraphQLClient(ctx, cfg.DirectorExternalCertSecuredURL, cfg.Tenant, cc.Get().PrivateKey, cc.Get().Certificate, cfg.SkipSSLValidation)
 	if err != nil {
-		log.Errorf("Failed to create director client: %s", err.Error())
+		log.D().Errorf("Failed to create director client: %s", err.Error())
 		os.Exit(1)
 	}
-	directorAppsForRuntimeClient, err = clients.NewStaticUserClient(ctx, cfg.DirectorURL, cfg.AppsForRuntimeTenant, dexToken)
+	directorAppsForRuntimeClient, err = clients.NewCertSecuredGraphQLClient(ctx, cfg.DirectorExternalCertSecuredURL, cfg.AppsForRuntimeTenant, cc.Get().PrivateKey, cc.Get().Certificate, cfg.SkipSSLValidation)
 	if err != nil {
-		log.Errorf("Failed to create director client: %s", err.Error())
+		log.D().Errorf("Failed to create director client: %s", err.Error())
 		os.Exit(1)
 	}
 	connectorHydratorClient = clients.NewHydratorClient(cfg.ConnectorHydratorURL)
@@ -74,14 +74,14 @@ func TestMain(m *testing.M) {
 
 	configmapInterface, err := newConfigMapInterface()
 	if err != nil {
-		log.Errorf("Failed to create config map interface: %s", err.Error())
+		log.D().Errorf("Failed to create config map interface: %s", err.Error())
 		os.Exit(1)
 	}
 	configmapCleaner = k8s.NewConfigMapCleaner(configmapInterface, cfg.RevocationConfigMapName)
 
 	exitCode := m.Run()
 
-	log.Info("Tests finished. Exit code: ", exitCode)
+	log.D().Info("Tests finished. Exit code: ", exitCode)
 
 	os.Exit(exitCode)
 }
@@ -89,8 +89,8 @@ func TestMain(m *testing.M) {
 func newConfigMapInterface() (v1.ConfigMapInterface, error) {
 	k8sConfig, err := restclient.InClusterConfig()
 	if err != nil {
-		log.Warnf("Failed to read in cluster config: %s", err.Error())
-		log.Info("Trying to initialize with local config")
+		log.D().Warnf("Failed to read in cluster config: %s", err.Error())
+		log.D().Info("Trying to initialize with local config")
 		home := homedir.HomeDir()
 		k8sConfPath := filepath.Join(home, ".kube", "config")
 		k8sConfig, err = clientcmd.BuildConfigFromFlags("", k8sConfPath)
