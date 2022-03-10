@@ -248,6 +248,7 @@ mount_minikube_ca_to_oathkeeper
 prometheusMTLSPatch
 
 bash "${ROOT_PATH}"/installation/scripts/run-compass-installer.sh --kyma-installation ${KYMA_INSTALLATION}
+sleep 15
 bash "${ROOT_PATH}"/installation/scripts/is-installed.sh
 
 echo "Adding Compass entries to /etc/hosts..."

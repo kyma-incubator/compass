@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-
 	"github.com/stretchr/testify/require"
 )
 
@@ -54,7 +52,7 @@ func TestCallingInfoEndpointFailForMethodsOtherThanGet(t *testing.T) {
 
 func infoEndpoint() string {
 	directorPath := "/director"
-	infoEndpoint := gql.GetDirectorURL()
+	infoEndpoint := conf.DirectorUrl
 	if strings.Contains(infoEndpoint, directorPath) {
 		infoEndpoint = infoEndpoint[:strings.Index(infoEndpoint, directorPath)]
 		infoEndpoint = infoEndpoint + conf.InfoUrl
