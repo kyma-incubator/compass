@@ -18,12 +18,13 @@ PATH_TO_DIRECTOR_VALUES="$CURRENT_DIR/../../chart/compass/charts/director/values
 PATH_TO_COMPASS_OIDC_CONFIG_FILE="$HOME/.compass.yaml"
 MIGRATOR_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/migrator-job.yaml)
 UPDATE_EXPECTED_SCHEMA_VERSION_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/update-expected-schema-version-job.yaml)
+RESET_VALUES_YAML=true
 
 MINIKUBE_MEMORY=8192
 MINIKUBE_TIMEOUT=25m
 MINIKUBE_CPUS=5
 APISERVER_VERSION=1.19.16
-DEFAULT_OIDC_ADMIN_GROUPS="$(yq ".adminGroupNames" "$PATH_TO_DIRECTOR_VALUES")"
+
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -133,7 +134,9 @@ function cleanup_trap() {
   if [[ ${DUMP_DB} ]]; then
       revert_migrator_file
   fi
-  set_oidc_config "" "" "$DEFAULT_OIDC_ADMIN_GROUPS"
+  if $RESET_VALUES_YAML ; then
+    set_oidc_config "" "" "$DEFAULT_OIDC_ADMIN_GROUPS"
+  fi
 }
 
 function mount_minikube_ca_to_oathkeeper() {
@@ -156,14 +159,17 @@ function mount_minikube_ca_to_oathkeeper() {
 if [[ -z ${OIDC_HOST} || -z ${OIDC_CLIENT_ID} ]]; then
   if [[ -f ${PATH_TO_COMPASS_OIDC_CONFIG_FILE} ]]; then
     echo -e "${YELLOW}OIDC configuration not provided. Configuration from default config file will be used.${NC}"
+    DEFAULT_OIDC_ADMIN_GROUPS="$(yq ".adminGroupNames" "$PATH_TO_DIRECTOR_VALUES")"
     OIDC_HOST=$(yq ".idpHost" "$PATH_TO_COMPASS_OIDC_CONFIG_FILE")
     OIDC_CLIENT_ID=$(yq ".clientID" "$PATH_TO_COMPASS_OIDC_CONFIG_FILE")
     OIDC_GROUPS=$(yq ".adminGroupNames" "$PATH_TO_COMPASS_OIDC_CONFIG_FILE")
     set_oidc_config "$OIDC_HOST" "$OIDC_CLIENT_ID" "$OIDC_GROUPS"
   else
     echo -e "${RED}OIDC configuration not provided and config file was not found. JWT flows will not work!${NC}"
+    RESET_VALUES_YAML=false
   fi
 else
+  DEFAULT_OIDC_ADMIN_GROUPS="$(yq ".adminGroupNames" "$PATH_TO_DIRECTOR_VALUES")"
   if [[ -z ${OIDC_ADMIN_GROUP} ]]; then
     echo -e "${GREEN}Using provided OIDC host and client-id.${NC}"
     echo -e "${YELLOW}OIDC admin group was not provided. Will use default values.${NC}"
