@@ -182,7 +182,7 @@ Optionally, you can use the `--dump-db` flag to populate the DB with sample data
 ```
 
 > **_NOTE:_**  
->To configure an OIDC Identity Provider that is required for the JWT flows, the OIDC configuration arguments (`--oidc-host`, `--oidc-client-id`, `--oidc-admin-group`) are mandatory. If they are omitted, the **run.sh** script tries to get the required values from the **~/.compass.yaml** file. To run the `run.sh` script, you need the [yq](https://mikefarah.gitbook.io/yq/) tool.
+>To configure an OIDC identity provider that is required for the JWT flows, the OIDC configuration arguments (`--oidc-host`, `--oidc-client-id`, `--oidc-admin-group`) are mandatory. If they are omitted, the **run.sh** script tries to get the required values from the **~/.compass.yaml** file. To run the `run.sh` script, you need the [yq](https://mikefarah.gitbook.io/yq/) tool.
 >
 >The  **~/compass.yaml** file must have the following structure:
 >  > idpHost: {URL_TO_OIDC_SERVER}
