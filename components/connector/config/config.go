@@ -25,11 +25,6 @@ type Config struct {
 		Locality           string `envconfig:"default=Locality"`
 		Province           string `envconfig:"default=State"`
 	}
-	ExternalIssuerSubject struct {
-		Country                   string `envconfig:"default=DE"`
-		Organization              string `envconfig:"default=Org"`
-		OrganizationalUnitPattern string `envconfig:"default=OrgUnit"`
-	}
 	CertificateValidityTime time.Duration `envconfig:"default=2160h"`
 	CASecret                struct {
 		Name           string `envconfig:"default=kyma-integration/connector-service-app-ca"`
@@ -74,7 +69,6 @@ func (c *Config) String() string {
 		c.ExternalAddress, c.APIEndpoint, c.HydratorAddress,
 		c.CSRSubject.Country, c.CSRSubject.Organization, c.CSRSubject.OrganizationalUnit,
 		c.CSRSubject.Locality, c.CSRSubject.Province,
-		c.ExternalIssuerSubject.Country, c.ExternalIssuerSubject.Organization, c.ExternalIssuerSubject.OrganizationalUnitPattern,
 		c.CertificateValidityTime, c.CASecret.Name, c.CASecret.CertificateKey, c.CASecret.KeyKey,
 		c.RootCASecret.Name, c.RootCASecret.CertificateKey, c.CertificateDataHeader,
 		c.CertificateSecuredConnectorURL,

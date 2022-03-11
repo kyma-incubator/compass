@@ -18,7 +18,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -78,8 +77,9 @@ type config struct {
 	StaticUsersSrc  string `envconfig:"default=/data/static-users.yaml"`
 	StaticGroupsSrc string `envconfig:"default=/data/static-groups.yaml"`
 
-	CSRSubject                   istiocertresolver.CSRSubjectConfig
-	ExternalIssuerSubject        istiocertresolver.ExternalIssuerSubjectConfig
+	CSRSubject            istiocertresolver.CSRSubjectConfig
+	ExternalIssuerSubject istiocertresolver.ExternalIssuerSubjectConfig
+
 	CertificateDataHeader        string `envconfig:"default=Certificate-Data"`
 	RevocationConfigMapName      string `envconfig:"default=compass-system/revocations-config"`
 	SubjectConsumerMappingConfig string `envconfig:"default=[]"`

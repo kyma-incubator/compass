@@ -197,12 +197,6 @@ func (m *systemAuthContextProvider) getTenantAndScopesForApplicationOrRuntime(ct
 	}
 	log.C(ctx).Debugf("Found scopes are: %s", scopes)
 
-	log.D().Infof("ALEX,  :::: %+v %+v %+v", reqData.Body.Extra, reqData.Body.Header.Get("tenant"), reqData.Header.Get("tenant"))
-	for k, v := range reqData.Body.Extra {
-		log.D().Infof("ALEX, %+v :::: %+v", k, v)
-
-	}
-
 	externalTenantID, err = reqData.GetExternalTenantID()
 	if err != nil {
 		if !apperrors.IsKeyDoesNotExist(err) {
@@ -226,7 +220,7 @@ func (m *systemAuthContextProvider) getTenantAndScopesForApplicationOrRuntime(ct
 		return TenantContext{}, scopes, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
-	if tenantMapping.ID != *tenantID {
+	if tenantMapping.InternalID != *tenantID {
 		log.C(ctx).Errorf("Tenant mismatch - tenant id %s and system auth tenant id %s, for object of type %s", tenantMapping.ID, *tenantID, refObjType)
 		return NewTenantContext(externalTenantID, ""), scopes, nil
 	}
