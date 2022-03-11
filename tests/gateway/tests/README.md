@@ -8,15 +8,15 @@ Gateway integration tests are a collection of the following tests:
 
 ## Compass authentication test scenario
 Director authentication test scenario consists of the following steps:
-- Get a JWT token issued byt your OIDC Identity Provider, register the Integration System using this token, and request client credentials for the IntegrationSystem
+- Get a JWT token issued by your OIDC identity provider, register the Integration System using this token, and request client credentials for the IntegrationSystem
 - Call Hydra for OAuth 2.0 access token with client_id and client_secret pair - https://github.com/kyma-incubator/examples/tree/main/ory-hydra/scenarios/client-credentials
 - Register an Application as the Integration System
 - Add example API Spec using issued OAuth2.0 Access token (as Integration System)
 - Try removing the Integration System
 - Remove Application using issued OAuth2.0 Access token (test if the token is still valid)
-- Remove IntegrationSystem as user (using JWT token from your OIDC Identity Provider)
+- Remove Integration System as a user (using JWT token from your OIDC identity provider)
 - Test if token granted for Integration System is invalid
-- Test if IntegrationSystem cannot fetch token
+- Test if Integration System cannot fetch token
 
 ## How to run test locally
 To run the test locally, set these environment variables:
