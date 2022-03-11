@@ -15,7 +15,7 @@ To establish a secure connection with Compass and generate the client certificat
 
     To get the Connector URL and the one-time token which allow you to fetch the required configuration details, use the Compass Console.
     
-    Alternatively, make a call to the Director including the `Tenant` header with Tenant ID and `authorization` header with the Dex Bearer token. Use the following mutation: 
+    Alternatively, make a call to the Director including the `Tenant` header with Tenant ID and `authorization` header with the JWT Bearer token issued by your OIDC Identity Provider. Use the following mutation: 
     
     ```graphql
     mutation { 

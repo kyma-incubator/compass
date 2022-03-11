@@ -8,13 +8,13 @@ Gateway integration tests are a collection of the following tests:
 
 ## Compass authentication test scenario
 Director authentication test scenario consists of the following steps:
-- Get a Dex token, register the Integration System using this token, and request client credentials for the IntegrationSystem
+- Get a JWT token issued byt your OIDC Identity Provider, register the Integration System using this token, and request client credentials for the IntegrationSystem
 - Call Hydra for OAuth 2.0 access token with client_id and client_secret pair - https://github.com/kyma-incubator/examples/tree/main/ory-hydra/scenarios/client-credentials
 - Register an Application as the Integration System
 - Add example API Spec using issued OAuth2.0 Access token (as Integration System)
 - Try removing the Integration System
 - Remove Application using issued OAuth2.0 Access token (test if the token is still valid)
-- Remove IntegrationSystem as user (using JWT token from Dex)
+- Remove IntegrationSystem as user (using JWT token from your OIDC Identity Provider)
 - Test if token granted for Integration System is invalid
 - Test if IntegrationSystem cannot fetch token
 
@@ -24,8 +24,6 @@ To run the test locally, set these environment variables:
 | Name   |      Description      |  Default value |
 |----------|:-------------:|------:|
 | DIRECTOR_URL |  URL to Compass Director | `https://compass-gateway.kyma.local/director` |
-| USER_EMAIL |    Dex static user email   |   `admin@kyma.cx` |
-| USER_PASSWORD |    Dex static user password   |   - |
 | DEFAULT_TENANT | Default tenant value |    `3e64ebae-38b5-46a0-b1ed-9ccee153a0ae` |
 | DOMAIN | Kyma domain name |    `kyma.local` |
 | GATEWAY_JWTSUBDOMAIN | Default gateway for handling requests with a JWT | compass-gateway |
