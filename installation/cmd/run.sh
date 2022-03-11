@@ -161,7 +161,7 @@ if [[ -z ${OIDC_HOST} || -z ${OIDC_CLIENT_ID} ]]; then
     OIDC_GROUPS=$(yq ".adminGroupNames" "$PATH_TO_COMPASS_OIDC_CONFIG_FILE")
     set_oidc_config "$OIDC_HOST" "$OIDC_CLIENT_ID" "$OIDC_GROUPS"
   else
-    echo -e "${RED}OIDC configuration not provided and config file was found. JWT flows will not work!${NC}"
+    echo -e "${RED}OIDC configuration not provided and config file was not found. JWT flows will not work!${NC}"
   fi
 else
   if [[ -z ${OIDC_ADMIN_GROUP} ]]; then
