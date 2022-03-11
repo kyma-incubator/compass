@@ -44,7 +44,7 @@ Compass uses [Octopus](https://github.com/kyma-incubator/octopus/blob/master/REA
 
 Currently, the Compass Gateway is accessible under three different hosts secured with different authentication methods:
 
-- `https://compass-gateway.{domain}` - secured with JWT token issued by an Identity Service
+- `https://compass-gateway.{domain}` - secured with JWT token issued by an identity service
 - `https://compass-gateway-mtls.{domain}` - secured with client certificates (mTLS)
 - `https://compass-gateway-auth-oauth.{domain}` - secured with OAuth 2.0 access token issued by [Hydra](https://kyma-project.io/docs/components/security/#details-o-auth2-and-open-id-connect-server)
 
