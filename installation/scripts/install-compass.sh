@@ -17,7 +17,7 @@ do
     case ${key} in
         --overrides-file)
             checkInputParameterValue "${2}"
-            COMPASS_OVERRIDES="$COMPASS_OVERRIDES -f ${2}"
+            COMPASS_OVERRIDES="${COMPASS_OVERRIDES} -f ${2}"
             shift # past argument
             shift
         ;;
@@ -42,4 +42,4 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 COMPASS_CHARTS="${CURRENT_DIR}/../../chart/compass"
 CRDS_FOLDER="${CURRENT_DIR}/../resources/crds"
 kubectl apply -f "${CRDS_FOLDER}"
-helm install --wait --timeout "${TIMEOUT}" -f "${COMPASS_CHARTS}"/values.yaml --create-namespace --namespace compass-system compass "${COMPASS_OVERRIDES}" "${COMPASS_CHARTS}"
+helm install --wait --timeout "${TIMEOUT}" -f "${COMPASS_CHARTS}"/values.yaml --create-namespace --namespace compass-system compass ${COMPASS_OVERRIDES} "${COMPASS_CHARTS}"
