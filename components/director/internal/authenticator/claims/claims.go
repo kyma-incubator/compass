@@ -3,8 +3,9 @@ package claims
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 

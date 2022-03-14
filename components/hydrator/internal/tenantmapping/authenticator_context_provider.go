@@ -18,8 +18,9 @@ package tenantmapping
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 

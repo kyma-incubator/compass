@@ -2,10 +2,11 @@ package systemauth_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 
 	systemauthmodel "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 

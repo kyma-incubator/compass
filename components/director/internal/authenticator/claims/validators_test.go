@@ -3,8 +3,9 @@ package claims_test
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims/automock"

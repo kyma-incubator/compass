@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 	"net/http"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/director"

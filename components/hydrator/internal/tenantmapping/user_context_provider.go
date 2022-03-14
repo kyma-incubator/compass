@@ -3,8 +3,9 @@ package tenantmapping
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
 	directorErrors "github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 
