@@ -82,7 +82,7 @@ spec:
               export CM_FILE="new-cm.yaml"
 
               echo "$KCM" | yq '.data."config.yaml"' | \
-              yq ".authenticators.jwt.config.jwks_urls += \"$JWKS_URL\"" > $CONFIG_FILE
+              yq ".authenticators.jwt.config.jwks_urls = [\"$JWKS_URL\"]" > $CONFIG_FILE
 
               if echo "$KCM" | grep -q "$JWKS_URL"; then
               echo "The jwks url has already been added"
