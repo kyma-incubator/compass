@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
@@ -24,17 +23,11 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
-const (
-	apiAccessTimeout  = 60 * time.Second
-	apiAccessInterval = 2 * time.Second
-)
-
 var (
 	cfg                          config.ConnectorTestConfig
 	directorClient               *clients.StaticUserClient
 	directorAppsForRuntimeClient *clients.StaticUserClient
-	connectorHydratorClient      *clients.HydratorClient
-	directorHydratorClient       *clients.HydratorClient
+	hydratorClient               *clients.HydratorClient
 	connectorClient              *clients.TokenSecuredClient
 	configmapCleaner             *k8s.ConfigmapCleaner
 	ctx                          context.Context
@@ -68,8 +61,8 @@ func TestMain(m *testing.M) {
 		log.Errorf("Failed to create director client: %s", err.Error())
 		os.Exit(1)
 	}
-	connectorHydratorClient = clients.NewHydratorClient(cfg.ConnectorHydratorURL)
-	directorHydratorClient = clients.NewHydratorClient(cfg.DirectorHydratorURL)
+
+	hydratorClient = clients.NewHydratorClient(cfg.HydratorURL)
 	connectorClient = clients.NewTokenSecuredClient(cfg.ConnectorURL)
 
 	configmapInterface, err := newConfigMapInterface()

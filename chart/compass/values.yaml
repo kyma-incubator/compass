@@ -595,6 +595,7 @@ global:
   hydrator:
     port: 3000
     prefix: /hydrators
+    host: compass-hydrator.compass-system.svc.cluster.local
 
   metrics:
     enabled: true
