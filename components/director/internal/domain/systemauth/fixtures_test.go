@@ -24,24 +24,36 @@ var (
 
 var testTableColumns = []string{"id", "tenant_id", "app_id", "runtime_id", "integration_system_id", "value"}
 
-func fixGQLAppSystemAuth(id string, auth *graphql.Auth) graphql.SystemAuth {
+func fixGQLAppSystemAuth(id string, auth *graphql.Auth, refObjID string) graphql.SystemAuth {
+	authType := graphql.SystemAuthReferenceTypeApplication
 	return &graphql.AppSystemAuth{
-		ID:   id,
-		Auth: auth,
+		ID:                id,
+		Auth:              auth,
+		Type:              &authType,
+		TenantID:          &testTenant,
+		ReferenceObjectID: &refObjID,
 	}
 }
 
-func fixGQLIntSysSystemAuth(id string, auth *graphql.Auth) graphql.SystemAuth {
+func fixGQLIntSysSystemAuth(id string, auth *graphql.Auth, refObjID string) graphql.SystemAuth {
+	authType := graphql.SystemAuthReferenceTypeIntegrationSystem
 	return &graphql.IntSysSystemAuth{
-		ID:   id,
-		Auth: auth,
+		ID:                id,
+		Auth:              auth,
+		Type:              &authType,
+		TenantID:          nil,
+		ReferenceObjectID: &refObjID,
 	}
 }
 
-func fixGQLRuntimeSystemAuth(id string, auth *graphql.Auth) graphql.SystemAuth {
+func fixGQLRuntimeSystemAuth(id string, auth *graphql.Auth, refObjID string) graphql.SystemAuth {
+	authType := graphql.SystemAuthReferenceTypeRuntime
 	return &graphql.RuntimeSystemAuth{
-		ID:   id,
-		Auth: auth,
+		ID:                id,
+		Auth:              auth,
+		Type:              &authType,
+		TenantID:          &testTenant,
+		ReferenceObjectID: &refObjID,
 	}
 }
 
@@ -138,6 +150,33 @@ func fixModelAuth() *model.Auth {
 			},
 		},
 		CertCommonName: "",
+	}
+}
+
+func fixGQLAuthInput() *graphql.AuthInput {
+	return &graphql.AuthInput{
+		Credential: &graphql.CredentialDataInput{
+			Basic: &graphql.BasicCredentialDataInput{
+				Username: "foo",
+				Password: "bar",
+			},
+		},
+		AdditionalHeaders:     map[string][]string{"test": {"foo", "bar"}},
+		AdditionalQueryParams: map[string][]string{"test": {"foo", "bar"}},
+		RequestAuth: &graphql.CredentialRequestAuthInput{
+			Csrf: &graphql.CSRFTokenCredentialRequestAuthInput{
+				TokenEndpointURL: "foo.url",
+				Credential: &graphql.CredentialDataInput{
+					Basic: &graphql.BasicCredentialDataInput{
+						Username: "foo",
+						Password: "bar",
+					},
+				},
+				AdditionalHeaders:     map[string][]string{"test": {"foo", "bar"}},
+				AdditionalQueryParams: map[string][]string{"test": {"foo", "bar"}},
+			},
+		},
+		CertCommonName: nil,
 	}
 }
 

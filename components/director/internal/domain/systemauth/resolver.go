@@ -181,6 +181,7 @@ func (r *Resolver) UpdateSystemAuth(ctx context.Context, id string, in graphql.A
 	return r.conv.ToGraphQL(systemAuth)
 }
 
+// InvalidateSystemAuthOneTimeToken missing godoc
 func (r *Resolver) InvalidateSystemAuthOneTimeToken(ctx context.Context, id string) (graphql.SystemAuth, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -190,17 +191,22 @@ func (r *Resolver) InvalidateSystemAuthOneTimeToken(ctx context.Context, id stri
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	systemAuth, err := r.svc.InvalidateToken(ctx, id)
+	systemAuth, err := r.svc.GetGlobal(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := r.onetimetokenSvc.IsTokenValid(systemAuth); err != nil {
+		return nil, err
+	}
+
+	systemAuth, err = r.svc.InvalidateToken(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return nil, err
-	}
-
-	if _, err := r.onetimetokenSvc.IsTokenValid(systemAuth); err != nil {
 		return nil, err
 	}
 

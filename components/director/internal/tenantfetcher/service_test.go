@@ -1025,7 +1025,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 		APIClientFn         func() *automock.EventAPIClient
 		TenantStorageSvcFn  func() *automock.TenantStorageService
 		RuntimeStorageSvcFn func() *automock.RuntimeService
-		LabelSvcFn          func() *automock.LabelService
+		LabelRepoFn         func() *automock.LabelRepo
 		KubeClientFn        func() *automock.KubeClient
 		GqlClientFn         func() *automock.DirectorGraphQLClient
 		ExpectedError       error
@@ -1062,8 +1062,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				svc.On("ListByFilters", ctxWithSubaccountMatcher, []*labelfilter.LabelFilter(nil)).Return(runtimes, nil).Once()
 				return svc
 			},
-			LabelSvcFn: func() *automock.LabelService {
-				svc := &automock.LabelService{}
+			LabelRepoFn: func() *automock.LabelRepo {
+				svc := &automock.LabelRepo{}
 				svc.On("GetScenarioLabelsForRuntimes", mock.Anything, "sourceInternalID", []string{runtimeID}).Return([]model.Label{{Value: []interface{}{"DEFAULT"}}}, nil).Once()
 				return svc
 			},
@@ -1105,7 +1105,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1136,7 +1136,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1166,7 +1166,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1208,7 +1208,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1239,7 +1239,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1291,8 +1291,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				svc.On("ListByFilters", ctxWithSubaccountMatcher, []*labelfilter.LabelFilter(nil)).Return(runtimes, nil).Once()
 				return svc
 			},
-			LabelSvcFn: func() *automock.LabelService {
-				svc := &automock.LabelService{}
+			LabelRepoFn: func() *automock.LabelRepo {
+				svc := &automock.LabelRepo{}
 				svc.On("GetScenarioLabelsForRuntimes", mock.Anything, "sourceInternalID", []string{runtimeID}).Return([]model.Label{{Value: []interface{}{"DEFAULT"}}}, nil).Once()
 				return svc
 			},
@@ -1341,7 +1341,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				svc.On("ListByFilters", ctxWithSubaccountMatcher, []*labelfilter.LabelFilter(nil)).Return(nil, nil).Once()
 				return svc
 			},
-			LabelSvcFn: UnusedLabelSvc,
+			LabelRepoFn: UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1403,8 +1403,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				svc.On("ListByFilters", ctxWithSubaccountMatcher, []*labelfilter.LabelFilter(nil)).Return(runtimes, nil).Once()
 				return svc
 			},
-			LabelSvcFn: func() *automock.LabelService {
-				svc := &automock.LabelService{}
+			LabelRepoFn: func() *automock.LabelRepo {
+				svc := &automock.LabelRepo{}
 				svc.On("GetScenarioLabelsForRuntimes", mock.Anything, "sourceInternalID", []string{runtimeID}).Return([]model.Label{{Value: []interface{}{"DEFAULT"}}}, nil).Once()
 				return svc
 			},
@@ -1471,8 +1471,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				svc.On("ListByFilters", ctxWithSubaccountMatcher, []*labelfilter.LabelFilter(nil)).Return(runtimes, nil).Once()
 				return svc
 			},
-			LabelSvcFn: func() *automock.LabelService {
-				svc := &automock.LabelService{}
+			LabelRepoFn: func() *automock.LabelRepo {
+				svc := &automock.LabelRepo{}
 				svc.On("GetScenarioLabelsForRuntimes", mock.Anything, "sourceInternalID", []string{runtimeID}).Return([]model.Label{{Value: []interface{}{"DEFAULT"}}}, nil).Once()
 				return svc
 			},
@@ -1506,7 +1506,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", testErr).Once()
@@ -1528,7 +1528,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1548,7 +1548,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1570,7 +1570,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1592,7 +1592,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1614,7 +1614,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1636,7 +1636,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1658,7 +1658,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1680,7 +1680,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1706,7 +1706,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1739,7 +1739,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1771,7 +1771,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1803,7 +1803,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1834,7 +1834,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				svc.On("ListByFilters", ctxWithSubaccountMatcher, []*labelfilter.LabelFilter(nil)).Return(nil, nil).Once()
 				return svc
 			},
-			LabelSvcFn: UnusedLabelSvc,
+			LabelRepoFn: UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1874,7 +1874,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1907,7 +1907,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1937,7 +1937,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				svc.On("ListByFilters", ctxWithSubaccountMatcher, []*labelfilter.LabelFilter(nil)).Return(nil, nil).Once()
 				return svc
 			},
-			LabelSvcFn: UnusedLabelSvc,
+			LabelRepoFn: UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -1982,7 +1982,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				svc.On("ListByFilters", ctxWithSubaccountMatcher, []*labelfilter.LabelFilter(nil)).Return(nil, testErr).Once()
 				return svc
 			},
-			LabelSvcFn: UnusedLabelSvc,
+			LabelRepoFn: UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -2022,7 +2022,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				svc.On("ListByFilters", ctxWithSubaccountMatcher, []*labelfilter.LabelFilter(nil)).Return(runtimes, nil).Once()
 				return svc
 			},
-			LabelSvcFn: UnusedLabelSvc,
+			LabelRepoFn: UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -2062,8 +2062,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				svc.On("ListByFilters", ctxWithSubaccountMatcher, []*labelfilter.LabelFilter(nil)).Return(runtimes, nil).Once()
 				return svc
 			},
-			LabelSvcFn: func() *automock.LabelService {
-				svc := &automock.LabelService{}
+			LabelRepoFn: func() *automock.LabelRepo {
+				svc := &automock.LabelRepo{}
 				svc.On("GetScenarioLabelsForRuntimes", mock.Anything, "sourceInternalID", []string{runtimeID}).Return(nil, testErr).Once()
 				return svc
 			},
@@ -2096,7 +2096,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
-			LabelSvcFn:          UnusedLabelSvc,
+			LabelRepoFn:         UnusedLabelSvc,
 			KubeClientFn: func() *automock.KubeClient {
 				client := &automock.KubeClient{}
 				client.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
@@ -2148,8 +2148,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				svc.On("ListByFilters", ctxWithSubaccountMatcher, []*labelfilter.LabelFilter(nil)).Return(runtimes, nil).Once()
 				return svc
 			},
-			LabelSvcFn: func() *automock.LabelService {
-				svc := &automock.LabelService{}
+			LabelRepoFn: func() *automock.LabelRepo {
+				svc := &automock.LabelRepo{}
 				svc.On("GetScenarioLabelsForRuntimes", mock.Anything, "sourceInternalID", []string{runtimeID}).Return([]model.Label{{Value: []interface{}{"DEFAULT"}}}, nil).Once()
 				return svc
 			},
@@ -2184,7 +2184,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			apiClient := testCase.APIClientFn()
 			tenantStorageSvc := testCase.TenantStorageSvcFn()
 			runtimeStorageSvc := testCase.RuntimeStorageSvcFn()
-			labelSvc := testCase.LabelSvcFn()
+			labelSvc := testCase.LabelRepoFn()
 			kubeClient := testCase.KubeClientFn()
 			gqlClient := testCase.GqlClientFn()
 			svc := tenantfetcher.NewSubaccountService(tenantfetcher.QueryConfig{
@@ -2328,12 +2328,8 @@ func UnusedRuntimeStorageSvc() *automock.RuntimeService {
 	return &automock.RuntimeService{}
 }
 
-func UnusedLabelSvc() *automock.LabelService {
-	return &automock.LabelService{}
-}
-
-func UnusedLabelDefConverter() *automock.LabelDefConverter {
-	return &automock.LabelDefConverter{}
+func UnusedLabelSvc() *automock.LabelRepo {
+	return &automock.LabelRepo{}
 }
 
 func UnusedGQLClient() *automock.DirectorGraphQLClient {

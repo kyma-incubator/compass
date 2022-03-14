@@ -331,7 +331,10 @@ func (s *service) getSuggestedTokenForApp(ctx context.Context, app *model.Applic
 		Token:        oneTimeToken.Token,
 		ConnectorURL: oneTimeToken.ConnectorURL,
 		Used:         oneTimeToken.Used,
+		Type:         graphql.OneTimeTokenTypeApplication,
 		ExpiresAt:    (*graphql.Timestamp)(&oneTimeToken.ExpiresAt),
+		CreatedAt:    (*graphql.Timestamp)(&oneTimeToken.CreatedAt),
+		UsedAt:       (*graphql.Timestamp)(&oneTimeToken.UsedAt),
 	})
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to generade raw encoded one time token for application, will continue with actual token: %v", err)

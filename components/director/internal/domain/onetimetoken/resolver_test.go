@@ -221,9 +221,9 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 
 func TestResolver_RawEncoded(t *testing.T) {
 	ctx := context.TODO()
-	tokenGraphql := graphql.OneTimeTokenForApplication{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL", Used: false}, LegacyConnectorURL: "legacyConnectorURL"}
+	tokenGraphql := graphql.OneTimeTokenForApplication{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL", Used: false, Type: graphql.OneTimeTokenTypeApplication}, LegacyConnectorURL: "legacyConnectorURL"}
 	expectedRawToken := "{\"token\":\"Token\"," +
-		"\"connectorURL\":\"connectorURL\",\"used\":false,\"expiresAt\":null}"
+		"\"connectorURL\":\"connectorURL\",\"used\":false,\"expiresAt\":null,\"createdAt\":null,\"usedAt\":null,\"type\":\"Application\"}"
 	expectedBaseToken := base64.StdEncoding.EncodeToString([]byte(expectedRawToken))
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
@@ -251,9 +251,9 @@ func TestResolver_RawEncoded(t *testing.T) {
 
 func TestResolver_Raw(t *testing.T) {
 	ctx := context.TODO()
-	tokenGraphql := graphql.OneTimeTokenForApplication{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL"}, LegacyConnectorURL: "legacyConnectorURL"}
+	tokenGraphql := graphql.OneTimeTokenForApplication{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL", Type: graphql.OneTimeTokenTypeApplication}, LegacyConnectorURL: "legacyConnectorURL"}
 	expectedRawToken := "{\"token\":\"Token\"," +
-		"\"connectorURL\":\"connectorURL\",\"used\":false,\"expiresAt\":null}"
+		"\"connectorURL\":\"connectorURL\",\"used\":false,\"expiresAt\":null,\"createdAt\":null,\"usedAt\":null,\"type\":\"Application\"}"
 
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN

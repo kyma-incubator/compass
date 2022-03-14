@@ -3,7 +3,6 @@ package systemauth
 import (
 	"database/sql"
 	"encoding/json"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
@@ -50,10 +49,9 @@ func (c *converter) ToGraphQL(in *systemauth.SystemAuth) (graphql.SystemAuth, er
 	systemAuthTypeApplication := graphql.SystemAuthReferenceTypeApplication
 	systemAuthTypeRuntime := graphql.SystemAuthReferenceTypeRuntime
 	systemAuthTypeIntSystem := graphql.SystemAuthReferenceTypeIntegrationSystem
-
 	switch objectType {
 	case systemauth.ApplicationReference:
-		return graphql.AppSystemAuth{
+		return &graphql.AppSystemAuth{
 			ID:                in.ID,
 			Auth:              auth,
 			Type:              &systemAuthTypeApplication,
@@ -61,7 +59,7 @@ func (c *converter) ToGraphQL(in *systemauth.SystemAuth) (graphql.SystemAuth, er
 			ReferenceObjectID: in.AppID,
 		}, nil
 	case systemauth.IntegrationSystemReference:
-		return graphql.IntSysSystemAuth{
+		return &graphql.IntSysSystemAuth{
 			ID:                in.ID,
 			Auth:              auth,
 			Type:              &systemAuthTypeIntSystem,
@@ -69,7 +67,7 @@ func (c *converter) ToGraphQL(in *systemauth.SystemAuth) (graphql.SystemAuth, er
 			ReferenceObjectID: in.IntegrationSystemID,
 		}, nil
 	case systemauth.RuntimeReference:
-		return graphql.RuntimeSystemAuth{
+		return &graphql.RuntimeSystemAuth{
 			ID:                in.ID,
 			Auth:              auth,
 			Type:              &systemAuthTypeRuntime,

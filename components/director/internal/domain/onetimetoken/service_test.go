@@ -162,7 +162,14 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				nowT := nowTime.Add(ottConfig.ApplicationExpiration)
 				converted, err := nowT.MarshalJSON()
 				assert.NoError(t, err)
-				return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(`{"token":"abc","connectorURL":"connector.url","used":false,"expiresAt":%s}`, string(converted))))
+
+				nowStr, err := nowTime.MarshalJSON()
+				assert.NoError(t, err)
+
+				defaultTimeStr, err := time.Time{}.MarshalJSON()
+				assert.NoError(t, err)
+
+				return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(`{"token":"abc","connectorURL":"connector.url","used":false,"expiresAt":%s,"createdAt":%s,"usedAt":%s,"type":"%s"}`, string(converted), string(nowStr), string(defaultTimeStr), tokens.ApplicationToken)))
 			},
 		},
 		{
