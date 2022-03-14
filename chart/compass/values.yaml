@@ -458,6 +458,7 @@ global:
       idpHost: ""
       clientID: ""
       scopes: "openid profile email"
+      path: "/oauth2/certs"
   tenantFetcher:
     host: compass-tenant-fetcher.compass-system.svc.cluster.local
     prefix: /tenants

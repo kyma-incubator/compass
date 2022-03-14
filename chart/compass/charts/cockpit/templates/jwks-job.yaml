@@ -67,7 +67,7 @@ spec:
             - name: YQ_VERSION
               value: "v4.20.1"
             - name: JWKS_URL
-              value: "{{ .Values.global.cockpit.auth.idpHost }}/oauth2/certs"
+              value: "{{ .Values.global.cockpit.auth.idpHost }}{{.Values.global.cockpit.auth.path}}"
           command:
             - bash
             - -c
