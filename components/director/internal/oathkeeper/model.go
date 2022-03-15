@@ -196,7 +196,7 @@ func (d *ReqData) GetUserScopes(scopePrefix string) ([]string, error) {
 
 // GetUserGroups returns group name or empty string if there's no group
 func (d *ReqData) GetUserGroups() []string {
-	userGroups := []string{}
+	userGroups := make([]string, 0)
 	groupsVal, ok := d.Body.Extra[GroupsKey]
 	if !ok {
 		return userGroups
@@ -212,6 +212,8 @@ func (d *ReqData) GetUserGroups() []string {
 
 			userGroups = append(userGroups, groupString)
 		}
+	} else if groupsStr, err := str.Cast(groupsVal); err == nil {
+		userGroups = append(userGroups, groupsStr)
 	}
 
 	return userGroups
