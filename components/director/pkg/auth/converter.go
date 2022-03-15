@@ -1,12 +1,13 @@
 package auth
 
 import (
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
 )
 
 // ToGraphQLInput converts graphql.Auth to graphql.AuthInput
-func ToGraphQLInput(in *Auth) (*graphql.AuthInput, error) {
+func ToGraphQLInput(in *model.Auth) (*graphql.AuthInput, error) {
 	if in == nil {
 		return nil, errors.New("Missing system auth")
 	}
@@ -52,7 +53,7 @@ func ToGraphQLInput(in *Auth) (*graphql.AuthInput, error) {
 	}, nil
 }
 
-func basicCredentialToInput(in *BasicCredentialData) *graphql.BasicCredentialDataInput {
+func basicCredentialToInput(in *model.BasicCredentialData) *graphql.BasicCredentialDataInput {
 	if in == nil {
 		return nil
 	}
@@ -63,7 +64,7 @@ func basicCredentialToInput(in *BasicCredentialData) *graphql.BasicCredentialDat
 	}
 }
 
-func oauthCredentialToInput(in *OAuthCredentialData) *graphql.OAuthCredentialDataInput {
+func oauthCredentialToInput(in *model.OAuthCredentialData) *graphql.OAuthCredentialDataInput {
 	if in == nil {
 		return nil
 	}
@@ -75,9 +76,9 @@ func oauthCredentialToInput(in *OAuthCredentialData) *graphql.OAuthCredentialDat
 	}
 }
 
-func credentialDataToInput(in CredentialData) *graphql.CredentialDataInput {
-	var basicCredentials *BasicCredentialData
-	var oauthCredentials *OAuthCredentialData
+func credentialDataToInput(in model.CredentialData) *graphql.CredentialDataInput {
+	var basicCredentials *model.BasicCredentialData
+	var oauthCredentials *model.OAuthCredentialData
 
 	if in.Basic != nil {
 		basicCredentials = in.Basic
@@ -93,7 +94,7 @@ func credentialDataToInput(in CredentialData) *graphql.CredentialDataInput {
 	}
 }
 
-func requestAuthToInput(in *CredentialRequestAuth) (*graphql.CredentialRequestAuthInput, error) {
+func requestAuthToInput(in *model.CredentialRequestAuth) (*graphql.CredentialRequestAuthInput, error) {
 	if in == nil || in.Csrf == nil {
 		return nil, nil
 	}
@@ -148,7 +149,7 @@ func requestAuthToInput(in *CredentialRequestAuth) (*graphql.CredentialRequestAu
 }
 
 // ToModel missing godoc
-func ToModel(in *graphql.Auth) (*Auth, error) {
+func ToModel(in *graphql.Auth) (*model.Auth, error) {
 	if in == nil {
 		return nil, nil
 	}
@@ -163,7 +164,7 @@ func ToModel(in *graphql.Auth) (*Auth, error) {
 		in.AdditionalQueryParams.UnmarshalGQL(params)
 	}
 
-	return &Auth{
+	return &model.Auth{
 		Credential:            credentialToModel(in.Credential),
 		AccessStrategy:        in.AccessStrategy,
 		AdditionalHeaders:     headers,
@@ -173,12 +174,12 @@ func ToModel(in *graphql.Auth) (*Auth, error) {
 	}, nil
 }
 
-func requestAuthToModel(in *graphql.CredentialRequestAuth) *CredentialRequestAuth {
+func requestAuthToModel(in *graphql.CredentialRequestAuth) *model.CredentialRequestAuth {
 	if in == nil {
 		return nil
 	}
 
-	var csrf *CSRFTokenCredentialRequestAuth
+	var csrf *model.CSRFTokenCredentialRequestAuth
 	if in.Csrf != nil {
 		var headers map[string][]string
 		if len(in.Csrf.AdditionalHeaders) != 0 {
@@ -190,7 +191,7 @@ func requestAuthToModel(in *graphql.CredentialRequestAuth) *CredentialRequestAut
 			in.Csrf.AdditionalQueryParams.UnmarshalGQL(params)
 		}
 
-		csrf = &CSRFTokenCredentialRequestAuth{
+		csrf = &model.CSRFTokenCredentialRequestAuth{
 			TokenEndpointURL:      in.Csrf.TokenEndpointURL,
 			AdditionalQueryParams: params,
 			AdditionalHeaders:     headers,
@@ -198,28 +199,28 @@ func requestAuthToModel(in *graphql.CredentialRequestAuth) *CredentialRequestAut
 		}
 	}
 
-	return &CredentialRequestAuth{
+	return &model.CredentialRequestAuth{
 		Csrf: csrf,
 	}
 }
 
-func credentialToModel(in graphql.CredentialData) CredentialData {
-	var basic *BasicCredentialData
-	var oauth *OAuthCredentialData
+func credentialToModel(in graphql.CredentialData) model.CredentialData {
+	var basic *model.BasicCredentialData
+	var oauth *model.OAuthCredentialData
 
 	switch cred := in.(type) {
 	case *graphql.BasicCredentialData:
-		basic = &BasicCredentialData{
+		basic = &model.BasicCredentialData{
 			Username: cred.Username,
 			Password: cred.Password,
 		}
 	case *graphql.OAuthCredentialData:
-		oauth = &OAuthCredentialData{
+		oauth = &model.OAuthCredentialData{
 			ClientID:     cred.ClientID,
 			ClientSecret: cred.ClientSecret,
 			URL:          cred.URL,
 		}
 	}
 
-	return CredentialData{Basic: basic, Oauth: oauth}
+	return model.CredentialData{Basic: basic, Oauth: oauth}
 }

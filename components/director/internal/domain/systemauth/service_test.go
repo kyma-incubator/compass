@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	systemauthmodel "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
@@ -42,7 +42,7 @@ func TestService_Create(t *testing.T) {
 		Name            string
 		sysAuthRepoFn   func() *automock.Repository
 		InputObjectType systemauthmodel.SystemAuthReferenceObjectType
-		InputAuth       *auth.AuthInput
+		InputAuth       *model.AuthInput
 		ExpectedOutput  string
 		ExpectedError   error
 	}{

@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -26,7 +24,7 @@ func fixModelFetchRequest(t *testing.T, url, filter string) *model.FetchRequest 
 
 	return &model.FetchRequest{
 		URL:    url,
-		Auth:   &auth.Auth{},
+		Auth:   &model.Auth{},
 		Mode:   model.FetchModeSingle,
 		Filter: &filter,
 		Status: &model.FetchRequestStatus{
@@ -57,7 +55,7 @@ func fixModelFetchRequestInput(url, filter string) *model.FetchRequestInput {
 
 	return &model.FetchRequestInput{
 		URL:    url,
-		Auth:   &auth.AuthInput{},
+		Auth:   &model.AuthInput{},
 		Mode:   &mode,
 		Filter: &filter,
 	}
@@ -89,9 +87,9 @@ func fixFullFetchRequestModelWithRefID(id string, timestamp time.Time, objectTyp
 			Condition: model.FetchRequestStatusConditionSucceeded,
 			Timestamp: timestamp,
 		},
-		Auth: &auth.Auth{
-			Credential: auth.CredentialData{
-				Basic: &auth.BasicCredentialData{
+		Auth: &model.Auth{
+			Credential: model.CredentialData{
+				Basic: &model.BasicCredentialData{
 					Username: "foo",
 					Password: "bar",
 				},
@@ -107,9 +105,9 @@ func fixFullFetchRequestEntity(t *testing.T, id string, timestamp time.Time, obj
 }
 
 func fixFullFetchRequestEntityWithRefID(t *testing.T, id string, timestamp time.Time, objectType model.FetchRequestReferenceObjectType, objectID string) *fetchrequest.Entity {
-	auth := &auth.Auth{
-		Credential: auth.CredentialData{
-			Basic: &auth.BasicCredentialData{
+	auth := &model.Auth{
+		Credential: model.CredentialData{
+			Basic: &model.BasicCredentialData{
 				Username: "foo",
 				Password: "bar",
 			},

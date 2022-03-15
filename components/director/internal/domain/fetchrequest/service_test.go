@@ -10,8 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
@@ -79,14 +77,14 @@ func TestService_HandleSpec(t *testing.T) {
 		ID:   "test",
 		Mode: model.FetchModeSingle,
 		URL:  "http://test.com",
-		Auth: &auth.Auth{AccessStrategy: &testAccessStrategy},
+		Auth: &model.Auth{AccessStrategy: &testAccessStrategy},
 	}
 
 	modelInputBasicCredentials := model.FetchRequest{
 		ID: "test",
-		Auth: &auth.Auth{
-			Credential: auth.CredentialData{
-				Basic: &auth.BasicCredentialData{
+		Auth: &model.Auth{
+			Credential: model.CredentialData{
+				Basic: &model.BasicCredentialData{
 					Username: username,
 					Password: password,
 				},
@@ -97,8 +95,8 @@ func TestService_HandleSpec(t *testing.T) {
 
 	modelInputMissingCredentials := model.FetchRequest{
 		ID: "test",
-		Auth: &auth.Auth{
-			Credential: auth.CredentialData{
+		Auth: &model.Auth{
+			Credential: model.CredentialData{
 				Basic: nil,
 				Oauth: nil,
 			},
@@ -109,10 +107,10 @@ func TestService_HandleSpec(t *testing.T) {
 	modelInputOauth := model.FetchRequest{
 		ID:  "test",
 		URL: "http://dummy.url.sth",
-		Auth: &auth.Auth{
-			Credential: auth.CredentialData{
+		Auth: &model.Auth{
+			Credential: model.CredentialData{
 				Basic: nil,
-				Oauth: &auth.OAuthCredentialData{
+				Oauth: &model.OAuthCredentialData{
 					ClientID:     clientID,
 					ClientSecret: secret,
 					URL:          url,

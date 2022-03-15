@@ -3,8 +3,6 @@ package model
 import (
 	"encoding/json"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
@@ -15,7 +13,7 @@ type Bundle struct {
 	Name                           string
 	Description                    *string
 	InstanceAuthRequestInputSchema *string
-	DefaultInstanceAuth            *auth.Auth
+	DefaultInstanceAuth            *Auth
 	OrdID                          *string
 	ShortDescription               *string
 	Links                          json.RawMessage
@@ -51,7 +49,7 @@ type BundleCreateInput struct {
 	Name                           string                  `json:"title"`
 	Description                    *string                 `json:"description"`
 	InstanceAuthRequestInputSchema *string                 `json:",omitempty"`
-	DefaultInstanceAuth            *auth.AuthInput         `json:",omitempty"`
+	DefaultInstanceAuth            *AuthInput              `json:",omitempty"`
 	OrdID                          *string                 `json:"ordId"`
 	ShortDescription               *string                 `json:"shortDescription"`
 	Links                          json.RawMessage         `json:"links"`
@@ -71,7 +69,7 @@ type BundleUpdateInput struct {
 	Name                           string
 	Description                    *string
 	InstanceAuthRequestInputSchema *string
-	DefaultInstanceAuth            *auth.AuthInput
+	DefaultInstanceAuth            *AuthInput
 	OrdID                          *string
 	ShortDescription               *string
 	Links                          json.RawMessage

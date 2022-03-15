@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -18,8 +16,8 @@ import (
 // AuthConverter missing godoc
 //go:generate mockery --name=AuthConverter --output=automock --outpkg=automock --case=underscore
 type AuthConverter interface {
-	ToGraphQL(in *auth.Auth) (*graphql.Auth, error)
-	InputFromGraphQL(in *graphql.AuthInput) (*auth.AuthInput, error)
+	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
+	InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, error)
 }
 
 type converter struct {
@@ -170,7 +168,7 @@ func (c *converter) statusToGraphQL(in *model.FetchRequestStatus) *graphql.Fetch
 	}
 }
 
-func (c *converter) authToEntity(in *auth.Auth) (sql.NullString, error) {
+func (c *converter) authToEntity(in *model.Auth) (sql.NullString, error) {
 	var auth sql.NullString
 	if in == nil {
 		return sql.NullString{}, nil
@@ -185,12 +183,12 @@ func (c *converter) authToEntity(in *auth.Auth) (sql.NullString, error) {
 	return auth, nil
 }
 
-func (c *converter) authToModel(in sql.NullString) (*auth.Auth, error) {
+func (c *converter) authToModel(in sql.NullString) (*model.Auth, error) {
 	if !in.Valid {
 		return nil, nil
 	}
 
-	var auth auth.Auth
+	var auth model.Auth
 	err := json.Unmarshal([]byte(in.String), &auth)
 	if err != nil {
 		return nil, errors.Wrap(err, "while unmarshalling Auth")

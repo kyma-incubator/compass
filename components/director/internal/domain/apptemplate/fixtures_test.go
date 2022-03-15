@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
@@ -263,7 +261,7 @@ func fixModelApplicationWebhooks(webhookID, applicationID string) []*model.Webho
 			ID:         webhookID,
 			Type:       model.WebhookTypeConfigurationChanged,
 			URL:        str.Ptr("foourl"),
-			Auth:       &auth.Auth{},
+			Auth:       &model.Auth{},
 		},
 	}
 }
@@ -276,7 +274,7 @@ func fixModelApplicationTemplateWebhooks(webhookID, applicationTemplateID string
 			ID:         webhookID,
 			Type:       model.WebhookTypeConfigurationChanged,
 			URL:        str.Ptr("foourl"),
-			Auth:       &auth.Auth{},
+			Auth:       &model.Auth{},
 		},
 	}
 }

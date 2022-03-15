@@ -6,8 +6,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/stretchr/testify/require"
@@ -75,7 +73,7 @@ func fixModelWebhookInput(url string) *model.WebhookInput {
 	return &model.WebhookInput{
 		Type:           model.WebhookTypeConfigurationChanged,
 		URL:            &url,
-		Auth:           &auth.AuthInput{},
+		Auth:           &model.AuthInput{},
 		Mode:           &modelWebhookMode,
 		URLTemplate:    &emptyTemplate,
 		InputTemplate:  &emptyTemplate,
@@ -109,10 +107,10 @@ func fixApplicationTemplateModelWebhookWithType(id, appTemplateID, url string, w
 	return
 }
 
-func fixBasicAuth() *auth.Auth {
-	return &auth.Auth{
-		Credential: auth.CredentialData{
-			Basic: &auth.BasicCredentialData{
+func fixBasicAuth() *model.Auth {
+	return &model.Auth{
+		Credential: model.CredentialData{
+			Basic: &model.BasicCredentialData{
 				Username: "aaa",
 				Password: "bbb",
 			},

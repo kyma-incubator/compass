@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -30,7 +28,7 @@ func TestService_Create(t *testing.T) {
 		Name:                           name,
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
-		DefaultInstanceAuth:            &auth.AuthInput{},
+		DefaultInstanceAuth:            &model.AuthInput{},
 		Documents: []*model.DocumentInput{
 			{Title: "foo", Description: "test", FetchRequest: &model.FetchRequestInput{URL: "doc.foo.bar"}},
 			{Title: "bar", Description: "test"},
@@ -70,7 +68,7 @@ func TestService_Create(t *testing.T) {
 		Name:                           name,
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
-		DefaultInstanceAuth:            &auth.Auth{},
+		DefaultInstanceAuth:            &model.Auth{},
 		BaseEntity: &model.BaseEntity{
 			ID:    id,
 			Ready: true,
@@ -285,7 +283,7 @@ func TestService_Update(t *testing.T) {
 		Name:                           name,
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
-		DefaultInstanceAuth:            &auth.AuthInput{},
+		DefaultInstanceAuth:            &model.AuthInput{},
 	}
 
 	inputBundleModel := mock.MatchedBy(func(bndl *model.Bundle) bool {
@@ -297,7 +295,7 @@ func TestService_Update(t *testing.T) {
 		Name:                           name,
 		Description:                    &desc,
 		InstanceAuthRequestInputSchema: fixBasicSchema(),
-		DefaultInstanceAuth:            &auth.Auth{},
+		DefaultInstanceAuth:            &model.Auth{},
 		BaseEntity:                     &model.BaseEntity{ID: id},
 	}
 

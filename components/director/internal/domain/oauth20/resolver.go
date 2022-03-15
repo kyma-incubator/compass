@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
@@ -22,7 +22,7 @@ import (
 // SystemAuthService missing godoc
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
-	CreateWithCustomID(ctx context.Context, id string, objectType systemauth.SystemAuthReferenceObjectType, objectID string, authInput *auth.AuthInput) (string, error)
+	CreateWithCustomID(ctx context.Context, id string, objectType systemauth.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
 	GetByIDForObject(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType, authID string) (*systemauth.SystemAuth, error)
 }
 
@@ -53,7 +53,7 @@ type SystemAuthConverter interface {
 // Service missing godoc
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
 type Service interface {
-	CreateClientCredentials(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType) (*auth.OAuthCredentialDataInput, error)
+	CreateClientCredentials(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error)
 	DeleteClientCredentials(ctx context.Context, clientID string) error
 }
 
@@ -126,8 +126,8 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType system
 
 	id := clientCreds.ClientID
 	log.C(ctx).Debugf("Creating SystemAuth for the client credentials for %s with id %s", objType, objID)
-	_, err = r.systemAuthSvc.CreateWithCustomID(ctx, id, objType, objID, &auth.AuthInput{
-		Credential: &auth.CredentialDataInput{
+	_, err = r.systemAuthSvc.CreateWithCustomID(ctx, id, objType, objID, &model.AuthInput{
+		Credential: &model.CredentialDataInput{
 			Oauth: clientCreds,
 		},
 	})

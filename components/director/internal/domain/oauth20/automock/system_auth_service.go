@@ -4,8 +4,7 @@ package automock
 
 import (
 	context "context"
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
 
 	systemauth "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
@@ -17,18 +16,18 @@ type SystemAuthService struct {
 }
 
 // CreateWithCustomID provides a mock function with given fields: ctx, id, objectType, objectID, authInput
-func (_m *SystemAuthService) CreateWithCustomID(ctx context.Context, id string, objectType systemauth.SystemAuthReferenceObjectType, objectID string, authInput *auth.AuthInput) (string, error) {
+func (_m *SystemAuthService) CreateWithCustomID(ctx context.Context, id string, objectType systemauth.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error) {
 	ret := _m.Called(ctx, id, objectType, objectID, authInput)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, systemauth.SystemAuthReferenceObjectType, string, *auth.AuthInput) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, systemauth.SystemAuthReferenceObjectType, string, *model.AuthInput) string); ok {
 		r0 = rf(ctx, id, objectType, objectID, authInput)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, systemauth.SystemAuthReferenceObjectType, string, *auth.AuthInput) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, systemauth.SystemAuthReferenceObjectType, string, *model.AuthInput) error); ok {
 		r1 = rf(ctx, id, objectType, objectID, authInput)
 	} else {
 		r1 = ret.Error(1)

@@ -3,8 +3,6 @@ package model
 import (
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/pkg/errors"
 )
 
@@ -17,7 +15,7 @@ type BundleInstanceAuth struct {
 	Owner            string
 	Context          *string
 	InputParams      *string
-	Auth             *auth.Auth
+	Auth             *Auth
 	Status           *BundleInstanceAuthStatus
 }
 
@@ -83,7 +81,7 @@ type BundleInstanceAuthRequestInput struct {
 }
 
 // ToBundleInstanceAuth missing godoc
-func (ri BundleInstanceAuthRequestInput) ToBundleInstanceAuth(id, bundleID, tenant string, auth *auth.Auth, status *BundleInstanceAuthStatus, runtimeID *string, runtimeContextID *string) BundleInstanceAuth {
+func (ri BundleInstanceAuthRequestInput) ToBundleInstanceAuth(id, bundleID, tenant string, auth *Auth, status *BundleInstanceAuthStatus, runtimeID *string, runtimeContextID *string) BundleInstanceAuth {
 	return BundleInstanceAuth{
 		ID:               id,
 		BundleID:         bundleID,
@@ -99,7 +97,7 @@ func (ri BundleInstanceAuthRequestInput) ToBundleInstanceAuth(id, bundleID, tena
 
 // BundleInstanceAuthSetInput type for setBundleInstanceAuth
 type BundleInstanceAuthSetInput struct {
-	Auth   *auth.AuthInput
+	Auth   *AuthInput
 	Status *BundleInstanceAuthStatusInput
 }
 

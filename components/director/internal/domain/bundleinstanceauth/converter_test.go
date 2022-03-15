@@ -3,8 +3,6 @@ package bundleinstanceauth_test
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
@@ -52,7 +50,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			Name: "Success when context and input params empty",
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("ToGraphQL", (*auth.Auth)(nil)).Return(nil, nil).Once()
+				conv.On("ToGraphQL", (*model.Auth)(nil)).Return(nil, nil).Once()
 				return conv
 			},
 			Input:    fixModelBundleInstanceAuthWithoutContextAndInputParams(testID, testBundleID, testTenant, nil, fixModelStatusPending(), nil),
@@ -62,7 +60,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			Name: "Success when context and input params empty",
 			AuthConverterFn: func() *automock.AuthConverter {
 				conv := &automock.AuthConverter{}
-				conv.On("ToGraphQL", (*auth.Auth)(nil)).Return(nil, nil).Once()
+				conv.On("ToGraphQL", (*model.Auth)(nil)).Return(nil, nil).Once()
 				return conv
 			},
 			Input:    fixModelBundleInstanceAuthWithoutContextAndInputParams(testID, testBundleID, testTenant, nil, nil, nil),

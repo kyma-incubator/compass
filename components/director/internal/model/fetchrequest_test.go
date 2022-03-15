@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -31,7 +29,7 @@ func TestFetchRequestInput_ToFetchRequest(t *testing.T) {
 			InputReferenceObjectType: model.APISpecFetchRequestReference,
 			InputFRInput: &model.FetchRequestInput{
 				URL: "foourl",
-				Auth: &auth.AuthInput{
+				Auth: &model.AuthInput{
 					AdditionalHeaders: map[string][]string{
 						"foo": {"foo", "bar"},
 						"bar": {"bar", "foo"},
@@ -45,7 +43,7 @@ func TestFetchRequestInput_ToFetchRequest(t *testing.T) {
 				ObjectID:   "ref-id",
 				ObjectType: model.APISpecFetchRequestReference,
 				URL:        "foourl",
-				Auth: &auth.Auth{
+				Auth: &model.Auth{
 					AdditionalHeaders: map[string][]string{
 						"foo": {"foo", "bar"},
 						"bar": {"bar", "foo"},

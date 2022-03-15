@@ -1,7 +1,6 @@
 package model
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
@@ -13,7 +12,7 @@ type Webhook struct {
 	CorrelationIDKey *string
 	Type             WebhookType
 	URL              *string
-	Auth             *auth.Auth
+	Auth             *Auth
 	Mode             *WebhookMode
 	RetryInterval    *int
 	Timeout          *int
@@ -29,7 +28,7 @@ type WebhookInput struct {
 	CorrelationIDKey *string
 	Type             WebhookType
 	URL              *string
-	Auth             *auth.AuthInput
+	Auth             *AuthInput
 	Mode             *WebhookMode
 	RetryInterval    *int
 	Timeout          *int
