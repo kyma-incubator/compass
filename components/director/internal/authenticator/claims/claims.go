@@ -63,6 +63,7 @@ func (c *Claims) UnmarshalJSON(b []byte) error {
 
 	if err := json.Unmarshal([]byte(tokenClaims.TenantString), &c.Tenant); err != nil {
 		log.D().Warnf("While unmarshaling tenants: %+v", err)
+		c.Tenant = make(map[string]string)
 	}
 
 	return nil

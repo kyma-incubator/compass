@@ -157,6 +157,10 @@ func (s *Service) processApp(ctx context.Context, app *model.Application, global
 
 	ctx = tenant.SaveToContext(ctx, tnt, "")
 
+	if _, err := s.appSvc.GetForUpdate(ctx, app.ID); err != nil {
+		return errors.Wrapf(err, "error while locking app with id %q for update", app.ID)
+	}
+
 	webhooks, err := s.webhookSvc.ListForApplicationWithSelectForUpdate(ctx, app.ID)
 	if err != nil {
 		return errors.Wrapf(err, "error fetching webhooks for app with id %q", app.ID)

@@ -19,8 +19,8 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 	appsCount := 5
 	for i := 0; i < appsCount; i++ {
 		app := fixtures.CreateApp(fmt.Sprintf("director-%d", i))
-		appResp, err := fixtures.RegisterApplicationFromInput(b, ctx, dexGraphQLClient, tenantID, app)
-		defer fixtures.CleanupApplication(b, ctx, dexGraphQLClient, tenantID, &appResp)
+		appResp, err := fixtures.RegisterApplicationFromInput(b, ctx, certSecuredGraphQLClient, tenantID, app)
+		defer fixtures.CleanupApplication(b, ctx, certSecuredGraphQLClient, tenantID, &appResp)
 		require.NoError(b, err)
 	}
 
@@ -29,8 +29,8 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 	(runtime.Labels)["scenarios"] = []string{conf.DefaultScenario}
 	(runtime.Labels)["isNormalized"] = "false"
 
-	rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(b, ctx, dexGraphQLClient, tenantID, &runtime)
-	defer fixtures.CleanupRuntime(b, ctx, dexGraphQLClient, tenantID, &rt)
+	rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(b, ctx, certSecuredGraphQLClient, tenantID, &runtime)
+	defer fixtures.CleanupRuntime(b, ctx, certSecuredGraphQLClient, tenantID, &rt)
 	require.NoError(b, err)
 	require.NotEmpty(b, rt.ID)
 
@@ -46,7 +46,7 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		res.Result = &graphql.ApplicationPage{}
 
-		err := dexGraphQLClient.Run(ctx, request, &res)
+		err := certSecuredGraphQLClient.Run(ctx, request, &res)
 
 		//THEN
 		require.NoError(b, err)
