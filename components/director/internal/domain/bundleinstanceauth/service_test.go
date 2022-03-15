@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
@@ -413,7 +415,7 @@ func TestService_Create(t *testing.T) {
 		InstanceAuthRepoFn func() *automock.Repository
 		UIDSvcFn           func() *automock.UIDService
 		Input              model.BundleInstanceAuthRequestInput
-		InputAuth          *model.Auth
+		InputAuth          *auth.Auth
 		InputSchema        *string
 		ExpectedOutput     string
 		ExpectedError      error
@@ -835,7 +837,7 @@ func TestService_RequestDeletion(t *testing.T) {
 
 	testCases := []struct {
 		Name                      string
-		BundleDefaultInstanceAuth *model.Auth
+		BundleDefaultInstanceAuth *auth.Auth
 		InstanceAuthRepoFn        func() *automock.Repository
 
 		ExpectedResult bool

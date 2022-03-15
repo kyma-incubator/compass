@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -11,7 +13,6 @@ import (
 	systemauthmodel "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
@@ -29,9 +30,9 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 	objectID := "bar"
 	objectType := systemauthmodel.RuntimeReference
 	modelSystemAuth := fixModelSystemAuth(id, objectType, objectID, fixModelAuth())
-	oauthModelSystemAuth := fixModelSystemAuth(id, objectType, objectID, &model.Auth{
-		Credential: model.CredentialData{
-			Oauth: &model.OAuthCredentialData{
+	oauthModelSystemAuth := fixModelSystemAuth(id, objectType, objectID, &auth.Auth{
+		Credential: auth.CredentialData{
+			Oauth: &auth.OAuthCredentialData{
 				ClientID:     "clientid",
 				ClientSecret: "clientsecret",
 				URL:          "foo.bar/token",

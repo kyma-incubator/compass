@@ -4,10 +4,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	model "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	internalmodel "github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
@@ -47,16 +48,16 @@ func NewService(repo Repository, uidService UIDService) *service {
 }
 
 // Create missing godoc
-func (s *service) Create(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *internalmodel.AuthInput) (string, error) {
+func (s *service) Create(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *auth.AuthInput) (string, error) {
 	return s.create(ctx, s.uidService.Generate(), objectType, objectID, authInput)
 }
 
 // CreateWithCustomID missing godoc
-func (s *service) CreateWithCustomID(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *internalmodel.AuthInput) (string, error) {
+func (s *service) CreateWithCustomID(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *auth.AuthInput) (string, error) {
 	return s.create(ctx, id, objectType, objectID, authInput)
 }
 
-func (s *service) create(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *internalmodel.AuthInput) (string, error) {
+func (s *service) create(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *auth.AuthInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		if !model.IsIntegrationSystemNoTenantFlow(err, objectType) {
@@ -126,7 +127,7 @@ func (s *service) GetGlobal(ctx context.Context, id string) (*model.SystemAuth, 
 	return item, nil
 }
 
-// GetByToken missing godoc
+// GetByToken get a SystemAuth by a one time token value
 func (s *service) GetByToken(ctx context.Context, token string) (*model.SystemAuth, error) {
 	return s.repo.GetByJSONValue(ctx, map[string]interface{}{
 		"OneTimeToken": map[string]interface{}{
@@ -136,7 +137,7 @@ func (s *service) GetByToken(ctx context.Context, token string) (*model.SystemAu
 	})
 }
 
-// InvalidateToken missing godoc
+// InvalidateToken gets a SystemAuth by ID, sets the Used properties for the OTT and updates the model
 func (s *service) InvalidateToken(ctx context.Context, id string) (*model.SystemAuth, error) {
 	systemAuth, err := s.GetGlobal(ctx, id)
 	if err != nil {
@@ -159,7 +160,7 @@ func (s *service) Update(ctx context.Context, item *model.SystemAuth) error {
 }
 
 // UpdateValue missing godoc
-func (s *service) UpdateValue(ctx context.Context, id string, item *internalmodel.Auth) (*model.SystemAuth, error) {
+func (s *service) UpdateValue(ctx context.Context, id string, item *auth.Auth) (*model.SystemAuth, error) {
 	systemAuth, err := s.repo.GetByIDGlobal(ctx, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting System Auth with id '%s'", id)

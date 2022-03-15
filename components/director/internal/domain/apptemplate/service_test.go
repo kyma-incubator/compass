@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -36,7 +38,7 @@ func TestService_Create(t *testing.T) {
 		{
 			Type: model.WebhookTypeConfigurationChanged,
 			URL:  str.Ptr("foourl"),
-			Auth: &model.AuthInput{},
+			Auth: &auth.AuthInput{},
 		},
 	}
 	appTemplateInputMatcher := func(webhooks []*model.Webhook) bool {

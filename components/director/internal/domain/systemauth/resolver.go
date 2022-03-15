@@ -3,10 +3,11 @@ package systemauth
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
@@ -20,7 +21,7 @@ type SystemAuthService interface {
 	GetByToken(ctx context.Context, token string) (*systemauth.SystemAuth, error)
 	DeleteByIDForObject(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType, authID string) error
 	Update(ctx context.Context, item *systemauth.SystemAuth) error
-	UpdateValue(ctx context.Context, id string, item *model.Auth) (*systemauth.SystemAuth, error)
+	UpdateValue(ctx context.Context, id string, item *auth.Auth) (*systemauth.SystemAuth, error)
 	InvalidateToken(ctx context.Context, id string) (*systemauth.SystemAuth, error)
 }
 
@@ -99,7 +100,7 @@ func (r *Resolver) GenericDeleteSystemAuth(objectType systemauth.SystemAuthRefer
 	}
 }
 
-// SystemAuth missing godoc
+// SystemAuth get a SystemAuth by ID
 func (r *Resolver) SystemAuth(ctx context.Context, id string) (graphql.SystemAuth, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -122,7 +123,7 @@ func (r *Resolver) SystemAuth(ctx context.Context, id string) (graphql.SystemAut
 	return r.conv.ToGraphQL(systemAuth)
 }
 
-// SystemAuth missing godoc
+// SystemAuthByToken gets a SystemAuth by a provided one time token
 func (r *Resolver) SystemAuthByToken(ctx context.Context, token string) (graphql.SystemAuth, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -149,7 +150,7 @@ func (r *Resolver) SystemAuthByToken(ctx context.Context, token string) (graphql
 	return r.conv.ToGraphQL(systemAuth)
 }
 
-// UpdateSystemAuth missing godoc
+// UpdateSystemAuth updates a SystemAuth with an AuthInput
 func (r *Resolver) UpdateSystemAuth(ctx context.Context, id string, in graphql.AuthInput) (graphql.SystemAuth, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -181,7 +182,7 @@ func (r *Resolver) UpdateSystemAuth(ctx context.Context, id string, in graphql.A
 	return r.conv.ToGraphQL(systemAuth)
 }
 
-// InvalidateSystemAuthOneTimeToken missing godoc
+// InvalidateSystemAuthOneTimeToken checks if the the OTT for the SystemAuth is valid. If yes, it invalidates the OTT. If not, returns an error
 func (r *Resolver) InvalidateSystemAuthOneTimeToken(ctx context.Context, id string) (graphql.SystemAuth, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {

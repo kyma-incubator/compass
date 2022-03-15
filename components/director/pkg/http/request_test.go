@@ -10,9 +10,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	"github.com/pkg/errors"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/stretchr/testify/require"
 )
@@ -72,9 +73,9 @@ func TestRequestWithCredentials_SuccessWithBasicAuth(t *testing.T) {
 		return expectedResp
 	})
 
-	resp, err := httputil.GetRequestWithCredentials(context.Background(), client, testURL, &model.Auth{
-		Credential: model.CredentialData{
-			Basic: &model.BasicCredentialData{
+	resp, err := httputil.GetRequestWithCredentials(context.Background(), client, testURL, &auth.Auth{
+		Credential: auth.CredentialData{
+			Basic: &auth.BasicCredentialData{
 				Username: user,
 				Password: pass,
 			},
@@ -89,9 +90,9 @@ func TestRequestWithCredentials_FailedWithBasicAuth(t *testing.T) {
 		return nil
 	})
 
-	_, err := httputil.GetRequestWithCredentials(context.Background(), client, testURL, &model.Auth{
-		Credential: model.CredentialData{
-			Basic: &model.BasicCredentialData{
+	_, err := httputil.GetRequestWithCredentials(context.Background(), client, testURL, &auth.Auth{
+		Credential: auth.CredentialData{
+			Basic: &auth.BasicCredentialData{
 				Username: "user",
 				Password: "pass",
 			},
@@ -134,9 +135,9 @@ func TestRequestWithCredentials_SuccessWithOAuth(t *testing.T) {
 		}
 	})
 
-	resp, err := httputil.GetRequestWithCredentials(context.Background(), client, testURL, &model.Auth{
-		Credential: model.CredentialData{
-			Oauth: &model.OAuthCredentialData{
+	resp, err := httputil.GetRequestWithCredentials(context.Background(), client, testURL, &auth.Auth{
+		Credential: auth.CredentialData{
+			Oauth: &auth.OAuthCredentialData{
 				ClientID:     clientID,
 				ClientSecret: clientSecret,
 				URL:          tokenURL,
@@ -154,9 +155,9 @@ func TestRequestWithCredentials_FailedWithOAuthDueToInvalidCredentials(t *testin
 		}
 	})
 
-	_, err := httputil.GetRequestWithCredentials(context.Background(), client, testURL, &model.Auth{
-		Credential: model.CredentialData{
-			Oauth: &model.OAuthCredentialData{},
+	_, err := httputil.GetRequestWithCredentials(context.Background(), client, testURL, &auth.Auth{
+		Credential: auth.CredentialData{
+			Oauth: &auth.OAuthCredentialData{},
 		},
 	})
 	require.Error(t, err)

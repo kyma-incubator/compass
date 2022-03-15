@@ -1,6 +1,9 @@
 package model
 
-import "github.com/kyma-incubator/compass/components/director/pkg/resource"
+import (
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+)
 
 // Webhook represents a webhook that is called by Compass.
 type Webhook struct {
@@ -10,7 +13,7 @@ type Webhook struct {
 	CorrelationIDKey *string
 	Type             WebhookType
 	URL              *string
-	Auth             *Auth
+	Auth             *auth.Auth
 	Mode             *WebhookMode
 	RetryInterval    *int
 	Timeout          *int
@@ -26,7 +29,7 @@ type WebhookInput struct {
 	CorrelationIDKey *string
 	Type             WebhookType
 	URL              *string
-	Auth             *AuthInput
+	Auth             *auth.AuthInput
 	Mode             *WebhookMode
 	RetryInterval    *int
 	Timeout          *int

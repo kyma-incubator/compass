@@ -4,13 +4,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
@@ -25,12 +26,12 @@ func TestResolver_CommonRequestClientCredentialsSuccess(t *testing.T) {
 	clientID := "clientid"
 	txGen := txtest.NewTransactionContextGenerator(nil)
 	expectedResult := fixGQLSystemAuth(clientID)
-	credsData := &model.OAuthCredentialDataInput{
+	credsData := &auth.OAuthCredentialDataInput{
 		ClientID:     "clientid",
 		ClientSecret: "secret",
 		URL:          "url",
 	}
-	authInput := &model.AuthInput{Credential: &model.CredentialDataInput{Oauth: credsData}}
+	authInput := &auth.AuthInput{Credential: &auth.CredentialDataInput{Oauth: credsData}}
 
 	testCases := []struct {
 		Name                       string
@@ -158,12 +159,12 @@ func TestResolver_CommonRequestClientCredentialsError(t *testing.T) {
 	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 	modelSystemAuth := fixModelSystemAuth(clientID, &id, nil, nil)
-	credsData := &model.OAuthCredentialDataInput{
+	credsData := &auth.OAuthCredentialDataInput{
 		ClientID:     "clientid",
 		ClientSecret: "secret",
 		URL:          "url",
 	}
-	authInput := &model.AuthInput{Credential: &model.CredentialDataInput{Oauth: credsData}}
+	authInput := &auth.AuthInput{Credential: &auth.CredentialDataInput{Oauth: credsData}}
 
 	testCases := []struct {
 		Name                string
@@ -386,9 +387,9 @@ func fixModelSystemAuth(clientID string, rtmID, appID, isID *string) *systemauth
 		RuntimeID:           rtmID,
 		IntegrationSystemID: isID,
 		AppID:               appID,
-		Value: &model.Auth{
-			Credential: model.CredentialData{
-				Oauth: &model.OAuthCredentialData{
+		Value: &auth.Auth{
+			Credential: auth.CredentialData{
+				Oauth: &auth.OAuthCredentialData{
 					ClientID:     clientID,
 					ClientSecret: "secret",
 					URL:          "url",

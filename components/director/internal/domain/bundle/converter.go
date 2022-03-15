@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -18,8 +20,8 @@ import (
 // AuthConverter missing godoc
 //go:generate mockery --name=AuthConverter --output=automock --outpkg=automock --case=underscore
 type AuthConverter interface {
-	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
-	InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, error)
+	ToGraphQL(in *auth.Auth) (*graphql.Auth, error)
+	InputFromGraphQL(in *graphql.AuthInput) (*auth.AuthInput, error)
 }
 
 type converter struct {
@@ -224,7 +226,7 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.BundleUpdateInput) (*model
 	}, nil
 }
 
-func (c *converter) marshalDefaultInstanceAuth(defaultInstanceAuth *model.Auth) (*string, error) {
+func (c *converter) marshalDefaultInstanceAuth(defaultInstanceAuth *auth.Auth) (*string, error) {
 	if defaultInstanceAuth == nil {
 		return nil, nil
 	}
@@ -236,10 +238,10 @@ func (c *converter) marshalDefaultInstanceAuth(defaultInstanceAuth *model.Auth) 
 	return str.Ptr(string(output)), nil
 }
 
-func (c *converter) unmarshalDefaultInstanceAuth(defaultInstanceAuthSQL sql.NullString) (*model.Auth, error) {
-	var defaultInstanceAuth *model.Auth
+func (c *converter) unmarshalDefaultInstanceAuth(defaultInstanceAuthSQL sql.NullString) (*auth.Auth, error) {
+	var defaultInstanceAuth *auth.Auth
 	if defaultInstanceAuthSQL.Valid && defaultInstanceAuthSQL.String != "" {
-		defaultInstanceAuth = &model.Auth{}
+		defaultInstanceAuth = &auth.Auth{}
 		err := json.Unmarshal([]byte(defaultInstanceAuthSQL.String), defaultInstanceAuth)
 		if err != nil {
 			return nil, errors.Wrap(err, "while unmarshalling default instance auth")

@@ -132,7 +132,7 @@ func (r *Resolver) TenantByID(ctx context.Context, internalID string) (*graphql.
 	return gqlTenant, nil
 }
 
-// TenantByID retrieves a tenant with the provided internal ID from the Compass storage.
+// TenantByLowestOwnerForResource retrieves a tenant with the provided internal ID from the Compass storage.
 func (r *Resolver) TenantByLowestOwnerForResource(ctx context.Context, resourceStr, objectID string) (string, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {

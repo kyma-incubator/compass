@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -17,8 +19,8 @@ import (
 // AuthConverter missing godoc
 //go:generate mockery --name=AuthConverter --output=automock --outpkg=automock --case=underscore
 type AuthConverter interface {
-	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
-	InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, error)
+	ToGraphQL(in *auth.Auth) (*graphql.Auth, error)
+	InputFromGraphQL(in *graphql.AuthInput) (*auth.AuthInput, error)
 }
 
 type converter struct {
@@ -256,12 +258,12 @@ func (c *converter) FromEntity(in *Entity) (*model.Webhook, error) {
 	}, nil
 }
 
-func (c *converter) fromEntityAuth(in Entity) (*model.Auth, error) {
+func (c *converter) fromEntityAuth(in Entity) (*auth.Auth, error) {
 	if !in.Auth.Valid {
 		return nil, nil
 	}
 
-	auth := &model.Auth{}
+	auth := &auth.Auth{}
 	val, err := in.Auth.Value()
 	if err != nil {
 		return nil, errors.Wrap(err, "while reading Auth from Entity")

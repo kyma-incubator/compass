@@ -5,11 +5,12 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/ory/hydra-client-go/client/admin"
 	"github.com/ory/hydra-client-go/models"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +32,7 @@ var (
 
 func TestService_CreateClient(t *testing.T) {
 	// GIVEN
-	successResult := &model.OAuthCredentialDataInput{
+	successResult := &auth.OAuthCredentialDataInput{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		URL:          publicEndpoint,
@@ -40,7 +41,7 @@ func TestService_CreateClient(t *testing.T) {
 
 	testCases := []struct {
 		Name                       string
-		ExpectedResult             *model.OAuthCredentialDataInput
+		ExpectedResult             *auth.OAuthCredentialDataInput
 		ExpectedError              error
 		ClientDetailsCfgProviderFn func() *automock.ClientDetailsConfigProvider
 		UIDServiceFn               func() *automock.UIDService
@@ -319,9 +320,9 @@ func TestService_DeleteMultipleClientCredentials(t *testing.T) {
 			},
 			Auths: []systemauth.SystemAuth{
 				{
-					Value: &model.Auth{
-						Credential: model.CredentialData{
-							Oauth: &model.OAuthCredentialData{
+					Value: &auth.Auth{
+						Credential: auth.CredentialData{
+							Oauth: &auth.OAuthCredentialData{
 								ClientID: clientID,
 							},
 						},
@@ -349,8 +350,8 @@ func TestService_DeleteMultipleClientCredentials(t *testing.T) {
 			},
 			Auths: []systemauth.SystemAuth{
 				{
-					Value: &model.Auth{
-						Credential: model.CredentialData{
+					Value: &auth.Auth{
+						Credential: auth.CredentialData{
 							Oauth: nil,
 						},
 					},
@@ -367,9 +368,9 @@ func TestService_DeleteMultipleClientCredentials(t *testing.T) {
 			},
 			Auths: []systemauth.SystemAuth{
 				{
-					Value: &model.Auth{
-						Credential: model.CredentialData{
-							Oauth: &model.OAuthCredentialData{
+					Value: &auth.Auth{
+						Credential: auth.CredentialData{
+							Oauth: &auth.OAuthCredentialData{
 								ClientID: clientID,
 							},
 						},

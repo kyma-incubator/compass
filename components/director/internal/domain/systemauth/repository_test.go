@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"testing"
 
-	systemauth2 "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+	model "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -32,8 +32,8 @@ func TestRepository_Create(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		modelSysAuth := fixModelSystemAuth("foo", systemauth2.RuntimeReference, objID, modelAuth)
-		entSysAuth := fixEntity(sysAuthID, systemauth2.RuntimeReference, objID, true)
+		modelSysAuth := fixModelSystemAuth("foo", model.RuntimeReference, objID, modelAuth)
+		entSysAuth := fixEntity(sysAuthID, model.RuntimeReference, objID, true)
 
 		dbMock.ExpectExec(insertQuery).
 			WithArgs(fixSystemAuthCreateArgs(entSysAuth)...).
@@ -56,8 +56,8 @@ func TestRepository_Create(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		modelSysAuth := fixModelSystemAuth("foo", systemauth2.ApplicationReference, objID, modelAuth)
-		entSysAuth := fixEntity(sysAuthID, systemauth2.ApplicationReference, objID, true)
+		modelSysAuth := fixModelSystemAuth("foo", model.ApplicationReference, objID, modelAuth)
+		entSysAuth := fixEntity(sysAuthID, model.ApplicationReference, objID, true)
 
 		dbMock.ExpectExec(insertQuery).
 			WithArgs(fixSystemAuthCreateArgs(entSysAuth)...).
@@ -80,8 +80,8 @@ func TestRepository_Create(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		modelSysAuth := fixModelSystemAuth("foo", systemauth2.IntegrationSystemReference, objID, modelAuth)
-		entSysAuth := fixEntity(sysAuthID, systemauth2.IntegrationSystemReference, objID, true)
+		modelSysAuth := fixModelSystemAuth("foo", model.IntegrationSystemReference, objID, modelAuth)
+		entSysAuth := fixEntity(sysAuthID, model.IntegrationSystemReference, objID, true)
 
 		dbMock.ExpectExec(insertQuery).
 			WithArgs(fixSystemAuthCreateArgs(entSysAuth)...).
@@ -103,7 +103,7 @@ func TestRepository_Create(t *testing.T) {
 	t.Run("Error converting", func(t *testing.T) {
 		ctx := context.TODO()
 
-		modelSysAuth := fixModelSystemAuth("foo", systemauth2.IntegrationSystemReference, objID, modelAuth)
+		modelSysAuth := fixModelSystemAuth("foo", model.IntegrationSystemReference, objID, modelAuth)
 
 		convMock := automock.Converter{}
 		convMock.On("ToEntity", *modelSysAuth).Return(systemauth.Entity{}, testErr).Once()
@@ -122,8 +122,8 @@ func TestRepository_Create(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		modelSysAuth := fixModelSystemAuth("foo", systemauth2.RuntimeReference, objID, modelAuth)
-		entSysAuth := fixEntity(sysAuthID, systemauth2.RuntimeReference, objID, true)
+		modelSysAuth := fixModelSystemAuth("foo", model.RuntimeReference, objID, modelAuth)
+		entSysAuth := fixEntity(sysAuthID, model.RuntimeReference, objID, true)
 
 		dbMock.ExpectExec(insertQuery).
 			WithArgs(fixSystemAuthCreateArgs(entSysAuth)...).
@@ -151,8 +151,8 @@ func TestRepository_GetByID(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		saModel := fixModelSystemAuth(saID, systemauth2.RuntimeReference, objectID, fixModelAuth())
-		saEntity := fixEntity(saID, systemauth2.RuntimeReference, objectID, true)
+		saModel := fixModelSystemAuth(saID, model.RuntimeReference, objectID, fixModelAuth())
+		saEntity := fixEntity(saID, model.RuntimeReference, objectID, true)
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("FromEntity", saEntity).Return(*saModel, nil).Once()
@@ -180,11 +180,11 @@ func TestRepository_GetByID(t *testing.T) {
 
 	t.Run("Error - Converter", func(t *testing.T) {
 		// GIVEN
-		saEntity := fixEntity(saID, systemauth2.RuntimeReference, objectID, true)
+		saEntity := fixEntity(saID, model.RuntimeReference, objectID, true)
 
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("FromEntity", saEntity).Return(systemauth2.SystemAuth{}, givenError())
+		mockConverter.On("FromEntity", saEntity).Return(model.SystemAuth{}, givenError())
 
 		repo := systemauth.NewRepository(mockConverter)
 		db, dbMock := testdb.MockDatabase(t)
@@ -226,8 +226,8 @@ func TestRepository_GetByIDGlobal(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
-		saModel := fixModelSystemAuth(saID, systemauth2.RuntimeReference, objectID, fixModelAuth())
-		saEntity := fixEntity(saID, systemauth2.RuntimeReference, objectID, true)
+		saModel := fixModelSystemAuth(saID, model.RuntimeReference, objectID, fixModelAuth())
+		saEntity := fixEntity(saID, model.RuntimeReference, objectID, true)
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("FromEntity", saEntity).Return(*saModel, nil).Once()
@@ -255,11 +255,11 @@ func TestRepository_GetByIDGlobal(t *testing.T) {
 
 	t.Run("Error - Converter", func(t *testing.T) {
 		// GIVEN
-		saEntity := fixEntity(saID, systemauth2.RuntimeReference, objectID, true)
+		saEntity := fixEntity(saID, model.RuntimeReference, objectID, true)
 
 		mockConverter := &automock.Converter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("FromEntity", saEntity).Return(systemauth2.SystemAuth{}, givenError())
+		mockConverter.On("FromEntity", saEntity).Return(model.SystemAuth{}, givenError())
 
 		repo := systemauth.NewRepository(mockConverter)
 		db, dbMock := testdb.MockDatabase(t)
@@ -305,13 +305,13 @@ func TestRepository_ListForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		modelSysAuths := []*systemauth2.SystemAuth{
-			fixModelSystemAuth("foo", systemauth2.RuntimeReference, objID, modelAuth),
-			fixModelSystemAuth("bar", systemauth2.RuntimeReference, objID, modelAuth),
+		modelSysAuths := []*model.SystemAuth{
+			fixModelSystemAuth("foo", model.RuntimeReference, objID, modelAuth),
+			fixModelSystemAuth("bar", model.RuntimeReference, objID, modelAuth),
 		}
 		entSysAuths := []systemauth.Entity{
-			fixEntity("foo", systemauth2.RuntimeReference, objID, true),
-			fixEntity("bar", systemauth2.RuntimeReference, objID, true),
+			fixEntity("foo", model.RuntimeReference, objID, true),
+			fixEntity("bar", model.RuntimeReference, objID, true),
 		}
 
 		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE tenant_id = $1 AND runtime_id = $2`
@@ -340,7 +340,7 @@ func TestRepository_ListForObject(t *testing.T) {
 		pgRepository := systemauth.NewRepository(&convMock)
 
 		// WHEN
-		result, err := pgRepository.ListForObject(ctx, testTenant, systemauth2.RuntimeReference, objID)
+		result, err := pgRepository.ListForObject(ctx, testTenant, model.RuntimeReference, objID)
 
 		// THEN
 		require.NoError(t, err)
@@ -353,13 +353,13 @@ func TestRepository_ListForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		modelSysAuths := []*systemauth2.SystemAuth{
-			fixModelSystemAuth("foo", systemauth2.ApplicationReference, objID, modelAuth),
-			fixModelSystemAuth("bar", systemauth2.ApplicationReference, objID, modelAuth),
+		modelSysAuths := []*model.SystemAuth{
+			fixModelSystemAuth("foo", model.ApplicationReference, objID, modelAuth),
+			fixModelSystemAuth("bar", model.ApplicationReference, objID, modelAuth),
 		}
 		entSysAuths := []systemauth.Entity{
-			fixEntity("foo", systemauth2.ApplicationReference, objID, true),
-			fixEntity("bar", systemauth2.ApplicationReference, objID, true),
+			fixEntity("foo", model.ApplicationReference, objID, true),
+			fixEntity("bar", model.ApplicationReference, objID, true),
 		}
 
 		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE tenant_id = $1 AND app_id = $2`
@@ -388,7 +388,7 @@ func TestRepository_ListForObject(t *testing.T) {
 		pgRepository := systemauth.NewRepository(&convMock)
 
 		// WHEN
-		result, err := pgRepository.ListForObject(ctx, testTenant, systemauth2.ApplicationReference, objID)
+		result, err := pgRepository.ListForObject(ctx, testTenant, model.ApplicationReference, objID)
 
 		// THEN
 		require.NoError(t, err)
@@ -401,13 +401,13 @@ func TestRepository_ListForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		modelSysAuths := []*systemauth2.SystemAuth{
-			fixModelSystemAuth("foo", systemauth2.IntegrationSystemReference, objID, modelAuth),
-			fixModelSystemAuth("bar", systemauth2.IntegrationSystemReference, objID, modelAuth),
+		modelSysAuths := []*model.SystemAuth{
+			fixModelSystemAuth("foo", model.IntegrationSystemReference, objID, modelAuth),
+			fixModelSystemAuth("bar", model.IntegrationSystemReference, objID, modelAuth),
 		}
 		entSysAuths := []systemauth.Entity{
-			fixEntity("foo", systemauth2.IntegrationSystemReference, objID, true),
-			fixEntity("bar", systemauth2.IntegrationSystemReference, objID, true),
+			fixEntity("foo", model.IntegrationSystemReference, objID, true),
+			fixEntity("bar", model.IntegrationSystemReference, objID, true),
 		}
 
 		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE integration_system_id = $1`
@@ -436,7 +436,7 @@ func TestRepository_ListForObject(t *testing.T) {
 		pgRepository := systemauth.NewRepository(&convMock)
 
 		// WHEN
-		result, err := pgRepository.ListForObjectGlobal(ctx, systemauth2.IntegrationSystemReference, objID)
+		result, err := pgRepository.ListForObjectGlobal(ctx, model.IntegrationSystemReference, objID)
 
 		// THEN
 		require.NoError(t, err)
@@ -470,7 +470,7 @@ func TestRepository_ListForObject(t *testing.T) {
 		pgRepository := systemauth.NewRepository(nil)
 
 		// WHEN
-		result, err := pgRepository.ListForObjectGlobal(ctx, systemauth2.IntegrationSystemReference, objID)
+		result, err := pgRepository.ListForObjectGlobal(ctx, model.IntegrationSystemReference, objID)
 
 		// THEN
 		require.Error(t, err)
@@ -483,13 +483,13 @@ func TestRepository_ListForObject(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
-		modelSysAuths := []*systemauth2.SystemAuth{
-			fixModelSystemAuth("foo", systemauth2.IntegrationSystemReference, objID, modelAuth),
-			fixModelSystemAuth("bar", systemauth2.IntegrationSystemReference, objID, modelAuth),
+		modelSysAuths := []*model.SystemAuth{
+			fixModelSystemAuth("foo", model.IntegrationSystemReference, objID, modelAuth),
+			fixModelSystemAuth("bar", model.IntegrationSystemReference, objID, modelAuth),
 		}
 		entSysAuths := []systemauth.Entity{
-			fixEntity("foo", systemauth2.IntegrationSystemReference, objID, true),
-			fixEntity("bar", systemauth2.IntegrationSystemReference, objID, true),
+			fixEntity("foo", model.IntegrationSystemReference, objID, true),
+			fixEntity("bar", model.IntegrationSystemReference, objID, true),
 		}
 
 		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE integration_system_id = $1`
@@ -513,11 +513,11 @@ func TestRepository_ListForObject(t *testing.T) {
 			}))
 
 		convMock := automock.Converter{}
-		convMock.On("FromEntity", entSysAuths[0]).Return(systemauth2.SystemAuth{}, testErr).Once()
+		convMock.On("FromEntity", entSysAuths[0]).Return(model.SystemAuth{}, testErr).Once()
 		pgRepository := systemauth.NewRepository(&convMock)
 
 		// WHEN
-		result, err := pgRepository.ListForObjectGlobal(ctx, systemauth2.IntegrationSystemReference, objID)
+		result, err := pgRepository.ListForObjectGlobal(ctx, model.IntegrationSystemReference, objID)
 
 		// THEN
 		require.Error(t, err)
@@ -543,7 +543,7 @@ func TestRepository_DeleteAllForObject(t *testing.T) {
 
 		repo := systemauth.NewRepository(nil)
 		// WHEN
-		err := repo.DeleteAllForObject(ctx, testTenant, systemauth2.RuntimeReference, sysAuthID)
+		err := repo.DeleteAllForObject(ctx, testTenant, model.RuntimeReference, sysAuthID)
 		// THEN
 		require.NoError(t, err)
 		dbMock.AssertExpectations(t)
@@ -560,7 +560,7 @@ func TestRepository_DeleteAllForObject(t *testing.T) {
 
 		repo := systemauth.NewRepository(nil)
 		// WHEN
-		err := repo.DeleteAllForObject(ctx, testTenant, systemauth2.ApplicationReference, sysAuthID)
+		err := repo.DeleteAllForObject(ctx, testTenant, model.ApplicationReference, sysAuthID)
 		// THEN
 		require.NoError(t, err)
 		dbMock.AssertExpectations(t)
@@ -577,7 +577,7 @@ func TestRepository_DeleteAllForObject(t *testing.T) {
 
 		repo := systemauth.NewRepository(nil)
 		// WHEN
-		err := repo.DeleteAllForObject(ctx, "", systemauth2.IntegrationSystemReference, sysAuthID)
+		err := repo.DeleteAllForObject(ctx, "", model.IntegrationSystemReference, sysAuthID)
 		// THEN
 		require.NoError(t, err)
 		dbMock.AssertExpectations(t)
@@ -594,7 +594,7 @@ func TestRepository_DeleteAllForObject(t *testing.T) {
 
 		repo := systemauth.NewRepository(nil)
 		// WHEN
-		err := repo.DeleteAllForObject(ctx, testTenant, systemauth2.RuntimeReference, sysAuthID)
+		err := repo.DeleteAllForObject(ctx, testTenant, model.RuntimeReference, sysAuthID)
 		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
@@ -629,7 +629,7 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 
 		repo := systemauth.NewRepository(nil)
 		// WHEN
-		err := repo.DeleteByIDForObject(ctx, testTenant, sysAuthID, systemauth2.ApplicationReference)
+		err := repo.DeleteByIDForObject(ctx, testTenant, sysAuthID, model.ApplicationReference)
 		// THEN
 		require.NoError(t, err)
 		dbMock.AssertExpectations(t)
@@ -646,7 +646,7 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 
 		repo := systemauth.NewRepository(nil)
 		// WHEN
-		err := repo.DeleteByIDForObject(ctx, testTenant, sysAuthID, systemauth2.RuntimeReference)
+		err := repo.DeleteByIDForObject(ctx, testTenant, sysAuthID, model.RuntimeReference)
 		// THEN
 		require.NoError(t, err)
 		dbMock.AssertExpectations(t)
@@ -663,7 +663,7 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 
 		repo := systemauth.NewRepository(nil)
 		// WHEN
-		err := repo.DeleteByIDForObjectGlobal(ctx, sysAuthID, systemauth2.IntegrationSystemReference)
+		err := repo.DeleteByIDForObjectGlobal(ctx, sysAuthID, model.IntegrationSystemReference)
 		// THEN
 		require.NoError(t, err)
 		dbMock.AssertExpectations(t)
@@ -680,7 +680,7 @@ func TestRepository_DeleteByIDForObject(t *testing.T) {
 
 		repo := systemauth.NewRepository(nil)
 		// WHEN
-		err := repo.DeleteByIDForObject(ctx, testTenant, sysAuthID, systemauth2.ApplicationReference)
+		err := repo.DeleteByIDForObject(ctx, testTenant, sysAuthID, model.ApplicationReference)
 		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
@@ -703,8 +703,8 @@ func TestRepository_Update(t *testing.T) {
 			WithArgs(testMarshalledSchema, sysAuthID, testTenant).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
-		modelSysAuth := fixModelSystemAuth("foo", systemauth2.RuntimeReference, objID, modelAuth)
-		entSysAuth := fixEntity(sysAuthID, systemauth2.RuntimeReference, objID, true)
+		modelSysAuth := fixModelSystemAuth("foo", model.RuntimeReference, objID, modelAuth)
+		entSysAuth := fixEntity(sysAuthID, model.RuntimeReference, objID, true)
 
 		convMock := &automock.Converter{}
 		convMock.On("ToEntity", *modelSysAuth).Return(entSysAuth, nil).Once()
@@ -729,8 +729,8 @@ func TestRepository_Update(t *testing.T) {
 			WithArgs(testMarshalledSchema, sysAuthID, testTenant).
 			WillReturnError(testErr)
 
-		modelSysAuth := fixModelSystemAuth("foo", systemauth2.RuntimeReference, objID, modelAuth)
-		entSysAuth := fixEntity(sysAuthID, systemauth2.RuntimeReference, objID, true)
+		modelSysAuth := fixModelSystemAuth("foo", model.RuntimeReference, objID, modelAuth)
+		entSysAuth := fixEntity(sysAuthID, model.RuntimeReference, objID, true)
 
 		convMock := &automock.Converter{}
 		convMock.On("ToEntity", *modelSysAuth).Return(entSysAuth, nil).Once()
@@ -760,7 +760,7 @@ func TestRepository_Update(t *testing.T) {
 
 	t.Run("error when converter returns error", func(t *testing.T) {
 		// GIVEN
-		modelSysAuth := fixModelSystemAuth("foo", systemauth2.RuntimeReference, objID, modelAuth)
+		modelSysAuth := fixModelSystemAuth("foo", model.RuntimeReference, objID, modelAuth)
 		convMock := &automock.Converter{}
 		convMock.On("ToEntity", *modelSysAuth).Return(systemauth.Entity{}, testErr).Once()
 		repo := systemauth.NewRepository(convMock)
@@ -808,7 +808,7 @@ func TestRepository_GetByJSONValue(t *testing.T) {
 
 		saID := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 		objectID := "cccccccc-cccc-cccc-cccc-cccccccccccc"
-		saEntity := fixEntity(saID, systemauth2.RuntimeReference, objectID, true)
+		saEntity := fixEntity(saID, model.RuntimeReference, objectID, true)
 
 		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE value @> $1`
 		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "runtime_id", "integration_system_id", "value"}).
@@ -818,7 +818,7 @@ func TestRepository_GetByJSONValue(t *testing.T) {
 			WithArgs("{\"key\":\"value\"}").
 			WillReturnRows(rows)
 		convMock := &automock.Converter{}
-		convMock.On("FromEntity", saEntity).Return(systemauth2.SystemAuth{}, testErr).Once()
+		convMock.On("FromEntity", saEntity).Return(model.SystemAuth{}, testErr).Once()
 		repo := systemauth.NewRepository(convMock)
 
 		// WHEN
@@ -841,7 +841,7 @@ func TestRepository_GetByJSONValue(t *testing.T) {
 
 		saID := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 		objectID := "cccccccc-cccc-cccc-cccc-cccccccccccc"
-		saEntity := fixEntity(saID, systemauth2.RuntimeReference, objectID, true)
+		saEntity := fixEntity(saID, model.RuntimeReference, objectID, true)
 
 		query := `SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE value @> $1`
 		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "runtime_id", "integration_system_id", "value"}).
@@ -851,7 +851,7 @@ func TestRepository_GetByJSONValue(t *testing.T) {
 			WithArgs("{\"key\":\"value\"}").
 			WillReturnRows(rows)
 		convMock := &automock.Converter{}
-		expectedModel := systemauth2.SystemAuth{}
+		expectedModel := model.SystemAuth{}
 		convMock.On("FromEntity", saEntity).Return(expectedModel, nil).Once()
 		repo := systemauth.NewRepository(convMock)
 

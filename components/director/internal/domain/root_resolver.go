@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
-	systemauth2 "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+	systemauthmodel "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
@@ -695,19 +695,19 @@ func (r *mutationResolver) RequestClientCredentialsForIntegrationSystem(ctx cont
 
 // DeleteSystemAuthForRuntime missing godoc
 func (r *mutationResolver) DeleteSystemAuthForRuntime(ctx context.Context, authID string) (graphql.SystemAuth, error) {
-	fn := r.systemAuth.GenericDeleteSystemAuth(systemauth2.RuntimeReference)
+	fn := r.systemAuth.GenericDeleteSystemAuth(systemauthmodel.RuntimeReference)
 	return fn(ctx, authID)
 }
 
 // DeleteSystemAuthForApplication missing godoc
 func (r *mutationResolver) DeleteSystemAuthForApplication(ctx context.Context, authID string) (graphql.SystemAuth, error) {
-	fn := r.systemAuth.GenericDeleteSystemAuth(systemauth2.ApplicationReference)
+	fn := r.systemAuth.GenericDeleteSystemAuth(systemauthmodel.ApplicationReference)
 	return fn(ctx, authID)
 }
 
 // DeleteSystemAuthForIntegrationSystem missing godoc
 func (r *mutationResolver) DeleteSystemAuthForIntegrationSystem(ctx context.Context, authID string) (graphql.SystemAuth, error) {
-	fn := r.systemAuth.GenericDeleteSystemAuth(systemauth2.IntegrationSystemReference)
+	fn := r.systemAuth.GenericDeleteSystemAuth(systemauthmodel.IntegrationSystemReference)
 	return fn(ctx, authID)
 }
 
@@ -1001,21 +1001,17 @@ func (r *tenantResolver) Labels(ctx context.Context, obj *graphql.Tenant, key *s
 	return r.tenant.Labels(ctx, obj, key)
 }
 
-// TenantByExternalID missing godoc
+// TenantByExternalID returns a tenant by external ID
 func (r *queryResolver) TenantByExternalID(ctx context.Context, id string) (*graphql.Tenant, error) {
 	return r.tenant.Tenant(ctx, id)
 }
 
-// TenantByInternalID fetches а tenant by an internal id
+// TenantByInternalID returns а tenant by an internal ID
 func (r *queryResolver) TenantByInternalID(ctx context.Context, id string) (*graphql.Tenant, error) {
 	return r.tenant.TenantByID(ctx, id)
 }
 
-// TenantByLowestOwnerForResource fetches а tenant by an internal id
+// TenantByLowestOwnerForResource returns the lowest tenant in the hierarchy that is owner of a given resource.
 func (r *queryResolver) TenantByLowestOwnerForResource(ctx context.Context, resource, objectID string) (string, error) {
 	return r.tenant.TenantByLowestOwnerForResource(ctx, resource, objectID)
-}
-
-type systemAuthResolver struct {
-	*RootResolver
 }
