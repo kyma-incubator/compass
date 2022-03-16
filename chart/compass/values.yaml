@@ -666,6 +666,7 @@ global:
     auditlog:
       applyMockConfiguration: false
       managementApiPath: /audit-log/v2/configuration-changes/search
+      mtlsTokenPath: "/cert/token"
       secret:
         name: "auditlog-instance-management"
         urlKey: url
