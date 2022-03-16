@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 	"net/http"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 

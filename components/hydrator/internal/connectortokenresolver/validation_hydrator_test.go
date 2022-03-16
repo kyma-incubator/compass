@@ -8,6 +8,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	connector "github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/connectortokenresolver"
@@ -103,20 +107,26 @@ func TestValidationHydrator_ServeHTTP(t *testing.T) {
 
 	t.Run("should fail when invalidating token fails", func(t *testing.T) {
 		// GIVEN
-		systemAuth := graphql.AppSystemAuth{
-			ID: clientID,
-			Auth: &graphql.Auth{
-				OneTimeToken: &graphql.OneTimeTokenForApplication{
-					TokenWithURL: graphql.TokenWithURL{
-						Type: "Runtime",
-					},
+		gqlAuth := &graphql.Auth{
+			OneTimeToken: &graphql.OneTimeTokenForApplication{
+				TokenWithURL: graphql.TokenWithURL{
+					Type: "Runtime",
 				},
 			},
+			CertCommonName: str.Ptr(""),
+		}
+
+		modelAuth, err := auth.ToModel(gqlAuth)
+		require.NoError(t, err)
+
+		sysAuth := &systemauth.SystemAuth{
+			ID:    clientID,
+			Value: modelAuth,
 		}
 
 		directorClientMock := &automock.Client{}
-		directorClientMock.On("GetSystemAuthByToken", mock.Anything, token).Return(systemAuth, nil).Once()
-		directorClientMock.On("InvalidateSystemAuthOneTimeToken", mock.Anything, clientID).Return(nil, errors.New("error when invalidating the token"))
+		directorClientMock.On("GetSystemAuthByToken", mock.Anything, token).Return(sysAuth, nil).Once()
+		directorClientMock.On("InvalidateSystemAuthOneTimeToken", mock.Anything, clientID).Return(errors.New("error when invalidating the token"))
 
 		validationHydrator := connectortokenresolver.NewValidationHydrator(directorClientMock)
 		authenticationSession := connector.AuthenticationSession{}
@@ -132,22 +142,28 @@ func TestValidationHydrator_ServeHTTP(t *testing.T) {
 
 	t.Run("should succeed when token is resolved successfully", func(t *testing.T) {
 		// GIVEN
-		systemAuth := graphql.AppSystemAuth{
-			ID: clientID,
-			Auth: &graphql.Auth{
-				OneTimeToken: &graphql.OneTimeTokenForApplication{
-					TokenWithURL: graphql.TokenWithURL{
-						Type: "Runtime",
-					},
+		gqlAuth := &graphql.Auth{
+			OneTimeToken: &graphql.OneTimeTokenForApplication{
+				TokenWithURL: graphql.TokenWithURL{
+					Type: "Runtime",
 				},
 			},
+			CertCommonName: str.Ptr(""),
+		}
+
+		modelAuth, err := auth.ToModel(gqlAuth)
+		require.NoError(t, err)
+
+		sysAuth := &systemauth.SystemAuth{
+			ID:    clientID,
+			Value: modelAuth,
 		}
 
 		directorClientMock := &automock.Client{}
 
 		validationHydrator := connectortokenresolver.NewValidationHydrator(directorClientMock)
-		directorClientMock.On("GetSystemAuthByToken", mock.Anything, token).Return(systemAuth, nil).Once()
-		directorClientMock.On("InvalidateSystemAuthOneTimeToken", mock.Anything, clientID).Return(systemAuth, nil)
+		directorClientMock.On("GetSystemAuthByToken", mock.Anything, token).Return(sysAuth, nil).Once()
+		directorClientMock.On("InvalidateSystemAuthOneTimeToken", mock.Anything, clientID).Return(nil)
 
 		authenticationSession := connector.AuthenticationSession{}
 		req := createAuthRequestWithTokenQueryParam(t, authenticationSession, token)
@@ -159,7 +175,7 @@ func TestValidationHydrator_ServeHTTP(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		var authSession connector.AuthenticationSession
-		err := json.NewDecoder(w.Body).Decode(&authSession)
+		err = json.NewDecoder(w.Body).Decode(&authSession)
 		require.NoError(t, err)
 
 		assert.Equal(t, []string{clientID}, authSession.Header[connector.ClientIdFromTokenHeader])

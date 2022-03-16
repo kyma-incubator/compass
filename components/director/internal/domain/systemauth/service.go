@@ -2,8 +2,9 @@ package systemauth
 
 import (
 	"context"
-	model2 "github.com/kyma-incubator/compass/components/director/internal/model"
 	"time"
+
+	model2 "github.com/kyma-incubator/compass/components/director/internal/model"
 
 	model "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 

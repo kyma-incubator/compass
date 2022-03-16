@@ -2,8 +2,9 @@ package scopes
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 

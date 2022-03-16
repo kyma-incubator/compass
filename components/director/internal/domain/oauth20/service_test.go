@@ -3,8 +3,9 @@ package oauth20_test
 import (
 	"context"
 	"errors"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 

@@ -139,7 +139,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 		},
 		{
 			Name:           "Error when can't get required scopes",
-			DirectorClient: unusedTenantRepo,
+			DirectorClient: unusedDirectorClient,
 			ScopesGetterFn: func() *automock.ScopesGetter {
 				scopesGetter := &automock.ScopesGetter{}
 				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(nil, testError)
@@ -219,6 +219,6 @@ func TestCertServiceContextProviderMatch(t *testing.T) {
 	})
 }
 
-func unusedTenantRepo() *automock.DirectorClient {
+func unusedDirectorClient() *automock.DirectorClient {
 	return &automock.DirectorClient{}
 }

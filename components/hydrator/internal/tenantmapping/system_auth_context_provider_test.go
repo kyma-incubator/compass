@@ -8,6 +8,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
@@ -29,10 +32,10 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		expectedTenantID := uuid.New()
 		expectedScopes := []string{"application:read"}
 
-		sysAuth := graphql.AppSystemAuth{
-			ID:                authID.String(),
-			TenantID:          str.Ptr(expectedTenantID.String()),
-			ReferenceObjectID: str.Ptr(refObjID.String()),
+		sysAuth := &systemauth.SystemAuth{
+			ID:       authID.String(),
+			TenantID: str.Ptr(expectedTenantID.String()),
+			AppID:    str.Ptr(refObjID.String()),
 		}
 
 		reqData := oathkeeper.ReqData{}
@@ -65,10 +68,10 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		expectedExternalTenantID := uuid.New().String()
 		expectedScopes := "application:read"
 
-		sysAuth := graphql.IntSysSystemAuth{
-			ID:                authID.String(),
-			TenantID:          str.Ptr(expectedTenantID.String()),
-			ReferenceObjectID: str.Ptr(refObjID.String()),
+		sysAuth := &systemauth.SystemAuth{
+			ID:                  authID.String(),
+			TenantID:            str.Ptr(expectedTenantID.String()),
+			IntegrationSystemID: str.Ptr(refObjID.String()),
 		}
 
 		testTenant := &graphql.Tenant{
@@ -110,10 +113,10 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		expectedTenantID := uuid.New()
 		expectedScopes := "application:read"
 
-		sysAuth := graphql.AppSystemAuth{
-			ID:                authID.String(),
-			TenantID:          str.Ptr(expectedTenantID.String()),
-			ReferenceObjectID: str.Ptr(refObjID.String()),
+		sysAuth := &systemauth.SystemAuth{
+			ID:       authID.String(),
+			TenantID: str.Ptr(expectedTenantID.String()),
+			AppID:    str.Ptr(refObjID.String()),
 		}
 
 		reqData := oathkeeper.ReqData{
@@ -148,29 +151,38 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		expectedTenantID := uuid.New()
 		expectedScopes := []string{"application:read"}
 
-		sysAuth := graphql.AppSystemAuth{
-			ID:                authID.String(),
-			TenantID:          str.Ptr(expectedTenantID.String()),
-			ReferenceObjectID: str.Ptr(refObjID.String()),
-			Auth: &graphql.Auth{
-				OneTimeToken: &graphql.OneTimeTokenForApplication{
-					TokenWithURL: graphql.TokenWithURL{
-						Token: "token",
-					},
+		authData := &graphql.Auth{
+			OneTimeToken: &graphql.OneTimeTokenForApplication{
+				TokenWithURL: graphql.TokenWithURL{
+					Token: "token",
 				},
 			},
+			CertCommonName: str.Ptr(""),
 		}
 
-		updatedAuth := &graphql.Auth{
-			Credential:                      nil,
-			AccessStrategy:                  nil,
-			AdditionalHeaders:               nil,
-			AdditionalQueryParamsSerialized: nil,
-			AdditionalQueryParams:           nil,
-			AdditionalHeadersSerialized:     nil,
-			RequestAuth:                     nil,
-			OneTimeToken:                    nil,
-			CertCommonName:                  str.Ptr(authID.String()),
+		authDataUpdated := &graphql.Auth{
+			OneTimeToken:   nil,
+			CertCommonName: str.Ptr(authID.String()),
+		}
+
+		authDataUpdatedValue, err := auth.ToModel(authDataUpdated)
+		require.NoError(t, err)
+
+		sysAuthValue, err := auth.ToModel(authData)
+		require.NoError(t, err)
+
+		sysAuth := &systemauth.SystemAuth{
+			ID:       authID.String(),
+			TenantID: str.Ptr(expectedTenantID.String()),
+			AppID:    str.Ptr(refObjID.String()),
+			Value:    sysAuthValue,
+		}
+
+		sysAuthUpdate := &systemauth.SystemAuth{
+			ID:       authID.String(),
+			TenantID: str.Ptr(expectedTenantID.String()),
+			AppID:    str.Ptr(refObjID.String()),
+			Value:    authDataUpdatedValue,
 		}
 
 		reqData := oathkeeper.ReqData{
@@ -183,7 +195,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 
 		directorClientMock := getDirectorClientMock()
 		directorClientMock.On("GetSystemAuthByID", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
-		directorClientMock.On("UpdateSystemAuth", mock.Anything, sysAuth.ID, *updatedAuth).Return(director.UpdateAuthResult{}, nil).Once()
+		directorClientMock.On("UpdateSystemAuth", mock.Anything, sysAuthUpdate).Return(director.UpdateAuthResult{}, nil).Once()
 
 		scopesGetterMock := getScopesGetterMock()
 		scopesGetterMock.On("GetRequiredScopes", "scopesPerConsumerType.application").Return(expectedScopes, nil).Once()
@@ -209,7 +221,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		reqData := oathkeeper.ReqData{}
 
 		directorClientMock := getDirectorClientMock()
-		directorClientMock.On("GetSystemAuthByID", mock.Anything, authID.String()).Return(&graphql.AppSystemAuth{}, errors.New("some-error")).Once()
+		directorClientMock.On("GetSystemAuthByID", mock.Anything, authID.String()).Return(nil, errors.New("some-error")).Once()
 
 		provider := tenantmapping.NewSystemAuthContextProvider(directorClientMock, nil)
 		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
@@ -223,9 +235,9 @@ func TestSystemAuthContextProvider(t *testing.T) {
 
 	t.Run("returns error when unable to get the ReferenceObjectType of underlying SystemAuth", func(t *testing.T) {
 		authID := uuid.New()
-		sysAuth := &graphql.AppSystemAuth{
-			Type: nil,
-			ID:   "42",
+
+		sysAuth := &systemauth.SystemAuth{
+			ID: authID.String(),
 		}
 
 		reqData := oathkeeper.ReqData{}
@@ -238,7 +250,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
-		errFormatted := fmt.Sprintf("could not determine system auth type for system auth with id %s", authID)
+		errFormatted := fmt.Sprintf("unknown reference object type for system auth with id %s", authID)
 		require.EqualError(t, err, errFormatted)
 
 		mock.AssertExpectationsForObjects(t, directorClientMock)
@@ -248,10 +260,11 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 
-		sysAuth := graphql.IntSysSystemAuth{
-			ID:                authID.String(),
-			ReferenceObjectID: str.Ptr(refObjID.String()),
+		sysAuth := &systemauth.SystemAuth{
+			ID:                  authID.String(),
+			IntegrationSystemID: str.Ptr(refObjID.String()),
 		}
+
 		reqData := oathkeeper.ReqData{}
 
 		directorClientMock := getDirectorClientMock()
@@ -271,10 +284,10 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 
-		sysAuth := graphql.AppSystemAuth{
-			ID:                authID.String(),
-			TenantID:          str.Ptr("123"),
-			ReferenceObjectID: str.Ptr(refObjID.String()),
+		sysAuth := &systemauth.SystemAuth{
+			ID:       authID.String(),
+			TenantID: str.Ptr("123"),
+			AppID:    str.Ptr(refObjID.String()),
 		}
 
 		reqData := oathkeeper.ReqData{
@@ -306,10 +319,10 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		tenant1ID := uuid.New()
 		tenant2ID := uuid.New()
 
-		sysAuth := graphql.AppSystemAuth{
-			ID:                authID.String(),
-			TenantID:          str.Ptr(tenant1ID.String()),
-			ReferenceObjectID: str.Ptr(refObjID.String()),
+		sysAuth := &systemauth.SystemAuth{
+			ID:        authID.String(),
+			TenantID:  str.Ptr(tenant1ID.String()),
+			RuntimeID: str.Ptr(refObjID.String()),
 		}
 
 		testTenant := &graphql.Tenant{
@@ -344,9 +357,10 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 		tenant2ID := uuid.New()
-		sysAuth := graphql.AppSystemAuth{
-			ID:                authID.String(),
-			ReferenceObjectID: str.Ptr(refObjID.String()),
+
+		sysAuth := &systemauth.SystemAuth{
+			ID:    authID.String(),
+			AppID: str.Ptr(refObjID.String()),
 		}
 		reqData := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
@@ -375,10 +389,10 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		refObjID := uuid.New()
 		tenant1ID := uuid.New()
 
-		sysAuth := graphql.AppSystemAuth{
-			ID:                authID.String(),
-			TenantID:          str.Ptr(tenant1ID.String()),
-			ReferenceObjectID: str.Ptr(refObjID.String()),
+		sysAuth := &systemauth.SystemAuth{
+			ID:       authID.String(),
+			TenantID: str.Ptr(tenant1ID.String()),
+			AppID:    str.Ptr(refObjID.String()),
 		}
 		reqData := oathkeeper.ReqData{}
 
@@ -399,10 +413,10 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 		expectedTenantID := uuid.New()
-		sysAuth := graphql.AppSystemAuth{
-			ID:                authID.String(),
-			TenantID:          str.Ptr(expectedTenantID.String()),
-			ReferenceObjectID: str.Ptr(refObjID.String()),
+		sysAuth := &systemauth.SystemAuth{
+			ID:       authID.String(),
+			TenantID: str.Ptr(expectedTenantID.String()),
+			AppID:    str.Ptr(refObjID.String()),
 		}
 		reqData := oathkeeper.ReqData{}
 

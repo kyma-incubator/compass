@@ -2,6 +2,7 @@ package systemauth_test
 
 import (
 	"database/sql/driver"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	systemauthmodel "github.com/kyma-incubator/compass/components/director/pkg/systemauth"

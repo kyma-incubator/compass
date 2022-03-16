@@ -3,6 +3,7 @@ package auth
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
 )
 
@@ -170,7 +171,7 @@ func ToModel(in *graphql.Auth) (*model.Auth, error) {
 		AdditionalHeaders:     headers,
 		AdditionalQueryParams: params,
 		RequestAuth:           requestAuthToModel(in.RequestAuth),
-		CertCommonName:        *in.CertCommonName,
+		CertCommonName:        str.PtrStrToStr(in.CertCommonName),
 	}, nil
 }
 

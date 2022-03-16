@@ -49,8 +49,8 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 	internalSubaccount := "internalSubaccountID"
 
 	testSubaccount := &graphql.Tenant{
-		ID:   internalSubaccount,
-		Type: "subaccount",
+		InternalID: internalSubaccount,
+		Type:       "subaccount",
 	}
 
 	testAccount := &graphql.Tenant{

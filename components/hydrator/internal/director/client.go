@@ -2,8 +2,10 @@ package director
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+	"fmt"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/retry"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -18,7 +20,7 @@ type Client interface {
 	GetSystemAuthByID(ctx context.Context, authID string) (*systemauth.SystemAuth, error)
 	GetSystemAuthByToken(ctx context.Context, token string) (*systemauth.SystemAuth, error)
 	UpdateSystemAuth(ctx context.Context, sysAuth *systemauth.SystemAuth) (UpdateAuthResult, error)
-	InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (*systemauth.SystemAuth, error)
+	InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) error
 	GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (*schema.Runtime, error)
 }
 
@@ -115,6 +117,11 @@ func (c *client) GetSystemAuthByID(ctx context.Context, authID string) (*systema
 		return nil, err
 	}
 
+	fmt.Printf("ALEX GetSystemAuthByID 0\n")
+	if response.Result != nil {
+		fmt.Printf("ALEX GetSystemAuthByID 1 Type: '%+v' \n", response.Result.Type)
+	}
+
 	sysAuth, err := c.sysAuthConv.GraphQLToModel(response.Result)
 	if err != nil {
 		return nil, err
@@ -135,6 +142,11 @@ func (c *client) GetSystemAuthByToken(ctx context.Context, token string) (*syste
 	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
 		return nil, err
+	}
+
+	fmt.Printf("ALEX GetSystemAuthByToken 0\n")
+	if response.Result != nil {
+		fmt.Printf("ALEX GetSystemAuthByToken 1 Type: '%+v' \n", response.Result.Type)
 	}
 
 	sysAuth, err := c.sysAuthConv.GraphQLToModel(response.Result)
@@ -161,22 +173,27 @@ func (c *client) UpdateSystemAuth(ctx context.Context, sysAuth *systemauth.Syste
 	return response.Result, nil
 }
 
-func (c *client) InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (*systemauth.SystemAuth, error) {
+func (c *client) InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) error {
 	query := InvalidateSystemAuthOneTimeTokenQuery(authID)
 
 	var response SystemAuthResponse1
 
 	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	sysAuth, err := c.sysAuthConv.GraphQLToModel(response.Result)
-	if err != nil {
-		return nil, err
-	}
+	//fmt.Printf("ALEX InvalidateSystemAuthOneTimeToken 0\n")
+	//if response.Result != nil {
+	//	fmt.Printf("ALEX InvalidateSystemAuthOneTimeToken 1 Type: '%+v' \n", response.Result.Type)
+	//}
 
-	return sysAuth, nil
+	//sysAuth, err := c.sysAuthConv.GraphQLToModel(response.Result)
+	//if err != nil {
+	//	return nil, err
+	//}
+
+	return nil
 }
 
 func (c *client) GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (*schema.Runtime, error) {

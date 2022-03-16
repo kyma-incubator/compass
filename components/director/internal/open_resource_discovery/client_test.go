@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 

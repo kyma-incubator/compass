@@ -2,9 +2,10 @@ package director
 
 import (
 	"crypto/tls"
-	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	gcli "github.com/machinebox/graphql"

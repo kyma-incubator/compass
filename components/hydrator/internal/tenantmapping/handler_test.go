@@ -11,6 +11,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping/automock"
+	tenantmappingconsts "github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 
@@ -81,7 +82,7 @@ func TestHandler(t *testing.T) {
 		userMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetails).Return(objCtxMock, nil).Once()
 
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-			tenantmapping.UserObjectContextProvider: userMockContextProvider,
+			tenantmappingconsts.UserObjectContextProvider: userMockContextProvider,
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
@@ -137,7 +138,7 @@ func TestHandler(t *testing.T) {
 			ConsumerID:      username,
 			AuthFlow:        oathkeeper.JWTAuthFlow,
 			ConsumerType:    "Static User",
-			ContextProvider: tenantmapping.AuthenticatorObjectContextProvider,
+			ContextProvider: tenantmappingconsts.AuthenticatorObjectContextProvider,
 		}
 		authn := []authenticator.Config{
 			{
@@ -172,7 +173,7 @@ func TestHandler(t *testing.T) {
 		authenticatorMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetailsWithAuthenticator).Return(objCtxMock, nil).Once()
 
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-			tenantmapping.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
+			tenantmappingconsts.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
@@ -228,7 +229,7 @@ func TestHandler(t *testing.T) {
 			ConsumerID:      username,
 			AuthFlow:        oathkeeper.JWTAuthFlow,
 			ConsumerType:    "Static User",
-			ContextProvider: tenantmapping.AuthenticatorObjectContextProvider,
+			ContextProvider: tenantmappingconsts.AuthenticatorObjectContextProvider,
 		}
 		authn := []authenticator.Config{
 			{
@@ -260,7 +261,7 @@ func TestHandler(t *testing.T) {
 		userMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetailsWithAuthenticator).Return(objCtxMock, nil).Once()
 
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-			tenantmapping.AuthenticatorObjectContextProvider: userMockContextProvider,
+			tenantmappingconsts.AuthenticatorObjectContextProvider: userMockContextProvider,
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
@@ -319,7 +320,7 @@ func TestHandler(t *testing.T) {
 		userMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetails).Return(objCtxMock, nil).Once()
 
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-			tenantmapping.UserObjectContextProvider: userMockContextProvider,
+			tenantmappingconsts.UserObjectContextProvider: userMockContextProvider,
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
@@ -376,7 +377,7 @@ func TestHandler(t *testing.T) {
 		systemAuthMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, oAuthAuthDetails).Return(objCtx, nil).Once()
 
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-			tenantmapping.SystemAuthObjectContextProvider: systemAuthMockContextProvider,
+			tenantmappingconsts.SystemAuthObjectContextProvider: systemAuthMockContextProvider,
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
@@ -435,7 +436,7 @@ func TestHandler(t *testing.T) {
 		systemAuthMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, certAuthDetails).Return(objCtx, nil).Once()
 
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-			tenantmapping.SystemAuthObjectContextProvider: systemAuthMockContextProvider,
+			tenantmappingconsts.SystemAuthObjectContextProvider: systemAuthMockContextProvider,
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
@@ -492,7 +493,7 @@ func TestHandler(t *testing.T) {
 		certServiceMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, externalCertAuthDetails).Return(objCtx, nil).Once()
 
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-			tenantmapping.CertServiceObjectContextProvider: certServiceMockContextProvider,
+			tenantmappingconsts.CertServiceObjectContextProvider: certServiceMockContextProvider,
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
@@ -550,7 +551,7 @@ func TestHandler(t *testing.T) {
 		systemAuthMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, oneTimeTokenAuthDetails).Return(objCtx, nil).Once()
 
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-			tenantmapping.SystemAuthObjectContextProvider: systemAuthMockContextProvider,
+			tenantmappingconsts.SystemAuthObjectContextProvider: systemAuthMockContextProvider,
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
@@ -612,7 +613,7 @@ func TestHandler(t *testing.T) {
 			ConsumerID:      externalTenantID,
 			AuthFlow:        oathkeeper.CertificateFlow,
 			ConsumerType:    consumer.Runtime,
-			ContextProvider: tenantmapping.CertServiceObjectContextProvider,
+			ContextProvider: tenantmappingconsts.CertServiceObjectContextProvider,
 		}
 
 		certServiceMockContextProvider := getMockContextProvider()
@@ -631,7 +632,7 @@ func TestHandler(t *testing.T) {
 			ConsumerID:      username,
 			AuthFlow:        oathkeeper.JWTAuthFlow,
 			ConsumerType:    "Static User",
-			ContextProvider: tenantmapping.AuthenticatorObjectContextProvider,
+			ContextProvider: tenantmappingconsts.AuthenticatorObjectContextProvider,
 		}
 		authn := []authenticator.Config{
 			{
@@ -664,8 +665,8 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-			tenantmapping.CertServiceObjectContextProvider:   certServiceMockContextProvider,
-			tenantmapping.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
+			tenantmappingconsts.CertServiceObjectContextProvider:   certServiceMockContextProvider,
+			tenantmappingconsts.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
@@ -724,7 +725,7 @@ func TestHandler(t *testing.T) {
 		userMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetails).Return(tenantmapping.ObjectContext{}, expectedError).Once()
 
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-			tenantmapping.UserObjectContextProvider: userMockContextProvider,
+			tenantmappingconsts.UserObjectContextProvider: userMockContextProvider,
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}

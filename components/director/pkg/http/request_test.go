@@ -5,11 +5,12 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/pkg/errors"
 
