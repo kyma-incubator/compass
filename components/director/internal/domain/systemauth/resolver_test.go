@@ -2,9 +2,8 @@ package systemauth_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"testing"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/stretchr/testify/assert"
@@ -30,9 +29,9 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 	objectID := "bar"
 	objectType := systemauthmodel.RuntimeReference
 	modelSystemAuth := fixModelSystemAuth(id, objectType, objectID, fixModelAuth())
-	oauthModelSystemAuth := fixModelSystemAuth(id, objectType, objectID, &auth.Auth{
-		Credential: auth.CredentialData{
-			Oauth: &auth.OAuthCredentialData{
+	oauthModelSystemAuth := fixModelSystemAuth(id, objectType, objectID, &model.Auth{
+		Credential: model.CredentialData{
+			Oauth: &model.OAuthCredentialData{
 				ClientID:     "clientid",
 				ClientSecret: "clientsecret",
 				URL:          "foo.bar/token",

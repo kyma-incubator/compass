@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	"github.com/google/uuid"
@@ -2276,10 +2274,10 @@ func fixOAuths() []systemauth.SystemAuth {
 		{
 			ID:       "foo",
 			TenantID: str.Ptr("foo"),
-			Value: &auth.Auth{
-				Credential: auth.CredentialData{
+			Value: &model.Auth{
+				Credential: model.CredentialData{
 					Basic: nil,
-					Oauth: &auth.OAuthCredentialData{
+					Oauth: &model.OAuthCredentialData{
 						ClientID:     "foo",
 						ClientSecret: "foo",
 						URL:          "foo",
@@ -2295,9 +2293,9 @@ func fixOAuths() []systemauth.SystemAuth {
 		{
 			ID:       "test",
 			TenantID: str.Ptr("test"),
-			Value: &auth.Auth{
-				Credential: auth.CredentialData{
-					Basic: &auth.BasicCredentialData{
+			Value: &model.Auth{
+				Credential: model.CredentialData{
+					Basic: &model.BasicCredentialData{
 						Username: "test",
 						Password: "test",
 					},

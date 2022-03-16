@@ -3,8 +3,7 @@ package systemauth
 import (
 	"database/sql"
 	"encoding/json"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
@@ -17,8 +16,8 @@ import (
 // AuthConverter missing godoc
 //go:generate mockery --name=AuthConverter --output=automock --outpkg=automock --case=underscore
 type AuthConverter interface {
-	ToGraphQL(in *auth.Auth) (*graphql.Auth, error)
-	ModelFromGraphQLInput(in graphql.AuthInput) (*auth.Auth, error)
+	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
+	ModelFromGraphQLInput(in graphql.AuthInput) (*model.Auth, error)
 }
 
 type converter struct {
@@ -105,9 +104,9 @@ func (c *converter) ToEntity(in systemauth.SystemAuth) (Entity, error) {
 
 // FromEntity missing godoc
 func (c *converter) FromEntity(in Entity) (systemauth.SystemAuth, error) {
-	var value *auth.Auth
+	var value *model.Auth
 	if in.Value.Valid {
-		var tmpAuth auth.Auth
+		var tmpAuth model.Auth
 		err := json.Unmarshal([]byte(in.Value.String), &tmpAuth)
 		if err != nil {
 			return systemauth.SystemAuth{}, err

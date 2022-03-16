@@ -4,8 +4,6 @@ import (
 	"database/sql/driver"
 	"errors"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -111,21 +109,21 @@ func fixGQLIntegrationSystemPage(intSystems []*graphql.IntegrationSystem) graphq
 	}
 }
 
-func fixModelAuth() *auth.Auth {
-	return &auth.Auth{
-		Credential: auth.CredentialData{
-			Basic: &auth.BasicCredentialData{
+func fixModelAuth() *model.Auth {
+	return &model.Auth{
+		Credential: model.CredentialData{
+			Basic: &model.BasicCredentialData{
 				Username: "foo",
 				Password: "bar",
 			},
 		},
 		AdditionalHeaders:     map[string][]string{"test": {"foo", "bar"}},
 		AdditionalQueryParams: map[string][]string{"test": {"foo", "bar"}},
-		RequestAuth: &auth.CredentialRequestAuth{
-			Csrf: &auth.CSRFTokenCredentialRequestAuth{
+		RequestAuth: &model.CredentialRequestAuth{
+			Csrf: &model.CSRFTokenCredentialRequestAuth{
 				TokenEndpointURL: "foo.url",
-				Credential: auth.CredentialData{
-					Basic: &auth.BasicCredentialData{
+				Credential: model.CredentialData{
+					Basic: &model.BasicCredentialData{
 						Username: "boo",
 						Password: "far",
 					},
@@ -159,7 +157,7 @@ func fixGQLAuth() *graphql.Auth {
 	}
 }
 
-func fixModelSystemAuth(id, intSysID string, auth *auth.Auth) systemauth.SystemAuth {
+func fixModelSystemAuth(id, intSysID string, auth *model.Auth) systemauth.SystemAuth {
 	return systemauth.SystemAuth{
 		ID:                  id,
 		TenantID:            nil,

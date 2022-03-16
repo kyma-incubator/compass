@@ -3,9 +3,8 @@ package oauth20_test
 import (
 	"context"
 	"errors"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"testing"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
@@ -32,7 +31,7 @@ var (
 
 func TestService_CreateClient(t *testing.T) {
 	// GIVEN
-	successResult := &auth.OAuthCredentialDataInput{
+	successResult := &model.OAuthCredentialDataInput{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		URL:          publicEndpoint,
@@ -41,7 +40,7 @@ func TestService_CreateClient(t *testing.T) {
 
 	testCases := []struct {
 		Name                       string
-		ExpectedResult             *auth.OAuthCredentialDataInput
+		ExpectedResult             *model.OAuthCredentialDataInput
 		ExpectedError              error
 		ClientDetailsCfgProviderFn func() *automock.ClientDetailsConfigProvider
 		UIDServiceFn               func() *automock.UIDService
@@ -320,9 +319,9 @@ func TestService_DeleteMultipleClientCredentials(t *testing.T) {
 			},
 			Auths: []systemauth.SystemAuth{
 				{
-					Value: &auth.Auth{
-						Credential: auth.CredentialData{
-							Oauth: &auth.OAuthCredentialData{
+					Value: &model.Auth{
+						Credential: model.CredentialData{
+							Oauth: &model.OAuthCredentialData{
 								ClientID: clientID,
 							},
 						},
@@ -350,8 +349,8 @@ func TestService_DeleteMultipleClientCredentials(t *testing.T) {
 			},
 			Auths: []systemauth.SystemAuth{
 				{
-					Value: &auth.Auth{
-						Credential: auth.CredentialData{
+					Value: &model.Auth{
+						Credential: model.CredentialData{
 							Oauth: nil,
 						},
 					},
@@ -368,9 +367,9 @@ func TestService_DeleteMultipleClientCredentials(t *testing.T) {
 			},
 			Auths: []systemauth.SystemAuth{
 				{
-					Value: &auth.Auth{
-						Credential: auth.CredentialData{
-							Oauth: &auth.OAuthCredentialData{
+					Value: &model.Auth{
+						Credential: model.CredentialData{
+							Oauth: &model.OAuthCredentialData{
 								ClientID: clientID,
 							},
 						},

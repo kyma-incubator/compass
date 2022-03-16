@@ -3,7 +3,7 @@
 package automock
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	graphql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -14,15 +14,15 @@ type AuthConverter struct {
 }
 
 // InputFromGraphQL provides a mock function with given fields: in
-func (_m *AuthConverter) InputFromGraphQL(in *graphql.AuthInput) (*auth.AuthInput, error) {
+func (_m *AuthConverter) InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, error) {
 	ret := _m.Called(in)
 
-	var r0 *auth.AuthInput
-	if rf, ok := ret.Get(0).(func(*graphql.AuthInput) *auth.AuthInput); ok {
+	var r0 *model.AuthInput
+	if rf, ok := ret.Get(0).(func(*graphql.AuthInput) *model.AuthInput); ok {
 		r0 = rf(in)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*auth.AuthInput)
+			r0 = ret.Get(0).(*model.AuthInput)
 		}
 	}
 
@@ -37,11 +37,11 @@ func (_m *AuthConverter) InputFromGraphQL(in *graphql.AuthInput) (*auth.AuthInpu
 }
 
 // ToGraphQL provides a mock function with given fields: in
-func (_m *AuthConverter) ToGraphQL(in *auth.Auth) (*graphql.Auth, error) {
+func (_m *AuthConverter) ToGraphQL(in *model.Auth) (*graphql.Auth, error) {
 	ret := _m.Called(in)
 
 	var r0 *graphql.Auth
-	if rf, ok := ret.Get(0).(func(*auth.Auth) *graphql.Auth); ok {
+	if rf, ok := ret.Get(0).(func(*model.Auth) *graphql.Auth); ok {
 		r0 = rf(in)
 	} else {
 		if ret.Get(0) != nil {
@@ -50,7 +50,7 @@ func (_m *AuthConverter) ToGraphQL(in *auth.Auth) (*graphql.Auth, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(*auth.Auth) error); ok {
+	if rf, ok := ret.Get(1).(func(*model.Auth) error); ok {
 		r1 = rf(in)
 	} else {
 		r1 = ret.Error(1)

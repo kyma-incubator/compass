@@ -3,8 +3,6 @@ package model
 import (
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
@@ -12,7 +10,7 @@ import (
 type FetchRequest struct {
 	ID         string
 	URL        string
-	Auth       *auth.Auth
+	Auth       *Auth
 	Mode       FetchMode
 	Filter     *string
 	Status     *FetchRequestStatus
@@ -79,7 +77,7 @@ const (
 // FetchRequestInput represents the input for creating a fetch request.
 type FetchRequestInput struct {
 	URL    string
-	Auth   *auth.AuthInput
+	Auth   *AuthInput
 	Mode   *FetchMode
 	Filter *string
 }

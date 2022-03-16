@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
@@ -97,7 +96,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 
 	testCases := []struct {
 		Name                 string
-		Credentials          *auth.Auth
+		Credentials          *model.Auth
 		AccessStrategy       string
 		RoundTripFunc        func(req *http.Request) *http.Response
 		ExecutorProviderFunc func() accessstrategy.ExecutorProvider
@@ -142,9 +141,9 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		},
 		{
 			Name: "Success with secured system type configured and basic credentials",
-			Credentials: &auth.Auth{
-				Credential: auth.CredentialData{
-					Basic: &auth.BasicCredentialData{
+			Credentials: &model.Auth{
+				Credential: model.CredentialData{
+					Basic: &model.BasicCredentialData{
 						Username: "user",
 						Password: "pass",
 					},
@@ -158,9 +157,9 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		},
 		{
 			Name: "Success with secured system type configured and oauth credentials",
-			Credentials: &auth.Auth{
-				Credential: auth.CredentialData{
-					Oauth: &auth.OAuthCredentialData{
+			Credentials: &model.Auth{
+				Credential: model.CredentialData{
+					Oauth: &model.OAuthCredentialData{
 						ClientID:     "client-id",
 						ClientSecret: "client-secret",
 						URL:          "url",
@@ -225,8 +224,8 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		{
 			Name:        "Error fetching well-known config due to missing basic credentials",
 			ExpectedErr: errors.New("error while fetching open resource discovery well-known configuration with webhook credentials: Invalid data [reason=Credentials not provided]"),
-			Credentials: &auth.Auth{
-				Credential: auth.CredentialData{
+			Credentials: &model.Auth{
+				Credential: model.CredentialData{
 					Basic: nil,
 				},
 			},
@@ -234,17 +233,17 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 		{
 			Name:        "Error fetching well-known config due to missing oauth credentials",
 			ExpectedErr: errors.New("error while fetching open resource discovery well-known configuration with webhook credentials: Invalid data [reason=Credentials not provided]"),
-			Credentials: &auth.Auth{
-				Credential: auth.CredentialData{
+			Credentials: &model.Auth{
+				Credential: model.CredentialData{
 					Oauth: nil,
 				},
 			},
 		},
 		{
 			Name: "Error fetching well-known config due to invalid credentials",
-			Credentials: &auth.Auth{
-				Credential: auth.CredentialData{
-					Basic: &auth.BasicCredentialData{
+			Credentials: &model.Auth{
+				Credential: model.CredentialData{
+					Basic: &model.BasicCredentialData{
 						Username: "user",
 						Password: "pass",
 					},
@@ -385,7 +384,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 
 			if len(test.AccessStrategy) > 0 {
 				if testWebhook.Auth == nil {
-					testWebhook.Auth = &auth.Auth{}
+					testWebhook.Auth = &model.Auth{}
 				}
 				testWebhook.Auth.AccessStrategy = &test.AccessStrategy
 			}

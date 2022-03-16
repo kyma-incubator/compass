@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -28,7 +26,7 @@ import (
 // SystemAuthService missing godoc
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
-	Create(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType, objectID string, authInput *auth.AuthInput) (string, error)
+	Create(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
 	GetByToken(ctx context.Context, token string) (*systemauth.SystemAuth, error)
 	GetGlobal(ctx context.Context, authID string) (*systemauth.SystemAuth, error)
 	Update(ctx context.Context, item *systemauth.SystemAuth) error
@@ -123,7 +121,7 @@ func (s *service) RegenerateOneTimeToken(ctx context.Context, sysAuthID string) 
 		return nil, err
 	}
 	if sysAuth.Value == nil {
-		sysAuth.Value = &auth.Auth{}
+		sysAuth.Value = &model.Auth{}
 	}
 	tokenType, err := sysAuth.GetReferenceObjectType()
 	if err != nil {
@@ -179,7 +177,7 @@ func (s *service) createToken(tokenType systemauth.SystemAuthReferenceObjectType
 }
 
 func (s *service) saveToken(ctx context.Context, objectID string, tokenType systemauth.SystemAuthReferenceObjectType, oneTimeToken *model.OneTimeToken) error {
-	if _, err := s.sysAuthSvc.Create(ctx, tokenType, objectID, &auth.AuthInput{OneTimeToken: oneTimeToken}); err != nil {
+	if _, err := s.sysAuthSvc.Create(ctx, tokenType, objectID, &model.AuthInput{OneTimeToken: oneTimeToken}); err != nil {
 		return errors.Wrap(err, "while creating System Auth")
 	}
 	return nil

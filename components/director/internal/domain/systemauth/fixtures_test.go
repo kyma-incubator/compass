@@ -2,8 +2,7 @@ package systemauth_test
 
 import (
 	"database/sql/driver"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	systemauthmodel "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
@@ -58,7 +57,7 @@ func fixGQLRuntimeSystemAuth(id string, auth *graphql.Auth, refObjID string) gra
 	}
 }
 
-func fixModelSystemAuth(id string, objectType systemauthmodel.SystemAuthReferenceObjectType, objectID string, auth *auth.Auth) *systemauthmodel.SystemAuth {
+func fixModelSystemAuth(id string, objectType systemauthmodel.SystemAuthReferenceObjectType, objectID string, auth *model.Auth) *systemauthmodel.SystemAuth {
 	systemAuth := systemauthmodel.SystemAuth{
 		ID:    id,
 		Value: auth,
@@ -79,21 +78,21 @@ func fixModelSystemAuth(id string, objectType systemauthmodel.SystemAuthReferenc
 	return &systemAuth
 }
 
-func fixModelAuthInput() auth.AuthInput {
-	return auth.AuthInput{
-		Credential: &auth.CredentialDataInput{
-			Basic: &auth.BasicCredentialDataInput{
+func fixModelAuthInput() model.AuthInput {
+	return model.AuthInput{
+		Credential: &model.CredentialDataInput{
+			Basic: &model.BasicCredentialDataInput{
 				Username: "foo",
 				Password: "bar",
 			},
 		},
 		AdditionalHeaders:     map[string][]string{"test": {"foo", "bar"}},
 		AdditionalQueryParams: map[string][]string{"test": {"foo", "bar"}},
-		RequestAuth: &auth.CredentialRequestAuthInput{
-			Csrf: &auth.CSRFTokenCredentialRequestAuthInput{
+		RequestAuth: &model.CredentialRequestAuthInput{
+			Csrf: &model.CSRFTokenCredentialRequestAuthInput{
 				TokenEndpointURL: "foo.url",
-				Credential: &auth.CredentialDataInput{
-					Basic: &auth.BasicCredentialDataInput{
+				Credential: &model.CredentialDataInput{
+					Basic: &model.BasicCredentialDataInput{
 						Username: "boo",
 						Password: "far",
 					},
@@ -127,21 +126,21 @@ func fixGQLAuth() *graphql.Auth {
 	}
 }
 
-func fixModelAuth() *auth.Auth {
-	return &auth.Auth{
-		Credential: auth.CredentialData{
-			Basic: &auth.BasicCredentialData{
+func fixModelAuth() *model.Auth {
+	return &model.Auth{
+		Credential: model.CredentialData{
+			Basic: &model.BasicCredentialData{
 				Username: "foo",
 				Password: "bar",
 			},
 		},
 		AdditionalHeaders:     map[string][]string{"test": {"foo", "bar"}},
 		AdditionalQueryParams: map[string][]string{"test": {"foo", "bar"}},
-		RequestAuth: &auth.CredentialRequestAuth{
-			Csrf: &auth.CSRFTokenCredentialRequestAuth{
+		RequestAuth: &model.CredentialRequestAuth{
+			Csrf: &model.CSRFTokenCredentialRequestAuth{
 				TokenEndpointURL: "foo.url",
-				Credential: auth.CredentialData{
-					Basic: &auth.BasicCredentialData{
+				Credential: model.CredentialData{
+					Basic: &model.BasicCredentialData{
 						Username: "boo",
 						Password: "far",
 					},

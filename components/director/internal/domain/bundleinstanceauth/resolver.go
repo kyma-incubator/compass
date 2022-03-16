@@ -3,8 +3,6 @@ package bundleinstanceauth
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -18,8 +16,8 @@ import (
 // Service missing godoc
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
 type Service interface {
-	RequestDeletion(ctx context.Context, instanceAuth *model.BundleInstanceAuth, defaultBundleInstanceAuth *auth.Auth) (bool, error)
-	Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *auth.Auth, requestInputSchema *string) (string, error)
+	RequestDeletion(ctx context.Context, instanceAuth *model.BundleInstanceAuth, defaultBundleInstanceAuth *model.Auth) (bool, error)
+	Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string) (string, error)
 	Get(ctx context.Context, id string) (*model.BundleInstanceAuth, error)
 	SetAuth(ctx context.Context, id string, in model.BundleInstanceAuthSetInput) error
 	Delete(ctx context.Context, id string) error

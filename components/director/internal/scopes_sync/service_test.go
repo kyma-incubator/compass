@@ -2,9 +2,8 @@ package scopes
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"testing"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
@@ -93,9 +92,9 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		mockedTx, transactioner := txtest.NewTransactionContextGenerator(errors.New("error")).ThatSucceeds()
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]systemauth.SystemAuth{
 			{
-				Value: &auth.Auth{
-					Credential: auth.CredentialData{
-						Oauth: &auth.OAuthCredentialData{
+				Value: &model.Auth{
+					Credential: model.CredentialData{
+						Oauth: &model.OAuthCredentialData{
 							ClientID: clientID,
 						},
 					},
@@ -122,9 +121,9 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]systemauth.SystemAuth{
 			{
 				AppID: str.Ptr("app-id"),
-				Value: &auth.Auth{
-					Credential: auth.CredentialData{
-						Oauth: &auth.OAuthCredentialData{
+				Value: &model.Auth{
+					Credential: model.CredentialData{
+						Oauth: &model.OAuthCredentialData{
 							ClientID: clientID,
 						},
 					},
@@ -154,9 +153,9 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]systemauth.SystemAuth{
 			{
 				AppID: str.Ptr("app-id"),
-				Value: &auth.Auth{
-					Credential: auth.CredentialData{
-						Oauth: &auth.OAuthCredentialData{
+				Value: &model.Auth{
+					Credential: model.CredentialData{
+						Oauth: &model.OAuthCredentialData{
 							ClientID: clientID,
 						},
 					},
@@ -191,9 +190,9 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]systemauth.SystemAuth{
 			{
 				AppID: str.Ptr("app-id"),
-				Value: &auth.Auth{
-					Credential: auth.CredentialData{
-						Oauth: &auth.OAuthCredentialData{
+				Value: &model.Auth{
+					Credential: model.CredentialData{
+						Oauth: &model.OAuthCredentialData{
 							ClientID: clientID,
 						},
 					},
@@ -224,8 +223,8 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]systemauth.SystemAuth{
 			{
 				AppID: str.Ptr("app-id"),
-				Value: &auth.Auth{
-					Credential: auth.CredentialData{},
+				Value: &model.Auth{
+					Credential: model.CredentialData{},
 				},
 			},
 		}, nil)
@@ -258,9 +257,9 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]systemauth.SystemAuth{
 			{
 				AppID: str.Ptr("app-id"),
-				Value: &auth.Auth{
-					Credential: auth.CredentialData{
-						Oauth: &auth.OAuthCredentialData{
+				Value: &model.Auth{
+					Credential: model.CredentialData{
+						Oauth: &model.OAuthCredentialData{
 							ClientID: clientID,
 						},
 					},
@@ -296,9 +295,9 @@ func TestSyncService_UpdateClientScopes(t *testing.T) {
 		systemAuthRepo.On("ListGlobalWithConditions", mock.Anything, selectCondition).Return([]systemauth.SystemAuth{
 			{
 				AppID: str.Ptr("app-id"),
-				Value: &auth.Auth{
-					Credential: auth.CredentialData{
-						Oauth: &auth.OAuthCredentialData{
+				Value: &model.Auth{
+					Credential: model.CredentialData{
+						Oauth: &model.OAuthCredentialData{
 							ClientID: clientID,
 						},
 					},

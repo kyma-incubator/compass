@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
@@ -257,12 +255,12 @@ func fixGQLBundleCreateInput(name, description string) graphql.BundleCreateInput
 }
 
 func fixModelBundleCreateInput(name, description string) model.BundleCreateInput {
-	basicCredentialDataInput := auth.BasicCredentialDataInput{
+	basicCredentialDataInput := model.BasicCredentialDataInput{
 		Username: "test",
 		Password: "pwd",
 	}
-	authInput := auth.AuthInput{
-		Credential: &auth.CredentialDataInput{Basic: &basicCredentialDataInput},
+	authInput := model.AuthInput{
+		Credential: &model.CredentialDataInput{Basic: &basicCredentialDataInput},
 	}
 
 	specData1 := "spec_data1"
@@ -316,12 +314,12 @@ func fixGQLBundleUpdateInput(name, description string) graphql.BundleUpdateInput
 }
 
 func fixModelBundleUpdateInput(name, description string) model.BundleUpdateInput {
-	basicCredentialDataInput := auth.BasicCredentialDataInput{
+	basicCredentialDataInput := model.BasicCredentialDataInput{
 		Username: "test",
 		Password: "pwd",
 	}
-	authInput := auth.AuthInput{
-		Credential: &auth.CredentialDataInput{Basic: &basicCredentialDataInput},
+	authInput := model.AuthInput{
+		Credential: &model.CredentialDataInput{Basic: &basicCredentialDataInput},
 	}
 
 	return model.BundleUpdateInput{
@@ -332,21 +330,21 @@ func fixModelBundleUpdateInput(name, description string) model.BundleUpdateInput
 	}
 }
 
-func fixModelAuth() *auth.Auth {
-	return &auth.Auth{
-		Credential: auth.CredentialData{
-			Basic: &auth.BasicCredentialData{
+func fixModelAuth() *model.Auth {
+	return &model.Auth{
+		Credential: model.CredentialData{
+			Basic: &model.BasicCredentialData{
 				Username: "foo",
 				Password: "bar",
 			},
 		},
 		AdditionalHeaders:     map[string][]string{"test": {"foo", "bar"}},
 		AdditionalQueryParams: map[string][]string{"test": {"foo", "bar"}},
-		RequestAuth: &auth.CredentialRequestAuth{
-			Csrf: &auth.CSRFTokenCredentialRequestAuth{
+		RequestAuth: &model.CredentialRequestAuth{
+			Csrf: &model.CSRFTokenCredentialRequestAuth{
 				TokenEndpointURL: "foo.url",
-				Credential: auth.CredentialData{
-					Basic: &auth.BasicCredentialData{
+				Credential: model.CredentialData{
+					Basic: &model.BasicCredentialData{
 						Username: "boo",
 						Password: "far",
 					},

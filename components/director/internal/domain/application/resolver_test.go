@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	auth2 "github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
@@ -1537,8 +1535,8 @@ func TestResolver_Labels(t *testing.T) {
 func TestResolver_Auths(t *testing.T) {
 	// GIVEN
 	id := "foo"
-	auth := auth2.Auth{
-		Credential: auth2.CredentialData{},
+	auth := model.Auth{
+		Credential: model.CredentialData{},
 		OneTimeToken: &model.OneTimeToken{
 			Token:     "sometoken",
 			Type:      tokens.ApplicationToken,
@@ -2183,10 +2181,10 @@ func fixOAuths() []systemauth.SystemAuth {
 		{
 			ID:       "foo",
 			TenantID: str.Ptr("foo"),
-			Value: &auth2.Auth{
-				Credential: auth2.CredentialData{
+			Value: &model.Auth{
+				Credential: model.CredentialData{
 					Basic: nil,
-					Oauth: &auth2.OAuthCredentialData{
+					Oauth: &model.OAuthCredentialData{
 						ClientID:     "foo",
 						ClientSecret: "foo",
 						URL:          "foo",
@@ -2202,9 +2200,9 @@ func fixOAuths() []systemauth.SystemAuth {
 		{
 			ID:       "test",
 			TenantID: str.Ptr("test"),
-			Value: &auth2.Auth{
-				Credential: auth2.CredentialData{
-					Basic: &auth2.BasicCredentialData{
+			Value: &model.Auth{
+				Credential: model.CredentialData{
+					Basic: &model.BasicCredentialData{
 						Username: "test",
 						Password: "test",
 					},

@@ -1,6 +1,4 @@
-package auth
-
-import "github.com/kyma-incubator/compass/components/director/internal/model"
+package model
 
 // Auth missing godoc
 type Auth struct {
@@ -9,7 +7,7 @@ type Auth struct {
 	AdditionalHeaders     map[string][]string
 	AdditionalQueryParams map[string][]string
 	RequestAuth           *CredentialRequestAuth
-	OneTimeToken          *model.OneTimeToken
+	OneTimeToken          *OneTimeToken
 	CertCommonName        string
 }
 
@@ -52,7 +50,7 @@ type AuthInput struct {
 	AdditionalHeaders     map[string][]string
 	AdditionalQueryParams map[string][]string
 	RequestAuth           *CredentialRequestAuthInput
-	OneTimeToken          *model.OneTimeToken
+	OneTimeToken          *OneTimeToken
 }
 
 // ToAuth missing godoc

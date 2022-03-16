@@ -1,8 +1,8 @@
 package systemauth
 
 import (
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 )
 
 // SystemAuth missing godoc
@@ -12,7 +12,7 @@ type SystemAuth struct {
 	AppID               *string
 	RuntimeID           *string
 	IntegrationSystemID *string
-	Value               *auth.Auth
+	Value               *model.Auth
 }
 
 // GetReferenceObjectType missing godoc

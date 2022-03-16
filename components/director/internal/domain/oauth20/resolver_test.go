@@ -2,9 +2,8 @@ package oauth20_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"testing"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
@@ -26,12 +25,12 @@ func TestResolver_CommonRequestClientCredentialsSuccess(t *testing.T) {
 	clientID := "clientid"
 	txGen := txtest.NewTransactionContextGenerator(nil)
 	expectedResult := fixGQLSystemAuth(clientID)
-	credsData := &auth.OAuthCredentialDataInput{
+	credsData := &model.OAuthCredentialDataInput{
 		ClientID:     "clientid",
 		ClientSecret: "secret",
 		URL:          "url",
 	}
-	authInput := &auth.AuthInput{Credential: &auth.CredentialDataInput{Oauth: credsData}}
+	authInput := &model.AuthInput{Credential: &model.CredentialDataInput{Oauth: credsData}}
 
 	testCases := []struct {
 		Name                       string
@@ -159,12 +158,12 @@ func TestResolver_CommonRequestClientCredentialsError(t *testing.T) {
 	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 	modelSystemAuth := fixModelSystemAuth(clientID, &id, nil, nil)
-	credsData := &auth.OAuthCredentialDataInput{
+	credsData := &model.OAuthCredentialDataInput{
 		ClientID:     "clientid",
 		ClientSecret: "secret",
 		URL:          "url",
 	}
-	authInput := &auth.AuthInput{Credential: &auth.CredentialDataInput{Oauth: credsData}}
+	authInput := &model.AuthInput{Credential: &model.CredentialDataInput{Oauth: credsData}}
 
 	testCases := []struct {
 		Name                string
@@ -387,9 +386,9 @@ func fixModelSystemAuth(clientID string, rtmID, appID, isID *string) *systemauth
 		RuntimeID:           rtmID,
 		IntegrationSystemID: isID,
 		AppID:               appID,
-		Value: &auth.Auth{
-			Credential: auth.CredentialData{
-				Oauth: &auth.OAuthCredentialData{
+		Value: &model.Auth{
+			Credential: model.CredentialData{
+				Oauth: &model.OAuthCredentialData{
 					ClientID:     clientID,
 					ClientSecret: "secret",
 					URL:          "url",

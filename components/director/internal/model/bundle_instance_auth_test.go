@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/stretchr/testify/assert"
@@ -32,9 +30,9 @@ func TestBundleInstanceAuthRequestInput_ToBundleInstanceAuth(t *testing.T) {
 		Message:   "Credentials were not yet provided.",
 		Reason:    "CredentialsNotProvided",
 	}
-	inputAuth := auth.Auth{
-		Credential: auth.CredentialData{
-			Basic: &auth.BasicCredentialData{
+	inputAuth := Auth{
+		Credential: CredentialData{
+			Basic: &BasicCredentialData{
 				Username: "foo",
 				Password: "bar",
 			},

@@ -2,9 +2,8 @@ package http
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"net/http"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -13,7 +12,7 @@ import (
 )
 
 // GetRequestWithCredentials executes a GET http request to the given url with the provided auth credentials
-func GetRequestWithCredentials(ctx context.Context, client *http.Client, url string, auth *auth.Auth) (*http.Response, error) {
+func GetRequestWithCredentials(ctx context.Context, client *http.Client, url string, auth *model.Auth) (*http.Response, error) {
 	if auth == nil || (auth.Credential.Basic == nil && auth.Credential.Oauth == nil) {
 		return nil, apperrors.NewInvalidDataError("Credentials not provided")
 	}
@@ -41,7 +40,7 @@ func GetRequestWithCredentials(ctx context.Context, client *http.Client, url str
 	return resp, err
 }
 
-func secureClient(ctx context.Context, client *http.Client, auth *auth.Auth) *http.Client {
+func secureClient(ctx context.Context, client *http.Client, auth *model.Auth) *http.Client {
 	conf := &clientcredentials.Config{
 		ClientID:     auth.Credential.Oauth.ClientID,
 		ClientSecret: auth.Credential.Oauth.ClientSecret,

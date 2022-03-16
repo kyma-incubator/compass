@@ -7,8 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -344,7 +342,7 @@ func fixModelWebhook(appID, id string) *model.Webhook {
 		ID:         id,
 		Type:       model.WebhookTypeConfigurationChanged,
 		URL:        stringPtr("foourl"),
-		Auth:       &auth.Auth{},
+		Auth:       &model.Auth{},
 	}
 }
 

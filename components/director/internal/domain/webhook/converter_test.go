@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/pkg/errors"
@@ -83,7 +81,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	}
 	authConv := &automock.AuthConverter{}
 	authConv.On("ToGraphQL", input[0].Auth).Return(expected[0].Auth, nil)
-	authConv.On("ToGraphQL", (*auth.Auth)(nil)).Return(nil, nil)
+	authConv.On("ToGraphQL", (*model.Auth)(nil)).Return(nil, nil)
 	converter := webhook.NewConverter(authConv)
 
 	// WHEN
