@@ -3,7 +3,6 @@ package auth
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
 )
 
@@ -171,7 +170,7 @@ func ToModel(in *graphql.Auth) (*model.Auth, error) {
 		AdditionalHeaders:     headers,
 		AdditionalQueryParams: params,
 		RequestAuth:           requestAuthToModel(in.RequestAuth),
-		CertCommonName:        str.PtrStrToStr(in.CertCommonName),
+		CertCommonName:        *in.CertCommonName,
 	}, nil
 }
 
@@ -208,10 +207,6 @@ func requestAuthToModel(in *graphql.CredentialRequestAuth) *model.CredentialRequ
 func credentialToModel(in graphql.CredentialData) model.CredentialData {
 	var basic *model.BasicCredentialData
 	var oauth *model.OAuthCredentialData
-
-	if in == nil {
-		return model.CredentialData{Basic: basic, Oauth: oauth}
-	}
 
 	switch cred := in.(type) {
 	case *graphql.BasicCredentialData:
