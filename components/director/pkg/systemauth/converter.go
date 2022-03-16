@@ -1,9 +1,9 @@
 package systemauth
 
 import (
-	"errors"
 	authConv "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/pkg/errors"
 )
 
 type converter struct {
@@ -32,10 +32,10 @@ func (c *converter) GraphQLToModel(appSysAuth *graphql.AppSystemAuth) (*SystemAu
 			return nil, err
 		}
 		return &SystemAuth{
-			ID:                  appSysAuth.ID,
-			TenantID:            appSysAuth.TenantID,
-			IntegrationSystemID: appSysAuth.ReferenceObjectID,
-			Value:               auth,
+			ID:       appSysAuth.ID,
+			TenantID: appSysAuth.TenantID,
+			AppID:    appSysAuth.ReferenceObjectID,
+			Value:    auth,
 		}, nil
 	case graphql.SystemAuthReferenceTypeRuntime:
 		auth, err := authConv.ToModel(appSysAuth.Auth)
@@ -43,10 +43,10 @@ func (c *converter) GraphQLToModel(appSysAuth *graphql.AppSystemAuth) (*SystemAu
 			return nil, err
 		}
 		return &SystemAuth{
-			ID:        appSysAuth.ID,
-			TenantID:  appSysAuth.TenantID,
-			RuntimeID: appSysAuth.ReferenceObjectID,
-			Value:     auth,
+			ID:       appSysAuth.ID,
+			TenantID: appSysAuth.TenantID,
+			AppID:    appSysAuth.ReferenceObjectID,
+			Value:    auth,
 		}, nil
 	default:
 		return nil, errors.New("could not determine system auth")
