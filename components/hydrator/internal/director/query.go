@@ -2,9 +2,9 @@ package director
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 )
 
@@ -156,8 +156,8 @@ func TenantByLowestOwnerForResourceQuery(resourceID, resourceType string) string
 	}`, resourceID, resourceType)
 }
 
-func UpdateSystemAuthQuery(authID string, gqlAuth graphql.Auth) (string, error) {
-	authInput, err := auth.ToGraphQLInput(gqlAuth)
+func UpdateSystemAuthQuery(sysAuth *systemauth.SystemAuth) (string, error) {
+	authInput, err := auth.ToGraphQLInput(sysAuth.Value)
 	if err != nil {
 		return "", err
 	}
@@ -170,7 +170,7 @@ func UpdateSystemAuthQuery(authID string, gqlAuth graphql.Auth) (string, error) 
 
 	return fmt.Sprintf(`mutation {
 		result: updateSystemAuth(authID: "%s", in: %s) { id }
-	}`, authID, gqlAuthInput), nil
+	}`, sysAuth.ID, gqlAuthInput), nil
 }
 
 func InvalidateSystemAuthOneTimeTokenQuery(authID string) string {

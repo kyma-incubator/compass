@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 	"net/http"
 	"strings"
 
@@ -24,8 +25,8 @@ import (
 //go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore
 type DirectorClient interface {
 	GetTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
-	GetSystemAuthByID(ctx context.Context, authID string) (*schema.AppSystemAuth, error)
-	UpdateSystemAuth(ctx context.Context, authID string, auth schema.Auth) (director.UpdateAuthResult, error)
+	GetSystemAuthByID(ctx context.Context, authID string) (*systemauth.SystemAuth, error)
+	UpdateSystemAuth(ctx context.Context, sysAuth *systemauth.SystemAuth) (director.UpdateAuthResult, error)
 }
 
 // ScopesGetter missing godoc

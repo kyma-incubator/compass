@@ -2,6 +2,7 @@ package director
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/retry"
@@ -14,11 +15,15 @@ type Client interface {
 	GetTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetTenantByInternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetTenantByLowestOwnerForResource(ctx context.Context, resourceID, resourceType string) (string, error)
-	GetSystemAuthByID(ctx context.Context, authID string) (*schema.AppSystemAuth, error)
-	GetSystemAuthByToken(ctx context.Context, token string) (schema.SystemAuth, error)
-	UpdateSystemAuth(ctx context.Context, authID string, auth schema.Auth) (UpdateAuthResult, error)
-	InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (schema.SystemAuth, error)
+	GetSystemAuthByID(ctx context.Context, authID string) (*systemauth.SystemAuth, error)
+	GetSystemAuthByToken(ctx context.Context, token string) (*systemauth.SystemAuth, error)
+	UpdateSystemAuth(ctx context.Context, sysAuth *systemauth.SystemAuth) (UpdateAuthResult, error)
+	InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (*systemauth.SystemAuth, error)
 	GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (*schema.Runtime, error)
+}
+
+type SystemAuhConverter interface {
+	GraphQLToModel(in *schema.AppSystemAuth) (*systemauth.SystemAuth, error)
 }
 
 type Config struct {
@@ -27,16 +32,18 @@ type Config struct {
 	SkipSSLValidation bool          `envconfig:"default=false"`
 }
 
-func NewClient(gqlClient *graphql.Client) Client {
+func NewClient(gqlClient *graphql.Client, sysAuthConv SystemAuhConverter) Client {
 	return &client{
-		gqlClient: gqlClient,
-		timeout:   30 * time.Second,
+		gqlClient:   gqlClient,
+		timeout:     30 * time.Second,
+		sysAuthConv: sysAuthConv,
 	}
 }
 
 type client struct {
-	gqlClient *graphql.Client
-	timeout   time.Duration
+	gqlClient   *graphql.Client
+	timeout     time.Duration
+	sysAuthConv SystemAuhConverter
 }
 
 type TenantResponse struct {
@@ -45,10 +52,6 @@ type TenantResponse struct {
 
 type TenantByLowestOwnerForResourceResponse struct {
 	Result string `json:"result"`
-}
-
-type SystemAuthResponse struct {
-	Result *interface{} `json:"result"`
 }
 
 type SystemAuthResponse1 struct {
@@ -102,7 +105,7 @@ func (c *client) GetTenantByLowestOwnerForResource(ctx context.Context, resource
 	return response.Result, nil
 }
 
-func (c *client) GetSystemAuthByID(ctx context.Context, authID string) (*schema.AppSystemAuth, error) {
+func (c *client) GetSystemAuthByID(ctx context.Context, authID string) (*systemauth.SystemAuth, error) {
 	query := SystemAuthQuery(authID)
 
 	var response SystemAuthResponse1
@@ -112,15 +115,19 @@ func (c *client) GetSystemAuthByID(ctx context.Context, authID string) (*schema.
 		return nil, err
 	}
 
-	if response.Result == nil {
-		return nil, nil
+	sysAuth, err := c.sysAuthConv.GraphQLToModel(response.Result)
+	if err != nil {
+		return nil, err
 	}
+	//if response.Result == nil {
+	//	return nil, nil
+	//}
 
-	return response.Result, nil
+	return sysAuth, nil
 
 }
 
-func (c *client) GetSystemAuthByToken(ctx context.Context, token string) (schema.SystemAuth, error) {
+func (c *client) GetSystemAuthByToken(ctx context.Context, token string) (*systemauth.SystemAuth, error) {
 	query := SystemAuthByTokenQuery(token)
 
 	var response SystemAuthResponse1
@@ -130,11 +137,16 @@ func (c *client) GetSystemAuthByToken(ctx context.Context, token string) (schema
 		return nil, err
 	}
 
-	return response.Result, nil
+	sysAuth, err := c.sysAuthConv.GraphQLToModel(response.Result)
+	if err != nil {
+		return nil, err
+	}
+
+	return sysAuth, nil
 }
 
-func (c *client) UpdateSystemAuth(ctx context.Context, authID string, auth schema.Auth) (UpdateAuthResult, error) {
-	query, err := UpdateSystemAuthQuery(authID, auth)
+func (c *client) UpdateSystemAuth(ctx context.Context, sysAuth *systemauth.SystemAuth) (UpdateAuthResult, error) {
+	query, err := UpdateSystemAuthQuery(sysAuth)
 	if err != nil {
 		return UpdateAuthResult{}, err
 	}
@@ -149,17 +161,22 @@ func (c *client) UpdateSystemAuth(ctx context.Context, authID string, auth schem
 	return response.Result, nil
 }
 
-func (c *client) InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (schema.SystemAuth, error) {
+func (c *client) InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (*systemauth.SystemAuth, error) {
 	query := InvalidateSystemAuthOneTimeTokenQuery(authID)
 
 	var response SystemAuthResponse1
 
 	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
-		return schema.AppSystemAuth{}, err
+		return nil, err
 	}
 
-	return response.Result, nil
+	sysAuth, err := c.sysAuthConv.GraphQLToModel(response.Result)
+	if err != nil {
+		return nil, err
+	}
+
+	return sysAuth, nil
 }
 
 func (c *client) GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (*schema.Runtime, error) {

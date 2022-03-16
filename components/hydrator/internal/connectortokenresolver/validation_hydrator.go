@@ -3,6 +3,7 @@ package connectortokenresolver
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 	"net/http"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
@@ -24,7 +25,7 @@ type validationHydrator struct {
 // DirectorClient missing godoc
 //go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore
 type DirectorClient interface {
-	GetSystemAuthByToken(ctx context.Context, token string) (graphql.SystemAuth, error)
+	GetSystemAuthByToken(ctx context.Context, token string) (*systemauth.SystemAuth, error)
 	InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (graphql.SystemAuth, error)
 }
 
@@ -71,30 +72,15 @@ func (vh *validationHydrator) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		authSession.Header = map[string][]string{}
 	}
 
-	var sysAuthID string
+	authSession.Header.Add(oathkeeper.ClientIdFromTokenHeader, systemAuth.ID)
 
-	switch v := systemAuth.(type) {
-	case *graphql.AppSystemAuth:
-		sysAuthID = v.ID
-	case *graphql.RuntimeSystemAuth:
-		sysAuthID = v.ID
-	case *graphql.IntSysSystemAuth:
-		sysAuthID = v.ID
-	default:
-		log.C(ctx).Error("Could not determine system auth type")
-		respondWithAuthSession(ctx, w, authSession)
-		return
-	}
-
-	authSession.Header.Add(oathkeeper.ClientIdFromTokenHeader, sysAuthID)
-
-	if _, err := vh.directorClient.InvalidateSystemAuthOneTimeToken(ctx, sysAuthID); err != nil {
+	if _, err := vh.directorClient.InvalidateSystemAuthOneTimeToken(ctx, systemAuth.ID); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to invalidate token: %v", err)
 		httputils.RespondWithError(ctx, w, http.StatusInternalServerError, errors.New("could not invalidate token"))
 		return
 	}
 
-	log.C(ctx).Infof("Token for %s resolved successfully", sysAuthID)
+	log.C(ctx).Infof("Token for %s resolved successfully", systemAuth.ID)
 	respondWithAuthSession(ctx, w, authSession)
 }
 

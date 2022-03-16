@@ -8,7 +8,6 @@ import (
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
@@ -47,41 +46,35 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 		return ObjectContext{}, errors.Wrap(opErr, "while retrieving system auth from director")
 	}
 
-	var refObjectType systemauth.SystemAuthReferenceObjectType
+	refObjectType, err := sysAuth.GetReferenceObjectType()
+	if err != nil {
+		return ObjectContext{}, errors.Errorf("unknown reference object type for system auth with id %s", sysAuth.ID)
+	}
 
-	if sysAuth.ReferenceObjectID == nil {
+	refObjectID, err := sysAuth.GetReferenceObjectID()
+	if err != nil {
 		return ObjectContext{}, errors.Errorf("unknown reference object ID for system auth with id %s", sysAuth.ID)
 	}
 
-	switch *sysAuth.Type {
-	case graphql.SystemAuthReferenceTypeApplication:
-		refObjectType = systemauth.ApplicationReference
-	case graphql.SystemAuthReferenceTypeRuntime:
-		refObjectType = systemauth.RuntimeReference
-	case graphql.SystemAuthReferenceTypeIntegrationSystem:
-		refObjectType = systemauth.IntegrationSystemReference
-	}
+	log.C(ctx).Debugf("Reference object id is %s", refObjectID)
+	log.C(ctx).Infof("Reference object type is %s", refObjectType)
 
-	log.C(ctx).Debugf("Reference object id is %s", *sysAuth.ReferenceObjectID)
-	log.C(ctx).Infof("Reference object type is %s", sysAuth.Type)
+	if authDetails.AuthFlow.IsCertFlow() && sysAuth.Value != nil && sysAuth.Value.CertCommonName != authDetails.AuthID {
+		sysAuth.Value.OneTimeToken = nil
+		sysAuth.Value.CertCommonName = authDetails.AuthID
 
-	if authDetails.AuthFlow.IsCertFlow() && sysAuth.Auth != nil && str.PtrStrToStr(sysAuth.Auth.CertCommonName) != authDetails.AuthID {
-		sysAuth.Auth.OneTimeToken = nil
-		sysAuth.Auth.CertCommonName = str.Ptr(authDetails.AuthID)
-
-		if _, err := m.directorClient.UpdateSystemAuth(ctx, authDetails.AuthID, *sysAuth.Auth); err != nil {
+		if _, err := m.directorClient.UpdateSystemAuth(ctx, sysAuth); err != nil {
 			return ObjectContext{}, errors.Wrap(err, "while updating system auth")
 		}
 	}
 
 	var scopes string
 	var tenantCtx TenantContext
-	var err error
 
-	switch *sysAuth.Type {
-	case graphql.SystemAuthReferenceTypeIntegrationSystem:
+	switch refObjectType {
+	case systemauth.IntegrationSystemReference:
 		tenantCtx, scopes, err = m.getTenantAndScopesForIntegrationSystem(ctx, reqData)
-	case graphql.SystemAuthReferenceTypeApplication, graphql.SystemAuthReferenceTypeRuntime:
+	case systemauth.ApplicationReference, systemauth.RuntimeReference:
 		tenantCtx, scopes, err = m.getTenantAndScopesForApplicationOrRuntime(ctx, sysAuth.TenantID, refObjectType, reqData, authDetails.AuthFlow)
 	default:
 		return ObjectContext{}, errors.Errorf("unsupported reference object type (%s)", refObjectType)
@@ -97,7 +90,7 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 		return ObjectContext{}, apperrors.NewInternalError("while mapping reference type to consumer type")
 	}
 
-	objCxt := NewObjectContext(tenantCtx, m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", *sysAuth.ReferenceObjectID, authDetails.AuthFlow, consumerType, tenantmapping.SystemAuthObjectContextProvider)
+	objCxt := NewObjectContext(tenantCtx, m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", refObjectID, authDetails.AuthFlow, consumerType, tenantmapping.SystemAuthObjectContextProvider)
 	log.C(ctx).Infof("Object context: %+v", objCxt)
 
 	return objCxt, nil

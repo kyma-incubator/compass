@@ -2,6 +2,7 @@ package director
 
 import (
 	"crypto/tls"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 	"net/http"
 	"time"
 
@@ -32,7 +33,8 @@ func (cp clientProvider) Client() Client {
 	authorizedClient := newAuthorizedHTTPClient(cp.timeout, cp.skipSSLValidation)
 	gqlClient := gcli.NewClient(cp.directorURL, gcli.WithHTTPClient(authorizedClient))
 
-	return NewClient(gqlClient)
+	sysAuthConv := systemauth.NewConverter()
+	return NewClient(gqlClient, sysAuthConv)
 }
 
 func newAuthorizedHTTPClient(timeout time.Duration, skipSSLValidation bool) *http.Client {
