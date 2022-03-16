@@ -200,6 +200,7 @@ metadata:
     component: logging
     kyma-project.io/installation: ""
 data:
+  global.logging_integration_tests.enabled: "false"
   logui.resources.limits.cpu: 160m
   logui.resources.limits.memory: 128Mi
   loki.resources.limits.memory: 512Mi

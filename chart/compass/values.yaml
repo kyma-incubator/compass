@@ -84,7 +84,6 @@ global:
       id: 7e8ab2e3-3bb4-42e3-92b2-4e0bf48559d3
       type: account
       parent: 2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0
-
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
@@ -99,7 +98,7 @@ global:
       version: "PR-2242"
     director:
       dir:
-      version: "PR-2242"
+      version: "PR-2214"
     gateway:
       dir:
       version: "PR-2242"
@@ -125,7 +124,7 @@ global:
       version: "PR-2242"
     console:
       dir:
-      version: "PR-59"
+      version: "PR-56"
     e2e_tests:
       dir:
       version: "PR-2242"
@@ -141,9 +140,7 @@ global:
     initialDelaySeconds: 5
     timeoutSeconds: 1
     periodSeconds: 2
-
   agentPreconfiguration: false
-
   nsAdapter:
     external:
       port: 3005
@@ -170,7 +167,6 @@ global:
     createClonePattern: '{"key": "%s"}'
     createBindingPattern: '{}'
     useClone: "false"
-
   director:
     host: compass-director.compass-system.svc.cluster.local
     prefix: /director
@@ -211,10 +207,8 @@ global:
       nameQueryParam: "name"
       tenantQueryParam: "tenant"
       requestBodyPattern: '{"key": "%s"}'
-
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
-
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
     mtlsTokenPath: "/cert/token"
@@ -227,18 +221,14 @@ global:
       clientSecretKey: client-secret
       clientCertKey: client-cert
       clientKeyKey: client-key
-
   log:
     format: "kibana"
-
   enableCompassDefaultScenarioAssignment: true
-
   tenantConfig:
     useDefaultTenants: true
     dbPool:
       maxOpenConnections: 1
       maxIdleConnections: 1
-
   connector:
     prefix: /connector
     graphql:
@@ -269,7 +259,6 @@ global:
     caKey: ""
     caCertificate: ""
     subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"},{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}]'
-
   system_broker:
     enabled: true
     port: 5001
@@ -283,7 +272,6 @@ global:
           name: compass-system-broker-credentials
           namespace: compass-system
     testNamespace: kyma-system
-
   gateway:
     port: 3000
     tls:
@@ -309,23 +297,19 @@ global:
           - "Client-Id-From-Certificate"
           - "Client-Certificate-Hash"
           - "Certificate-Data"
-
   operations_controller:
     enabled: true
-
   connectivity_adapter:
     port: 8080
     tls:
       host: adapter-gateway
     mtls:
       host: adapter-gateway-mtls
-
   oathkeeperFilters:
     workloadLabel: oathkeeper
     namespace: kyma-system
     tokenDataHeader: "Connector-Token"
     certificateDataHeader: "Certificate-Data"
-
   istio:
     externalMtlsGateway:
       name: "compass-gateway-external-mtls"
@@ -347,20 +331,17 @@ global:
       requestPayloadSizeLimit5MBLabel: "5MB"
       correlationHeaderRewriteFilter:
         expectedHeaders:
-        - "x-request-id"
-        - "x-correlation-id"
-        - "x-correlationid"
-        - "x-forrequest-id"
-        - "x-vcap-request-id"
-        - "x-broker-api-request-identity"
-
+          - "x-request-id"
+          - "x-correlation-id"
+          - "x-correlationid"
+          - "x-forrequest-id"
+          - "x-vcap-request-id"
+          - "x-broker-api-request-identity"
   kubernetes:
     serviceAccountTokenIssuer: kubernetes/serviceaccount
     serviceAccountTokenJWKS: https://kubernetes.default.svc.cluster.local/openid/v1/jwks
-
   ingress:
     domainName: "kyma.local"
-
   database:
     sqlProxyServiceAccount: "proxy-user@gcp-cmp.iam.gserviceaccount.com"
     manageSecrets: true
@@ -379,12 +360,10 @@ global:
       host: "localhost"
       hostPort: "5432"
       sslMode: ""
-
       #TODO remove below after migration to separate user will be done
       dbUser: ""
       dbPassword: ""
       directorDBName: ""
-
   oathkeeper:
     host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
     port: 4455
@@ -472,7 +451,14 @@ global:
             retry:
               give_up_after: 6s
               max_delay: 2000ms
-
+  cockpit:
+    auth:
+      allowedConnectSrc: "https://*.ondemand.com"
+      secretName: "cockpit-auth-secret"
+      idpHost: ""
+      clientID: ""
+      scopes: "openid profile email"
+      path: "/oauth2/certs"
   tenantFetcher:
     host: compass-tenant-fetcher.compass-system.svc.cluster.local
     prefix: /tenants
@@ -495,7 +481,6 @@ global:
       regionPathParam: "region"
       subscriptionProviderLabelKey: "subscriptionProviderId"
       consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
-
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     issuerLocality: "local" # In local setup we have manually created connector CA certificate with 'local' Locality property
@@ -527,7 +512,6 @@ global:
       certValidity: "7"
       clientCertRetryAttempts: "8"
       containerName: "certificate-rotation"
-
   ordService:
     host: compass-ord-service.compass-system.svc.cluster.local
     prefix: /open-resource-discovery-service/v0
@@ -535,7 +519,6 @@ global:
     staticPrefix: /open-resource-discovery-static/v0
     port: 3000
     defaultResponseType: "xml"
-
   ordAggregator:
     name: ord-aggregator
     enabled: true
@@ -547,7 +530,6 @@ global:
       maxOpenConnections: 2
       maxIdleConnections: 2
     globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8086/.well-known/open-resource-discovery
-
   systemFetcher:
     enabled: false
     name: "system-fetcher"
@@ -597,7 +579,6 @@ global:
       pageSize: 200
       sizeParam: "$top"
       skipParam: "$skip"
-
   tenantFetchers:
     job1:
       enabled: false
@@ -625,7 +606,6 @@ global:
         clientCertKey: client-cert
         clientKeyKey: client-key
         skipSSLValidation: true
-
       endpoints:
         accountCreated: "127.0.0.1/events?type=account-created"
         accountDeleted: "127.0.0.1/events?type=account-deleted"
@@ -661,11 +641,9 @@ global:
       dbPool:
         maxOpenConnections: 1
         maxIdleConnections: 1
-
   metrics:
     enabled: true
     pushEndpoint: http://monitoring-prometheus-pushgateway.kyma-system.svc.cluster.local:9091
-
   externalServicesMock:
     enabled: false
     certSecuredPort: 8081
@@ -696,7 +674,6 @@ global:
         clientSecretKey: client-secret
         clientCertKey: client-cert
         clientKeyKey: client-key
-
   tests:
     http:
       client:
@@ -745,22 +722,18 @@ global:
     securityContext: # Set on container level
       runAsUser: 2000
       allowPrivilegeEscalation: false
-
   expectedSchemaVersionUpdateJob:
     cm:
       name: "expected-schema-version"
-
   migratorJob:
     nodeSelectorEnabled: false
     pvc:
       name: "compass-director-migrations"
       namespace: "compass-system"
       migrationsPath: "/compass-migrations"
-
   http:
     client:
       skipSSLValidation: false
-
   pairingAdapter:
     e2e:
       appName: "test-app"
