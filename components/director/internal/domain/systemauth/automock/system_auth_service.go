@@ -4,7 +4,8 @@ package automock
 
 import (
 	context "context"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	mock "github.com/stretchr/testify/mock"
 
 	systemauth "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
@@ -136,11 +137,11 @@ func (_m *SystemAuthService) Update(ctx context.Context, item *systemauth.System
 }
 
 // UpdateValue provides a mock function with given fields: ctx, id, item
-func (_m *SystemAuthService) UpdateValue(ctx context.Context, id string, item *model.Auth) (*systemauth.SystemAuth, error) {
+func (_m *SystemAuthService) UpdateValue(ctx context.Context, id string, item *auth.Auth) (*systemauth.SystemAuth, error) {
 	ret := _m.Called(ctx, id, item)
 
 	var r0 *systemauth.SystemAuth
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Auth) *systemauth.SystemAuth); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *auth.Auth) *systemauth.SystemAuth); ok {
 		r0 = rf(ctx, id, item)
 	} else {
 		if ret.Get(0) != nil {
@@ -149,7 +150,7 @@ func (_m *SystemAuthService) UpdateValue(ctx context.Context, id string, item *m
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *model.Auth) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *auth.Auth) error); ok {
 		r1 = rf(ctx, id, item)
 	} else {
 		r1 = ret.Error(1)

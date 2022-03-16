@@ -3,7 +3,7 @@ package systemauth
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
@@ -21,7 +21,7 @@ type SystemAuthService interface {
 	GetByToken(ctx context.Context, token string) (*systemauth.SystemAuth, error)
 	DeleteByIDForObject(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType, authID string) error
 	Update(ctx context.Context, item *systemauth.SystemAuth) error
-	UpdateValue(ctx context.Context, id string, item *model.Auth) (*systemauth.SystemAuth, error)
+	UpdateValue(ctx context.Context, id string, item *auth.Auth) (*systemauth.SystemAuth, error)
 	InvalidateToken(ctx context.Context, id string) (*systemauth.SystemAuth, error)
 }
 

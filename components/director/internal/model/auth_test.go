@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -15,14 +15,14 @@ func TestAuthInput_ToAuth(t *testing.T) {
 	// GIVEN
 	testCases := []struct {
 		Name     string
-		Input    *model.AuthInput
-		Expected *model.Auth
+		Input    *auth.AuthInput
+		Expected *auth.Auth
 	}{
 		{
 			Name: "All properties given",
-			Input: &model.AuthInput{
-				Credential: &model.CredentialDataInput{
-					Basic: &model.BasicCredentialDataInput{
+			Input: &auth.AuthInput{
+				Credential: &auth.CredentialDataInput{
+					Basic: &auth.BasicCredentialDataInput{
 						Username: "test",
 					},
 				},
@@ -33,15 +33,15 @@ func TestAuthInput_ToAuth(t *testing.T) {
 				AdditionalHeaders: map[string][]string{
 					"header": {"value1", "value2"},
 				},
-				RequestAuth: &model.CredentialRequestAuthInput{
-					Csrf: &model.CSRFTokenCredentialRequestAuthInput{
+				RequestAuth: &auth.CredentialRequestAuthInput{
+					Csrf: &auth.CSRFTokenCredentialRequestAuthInput{
 						TokenEndpointURL: "test",
 					},
 				},
 			},
-			Expected: &model.Auth{
-				Credential: model.CredentialData{
-					Basic: &model.BasicCredentialData{
+			Expected: &auth.Auth{
+				Credential: auth.CredentialData{
+					Basic: &auth.BasicCredentialData{
 						Username: "test",
 					},
 				},
@@ -52,8 +52,8 @@ func TestAuthInput_ToAuth(t *testing.T) {
 				AdditionalHeaders: map[string][]string{
 					"header": {"value1", "value2"},
 				},
-				RequestAuth: &model.CredentialRequestAuth{
-					Csrf: &model.CSRFTokenCredentialRequestAuth{
+				RequestAuth: &auth.CredentialRequestAuth{
+					Csrf: &auth.CSRFTokenCredentialRequestAuth{
 						TokenEndpointURL: "test",
 					},
 				},
@@ -61,8 +61,8 @@ func TestAuthInput_ToAuth(t *testing.T) {
 		},
 		{
 			Name:     "Empty",
-			Input:    &model.AuthInput{},
-			Expected: &model.Auth{},
+			Input:    &auth.AuthInput{},
+			Expected: &auth.Auth{},
 		},
 		{
 			Name:     "Nil",
@@ -86,32 +86,32 @@ func TestCredentialDataInput_ToCredentialData(t *testing.T) {
 	// GIVEN
 	testCases := []struct {
 		Name     string
-		Input    *model.CredentialDataInput
-		Expected *model.CredentialData
+		Input    *auth.CredentialDataInput
+		Expected *auth.CredentialData
 	}{
 		{
 			Name: "All properties given",
-			Input: &model.CredentialDataInput{
-				Basic: &model.BasicCredentialDataInput{
+			Input: &auth.CredentialDataInput{
+				Basic: &auth.BasicCredentialDataInput{
 					Username: "user",
 				},
-				Oauth: &model.OAuthCredentialDataInput{
+				Oauth: &auth.OAuthCredentialDataInput{
 					URL: "test",
 				},
 			},
-			Expected: &model.CredentialData{
-				Basic: &model.BasicCredentialData{
+			Expected: &auth.CredentialData{
+				Basic: &auth.BasicCredentialData{
 					Username: "user",
 				},
-				Oauth: &model.OAuthCredentialData{
+				Oauth: &auth.OAuthCredentialData{
 					URL: "test",
 				},
 			},
 		},
 		{
 			Name:     "Empty",
-			Input:    &model.CredentialDataInput{},
-			Expected: &model.CredentialData{},
+			Input:    &auth.CredentialDataInput{},
+			Expected: &auth.CredentialData{},
 		},
 		{
 			Name:     "Nil",
@@ -135,24 +135,24 @@ func TestBasicCredentialDataInput_ToBasicCredentialData(t *testing.T) {
 	// GIVEN
 	testCases := []struct {
 		Name     string
-		Input    *model.BasicCredentialDataInput
-		Expected *model.BasicCredentialData
+		Input    *auth.BasicCredentialDataInput
+		Expected *auth.BasicCredentialData
 	}{
 		{
 			Name: "All properties given",
-			Input: &model.BasicCredentialDataInput{
+			Input: &auth.BasicCredentialDataInput{
 				Username: "user",
 				Password: "pass",
 			},
-			Expected: &model.BasicCredentialData{
+			Expected: &auth.BasicCredentialData{
 				Username: "user",
 				Password: "pass",
 			},
 		},
 		{
 			Name:     "Empty",
-			Input:    &model.BasicCredentialDataInput{},
-			Expected: &model.BasicCredentialData{},
+			Input:    &auth.BasicCredentialDataInput{},
+			Expected: &auth.BasicCredentialData{},
 		},
 		{
 			Name:     "Nil",
@@ -176,17 +176,17 @@ func TestOAuthCredentialDataInput_ToOAuthCredentialData(t *testing.T) {
 	// GIVEN
 	testCases := []struct {
 		Name     string
-		Input    *model.OAuthCredentialDataInput
-		Expected *model.OAuthCredentialData
+		Input    *auth.OAuthCredentialDataInput
+		Expected *auth.OAuthCredentialData
 	}{
 		{
 			Name: "All properties given",
-			Input: &model.OAuthCredentialDataInput{
+			Input: &auth.OAuthCredentialDataInput{
 				URL:          "test",
 				ClientID:     "id",
 				ClientSecret: "secret",
 			},
-			Expected: &model.OAuthCredentialData{
+			Expected: &auth.OAuthCredentialData{
 				URL:          "test",
 				ClientID:     "id",
 				ClientSecret: "secret",
@@ -194,8 +194,8 @@ func TestOAuthCredentialDataInput_ToOAuthCredentialData(t *testing.T) {
 		},
 		{
 			Name:     "Empty",
-			Input:    &model.OAuthCredentialDataInput{},
-			Expected: &model.OAuthCredentialData{},
+			Input:    &auth.OAuthCredentialDataInput{},
+			Expected: &auth.OAuthCredentialData{},
 		},
 		{
 			Name:     "Nil",
@@ -219,26 +219,26 @@ func TestCredentialRequestAuthInput_ToCredentialRequestAuth(t *testing.T) {
 	// GIVEN
 	testCases := []struct {
 		Name     string
-		Input    *model.CredentialRequestAuthInput
-		Expected *model.CredentialRequestAuth
+		Input    *auth.CredentialRequestAuthInput
+		Expected *auth.CredentialRequestAuth
 	}{
 		{
 			Name: "All properties given",
-			Input: &model.CredentialRequestAuthInput{
-				Csrf: &model.CSRFTokenCredentialRequestAuthInput{
+			Input: &auth.CredentialRequestAuthInput{
+				Csrf: &auth.CSRFTokenCredentialRequestAuthInput{
 					TokenEndpointURL: "foo.bar",
 				},
 			},
-			Expected: &model.CredentialRequestAuth{
-				Csrf: &model.CSRFTokenCredentialRequestAuth{
+			Expected: &auth.CredentialRequestAuth{
+				Csrf: &auth.CSRFTokenCredentialRequestAuth{
 					TokenEndpointURL: "foo.bar",
 				},
 			},
 		},
 		{
 			Name:     "Empty",
-			Input:    &model.CredentialRequestAuthInput{},
-			Expected: &model.CredentialRequestAuth{},
+			Input:    &auth.CredentialRequestAuthInput{},
+			Expected: &auth.CredentialRequestAuth{},
 		},
 		{
 			Name:     "Nil",
@@ -262,14 +262,14 @@ func TestCSRFTokenCredentialRequestAuthInput_ToCSRFTokenCredentialRequestAuth(t 
 	// GIVEN
 	testCases := []struct {
 		Name     string
-		Input    *model.CSRFTokenCredentialRequestAuthInput
-		Expected *model.CSRFTokenCredentialRequestAuth
+		Input    *auth.CSRFTokenCredentialRequestAuthInput
+		Expected *auth.CSRFTokenCredentialRequestAuth
 	}{
 		{
 			Name: "All properties given",
-			Input: &model.CSRFTokenCredentialRequestAuthInput{
-				Credential: &model.CredentialDataInput{
-					Basic: &model.BasicCredentialDataInput{
+			Input: &auth.CSRFTokenCredentialRequestAuthInput{
+				Credential: &auth.CredentialDataInput{
+					Basic: &auth.BasicCredentialDataInput{
 						Username: "test",
 					},
 				},
@@ -281,9 +281,9 @@ func TestCSRFTokenCredentialRequestAuthInput_ToCSRFTokenCredentialRequestAuth(t 
 					"header": {"value1", "value2"},
 				},
 			},
-			Expected: &model.CSRFTokenCredentialRequestAuth{
-				Credential: model.CredentialData{
-					Basic: &model.BasicCredentialData{
+			Expected: &auth.CSRFTokenCredentialRequestAuth{
+				Credential: auth.CredentialData{
+					Basic: &auth.BasicCredentialData{
 						Username: "test",
 					},
 				},
@@ -298,8 +298,8 @@ func TestCSRFTokenCredentialRequestAuthInput_ToCSRFTokenCredentialRequestAuth(t 
 		},
 		{
 			Name:     "Empty",
-			Input:    &model.CSRFTokenCredentialRequestAuthInput{},
-			Expected: &model.CSRFTokenCredentialRequestAuth{},
+			Input:    &auth.CSRFTokenCredentialRequestAuthInput{},
+			Expected: &auth.CSRFTokenCredentialRequestAuth{},
 		},
 		{
 			Name:     "Nil",

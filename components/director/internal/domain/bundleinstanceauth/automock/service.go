@@ -4,6 +4,8 @@ package automock
 
 import (
 	context "context"
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -14,18 +16,18 @@ type Service struct {
 }
 
 // Create provides a mock function with given fields: ctx, bundleID, in, defaultAuth, requestInputSchema
-func (_m *Service) Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string) (string, error) {
+func (_m *Service) Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *auth.Auth, requestInputSchema *string) (string, error) {
 	ret := _m.Called(ctx, bundleID, in, defaultAuth, requestInputSchema)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleInstanceAuthRequestInput, *model.Auth, *string) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.BundleInstanceAuthRequestInput, *auth.Auth, *string) string); ok {
 		r0 = rf(ctx, bundleID, in, defaultAuth, requestInputSchema)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.BundleInstanceAuthRequestInput, *model.Auth, *string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.BundleInstanceAuthRequestInput, *auth.Auth, *string) error); ok {
 		r1 = rf(ctx, bundleID, in, defaultAuth, requestInputSchema)
 	} else {
 		r1 = ret.Error(1)
@@ -72,18 +74,18 @@ func (_m *Service) Get(ctx context.Context, id string) (*model.BundleInstanceAut
 }
 
 // RequestDeletion provides a mock function with given fields: ctx, instanceAuth, defaultBundleInstanceAuth
-func (_m *Service) RequestDeletion(ctx context.Context, instanceAuth *model.BundleInstanceAuth, defaultBundleInstanceAuth *model.Auth) (bool, error) {
+func (_m *Service) RequestDeletion(ctx context.Context, instanceAuth *model.BundleInstanceAuth, defaultBundleInstanceAuth *auth.Auth) (bool, error) {
 	ret := _m.Called(ctx, instanceAuth, defaultBundleInstanceAuth)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, *model.BundleInstanceAuth, *model.Auth) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *model.BundleInstanceAuth, *auth.Auth) bool); ok {
 		r0 = rf(ctx, instanceAuth, defaultBundleInstanceAuth)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *model.BundleInstanceAuth, *model.Auth) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *model.BundleInstanceAuth, *auth.Auth) error); ok {
 		r1 = rf(ctx, instanceAuth, defaultBundleInstanceAuth)
 	} else {
 		r1 = ret.Error(1)

@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -31,7 +33,7 @@ var (
 	testTableColumns   = []string{"id", "owner_id", "bundle_id", "context", "input_params", "auth_value", "status_condition", "status_timestamp", "status_message", "status_reason", "runtime_id", "runtime_context_id"}
 )
 
-func fixModelBundleInstanceAuth(id, bundleID, tenant string, auth *model.Auth, status *model.BundleInstanceAuthStatus, runtimeID *string) *model.BundleInstanceAuth {
+func fixModelBundleInstanceAuth(id, bundleID, tenant string, auth *auth.Auth, status *model.BundleInstanceAuthStatus, runtimeID *string) *model.BundleInstanceAuth {
 	pia := fixModelBundleInstanceAuthWithoutContextAndInputParams(id, bundleID, tenant, auth, status, runtimeID)
 	pia.Context = &testContext
 	pia.InputParams = &testInputParams
@@ -39,7 +41,7 @@ func fixModelBundleInstanceAuth(id, bundleID, tenant string, auth *model.Auth, s
 	return pia
 }
 
-func fixModelBundleInstanceAuthWithoutContextAndInputParams(id, bundleID, tenant string, auth *model.Auth, status *model.BundleInstanceAuthStatus, runtimeID *string) *model.BundleInstanceAuth {
+func fixModelBundleInstanceAuthWithoutContextAndInputParams(id, bundleID, tenant string, auth *auth.Auth, status *model.BundleInstanceAuthStatus, runtimeID *string) *model.BundleInstanceAuth {
 	return &model.BundleInstanceAuth{
 		ID:        id,
 		BundleID:  bundleID,
@@ -153,7 +155,7 @@ func fixGQLSetInput() *graphql.BundleInstanceAuthSetInput {
 	}
 }
 
-func fixEntityBundleInstanceAuth(t *testing.T, id, bundleID, tenant string, auth *model.Auth, status *model.BundleInstanceAuthStatus, runtimeID *string) *bundleinstanceauth.Entity {
+func fixEntityBundleInstanceAuth(t *testing.T, id, bundleID, tenant string, auth *auth.Auth, status *model.BundleInstanceAuthStatus, runtimeID *string) *bundleinstanceauth.Entity {
 	out := fixEntityBundleInstanceAuthWithoutContextAndInputParams(t, id, bundleID, tenant, auth, status, runtimeID)
 	out.Context = sql.NullString{Valid: true, String: testContext}
 	out.InputParams = sql.NullString{Valid: true, String: testInputParams}
@@ -161,7 +163,7 @@ func fixEntityBundleInstanceAuth(t *testing.T, id, bundleID, tenant string, auth
 	return out
 }
 
-func fixEntityBundleInstanceAuthWithoutContextAndInputParams(t *testing.T, id, bundleID, tenant string, auth *model.Auth, status *model.BundleInstanceAuthStatus, runtimeID *string) *bundleinstanceauth.Entity {
+func fixEntityBundleInstanceAuthWithoutContextAndInputParams(t *testing.T, id, bundleID, tenant string, auth *auth.Auth, status *model.BundleInstanceAuthStatus, runtimeID *string) *bundleinstanceauth.Entity {
 	sqlNullString := sql.NullString{}
 	if runtimeID != nil {
 		sqlNullString.Valid = true
@@ -193,10 +195,10 @@ func fixEntityBundleInstanceAuthWithoutContextAndInputParams(t *testing.T, id, b
 	return &out
 }
 
-func fixModelAuth() *model.Auth {
-	return &model.Auth{
-		Credential: model.CredentialData{
-			Basic: &model.BasicCredentialData{
+func fixModelAuth() *auth.Auth {
+	return &auth.Auth{
+		Credential: auth.CredentialData{
+			Basic: &auth.BasicCredentialData{
 				Username: "foo",
 				Password: "bar",
 			},
@@ -213,10 +215,10 @@ func fixGQLAuth() *graphql.Auth {
 	}
 }
 
-func fixModelAuthInput() *model.AuthInput {
-	return &model.AuthInput{
-		Credential: &model.CredentialDataInput{
-			Basic: &model.BasicCredentialDataInput{
+func fixModelAuthInput() *auth.AuthInput {
+	return &auth.AuthInput{
+		Credential: &auth.CredentialDataInput{
+			Basic: &auth.BasicCredentialDataInput{
 				Username: "foo",
 				Password: "bar",
 			},
@@ -292,7 +294,7 @@ func fixSimpleGQLBundleInstanceAuth(id string) *graphql.BundleInstanceAuth {
 	}
 }
 
-func fixModelBundle(id string, requestInputSchema *string, defaultAuth *model.Auth) *model.Bundle {
+func fixModelBundle(id string, requestInputSchema *string, defaultAuth *auth.Auth) *model.Bundle {
 	return &model.Bundle{
 		ApplicationID:                  "foo",
 		Name:                           "test-bundle",

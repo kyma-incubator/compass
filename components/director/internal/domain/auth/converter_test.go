@@ -3,7 +3,7 @@ package auth_test
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
+	auth2 "github.com/kyma-incubator/compass/components/director/pkg/auth"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -15,7 +15,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	// GIVEN
 	testCases := []struct {
 		Name     string
-		Input    *model.Auth
+		Input    *auth2.Auth
 		Expected *graphql.Auth
 		Error    error
 	}{
@@ -26,7 +26,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		},
 		{
 			Name:  "Empty",
-			Input: &model.Auth{},
+			Input: &auth2.Auth{},
 			Expected: &graphql.Auth{
 				CertCommonName: &emptyCertCommonName,
 			},
@@ -56,7 +56,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	testCases := []struct {
 		Name     string
 		Input    *graphql.AuthInput
-		Expected *model.AuthInput
+		Expected *auth2.AuthInput
 	}{
 		{
 			Name:     "All properties given",
@@ -71,7 +71,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		{
 			Name:     "Empty",
 			Input:    &graphql.AuthInput{},
-			Expected: &model.AuthInput{},
+			Expected: &auth2.AuthInput{},
 		},
 	}
 

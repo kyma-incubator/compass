@@ -3,6 +3,8 @@ package bundleinstanceauth
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -49,7 +51,7 @@ func NewService(repo Repository, uidService UIDService) *service {
 }
 
 // Create missing godoc
-func (s *service) Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string) (string, error) {
+func (s *service) Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *auth.Auth, requestInputSchema *string) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", err
@@ -193,7 +195,7 @@ func (s *service) SetAuth(ctx context.Context, id string, in model.BundleInstanc
 }
 
 // RequestDeletion missing godoc
-func (s *service) RequestDeletion(ctx context.Context, instanceAuth *model.BundleInstanceAuth, defaultBundleInstanceAuth *model.Auth) (bool, error) {
+func (s *service) RequestDeletion(ctx context.Context, instanceAuth *model.BundleInstanceAuth, defaultBundleInstanceAuth *auth.Auth) (bool, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return false, err
@@ -261,7 +263,7 @@ func (s *service) setUpdateAuthAndStatus(ctx context.Context, instanceAuth *mode
 	return nil
 }
 
-func (s *service) setCreationStatusFromAuth(ctx context.Context, instanceAuth *model.BundleInstanceAuth, defaultAuth *model.Auth) error {
+func (s *service) setCreationStatusFromAuth(ctx context.Context, instanceAuth *model.BundleInstanceAuth, defaultAuth *auth.Auth) error {
 	if instanceAuth == nil {
 		return nil
 	}

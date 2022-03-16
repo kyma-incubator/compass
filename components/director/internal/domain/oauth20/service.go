@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
@@ -67,7 +67,7 @@ func NewService(scopeCfgProvider ClientDetailsConfigProvider, uidService UIDServ
 }
 
 // CreateClientCredentials missing godoc
-func (s *service) CreateClientCredentials(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error) {
+func (s *service) CreateClientCredentials(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType) (*auth.OAuthCredentialDataInput, error) {
 	details, err := s.GetClientDetails(objectType)
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func (s *service) CreateClientCredentials(ctx context.Context, objectType system
 		return nil, errors.Wrap(err, "while registering client credentials in Hydra")
 	}
 
-	credentialData := &model.OAuthCredentialDataInput{
+	credentialData := &auth.OAuthCredentialDataInput{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		URL:          s.publicAccessTokenEndpoint,

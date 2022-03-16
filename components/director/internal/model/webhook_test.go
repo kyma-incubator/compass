@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -25,7 +27,7 @@ func TestWebhookInput_ToApplicationWebhook(t *testing.T) {
 			Input: &model.WebhookInput{
 				Type: model.WebhookTypeConfigurationChanged,
 				URL:  &webhookURL,
-				Auth: &model.AuthInput{
+				Auth: &auth.AuthInput{
 					AdditionalHeaders: map[string][]string{
 						"foo": {"foo", "bar"},
 						"bar": {"bar", "foo"},
@@ -43,7 +45,7 @@ func TestWebhookInput_ToApplicationWebhook(t *testing.T) {
 				ID:         id,
 				Type:       model.WebhookTypeConfigurationChanged,
 				URL:        &webhookURL,
-				Auth: &model.Auth{
+				Auth: &auth.Auth{
 					AdditionalHeaders: map[string][]string{
 						"foo": {"foo", "bar"},
 						"bar": {"bar", "foo"},
@@ -95,7 +97,7 @@ func TestWebhookInput_ToApplicationTemplateWebhook(t *testing.T) {
 			Input: &model.WebhookInput{
 				Type: model.WebhookTypeConfigurationChanged,
 				URL:  &webhookURL,
-				Auth: &model.AuthInput{
+				Auth: &auth.AuthInput{
 					AdditionalHeaders: map[string][]string{
 						"foo": {"foo", "bar"},
 						"bar": {"bar", "foo"},
@@ -113,7 +115,7 @@ func TestWebhookInput_ToApplicationTemplateWebhook(t *testing.T) {
 				ID:         id,
 				Type:       model.WebhookTypeConfigurationChanged,
 				URL:        &webhookURL,
-				Auth: &model.Auth{
+				Auth: &auth.Auth{
 					AdditionalHeaders: map[string][]string{
 						"foo": {"foo", "bar"},
 						"bar": {"bar", "foo"},

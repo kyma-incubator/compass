@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strconv"
 
+	auth2 "github.com/kyma-incubator/compass/components/director/pkg/auth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -114,10 +116,10 @@ func (rd *EventResourceDefinition) Validate() error {
 
 // ToSpec missing godoc
 func (rd *EventResourceDefinition) ToSpec() *SpecInput {
-	var auth *AuthInput
+	var auth *auth2.AuthInput
 	if as, ok := rd.AccessStrategy.GetSupported(); ok {
 		asString := string(as)
-		auth = &AuthInput{
+		auth = &auth2.AuthInput{
 			AccessStrategy: &asString,
 		}
 	}
