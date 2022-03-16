@@ -14,6 +14,10 @@ func NewConverter() *converter {
 }
 
 func (c *converter) GraphQLToModel(appSysAuth *graphql.AppSystemAuth) (*SystemAuth, error) {
+	if appSysAuth.Type == nil {
+		return nil, errors.New("no system auth type provided")
+	}
+
 	switch *appSysAuth.Type {
 	case graphql.SystemAuthReferenceTypeApplication:
 		auth, err := authConv.ToModel(appSysAuth.Auth)
