@@ -29,7 +29,7 @@ func TestFullReport(stdT *testing.T) {
 
 	applicationRequest := fixtures.FixApplicationsFilteredPageableRequest(" { key: \"scc\" }", 200, after)
 	applicationPage := graphql.ApplicationPageExt{}
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, applicationRequest, &applicationPage)
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, applicationRequest, &applicationPage)
 	require.NoError(t, err)
 	for _, app := range applicationPage.Data {
 		applications = append(applications, app)
@@ -39,7 +39,7 @@ func TestFullReport(stdT *testing.T) {
 		err = applicationPage.PageInfo.EndCursor.UnmarshalGQL(&after)
 		require.NoError(stdT, err)
 		fixtures.FixApplicationsFilteredPageableRequest(" { key: \"scc\" }", 200, after)
-		err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, applicationRequest, &applicationPage)
+		err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, applicationRequest, &applicationPage)
 		require.NoError(t, err)
 		for _, app := range applicationPage.Data {
 			applications = append(applications, app)
@@ -161,7 +161,7 @@ func TestFullReport(stdT *testing.T) {
 		require.Equal(t, 1, len(apps))
 
 		app := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
 
 		validateApplication(t, app, "nonSAPsys", "http", "", expectedLabel, "reachable")
 	})
@@ -215,13 +215,13 @@ func TestFullReport(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		appOne := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appOne)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appOne)
 
 		apps, err = retrieveApps(t, ctx, sccLabelFilterWithLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		appTwo := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appTwo)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appTwo)
 
 		validateApplication(t, appOne, "nonSAPsys", "http", "system_one", expectedLabel, "reachable")
 		validateApplication(t, appTwo, "nonSAPsys", "http", "system_two", expectedLabelWithLocId, "reachable")
@@ -276,13 +276,13 @@ func TestFullReport(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		appOne := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appOne)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appOne)
 
 		apps, err = retrieveApps(t, ctx, sccLabelFilterWithLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		appTwo := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appTwo)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appTwo)
 
 		validateApplication(t, appOne, "nonSAPsys", "http", "system_one", expectedLabel, "reachable")
 		validateApplication(t, appTwo, "nonSAPsys", "http", "system_two", expectedLabelWithLocId, "reachable")
@@ -341,8 +341,8 @@ func TestFullReport(stdT *testing.T) {
 		outputApp := graphql.ApplicationExt{}
 		//WHEN
 
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", createAppFromTmplRequest, &outputApp)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", &outputApp)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", createAppFromTmplRequest, &outputApp)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", &outputApp)
 		require.NoError(t, err)
 		require.NotEmpty(t, outputApp.ID)
 
@@ -389,8 +389,8 @@ func TestFullReport(stdT *testing.T) {
 		outputApp := graphql.ApplicationExt{}
 		//WHEN
 
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", createAppFromTmplRequest, &outputApp)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", &outputApp)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", createAppFromTmplRequest, &outputApp)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", &outputApp)
 		require.NoError(t, err)
 		require.NotEmpty(t, outputApp.ID)
 
@@ -448,7 +448,7 @@ func TestFullReport(stdT *testing.T) {
 		require.Equal(t, 1, len(apps))
 
 		app := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
 
 		validateApplication(t, app, "nonSAPsys", "http", "", expectedLabel, "reachable")
 	})
@@ -483,7 +483,7 @@ func TestFullReport(stdT *testing.T) {
 		require.Equal(t, 1, len(apps))
 
 		app := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
 
 		report = baseReport
 		report.Value = append(report.Value,
@@ -543,7 +543,7 @@ func TestFullReport(stdT *testing.T) {
 		require.Equal(t, 1, len(apps))
 
 		app := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
 		validateApplication(t, apps[0], "nonSAPsys", "mail", "initial description", expectedLabel, "reachable")
 
 		report = baseReport

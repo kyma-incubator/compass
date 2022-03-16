@@ -16,17 +16,18 @@ import (
 )
 
 const (
-	invalidOpenResourceDiscovery = "invalidOpenResourceDiscovery"
-	invalidURL                   = "invalidURL"
-	invalidOrdID                 = "invalidOrdId"
-	invalidDescriptionLength     = 256
-	invalidVersion               = "invalidVersion"
-	invalidPolicyLevel           = "invalidPolicyLevel"
-	invalidVendor                = "wrongVendor!"
-	invalidType                  = "invalidType"
-	invalidCustomType            = "wrongCustomType"
-	invalidMediaType             = "invalid/type"
-	invalidBundleOrdID           = "ns:wrongConsumptionBundle:v1"
+	invalidOpenResourceDiscovery  = "invalidOpenResourceDiscovery"
+	invalidURL                    = "invalidURL"
+	invalidOrdID                  = "invalidOrdId"
+	invalidShortDescriptionLength = 257 // max allowed: 256
+	maxDescriptionLength          = 5000
+	invalidVersion                = "invalidVersion"
+	invalidPolicyLevel            = "invalidPolicyLevel"
+	invalidVendor                 = "wrongVendor!"
+	invalidType                   = "invalidType"
+	invalidCustomType             = "wrongCustomType"
+	invalidMediaType              = "invalid/type"
+	invalidBundleOrdID            = "ns:wrongConsumptionBundle:v1"
 
 	unknownVendorOrdID  = "nsUNKNOWN:vendor:id:"
 	unknownProductOrdID = "nsUNKNOWN:product:id:"
@@ -115,6 +116,13 @@ var (
           "title": "myTitle"
         }
       ]`
+	invalidLinkDueToInvalidLengthOfDescription = `[
+        {
+          "title": "myTitle",
+          "url": "https://example2.com/en/legal/terms-of-use.html",
+          "description": "%s"
+        }
+      ]`
 
 	invalidPartOfProductsElement = `["invalidValue"]`
 
@@ -201,6 +209,13 @@ var (
           "type": "wrongType",
 		  "customType": "ns:credential-exchange:v1",
 		  "customDescription": "foo bar"
+        }
+      ]`
+	invalidCredentialsExchangeStrategyDueToInvalidLenOfCustomDescription = `[
+        {
+		  "type": "custom",
+		  "customType": "ns:credential-exchange:v1",
+		  "customDescription": "%s"
         }
       ]`
 	invalidCredentialsExchangeStrategyDueToWrongCustomType = `[
@@ -310,6 +325,15 @@ var (
           "version": "1.0.0"
         }
       ]`
+	invalidChangeLogEntriesDueToInvalidLengthOfDescription = `[
+        {
+		  "date": "2020-04-29",
+		  "description": "%s",
+		  "releaseStatus": "active",
+		  "url": "https://example.com/changelog/v1",
+		  "version": "1.0.0"
+        }
+      ]`
 
 	invalidCorrelationIDsElement          = `["foo.bar.baz:123456", "wrongID"]`
 	invalidCorrelationIDsNonStringElement = `["foo.bar.baz:123456", 992]`
@@ -318,15 +342,18 @@ var (
 	invalidEntryPointsDueToDuplicates  = `["/test/v1", "/test/v1"]`
 	invalidEntryPointsNonStringElement = `["/test/v1", 992]`
 
-	invalidExtensibleDueToInvalidJSON                                = `{invalid}`
-	invalidExtensibleDueToInvalidSupportedType                       = `{"supported":true}`
-	invalidExtensibleDueToNoSupportedProperty                        = `{"description":"Please find the extensibility documentation"}`
-	invalidExtensibleDueToInvalidSupportedValue                      = `{"supported":"invalid"}`
-	invalidExtensibleDueToSupportedAutomaticAndNoDescriptionProperty = `{"supported":"automatic"}`
-	invalidExtensibleDueToSupportedManualAndNoDescriptionProperty    = `{"supported":"manual"}`
+	invalidExtensibleDueToInvalidJSON                                 = `{invalid}`
+	invalidExtensibleDueToInvalidSupportedType                        = `{"supported":true}`
+	invalidExtensibleDueToNoSupportedProperty                         = `{"description":"Please find the extensibility documentation"}`
+	invalidExtensibleDueToInvalidSupportedValue                       = `{"supported":"invalid"}`
+	invalidExtensibleDueToSupportedAutomaticAndNoDescriptionProperty  = `{"supported":"automatic"}`
+	invalidExtensibleDueToSupportedManualAndNoDescriptionProperty     = `{"supported":"manual"}`
+	invalidExtensibleDueToCorrectSupportedButInvalidDescriptionLength = `{"supported":"%s", "description": "%s"}`
 
 	invalidSuccessorsDueToInvalidAPIRegex   = `["sap.s4:apiResource:API_BILL_OF_MATERIAL_SRV:v2", "invalid-api-successor"]`
 	invalidSuccessorsDueToInvalidEventRegex = `["sap.billing.sb:eventResource:BusinessEvents_SubscriptionEvents:v1", "invalid-event-successor"]`
+
+	invalidDescriptionFieldWithExceedingMaxLength = strings.Repeat("a", maxDescriptionLength+1)
 )
 
 func TestConfig_ValidateConfig(t *testing.T) {
@@ -754,7 +781,7 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			Name: "Exceeded length of `shortDescription` field for Package",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Packages[0].ShortDescription = strings.Repeat("a", invalidDescriptionLength)
+				doc.Packages[0].ShortDescription = strings.Repeat("a", invalidShortDescriptionLength)
 
 				return []*ord.Document{doc}
 			},
@@ -779,6 +806,14 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Description = ""
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Exceeded length of `description` field for Package",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Description = invalidDescriptionFieldWithExceedingMaxLength
 
 				return []*ord.Document{doc}
 			},
@@ -990,6 +1025,22 @@ func TestDocuments_ValidatePackage(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.Packages[0].Links = json.RawMessage(invalidLinkDueToWrongURL)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `description` field with exceeding length in `Links` for Package",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Links = json.RawMessage(fmt.Sprintf(invalidLinkDueToInvalidLengthOfDescription, invalidDescriptionFieldWithExceedingMaxLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `description` field in `Links` for Package",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.Packages[0].Links = json.RawMessage(fmt.Sprintf(invalidLinkDueToInvalidLengthOfDescription, ""))
 
 				return []*ord.Document{doc}
 			},
@@ -1460,20 +1511,19 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			Name: "Exceeded length of `shortDescription` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.ConsumptionBundles[0].ShortDescription = str.Ptr(strings.Repeat("a", invalidDescriptionLength))
+				doc.ConsumptionBundles[0].ShortDescription = str.Ptr(strings.Repeat("a", invalidShortDescriptionLength))
 
 				return []*ord.Document{doc}
 			},
 		},
 		{
-			Name: "Valid empty `shortDescription` field for Bundle",
+			Name: "Invalid empty `shortDescription` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].ShortDescription = str.Ptr("")
 
 				return []*ord.Document{doc}
 			},
-			ExpectedToBeValid: true,
 		},
 		{
 			Name: "New lines in `shortDescription` field for Bundle",
@@ -1498,26 +1548,16 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			Name: "Exceeded length of `description` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.ConsumptionBundles[0].Description = str.Ptr(strings.Repeat("a", invalidDescriptionLength))
+				doc.ConsumptionBundles[0].Description = str.Ptr(invalidDescriptionFieldWithExceedingMaxLength)
 
 				return []*ord.Document{doc}
 			},
 		},
 		{
-			Name: "Valid empty `description` field for Bundle",
+			Name: "Invalid empty `description` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].Description = str.Ptr("")
-
-				return []*ord.Document{doc}
-			},
-			ExpectedToBeValid: true,
-		},
-		{
-			Name: "New lines in `description` field for Bundle",
-			DocumentProvider: func() []*ord.Document {
-				doc := fixORDDocument()
-				doc.ConsumptionBundles[0].Description = str.Ptr(`newLine\n`)
 
 				return []*ord.Document{doc}
 			},
@@ -1545,6 +1585,24 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].Links = json.RawMessage(invalidBundleLinksDueToWrongURL)
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `description` field with exceeding length in `Links` for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Links = json.RawMessage(fmt.Sprintf(invalidLinkDueToInvalidLengthOfDescription, invalidDescriptionFieldWithExceedingMaxLength))
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid empty `description` field in `Links` for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].Links = json.RawMessage(fmt.Sprintf(invalidLinkDueToInvalidLengthOfDescription, ""))
 
 				return []*ord.Document{doc}
 			},
@@ -1704,6 +1762,24 @@ func TestDocuments_ValidateBundle(t *testing.T) {
 			},
 		},
 		{
+			Name: "`type` field is with value `custom` but `customDescription` field is empty for `CredentialExchangeStrategies` field for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(invalidCredentialsExchangeStrategyDueToInvalidLenOfCustomDescription, ""))
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "`type` field is with value `custom` but `customDescription` field is with exceeding length for `CredentialExchangeStrategies` field for Bundle",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(invalidCredentialsExchangeStrategyDueToInvalidLenOfCustomDescription, invalidDescriptionFieldWithExceedingMaxLength))
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
 			Name: "Invalid `callbackURL` field of `CredentialExchangeStrategies` field for Bundle",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -1851,7 +1927,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			Name: "Exceeded length of `shortDescription` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.APIResources[0].ShortDescription = str.Ptr(strings.Repeat("a", invalidDescriptionLength))
+				doc.APIResources[0].ShortDescription = str.Ptr(strings.Repeat("a", invalidShortDescriptionLength))
 
 				return []*ord.Document{doc}
 			},
@@ -1876,6 +1952,14 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Description = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `description` field with exceeding max length for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Description = str.Ptr(invalidDescriptionFieldWithExceedingMaxLength)
 
 				return []*ord.Document{doc}
 			},
@@ -2532,6 +2616,15 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Invalid field `customDescription` with exceeding length when field `type` is `custom` for `accessStrategies` of `resourceDefinitions` field for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "custom"
+				doc.APIResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomDescription = invalidDescriptionFieldWithExceedingMaxLength
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Missing `type` field for `apiResourceLink` field for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -2621,6 +2714,22 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Invalid `description` field with exceeding length in `Links` for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Links = json.RawMessage(fmt.Sprintf(invalidLinkDueToInvalidLengthOfDescription, invalidDescriptionFieldWithExceedingMaxLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `description` field in `Links` for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Links = json.RawMessage(fmt.Sprintf(invalidLinkDueToInvalidLengthOfDescription, ""))
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Invalid `links` field when it is invalid JSON for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -2675,7 +2784,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				doc := fixORDDocument()
 				doc.APIResources[0].ReleaseStatus = str.Ptr("deprecated")
 				doc.APIResources[0].SunsetDate = str.Ptr("0000-00-00T09:35:30+0000")
-				doc.APIResources[0].Successors = json.RawMessage(fmt.Sprintf(`[%s]`, api2ORDID))
+				doc.APIResources[0].Successors = json.RawMessage(fmt.Sprintf(`["%s"]`, api2ORDID))
 
 				return []*ord.Document{doc}
 			},
@@ -2756,6 +2865,22 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].ChangeLogEntries = json.RawMessage(invalidChangeLogEntriesDueToWrongURL)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty field `description` of field `changeLogEntries` for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ChangeLogEntries = json.RawMessage(fmt.Sprintf(invalidChangeLogEntriesDueToInvalidLengthOfDescription, ""))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `description` with exceeding length of field `changeLogEntries` for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].ChangeLogEntries = json.RawMessage(fmt.Sprintf(invalidChangeLogEntriesDueToInvalidLengthOfDescription, invalidDescriptionFieldWithExceedingMaxLength))
 
 				return []*ord.Document{doc}
 			},
@@ -3071,7 +3196,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 			},
 		},
 		{
-			Name: "Missing `Extensible` field when `policyLevel` is sap",
+			Name: "Missing `Extensible` field when `policyLevel` is sap for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Extensible = nil
@@ -3080,7 +3205,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Missing `Extensible` field when `policyLevel` is sap partner",
+			Name: "Missing `Extensible` field when `policyLevel` is sap partner for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Extensible = nil
@@ -3090,7 +3215,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid `Extensible` field due to empty json object",
+			Name: "Invalid `Extensible` field due to empty json object for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Extensible = json.RawMessage(`{}`)
@@ -3098,7 +3223,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Invalid `Extensible` field due to invalid json",
+			Name: "Invalid `Extensible` field due to invalid json for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Extensible = json.RawMessage(invalidExtensibleDueToInvalidJSON)
@@ -3130,7 +3255,7 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Missing `description` field when `supported` has an `automatic` value",
+			Name: "Missing `description` field when `supported` has an `automatic` value for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Extensible = json.RawMessage(invalidExtensibleDueToSupportedAutomaticAndNoDescriptionProperty)
@@ -3138,10 +3263,42 @@ func TestDocuments_ValidateAPI(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
-			Name: "Missing `description` field when `supported` has a `manual` value",
+			Name: "Missing `description` field when `supported` has a `manual` value for API",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.APIResources[0].Extensible = json.RawMessage(invalidExtensibleDueToSupportedManualAndNoDescriptionProperty)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Empty `description` field when `supported` has a `manual` value for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = json.RawMessage(fmt.Sprintf(invalidExtensibleDueToCorrectSupportedButInvalidDescriptionLength, "manual", ""))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Empty `description` field when `supported` has a `automatic` value for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = json.RawMessage(fmt.Sprintf(invalidExtensibleDueToCorrectSupportedButInvalidDescriptionLength, "automatic", ""))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `description` field with exceeding length when `supported` has a `manual` value for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = json.RawMessage(fmt.Sprintf(invalidExtensibleDueToCorrectSupportedButInvalidDescriptionLength, "manual", invalidDescriptionFieldWithExceedingMaxLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `description` field with exceeding length when `supported` has a `automatic` value for API",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.APIResources[0].Extensible = json.RawMessage(fmt.Sprintf(invalidExtensibleDueToCorrectSupportedButInvalidDescriptionLength, "automatic", invalidDescriptionFieldWithExceedingMaxLength))
 
 				return []*ord.Document{doc}
 			},
@@ -3485,7 +3642,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			Name: "Exceeded length of `shortDescription` field for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.EventResources[0].ShortDescription = str.Ptr(strings.Repeat("a", invalidDescriptionLength))
+				doc.EventResources[0].ShortDescription = str.Ptr(strings.Repeat("a", invalidShortDescriptionLength))
 
 				return []*ord.Document{doc}
 			},
@@ -3510,6 +3667,14 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Description = nil
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `description` field with exceeding length for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Description = str.Ptr(invalidDescriptionFieldWithExceedingMaxLength)
 
 				return []*ord.Document{doc}
 			},
@@ -3670,6 +3835,22 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				return []*ord.Document{doc}
 			},
 		}, {
+			Name: "Invalid empty field `description` of field `changeLogEntries` for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].ChangeLogEntries = json.RawMessage(fmt.Sprintf(invalidChangeLogEntriesDueToInvalidLengthOfDescription, ""))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `description` with exceeding length of field `changeLogEntries` for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].ChangeLogEntries = json.RawMessage(fmt.Sprintf(invalidChangeLogEntriesDueToInvalidLengthOfDescription, invalidDescriptionFieldWithExceedingMaxLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
 			Name: "Invalid `changeLogEntries` field when it is invalid JSON for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
@@ -3747,6 +3928,22 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Links = json.RawMessage(invalidLinkDueToWrongURL)
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid `description` field with exceeding length in `Links` for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Links = json.RawMessage(fmt.Sprintf(invalidLinkDueToInvalidLengthOfDescription, invalidDescriptionFieldWithExceedingMaxLength))
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid empty `description` field in `Links` for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Links = json.RawMessage(fmt.Sprintf(invalidLinkDueToInvalidLengthOfDescription, ""))
 
 				return []*ord.Document{doc}
 			},
@@ -3957,6 +4154,15 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc := fixORDDocument()
 				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "open"
 				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomDescription = "foo"
+
+				return []*ord.Document{doc}
+			},
+		}, {
+			Name: "Invalid field `customDescription` with exceeding length when field `type` is `custom` for `accessStrategies` of `resourceDefinitions` field for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].Type = "custom"
+				doc.EventResources[0].ResourceDefinitions[0].AccessStrategy[0].CustomDescription = invalidDescriptionFieldWithExceedingMaxLength
 
 				return []*ord.Document{doc}
 			},
@@ -4267,6 +4473,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].ReleaseStatus = str.Ptr("deprecated")
+				doc.EventResources[0].Successors = json.RawMessage(fmt.Sprintf(`["%s"]`, event2ORDID))
 
 				return []*ord.Document{doc}
 			},
@@ -4276,7 +4483,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 				doc := fixORDDocument()
 				doc.EventResources[0].ReleaseStatus = str.Ptr("deprecated")
 				doc.EventResources[0].SunsetDate = str.Ptr("0000-00-00T09:35:30+0000")
-				doc.EventResources[0].Successors = json.RawMessage(fmt.Sprintf(`[%s]`, event2ORDID))
+				doc.EventResources[0].Successors = json.RawMessage(fmt.Sprintf(`["%s"]`, event2ORDID))
 
 				return []*ord.Document{doc}
 			},
@@ -4427,7 +4634,7 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			},
 		},
 		{
-			Name: "Missing `description` field when `supported` has an `automatic` value",
+			Name: "Missing `description` field when `supported` has an `automatic` value for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Extensible = json.RawMessage(invalidExtensibleDueToSupportedAutomaticAndNoDescriptionProperty)
@@ -4436,10 +4643,46 @@ func TestDocuments_ValidateEvent(t *testing.T) {
 			},
 		},
 		{
-			Name: "Missing `description` field when `supported` has a `manual` value",
+			Name: "Missing `description` field when `supported` has a `manual` value for Event",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
 				doc.EventResources[0].Extensible = json.RawMessage(invalidExtensibleDueToSupportedManualAndNoDescriptionProperty)
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Empty `description` field when `supported` has a `manual` value for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = json.RawMessage(fmt.Sprintf(invalidExtensibleDueToCorrectSupportedButInvalidDescriptionLength, "manual", ""))
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Empty `description` field when `supported` has a `automatic` value for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = json.RawMessage(fmt.Sprintf(invalidExtensibleDueToCorrectSupportedButInvalidDescriptionLength, "automatic", ""))
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `description` field with exceeding length when `supported` has a `manual` value for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = json.RawMessage(fmt.Sprintf(invalidExtensibleDueToCorrectSupportedButInvalidDescriptionLength, "manual", invalidDescriptionFieldWithExceedingMaxLength))
+
+				return []*ord.Document{doc}
+			},
+		},
+		{
+			Name: "Invalid `description` field with exceeding length when `supported` has a `automatic` value for Event",
+			DocumentProvider: func() []*ord.Document {
+				doc := fixORDDocument()
+				doc.EventResources[0].Extensible = json.RawMessage(fmt.Sprintf(invalidExtensibleDueToCorrectSupportedButInvalidDescriptionLength, "automatic", invalidDescriptionFieldWithExceedingMaxLength))
 
 				return []*ord.Document{doc}
 			},
@@ -4553,7 +4796,7 @@ func TestDocuments_ValidateProduct(t *testing.T) {
 			Name: "Exceeded length of `shortDescription` field for Product",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.Products[0].ShortDescription = strings.Repeat("a", invalidDescriptionLength)
+				doc.Products[0].ShortDescription = strings.Repeat("a", invalidShortDescriptionLength)
 
 				return []*ord.Document{doc}
 			},

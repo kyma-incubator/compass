@@ -82,6 +82,13 @@ fi
 
 echo "Using Kyma source '${KYMA_SOURCE}'..."
 
+# Temporary hack. Should be removed when we start using Kyma 2.0
+kubectl create namespace kyma-system
+kubectl label namespace kyma-system name=kyma-system
+kubectl create secret -n kyma-system generic admin-user \
+  --from-literal email="Dex not installed. Admin user is missing." \
+  --from-literal password="Dex not installed. Admin password is missing." \
+
 echo "Installing Kyma..."
 set -o xtrace
 if [[ $KYMA_INSTALLATION == *full* ]]; then
