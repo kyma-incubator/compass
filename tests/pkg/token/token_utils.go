@@ -176,7 +176,6 @@ func GetTokenWithClient(t *testing.T, ctx context.Context, client *http.Client, 
 	if err != nil {
 		fmt.Println(err)
 	}
-	req.SetBasicAuth(oauthConfig.ClientID, oauthConfig.ClientSecret)
 	req.Header.Add(contentTypeHeader, contentTypeApplicationURLEncoded)
 
 	resp, err := client.Do(req)
