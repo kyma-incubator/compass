@@ -1,17 +1,17 @@
 package runtime
 
-import "C"
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
-	authpkg "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"io"
 	"net/http"
 	urlpkg "net/url"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
+	authpkg "github.com/kyma-incubator/compass/components/director/pkg/auth"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 
@@ -28,12 +28,17 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// ExternalSvcCaller is used to call external services with given authentication
+//go:generate mockery --name=ExternalSvcCaller --output=automock --outpkg=automock --case=underscore
+type ExternalSvcCaller interface {
+	Call(*http.Request) (*http.Response, error)
+}
+
 // ExternalSvcCallerProvider is used to call external services with given authentication
 //go:generate mockery --name=ExternalSvcCallerProvider --output=automock --outpkg=automock --case=underscore
 type ExternalSvcCallerProvider interface {
-	GetCaller(config SelfRegConfig, region string) (*securehttp.Caller, error)
+	GetCaller(SelfRegConfig, string) (ExternalSvcCaller, error)
 }
-
 
 // SelfRegConfig is configuration for the runtime self-registration flow
 type SelfRegConfig struct {
@@ -79,11 +84,9 @@ func (i *InstanceConfig) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+type CallerProvider struct{}
 
-type CallerProvider struct {
-}
-
-func (c *CallerProvider) GetCaller(config SelfRegConfig, region string) (*securehttp.Caller, error) {
+func (c *CallerProvider) GetCaller(config SelfRegConfig, region string) (ExternalSvcCaller, error) {
 	instanceConfig, exists := config.RegionToConfig[region]
 	if !exists {
 		return nil, errors.New(fmt.Sprintf("missing configuration for region: %s", region))
@@ -126,8 +129,8 @@ type selfRegisterManager struct {
 
 // NewSelfRegisterManager creates a new SelfRegisterManager which is responsible for doing preparation/clean-up during
 // self-registration of runtimes configured with values from cfg.
-func NewSelfRegisterManager(cfg SelfRegConfig, provider CallerProvider) *selfRegisterManager {
-	return &selfRegisterManager{cfg: cfg, callerProvider: &provider}
+func NewSelfRegisterManager(cfg SelfRegConfig, provider ExternalSvcCallerProvider) *selfRegisterManager {
+	return &selfRegisterManager{cfg: cfg, callerProvider: provider}
 }
 
 // PrepareRuntimeForSelfRegistration executes the prerequisite calls for self-registration in case the runtime
@@ -148,7 +151,7 @@ func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Cont
 
 		instanceConfig, exists := s.cfg.RegionToConfig[region]
 		if !exists {
-			return nil, errors.New(fmt.Sprintf("missing configuration for region: %s", region))
+			return labels, errors.New(fmt.Sprintf("missing configuration for region: %s", region))
 		}
 
 		request, err := s.createSelfRegPrepRequest(id, consumerInfo.ConsumerID, instanceConfig)
@@ -158,7 +161,7 @@ func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Cont
 
 		caller, err := s.callerProvider.GetCaller(s.cfg, region)
 		if err != nil {
-			return nil, err
+			return labels, errors.Wrapf(err, "while getting caller")
 		}
 
 		response, err := caller.Call(request)
@@ -202,7 +205,7 @@ func (s *selfRegisterManager) CleanupSelfRegisteredRuntime(ctx context.Context, 
 
 	caller, err := s.callerProvider.GetCaller(s.cfg, region)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "while getting caller")
 	}
 	resp, err := caller.Call(request)
 	if err != nil {
