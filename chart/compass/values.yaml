@@ -196,6 +196,8 @@ global:
     selfRegister:
       secret:
         name: "compass-self-registration-credentials"
+        name1: "xsuaa-instance-per-region"
+        key: "keyConfig"
         clientIdKey: client-id
         clientSecretKey: client-secret
         urlKey: url

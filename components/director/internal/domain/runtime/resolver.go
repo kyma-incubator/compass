@@ -93,7 +93,7 @@ type BundleInstanceAuthService interface {
 //go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore
 type SelfRegisterManager interface {
 	PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeInput, id string) (map[string]interface{}, error)
-	CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterLabelValue string) error
+	CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterLabelValue, region string) error
 	GetSelfRegDistinguishingLabelKey() string
 }
 
@@ -219,9 +219,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 		if didRollback {
 			labelVal := str.CastOrEmpty(convertedIn.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
 			if labelVal != "" {
-				r.cleanupAndLogOnError(ctx, id)
-			} else {
-				r.cleanupAndLogOnError(ctx, "")
+				r.cleanupAndLogOnError(ctx, id, in.Labels["region"].(string))
 			}
 		}
 	}()
@@ -281,16 +279,13 @@ func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.Runt
 
 // DeleteRuntime missing godoc
 func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runtime, error) {
-	var selfRegCleanup string
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		didRollback := r.transact.RollbackUnlessCommitted(ctx, tx)
-		if !didRollback { // if we did rollback we should not try to execute the cleanup
-			r.cleanupAndLogOnError(ctx, selfRegCleanup)
-		}
+		r.transact.RollbackUnlessCommitted(ctx, tx)
 	}()
 
 	ctx = persistence.SaveToContext(ctx, tx)
@@ -306,13 +301,36 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	}
 
 	_, err = r.runtimeService.GetLabel(ctx, runtime.ID, r.selfRegManager.GetSelfRegDistinguishingLabelKey())
+
+	isSelfRegistered := false
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
 			return nil, errors.Wrapf(err, "while getting self register info label")
 		}
-		selfRegCleanup = "" // the deferred cleanup will do nothing
 	} else {
-		selfRegCleanup = id
+		isSelfRegistered = true
+	}
+
+	if isSelfRegistered {
+		regionLabel, err := r.runtimeService.GetLabel(ctx, runtime.ID, "region")
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting region label")
+		}
+
+		//Commiting transaction as the cleanup sends request to external service
+		if err = tx.Commit(); err != nil {
+			return nil, err
+		}
+
+		if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, runtime.ID, regionLabel.Value.(string)); err != nil {
+			return nil, errors.Wrap(err, "An error occurred during cleanup of self-registered runtime: ")
+		}
+
+		tx, err = r.transact.Begin()
+		if err != nil {
+			return nil, err
+		}
+		ctx = persistence.SaveToContext(ctx, tx)
 	}
 
 	currentTimestamp := timestamp.DefaultGenerator
@@ -608,8 +626,8 @@ func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runt
 	return nil
 }
 
-func (r *Resolver) cleanupAndLogOnError(ctx context.Context, runtimeID string) {
-	if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, runtimeID); err != nil {
+func (r *Resolver) cleanupAndLogOnError(ctx context.Context, runtimeID, region string) {
+	if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, runtimeID, region); err != nil {
 		log.C(ctx).Errorf("An error occurred during cleanup of self-registered runtime: %v", err)
 	}
 }

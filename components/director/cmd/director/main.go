@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"net/http"
 	"net/url"
 	"os"
@@ -191,6 +193,15 @@ func main() {
 		},
 	}
 	cfg.SelfRegConfig.ClientTimeout = cfg.ClientTimeout
+	fmt.Println("INSTANCES: ", cfg.SelfRegConfig.Instances)
+	fmt.Println(">>>>>>>>>>>>>>>>>>")
+	spew.Dump(cfg.SelfRegConfig.Instances)
+	fmt.Println(">>>>>>>>>>>>>>>>>>")
+	byte := []byte(cfg.SelfRegConfig.Instances)
+	mapped := make(map[string]runtime.InstanceConfig, 0)
+	json.Unmarshal(byte, &mapped)
+	spew.Dump(mapped)
+	cfg.SelfRegConfig.RegionToConfig=mapped
 
 	internalHTTPClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,

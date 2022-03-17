@@ -190,6 +190,11 @@ spec:
               value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY
               value: {{ .Values.global.tenantFetcher.server.consumerSubaccountIdsLabelKey }}
+            - name: APP_SELF_REGISTER_AGGREGATED_XSUAA_INSTANCES
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.director.selfRegister.secret.name1 }}
+                  key: {{ .Values.global.director.selfRegister.secret.key }}
             - name: APP_SELF_REGISTER_CLIENT_ID
               valueFrom:
                 secretKeyRef:

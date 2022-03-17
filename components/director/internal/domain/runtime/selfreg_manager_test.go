@@ -33,9 +33,14 @@ var testConfig = runtime.SelfRegConfig{
 	SelfRegisterNameQueryParam:      "testNameQuery",
 	SelfRegisterTenantQueryParam:    "testTenantQuery",
 	SelfRegisterRequestBodyPattern:  `{"%s":"test"}`,
-	ClientID:                        "test-client-id",
-	ClientSecret:                    "test-client-secret",
-	URL:                             "https://test-url.com",
+	RegionToConfig: map[string]runtime.InstanceConfig{
+		"test-region": runtime.InstanceConfig{
+			ClientID:                        "test-client-id",
+			ClientSecret:                    "test-client-secret",
+			URL:                             "https://test-url.com",
+		},
+	},
+
 	ClientTimeout:                   5 * time.Second,
 }
 
@@ -58,7 +63,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 	lblInvalidInput := model.RuntimeInput{Labels: graphql.Labels{selfRegisterDistinguishLabelKey: "invalid value"}}
 
 	fakeConfig := testConfig
-	fakeConfig.URL = "https://test-url    .com"
+	fakeConfig.RegionToConfig["fake-region"] = runtime.InstanceConfig{URL: "https://test-url    .com"}
 
 	ctxWithTokenConsumer := consumer.SaveToContext(context.TODO(), tokenConsumer)
 	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
@@ -150,7 +155,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 	ctx := context.TODO()
 	fakeConfig := testConfig
-	fakeConfig.URL = "https://test-url    .com"
+	fakeConfig.RegionToConfig["fake-region"] = runtime.InstanceConfig{URL: "https://test-url    .com"}
 
 	testCases := []struct {
 		Name                                string
@@ -204,8 +209,7 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			svcCaller := testCase.Caller(t)
-			manager := runtime.NewSelfRegisterManager(testCase.Config, svcCaller)
+			manager := runtime.NewSelfRegisterManager(testCase.Config, )
 
 			err := manager.CleanupSelfRegisteredRuntime(testCase.Context, testCase.SelfRegisteredDistinguishLabelValue)
 			if testCase.ExpectedErr != nil {
