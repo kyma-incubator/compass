@@ -16,7 +16,6 @@ func NewConverter() *converter {
 func (c *converter) GraphQLToModel(in *graphql.AppSystemAuth) (*SystemAuth, error) {
 	if in.Type == nil {
 		return nil, errors.New("cannot get system auth type")
-
 	}
 
 	switch *in.Type {

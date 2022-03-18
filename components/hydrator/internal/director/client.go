@@ -2,7 +2,6 @@ package director
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
@@ -56,7 +55,7 @@ type TenantByLowestOwnerForResourceResponse struct {
 	Result string `json:"result"`
 }
 
-type SystemAuthResponse1 struct {
+type SystemAuthResponse struct {
 	Result *schema.AppSystemAuth `json:"result"`
 }
 
@@ -110,43 +109,29 @@ func (c *client) GetTenantByLowestOwnerForResource(ctx context.Context, resource
 func (c *client) GetSystemAuthByID(ctx context.Context, authID string) (*systemauth.SystemAuth, error) {
 	query := SystemAuthQuery(authID)
 
-	var response SystemAuthResponse1
+	var response SystemAuthResponse
 
 	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
 		return nil, err
-	}
-
-	fmt.Printf("ALEX GetSystemAuthByID 0\n")
-	if response.Result != nil {
-		fmt.Printf("ALEX GetSystemAuthByID 1 Type: '%+v' \n", response.Result.Type)
 	}
 
 	sysAuth, err := c.sysAuthConv.GraphQLToModel(response.Result)
 	if err != nil {
 		return nil, err
 	}
-	//if response.Result == nil {
-	//	return nil, nil
-	//}
 
 	return sysAuth, nil
-
 }
 
 func (c *client) GetSystemAuthByToken(ctx context.Context, token string) (*systemauth.SystemAuth, error) {
 	query := SystemAuthByTokenQuery(token)
 
-	var response SystemAuthResponse1
+	var response SystemAuthResponse
 
 	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
 		return nil, err
-	}
-
-	fmt.Printf("ALEX GetSystemAuthByToken 0\n")
-	if response.Result != nil {
-		fmt.Printf("ALEX GetSystemAuthByToken 1 Type: '%+v' \n", response.Result.Type)
 	}
 
 	sysAuth, err := c.sysAuthConv.GraphQLToModel(response.Result)
@@ -176,22 +161,12 @@ func (c *client) UpdateSystemAuth(ctx context.Context, sysAuth *systemauth.Syste
 func (c *client) InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) error {
 	query := InvalidateSystemAuthOneTimeTokenQuery(authID)
 
-	var response SystemAuthResponse1
+	var response SystemAuthResponse
 
 	err := c.execute(ctx, c.gqlClient, query, &response)
 	if err != nil {
 		return err
 	}
-
-	//fmt.Printf("ALEX InvalidateSystemAuthOneTimeToken 0\n")
-	//if response.Result != nil {
-	//	fmt.Printf("ALEX InvalidateSystemAuthOneTimeToken 1 Type: '%+v' \n", response.Result.Type)
-	//}
-
-	//sysAuth, err := c.sysAuthConv.GraphQLToModel(response.Result)
-	//if err != nil {
-	//	return nil, err
-	//}
 
 	return nil
 }
