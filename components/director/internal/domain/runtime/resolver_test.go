@@ -188,7 +188,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := testCase.UUIDSvcFn()
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil)
 
 			// WHEN
 			result, err := resolver.RegisterRuntime(context.TODO(), testCase.Input)
@@ -320,7 +320,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			selfRegMng := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegMng, uuidSvc)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegMng, uuidSvc, nil)
 
 			// WHEN
 			result, err := resolver.UpdateRuntime(context.TODO(), testCase.RuntimeID, testCase.Input)
@@ -1269,7 +1269,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			selfRegisterManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, scenarioAssignmentSvc, sysAuthSvc, oAuth20Svc, converter, nil, nil, bundleInstanceAuthSvc, selfRegisterManager, uuidSvc)
+			resolver := runtime.NewResolver(transact, svc, scenarioAssignmentSvc, sysAuthSvc, oAuth20Svc, converter, nil, nil, bundleInstanceAuthSvc, selfRegisterManager, uuidSvc, nil)
 
 			// WHEN
 			result, err := resolver.DeleteRuntime(context.TODO(), testCase.InputID)
@@ -1384,7 +1384,7 @@ func TestResolver_Runtime(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil)
 
 			// WHEN
 			result, err := resolver.Runtime(context.TODO(), testCase.InputID)
@@ -1489,7 +1489,7 @@ func TestResolver_Runtimes(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil)
 
 			// WHEN
 			result, err := resolver.Runtimes(context.TODO(), testCase.InputLabelFilters, testCase.InputFirst, testCase.InputAfter)
@@ -1601,7 +1601,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil)
 
 			// WHEN
 			result, err := resolver.SetRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey, testCase.InputValue)
@@ -1615,7 +1615,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 	}
 
 	t.Run("Returns error when Label input validation failed", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.SetRuntimeLabel(context.TODO(), "", "", "")
@@ -1735,7 +1735,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil)
 
 			// WHEN
 			result, err := resolver.DeleteRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey)
@@ -1879,7 +1879,7 @@ func TestResolver_Labels(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, selfRegManager, uuidSvc)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, selfRegManager, uuidSvc, nil)
 
 			// WHEN
 			result, err := resolver.Labels(context.TODO(), gqlRuntime, testCase.InputKey)
@@ -1987,7 +1987,7 @@ func TestResolver_GetLabel(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, selfRegManager, uuidSvc)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, selfRegManager, uuidSvc, nil)
 
 			// WHEN
 			result, err := resolver.GetLabel(context.TODO(), runtimeID, labelKey)
@@ -2110,7 +2110,7 @@ func TestResolver_Auths(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, nil, nil, sysAuthSvc, nil, nil, sysAuthConv, nil, nil, selfRegManager, uuidSvc)
+			resolver := runtime.NewResolver(transact, nil, nil, sysAuthSvc, nil, nil, sysAuthConv, nil, nil, selfRegManager, uuidSvc, nil)
 
 			// WHEN
 			result, err := resolver.Auths(ctx, parentRuntime)
@@ -2129,7 +2129,7 @@ func TestResolver_Auths(t *testing.T) {
 	}
 
 	t.Run("Error when parent object is nil", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.Auths(context.TODO(), nil)
@@ -2222,7 +2222,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, eventingSvc, nil, selfRegManager, uuidSvc)
+			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, eventingSvc, nil, selfRegManager, uuidSvc, nil)
 
 			// WHEN
 			result, err := resolver.EventingConfiguration(ctx, gqlRuntime)
@@ -2242,7 +2242,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 	t.Run("Error when parent object ID is not a valid UUID", func(t *testing.T) {
 		// GIVEN
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.EventingConfiguration(ctx, &graphql.Runtime{ID: "abc"})
@@ -2255,7 +2255,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 	t.Run("Error when parent object is nil", func(t *testing.T) {
 		// GIVEN
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.EventingConfiguration(context.TODO(), nil)

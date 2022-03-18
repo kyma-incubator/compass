@@ -146,7 +146,7 @@ func TestProvisioner_CreateRegionalTenant(t *testing.T) {
 			provisioner := tenantfetchersvc.NewTenantProvisioner(directorClient, tenantConverter, testProviderName)
 
 			// WHEN
-			err := provisioner.ProvisionTenants(ctx, testCase.Request, "asd")
+			err := provisioner.ProvisionTenants(ctx, testCase.Request)
 
 			// THEN
 			if len(testCase.ExpectedErrorOutput) > 0 {
