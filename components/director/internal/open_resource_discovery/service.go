@@ -20,10 +20,12 @@ import (
 
 const applicationTypeLabel = "applicationType"
 
+// ServiceConfig contains configuration for the ORD aggregator service
 type ServiceConfig struct {
 	MaxParallelDownloads int
 }
 
+// NewServiceConfig creates new ServiceConfig from the supplied parameters
 func NewServiceConfig(maxParallelDownloads int) ServiceConfig {
 	return ServiceConfig{
 		MaxParallelDownloads: maxParallelDownloads,
