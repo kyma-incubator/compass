@@ -36,7 +36,7 @@ var testConfig = runtime.SelfRegConfig{
 	SelfRegisterNameQueryParam:      "testNameQuery",
 	SelfRegisterTenantQueryParam:    "testTenantQuery",
 	SelfRegisterRequestBodyPattern:  `{"%s":"test"}`,
-	RegionToConfig: map[string]runtime.InstanceConfig{
+	RegionToInstanceConfig: map[string]runtime.InstanceConfig{
 		"test-region": {
 			ClientID:     "test-client-id",
 			ClientSecret: "test-client-secret",
@@ -73,7 +73,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 	emptyLabels := make(map[string]interface{})
 
 	fakeConfig := testConfig
-	fakeConfig.RegionToConfig[fakeRegion] = runtime.InstanceConfig{URL: "https://test-url    .com"}
+	fakeConfig.RegionToInstanceConfig[fakeRegion] = runtime.InstanceConfig{URL: "https://test-url    .com"}
 
 	ctxWithTokenConsumer := consumer.SaveToContext(context.TODO(), tokenConsumer)
 	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
@@ -202,7 +202,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 	ctx := context.TODO()
 	fakeConfig := testConfig
-	fakeConfig.RegionToConfig[fakeRegion] = runtime.InstanceConfig{URL: "https://test-url    .com"}
+	fakeConfig.RegionToInstanceConfig[fakeRegion] = runtime.InstanceConfig{URL: "https://test-url    .com"}
 
 	testCases := []struct {
 		Name                                string

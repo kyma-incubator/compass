@@ -58,8 +58,14 @@ type SelfRegConfig struct {
 
 	ClientTimeout time.Duration `envconfig:"default=30s"`
 
-	Instances      string                    `envconfig:"APP_SELF_REGISTER_AGGREGATED_XSUAA_INSTANCES"`
-	RegionToConfig map[string]InstanceConfig `envconfig:"-"`
+	InstanceClientIDPath     string                    `envconfig:"APP_SELF_REGISTER_INSTANCE_CLIENT_ID_PATH"`
+	InstanceClientSecretPath string                    `envconfig:"APP_SELF_REGISTER_INSTANCE_CLIENT_SECRET_PATH"`
+	InstanceURLPath          string                    `envconfig:"APP_SELF_REGISTER_INSTANCE_URL_PATH"`
+	InstanceTokenURLPath     string                    `envconfig:"APP_SELF_REGISTER_INSTANCE_TOKEN_URL_PATH"`
+	InstanceCertPath         string                    `envconfig:"APP_SELF_REGISTER_INSTANCE_X509_CERT_PATH"`
+	InstanceKeyPath          string                    `envconfig:"APP_SELF_REGISTER_INSTANCE_X509_KEY_PATH"`
+	InstanceConfigs          string                    `envconfig:"APP_SELF_REGISTER_AGGREGATED_INSTANCE_CONFIGS"`
+	RegionToInstanceConfig   map[string]InstanceConfig `envconfig:"-"`
 }
 
 type InstanceConfig struct {
@@ -71,23 +77,27 @@ type InstanceConfig struct {
 	Key          string
 }
 
-func (i *InstanceConfig) UnmarshalJSON(data []byte) error {
-	fmt.Println("TEST")
-
-	instanceBinding := string(data)
-	i.ClientID = gjson.Get(instanceBinding, "x509.credentials.clientid").String()
-	i.ClientSecret = gjson.Get(instanceBinding, "credentials.clientsecret").String()
-	i.URL = gjson.Get(instanceBinding, "x509.credentials.url").String()
-	i.TokenURL = gjson.Get(instanceBinding, "x509.credentials.certurl").String()
-	i.Cert = gjson.Get(instanceBinding, "x509.credentials.certificate").String()
-	i.Key = gjson.Get(instanceBinding, "x509.credentials.key").String()
-	return nil
+func (c *SelfRegConfig) MapInstanceConfigs() {
+	bindingsResult := gjson.Parse(c.InstanceConfigs)
+	bindingsMap := bindingsResult.Map()
+	c.RegionToInstanceConfig = make(map[string]InstanceConfig)
+	for k, v := range bindingsMap {
+		i := InstanceConfig{
+			gjson.Get(v.String(), c.InstanceClientIDPath).String(),
+			gjson.Get(v.String(), c.InstanceClientSecretPath).String(),
+			gjson.Get(v.String(), c.InstanceURLPath).String(),
+			gjson.Get(v.String(), c.InstanceTokenURLPath).String(),
+			gjson.Get(v.String(), c.InstanceCertPath).String(),
+			gjson.Get(v.String(), c.InstanceKeyPath).String(),
+		}
+		c.RegionToInstanceConfig[k] = i
+	}
 }
 
 type CallerProvider struct{}
 
 func (c *CallerProvider) GetCaller(config SelfRegConfig, region string) (ExternalSvcCaller, error) {
-	instanceConfig, exists := config.RegionToConfig[region]
+	instanceConfig, exists := config.RegionToInstanceConfig[region]
 	if !exists {
 		return nil, errors.New(fmt.Sprintf("missing configuration for region: %s", region))
 	}
@@ -149,7 +159,7 @@ func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Cont
 
 		region := regionValue.(string)
 
-		instanceConfig, exists := s.cfg.RegionToConfig[region]
+		instanceConfig, exists := s.cfg.RegionToInstanceConfig[region]
 		if !exists {
 			return labels, errors.New(fmt.Sprintf("missing configuration for region: %s", region))
 		}
@@ -193,7 +203,7 @@ func (s *selfRegisterManager) CleanupSelfRegisteredRuntime(ctx context.Context, 
 		return nil
 	}
 
-	instanceConfig, exists := s.cfg.RegionToConfig[region]
+	instanceConfig, exists := s.cfg.RegionToInstanceConfig[region]
 	if !exists {
 		return errors.New(fmt.Sprintf("missing configuration for region: %s", region))
 	}
