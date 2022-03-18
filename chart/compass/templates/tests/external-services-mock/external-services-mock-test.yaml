@@ -68,6 +68,8 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.externalServicesMock.auditlog.secret.name }}
                   key: {{ .Values.global.externalServicesMock.auditlog.secret.tokenUrlKey }}
+            - name: AUDITLOG_TOKEN_PATH
+              value: {{ .Values.global.externalServicesMock.auditlog.mtlsTokenPath }}
             - name: AUDITLOG_CLIENT_ID
               valueFrom:
                 secretKeyRef:
