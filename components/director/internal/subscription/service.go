@@ -82,7 +82,7 @@ func (s *service) SubscribeTenant(ctx context.Context, runtimeID string, subacco
 	runtimes, err := s.runtimeSvc.ListByFiltersGlobal(ctx, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return false, err
+			return false, nil
 		}
 
 		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, runtimeID))
@@ -135,7 +135,7 @@ func (s *service) UnsubscribeTenant(ctx context.Context, runtimeID string, subac
 	runtimes, err := s.runtimeSvc.ListByFiltersGlobal(ctx, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return false, err
+			return false, nil
 		}
 
 		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, runtimeID))

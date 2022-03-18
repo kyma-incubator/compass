@@ -586,14 +586,10 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, runtimeID string, subacc
 
 	success, err := r.subscriptionSvc.SubscribeTenant(ctx, runtimeID, subaccountTenantID, region)
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return false, tx.Commit()
-		}
 		return false, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return false, err
 	}
 
@@ -612,14 +608,10 @@ func (r *Resolver) UnsubscribeTenant(ctx context.Context, runtimeID string, suba
 
 	success, err := r.subscriptionSvc.UnsubscribeTenant(ctx, runtimeID, subaccountTenantID, region)
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return false, tx.Commit()
-		}
 		return false, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return false, err
 	}
 
