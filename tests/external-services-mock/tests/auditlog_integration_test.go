@@ -53,12 +53,12 @@ func TestAuditlogIntegration(t *testing.T) {
 
 	registerRequest := fixtures.FixRegisterApplicationRequest(appInputGQL)
 
-	t.Log("Register Application through Gateway with Dex id Token")
+	t.Log("Register Application through Gateway via Certificate Secured Client")
 	app := graphql.ApplicationExt{}
 
 	timeFrom := time.Now()
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
 	require.NoError(t, err)
 	timeTo := timeFrom.Add(1 * time.Minute)
 
@@ -99,8 +99,8 @@ func TestAuditlogIntegration(t *testing.T) {
 
 	assert.Equal(t, requestBody.String(), preRequest)
 	assert.Equal(t, 2, len(auditlogs))
-	assert.Equal(t, staticUser, pre.Object.ID["consumerID"])
-	assert.Equal(t, "Static User", pre.Object.ID["apiConsumer"])
+	assert.Equal(t, testConfig.ConsumerID, pre.Object.ID["consumerID"])
+	assert.Equal(t, "Super Admin", pre.Object.ID["apiConsumer"])
 
 	var postRequest string
 	for _, v := range post.Attributes {
@@ -110,8 +110,8 @@ func TestAuditlogIntegration(t *testing.T) {
 	}
 
 	assert.Equal(t, requestBody.String(), postRequest)
-	assert.Equal(t, staticUser, post.Object.ID["consumerID"])
-	assert.Equal(t, "Static User", post.Object.ID["apiConsumer"])
+	assert.Equal(t, testConfig.ConsumerID, post.Object.ID["consumerID"])
+	assert.Equal(t, "Super Admin", post.Object.ID["apiConsumer"])
 }
 
 func prepareRegisterAppRequestBody(t *testing.T, registerRequest *graphql2.Request) bytes.Buffer {

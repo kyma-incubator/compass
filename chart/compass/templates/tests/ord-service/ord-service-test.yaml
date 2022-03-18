@@ -34,32 +34,12 @@ spec:
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"
             - name: ORD_SERVICE_STATIC_PREFIX
               value: "{{ .Values.global.ordService.staticPrefix }}"
-            - name: ORD_SERVICE_HEALTHZ_URL
-              value: "{{ .Values.global.tests.ordServiceFQDN }}:{{ .Values.global.director.graphql.external.port }}/actuator/health"
             - name: ORD_SERVICE_DEFAULT_RESPONSE_TYPE
               value: {{ .Values.global.ordService.defaultResponseType }}
-            - name: DIRECTOR_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: DIRECTOR_EXTERNAL_CERT_SECURED_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
-            - name: CA_SECRET_NAME
-              value: "{{ .Values.global.connector.secrets.ca.name }}"
-            - name: CA_SECRET_NAMESPACE
-              value: "{{ .Values.global.connector.secrets.ca.namespace }}"
-            - name: CA_SECRET_CERTIFICATE_KEY
-              value: {{ .Values.global.connector.secrets.ca.certificateKey | quote }}
-            - name: CA_SECRET_KEY_KEY
-              value: {{ .Values.global.connector.secrets.ca.keyKey | quote }}
-            - name: EXTERNAL_CA_SECRET_NAME
-              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
-            - name: EXTERNAL_CA_SECRET_NAMESPACE
-              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}"
-            - name: EXTERNAL_CA_SECRET_CERTIFICATE_KEY
-              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
-            - name: EXTERNAL_CA_SECRET_KEY_KEY
-              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: SKIP_SSL_VALIDATION
-              value: "{{ .Values.global.tests.http.client.skipSSLValidation.ordService }}"
+              value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
             - name: CONSUMER_TOKEN_URL
               value: {{ .Values.global.tests.ordService.consumerTokenURL }}
             - name: TOKEN_PATH
@@ -137,24 +117,8 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
-            - name: USER_EMAIL
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: email
-            - name: USER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: password
             - name: APP_DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
-            - name: DOMAIN
-              value: "{{ .Values.global.ingress.domainName }}"
-            - name: APP_IS_WITH_TOKEN
-              value: "{{.Values.global.tests.token.server.enabled}}"
-            - name: APP_ADDRESS
-              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
             - name: SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.label }}
             - name: SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_VALUE_PREFIX
@@ -165,6 +129,8 @@ spec:
               value: {{ .Values.global.tests.ordService.externalClientCertTestSecretName }}
             - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE
               value: {{ .Values.global.tests.ordService.externalClientCertTestSecretNamespace }}
+            - name: EXTERNAL_CERT_TEST_JOB_NAME
+              value: {{ .Values.global.tests.ordService.externalCertTestJobName }}
             - name: CERT_SVC_INSTANCE_TEST_SECRET_NAME
               value: {{ .Values.global.tests.ordService.certSvcInstanceTestSecretName }}
             - name: EXTERNAL_CERT_CRONJOB_CONTAINER_NAME
@@ -183,6 +149,12 @@ spec:
               value: {{ .Values.global.tests.ordService.accountTenantID }}
             - name: SUBACCOUNT_TENANT_ID
               value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: APP_EXTERNAL_CLIENT_KEY_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: TEST_CONSUMER_ACCOUNT_ID
               value: {{ .Values.global.tests.ordService.consumerAccountID }}
             - name: TEST_PROVIDER_SUBACCOUNT_ID
@@ -219,3 +191,95 @@ spec:
           {{- end }}
           {{end}}
       restartPolicy: Never
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Chart.Name }}-e2e-ord-service
+  namespace: {{ .Values.global.tests.namespace }}
+  {{- if eq .Values.global.database.embedded.enabled false }}
+  annotations:
+    iam.gke.io/gcp-service-account: {{ $.Values.global.database.sqlProxyServiceAccount | quote }}
+  {{- end }}
+  labels:
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Chart.Name }}-e2e-ord-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+rules:
+- apiGroups: ["*"]
+  resources: ["secrets"]
+  resourceNames: ["{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"]
+  verbs: ["get"]
+- apiGroups: ["*"]
+  resources: ["secrets"]
+  resourceNames: ["{{ .Values.global.tests.ordService.externalClientCertTestSecretName }}"]
+  verbs: ["get", "delete"]
+- apiGroups: ["*"]
+  resources: ["jobs"]
+  resourceNames: [{{ .Values.global.tests.ordService.externalCertTestJobName }}]
+  verbs: ["get", "delete"]
+- apiGroups: ["*"]
+  resources: ["jobs"]
+  resourceNames: []
+  verbs: ["create"]
+- apiGroups: ["*"]
+  resources: ["cronjobs"]
+  resourceNames: ["director-external-certificate-rotation-job"]
+  verbs: ["get"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Chart.Name }}-e2e-ord-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Chart.Name }}-e2e-ord-service
+  namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: {{ .Chart.Name }}-e2e-ord-service
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Chart.Name }}-e2e-ord-service-client-cert
+  namespace: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Chart.Name }}-e2e-ord-service
+    namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+  apiGroup: rbac.authorization.k8s.io

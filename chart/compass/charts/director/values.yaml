@@ -28,27 +28,21 @@ deployment:
     wait: 10ms
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
   nodeSelector: {}
-
 adminGroupNames: "mps-superadmin, runtimeAdmin, runtimeNamespaceAdmin"
 operatorGroupNames: "runtimeOperator"
-
 configFile:
   name: "config.yaml"
-
 applicationHideSelectors: |-
   applicationHideSelectorKey:
     - "applicationHideSelectorValue"
-
 istio:
   rbac:
     enabled: true
     directorInternalApi:
       compassConnector: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-connector
       compassOperationsController: cluster.local/ns/{{ .Release.Namespace }}/sa/compass-operations-controller
-
 health:
   indicators: "{database,5s,1s,1s,3}"
-
 readinessProbe:
   initialDelaySeconds: 5
   timeoutSeconds: 2

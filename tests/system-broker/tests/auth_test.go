@@ -53,8 +53,8 @@ var (
 
 func TestSystemBrokerAuthentication(t *testing.T) {
 	logrus.Infof("registering runtime with name: %s, within tenant: %s", runtimeInput.Name, testCtx.Tenant)
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtimeInput)
-	defer fixtures.CleanupRuntime(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, &runtime)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, runtimeInput)
+	defer fixtures.CleanupRuntime(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
@@ -121,19 +121,19 @@ func TestSystemBrokerAuthentication(t *testing.T) {
 
 func TestCallingORDServiceWithCert(t *testing.T) {
 	logrus.Infof("registering runtime with name: %s, within tenant: %s", runtimeInput.Name, testCtx.Tenant)
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, runtimeInput)
-	defer fixtures.CleanupRuntime(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, &runtime)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, runtimeInput)
+	defer fixtures.CleanupRuntime(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
-	app, err := fixtures.RegisterApplicationFromInput(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, applicationInput)
-	defer fixtures.CleanupApplication(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, &app)
+	app, err := fixtures.RegisterApplicationFromInput(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, applicationInput)
+	defer fixtures.CleanupApplication(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, &app)
 	require.NoError(t, err)
 
-	bundle := fixtures.CreateBundle(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, app.ID, testBundleName)
-	defer fixtures.DeleteBundle(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, bundle.ID)
+	bundle := fixtures.CreateBundle(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, app.ID, testBundleName)
+	defer fixtures.DeleteBundle(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, bundle.ID)
 
-	api := fixtures.AddAPIToBundleWithInput(t, testCtx.Context, testCtx.DexGraphqlClient, testCtx.Tenant, bundle.ID, apiDefInput)
+	api := fixtures.AddAPIToBundleWithInput(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, bundle.ID, apiDefInput)
 
 	securedClient, configuration, certChain := getSecuredClientByContext(t, testCtx, runtime.ID)
 
@@ -182,7 +182,7 @@ func TestCallingORDServiceWithCert(t *testing.T) {
 
 func getSecuredClientByContext(t *testing.T, ctx *broker.SystemBrokerTestContext, runtimeID string) (*http.Client, externalschema.Configuration, []*x509.Certificate) {
 	logrus.Infof("generating one-time token for runtime with id: %s", runtimeID)
-	runtimeToken := fixtures.RequestOneTimeTokenForRuntime(t, ctx.Context, ctx.DexGraphqlClient, ctx.Tenant, runtimeID)
+	runtimeToken := fixtures.RequestOneTimeTokenForRuntime(t, ctx.Context, ctx.CertSecuredGraphQLClient, ctx.Tenant, runtimeID)
 	oneTimeToken := &externalschema.Token{Token: runtimeToken.Token}
 
 	logrus.Infof("generation certificate for runtime with id: %s", runtimeID)

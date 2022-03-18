@@ -26,19 +26,19 @@ func BenchmarkSystemBundles(b *testing.B) {
 	appsCount := 15
 	for i := 0; i < appsCount; i++ {
 		app := fixtures.CreateApp(fmt.Sprintf("ord-service-%d", i))
-		appResp, err := fixtures.RegisterApplicationFromInput(b, ctx, dexGraphQLClient, defaultTestTenant, app)
-		defer fixtures.CleanupApplication(b, ctx, dexGraphQLClient, defaultTestTenant, &appResp)
+		appResp, err := fixtures.RegisterApplicationFromInput(b, ctx, certSecuredGraphQLClient, defaultTestTenant, app)
+		defer fixtures.CleanupApplication(b, ctx, certSecuredGraphQLClient, defaultTestTenant, &appResp)
 		require.NoError(b, err)
 	}
 
 	b.Log("Create integration system")
-	intSys, err := fixtures.RegisterIntegrationSystem(b, ctx, dexGraphQLClient, "", "test-int-system")
-	defer fixtures.CleanupIntegrationSystem(b, ctx, dexGraphQLClient, "", intSys)
+	intSys, err := fixtures.RegisterIntegrationSystem(b, ctx, certSecuredGraphQLClient, "", "test-int-system")
+	defer fixtures.CleanupIntegrationSystem(b, ctx, certSecuredGraphQLClient, "", intSys)
 	require.NoError(b, err)
 	require.NotEmpty(b, intSys.ID)
 
-	intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(b, ctx, dexGraphQLClient, "", intSys.ID)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(b, ctx, dexGraphQLClient, intSystemCredentials.ID)
+	intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(b, ctx, certSecuredGraphQLClient, "", intSys.ID)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(b, ctx, certSecuredGraphQLClient, intSystemCredentials.ID)
 
 	intSystemHttpClient, err := clients.NewIntegrationSystemClient(ctx, intSystemCredentials)
 	require.NoError(b, err)

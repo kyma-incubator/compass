@@ -19,6 +19,7 @@ spec:
       labels:
         app: {{ .Chart.Name }}-ord-service-bench-app
     spec:
+      serviceAccountName: {{ .Chart.Name }}-ord-service-bench-app
       nodeSelector:
         benchmark: "true" # This guarantees that benchmark tests will be executed on one and the same node. The gke-benchamrk job adds the benchmark=true label to the node with the lowest cpu load.
       containers:
@@ -31,12 +32,18 @@ spec:
           env:
             - name: ORD_SERVICE_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"
-            - name: ORD_SERVICE_HEALTHZ_URL
-              value: "{{ .Values.global.tests.ordServiceFQDN }}:{{ .Values.global.director.graphql.external.port }}/actuator/health"
             - name: ORD_SERVICE_DEFAULT_RESPONSE_TYPE
               value: {{ .Values.global.ordService.defaultResponseType }}
-            - name: DIRECTOR_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
+            - name: DIRECTOR_EXTERNAL_CERT_SECURED_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
+            - name: SKIP_SSL_VALIDATION
+              value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: APP_EXTERNAL_CLIENT_KEY_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
@@ -67,19 +74,36 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
-            - name: USER_EMAIL
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: email
-            - name: USER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: password
-            - name: DOMAIN
-              value: "{{ .Values.global.ingress.domainName }}"
-            - name: APP_IS_WITH_TOKEN
-              value: "{{.Values.global.tests.token.server.enabled}}"
-            - name: APP_ADDRESS
-              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Chart.Name }}-ord-service-bench-app
+  namespace: {{ .Values.global.tests.namespace }}
+  labels:
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}-tests
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Chart.Name }}-ord-service-bench-app
+  namespace: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Chart.Name }}-ord-service-bench-app
+    namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+  apiGroup: rbac.authorization.k8s.io

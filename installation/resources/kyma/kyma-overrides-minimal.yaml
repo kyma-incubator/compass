@@ -138,6 +138,9 @@ kiali:
       requests:
         memory: 32Mi
 logging:
+  global:
+    logging_integration_tests:
+      enabled: false
   loki:
     resources:
       limits:

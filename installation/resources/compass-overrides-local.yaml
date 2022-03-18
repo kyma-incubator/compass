@@ -174,7 +174,6 @@ global:
       client:
         skipSSLValidation:
           director: true
-          ordService: true
     ordService:
       subscriptionOauthSecret:
         manage: true

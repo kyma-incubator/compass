@@ -21,14 +21,14 @@ func TestAddAPIToBundle(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appName := "app-test-bundle"
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, bndlName)
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bndlName)
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
 	input := fixtures.FixAPIDefinitionInput()
 	inStr, err := testctx.Tc.Graphqlizer.APIDefinitionInputToGQL(input)
@@ -36,10 +36,10 @@ func TestAddAPIToBundle(t *testing.T) {
 
 	actualApi := graphql.APIDefinitionExt{}
 	req := fixtures.FixAddAPIToBundleRequest(bndl.ID, inStr)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, req, &actualApi)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, req, &actualApi)
 	require.NoError(t, err)
 
-	pack := fixtures.GetBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, bndl.ID)
+	pack := fixtures.GetBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bndl.ID)
 	require.Equal(t, bndl.ID, pack.ID)
 
 	assertions.AssertAPI(t, []*graphql.APIDefinitionInput{&input}, []*graphql.APIDefinitionExt{&actualApi})
@@ -52,16 +52,16 @@ func TestManageAPIInBundle(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appName := "app-test-bundle"
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, bndlName)
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bndlName)
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
-	api := fixtures.AddAPIToBundle(t, ctx, dexGraphQLClient, bndl.ID)
+	api := fixtures.AddAPIToBundle(t, ctx, certSecuredGraphQLClient, bndl.ID)
 
 	apiUpdateInput := fixtures.FixAPIDefinitionInputWithName("new-name")
 	apiUpdateGQL, err := testctx.Tc.Graphqlizer.APIDefinitionInputToGQL(apiUpdateInput)
@@ -70,7 +70,7 @@ func TestManageAPIInBundle(t *testing.T) {
 	req := fixtures.FixUpdateAPIRequest(api.ID, apiUpdateGQL)
 
 	var updatedAPI graphql.APIDefinitionExt
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, req, &updatedAPI)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, req, &updatedAPI)
 	require.NoError(t, err)
 
 	assert.Equal(t, updatedAPI.ID, api.ID)
@@ -79,7 +79,7 @@ func TestManageAPIInBundle(t *testing.T) {
 
 	var deletedAPI graphql.APIDefinitionExt
 	req = fixtures.FixDeleteAPIRequest(api.ID)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, req, &deletedAPI)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, req, &deletedAPI)
 	require.NoError(t, err)
 
 	assert.Equal(t, api.ID, deletedAPI.ID)
@@ -92,14 +92,14 @@ func TestAddEventDefinitionToBundle(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appName := "app-test-bundle"
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, bndlName)
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bndlName)
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
 	input := fixtures.FixEventAPIDefinitionInput()
 	inStr, err := testctx.Tc.Graphqlizer.EventDefinitionInputToGQL(input)
@@ -107,7 +107,7 @@ func TestAddEventDefinitionToBundle(t *testing.T) {
 
 	actualEvent := graphql.EventAPIDefinitionExt{}
 	req := fixtures.FixAddEventAPIToBundleRequest(bndl.ID, inStr)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, req, &actualEvent)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, req, &actualEvent)
 	require.NoError(t, err)
 
 	assertions.AssertEventsAPI(t, []*graphql.EventDefinitionInput{&input}, []*graphql.EventAPIDefinitionExt{&actualEvent})
@@ -120,16 +120,16 @@ func TestManageEventDefinitionInBundle(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appName := "app-test-bundle"
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, bndlName)
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bndlName)
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
-	event := fixtures.AddEventToBundle(t, ctx, dexGraphQLClient, bndl.ID)
+	event := fixtures.AddEventToBundle(t, ctx, certSecuredGraphQLClient, bndl.ID)
 
 	eventUpdateInput := fixtures.FixEventAPIDefinitionInputWithName("new-name")
 	eventUpdateGQL, err := testctx.Tc.Graphqlizer.EventDefinitionInputToGQL(eventUpdateInput)
@@ -138,7 +138,7 @@ func TestManageEventDefinitionInBundle(t *testing.T) {
 	req := fixtures.FixUpdateEventAPIRequest(event.ID, eventUpdateGQL)
 
 	var updatedEvent graphql.EventAPIDefinitionExt
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, req, &updatedEvent)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, req, &updatedEvent)
 	require.NoError(t, err)
 
 	assert.Equal(t, updatedEvent.ID, event.ID)
@@ -147,7 +147,7 @@ func TestManageEventDefinitionInBundle(t *testing.T) {
 
 	var deletedEvent graphql.EventAPIDefinitionExt
 	req = fixtures.FixDeleteEventAPIRequest(event.ID)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, req, &deletedEvent)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, req, &deletedEvent)
 	require.NoError(t, err)
 
 	assert.Equal(t, event.ID, deletedEvent.ID)
@@ -160,14 +160,14 @@ func TestAddDocumentToBundle(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appName := "app-test-bundle"
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, bndlName)
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bndlName)
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
 	input := fixtures.FixDocumentInput(t)
 	inStr, err := testctx.Tc.Graphqlizer.DocumentInputToGQL(&input)
@@ -175,7 +175,7 @@ func TestAddDocumentToBundle(t *testing.T) {
 
 	actualDocument := graphql.DocumentExt{}
 	req := fixtures.FixAddDocumentToBundleRequest(bndl.ID, inStr)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, req, &actualDocument)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, req, &actualDocument)
 	require.NoError(t, err)
 
 	assertions.AssertDocuments(t, []*graphql.DocumentInput{&input}, []*graphql.DocumentExt{&actualDocument})
@@ -188,20 +188,20 @@ func TestManageDocumentInBundle(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appName := "app-test-bundle"
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, bndlName)
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bndlName)
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
-	document := fixtures.AddDocumentToBundle(t, ctx, dexGraphQLClient, bndl.ID)
+	document := fixtures.AddDocumentToBundle(t, ctx, certSecuredGraphQLClient, bndl.ID)
 
 	var deletedDocument graphql.DocumentExt
 	req := fixtures.FixDeleteDocumentRequest(document.ID)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, req, &deletedDocument)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, req, &deletedDocument)
 	require.NoError(t, err)
 
 	assert.Equal(t, document.ID, deletedDocument.ID)
@@ -214,20 +214,20 @@ func TestAPIDefinitionInBundle(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appName := "app-test-bundle"
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, bndlName)
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bndlName)
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
-	api := fixtures.AddAPIToBundle(t, ctx, dexGraphQLClient, bndl.ID)
+	api := fixtures.AddAPIToBundle(t, ctx, certSecuredGraphQLClient, bndl.ID)
 
 	queryApiForBndl := fixtures.FixAPIDefinitionInBundleRequest(application.ID, bndl.ID, api.ID)
 	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryApiForBndl, &app)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryApiForBndl, &app)
 	require.NoError(t, err)
 
 	actualApi := app.Bundle.APIDefinition
@@ -242,20 +242,20 @@ func TestEventDefinitionInBundle(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appName := "app-test-bundle"
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, bndlName)
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bndlName)
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
-	event := fixtures.AddEventToBundle(t, ctx, dexGraphQLClient, bndl.ID)
+	event := fixtures.AddEventToBundle(t, ctx, certSecuredGraphQLClient, bndl.ID)
 
 	queryEventForBndl := fixtures.FixEventDefinitionInBundleRequest(application.ID, bndl.ID, event.ID)
 	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryEventForBndl, &app)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryEventForBndl, &app)
 	require.NoError(t, err)
 
 	actualEvent := app.Bundle.EventDefinition
@@ -270,20 +270,20 @@ func TestDocumentInBundle(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appName := "app-test-bundle"
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, bndlName)
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bndlName)
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
-	doc := fixtures.AddDocumentToBundle(t, ctx, dexGraphQLClient, bndl.ID)
+	doc := fixtures.AddDocumentToBundle(t, ctx, certSecuredGraphQLClient, bndl.ID)
 
 	queryDocForBndl := fixtures.FixDocumentInBundleRequest(application.ID, bndl.ID, doc.ID)
 	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryDocForBndl, &app)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryDocForBndl, &app)
 	require.NoError(t, err)
 
 	actualDoc := app.Bundle.Document
@@ -297,24 +297,24 @@ func TestAPIDefinitionsInBundle(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appName := "app-test-bundle"
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, bndlName)
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bndlName)
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
 	inputA := fixtures.FixAPIDefinitionInputWithName("foo")
-	fixtures.AddAPIToBundleWithInput(t, ctx, dexGraphQLClient, tenantId, bndl.ID, inputA)
+	fixtures.AddAPIToBundleWithInput(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID, inputA)
 
 	inputB := fixtures.FixAPIDefinitionInputWithName("bar")
-	fixtures.AddAPIToBundleWithInput(t, ctx, dexGraphQLClient, tenantId, bndl.ID, inputB)
+	fixtures.AddAPIToBundleWithInput(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID, inputB)
 
 	queryApisForBndl := fixtures.FixAPIDefinitionsInBundleRequest(application.ID, bndl.ID)
 	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryApisForBndl, &app)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryApisForBndl, &app)
 	require.NoError(t, err)
 
 	apis := app.Bundle.APIDefinitions
@@ -329,25 +329,25 @@ func TestEventDefinitionsInBundle(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appName := "app-test-bundle"
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, bndlName)
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bndlName)
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
 	inputA := fixtures.FixEventAPIDefinitionInputWithName("foo")
-	fixtures.AddEventToBundleWithInput(t, ctx, dexGraphQLClient, bndl.ID, inputA)
+	fixtures.AddEventToBundleWithInput(t, ctx, certSecuredGraphQLClient, bndl.ID, inputA)
 
 	inputB := fixtures.FixEventAPIDefinitionInputWithName("bar")
-	fixtures.AddEventToBundleWithInput(t, ctx, dexGraphQLClient, bndl.ID, inputB)
+	fixtures.AddEventToBundleWithInput(t, ctx, certSecuredGraphQLClient, bndl.ID, inputB)
 
 	queryEventsForBndl := fixtures.FixEventDefinitionsInBundleRequest(application.ID, bndl.ID)
 
 	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryEventsForBndl, &app)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryEventsForBndl, &app)
 	require.NoError(t, err)
 
 	events := app.Bundle.EventDefinitions
@@ -362,25 +362,25 @@ func TestDocumentsInBundle(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appName := "app-test-bundle"
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
 	bndlName := "test-bundle"
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, bndlName)
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bndlName)
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
 	inputA := fixtures.FixDocumentInputWithName(t, "foo")
-	fixtures.AddDocumentToBundleWithInput(t, ctx, dexGraphQLClient, bndl.ID, inputA)
+	fixtures.AddDocumentToBundleWithInput(t, ctx, certSecuredGraphQLClient, bndl.ID, inputA)
 
 	inputB := fixtures.FixDocumentInputWithName(t, "bar")
-	fixtures.AddDocumentToBundleWithInput(t, ctx, dexGraphQLClient, bndl.ID, inputB)
+	fixtures.AddDocumentToBundleWithInput(t, ctx, certSecuredGraphQLClient, bndl.ID, inputB)
 
 	queryDocsForBndl := fixtures.FixDocumentsInBundleRequest(application.ID, bndl.ID)
 
 	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryDocsForBndl, &app)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryDocsForBndl, &app)
 	require.NoError(t, err)
 
 	docs := app.Bundle.Documents
@@ -394,8 +394,8 @@ func TestAddBundle(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -408,20 +408,20 @@ func TestAddBundle(t *testing.T) {
 
 	// WHEN
 	t.Log("Create bundle")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, addBndlRequest, &output)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addBndlRequest, &output)
 
 	// THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
 	assertions.AssertBundle(t, &bndlInput, &output)
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, output.ID)
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, output.ID)
 
 	saveExample(t, addBndlRequest.Query(), "add bundle")
 
 	bundleRequest := fixtures.FixBundleRequest(application.ID, output.ID)
 	bndlFromAPI := graphql.ApplicationExt{}
 
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, bundleRequest, &bndlFromAPI)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, bundleRequest, &bndlFromAPI)
 	require.NoError(t, err)
 
 	assertions.AssertBundle(t, &bndlInput, &output)
@@ -433,21 +433,21 @@ func TestQueryBundles(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
-	bndl1 := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, "bndl-app-1")
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl1.ID)
+	bndl1 := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl1.ID)
 
-	bndl2 := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, "bndl-app-2")
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl2.ID)
+	bndl2 := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, "bndl-app-2")
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl2.ID)
 
 	bundlesRequest := fixtures.FixGetBundlesRequest(application.ID)
 	bndlsFromAPI := graphql.ApplicationExt{}
 
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, bundlesRequest, &bndlsFromAPI)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, bundlesRequest, &bndlsFromAPI)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(bndlsFromAPI.Bundles.Data))
 
@@ -459,11 +459,11 @@ func TestUpdateBundle(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, "bndl-app-1")
-	defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenantId, bndl.ID)
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
 
 	bndlUpdateInput := fixtures.FixBundleUpdateInput("bndl-app-1-up")
 	bndlUpdate, err := testctx.Tc.Graphqlizer.BundleUpdateInputToGQL(bndlUpdateInput)
@@ -474,7 +474,7 @@ func TestUpdateBundle(t *testing.T) {
 
 	// WHEN
 	t.Log("Update bundle")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, updateBndlReq, &output)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateBndlReq, &output)
 
 	// THEN
 	require.NoError(t, err)
@@ -489,17 +489,17 @@ func TestDeleteBundle(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app-test-bundle", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 
-	bndl := fixtures.CreateBundle(t, ctx, dexGraphQLClient, tenantId, application.ID, "bndl-app-1")
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, "bndl-app-1")
 
 	pkdDeleteReq := fixtures.FixDeleteBundleRequest(bndl.ID)
 	output := graphql.Bundle{}
 
 	// WHEN
 	t.Log("Delete bundle")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, pkdDeleteReq, &output)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, pkdDeleteReq, &output)
 
 	// THEN
 	require.NoError(t, err)
