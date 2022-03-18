@@ -193,6 +193,7 @@ func main() {
 		},
 	}
 	cfg.SelfRegConfig.ClientTimeout = cfg.ClientTimeout
+	// TODO: Remove logs
 	fmt.Println("INSTANCES: ", cfg.SelfRegConfig.Instances)
 	fmt.Println(">>>>>>>>>>>>>>>>>>")
 	spew.Dump(cfg.SelfRegConfig.Instances)
@@ -201,7 +202,7 @@ func main() {
 	mapped := make(map[string]runtime.InstanceConfig, 0)
 	json.Unmarshal(byte, &mapped)
 	spew.Dump(mapped)
-	cfg.SelfRegConfig.RegionToConfig=mapped
+	cfg.SelfRegConfig.RegionToConfig = mapped
 
 	internalHTTPClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,

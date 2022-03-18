@@ -279,7 +279,6 @@ func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.Runt
 
 // DeleteRuntime missing godoc
 func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runtime, error) {
-
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err

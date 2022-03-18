@@ -9,6 +9,7 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/coreos/go-oidc/v3 v3.1.0
+	github.com/davecgh/go-spew v1.1.1
 	github.com/dlmiddlecote/sqlstats v1.0.2
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
@@ -46,6 +47,9 @@ require (
 	k8s.io/apimachinery v0.20.2 // DO NOT BUMP
 	k8s.io/client-go v0.20.2 // DO NOT BUMP
 	sigs.k8s.io/controller-runtime v0.8.3 // DO NOT BUMP
+)
+
+require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
@@ -53,7 +57,6 @@ require (
 	github.com/agnivade/levenshtein v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.0-20210816181553-5444fa50b93d // indirect
 	github.com/evanphx/json-patch v4.9.0+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
