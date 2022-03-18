@@ -169,8 +169,7 @@ global:
       manage: true
     http:
       client:
-        skipSSLValidation:
-          director: true
+        skipSSLValidation: true
     ordService:
       subscriptionOauthSecret:
         manage: true

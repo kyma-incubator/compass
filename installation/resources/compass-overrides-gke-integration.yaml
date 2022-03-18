@@ -174,8 +174,7 @@ global:
       manage: true
     http:
       client:
-        skipSSLValidation:
-          director: true
+        skipSSLValidation: true
 operations-controller:
   http:
     client:
