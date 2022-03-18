@@ -162,6 +162,10 @@ kind: ServiceAccount
 metadata:
   name: {{ .Chart.Name }}-e2e-ns-adapter
   namespace: {{ .Values.global.tests.namespace }}
+  {{- if eq .Values.global.database.embedded.enabled false }}
+  annotations:
+    iam.gke.io/gcp-service-account: {{ $.Values.global.database.sqlProxyServiceAccount | quote }}
+  {{- end }}
   labels:
     app: {{ $.Chart.Name }}
     release: {{ $.Release.Name }}
