@@ -51,10 +51,11 @@ const (
 	credentialsGrantType = "client_credentials"
 	claimsKey            = "claims_key"
 
-	clientIDKey = "client_id"
-	scopeKey    = "scope"
-	userNameKey = "username"
-	passwordKey = "password"
+	clientIDKey     = "client_id"
+	clientSecretKey = "client_secret"
+	scopeKey        = "scope"
+	userNameKey     = "username"
+	passwordKey     = "password"
 )
 
 func FetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL string, scopes string) (*HydraToken, error) {
@@ -110,6 +111,7 @@ func GetClientCredentialsToken(t *testing.T, ctx context.Context, tokenURL, clie
 	data := url.Values{}
 	data.Add(grantTypeFieldName, credentialsGrantType)
 	data.Add(clientIDKey, clientID)
+	data.Add(clientSecretKey, clientSecret)
 	data.Add(claimsKey, staticMappingClaimsKey)
 
 	token := GetToken(t, ctx, tokenURL, clientID, clientSecret, data)
@@ -123,6 +125,7 @@ func GetClientCredentialsTokenWithClient(t *testing.T, ctx context.Context, clie
 	data := url.Values{}
 	data.Add(grantTypeFieldName, credentialsGrantType)
 	data.Add(clientIDKey, clientID)
+	data.Add(clientSecretKey, clientSecret)
 	data.Add(claimsKey, staticMappingClaimsKey)
 
 	oauthConfig := OauthConfig{
@@ -175,6 +178,10 @@ func GetTokenWithClient(t *testing.T, ctx context.Context, client *http.Client, 
 	req, err := http.NewRequest(http.MethodPost, oauthConfig.TokenURL, bytes.NewBuffer([]byte(oauthConfig.Data.Encode())))
 	if err != nil {
 		fmt.Println(err)
+	}
+
+	if oauthConfig.Data.Get(userNameKey) != "" && oauthConfig.Data.Get(passwordKey) != "" {
+		req.SetBasicAuth(oauthConfig.ClientID, oauthConfig.ClientSecret)
 	}
 	req.Header.Add(contentTypeHeader, contentTypeApplicationURLEncoded)
 
