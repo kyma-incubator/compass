@@ -10,7 +10,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/tidwall/gjson"
 )
 
@@ -54,15 +53,13 @@ type TenantProviderConfig struct {
 
 type handler struct {
 	subscriber TenantSubscriber
-	transact   persistence.Transactioner
 	config     HandlerConfig
 }
 
 // NewTenantsHTTPHandler returns a new HTTP handler, responsible for creation and deletion of regional and non-regional tenants.
-func NewTenantsHTTPHandler(subscriber TenantSubscriber, transact persistence.Transactioner, config HandlerConfig) *handler {
+func NewTenantsHTTPHandler(subscriber TenantSubscriber, config HandlerConfig) *handler {
 	return &handler{
 		subscriber: subscriber,
-		transact:   transact,
 		config:     config,
 	}
 }
@@ -112,24 +109,9 @@ func (h *handler) applySubscriptionChange(writer http.ResponseWriter, request *h
 		return
 	}
 
-	tx, err := h.transact.Begin()
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while opening db transaction: %v", err)
-		http.Error(writer, InternalServerError, http.StatusInternalServerError)
-		return
-	}
-	defer h.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
 	mainTenantID := subscriptionRequest.MainTenantID()
 	if err := subscriptionFunc(ctx, subscriptionRequest); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to apply subscription change for tenant %s: %v", mainTenantID, err)
-		http.Error(writer, InternalServerError, http.StatusInternalServerError)
-		return
-	}
-
-	if err = tx.Commit(); err != nil {
-		log.C(ctx).WithError(err).Errorf("An error occurred while committing db transaction: %v", err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}

@@ -32,7 +32,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
@@ -59,8 +58,6 @@ type config struct {
 	RootAPI string `envconfig:"APP_ROOT_API,default=/tenants"`
 
 	Handler tenantfetcher.HandlerConfig
-
-	Database persistence.DatabaseConfig
 
 	SecurityConfig securityConfig
 }
@@ -91,14 +88,6 @@ func main() {
 		exitOnError(errors.New("missing tenant path parameter"), "Error while loading app handler config")
 	}
 
-	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
-	exitOnError(err, "Error while establishing the connection to the database")
-
-	defer func() {
-		err := closeFunc()
-		exitOnError(err, "Error while closing the connection to the database")
-	}()
-
 	httpClient := &http.Client{
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -106,7 +95,7 @@ func main() {
 		},
 	}
 
-	handler := initAPIHandler(ctx, httpClient, cfg, transact)
+	handler := initAPIHandler(ctx, httpClient, cfg)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
 	go func() {
@@ -118,7 +107,7 @@ func main() {
 	runMainSrv()
 }
 
-func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, transact persistence.Transactioner) http.Handler {
+func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config) http.Handler {
 	logger := log.C(ctx)
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
@@ -128,7 +117,7 @@ func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, tr
 
 	configureAuthMiddleware(ctx, httpClient, router, cfg.SecurityConfig)
 
-	registerHandler(ctx, router, cfg.Handler, transact)
+	registerHandler(ctx, router, cfg.Handler)
 
 	logger.Infof("Registering readiness endpoint...")
 	healthCheckRouter.HandleFunc("/readyz", newReadinessHandler())
@@ -192,7 +181,7 @@ func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, route
 	go periodicExecutor.Run(ctx)
 }
 
-func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.HandlerConfig, transact persistence.Transactioner) {
+func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.HandlerConfig) {
 
 	gqlClient := newInternalGraphQLClient(cfg.DirectorGraphQLEndpoint, cfg.ClientTimeout, cfg.HTTPClientSkipSslValidation)
 	gqlClient.Log = func(s string) {
@@ -204,7 +193,7 @@ func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.
 
 	provisioner := tenantfetcher.NewTenantProvisioner(directorClient, tenantConverter, cfg.TenantProvider)
 	subscriber := tenantfetcher.NewSubscriber(directorClient, provisioner)
-	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(subscriber, transact, cfg)
+	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(subscriber, cfg)
 
 	log.C(ctx).Infof("Registering Regional Tenant Onboarding endpoint on %s...", cfg.RegionalHandlerEndpoint)
 	router.HandleFunc(cfg.RegionalHandlerEndpoint, tenantHandler.SubscribeTenant).Methods(http.MethodPut)
