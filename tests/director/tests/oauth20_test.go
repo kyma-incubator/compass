@@ -217,7 +217,6 @@ func TestDeleteSystemAuthFromApplication(t *testing.T) {
 //	require.Error(t, err)
 //}
 
-
 func TestDeleteSystemAuthFromRuntime(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
