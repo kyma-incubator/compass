@@ -2,9 +2,10 @@ package ord
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"sync"
 	"sync/atomic"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
