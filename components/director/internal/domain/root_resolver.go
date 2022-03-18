@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/internal/subscription"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/pkg/errors"
 
@@ -99,6 +101,7 @@ func NewRootResolver(
 	tokenLength int,
 	hydraURL *url.URL,
 	accessStrategyExecutorProvider *accessstrategy.Provider,
+	subscriptionConfig subscription.Config,
 ) (*RootResolver, error) {
 	oAuth20HTTPClient := &http.Client{
 		Timeout:   oAuth20Cfg.HTTPClientTimeout,
@@ -212,6 +215,7 @@ func NewRootResolver(
 	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdaptersMapping, timeService)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
 	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentSvc, tenantSvc)
+	subscriptionSvc := subscription.NewService(runtimeSvc, tenantSvc, labelSvc, uidSvc, subscriptionConfig.ProviderLabelKey, subscriptionConfig.ConsumerSubaccountIDsLabelKey)
 
 	return &RootResolver{
 		appNameNormalizer:  appNameNormalizer,
@@ -222,7 +226,7 @@ func NewRootResolver(
 		eventing:           eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:                document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
 		formation:          formation.NewResolver(transact, formationSvc, formationConv),
-		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc),
+		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc, subscriptionSvc),
 		runtimeContext:     runtimectx.NewResolver(transact, runtimeCtxSvc, runtimeContextConverter),
 		healthCheck:        healthcheck.NewResolver(healthCheckSvc),
 		webhook:            webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, webhookConverter),
@@ -808,7 +812,16 @@ func (r *mutationResolver) DeleteTenants(ctx context.Context, in []string) (int,
 	return r.tenant.Delete(ctx, in)
 }
 
-// UpdateTenant updates tenant by external id
+// SubscribeTenantToRuntime subscribes given tenant to runtime
+func (r *mutationResolver) SubscribeTenantToRuntime(ctx context.Context, runtimeId string, subaccountId string, region string) (bool, error) {
+	return r.runtime.SubscribeTenant(ctx, runtimeId, subaccountId, region)
+}
+
+// UnsubscribeTenantFromRuntime unsubscribes given tenant from runtime
+func (r *mutationResolver) UnsubscribeTenantFromRuntime(ctx context.Context, runtimeId string, subaccountId string, region string) (bool, error) {
+	return r.runtime.UnsubscribeTenant(ctx, runtimeId, subaccountId, region)
+}
+
 func (r *mutationResolver) UpdateTenant(ctx context.Context, id string, in graphql.BusinessTenantMappingInput) (*graphql.Tenant, error) {
 	return r.tenant.Update(ctx, id, in)
 }

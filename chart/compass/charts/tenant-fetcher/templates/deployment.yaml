@@ -34,6 +34,14 @@ spec:
         reqlimit: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit2MBLabel }}
         release: {{ .Release.Name }}
     spec:
+      {{ if $.Values.global.isLocalEnv }}
+      # HostAliases are used by Pod to resolve kyma.local domain
+      hostAliases:
+        - ip: {{ $.Values.global.minikubeIP }}
+          hostnames:
+            # Used for calls to Director
+            - "{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}"
+      {{ end }}
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
@@ -69,10 +77,6 @@ spec:
               value: {{ .Values.global.tenantFetcher.tenantProvider.name }}
             - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
-            - name: APP_SUBSCRIPTION_PROVIDER_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
-            - name: APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.consumerSubaccountIdsLabelKey }}
             - name: APP_DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: APP_LOG_FORMAT
@@ -81,8 +85,6 @@ spec:
               value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             - name: APP_ROOT_API
               value: "{{ .Values.global.tenantFetcher.prefix }}"
-            - name: APP_HANDLER_ENDPOINT
-              value: "{{ .Values.global.tenantFetcher.server.handlerEndpoint }}"
             - name: APP_REGIONAL_HANDLER_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.server.regionalHandlerEndpoint }}"
             - name: APP_DEPENDENCIES_ENDPOINT
@@ -129,6 +131,10 @@ spec:
               value: "{{.Values.database.dbPool.maxIdleConnections}}"
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
               value: "{{ .Values.global.tenantFetcher.requiredAuthScope }}"
+            - name: APP_DIRECTOR_GRAPHQL_ENDPOINT
+              value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
+            - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
+              value: "{{ $.Values.global.http.client.skipSSLValidation }}"
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}

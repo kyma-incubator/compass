@@ -2,8 +2,13 @@ package tenantfetchersvc_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
+	"github.com/stretchr/testify/mock"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
@@ -83,104 +88,49 @@ var (
 	}
 )
 
-func TestProvisioner_CreateTenant(t *testing.T) {
-	// GIVEN
-	ctx := context.TODO()
-
-	testCases := []struct {
-		Name                string
-		TenantSvcFn         func() *automock.TenantService
-		Request             *tenantfetchersvc.TenantSubscriptionRequest
-		ExpectedErrorOutput string
-	}{
-		{
-			Name: "Succeeds to create account tenant",
-			TenantSvcFn: func() *automock.TenantService {
-				expectedTenants := []model.BusinessTenantMappingInput{customerTenant, accountTenant}
-				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("CreateManyIfNotExists", ctx, expectedTenants).Return(nil).Once()
-				return tenantSvc
-			},
-			Request: requestWithAccountTenant,
-		},
-		{
-			Name: "Succeeds to create account tenant with no parent provided",
-			TenantSvcFn: func() *automock.TenantService {
-				expectedTenants := []model.BusinessTenantMappingInput{accountTenantWithoutParent}
-				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("CreateManyIfNotExists", ctx, expectedTenants).Return(nil).Once()
-				return tenantSvc
-			},
-			Request: requestWithAccountTenantWithoutParent,
-		},
-		{
-			Name: "Returns error when tenant creation fails",
-			TenantSvcFn: func() *automock.TenantService {
-				expectedTenants := []model.BusinessTenantMappingInput{customerTenant, accountTenant}
-				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("CreateManyIfNotExists", ctx, expectedTenants).Return(testError).Once()
-				return tenantSvc
-			},
-			Request:             requestWithAccountTenant,
-			ExpectedErrorOutput: testError.Error(),
-		},
-		{
-			Name: "Returns error when tenant is of type subaccount",
-			TenantSvcFn: func() *automock.TenantService {
-				return &automock.TenantService{}
-			},
-			Request:             requestWithSubaccountTenant,
-			ExpectedErrorOutput: fmt.Sprintf("tenant with ID %s is of type subaccount and supports only regional provisioning", subaccountTenantExtID),
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			tenantSvc := testCase.TenantSvcFn()
-			defer tenantSvc.AssertExpectations(t)
-
-			provisioner := tenantfetchersvc.NewTenantProvisioner(tenantSvc, testProviderName)
-
-			// WHEN
-			err := provisioner.ProvisionTenants(ctx, testCase.Request, "")
-
-			// THEN
-			if len(testCase.ExpectedErrorOutput) > 0 {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedErrorOutput)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
-}
-
 func TestProvisioner_CreateRegionalTenant(t *testing.T) {
 	// GIVEN
 	ctx := context.TODO()
 
 	testCases := []struct {
 		Name                string
-		TenantSvcFn         func() *automock.TenantService
+		DirectorClient      func() *automock.DirectorGraphQLClient
+		TenantConverter     func() *automock.TenantConverter
 		Request             *tenantfetchersvc.TenantSubscriptionRequest
 		ExpectedErrorOutput string
 	}{
 		{
 			Name: "Succeeds when parent account tenant already exists",
-			TenantSvcFn: func() *automock.TenantService {
+			TenantConverter: func() *automock.TenantConverter {
+				tenantSvc := &automock.TenantConverter{}
 				expectedTenants := []model.BusinessTenantMappingInput{customerTenant, parentAccountTenant, subaccountTenant}
-				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("CreateManyIfNotExists", ctx, expectedTenants).Return(nil).Once()
+				expectedTenantsConverted := convertTenantsToGQLInput(expectedTenants)
+				tenantSvc.On("MultipleInputToGraphQLInput", expectedTenants).Return(expectedTenantsConverted).Once()
+				return tenantSvc
+			},
+			DirectorClient: func() *automock.DirectorGraphQLClient {
+				expectedTenants := []model.BusinessTenantMappingInput{customerTenant, parentAccountTenant, subaccountTenant}
+				expectedTenantsConverted := convertTenantsToGQLInput(expectedTenants)
+				tenantSvc := &automock.DirectorGraphQLClient{}
+				tenantSvc.On("WriteTenants", ctx, expectedTenantsConverted).Return(nil).Once()
 				return tenantSvc
 			},
 			Request: requestWithSubaccountTenant,
 		},
 		{
 			Name: "Returns error when tenant creation fails",
-			TenantSvcFn: func() *automock.TenantService {
+			TenantConverter: func() *automock.TenantConverter {
+				tenantSvc := &automock.TenantConverter{}
 				expectedTenants := []model.BusinessTenantMappingInput{customerTenant, parentAccountTenant, subaccountTenant}
-				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("CreateManyIfNotExists", ctx, expectedTenants).Return(testError).Once()
+				expectedTenantsConverted := convertTenantsToGQLInput(expectedTenants)
+				tenantSvc.On("MultipleInputToGraphQLInput", expectedTenants).Return(expectedTenantsConverted).Once()
+				return tenantSvc
+			},
+			DirectorClient: func() *automock.DirectorGraphQLClient {
+				expectedTenants := []model.BusinessTenantMappingInput{customerTenant, parentAccountTenant, subaccountTenant}
+				expectedTenantsConverted := convertTenantsToGQLInput(expectedTenants)
+				tenantSvc := &automock.DirectorGraphQLClient{}
+				tenantSvc.On("WriteTenants", ctx, expectedTenantsConverted).Return(testError).Once()
 				return tenantSvc
 			},
 			Request:             requestWithSubaccountTenant,
@@ -190,10 +140,10 @@ func TestProvisioner_CreateRegionalTenant(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			tenantSvc := testCase.TenantSvcFn()
-			defer tenantSvc.AssertExpectations(t)
+			tenantConverter := testCase.TenantConverter()
+			directorClient := testCase.DirectorClient()
 
-			provisioner := tenantfetchersvc.NewTenantProvisioner(tenantSvc, testProviderName)
+			provisioner := tenantfetchersvc.NewTenantProvisioner(directorClient, tenantConverter, testProviderName)
 
 			// WHEN
 			err := provisioner.ProvisionTenants(ctx, testCase.Request, "asd")
@@ -205,6 +155,11 @@ func TestProvisioner_CreateRegionalTenant(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
+			mock.AssertExpectationsForObjects(t, tenantConverter, directorClient)
 		})
 	}
+}
+
+func convertTenantsToGQLInput(tenants []model.BusinessTenantMappingInput) []graphql.BusinessTenantMappingInput {
+	return tenant.NewConverter().MultipleInputToGraphQLInput(tenants)
 }

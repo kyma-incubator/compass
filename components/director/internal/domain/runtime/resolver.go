@@ -4,28 +4,19 @@ import (
 	"context"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
-	labelPkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
-	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
+	labelPkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
-
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/pkg/errors"
 )
 
 // EventingService missing godoc
@@ -97,6 +88,13 @@ type SelfRegisterManager interface {
 	GetSelfRegDistinguishingLabelKey() string
 }
 
+// SubscriptionService missing godoc
+//go:generate mockery --name=SubscriptionService --output=automock --outpkg=automock --case=underscore
+type SubscriptionService interface {
+	SubscribeTenant(ctx context.Context, runtimeId string, subaccountTenantID string, region string) (bool, error)
+	UnsubscribeTenant(ctx context.Context, runtimeId string, subaccountTenantID string, region string) (bool, error)
+}
+
 // Resolver missing godoc
 type Resolver struct {
 	transact                  persistence.Transactioner
@@ -110,10 +108,14 @@ type Resolver struct {
 	bundleInstanceAuthSvc     BundleInstanceAuthService
 	selfRegManager            SelfRegisterManager
 	uidService                uidService
+	subscriptionSvc           SubscriptionService
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService, sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter, eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService, selfRegManager SelfRegisterManager, uidService uidService) *Resolver {
+func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService,
+	sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter,
+	eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService, selfRegManager SelfRegisterManager,
+	uidService uidService, subscriptionSvc SubscriptionService) *Resolver {
 	return &Resolver{
 		transact:                  transact,
 		runtimeService:            runtimeService,
@@ -126,6 +128,7 @@ func NewResolver(transact persistence.Transactioner, runtimeService RuntimeServi
 		bundleInstanceAuthSvc:     bundleInstanceAuthSvc,
 		selfRegManager:            selfRegManager,
 		uidService:                uidService,
+		subscriptionSvc:           subscriptionSvc,
 	}
 }
 
@@ -569,6 +572,56 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Runti
 	}
 
 	return eventing.RuntimeEventingConfigurationToGraphQL(eventingCfg), nil
+}
+
+func (r *Resolver) SubscribeTenant(ctx context.Context, runtimeId string, subaccountTenantID string, region string) (bool, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return false, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	success, err := r.subscriptionSvc.SubscribeTenant(ctx, runtimeId, subaccountTenantID, region)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return false, tx.Commit()
+		}
+		return false, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return false, err
+	}
+
+	return success, nil
+}
+
+func (r *Resolver) UnsubscribeTenant(ctx context.Context, runtimeId string, subaccountTenantID string, region string) (bool, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return false, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	success, err := r.subscriptionSvc.UnsubscribeTenant(ctx, runtimeId, subaccountTenantID, region)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return false, tx.Commit()
+		}
+		return false, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return false, err
+	}
+
+	return success, nil
 }
 
 // deleteAssociatedScenarioAssignments ensures that scenario assignments which are responsible for creation of certain runtime labels are deleted,

@@ -81,3 +81,27 @@ func (d *Director) UpdateTenant(ctx context.Context, id string, tenant graphql.B
 	}
 	return nil
 }
+
+// SubscribeTenantToRuntime makes graphql query tenant-runtime subscription
+func (d *Director) SubscribeTenantToRuntime(ctx context.Context, runtimeId string, subaccountId string, region string) error {
+	var res map[string]interface{}
+
+	subscriptionMutation := fmt.Sprintf(`mutation { subscribeTenantToRuntime(runtimeID: "%s", subaccountID: "%s", region: "%s")}`, runtimeId, subaccountId, region)
+	gRequest := gcli.NewRequest(subscriptionMutation)
+	if err := d.client.Run(ctx, gRequest, &res); err != nil {
+		return errors.Wrap(err, "while executing gql mutation")
+	}
+	return nil
+}
+
+// UnsubscribeTenantFromRuntime makes graphql query tenant-runtime unsubscription
+func (d *Director) UnsubscribeTenantFromRuntime(ctx context.Context, runtimeId string, subaccountId string, region string) error {
+	var res map[string]interface{}
+
+	unsubscriptionMutation := fmt.Sprintf(`mutation { unsubscribeTenantFromRuntime(runtimeID: "%s", subaccountID: "%s", region: "%s")}`, runtimeId, subaccountId, region)
+	gRequest := gcli.NewRequest(unsubscriptionMutation)
+	if err := d.client.Run(ctx, gRequest, &res); err != nil {
+		return errors.Wrap(err, "while executing gql mutation")
+	}
+	return nil
+}
