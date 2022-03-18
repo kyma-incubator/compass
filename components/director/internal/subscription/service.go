@@ -73,9 +73,9 @@ func NewService(runtimeSvc RuntimeService, tenantSvc TenantService, labelSvc Lab
 	}
 }
 
-func (s *service) SubscribeTenant(ctx context.Context, runtimeId string, subaccountTenantID string, region string) (bool, error) {
+func (s *service) SubscribeTenant(ctx context.Context, runtimeID string, subaccountTenantID string, region string) (bool, error) {
 	filters := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(s.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", runtimeId)),
+		labelfilter.NewForKeyWithQuery(s.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", runtimeID)),
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
 	}
 
@@ -85,14 +85,13 @@ func (s *service) SubscribeTenant(ctx context.Context, runtimeId string, subacco
 			return false, err
 		}
 
-		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, runtimeId))
+		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, runtimeID))
 	}
 
-	// TODO
-	//if len(runtimes) != 1 {
-	//	return false, fmt.Errorf("only one runtime was expected to be returned for region: %s and %s: %s", region, s.subscriptionProviderLabelKey, runtimeId)
-	//}
-	//provider := runtimes[0]
+	// if len(runtimes) != 1 {
+	// 	 return false, fmt.Errorf("only one runtime was expected to be returned for region: %s and %s: %s", region, s.subscriptionProviderLabelKey, runtimeID)
+	// }
+	// provider := runtimes[0]
 	for _, provider := range runtimes {
 		tnt, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Runtime, provider.ID)
 		if err != nil {
@@ -101,7 +100,7 @@ func (s *service) SubscribeTenant(ctx context.Context, runtimeId string, subacco
 
 		label, err := s.labelSvc.GetLabel(ctx, tnt, &model.LabelInput{
 			Key:        s.consumerSubaccountIDsLabelKey,
-			ObjectID:   runtimeId,
+			ObjectID:   provider.ID,
 			ObjectType: model.RuntimeLabelableObject,
 		})
 
@@ -127,9 +126,9 @@ func (s *service) SubscribeTenant(ctx context.Context, runtimeId string, subacco
 	return true, nil
 }
 
-func (s *service) UnsubscribeTenant(ctx context.Context, runtimeId string, subaccountTenantID string, region string) (bool, error) {
+func (s *service) UnsubscribeTenant(ctx context.Context, runtimeID string, subaccountTenantID string, region string) (bool, error) {
 	filters := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(s.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", runtimeId)),
+		labelfilter.NewForKeyWithQuery(s.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", runtimeID)),
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
 	}
 
@@ -139,13 +138,12 @@ func (s *service) UnsubscribeTenant(ctx context.Context, runtimeId string, subac
 			return false, err
 		}
 
-		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, runtimeId))
+		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, runtimeID))
 	}
 
-	// TODO
-	//if len(runtimes) != 1 {
-	//	return false, fmt.Errorf("only one runtime was expected to be returned for region: %s and %s: %s", region, s.subscriptionProviderLabelKey, runtimeId)
-	//}
+	// if len(runtimes) != 1 {
+	//	 return false, fmt.Errorf("only one runtime was expected to be returned for region: %s and %s: %s", region, s.subscriptionProviderLabelKey, runtimeID)
+	// }
 	for _, runtime := range runtimes {
 		tnt, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Runtime, runtime.ID)
 		if err != nil {
@@ -154,7 +152,7 @@ func (s *service) UnsubscribeTenant(ctx context.Context, runtimeId string, subac
 
 		label, err := s.labelSvc.GetLabel(ctx, tnt, &model.LabelInput{
 			Key:        s.consumerSubaccountIDsLabelKey,
-			ObjectID:   runtimeId,
+			ObjectID:   runtime.ID,
 			ObjectType: model.RuntimeLabelableObject,
 		})
 

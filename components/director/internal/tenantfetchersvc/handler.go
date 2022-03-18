@@ -14,6 +14,7 @@ import (
 )
 
 const (
+	// InternalServerError message
 	InternalServerError = "Internal Server Error"
 	compassURL          = "https://github.com/kyma-incubator/compass"
 )
@@ -84,7 +85,6 @@ func (h *handler) Dependencies(writer http.ResponseWriter, request *http.Request
 }
 
 func (h *handler) applySubscriptionChange(writer http.ResponseWriter, request *http.Request, subscriptionFunc subscriptionFunc) {
-
 	ctx := request.Context()
 
 	vars := mux.Vars(request)

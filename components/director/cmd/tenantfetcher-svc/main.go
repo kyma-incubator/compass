@@ -182,7 +182,6 @@ func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, route
 }
 
 func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.HandlerConfig) {
-
 	gqlClient := newInternalGraphQLClient(cfg.DirectorGraphQLEndpoint, cfg.ClientTimeout, cfg.HTTPClientSkipSslValidation)
 	gqlClient.Log = func(s string) {
 		log.D().Debug(s)

@@ -813,13 +813,13 @@ func (r *mutationResolver) DeleteTenants(ctx context.Context, in []string) (int,
 }
 
 // SubscribeTenantToRuntime subscribes given tenant to runtime
-func (r *mutationResolver) SubscribeTenantToRuntime(ctx context.Context, runtimeId string, subaccountId string, region string) (bool, error) {
-	return r.runtime.SubscribeTenant(ctx, runtimeId, subaccountId, region)
+func (r *mutationResolver) SubscribeTenantToRuntime(ctx context.Context, runtimeID string, subaccountID string, region string) (bool, error) {
+	return r.runtime.SubscribeTenant(ctx, runtimeID, subaccountID, region)
 }
 
 // UnsubscribeTenantFromRuntime unsubscribes given tenant from runtime
-func (r *mutationResolver) UnsubscribeTenantFromRuntime(ctx context.Context, runtimeId string, subaccountId string, region string) (bool, error) {
-	return r.runtime.UnsubscribeTenant(ctx, runtimeId, subaccountId, region)
+func (r *mutationResolver) UnsubscribeTenantFromRuntime(ctx context.Context, runtimeID string, subaccountID string, region string) (bool, error) {
+	return r.runtime.UnsubscribeTenant(ctx, runtimeID, subaccountID, region)
 }
 
 func (r *mutationResolver) UpdateTenant(ctx context.Context, id string, in graphql.BusinessTenantMappingInput) (*graphql.Tenant, error) {

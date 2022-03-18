@@ -5156,7 +5156,7 @@ type Mutation {
 	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
 	updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")
 	subscribeTenantToRuntime(runtimeID: String!, subaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenantToRuntime")
-	unsubscribeTenantFromRuntime(runtimeID: String!, subaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenantToRuntime")
+	unsubscribeTenantFromRuntime(runtimeID: String!, subaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenantFromRuntime")
 }
 
 `, BuiltIn: false},
@@ -17923,7 +17923,7 @@ func (ec *executionContext) _Mutation_unsubscribeTenantFromRuntime(ctx context.C
 			return ec.resolvers.Mutation().UnsubscribeTenantFromRuntime(rctx, args["runtimeID"].(string), args["subaccountID"].(string), args["region"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.unsubscribeTenantToRuntime")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.unsubscribeTenantFromRuntime")
 			if err != nil {
 				return nil, err
 			}
