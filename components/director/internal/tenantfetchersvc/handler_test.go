@@ -18,28 +18,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-var (
-	validHandlerConfig = tenantfetchersvc.HandlerConfig{
-		RegionPathParam: "region",
-		TenantProviderConfig: tenantfetchersvc.TenantProviderConfig{
-			TenantProvider:                 testProviderName,
-			TenantIDProperty:               tenantProviderTenantIDProperty,
-			CustomerIDProperty:             tenantProviderCustomerIDProperty,
-			SubdomainProperty:              tenantProviderSubdomainProperty,
-			SubscriptionProviderIDProperty: subscriptionProviderIDProperty,
-			SubaccountTenantIDProperty:     tenantProviderSubaccountTenantIDProperty,
-		},
-	}
-)
-
-type tenantCreationRequest struct {
-	TenantID               string `json:"tenantId"`
-	CustomerID             string `json:"customerId"`
-	Subdomain              string `json:"subdomain"`
-	SubscriptionProviderID string `json:"subscriptionProviderId"`
-	SubaccountID           string `json:"subaccountTenantId"`
-}
-
 type regionalTenantCreationRequest struct {
 	SubaccountID           string `json:"subaccountTenantId"`
 	TenantID               string `json:"tenantId"`
@@ -200,7 +178,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 			Name: "Returns error when tenant subscription fails",
 			TenantSubscriberFn: func() *automock.TenantSubscriber {
 				subscriber := &automock.TenantSubscriber{}
-				subscriber.On("Subscribe", txtest.CtxWithDBMatcher(), &regionalTenant, region).Return(testError).Once()
+				subscriber.On("Subscribe", mock.Anything, &regionalTenant).Return(testError).Once()
 				return subscriber
 			},
 			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody)),
@@ -218,10 +196,12 @@ func TestService_SubscriptionFlows(t *testing.T) {
 			handler := tenantfetchersvc.NewTenantsHTTPHandler(subscriber, validHandlerConfig)
 			req := testCase.Request
 
-			vars := map[string]string{
-				"region": testCase.Region,
+			if len(testCase.Region) > 0 {
+				vars := map[string]string{
+					"region": testCase.Region,
+				}
+				req = mux.SetURLVars(req, vars)
 			}
-			req = mux.SetURLVars(req, vars)
 
 			w := httptest.NewRecorder()
 
@@ -257,7 +237,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(validRequestBody))
 
 		vars := map[string]string{
-			"region": region,
+			validHandlerConfig.RegionPathParam: region,
 		}
 		req = mux.SetURLVars(req, vars)
 
