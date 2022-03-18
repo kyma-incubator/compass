@@ -5,9 +5,6 @@ connector:
   http:
     client:
       skipSSLValidation: true
-dex:
-  telemetry:
-    enabled: false
 gateway:
   gateway:
     auditlog:

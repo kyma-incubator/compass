@@ -2,12 +2,6 @@ connector:
   http:
     client:
       skipSSLValidation: true
-dex:
-  global:
-    istio:
-      gateway:
-        name: "kyma-gateway"
-        namespace: "kyma-system"
 gateway:
   gateway:
     auditlog:
@@ -173,6 +167,9 @@ global:
       shouldSyncSubaccounts: true
       subaccountRegions: "test"
   tests:
+    ordService:
+      subscriptionOauthSecret:
+        manage: true
     basicCredentials:
       manage: true
     http:

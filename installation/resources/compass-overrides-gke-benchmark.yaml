@@ -47,6 +47,9 @@ global:
     systemsAPIFilterCriteria: "no"
     systemsAPIFilterTenantCriteriaPattern: "tenant=%s"
   tests:
+    ordService:
+      subscriptionOauthSecret:
+        manage: true
     basicCredentials:
       manage: true
     http:

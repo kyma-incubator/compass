@@ -235,8 +235,8 @@ ory:
             enabled: false
           jwt:
             config:
-              jwks_urls:
-                - http://dex-service.kyma-system.svc.cluster.local:5556/keys
+#              jwks_urls:
+#               - http://dex-service.kyma-system.svc.cluster.local:5556/keys
               scope_strategy: wildcard
             enabled: true
           noop:
