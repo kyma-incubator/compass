@@ -31,7 +31,7 @@ Note that `<APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY>` is optional.
 
 ## Installation Prerequisites
 
-Tenant fetcher requires running Director component.
+Tenant fetcher requires a running Director component.
 
 ## Configuration
 
