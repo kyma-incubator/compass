@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"net/http"
 	"net/url"
 	"os"
@@ -192,6 +194,8 @@ func main() {
 	}
 	cfg.SelfRegConfig.ClientTimeout = cfg.ClientTimeout
 	cfg.SelfRegConfig.MapInstanceConfigs()
+	fmt.Println("CONFIG: ")
+	spew.Dump(cfg.SelfRegConfig)
 
 	internalHTTPClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,

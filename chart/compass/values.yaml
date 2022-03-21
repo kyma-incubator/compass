@@ -211,7 +211,7 @@ global:
           tokenURLMapping: '{{ printf "\"%s\":\"https://%s.%s:%s\"" .Values.global.director.selfRegister.tokenUrlPath .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName (.Values.service.certPort | toString) }}'
           x509CertificateMapping: '{{ printf "\"%s\":\"%s\"" .Values.global.director.selfRegister.clientCertPath .Values.global.connector.caCertificate }}'
           x509KeyMapping: '{{ printf "\"%s\":\"%s\"" .Values.global.director.selfRegister.clientKeyPath .Values.global.connector.caKey }}'
-        secret: '{"local-region":{.Values.global.director.selfRegister.clientIdPath,.Values.global.director.selfRegister.clientIdPath,.Values.global.director.selfRegister.clientIdPath,.Values.global.director.selfRegister.clientIdPath,.Values.global.director.selfRegister.clientIdPath,.Values.global.director.selfRegister.clientIdPath}}'
+        secret: '{"eu-1":{.Values.global.director.selfRegister.clientIdPath,.Values.global.director.selfRegister.clientIdPath,.Values.global.director.selfRegister.clientIdPath,.Values.global.director.selfRegister.clientIdPath,.Values.global.director.selfRegister.clientIdPath,.Values.global.director.selfRegister.clientIdPath}}'
       oauthTokenPath: "/cert/token"
       oauthMode: "oauth-mtls"
       label: "selfRegLabel"
