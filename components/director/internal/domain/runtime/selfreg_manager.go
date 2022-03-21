@@ -8,12 +8,6 @@ import (
 	urlpkg "net/url"
 	"path"
 	"strings"
-	"time"
-
-	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
-	authpkg "github.com/kyma-incubator/compass/components/director/pkg/auth"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -34,103 +28,13 @@ type ExternalSvcCaller interface {
 	Call(*http.Request) (*http.Response, error)
 }
 
-// ExternalSvcCallerProvider is used to call external services with given authentication
+// ExternalSvcCallerProvider provides ExternalSvcCaller to call external services with given authentication
 //go:generate mockery --name=ExternalSvcCallerProvider --output=automock --outpkg=automock --case=underscore
 type ExternalSvcCallerProvider interface {
 	GetCaller(SelfRegConfig, string) (ExternalSvcCaller, error)
 }
 
-// SelfRegConfig is configuration for the runtime self-registration flow
-type SelfRegConfig struct {
-	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
-	SelfRegisterLabelKey            string `envconfig:"APP_SELF_REGISTER_LABEL_KEY,optional"`
-	SelfRegisterLabelValuePrefix    string `envconfig:"APP_SELF_REGISTER_LABEL_VALUE_PREFIX,optional"`
-	SelfRegisterResponseKey         string `envconfig:"APP_SELF_REGISTER_RESPONSE_KEY,optional"`
-	SelfRegisterPath                string `envconfig:"APP_SELF_REGISTER_PATH,optional"`
-	SelfRegisterNameQueryParam      string `envconfig:"APP_SELF_REGISTER_NAME_QUERY_PARAM,optional"`
-	SelfRegisterTenantQueryParam    string `envconfig:"APP_SELF_REGISTER_TENANT_QUERY_PARAM,optional"`
-	SelfRegisterRequestBodyPattern  string `envconfig:"APP_SELF_REGISTER_REQUEST_BODY_PATTERN,optional"`
-
-	OAuthMode      oauth.AuthMode `envconfig:"APP_SELF_REGISTER_OAUTH_MODE,default=oauth-mtls"`
-	OauthTokenPath string         `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"`
-
-	SkipSSLValidation bool `envconfig:"APP_SELF_REGISTER_SKIP_SSL_VALIDATION,default=false"`
-
-	ClientTimeout time.Duration `envconfig:"default=30s"`
-
-	InstanceClientIDPath     string                    `envconfig:"APP_SELF_REGISTER_INSTANCE_CLIENT_ID_PATH"`
-	InstanceClientSecretPath string                    `envconfig:"APP_SELF_REGISTER_INSTANCE_CLIENT_SECRET_PATH"`
-	InstanceURLPath          string                    `envconfig:"APP_SELF_REGISTER_INSTANCE_URL_PATH"`
-	InstanceTokenURLPath     string                    `envconfig:"APP_SELF_REGISTER_INSTANCE_TOKEN_URL_PATH"`
-	InstanceCertPath         string                    `envconfig:"APP_SELF_REGISTER_INSTANCE_X509_CERT_PATH"`
-	InstanceKeyPath          string                    `envconfig:"APP_SELF_REGISTER_INSTANCE_X509_KEY_PATH"`
-	InstanceConfigs          string                    `envconfig:"APP_SELF_REGISTER_AGGREGATED_INSTANCE_CONFIGS"`
-	RegionToInstanceConfig   map[string]InstanceConfig `envconfig:"-"`
-}
-
-type InstanceConfig struct {
-	ClientID     string
-	ClientSecret string
-	URL          string
-	TokenURL     string
-	Cert         string
-	Key          string
-}
-
-func (c *SelfRegConfig) MapInstanceConfigs() {
-	bindingsResult := gjson.Parse(c.InstanceConfigs)
-	bindingsMap := bindingsResult.Map()
-	c.RegionToInstanceConfig = make(map[string]InstanceConfig)
-	for k, v := range bindingsMap {
-		i := InstanceConfig{
-			gjson.Get(v.String(), c.InstanceClientIDPath).String(),
-			gjson.Get(v.String(), c.InstanceClientSecretPath).String(),
-			gjson.Get(v.String(), c.InstanceURLPath).String(),
-			gjson.Get(v.String(), c.InstanceTokenURLPath).String(),
-			gjson.Get(v.String(), c.InstanceCertPath).String(),
-			gjson.Get(v.String(), c.InstanceKeyPath).String(),
-		}
-		c.RegionToInstanceConfig[k] = i
-	}
-}
-
-type CallerProvider struct{}
-
-func (c *CallerProvider) GetCaller(config SelfRegConfig, region string) (ExternalSvcCaller, error) {
-	instanceConfig, exists := config.RegionToInstanceConfig[region]
-	if !exists {
-		return nil, errors.New(fmt.Sprintf("missing configuration for region: %s", region))
-	}
-
-	var credentials authpkg.Credentials
-	if config.OAuthMode == oauth.Standard {
-		credentials = &authpkg.OAuthCredentials{
-			ClientID:     instanceConfig.ClientID,
-			ClientSecret: instanceConfig.ClientSecret,
-			TokenURL:     instanceConfig.URL + config.OauthTokenPath,
-		}
-	} else if config.OAuthMode == oauth.Mtls {
-		mtlsCredentials, err := authpkg.NewOAuthMtlsCredentials(instanceConfig.ClientID, instanceConfig.Cert, instanceConfig.Key, instanceConfig.TokenURL, config.OauthTokenPath)
-		if err != nil {
-			return nil, errors.Wrap(err, "while creating OAuth Mtls credentials")
-		}
-		credentials = mtlsCredentials
-	} else {
-		return nil, errors.New(fmt.Sprintf("unsupported OAuth mode: %s", config.OAuthMode))
-	}
-
-	callerConfig := securehttp.CallerConfig{
-		Credentials:       credentials,
-		ClientTimeout:     config.ClientTimeout,
-		SkipSSLValidation: config.SkipSSLValidation,
-	}
-	caller, err := securehttp.NewCaller(callerConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	return caller, nil
-}
+const regionLabel = "region"
 
 type selfRegisterManager struct {
 	cfg            SelfRegConfig
@@ -152,12 +56,15 @@ func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Cont
 		return labels, errors.Wrapf(err, "while loading consumer")
 	}
 	if distinguishLabel, exists := in.Labels[s.cfg.SelfRegisterDistinguishLabelKey]; exists && consumerInfo.Flow.IsCertFlow() { // this means that the runtime is being self-registered
-		regionValue, exists := in.Labels["region"]
+		regionValue, exists := in.Labels[regionLabel]
 		if !exists {
-			return labels, errors.New("missing region label")
+			return labels, errors.New(fmt.Sprintf("missing %q label", regionLabel))
 		}
 
-		region := regionValue.(string)
+		region, ok := regionValue.(string)
+		if !ok {
+			return labels, errors.New(fmt.Sprintf("region value should be of type %q", "string"))
+		}
 
 		instanceConfig, exists := s.cfg.RegionToInstanceConfig[region]
 		if !exists {
@@ -219,14 +126,14 @@ func (s *selfRegisterManager) CleanupSelfRegisteredRuntime(ctx context.Context, 
 	}
 	resp, err := caller.Call(request)
 	if err != nil {
-		return errors.Wrapf(err, "while executing cleanup of self-registered runtime with id %s", runtimeID)
+		return errors.Wrapf(err, "while executing cleanup of self-registered runtime with id %q", runtimeID)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.New(fmt.Sprintf("received unexpected status code %d while cleaning up self-registered runtime with id %s", resp.StatusCode, runtimeID))
+		return errors.New(fmt.Sprintf("received unexpected status code %d while cleaning up self-registered runtime with id %q", resp.StatusCode, runtimeID))
 	}
 
-	log.C(ctx).Infof("Successfully executed clean-up self-registered runtime with id %s", runtimeID)
+	log.C(ctx).Infof("Successfully executed clean-up self-registered runtime with id %q", runtimeID)
 	return nil
 }
 

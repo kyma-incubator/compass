@@ -3,6 +3,7 @@ package runtime_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -115,7 +116,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Region:         testRegion,
 			Input:          lblInputWithoutRegion,
 			Context:        ctxWithCertConsumer,
-			ExpectedErr:    errors.New("missing region label"),
+			ExpectedErr:    fmt.Errorf("missing %q label", regionLabelKey),
 			ExpectedOutput: emptyLabels,
 		},
 		{

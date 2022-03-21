@@ -301,26 +301,22 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 
 	_, err = r.runtimeService.GetLabel(ctx, runtime.ID, r.selfRegManager.GetSelfRegDistinguishingLabelKey())
 
-	isSelfRegistered := false
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
 			return nil, errors.Wrapf(err, "while getting self register info label")
 		}
 	} else {
-		isSelfRegistered = true
-	}
-
-	if isSelfRegistered {
 		regionLabel, err := r.runtimeService.GetLabel(ctx, runtime.ID, "region")
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting region label")
 		}
 
-		//Commiting transaction as the cleanup sends request to external service
+		// Committing transaction as the cleanup sends request to external service
 		if err = tx.Commit(); err != nil {
 			return nil, err
 		}
 
+		log.C(ctx).Infof("Executing clean-up for self-registered runtime with id %q", runtime.ID)
 		if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, runtime.ID, regionLabel.Value.(string)); err != nil {
 			return nil, errors.Wrap(err, "An error occurred during cleanup of self-registered runtime: ")
 		}
