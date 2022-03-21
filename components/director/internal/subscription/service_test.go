@@ -5,12 +5,13 @@ import (
 	"errors"
 	"fmt"
 
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/subscription/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -20,25 +21,14 @@ import (
 )
 
 const (
-	tenantID        = "tenantID"
-	runtimeID       = "runtimeID"
-	tenantExtID     = "tenant-external-id"
-	tenantSubdomain = "mytenant"
-	tenantRegion    = "myregion"
+	tenantID     = "tenantID"
+	runtimeID    = "runtimeID"
+	tenantExtID  = "tenant-external-id"
+	tenantRegion = "myregion"
 
 	regionalTenantSubdomain = "myregionaltenant"
 	subaccountTenantExtID   = "subaccount-tenant-external-id"
 	subscriptionProviderID  = "123"
-
-	parentTenantExtID = "parent-tenant-external-id"
-
-	tenantProviderTenantIDProperty           = "tenantId"
-	tenantProviderCustomerIDProperty         = "customerId"
-	tenantProviderSubdomainProperty          = "subdomain"
-	tenantProviderSubaccountTenantIDProperty = "subaccountTenantId"
-	subscriptionProviderIDProperty           = "subscriptionProviderId"
-
-	compassURL = "https://github.com/kyma-incubator/compass"
 )
 
 var (
@@ -101,13 +91,6 @@ var (
 		ObjectType: model.RuntimeLabelableObject,
 		ObjectID:   testRuntime.ID,
 		Version:    testLabel.Version,
-	}
-
-	emptyLabelInput = model.LabelInput{
-		Key:        consumerSubaccountIDsLabelKey,
-		Value:      []string{""},
-		ObjectType: model.RuntimeLabelableObject,
-		ObjectID:   testRuntime.ID,
 	}
 
 	getLabelInput = model.LabelInput{
@@ -611,7 +594,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			if testCase.TenantSvcFn != nil {
 				tenantSvc = testCase.TenantSvcFn()
 			}
-			defer mock.AssertExpectationsForObjects(t, runtimeSvc)
+			defer mock.AssertExpectationsForObjects(t, runtimeSvc, labelSvc, uidSvc, tenantSvc)
 
 			service := NewService(runtimeSvc, tenantSvc, labelSvc, uidSvc, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
 
@@ -627,8 +610,6 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			}
 
 			assert.Equal(t, testCase.IsSuccessful, isUnsubscribeSuccessful)
-
-			mock.AssertExpectationsForObjects(t, runtimeSvc, labelSvc, uidSvc, tenantSvc)
 		})
 	}
 }

@@ -12,15 +12,12 @@ import (
 )
 
 const (
-	tenantExtID     = "tenant-external-id"
-	tenantSubdomain = "mytenant"
-	tenantRegion    = "myregion"
+	tenantExtID  = "tenant-external-id"
+	tenantRegion = "myregion"
 
 	regionalTenantSubdomain = "myregionaltenant"
 	subaccountTenantExtID   = "subaccount-tenant-external-id"
 	subscriptionProviderID  = "123"
-
-	parentTenantExtID = "parent-tenant-external-id"
 
 	tenantProviderTenantIDProperty           = "tenantId"
 	tenantProviderCustomerIDProperty         = "customerId"

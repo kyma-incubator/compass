@@ -2267,6 +2267,176 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 	})
 }
 
+func TestResolver_SubscribeTenant(t *testing.T) {
+	// GIVEN
+	testruntimeID := "runtime-id"
+	subaccountID := "subaccount-id"
+	region := "region"
+
+	ctx := context.TODO()
+
+	testErr := errors.New("this is a test error")
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	testCases := []struct {
+		Name              string
+		TransactionerFn   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		SubscriptionSvcFn func() *automock.SubscriptionService
+		ExpectedOutput    bool
+		ExpectedError     error
+	}{
+		{
+			Name:            "Success",
+			TransactionerFn: txGen.ThatSucceeds,
+			SubscriptionSvcFn: func() *automock.SubscriptionService {
+				subscriptionSvc := &automock.SubscriptionService{}
+				subscriptionSvc.On("SubscribeTenant", txtest.CtxWithDBMatcher(), testruntimeID, subaccountID, region).Return(true, nil).Once()
+				return subscriptionSvc
+			},
+			ExpectedOutput: true,
+			ExpectedError:  nil,
+		},
+		{
+			Name:            "Error when cannot start transaction",
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			SubscriptionSvcFn: func() *automock.SubscriptionService {
+				return &automock.SubscriptionService{}
+			},
+			ExpectedOutput: false,
+			ExpectedError:  testErr,
+		},
+		{
+			Name:            "Error when cannot subscribe tenant to runtime",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			SubscriptionSvcFn: func() *automock.SubscriptionService {
+				subscriptionSvc := &automock.SubscriptionService{}
+				subscriptionSvc.On("SubscribeTenant", txtest.CtxWithDBMatcher(), testruntimeID, subaccountID, region).Return(false, testErr).Once()
+				return subscriptionSvc
+			},
+			ExpectedOutput: false,
+			ExpectedError:  testErr,
+		},
+		{
+			Name:            "Error when cannot commit transaction",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			SubscriptionSvcFn: func() *automock.SubscriptionService {
+				subscriptionSvc := &automock.SubscriptionService{}
+				subscriptionSvc.On("SubscribeTenant", txtest.CtxWithDBMatcher(), testruntimeID, subaccountID, region).Return(true, nil).Once()
+				return subscriptionSvc
+			},
+			ExpectedOutput: false,
+			ExpectedError:  testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persist, transact := testCase.TransactionerFn()
+			subscriptionSvc := testCase.SubscriptionSvcFn()
+			defer mock.AssertExpectationsForObjects(t, persist, transact, subscriptionSvc)
+
+			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, subscriptionSvc)
+
+			// WHEN
+			result, err := resolver.SubscribeTenant(ctx, testruntimeID, subaccountID, region)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+		})
+	}
+}
+
+func TestResolver_UnsubscribeTenant(t *testing.T) {
+	// GIVEN
+	testruntimeID := "runtime-id"
+	subaccountID := "subaccount-id"
+	region := "region"
+
+	ctx := context.TODO()
+
+	testErr := errors.New("this is a test error")
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	testCases := []struct {
+		Name              string
+		TransactionerFn   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		SubscriptionSvcFn func() *automock.SubscriptionService
+		ExpectedOutput    bool
+		ExpectedError     error
+	}{
+		{
+			Name:            "Success",
+			TransactionerFn: txGen.ThatSucceeds,
+			SubscriptionSvcFn: func() *automock.SubscriptionService {
+				subscriptionSvc := &automock.SubscriptionService{}
+				subscriptionSvc.On("UnsubscribeTenant", txtest.CtxWithDBMatcher(), testruntimeID, subaccountID, region).Return(true, nil).Once()
+				return subscriptionSvc
+			},
+			ExpectedOutput: true,
+			ExpectedError:  nil,
+		},
+		{
+			Name:            "Error when cannot start transaction",
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			SubscriptionSvcFn: func() *automock.SubscriptionService {
+				return &automock.SubscriptionService{}
+			},
+			ExpectedOutput: false,
+			ExpectedError:  testErr,
+		},
+		{
+			Name:            "Error when cannot unsubscribe tenant from runtime",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			SubscriptionSvcFn: func() *automock.SubscriptionService {
+				subscriptionSvc := &automock.SubscriptionService{}
+				subscriptionSvc.On("UnsubscribeTenant", txtest.CtxWithDBMatcher(), testruntimeID, subaccountID, region).Return(false, testErr).Once()
+				return subscriptionSvc
+			},
+			ExpectedOutput: false,
+			ExpectedError:  testErr,
+		},
+		{
+			Name:            "Error when cannot commit transaction",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			SubscriptionSvcFn: func() *automock.SubscriptionService {
+				subscriptionSvc := &automock.SubscriptionService{}
+				subscriptionSvc.On("UnsubscribeTenant", txtest.CtxWithDBMatcher(), testruntimeID, subaccountID, region).Return(true, nil).Once()
+				return subscriptionSvc
+			},
+			ExpectedOutput: false,
+			ExpectedError:  testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persist, transact := testCase.TransactionerFn()
+			subscriptionSvc := testCase.SubscriptionSvcFn()
+			defer mock.AssertExpectationsForObjects(t, persist, transact, subscriptionSvc)
+
+			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, subscriptionSvc)
+
+			// WHEN
+			result, err := resolver.UnsubscribeTenant(ctx, testruntimeID, subaccountID, region)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+		})
+	}
+}
+
 func fixOAuths() []model.SystemAuth {
 	return []model.SystemAuth{
 		{

@@ -48,7 +48,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 
 	bodyWithMissingParent, err := json.Marshal(regionalTenantCreationRequest{
 		SubaccountID:           subaccountTenantExtID,
-		Subdomain:              tenantSubdomain,
+		Subdomain:              regionalTenantSubdomain,
 		SubscriptionProviderID: subscriptionProviderID,
 	})
 	assert.NoError(t, err)
