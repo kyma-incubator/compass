@@ -491,6 +491,28 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			IsSuccessful:              false,
 		},
 		{
+			Name: "Succeeds if label for runtime is not found",
+			RuntimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				return provisioner
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
+				return tenantSvc
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelSvc := &automock.LabelService{}
+				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(nil, apperrors.NewNotFoundError(resource.Label, getLabelInput.ObjectID)).Once()
+				return labelSvc
+			},
+			UIDServiceFn:              emptyUIDSvcFn,
+			Region:                    tenantRegion,
+			TenantSubscriptionRequest: regionalTenant,
+			IsSuccessful:              true,
+		},
+		{
 			Name: "Returns an error when could not parse label value",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}

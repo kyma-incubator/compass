@@ -88,10 +88,6 @@ func (s *service) SubscribeTenant(ctx context.Context, runtimeID string, subacco
 		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, runtimeID))
 	}
 
-	// if len(runtimes) != 1 {
-	// 	 return false, fmt.Errorf("only one runtime was expected to be returned for region: %s and %s: %s", region, s.subscriptionProviderLabelKey, runtimeID)
-	// }
-	// provider := runtimes[0]
 	for _, provider := range runtimes {
 		tnt, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Runtime, provider.ID)
 		if err != nil {
@@ -141,9 +137,6 @@ func (s *service) UnsubscribeTenant(ctx context.Context, runtimeID string, subac
 		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, runtimeID))
 	}
 
-	// if len(runtimes) != 1 {
-	//	 return false, fmt.Errorf("only one runtime was expected to be returned for region: %s and %s: %s", region, s.subscriptionProviderLabelKey, runtimeID)
-	// }
 	for _, runtime := range runtimes {
 		tnt, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Runtime, runtime.ID)
 		if err != nil {
@@ -157,16 +150,20 @@ func (s *service) UnsubscribeTenant(ctx context.Context, runtimeID string, subac
 		})
 
 		if err != nil {
-			return false, err
-		}
-		labelOldValue, err := labelPkg.ValueToStringsSlice(label.Value)
-		if err != nil {
-			return false, errors.Wrap(err, fmt.Sprintf("Failed to parse label values for label with id: %s", label.ID))
-		}
-		labelNewValue := removeElement(labelOldValue, subaccountTenantID)
+			if !apperrors.IsNotFoundError(err) {
+				return false, errors.Wrap(err, fmt.Sprintf("Failed to get label for runtime with id: %s and key: %s", runtime.ID, s.consumerSubaccountIDsLabelKey))
+			}
+			return true, nil
+		} else {
+			labelOldValue, err := labelPkg.ValueToStringsSlice(label.Value)
+			if err != nil {
+				return false, errors.Wrap(err, fmt.Sprintf("Failed to parse label values for label with id: %s", label.ID))
+			}
+			labelNewValue := removeElement(labelOldValue, subaccountTenantID)
 
-		if err := s.updateLabelWithRetry(ctx, tnt, runtime, label, labelNewValue); err != nil {
-			return false, errors.Wrap(err, fmt.Sprintf("Failed to set label for runtime with id: %s", runtime.ID))
+			if err := s.updateLabelWithRetry(ctx, tnt, runtime, label, labelNewValue); err != nil {
+				return false, errors.Wrap(err, fmt.Sprintf("Failed to set label for runtime with id: %s", runtime.ID))
+			}
 		}
 	}
 
