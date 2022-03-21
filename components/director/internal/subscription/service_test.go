@@ -138,6 +138,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 		TenantSvcFn               func() *automock.TenantService
 		TenantSubscriptionRequest tenantfetchersvc.TenantSubscriptionRequest
 		ExpectedErrorOutput       string
+		IsSuccessful              bool
 	}{
 		{
 			Name:   "Succeeds",
@@ -150,9 +151,10 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			LabelServiceFn:            emptyLabelSvcFn,
 			UIDServiceFn:              emptyUIDSvcFn,
 			TenantSubscriptionRequest: regionalTenant,
+			IsSuccessful:              true,
 		},
 		{
-			Name: "Succeeds when can't find runtimes",
+			Name: "Returns an error when can't find runtimes",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return(nil, notFoundErr).Once()
@@ -162,9 +164,10 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			UIDServiceFn:              emptyUIDSvcFn,
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
+			IsSuccessful:              false,
 		},
 		{
-			Name: "Returns error when could not list runtimes",
+			Name: "Returns an error when could not list runtimes",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return(nil, testError).Once()
@@ -175,9 +178,10 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
 			ExpectedErrorOutput:       testError.Error(),
+			IsSuccessful:              false,
 		},
 		{
-			Name:   "Returns error when could not get tenant for runtime",
+			Name:   "Returns an error when could not get tenant for runtime",
 			Region: tenantRegion,
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
@@ -193,9 +197,10 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			UIDServiceFn:              emptyUIDSvcFn,
 			TenantSubscriptionRequest: regionalTenant,
 			ExpectedErrorOutput:       testError.Error(),
+			IsSuccessful:              false,
 		},
 		{
-			Name: "Returns error when could not get label for runtime",
+			Name: "Returns an error when could not get label for runtime",
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
@@ -215,9 +220,10 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
 			ExpectedErrorOutput:       testError.Error(),
+			IsSuccessful:              false,
 		},
 		{
-			Name: "Returns error when could not create label for runtime",
+			Name: "Returns an error when could not create label for runtime",
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
@@ -242,9 +248,10 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
 			ExpectedErrorOutput:       testError.Error(),
+			IsSuccessful:              false,
 		},
 		{
-			Name: "Returns error when could not parse label value",
+			Name: "Returns an error when could not parse label value",
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
@@ -264,9 +271,10 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
 			ExpectedErrorOutput:       "Failed to parse label values for label ",
+			IsSuccessful:              false,
 		},
 		{
-			Name: "Returns error when could not update label for runtime",
+			Name: "Returns an error when could not update label for runtime",
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
@@ -287,6 +295,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
 			ExpectedErrorOutput:       testError.Error(),
+			IsSuccessful:              false,
 		},
 		{
 			Name: "Succeeds and creates label",
@@ -313,6 +322,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			},
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
+			IsSuccessful:              true,
 		},
 		{
 			Name: "Succeeds and updates label",
@@ -335,6 +345,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			UIDServiceFn:              emptyUIDSvcFn,
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
+			IsSuccessful:              true,
 		},
 		{
 			Name: "Succeeds and updates label on second try",
@@ -358,6 +369,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			UIDServiceFn:              emptyUIDSvcFn,
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
+			IsSuccessful:              true,
 		},
 	}
 
@@ -374,7 +386,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			service := NewService(runtimeSvc, tenantSvc, labelSvc, uuidSvc, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
 
 			// WHEN
-			_, err := service.SubscribeTenant(context.TODO(), subscriptionProviderID, subaccountTenantExtID, testCase.Region)
+			isSubscribeSuccessful, err := service.SubscribeTenant(context.TODO(), subscriptionProviderID, subaccountTenantExtID, testCase.Region)
 
 			// THEN
 			if len(testCase.ExpectedErrorOutput) > 0 {
@@ -383,6 +395,8 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
+
+			assert.Equal(t, testCase.IsSuccessful, isSubscribeSuccessful)
 
 			mock.AssertExpectationsForObjects(t, runtimeSvc, labelSvc, uuidSvc, tenantSvc)
 		})
@@ -409,6 +423,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 		TenantSvcFn               func() *automock.TenantService
 		TenantSubscriptionRequest tenantfetchersvc.TenantSubscriptionRequest
 		ExpectedErrorOutput       string
+		IsSuccessful              bool
 	}{
 		{
 			Name:   "Succeeds when no runtime is found",
@@ -421,9 +436,10 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			LabelServiceFn:            emptyLabelSvcFn,
 			UIDServiceFn:              emptyUIDSvcFn,
 			TenantSubscriptionRequest: regionalTenant,
+			IsSuccessful:              true,
 		},
 		{
-			Name: "Succeeds when can't find runtimes",
+			Name: "Returns an error when can't find runtimes",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return(nil, notFoundErr).Once()
@@ -433,9 +449,10 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			UIDServiceFn:              emptyUIDSvcFn,
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
+			IsSuccessful:              false,
 		},
 		{
-			Name: "Returns error when could not list runtimes",
+			Name: "Returns an error when could not list runtimes",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return(nil, testError).Once()
@@ -446,9 +463,10 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
 			ExpectedErrorOutput:       testError.Error(),
+			IsSuccessful:              false,
 		},
 		{
-			Name: "Returns error when could not get tenant for runtime",
+			Name: "Returns an error when could not get tenant for runtime",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
@@ -464,9 +482,10 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
 			ExpectedErrorOutput:       testError.Error(),
+			IsSuccessful:              false,
 		},
 		{
-			Name: "Returns error when could not get label for runtime",
+			Name: "Returns an error when could not get label for runtime",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
@@ -486,36 +505,10 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
 			ExpectedErrorOutput:       testError.Error(),
+			IsSuccessful:              false,
 		},
 		{
-			Name: "Returns error when could not create label for runtime",
-			RuntimeServiceFn: func() *automock.RuntimeService {
-				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
-				return provisioner
-			},
-			TenantSvcFn: func() *automock.TenantService {
-				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
-				return tenantSvc
-			},
-			LabelServiceFn: func() *automock.LabelService {
-				labelSvc := &automock.LabelService{}
-				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(nil, notFoundErr).Once()
-				labelSvc.On("CreateLabel", context.TODO(), tenantID, fixUUID(), &createLabelInput).Return(testError).Once()
-				return labelSvc
-			},
-			UIDServiceFn: func() *automock.UidService {
-				uidService := &automock.UidService{}
-				uidService.On("Generate").Return(fixUUID())
-				return uidService
-			},
-			Region:                    tenantRegion,
-			TenantSubscriptionRequest: regionalTenant,
-			ExpectedErrorOutput:       testError.Error(),
-		},
-		{
-			Name: "Returns error when could not parse label value",
+			Name: "Returns an error when could not parse label value",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
@@ -535,9 +528,10 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
 			ExpectedErrorOutput:       "Failed to parse label values for label ",
+			IsSuccessful:              false,
 		},
 		{
-			Name: "Returns error when could not update label for runtime",
+			Name: "Returns an error when could not update label for runtime",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
 				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
@@ -558,38 +552,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
 			ExpectedErrorOutput:       testError.Error(),
-		},
-		{
-			Name: "Succeeds and creates empty label",
-			RuntimeServiceFn: func() *automock.RuntimeService {
-				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
-				return provisioner
-			},
-			TenantSvcFn: func() *automock.TenantService {
-				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
-				return tenantSvc
-			},
-			LabelServiceFn: func() *automock.LabelService {
-				labelSvc := &automock.LabelService{}
-				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(nil, notFoundErr).Once()
-				labelSvc.On("CreateLabel", context.TODO(), tenantID, fixUUID(), &emptyLabelInput).Return(nil).Once()
-				return labelSvc
-			},
-			UIDServiceFn: func() *automock.UidService {
-				uidService := &automock.UidService{}
-				uidService.On("Generate").Return(fixUUID())
-				return uidService
-			},
-			Region: tenantRegion,
-			TenantSubscriptionRequest: tenantfetchersvc.TenantSubscriptionRequest{
-				SubaccountTenantID:     "",
-				AccountTenantID:        tenantExtID,
-				Subdomain:              regionalTenantSubdomain,
-				Region:                 tenantRegion,
-				SubscriptionProviderID: subscriptionProviderID,
-			},
+			IsSuccessful:              false,
 		},
 		{
 			Name: "Succeeds and updates label",
@@ -612,6 +575,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			UIDServiceFn:              emptyUIDSvcFn,
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
+			IsSuccessful:              true,
 		},
 		{
 			Name: "Succeeds and updates label on second try",
@@ -635,6 +599,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			UIDServiceFn:              emptyUIDSvcFn,
 			Region:                    tenantRegion,
 			TenantSubscriptionRequest: regionalTenant,
+			IsSuccessful:              true,
 		}}
 
 	for _, testCase := range testCases {
@@ -651,7 +616,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			service := NewService(runtimeSvc, tenantSvc, labelSvc, uidSvc, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
 
 			// WHEN
-			_, err := service.UnsubscribeTenant(context.TODO(), subscriptionProviderID, subaccountTenantExtID, testCase.Region)
+			isUnsubscribeSuccessful, err := service.UnsubscribeTenant(context.TODO(), subscriptionProviderID, subaccountTenantExtID, testCase.Region)
 
 			// THEN
 			if len(testCase.ExpectedErrorOutput) > 0 {
@@ -660,6 +625,8 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
+
+			assert.Equal(t, testCase.IsSuccessful, isUnsubscribeSuccessful)
 
 			mock.AssertExpectationsForObjects(t, runtimeSvc, labelSvc, uidSvc, tenantSvc)
 		})
