@@ -50,15 +50,15 @@ func (c *SelfRegConfig) MapInstanceConfigs() {
 	bindingsResult := gjson.Parse(c.InstanceConfigs)
 	bindingsMap := bindingsResult.Map()
 	c.RegionToInstanceConfig = make(map[string]InstanceConfig)
-	for k, v := range bindingsMap {
+	for region, config := range bindingsMap {
 		i := InstanceConfig{
-			gjson.Get(v.String(), c.InstanceClientIDPath).String(),
-			gjson.Get(v.String(), c.InstanceClientSecretPath).String(),
-			gjson.Get(v.String(), c.InstanceURLPath).String(),
-			gjson.Get(v.String(), c.InstanceTokenURLPath).String(),
-			gjson.Get(v.String(), c.InstanceCertPath).String(),
-			gjson.Get(v.String(), c.InstanceKeyPath).String(),
+			gjson.Get(config.String(), c.InstanceClientIDPath).String(),
+			gjson.Get(config.String(), c.InstanceClientSecretPath).String(),
+			gjson.Get(config.String(), c.InstanceURLPath).String(),
+			gjson.Get(config.String(), c.InstanceTokenURLPath).String(),
+			gjson.Get(config.String(), c.InstanceCertPath).String(),
+			gjson.Get(config.String(), c.InstanceKeyPath).String(),
 		}
-		c.RegionToInstanceConfig[k] = i
+		c.RegionToInstanceConfig[region] = i
 	}
 }
