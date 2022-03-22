@@ -8,8 +8,8 @@ RUN go mod download -x
 
 COPY . ${BASE_APP_DIR}
 
-RUN go build -v -o main ./cmd/main.go
-RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
+RUN go build -v -o hydrator ./cmd/main.go
+RUN mkdir /app && mv ./hydrator /app/hydrator
 
 FROM alpine:3.15.0
 LABEL source = git@github.com:kyma-incubator/compass.git
@@ -19,4 +19,4 @@ RUN apk --no-cache add curl ca-certificates
 
 COPY --from=builder /app /app
 
-CMD ["/app/main"]
+CMD ["/app/hydrator"]

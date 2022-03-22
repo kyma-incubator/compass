@@ -8,4 +8,4 @@ metadata:
     release: {{ .Release.Name }}
 data:
   {{ .Values.configFile.name }}: |
-{{ toYaml .Values.global.scopes | indent 4}}
+{{ toYaml .Values.global.scopes | indent 4 }}
