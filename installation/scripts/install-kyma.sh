@@ -46,11 +46,16 @@ ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 CERT=$(docker exec k3d-kyma-server-0 cat /var/lib/rancher/k3s/server/tls/server-ca.crt)
 CERT="${CERT//$'\n'/\\\\n}"
 
+VALUES_FILE="${ROOT_PATH}"/chart/compass/values.yaml
+IDP_HOST=$(yq ".global.cockpit.auth.idpHost" $VALUES_FILE)
+AUTH_PATH=$(yq ".global.cockpit.auth.path" $VALUES_FILE)
+JWKS_URL=$IDP_HOST$AUTH_PATH
+
 KYMA_COMPONENTS_MINIMAL="${ROOT_PATH}"/installation/resources/kyma/kyma-components-minimal.yaml
 KYMA_OVERRIDES_MINIMAL="${ROOT_PATH}"/installation/resources/kyma/kyma-overrides-minimal.yaml
 
 MINIMAL_OVERRIDES_TEMP=overrides-minimal.yaml
-MINIMAL_OVERRIDES_CONTENT=$(sed "s~\"__CERT__\"~\"$CERT\"~" "${KYMA_OVERRIDES_MINIMAL}")
+MINIMAL_OVERRIDES_CONTENT=$(sed -e "s~__CERT__~$CERT~" -e "s~__URL__~$JWKS_URL~" "${KYMA_OVERRIDES_MINIMAL}")
 
 >"${MINIMAL_OVERRIDES_TEMP}" cat <<-EOF
 $MINIMAL_OVERRIDES_CONTENT
@@ -60,7 +65,7 @@ KYMA_COMPONENTS_FULL="${ROOT_PATH}"/installation/resources/kyma/kyma-components-
 KYMA_OVERRIDES_FULL="${ROOT_PATH}"/installation/resources/kyma/kyma-overrides-full.yaml
 
 FULL_OVERRIDES_TEMP=overrides-full.yaml
-FULL_OVERRIDES_CONTENT=$(sed "s~\"__CERT__\"~\"$CERT\"~" "${KYMA_OVERRIDES_FULL}")
+FULL_OVERRIDES_CONTENT=$(sed -e "s~__CERT__~$CERT~" -e "s~__URL__~$JWKS_URL~" "${KYMA_OVERRIDES_FULL}")
 
 >"${FULL_OVERRIDES_TEMP}" cat <<-EOF
 $FULL_OVERRIDES_CONTENT
