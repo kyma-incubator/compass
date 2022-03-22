@@ -1,15 +1,15 @@
 package runtime_test
 
 import (
-	"fmt"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestCallerProvider_GetCaller(t *testing.T) {
@@ -85,7 +85,7 @@ func TestCallerProvider_GetCaller(t *testing.T) {
 			Config:                    cfg,
 			Region:                    "fake-region",
 			ExpectedExternalSvcCaller: nil,
-			ExpectedErr:               errors.New(fmt.Sprintf("missing configuration for region: fake-region")),
+			ExpectedErr:               errors.New("missing configuration for region: fake-region"),
 		},
 	}
 	for _, testCase := range testCases {
