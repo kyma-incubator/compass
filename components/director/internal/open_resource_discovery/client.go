@@ -38,7 +38,7 @@ func NewClient(httpClient *http.Client, accessStrategyExecutorProvider accessstr
 	}
 }
 
-// FetchOpenResourceDiscoveryDocuments fetches all the documents for a single ORD .well-known endpoint
+// FetchOpenResourceDiscoveryDocuments fetches all the documents for a single ORD .well-known config endpoint
 func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *model.Application, webhook *model.Webhook) (Documents, string, error) {
 	config, err := c.fetchConfig(ctx, app, webhook)
 	if err != nil {
