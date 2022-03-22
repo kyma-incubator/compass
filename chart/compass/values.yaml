@@ -90,7 +90,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2242" # TODO:: change version 2266
+      version: "PR-2268"
     connectivity_adapter:
       dir:
       version: "PR-2242"
@@ -99,7 +99,7 @@ global:
       version: "PR-2242"
     director:
       dir:
-      version: "PR-2214" # TODO:: change version 2266
+      version: "PR-2268"
     hydrator:
       dir:
       version: "latest" # TODO:: change version 2266
@@ -131,7 +131,7 @@ global:
       version: "PR-56"
     e2e_tests:
       dir:
-      version: "PR-2251" # TODO:: change version 2266
+      version: "PR-2268"
 
   isLocalEnv: false
   isForTesting: false
