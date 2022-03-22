@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	systemauthmodel "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/pkg/errors"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
@@ -99,27 +99,39 @@ func NewRootResolver(
 	tokenLength int,
 	hydraURL *url.URL,
 	accessStrategyExecutorProvider *accessstrategy.Provider,
-	cache certloader.Cache,
-) *RootResolver {
+) (*RootResolver, error) {
 	oAuth20HTTPClient := &http.Client{
 		Timeout:   oAuth20Cfg.HTTPClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
 	}
 
-	oauthCredentials := &authpkg.OAuthCredentials{
-		ClientID:     selfRegConfig.ClientID,
-		ClientSecret: selfRegConfig.ClientSecret,
-		TokenURL:     selfRegConfig.URL + selfRegConfig.OauthTokenPath,
+	var credentials authpkg.Credentials
+	if selfRegConfig.OAuthMode == oauth.Standard {
+		credentials = &authpkg.OAuthCredentials{
+			ClientID:     selfRegConfig.ClientID,
+			ClientSecret: selfRegConfig.ClientSecret,
+			TokenURL:     selfRegConfig.URL + selfRegConfig.OauthTokenPath,
+		}
+	} else if selfRegConfig.OAuthMode == oauth.Mtls {
+		mtlsCredentials, err := authpkg.NewOAuthMtlsCredentials(&selfRegConfig)
+		if err != nil {
+			return nil, errors.Wrap(err, "while creating OAuth Mtls credentials")
+		}
+		credentials = mtlsCredentials
+	} else {
+		return nil, errors.New(fmt.Sprintf("unsupported OAuth mode: %s", selfRegConfig.OAuthMode))
 	}
 
 	config := securehttp.CallerConfig{
-		Credentials:       oauthCredentials,
+		Credentials:       credentials,
 		ClientTimeout:     selfRegConfig.ClientTimeout,
 		SkipSSLValidation: selfRegConfig.SkipSSLValidation,
-		Cache:             cache,
 	}
 
-	caller := securehttp.NewCaller(config)
+	caller, err := securehttp.NewCaller(config)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating caller")
+	}
 
 	transport := httptransport.NewWithClient(hydraURL.Host, hydraURL.Path, []string{hydraURL.Scheme}, oAuth20HTTPClient)
 	hydra := hydraClient.New(transport, nil)
@@ -224,7 +236,7 @@ func NewRootResolver(
 		mpBundle:           bundleutil.NewResolver(transact, bundleSvc, bundleInstanceAuthSvc, bundleReferenceSvc, apiSvc, eventAPISvc, docSvc, bundleConverter, bundleInstanceAuthConv, apiConverter, eventAPIConverter, docConverter, specSvc),
 		bundleInstanceAuth: bundleinstanceauth.NewResolver(transact, bundleInstanceAuthSvc, bundleSvc, bundleInstanceAuthConv, bundleConverter),
 		scenarioAssignment: scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv, tenantSvc),
-	}
+	}, nil
 }
 
 // BundlesDataloader missing godoc

@@ -46,9 +46,6 @@ require (
 	k8s.io/apimachinery v0.20.2 // DO NOT BUMP
 	k8s.io/client-go v0.20.2 // DO NOT BUMP
 	sigs.k8s.io/controller-runtime v0.8.3 // DO NOT BUMP
-)
-
-require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect

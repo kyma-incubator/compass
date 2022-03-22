@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 
 	"github.com/pkg/errors"
@@ -31,7 +32,7 @@ type Caller struct {
 }
 
 // NewCaller creates a new Caller
-func NewCaller(config CallerConfig) *Caller {
+func NewCaller(config CallerConfig) (*Caller, error) {
 	c := &Caller{
 		credentials: config.Credentials,
 		client:      &http.Client{Timeout: config.ClientTimeout},
@@ -41,21 +42,20 @@ func NewCaller(config CallerConfig) *Caller {
 	case auth.BasicCredentialType:
 		c.provider = auth.NewBasicAuthorizationProvider()
 	case auth.OAuthCredentialType:
-		// TODO  When the change for fetching xsuaa token
-		// with certificate is merged mtlsTokenAuthorizationProvider should be used so this if has to be removed
-		oAuthCredentials, ok := config.Credentials.Get().(*auth.OAuthCredentials)
-		if ok && oAuthCredentials.ClientSecret == "" {
-			oauthCfg := oauth.Config{
-				TokenRequestTimeout: config.ClientTimeout,
-				SkipSSLValidation:   config.SkipSSLValidation,
-			}
-			c.provider = auth.NewMtlsTokenAuthorizationProvider(oauthCfg, config.Cache, auth.DefaultMtlsClientCreator)
-		} else {
-			c.provider = auth.NewTokenAuthorizationProvider(&http.Client{Timeout: config.ClientTimeout})
+		c.provider = auth.NewTokenAuthorizationProvider(&http.Client{Timeout: config.ClientTimeout})
+	case auth.OAuthMtlsCredentialType:
+		oauthCfg := oauth.Config{
+			TokenRequestTimeout: config.ClientTimeout,
+			SkipSSLValidation:   config.SkipSSLValidation,
 		}
+		credentials, ok := config.Credentials.Get().(*auth.OAuthMtlsCredentials)
+		if !ok {
+			return nil, errors.New("failed to cast credentials to mtls oauth credentials type")
+		}
+		c.provider = auth.NewMtlsTokenAuthorizationProvider(oauthCfg, credentials.CertCache, auth.DefaultMtlsClientCreator)
 	}
 	c.client.Transport = director_http.NewCorrelationIDTransport(director_http.NewSecuredTransport(http.DefaultTransport, c.provider))
-	return c
+	return c, nil
 }
 
 // Call executes a http call with the configured credentials

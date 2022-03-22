@@ -2,7 +2,6 @@ package tenantmapping
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
@@ -21,10 +20,9 @@ import (
 )
 
 // NewUserContextProvider missing godoc
-func NewUserContextProvider(clientProvider DirectorClient, staticUserRepo StaticUserRepository, staticGroupRepo StaticGroupRepository) *userContextProvider {
+func NewUserContextProvider(clientProvider DirectorClient, staticGroupRepo StaticGroupRepository) *userContextProvider {
 	return &userContextProvider{
 		directorClient:  clientProvider,
-		staticUserRepo:  staticUserRepo,
 		staticGroupRepo: staticGroupRepo,
 		tenantKeys: KeysExtra{
 			TenantKey:         tenantmapping.ConsumerTenantKey,
@@ -35,15 +33,13 @@ func NewUserContextProvider(clientProvider DirectorClient, staticUserRepo Static
 
 type userContextProvider struct {
 	directorClient  DirectorClient
-	staticUserRepo  StaticUserRepository
 	staticGroupRepo StaticGroupRepository
 	tenantKeys      KeysExtra
 }
 
 // GetObjectContext missing godoc
 func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
-	var externalTenantID, scopes string
-	var staticUser *StaticUser
+	var externalTenantID string
 	var err error
 
 	logger := log.C(ctx).WithFields(logrus.Fields{
@@ -51,17 +47,9 @@ func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oath
 	})
 
 	ctx = log.ContextWithLogger(ctx, logger)
-
 	log.C(ctx).Info("Getting scopes from groups")
-	scopes = m.getScopesForUserGroups(ctx, reqData)
-	if !hasScopes(scopes) {
-		log.C(ctx).Info("No scopes found from groups, getting user data")
 
-		staticUser, scopes, err = m.getUserData(ctx, reqData, authDetails.AuthID)
-		if err != nil {
-			return ObjectContext{}, errors.Wrapf(err, "while getting user data for user: %s", authDetails.AuthID)
-		}
-	}
+	scopes := m.getScopesForUserGroups(ctx, reqData)
 
 	externalTenantID, err = reqData.GetExternalTenantID()
 	if err != nil {
@@ -86,11 +74,7 @@ func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oath
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
-	if staticUser != nil && !hasValidTenant(staticUser.Tenants, externalTenantID) {
-		return ObjectContext{}, apperrors.NewInternalError(fmt.Sprintf("Static tenant with username: %s missmatch external tenant: %s", staticUser.Username, externalTenantID))
-	}
-
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.UserObjectContextProvider)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.User, UserObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
 	return objCtx, nil
@@ -124,37 +108,4 @@ func (m *userContextProvider) getScopesForUserGroups(ctx context.Context, reqDat
 	log.C(ctx).Debugf("Found scopes: %s", scopes)
 
 	return scopes
-}
-
-func (m *userContextProvider) getUserData(ctx context.Context, reqData oathkeeper.ReqData, username string) (*StaticUser, string, error) {
-	staticUser, err := m.staticUserRepo.Get(username)
-	if err != nil {
-		return nil, "", errors.Wrapf(err, "while searching for a static user with username %s", username)
-	}
-	log.C(ctx).Debugf("Found static user with name %s and tenants: %s", staticUser.Username, staticUser.Tenants)
-
-	scopes, err := reqData.GetScopes()
-	if err != nil {
-		if !apperrors.IsKeyDoesNotExist(err) {
-			return nil, "", errors.Wrap(err, "while fetching scopes")
-		}
-		scopes = strings.Join(staticUser.Scopes, " ")
-	}
-	log.C(ctx).Debugf("Found scopes: %s", scopes)
-
-	return &staticUser, scopes, nil
-}
-
-func hasValidTenant(assignedTenants []string, tenant string) bool {
-	for _, assignedTenant := range assignedTenants {
-		if assignedTenant == tenant {
-			return true
-		}
-	}
-
-	return false
-}
-
-func hasScopes(scopes string) bool {
-	return len(scopes) > 0
 }

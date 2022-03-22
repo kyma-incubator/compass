@@ -111,10 +111,10 @@ func (suite *RepoUpsertTestSuite) Run(t *testing.T) bool {
 
 func callUpsert(repo interface{}, ctx context.Context, tenant string, modelEntity interface{}, methodName string) error {
 	results := reflect.ValueOf(repo).MethodByName(methodName).Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(tenant), reflect.ValueOf(modelEntity)})
-	if len(results) != 1 {
-		panic("Update should return one argument")
+	if len(results) != 2 {
+		panic("Update should return two arguments")
 	}
-	result := results[0].Interface()
+	result := results[1].Interface()
 	if result == nil {
 		return nil
 	}

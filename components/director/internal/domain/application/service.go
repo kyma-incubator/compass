@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -29,27 +30,33 @@ import (
 )
 
 const (
-	intSysKey = "integrationSystemID"
-	nameKey   = "name"
+	intSysKey     = "integrationSystemID"
+	nameKey       = "name"
+	sccLabelKey   = "scc"
+	subaccountKey = "Subaccount"
+	locationIDKey = "LocationID"
 )
 
 type repoCreatorFunc func(ctx context.Context, tenant string, application *model.Application) error
-type repoUpserterFunc func(ctx context.Context, tenant string, application *model.Application) error
+type repoUpserterFunc func(ctx context.Context, tenant string, application *model.Application) (string, error)
 
 // ApplicationRepository missing godoc
 //go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore
 type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
+	GetByIDForUpdate(ctx context.Context, tenant, id string) (*model.Application, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
 	GetByNameAndSystemNumber(ctx context.Context, tenant, name, systemNumber string) (*model.Application, error)
+	GetByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Application, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListAll(ctx context.Context, tenant string) ([]*model.Application, error)
+	ListAllByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Application, error)
 	ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, tenant string, item *model.Application) error
 	Update(ctx context.Context, tenant string, item *model.Application) error
-	Upsert(ctx context.Context, tenant string, model *model.Application) error
+	Upsert(ctx context.Context, tenant string, model *model.Application) (string, error)
 	TechnicalUpdate(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteGlobal(ctx context.Context, id string) error
@@ -60,6 +67,8 @@ type ApplicationRepository interface {
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
+	ListGlobalByKey(ctx context.Context, key string) ([]*model.Label, error)
+	ListGlobalByKeyAndObjects(ctx context.Context, objectType model.LabelableObject, objectIDs []string, key string) ([]*model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
 }
@@ -240,6 +249,20 @@ func (s *service) Get(ctx context.Context, id string) (*model.Application, error
 	return app, nil
 }
 
+// GetForUpdate returns an application retrieved globally (without tenant required in the context)
+func (s *service) GetForUpdate(ctx context.Context, id string) (*model.Application, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+	app, err := s.appRepo.GetByIDForUpdate(ctx, appTenant, id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Application with id %s", id)
+	}
+
+	return app, nil
+}
+
 // GetByNameAndSystemNumber missing godoc
 func (s *service) GetByNameAndSystemNumber(ctx context.Context, name, systemNumber string) (*model.Application, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
@@ -280,6 +303,101 @@ func (s *service) Create(ctx context.Context, in model.ApplicationRegisterInput)
 	}
 
 	return s.genericCreate(ctx, in, creator)
+}
+
+// GetSccSystem retrieves an application with label key "scc" and value that matches specified subaccount, location id and virtual host
+func (s *service) GetSccSystem(ctx context.Context, sccSubaccount, locationID, virtualHost string) (*model.Application, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	sccLabel := struct {
+		Host       string `json:"Host"`
+		Subaccount string `json:"Subaccount"`
+		LocationID string `json:"LocationID"`
+	}{
+		virtualHost, sccSubaccount, locationID,
+	}
+	marshal, err := json.Marshal(sccLabel)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while marshaling sccLabel with subaccount: %s, locationId: %s and virtualHost: %s", appTenant, locationID, virtualHost)
+	}
+
+	filter := labelfilter.NewForKeyWithQuery(sccLabelKey, string(marshal))
+
+	app, err := s.appRepo.GetByFilter(ctx, appTenant, []*labelfilter.LabelFilter{filter})
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Application with subaccount: %s, locationId: %s and virtualHost: %s", appTenant, locationID, virtualHost)
+	}
+
+	return app, nil
+}
+
+// ListBySCC retrieves all applications with label matching the specified filter
+func (s *service) ListBySCC(ctx context.Context, filter *labelfilter.LabelFilter) ([]*model.ApplicationWithLabel, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	apps, err := s.appRepo.ListAllByFilter(ctx, appTenant, []*labelfilter.LabelFilter{filter})
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Applications by filters: %v", filter)
+	}
+
+	if len(apps) == 0 {
+		return []*model.ApplicationWithLabel{}, nil
+	}
+
+	appIDs := make([]string, 0, len(apps))
+	for _, app := range apps {
+		appIDs = append(appIDs, app.ID)
+	}
+
+	labels, err := s.labelRepo.ListGlobalByKeyAndObjects(ctx, model.ApplicationLabelableObject, appIDs, sccLabelKey)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting labels with key scc for applications with IDs: %v", appIDs)
+	}
+
+	appIDToLabel := make(map[string]*model.Label, len(labels))
+	for _, l := range labels {
+		appIDToLabel[l.ObjectID] = l
+	}
+
+	appsWithLabel := make([]*model.ApplicationWithLabel, 0, len(apps))
+	for _, app := range apps {
+		appWithLabel := &model.ApplicationWithLabel{
+			App:      app,
+			SccLabel: appIDToLabel[app.ID],
+		}
+		appsWithLabel = append(appsWithLabel, appWithLabel)
+	}
+
+	return appsWithLabel, nil
+}
+
+// ListSCCs retrieves all SCCs
+func (s *service) ListSCCs(ctx context.Context) ([]*model.SccMetadata, error) {
+	labels, err := s.labelRepo.ListGlobalByKey(ctx, sccLabelKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting SCCs by label key: scc")
+	}
+	sccs := make([]*model.SccMetadata, 0, len(labels))
+	for _, sccLabel := range labels {
+		v, ok := sccLabel.Value.(map[string]interface{})
+		if !ok {
+			return nil, errors.New("Label value is not of type map[string]interface{}")
+		}
+
+		scc := &model.SccMetadata{
+			Subaccount: v[subaccountKey].(string),
+			LocationID: v[locationIDKey].(string),
+		}
+
+		sccs = append(sccs, scc)
+	}
+	return sccs, nil
 }
 
 // CreateFromTemplate missing godoc
@@ -371,11 +489,12 @@ func (s *service) Upsert(ctx context.Context, in model.ApplicationRegisterInput)
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	upserterFunc := func(ctx context.Context, tenant string, application *model.Application) (err error) {
-		if err = s.appRepo.Upsert(ctx, tenant, application); err != nil {
-			return errors.Wrapf(err, "while upserting Application with name %s", application.Name)
+	upserterFunc := func(ctx context.Context, tenant string, application *model.Application) (string, error) {
+		id, err := s.appRepo.Upsert(ctx, tenant, application)
+		if err != nil {
+			return "", errors.Wrapf(err, "while upserting Application with name %s", application.Name)
 		}
-		return
+		return id, nil
 	}
 
 	return s.genericUpsert(ctx, tenant, in, upserterFunc)
@@ -388,12 +507,13 @@ func (s *service) UpsertFromTemplate(ctx context.Context, in model.ApplicationRe
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	upserterFunc := func(ctx context.Context, tenant string, application *model.Application) (err error) {
+	upserterFunc := func(ctx context.Context, tenant string, application *model.Application) (string, error) {
 		application.ApplicationTemplateID = appTemplateID
-		if err = s.appRepo.Upsert(ctx, tenant, application); err != nil {
-			return errors.Wrapf(err, "while upserting Application with name %s from template", application.Name)
+		id, err := s.appRepo.Upsert(ctx, tenant, application)
+		if err != nil {
+			return "", errors.Wrapf(err, "while upserting Application with name %s from template", application.Name)
 		}
-		return
+		return id, nil
 	}
 
 	return s.genericUpsert(ctx, tenant, in, upserterFunc)
@@ -805,9 +925,12 @@ func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.
 	log.C(ctx).Debugf("ID %s generated for Application with name %s", id, in.Name)
 	app := in.ToApplication(s.timestampGen(), id)
 
-	if err := repoUpserterFunc(ctx, appTenant, app); err != nil {
+	id, err = repoUpserterFunc(ctx, appTenant, app)
+	if err != nil {
 		return errors.Wrap(err, "while upserting application")
 	}
+
+	app.ID = id
 
 	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, appTenant, &in.Labels)
 

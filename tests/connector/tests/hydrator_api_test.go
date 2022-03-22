@@ -16,18 +16,18 @@ import (
 )
 
 func TestHydrators(t *testing.T) {
-	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
+	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
 		Name: "test-hydrators-app",
 	})
-	defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &app)
+	defer fixtures.CleanupApplication(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 	appID := app.ID
 
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &graphql.RuntimeInput{
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &graphql.RuntimeInput{
 		Name: "test-hydrators-runtime",
 	})
-	defer fixtures.CleanupRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &runtime)
+	defer fixtures.CleanupRuntime(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 	runtimeID := runtime.ID
@@ -71,9 +71,9 @@ func TestHydrators(t *testing.T) {
 			var runtimeSystemAuths []*graphql.RuntimeSystemAuth
 
 			if testCase.clientType == "Application" {
-				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, testCase.clientId).Auths
+				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, testCase.clientId).Auths
 			} else {
-				runtimeSystemAuths = fixtures.GetRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, testCase.clientId).Auths
+				runtimeSystemAuths = fixtures.GetRuntime(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, testCase.clientId).Auths
 			}
 
 			//when
@@ -98,7 +98,7 @@ func TestHydrators(t *testing.T) {
 
 			// check that gql resolver is sending used/expired auths, but there is valid property
 			if testCase.clientType == "Application" {
-				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID).Auths
+				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, appID).Auths
 				assert.Len(t, appSystemAuths, 1)
 				assert.True(t, appSystemAuths[0].Auth.OneTimeToken.(*graphql.OneTimeTokenForApplication).Used)
 				assert.True(t, time.Time(*appSystemAuths[0].Auth.OneTimeToken.(*graphql.OneTimeTokenForApplication).ExpiresAt).After(time.Now()))
@@ -128,9 +128,9 @@ func TestHydrators(t *testing.T) {
 			var runtimeSystemAuths []*graphql.RuntimeSystemAuth
 
 			if testCase.clientType == "Application" {
-				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, testCase.clientId).Auths
+				appSystemAuths = fixtures.GetApplication(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, testCase.clientId).Auths
 			} else {
-				runtimeSystemAuths = fixtures.GetRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, testCase.clientId).Auths
+				runtimeSystemAuths = fixtures.GetRuntime(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, testCase.clientId).Auths
 			}
 
 			hasAuth := false

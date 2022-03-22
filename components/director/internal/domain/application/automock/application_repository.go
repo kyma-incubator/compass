@@ -81,8 +81,54 @@ func (_m *ApplicationRepository) Exists(ctx context.Context, tenant string, id s
 	return r0, r1
 }
 
+// GetByFilter provides a mock function with given fields: ctx, tenant, filter
+func (_m *ApplicationRepository) GetByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Application, error) {
+	ret := _m.Called(ctx, tenant, filter)
+
+	var r0 *model.Application
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) *model.Application); ok {
+		r0 = rf(ctx, tenant, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Application)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter) error); ok {
+		r1 = rf(ctx, tenant, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetByID provides a mock function with given fields: ctx, tenant, id
 func (_m *ApplicationRepository) GetByID(ctx context.Context, tenant string, id string) (*model.Application, error) {
+	ret := _m.Called(ctx, tenant, id)
+
+	var r0 *model.Application
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Application); ok {
+		r0 = rf(ctx, tenant, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Application)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetByIDForUpdate provides a mock function with given fields: ctx, tenant, id
+func (_m *ApplicationRepository) GetByIDForUpdate(ctx context.Context, tenant string, id string) (*model.Application, error) {
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 *model.Application
@@ -196,6 +242,29 @@ func (_m *ApplicationRepository) ListAll(ctx context.Context, tenant string) ([]
 	return r0, r1
 }
 
+// ListAllByFilter provides a mock function with given fields: ctx, tenant, filter
+func (_m *ApplicationRepository) ListAllByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Application, error) {
+	ret := _m.Called(ctx, tenant, filter)
+
+	var r0 []*model.Application
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) []*model.Application); ok {
+		r0 = rf(ctx, tenant, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Application)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter) error); ok {
+		r1 = rf(ctx, tenant, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListByScenarios provides a mock function with given fields: ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors
 func (_m *ApplicationRepository) ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors)
@@ -271,15 +340,22 @@ func (_m *ApplicationRepository) Update(ctx context.Context, tenant string, item
 }
 
 // Upsert provides a mock function with given fields: ctx, tenant, _a2
-func (_m *ApplicationRepository) Upsert(ctx context.Context, tenant string, _a2 *model.Application) error {
+func (_m *ApplicationRepository) Upsert(ctx context.Context, tenant string, _a2 *model.Application) (string, error) {
 	ret := _m.Called(ctx, tenant, _a2)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Application) error); ok {
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Application) string); ok {
 		r0 = rf(ctx, tenant, _a2)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, *model.Application) error); ok {
+		r1 = rf(ctx, tenant, _a2)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }

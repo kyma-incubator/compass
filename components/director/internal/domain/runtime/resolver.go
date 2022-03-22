@@ -247,7 +247,11 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 		didRollback := r.transact.RollbackUnlessCommitted(ctx, tx)
 		if didRollback {
 			labelVal := str.CastOrEmpty(convertedIn.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
-			r.cleanupAndLogOnError(ctx, labelVal)
+			if labelVal != "" {
+				r.cleanupAndLogOnError(ctx, id)
+			} else {
+				r.cleanupAndLogOnError(ctx, "")
+			}
 		}
 	}()
 
@@ -306,7 +310,7 @@ func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.Runt
 
 // DeleteRuntime missing godoc
 func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runtime, error) {
-	var selfRegLabelVal string
+	var selfRegCleanup string
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -314,7 +318,7 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	defer func() {
 		didRollback := r.transact.RollbackUnlessCommitted(ctx, tx)
 		if !didRollback { // if we did rollback we should not try to execute the cleanup
-			r.cleanupAndLogOnError(ctx, selfRegLabelVal)
+			r.cleanupAndLogOnError(ctx, selfRegCleanup)
 		}
 	}()
 
@@ -330,14 +334,14 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 		return nil, err
 	}
 
-	selfRegLabel, err := r.runtimeService.GetLabel(ctx, runtime.ID, r.selfRegManager.GetSelfRegDistinguishingLabelKey())
+	_, err = r.runtimeService.GetLabel(ctx, runtime.ID, r.selfRegManager.GetSelfRegDistinguishingLabelKey())
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
 			return nil, errors.Wrapf(err, "while getting self register info label")
 		}
-		selfRegLabelVal = "" // the deferred cleanup will do nothing
+		selfRegCleanup = "" // the deferred cleanup will do nothing
 	} else {
-		selfRegLabelVal = str.CastOrEmpty(selfRegLabel.Value)
+		selfRegCleanup = id
 	}
 
 	currentTimestamp := timestamp.DefaultGenerator
@@ -633,8 +637,8 @@ func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runt
 	return nil
 }
 
-func (r *Resolver) cleanupAndLogOnError(ctx context.Context, labelVal string) {
-	if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, labelVal); err != nil {
+func (r *Resolver) cleanupAndLogOnError(ctx context.Context, runtimeID string) {
+	if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, runtimeID); err != nil {
 		log.C(ctx).Errorf("An error occurred during cleanup of self-registered runtime: %v", err)
 	}
 }

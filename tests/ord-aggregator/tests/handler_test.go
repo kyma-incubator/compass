@@ -9,8 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
+	gcli "github.com/machinebox/graphql"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -24,12 +27,14 @@ import (
 
 const (
 	tenantHeader            = "Tenant"
-	applicationTypeLabelKey = "applicationType"
+	internalVisibilityScope = "internal_visibility:read"
 
 	descriptionField      = "description"
 	shortDescriptionField = "shortDescription"
 	apisField             = "apis"
 	eventsField           = "events"
+	publicAPIsField       = "publicAPIs"
+	publicEventsField     = "publicEvents"
 
 	expectedSpecType                        = "openapi-v3"
 	expectedSpecFormat                      = "application/json"
@@ -58,27 +63,45 @@ const (
 	secondProductShortDescription           = "Accelerate business outcomes with integration, data to value, and extensibility."
 	firstAPIExpectedTitle                   = "API TITLE"
 	firstAPIExpectedDescription             = "lorem ipsum dolor sit amet"
+	firstAPIExpectedNumberOfSpecs           = 3
+	secondAPIExpectedTitle                  = "API TITLE INTERNAL"
+	secondAPIExpectedDescription            = "Test description internal"
+	secondAPIExpectedNumberOfSpecs          = 2
+	thirdAPIExpectedTitle                   = "API TITLE PRIVATE"
+	thirdAPIExpectedDescription             = "Test description private"
+	thirdAPIExpectedNumberOfSpecs           = 2
 	firstEventTitle                         = "EVENT TITLE"
 	firstEventDescription                   = "lorem ipsum dolor sit amet"
 	secondEventTitle                        = "EVENT TITLE 2"
 	secondEventDescription                  = "lorem ipsum dolor sit amet"
+	thirdEventTitle                         = "EVENT TITLE INTERNAL"
+	thirdEventDescription                   = "Test description internal"
+	fourthEventTitle                        = "EVENT TITLE PRIVATE"
+	fourthEventDescription                  = "Test description private"
 	expectedTombstoneOrdIDRegex             = "ns:apiResource:API_ID2(.+):v1"
 	expectedVendorTitle                     = "SAP SE"
 
-	expectedNumberOfSystemInstances           = 6
-	expectedNumberOfPackages                  = 6
-	expectedNumberOfBundles                   = 12
-	expectedNumberOfAPIs                      = 6
-	expectedNumberOfResourceDefinitionsPerAPI = 3
-	expectedNumberOfEvents                    = 12
-	expectedNumberOfTombstones                = 6
+	expectedNumberOfSystemInstances = 6
+	expectedNumberOfPackages        = 6
+	expectedNumberOfBundles         = 12
+	expectedNumberOfAPIs            = 18
+	expectedNumberOfEvents          = 24
+	expectedNumberOfTombstones      = 6
 
-	expectedNumberOfAPIsInFirstBundle    = 1
-	expectedNumberOfAPIsInSecondBundle   = 1
-	expectedNumberOfEventsInFirstBundle  = 2
-	expectedNumberOfEventsInSecondBundle = 2
+	expectedNumberOfPublicAPIs   = 6
+	expectedNumberOfPublicEvents = 12
 
-	testTimeoutAdditionalBuffer = 5 * time.Minute
+	expectedNumberOfAPIsInFirstBundle    = 2
+	expectedNumberOfAPIsInSecondBundle   = 2
+	expectedNumberOfEventsInFirstBundle  = 3
+	expectedNumberOfEventsInSecondBundle = 3
+
+	expectedNumberOfPublicAPIsInFirstBundle    = 1
+	expectedNumberOfPublicAPIsInSecondBundle   = 1
+	expectedNumberOfPublicEventsInFirstBundle  = 2
+	expectedNumberOfPublicEventsInSecondBundle = 2
+
+	testTimeoutAdditionalBuffer = 7 * time.Minute
 
 	firstCorrelationID  = "sap.s4:communicationScenario:SAP_COM_0001"
 	secondCorrelationID = "sap.s4:communicationScenario:SAP_COM_0002"
@@ -133,15 +156,40 @@ func TestORDAggregator(t *testing.T) {
 		systemInstancesMap[expectedFifthSystemInstanceName] = expectedFifthSystemInstanceDescription
 		systemInstancesMap[expectedSixthSystemInstanceName] = expectedSixthSystemInstanceDescription
 
+		apisMap := make(map[string]string)
+		apisMap[firstAPIExpectedTitle] = firstAPIExpectedDescription
+		apisMap[secondAPIExpectedTitle] = secondAPIExpectedDescription
+		apisMap[thirdAPIExpectedTitle] = thirdAPIExpectedDescription
+
+		publicApisMap := make(map[string]string)
+		publicApisMap[firstAPIExpectedTitle] = firstAPIExpectedDescription
+
 		apisDefaultBundleMap := make(map[string]string)
 		apisDefaultBundleMap[firstAPIExpectedTitle] = firstBundleOrdIDRegex
+
+		apiSpecsMap := make(map[string]int)
+		apiSpecsMap[firstAPIExpectedTitle] = firstAPIExpectedNumberOfSpecs
+		apiSpecsMap[secondAPIExpectedTitle] = secondAPIExpectedNumberOfSpecs
+		apiSpecsMap[thirdAPIExpectedTitle] = thirdAPIExpectedNumberOfSpecs
 
 		eventsMap := make(map[string]string)
 		eventsMap[firstEventTitle] = firstEventDescription
 		eventsMap[secondEventTitle] = secondEventDescription
+		eventsMap[thirdEventTitle] = thirdEventDescription
+		eventsMap[fourthEventTitle] = fourthEventDescription
+
+		publicEventsMap := make(map[string]string)
+		publicEventsMap[firstEventTitle] = firstEventDescription
+		publicEventsMap[secondEventTitle] = secondEventDescription
 
 		eventsDefaultBundleMap := make(map[string]string)
 		eventsDefaultBundleMap[firstEventTitle] = firstBundleOrdIDRegex
+
+		apisAndEventsNumber := make(map[string]int)
+		apisAndEventsNumber[apisField] = expectedNumberOfAPIsInFirstBundle + expectedNumberOfAPIsInSecondBundle
+		apisAndEventsNumber[publicAPIsField] = expectedNumberOfPublicAPIsInFirstBundle + expectedNumberOfPublicAPIsInSecondBundle
+		apisAndEventsNumber[eventsField] = expectedNumberOfEventsInFirstBundle + expectedNumberOfEventsInSecondBundle
+		apisAndEventsNumber[publicEventsField] = expectedNumberOfPublicEventsInFirstBundle + expectedNumberOfPublicEventsInSecondBundle
 
 		bundlesMap := make(map[string]string)
 		bundlesMap[expectedBundleTitle] = expectedBundleDescription
@@ -152,16 +200,16 @@ func TestORDAggregator(t *testing.T) {
 		bundlesAPIsNumberMap[secondExpectedBundleTitle] = expectedNumberOfAPIsInSecondBundle
 
 		bundlesAPIsData := make(map[string][]string)
-		bundlesAPIsData[expectedBundleTitle] = []string{firstAPIExpectedTitle}
-		bundlesAPIsData[secondExpectedBundleTitle] = []string{firstAPIExpectedTitle}
+		bundlesAPIsData[expectedBundleTitle] = []string{firstAPIExpectedTitle, secondAPIExpectedTitle}
+		bundlesAPIsData[secondExpectedBundleTitle] = []string{firstAPIExpectedTitle, thirdAPIExpectedTitle}
 
 		bundlesEventsNumberMap := make(map[string]int)
 		bundlesEventsNumberMap[expectedBundleTitle] = expectedNumberOfEventsInFirstBundle
 		bundlesEventsNumberMap[secondExpectedBundleTitle] = expectedNumberOfEventsInSecondBundle
 
 		bundlesEventsData := make(map[string][]string)
-		bundlesEventsData[expectedBundleTitle] = []string{firstEventTitle, secondEventTitle}
-		bundlesEventsData[secondExpectedBundleTitle] = []string{firstEventTitle, secondEventTitle}
+		bundlesEventsData[expectedBundleTitle] = []string{firstEventTitle, secondEventTitle, thirdEventTitle}
+		bundlesEventsData[secondExpectedBundleTitle] = []string{firstEventTitle, secondEventTitle, fourthEventTitle}
 
 		bundlesCorrelationIDs := make(map[string][]string)
 		bundlesCorrelationIDs[expectedBundleTitle] = []string{firstCorrelationID, secondCorrelationID}
@@ -176,13 +224,13 @@ func TestORDAggregator(t *testing.T) {
 		ctx := context.Background()
 
 		t.Log("Create integration system")
-		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, "", "test-int-system")
-		defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys)
+		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", "test-int-system")
+		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSys)
 		require.NoError(t, err)
 		require.NotEmpty(t, intSys.ID)
 
-		intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, "", intSys.ID)
-		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, dexGraphQLClient, intSystemCredentials.ID)
+		intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSys.ID)
+		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSystemCredentials.ID)
 
 		unsecuredHttpClient := http.DefaultClient
 		unsecuredHttpClient.Transport = &http.Transport{
@@ -194,45 +242,63 @@ func TestORDAggregator(t *testing.T) {
 		oauthCredentialData, ok := intSystemCredentials.Auth.Credential.(*directorSchema.OAuthCredentialData)
 		require.True(t, ok)
 
-		conf := &clientcredentials.Config{
+		cfgWithInternalVisibilityScope := &clientcredentials.Config{
+			ClientID:     oauthCredentialData.ClientID,
+			ClientSecret: oauthCredentialData.ClientSecret,
+			TokenURL:     oauthCredentialData.URL,
+			Scopes:       []string{internalVisibilityScope},
+		}
+
+		cfgWithoutScopes := &clientcredentials.Config{
 			ClientID:     oauthCredentialData.ClientID,
 			ClientSecret: oauthCredentialData.ClientSecret,
 			TokenURL:     oauthCredentialData.URL,
 		}
 
 		ctx = context.WithValue(ctx, oauth2.HTTPClient, unsecuredHttpClient)
-		httpClient := conf.Client(ctx)
+		httpClient := cfgWithInternalVisibilityScope.Client(ctx)
 		httpClient.Timeout = 20 * time.Second
+
+		httpClientWithoutVisibilityScope := cfgWithoutScopes.Client(ctx)
+		httpClientWithoutVisibilityScope.Timeout = 20 * time.Second
+
+		// create client to call Director graphql api with internal_visibility:read scope
+		accessTokenWithInternalVisibility := token.GetAccessToken(t, oauthCredentialData, token.IntegrationSystemScopes)
+		oauthGraphQLClientWithInternalVisibility := gql.NewAuthorizedGraphQLClientWithCustomURL(accessTokenWithInternalVisibility, testConfig.DirectorGraphqlOauthURL)
+
+		// create client to call Director graphql api without internal_visibility:read scope
+		accessTokenWithoutInternalVisibility := token.GetAccessToken(t, oauthCredentialData, token.IntegrationSystemScopesWithoutInternalVisibility)
+		oauthGraphQLClientWithoutInternalVisibility := gql.NewAuthorizedGraphQLClientWithCustomURL(accessTokenWithoutInternalVisibility, testConfig.DirectorGraphqlOauthURL)
 
 		globalProductsNumber, globalVendorsNumber := getGlobalResourcesNumber(ctx, t, unsecuredHttpClient)
 		t.Logf("Global products number: %d, Global vendors number: %d", globalProductsNumber, globalVendorsNumber)
 
-		expectedNumberOfProducts += globalProductsNumber
-		expectedNumberOfVendors += globalVendorsNumber
+		expectedTotalNumberOfProducts := expectedNumberOfProducts + globalProductsNumber
+		expectedTotalNumberOfVendors := expectedNumberOfVendors + globalVendorsNumber
 
 		// Register systems
-		app, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, appInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
+		app, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
 		require.NoError(t, err)
 
-		secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, secondAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &secondApp)
+		secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, secondAppInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &secondApp)
 		require.NoError(t, err)
 
-		thirdApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, thirdAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &thirdApp)
+		thirdApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, thirdAppInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &thirdApp)
 		require.NoError(t, err)
 
-		fourthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fourthAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &fourthApp)
+		fourthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, fourthAppInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &fourthApp)
 		require.NoError(t, err)
 
-		fifthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, fifthAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &fifthApp)
+		fifthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, fifthAppInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &fifthApp)
 		require.NoError(t, err)
 
-		sixthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, sixthAppInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &sixthApp)
+		sixthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, sixthAppInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &sixthApp)
 		require.NoError(t, err)
 
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
@@ -287,12 +353,12 @@ func TestORDAggregator(t *testing.T) {
 			// Verify products
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/products?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
-			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfProducts {
+			if len(gjson.Get(respBody, "value").Array()) < expectedTotalNumberOfProducts {
 				t.Log("Missing Products...will try again")
 				return false
 			}
-			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfProducts)
-			assertions.AssertMultipleEntitiesFromORDService(t, respBody, productsMap, expectedNumberOfProducts, shortDescriptionField)
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfProducts)
+			assertions.AssertProducts(t, respBody, productsMap, expectedTotalNumberOfProducts, shortDescriptionField)
 			t.Log("Successfully verified products")
 
 			// Verify apis
@@ -303,8 +369,8 @@ func TestORDAggregator(t *testing.T) {
 				return false
 			}
 			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfAPIs)
-			// In the document there are actually 2 APIs but there is a tombstone for the second one so in the end there will be only one API
-			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfAPIs, firstAPIExpectedTitle, firstAPIExpectedDescription, descriptionField)
+			// In the document there are actually 4 APIs but there is a tombstone for one of them so in the end there will be 3 APIs
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, apisMap, expectedNumberOfAPIs, descriptionField)
 			t.Log("Successfully verified apis")
 
 			// Verify defaultBundle for apis
@@ -312,8 +378,8 @@ func TestORDAggregator(t *testing.T) {
 			t.Log("Successfully verified defaultBundles for apis")
 
 			// Verify the api spec
-			specs := gjson.Get(respBody, fmt.Sprintf("value.%d.resourceDefinitions", 0)).Array()
-			require.Equal(t, expectedNumberOfResourceDefinitionsPerAPI, len(specs))
+			specs := assertions.AssertSpecsFromORDService(t, respBody, expectedNumberOfAPIs, apiSpecsMap)
+			t.Log("Successfully verified specs for apis")
 
 			var specURL string
 			for _, s := range specs {
@@ -332,6 +398,9 @@ func TestORDAggregator(t *testing.T) {
 			}
 			t.Log("Successfully verified api spec")
 
+			// verify public apis via ORD Service
+			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicApisMap, apisField, expectedNumberOfPublicAPIs)
+
 			// Verify events
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/events?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
@@ -347,6 +416,12 @@ func TestORDAggregator(t *testing.T) {
 			assertions.AssertDefaultBundleID(t, respBody, expectedNumberOfEvents, eventsDefaultBundleMap, ordAndInternalIDsMappingForBundles)
 			t.Log("Successfully verified defaultBundles for events")
 
+			// verify public events via ORD Service
+			verifyEntitiesWithPublicVisibilityInORD(t, httpClientWithoutVisibilityScope, publicEventsMap, eventsField, expectedNumberOfPublicEvents)
+
+			// verify apis and events visibility via Director's graphql
+			verifyEntitiesVisibilityViaGraphql(t, oauthGraphQLClientWithInternalVisibility, oauthGraphQLClientWithoutInternalVisibility, mergeMaps(apisMap, eventsMap), mergeMaps(publicApisMap, publicEventsMap), apisAndEventsNumber, app.ID)
+
 			// Verify tombstones
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
@@ -360,12 +435,12 @@ func TestORDAggregator(t *testing.T) {
 			// Verify vendors
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/vendors?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
-			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfVendors {
+			if len(gjson.Get(respBody, "value").Array()) < expectedTotalNumberOfVendors {
 				t.Log("Missing Vendors...will try again")
 				return false
 			}
-			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfVendors)
-			assertions.AssertVendorFromORDService(t, respBody, expectedNumberOfVendors, expectedVendorTitle)
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfVendors)
+			assertions.AssertVendorFromORDService(t, respBody, expectedTotalNumberOfVendors, expectedNumberOfVendors, expectedVendorTitle)
 			t.Log("Successfully verified vendors")
 
 			return true
@@ -411,17 +486,77 @@ func storeMappingBetweenORDAndInternalBundleID(t *testing.T, respBody string, nu
 	return ordAndInternalIDsMapping
 }
 
-func getGlobalResourcesNumber(ctx context.Context, t *testing.T, httpClient *http.Client) (int, int) {
-	certCache, err := certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
-	require.NoError(t, err, "Failed to initialize certificate loader")
+func verifyEntitiesWithPublicVisibilityInORD(t *testing.T, httpClient *http.Client, publicEntitiesMap map[string]string, entity string, expectedNumberOfPublicEntities int) {
+	respBody := makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+fmt.Sprintf("/%s?$format=json", entity), map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
+	assertions.AssertMultipleEntitiesFromORDService(t, respBody, publicEntitiesMap, expectedNumberOfPublicEntities, descriptionField)
+	t.Logf("Successfully verified public %s", entity)
+}
+
+func verifyEntitiesVisibilityViaGraphql(t *testing.T, clientWithInternalScope, clientWithoutInternalScope *gcli.Client, entitiesMap, publicEntitiesMap map[string]string, expectedNumberOfEntities map[string]int, appID string) {
+	appWithAllEntities := fixtures.GetApplication(t, context.Background(), clientWithInternalScope, testConfig.DefaultTestTenant, appID)
+	appWithPublicEntities := fixtures.GetApplication(t, context.Background(), clientWithoutInternalScope, testConfig.DefaultTestTenant, appID)
+
+	var allAPIs []*directorSchema.APIDefinitionExt
+	var allEvents []*directorSchema.EventAPIDefinitionExt
+
+	for _, bndl := range appWithAllEntities.Bundles.Data {
+		allAPIs = append(allAPIs, bndl.APIDefinitions.Data...)
+		allEvents = append(allEvents, bndl.EventDefinitions.Data...)
+	}
+
+	var publicAPIs []*directorSchema.APIDefinitionExt
+	var publicEvents []*directorSchema.EventAPIDefinitionExt
+
+	for _, bndl := range appWithPublicEntities.Bundles.Data {
+		publicAPIs = append(publicAPIs, bndl.APIDefinitions.Data...)
+		publicEvents = append(publicEvents, bndl.EventDefinitions.Data...)
+	}
+
+	t.Log("Start verifying all APIs via Director graphql api")
+	for _, api := range allAPIs {
+		require.Equal(t, entitiesMap[api.Name], *api.Description)
+	}
+	require.Equal(t, len(allAPIs), expectedNumberOfEntities[apisField])
+	t.Log("Successfully verified all APIs via Director graphql api")
+
+	t.Log("Start verifying public APIs via Director graphql api")
+	for _, api := range publicAPIs {
+		require.Equal(t, publicEntitiesMap[api.Name], *api.Description)
+	}
+	require.Equal(t, len(publicAPIs), expectedNumberOfEntities[publicAPIsField])
+	t.Log("Successfully verified public APIs via Director graphql api")
+
+	t.Log("Start verifying all Events via Director graphql api")
+	for _, event := range allEvents {
+		require.Equal(t, entitiesMap[event.Name], *event.Description)
+	}
+	require.Equal(t, len(allEvents), expectedNumberOfEntities[eventsField])
+	t.Log("Successfully verified all Events via Director graphql api")
+
+	t.Log("Start verifying public Events via Director graphql api")
+	for _, event := range publicEvents {
+		require.Equal(t, publicEntitiesMap[event.Name], *event.Description)
+	}
+	require.Equal(t, len(publicEvents), expectedNumberOfEntities[publicEventsField])
+	t.Log("Successfully verified public Events via Director graphql api")
+
+}
+
+func getGlobalResourcesNumber(ctx context.Context, t *testing.T, httpClient *http.Client) (int, int) {
 	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
 	ordClient := NewGlobalRegistryClient(httpClient, accessStrategyExecutorProvider)
 
 	products, vendors, err := ordClient.GetGlobalProductsAndVendorsNumber(ctx, testConfig.GlobalRegistryURL)
 	if err != nil {
-		t.Logf("while fetching global registry resources from %s %v", testConfig.GlobalRegistryURL, err)
-		t.Fail()
+		t.Fatalf("while fetching global registry resources from %s %v", testConfig.GlobalRegistryURL, err)
 	}
 	return products, vendors
+}
+
+func mergeMaps(first, second map[string]string) map[string]string {
+	for k, v := range second {
+		first[k] = v
+	}
+	return first
 }

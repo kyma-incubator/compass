@@ -599,6 +599,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock.On("Parse", mock.Anything).Return(oathkeeper.ReqData{}, mockErr).Once()
 
 		handler := authnmappinghandler.NewHandler(reqDataParserMock, nil, nil, nil)
+		req = mux.SetURLVars(req, map[string]string{"authenticator": "auth"})
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()

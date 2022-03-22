@@ -515,7 +515,10 @@ func TestNewClient(t *testing.T) {
 		require.True(t, ok, "expected *oauth2.Transport")
 
 		expectedTransport := &http.Transport{
-			TLSClientConfig: &tls.Config{Certificates: []tls.Certificate{*tlsCert}},
+			TLSClientConfig: &tls.Config{
+				Certificates:       []tls.Certificate{*tlsCert},
+				InsecureSkipVerify: oauthCfg.SkipSSLValidation,
+			},
 		}
 		require.Equal(t, tr.Base, expectedTransport)
 	})

@@ -17,33 +17,36 @@
 package tests
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/util"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	c "github.com/robfig/cron/v3"
-	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 )
 
 type config struct {
 	DefaultTestTenant                     string
-	DirectorURL                           string
+	DirectorExternalCertSecuredURL        string
+	DirectorGraphqlOauthURL               string
 	ORDServiceURL                         string
 	AggregatorSchedule                    string
 	ExternalServicesMockBaseURL           string
 	ExternalServicesMockUnsecuredURL      string
 	ExternalServicesMockAbsoluteURL       string
 	ExternalServicesMockOrdCertSecuredURL string
+	ExternalServicesMockBasicURL          string
 	ExternalServicesMockOauthURL          string
 	ClientID                              string
 	ClientSecret                          string
-	ExternalServicesMockBasicURL          string
 	BasicUsername                         string
 	BasicPassword                         string
 	ORDServiceDefaultResponseType         string
@@ -54,19 +57,30 @@ type config struct {
 }
 
 var (
-	testConfig       config
-	dexGraphQLClient *graphql.Client
+	testConfig config
+
+	certSecuredGraphQLClient *graphql.Client
+	certCache                certloader.Cache
 )
 
 func TestMain(m *testing.M) {
 	err := envconfig.Init(&testConfig)
 	if err != nil {
-		log.Fatal(errors.Wrap(err, "while initializing envconfig"))
+		log.D().Fatal(errors.Wrap(err, "while initializing envconfig"))
 	}
 
-	dexToken := server.Token()
+	ctx := context.Background()
 
-	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
+	certCache, err = certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
+	if err != nil {
+		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
+	}
+
+	if err := util.WaitForCache(certCache); err != nil {
+		log.D().Fatal(err)
+	}
+
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, certCache.Get().Certificate, testConfig.SkipSSLValidation)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)

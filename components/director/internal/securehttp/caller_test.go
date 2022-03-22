@@ -37,7 +37,7 @@ const (
 
 func TestCaller_Call(t *testing.T) {
 	oauthServerExpectingCredentialsFromHeader := httptest.NewServer(getTestOauthServer(t, requireClientCredentialsFromHeader))
-	oauthCredentialsWithSecret := &auth.OAuthCredentials{
+	oauthCredentials := &auth.OAuthCredentials{
 		ClientID:     testClientID,
 		ClientSecret: testClientSecret,
 		TokenURL:     oauthServerExpectingCredentialsFromHeader.URL,
@@ -45,7 +45,7 @@ func TestCaller_Call(t *testing.T) {
 	}
 
 	oauthServerExpectingCredentialsFromBody := httptest.NewServer(getTestOauthServer(t, requireClientCredentialsFromBody))
-	oauthCredentialsWithoutSecret := &auth.OAuthCredentials{
+	oauthMtlsCredentials := &auth.OAuthMtlsCredentials{
 		ClientID: testClientID,
 		TokenURL: oauthServerExpectingCredentialsFromBody.URL,
 		Scopes:   testScopes,
@@ -65,7 +65,7 @@ func TestCaller_Call(t *testing.T) {
 		{
 			Name: "Success for oauth credentials with secret",
 			Config: securehttp.CallerConfig{
-				Credentials:       oauthCredentialsWithSecret,
+				Credentials:       oauthCredentials,
 				ClientTimeout:     time.Second,
 				SkipSSLValidation: true,
 			},
@@ -79,9 +79,9 @@ func TestCaller_Call(t *testing.T) {
 			),
 		},
 		{
-			Name: "Success for oauth credentials without secret",
+			Name: "Success for oauth Mtls",
 			Config: securehttp.CallerConfig{
-				Credentials:       oauthCredentialsWithoutSecret,
+				Credentials:       oauthMtlsCredentials,
 				ClientTimeout:     time.Second,
 				SkipSSLValidation: true,
 			},
@@ -111,7 +111,8 @@ func TestCaller_Call(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			caller := securehttp.NewCaller(testCase.Config)
+			caller, err := securehttp.NewCaller(testCase.Config)
+			require.NoError(t, err)
 			request, err := http.NewRequest(http.MethodGet, testCase.Server.URL, nil)
 			require.NoError(t, err)
 

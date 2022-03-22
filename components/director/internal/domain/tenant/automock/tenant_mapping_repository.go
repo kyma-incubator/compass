@@ -162,6 +162,29 @@ func (_m *TenantMappingRepository) List(ctx context.Context) ([]*model.BusinessT
 	return r0, r1
 }
 
+// ListByExternalTenants provides a mock function with given fields: ctx, externalTenant
+func (_m *TenantMappingRepository) ListByExternalTenants(ctx context.Context, externalTenant []string) ([]*model.BusinessTenantMapping, error) {
+	ret := _m.Called(ctx, externalTenant)
+
+	var r0 []*model.BusinessTenantMapping
+	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.BusinessTenantMapping); ok {
+		r0 = rf(ctx, externalTenant)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.BusinessTenantMapping)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
+		r1 = rf(ctx, externalTenant)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListPageBySearchTerm provides a mock function with given fields: ctx, searchTerm, pageSize, cursor
 func (_m *TenantMappingRepository) ListPageBySearchTerm(ctx context.Context, searchTerm string, pageSize int, cursor string) (*model.BusinessTenantMappingPage, error) {
 	ret := _m.Called(ctx, searchTerm, pageSize, cursor)

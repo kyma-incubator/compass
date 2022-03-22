@@ -79,6 +79,8 @@ spec:
               value: {{ $config.authenticator.trusted_issuers | quote }}
             - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_ATTRIBUTES
               value: {{ $config.authenticator.attributes | quote }}
+            - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_CHECK_CLIENT_ID_SUFFIX
+              value: {{ $config.authenticator.checkSuffix | quote }}
             {{- end }}
             {{- end }}
             - name: APP_CSR_SUBJECT_COUNTRY

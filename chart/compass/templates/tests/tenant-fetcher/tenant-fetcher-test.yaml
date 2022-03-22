@@ -23,8 +23,9 @@ spec:
         - ip: {{ .Values.global.minikubeIP }}
           hostnames:
             - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "dex.{{ .Values.global.ingress.domainName }}"
+            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
       {{ end }}
+      serviceAccountName: {{ .Chart.Name }}-e2e-tenant-fetcher
       containers:
         - name: tenant-fetcher-tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
@@ -45,12 +46,6 @@ spec:
               value: {{ .Values.global.tenantFetcher.tenantProvider.subdomainProperty }}
             - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
-            - name: APP_SUBSCRIPTION_PROVIDER_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
-            - name: APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.consumerSubaccountIdsLabelKey }}
-            - name: APP_TENANT
-              value: {{ .Values.global.defaultTenant }}
             - name: APP_TENANT_FETCHER_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_EXTERNAL_SERVICES_MOCK_URL
@@ -58,15 +53,13 @@ spec:
             - name: APP_CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.externalServicesMock.oauthSecretName }}
-                  key: client-id
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientIdKey }}
             - name: APP_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.externalServicesMock.oauthSecretName }}
-                  key: client-secret
-            - name: APP_TENANT_FETCHER_HEALTHZ_URL
-              value: "{{ .Values.global.tests.tenantFetcherFQDN }}:{{ .Values.global.tenantFetcher.port }}{{ .Values.global.tenantFetcher.prefix }}/healthz"
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientSecretKey }}
             - name: APP_ROOT_API
               value: "{{ .Values.global.tenantFetcher.prefix }}"
             - name: APP_HANDLER_ENDPOINT
@@ -79,8 +72,16 @@ spec:
               value: "{{ .Values.global.tenantFetcher.server.tenantPathParam }}"
             - name: APP_REGION_PATH_PARAM
               value: "{{ .Values.global.tenantFetcher.server.regionPathParam }}"
-            - name: DIRECTOR_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
+            - name: APP_SKIP_SSL_VALIDATION
+              value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: APP_EXTERNAL_CLIENT_KEY_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: APP_DB_NAME
               valueFrom:
                 secretKeyRef:
@@ -122,20 +123,38 @@ spec:
               value: "{{ .Values.global.tests.db.maxIdleConnections }}"
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
               value: "{{ .Values.global.tenantFetcher.requiredAuthScope }}"
-            - name: DOMAIN
-              value: "{{ .Values.global.ingress.domainName }}"
-            - name: APP_IS_WITH_TOKEN
-              value: "{{.Values.global.tests.token.server.enabled}}"
-            - name: APP_ADDRESS
-              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
-            - name: USER_EMAIL
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: email
-            - name: USER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: password
       restartPolicy: Never
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Chart.Name }}-e2e-tenant-fetcher
+  namespace: {{ .Values.global.tests.namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Chart.Name }}-e2e-tenant-fetcher-client-cert
+  namespace: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Chart.Name }}-e2e-tenant-fetcher
+    namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+  apiGroup: rbac.authorization.k8s.io

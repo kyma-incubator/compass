@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
@@ -34,14 +36,19 @@ type SelfRegConfig struct {
 	SelfRegisterTenantQueryParam    string `envconfig:"APP_SELF_REGISTER_TENANT_QUERY_PARAM,optional"`
 	SelfRegisterRequestBodyPattern  string `envconfig:"APP_SELF_REGISTER_REQUEST_BODY_PATTERN,optional"`
 
-	ClientID       string `envconfig:"APP_SELF_REGISTER_CLIENT_ID,optional"`
-	ClientSecret   string `envconfig:"APP_SELF_REGISTER_CLIENT_SECRET,optional"`
-	URL            string `envconfig:"APP_SELF_REGISTER_URL,optional"`
-	OauthTokenPath string `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"`
+	ClientID       string         `envconfig:"APP_SELF_REGISTER_CLIENT_ID,optional"`
+	ClientSecret   string         `envconfig:"APP_SELF_REGISTER_CLIENT_SECRET,optional"`
+	OAuthMode      oauth.AuthMode `envconfig:"APP_SELF_REGISTER_OAUTH_MODE,default=oauth-mtls"`
+	URL            string         `envconfig:"APP_SELF_REGISTER_URL,optional"`
+	TokenURL       string         `envconfig:"APP_SELF_REGISTER_TOKEN_URL,optional"`
+	OauthTokenPath string         `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"`
 
 	SkipSSLValidation bool `envconfig:"APP_SELF_REGISTER_SKIP_SSL_VALIDATION,default=false"`
 
 	ClientTimeout time.Duration `envconfig:"default=30s"`
+
+	Cert string `envconfig:"APP_SELF_REGISTER_OAUTH_X509_CERT,optional"`
+	Key  string `envconfig:"APP_SELF_REGISTER_OAUTH_X509_KEY,optional"`
 }
 
 // ExternalSvcCaller is used to call external services with given authentication
@@ -99,25 +106,25 @@ func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Cont
 }
 
 // CleanupSelfRegisteredRuntime executes cleanup calls for self-registered runtimes
-func (s *selfRegisterManager) CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterDistinguishLabelValue string) error {
-	if selfRegisterDistinguishLabelValue == "" {
+func (s *selfRegisterManager) CleanupSelfRegisteredRuntime(ctx context.Context, runtimeID string) error {
+	if runtimeID == "" {
 		return nil
 	}
-	request, err := s.createSelfRegDelRequest(selfRegisterDistinguishLabelValue)
+	request, err := s.createSelfRegDelRequest(runtimeID)
 	if err != nil {
 		return err
 	}
 
 	resp, err := s.caller.Call(request)
 	if err != nil {
-		return errors.Wrapf(err, "while executing cleanup of self-registered runtime with label value %s", selfRegisterDistinguishLabelValue)
+		return errors.Wrapf(err, "while executing cleanup of self-registered runtime with id %s", runtimeID)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.New(fmt.Sprintf("received unexpected status code %d while cleaning up self-registered runtime with label value %s", resp.StatusCode, selfRegisterDistinguishLabelValue))
+		return errors.New(fmt.Sprintf("received unexpected status code %d while cleaning up self-registered runtime with id %s", resp.StatusCode, runtimeID))
 	}
 
-	log.C(ctx).Infof("Successfully executed clean-up self-registered runtime with distinguishing label value %s", selfRegisterDistinguishLabelValue)
+	log.C(ctx).Infof("Successfully executed clean-up self-registered runtime with id %s", runtimeID)
 	return nil
 }
 
@@ -148,8 +155,8 @@ func (s *selfRegisterManager) createSelfRegPrepRequest(runtimeID, tenant string)
 	return request, nil
 }
 
-func (s *selfRegisterManager) createSelfRegDelRequest(distinguishingVal string) (*http.Request, error) {
-	selfRegLabelVal := s.cfg.SelfRegisterLabelValuePrefix + distinguishingVal
+func (s *selfRegisterManager) createSelfRegDelRequest(runtimeID string) (*http.Request, error) {
+	selfRegLabelVal := s.cfg.SelfRegisterLabelValuePrefix + runtimeID
 	url, err := urlpkg.Parse(s.cfg.URL)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating url for cleanup of self-registered runtime")

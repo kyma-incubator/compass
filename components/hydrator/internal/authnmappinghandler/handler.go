@@ -27,6 +27,8 @@ import (
 	"strings"
 	"sync"
 
+	"golang.org/x/oauth2"
+
 	"github.com/gorilla/mux"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
@@ -125,7 +127,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ctx := req.Context()
+	ctx := context.WithValue(req.Context(), oauth2.HTTPClient, h.httpClient)
 
 	reqData, err := h.reqDataParser.Parse(req)
 	if err != nil {
@@ -247,6 +249,21 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData, a
 		return nil, authenticator.Coordinates{}, aggregatedErr
 	}
 
+	if config.CheckSuffix {
+		c := make(map[string]interface{})
+		if err = claims.Claims(&c); err != nil {
+			return nil, authenticator.Coordinates{}, err
+		}
+		for _, suffix := range config.ClientIDSuffixes {
+			if strings.HasSuffix(c[config.Attributes.ClientID.Key].(string), suffix) {
+				return claims, authenticator.Coordinates{
+					Name:  config.Name,
+					Index: index,
+				}, nil
+			}
+		}
+		return nil, authenticator.Coordinates{}, errors.Wrapf(aggregatedErr, "client suffix mismatch")
+	}
 	return claims, authenticator.Coordinates{
 		Name:  config.Name,
 		Index: index,
