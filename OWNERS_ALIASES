@@ -1,26 +1,30 @@
 aliases:
+  team-dragon:
+    - desislavaa
+    - StefanCholakov
+    - krasish
+    - KirilKabakchiev
+  team-raptor:
+    - DimitarPetrov
+    - PetarTodorovv
+    - nyordanoff
+    - StanislavStefanov
+    - la4ezar
+    - KirilKabakchiev
+  team-falcon:
+    - NickyMateev
+    - dzahariev
+    - alextargov
+    - kaloyanspiridonov
+    - SvetlinZarev-SAP
+    - KirilKabakchiev
   documentation-reviewers:
-    - kazydek
-    - klaudiagrz
-    - bszwarc
-    - mmitoraj
-    - majakurcius
-    - alexandra-simeonova
-    - Peteva
-    - ekaterina-mitova
-  documentation-approvers:
-    - kazydek
-    - klaudiagrz
-    - bszwarc
-    - mmitoraj
-    - majakurcius
     - alexandra-simeonova
     - Peteva
     - ekaterina-mitova
     - nkanchev
-  console-approvers:
-    - parostatkiem
-    - Wawrzyn321
-    - kwiatekus
-    - dariadomagala
-    - akucharska
+  documentation-approvers:
+    - alexandra-simeonova
+    - Peteva
+    - ekaterina-mitova
+    - nkanchev
