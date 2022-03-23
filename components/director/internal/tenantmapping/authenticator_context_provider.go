@@ -54,7 +54,7 @@ type authenticatorContextProvider struct {
 	authenticators []authenticator.Config
 }
 
-// GetObjectContext is the authenticatorContextProvider implementation of the ObjectContextProvider interface
+// GetObjectContext is the authenticatorContextProvider implementation of the ObjectContextProvider interface.
 func (m *authenticatorContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	var externalTenantID, scopes string
 
