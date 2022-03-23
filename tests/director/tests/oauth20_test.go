@@ -158,64 +158,63 @@ func TestDeleteSystemAuthFromApplication(t *testing.T) {
 	require.Empty(t, appAfterDelete.Auths)
 }
 
-////failing
-//func TestDeleteSystemAuthFromApplicationUsingRuntimeMutationShouldReportError(t *testing.T) {
-//	// GIVEN
-//	ctx := context.Background()
-//
-//	tenantId := tenant.TestTenants.GetDefaultTenantID()
-//
-//	name := "app"
-//
-//	t.Log("Create application")
-//	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, name, tenantId)
-//	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
-//	require.NoError(t, err)
-//	require.NotEmpty(t, app.ID)
-//
-//	appAuth := fixtures.GenerateClientCredentialsForApplication(t, ctx, certSecuredGraphQLClient, app.ID)
-//	require.NotEmpty(t, appAuth)
-//	defer fixtures.DeleteSystemAuthForApplication(t, ctx, certSecuredGraphQLClient, appAuth.ID)
-//
-//	deleteSystemAuthForRuntimeRequest := fixtures.FixDeleteSystemAuthForRuntimeRequest(appAuth.ID)
-//	deleteOutput := graphql.RuntimeSystemAuth{}
-//
-//	// WHEN
-//	t.Log("Delete system auth for application using runtime mutation")
-//	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteSystemAuthForRuntimeRequest, &deleteOutput)
-//
-//	// THEN
-//	require.Error(t, err)
-//}
-//
-//func TestDeleteSystemAuthFromApplicationUsingIntegrationSystemMutationShouldReportError(t *testing.T) {
-//	// GIVEN
-//	ctx := context.Background()
-//
-//	tenantId := tenant.TestTenants.GetDefaultTenantID()
-//
-//	name := "app"
-//
-//	t.Log("Create application")
-//	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, name, tenantId)
-//	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
-//	require.NoError(t, err)
-//	require.NotEmpty(t, app)
-//
-//	appAuth := fixtures.GenerateClientCredentialsForApplication(t, ctx, certSecuredGraphQLClient, app.ID)
-//	require.NotEmpty(t, appAuth)
-//	defer fixtures.DeleteSystemAuthForApplication(t, ctx, certSecuredGraphQLClient, appAuth.ID)
-//
-//	deleteSystemAuthForIntegrationSystemRequest := fixtures.FixDeleteSystemAuthForIntegrationSystemRequest(appAuth.ID)
-//	deleteOutput := graphql.IntSysSystemAuth{}
-//
-//	// WHEN
-//	t.Log("Delete system auth for application using runtime mutation")
-//	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteSystemAuthForIntegrationSystemRequest, &deleteOutput)
-//
-//	// THEN
-//	require.Error(t, err)
-//}
+func TestDeleteSystemAuthFromApplicationUsingRuntimeMutationShouldReportError(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	name := "app"
+
+	t.Log("Create application")
+	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, name, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
+	require.NoError(t, err)
+	require.NotEmpty(t, app.ID)
+
+	appAuth := fixtures.GenerateClientCredentialsForApplication(t, ctx, certSecuredGraphQLClient, app.ID)
+	require.NotEmpty(t, appAuth)
+	defer fixtures.DeleteSystemAuthForApplication(t, ctx, certSecuredGraphQLClient, appAuth.ID)
+
+	deleteSystemAuthForRuntimeRequest := fixtures.FixDeleteSystemAuthForRuntimeRequest(appAuth.ID)
+	deleteOutput := graphql.RuntimeSystemAuth{}
+
+	// WHEN
+	t.Log("Delete system auth for application using runtime mutation")
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteSystemAuthForRuntimeRequest, &deleteOutput)
+
+	// THEN
+	require.Error(t, err)
+}
+
+func TestDeleteSystemAuthFromApplicationUsingIntegrationSystemMutationShouldReportError(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	name := "app"
+
+	t.Log("Create application")
+	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, name, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
+	require.NoError(t, err)
+	require.NotEmpty(t, app)
+
+	appAuth := fixtures.GenerateClientCredentialsForApplication(t, ctx, certSecuredGraphQLClient, app.ID)
+	require.NotEmpty(t, appAuth)
+	defer fixtures.DeleteSystemAuthForApplication(t, ctx, certSecuredGraphQLClient, appAuth.ID)
+
+	deleteSystemAuthForIntegrationSystemRequest := fixtures.FixDeleteSystemAuthForIntegrationSystemRequest(appAuth.ID)
+	deleteOutput := graphql.IntSysSystemAuth{}
+
+	// WHEN
+	t.Log("Delete system auth for application using runtime mutation")
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteSystemAuthForIntegrationSystemRequest, &deleteOutput)
+
+	// THEN
+	require.Error(t, err)
+}
 
 func TestDeleteSystemAuthFromRuntime(t *testing.T) {
 	// GIVEN
@@ -251,66 +250,65 @@ func TestDeleteSystemAuthFromRuntime(t *testing.T) {
 	require.Empty(t, rtmAfterDelete.Auths)
 }
 
-////failing
-//func TestDeleteSystemAuthFromRuntimeUsingApplicationMutationShouldReportError(t *testing.T) {
-//	// GIVEN
-//	ctx := context.Background()
-//
-//	tenantId := tenant.TestTenants.GetDefaultTenantID()
-//
-//	name := "rtm"
-//	input := fixtures.FixRuntimeInput(name)
-//	t.Log("Create runtime")
-//	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
-//	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
-//	require.NotEmpty(t, rtm)
-//	require.NotEmpty(t, rtm.ID)
-//	require.NoError(t, err)
-//
-//	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, ctx, certSecuredGraphQLClient, tenantId, rtm.ID)
-//	require.NotEmpty(t, rtmAuth)
-//	defer fixtures.DeleteSystemAuthForRuntime(t, ctx, certSecuredGraphQLClient, rtmAuth.ID)
-//
-//	deleteSystemAuthForApplicationRequest := fixtures.FixDeleteSystemAuthForApplicationRequest(rtmAuth.ID)
-//	deleteOutput := graphql.AppSystemAuth{}
-//
-//	// WHEN
-//	t.Log("Delete system auth for runtime using application mutation")
-//	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteSystemAuthForApplicationRequest, &deleteOutput)
-//
-//	//THEN
-//	require.Error(t, err)
-//}
-//
-//func TestDeleteSystemAuthFromRuntimeUsingIntegrationSystemMutationShouldReportError(t *testing.T) {
-//	// GIVEN
-//	ctx := context.Background()
-//
-//	tenantId := tenant.TestTenants.GetDefaultTenantID()
-//
-//	name := "rtm"
-//	input := fixtures.FixRuntimeInput(name)
-//	t.Log("Create runtime")
-//	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
-//	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
-//	require.NotEmpty(t, rtm)
-//	require.NotEmpty(t, rtm.ID)
-//	require.NoError(t, err)
-//
-//	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, ctx, certSecuredGraphQLClient, tenantId, rtm.ID)
-//	require.NotEmpty(t, rtmAuth)
-//	defer fixtures.DeleteSystemAuthForRuntime(t, ctx, certSecuredGraphQLClient, rtmAuth.ID)
-//
-//	deleteSystemAuthForIntegrationSystemRequest := fixtures.FixDeleteSystemAuthForIntegrationSystemRequest(rtmAuth.ID)
-//	deleteOutput := graphql.IntSysSystemAuth{}
-//
-//	// WHEN
-//	t.Log("Delete system auth for runtime using integration system mutation")
-//	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteSystemAuthForIntegrationSystemRequest, &deleteOutput)
-//
-//	//THEN
-//	require.Error(t, err)
-//}
+func TestDeleteSystemAuthFromRuntimeUsingApplicationMutationShouldReportError(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	name := "rtm"
+	input := fixtures.FixRuntimeInput(name)
+	t.Log("Create runtime")
+	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
+	require.NotEmpty(t, rtm)
+	require.NotEmpty(t, rtm.ID)
+	require.NoError(t, err)
+
+	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, ctx, certSecuredGraphQLClient, tenantId, rtm.ID)
+	require.NotEmpty(t, rtmAuth)
+	defer fixtures.DeleteSystemAuthForRuntime(t, ctx, certSecuredGraphQLClient, rtmAuth.ID)
+
+	deleteSystemAuthForApplicationRequest := fixtures.FixDeleteSystemAuthForApplicationRequest(rtmAuth.ID)
+	deleteOutput := graphql.AppSystemAuth{}
+
+	// WHEN
+	t.Log("Delete system auth for runtime using application mutation")
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteSystemAuthForApplicationRequest, &deleteOutput)
+
+	//THEN
+	require.Error(t, err)
+}
+
+func TestDeleteSystemAuthFromRuntimeUsingIntegrationSystemMutationShouldReportError(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	name := "rtm"
+	input := fixtures.FixRuntimeInput(name)
+	t.Log("Create runtime")
+	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
+	require.NotEmpty(t, rtm)
+	require.NotEmpty(t, rtm.ID)
+	require.NoError(t, err)
+
+	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, ctx, certSecuredGraphQLClient, tenantId, rtm.ID)
+	require.NotEmpty(t, rtmAuth)
+	defer fixtures.DeleteSystemAuthForRuntime(t, ctx, certSecuredGraphQLClient, rtmAuth.ID)
+
+	deleteSystemAuthForIntegrationSystemRequest := fixtures.FixDeleteSystemAuthForIntegrationSystemRequest(rtmAuth.ID)
+	deleteOutput := graphql.IntSysSystemAuth{}
+
+	// WHEN
+	t.Log("Delete system auth for runtime using integration system mutation")
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteSystemAuthForIntegrationSystemRequest, &deleteOutput)
+
+	//THEN
+	require.Error(t, err)
+}
 
 func TestDeleteSystemAuthFromIntegrationSystem(t *testing.T) {
 	// GIVEN
