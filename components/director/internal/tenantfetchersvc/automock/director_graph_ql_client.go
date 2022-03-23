@@ -14,13 +14,13 @@ type DirectorGraphQLClient struct {
 	mock.Mock
 }
 
-// SubscribeTenantToRuntime provides a mock function with given fields: ctx, runtimeId, subaccountId, region
-func (_m *DirectorGraphQLClient) SubscribeTenantToRuntime(ctx context.Context, runtimeId string, subaccountId string, region string) error {
-	ret := _m.Called(ctx, runtimeId, subaccountId, region)
+// SubscribeTenantToRuntime provides a mock function with given fields: ctx, providerID, subaccountID, region
+func (_m *DirectorGraphQLClient) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountID string, region string) error {
+	ret := _m.Called(ctx, providerID, subaccountID, region)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
-		r0 = rf(ctx, runtimeId, subaccountId, region)
+		r0 = rf(ctx, providerID, subaccountID, region)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -28,13 +28,13 @@ func (_m *DirectorGraphQLClient) SubscribeTenantToRuntime(ctx context.Context, r
 	return r0
 }
 
-// UnsubscribeTenantFromRuntime provides a mock function with given fields: ctx, runtimeId, subaccountId, region
-func (_m *DirectorGraphQLClient) UnsubscribeTenantFromRuntime(ctx context.Context, runtimeId string, subaccountId string, region string) error {
-	ret := _m.Called(ctx, runtimeId, subaccountId, region)
+// UnsubscribeTenantFromRuntime provides a mock function with given fields: ctx, providerID, subaccountID, region
+func (_m *DirectorGraphQLClient) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountID string, region string) error {
+	ret := _m.Called(ctx, providerID, subaccountID, region)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
-		r0 = rf(ctx, runtimeId, subaccountId, region)
+		r0 = rf(ctx, providerID, subaccountID, region)
 	} else {
 		r0 = ret.Error(0)
 	}
