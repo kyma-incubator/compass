@@ -1,10 +1,10 @@
 # Connector
 
-The Connector component takes care of issuing client certificates for applications and runtimes. More details can be found in the [Compass](../../docs/compass/) and [Connector](../../docs/connector/) documentation.
+You can use the Connector component to issue client certificates for applications and runtimes. For more information, see the [Compass](../../docs/compass/) and [Connector](../../docs/connector/) documentation.
 
 ## Development
 
-> **NOTE:** Connector requires the Director component for One-Time Token generation. Read [this](../director/README.md) document to learn how to run it.
+> **NOTE:** To issue an one-time token (OTT) the Connector component requires the Director component. To learn how to run the Director component, see [Director](../director/README.md).
 
 After you introduce changes in the GraphQL schema, run the `gqlgen.sh` script.
 To run the Connector, use the following command:
@@ -17,4 +17,4 @@ The GraphQL API playground is available at `localhost:3000`.
 
 ## Configuration
 
-Up-to-date list of the configurable parameters of Connector can be found [here](https://github.com/kyma-incubator/compass/blob/main/components/connector/config/config.go)
+To get a list of the configurable parameters of the Connector component, see [config.go](https://github.com/kyma-incubator/compass/blob/main/components/connector/config/config.go).
