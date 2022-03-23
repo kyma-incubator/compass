@@ -20,7 +20,7 @@ To run Director with PostgreSQL container on local machine with latest DB schema
 ./run.sh
 ```
 
-The GraphQL API playground is available at `localhost:3000`. In order to call the API, send the following headers:
+The GraphQL API playground is available at `localhost:3000`. To call the API, send the following headers:
 
 ```json
 {
@@ -35,15 +35,15 @@ You can set `tenant` header as any UUID.
 
 <h3 id="prerequisites">Prerequisites</h3>
 
-> **NOTE:** Use script `run.sh` to perform these steps automatically. Check [Local Development](#local-development) section for more information.
+> **NOTE:** To perform the following steps automatically, you can use the `run.sh` script. For more information, see the section [Local Development](#local-development).
 
-Before you can run Director you have to configure access to PostgreSQL database. For development purpose you can run PostgreSQL instance in the docker container executing following command:
+To run the Director, first you must configure access to PostgreSQL database. For development purposes, you can run the PostgreSQL instance in the docker container by running the following command:
 
 ```bash
 $ docker run --rm -p 5432:5432 -e POSTGRES_PASSWORD=pgsql@12345 postgres
 ```
 
-When you have PostgreSQL instance running you must import the database schema running following command:
+When you have the PostgreSQL instance running, you must import the database schema by running the following command:
 
 ```bash
 $ PGPASSWORD=pgsql@12345 psql -U postgres -W -h 127.0.0.1 -f <(cat components/schema-migrator/migrations/*.up.sql)
@@ -51,15 +51,15 @@ $ PGPASSWORD=pgsql@12345 psql -U postgres -W -h 127.0.0.1 -f <(cat components/sc
 
 ### Configuration
 
-The Director binary allows overriding of some configuration parameters. Up-to-date list of the configurable parameters can be found [here](https://github.com/kyma-incubator/compass/blob/75aff5226d4a105f4f04608416c8fa9a722d3534/components/director/cmd/director/main.go#L90).
+The Director binary allows you to override some configuration parameters. To get a list of the configurable parameters, see [main.go](https://github.com/kyma-incubator/compass/blob/75aff5226d4a105f4f04608416c8fa9a722d3534/components/director/cmd/director/main.go#L90).
 
-Director also depends on a configuration file, containing the required scopes for each GraphQL query and mutation. The file used for local development is located under [hack/config-local.yaml](./hack/config-local.yaml), and the one used for in-cluster setup is located in the Director subchart in [chart/compass/charts/director/config.yaml](../../chart/compass/charts/director/config.yaml).
+The Director also depends on a configuration file that contains the required scopes for each GraphQL query and mutation. For local development you can use the file at [hack/config-local.yaml](./hack/config-local.yaml). For in-cluster setup you can use the file that is located in the Director subchart at [chart/compass/charts/director/config.yaml](../../chart/compass/charts/director/config.yaml).
 
 ## Local Development
 
 <h3 id="local-prerequisites">Prerequisites</h3>
 
-- You should install `kubectl` version 1.18 or higher.
+- Install `kubectl` version 1.18 or higher.
 - To use `--debug` flag, first you must install `delve`.
 
 <h3 id="local-run">Run</h3>
@@ -69,7 +69,7 @@ There is a `./run.sh` script that automatically runs director locally with the n
 - `--reuse-db` - Can be used in combination with `--skip-db-cleanup` to reuse an already existing DB.
 - `--dump-db` - Starts director with DB, populated with data from CMP development environment.
 - `--debug` - Starts director in debugging mode on default port `40000`.
-- `--async-enabled` - Enables asynchronous operations scheduling. A prerequisite for this option is a running [Operations Controller](../operations-controller/) component.
+- `--async-enabled` - Enables scheduling of asynchronous operations. To use this option, make sure that the [Operations Controller](../operations-controller/) component is running.
 
 > **NOTE**: Director component has certificate cache, which is populated with an external certificate through Kubernetes secret. Locally, you can override the secret data with certificate and key that you need for testing or debugging. Check the table below for environment variables.
 
@@ -80,11 +80,11 @@ There is a `./run.sh` script that automatically runs director locally with the n
 
 ## Usage
 
-Find examples of GraphQL calls [here](examples/README.md).
+You can find examples of GraphQL calls at: [Examples](examples/README.md).
 
 ## Other Binaries
 
-As the source code required by a few other Compass components is the same as Director, they are just different binaries located in the `cmd` directory. You can check their own documentations in order to see how they can be configured and ran locally:
+The Director's source code is also used by other Compass's components. For this reason, the code comprises different binaries, located in the `cmd` directory. To configure it and run it locally, you can see the following documentation sources:
 - [ORD Aggregator](./cmd/ordaggregator/README.md)
 - [Tenant Fetcher (Job)](./cmd/tenantfetcher-job/README.md)
 - [Tenant Fetcher (Deployment)](./cmd/tenantfetcher-svc/README.md)
