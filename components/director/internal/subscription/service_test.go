@@ -29,6 +29,8 @@ const (
 	regionalTenantSubdomain = "myregionaltenant"
 	subaccountTenantExtID   = "subaccount-tenant-external-id"
 	subscriptionProviderID  = "123"
+
+	uuid = "647af599-7f2d-485c-a63b-615b5ff6daf1"
 )
 
 var (
@@ -220,12 +222,12 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			LabelServiceFn: func() *automock.LabelService {
 				labelSvc := &automock.LabelService{}
 				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(nil, notFoundErr).Once()
-				labelSvc.On("CreateLabel", context.TODO(), tenantID, fixUUID(), &createLabelInput).Return(testError).Once()
+				labelSvc.On("CreateLabel", context.TODO(), tenantID, uuid, &createLabelInput).Return(testError).Once()
 				return labelSvc
 			},
 			UIDServiceFn: func() *automock.UidService {
 				uidService := &automock.UidService{}
-				uidService.On("Generate").Return(fixUUID())
+				uidService.On("Generate").Return(uuid)
 				return uidService
 			},
 			Region:                    tenantRegion,
@@ -295,12 +297,12 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			LabelServiceFn: func() *automock.LabelService {
 				labelSvc := &automock.LabelService{}
 				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(nil, notFoundErr).Once()
-				labelSvc.On("CreateLabel", context.TODO(), tenantID, fixUUID(), &createLabelInput).Return(nil).Once()
+				labelSvc.On("CreateLabel", context.TODO(), tenantID, uuid, &createLabelInput).Return(nil).Once()
 				return labelSvc
 			},
 			UIDServiceFn: func() *automock.UidService {
 				uidService := &automock.UidService{}
-				uidService.On("Generate").Return(fixUUID())
+				uidService.On("Generate").Return(uuid)
 				return uidService
 			},
 			Region:                    tenantRegion,
@@ -634,8 +636,4 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			assert.Equal(t, testCase.IsSuccessful, isUnsubscribeSuccessful)
 		})
 	}
-}
-
-func fixUUID() string {
-	return "647af599-7f2d-485c-a63b-615b5ff6daf1"
 }

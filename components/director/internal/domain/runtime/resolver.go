@@ -91,8 +91,8 @@ type SelfRegisterManager interface {
 // SubscriptionService missing godoc
 //go:generate mockery --name=SubscriptionService --output=automock --outpkg=automock --case=underscore
 type SubscriptionService interface {
-	SubscribeTenant(ctx context.Context, runtimeID string, subaccountTenantID string, region string) (bool, error)
-	UnsubscribeTenant(ctx context.Context, runtimeID string, subaccountTenantID string, region string) (bool, error)
+	SubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error)
+	UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error)
 }
 
 // Resolver missing godoc
@@ -574,8 +574,8 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Runti
 	return eventing.RuntimeEventingConfigurationToGraphQL(eventingCfg), nil
 }
 
-// SubscribeTenant missing godoc
-func (r *Resolver) SubscribeTenant(ctx context.Context, runtimeID string, subaccountTenantID string, region string) (bool, error) {
+// SubscribeTenant subscribes tenant to runtime labeled with `providerID` and `region`
+func (r *Resolver) SubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return false, err
@@ -584,7 +584,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, runtimeID string, subacc
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	success, err := r.subscriptionSvc.SubscribeTenant(ctx, runtimeID, subaccountTenantID, region)
+	success, err := r.subscriptionSvc.SubscribeTenant(ctx, providerID, subaccountTenantID, region)
 	if err != nil {
 		return false, err
 	}
@@ -596,8 +596,8 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, runtimeID string, subacc
 	return success, nil
 }
 
-// UnsubscribeTenant missing godoc
-func (r *Resolver) UnsubscribeTenant(ctx context.Context, runtimeID string, subaccountTenantID string, region string) (bool, error) {
+// UnsubscribeTenant unsubscribes tenant to runtime labeled with `providerID` and `region`
+func (r *Resolver) UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return false, err
@@ -606,7 +606,7 @@ func (r *Resolver) UnsubscribeTenant(ctx context.Context, runtimeID string, suba
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	success, err := r.subscriptionSvc.UnsubscribeTenant(ctx, runtimeID, subaccountTenantID, region)
+	success, err := r.subscriptionSvc.UnsubscribeTenant(ctx, providerID, subaccountTenantID, region)
 	if err != nil {
 		return false, err
 	}

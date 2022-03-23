@@ -89,8 +89,8 @@ graphql:
     writeTenants: ["tenant:write"]
     deleteTenants: ["tenant:write"]
     updateTenant: ["tenant:write"]
-    subscribeTenantToRuntime: ["tenantSubscription:write"]
-    unsubscribeTenantFromRuntime: ["tenantSubscription:write"]
+    subscribeTenantToRuntime: ["tenant_subscription:write"]
+    unsubscribeTenantFromRuntime: ["tenant_subscription:write"]
 
   field:
     fetch_request:

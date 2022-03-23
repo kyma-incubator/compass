@@ -73,9 +73,9 @@ func NewService(runtimeSvc RuntimeService, tenantSvc TenantService, labelSvc Lab
 	}
 }
 
-func (s *service) SubscribeTenant(ctx context.Context, runtimeID string, subaccountTenantID string, region string) (bool, error) {
+func (s *service) SubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error) {
 	filters := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(s.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", runtimeID)),
+		labelfilter.NewForKeyWithQuery(s.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", providerID)),
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
 	}
 
@@ -85,7 +85,7 @@ func (s *service) SubscribeTenant(ctx context.Context, runtimeID string, subacco
 			return false, nil
 		}
 
-		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, runtimeID))
+		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, providerID))
 	}
 
 	for _, provider := range runtimes {
@@ -122,9 +122,9 @@ func (s *service) SubscribeTenant(ctx context.Context, runtimeID string, subacco
 	return true, nil
 }
 
-func (s *service) UnsubscribeTenant(ctx context.Context, runtimeID string, subaccountTenantID string, region string) (bool, error) {
+func (s *service) UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error) {
 	filters := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(s.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", runtimeID)),
+		labelfilter.NewForKeyWithQuery(s.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", providerID)),
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
 	}
 
@@ -134,7 +134,7 @@ func (s *service) UnsubscribeTenant(ctx context.Context, runtimeID string, subac
 			return false, nil
 		}
 
-		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, runtimeID))
+		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, providerID))
 	}
 
 	for _, runtime := range runtimes {
