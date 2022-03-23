@@ -3,6 +3,6 @@ reviewers:
 approvers:
   - team-falcon
 labels:
-  - :eagle: team-falcon
+  - ":eagle: team-falcon"
 options:
   no_parent_owners: true
