@@ -148,7 +148,36 @@ func TestRepository_GetByIDForObject(t *testing.T) {
 	saID := "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	objectID := "cccccccc-cccc-cccc-cccc-cccccccccccc"
 
-	t.Run("Success", func(t *testing.T) {
+	t.Run("Success for Application", func(t *testing.T) {
+		// GIVEN
+		saModel := fixModelSystemAuth(saID, model.ApplicationReference, objectID, fixModelAuth())
+		saEntity := fixEntity(saID, model.ApplicationReference, objectID, true)
+
+		mockConverter := &automock.Converter{}
+		mockConverter.On("FromEntity", saEntity).Return(*saModel, nil).Once()
+		defer mockConverter.AssertExpectations(t)
+
+		repo := systemauth.NewRepository(mockConverter)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "runtime_id", "integration_system_id", "value"}).
+			AddRow(saID, testTenant, saEntity.AppID, saEntity.RuntimeID, saEntity.IntegrationSystemID, saEntity.Value)
+
+		query := "SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE tenant_id = $1 AND id = $2 AND app_id IS NOT NULL"
+		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
+			WithArgs(testTenant, saID).WillReturnRows(rows)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		// WHEN
+		actual, err := repo.GetByIDForObject(ctx, testTenant, saID, model.ApplicationReference)
+		// THEN
+		require.NoError(t, err)
+		require.NotNil(t, actual)
+		assert.Equal(t, saModel, actual)
+	})
+
+	t.Run("Success for Runtime", func(t *testing.T) {
 		// GIVEN
 		saModel := fixModelSystemAuth(saID, model.RuntimeReference, objectID, fixModelAuth())
 		saEntity := fixEntity(saID, model.RuntimeReference, objectID, true)
@@ -164,7 +193,7 @@ func TestRepository_GetByIDForObject(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "runtime_id", "integration_system_id", "value"}).
 			AddRow(saID, testTenant, saEntity.AppID, saEntity.RuntimeID, saEntity.IntegrationSystemID, saEntity.Value)
 
-		query := "SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE tenant_id = $1 AND id = $2"
+		query := "SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE tenant_id = $1 AND id = $2 AND runtime_id IS NOT NULL"
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(testTenant, saID).WillReturnRows(rows)
 
@@ -239,7 +268,7 @@ func TestRepository_GetByIDForObjectGlobal(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id", "tenant_id", "app_id", "runtime_id", "integration_system_id", "value"}).
 			AddRow(saID, testTenant, saEntity.AppID, saEntity.RuntimeID, saEntity.IntegrationSystemID, saEntity.Value)
 
-		query := "SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE id = $1"
+		query := "SELECT id, tenant_id, app_id, runtime_id, integration_system_id, value FROM public.system_auths WHERE id = $1 AND runtime_id IS NOT NULL"
 		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
 			WithArgs(saID).WillReturnRows(rows)
 
