@@ -1,17 +1,8 @@
-filters:
-  ".*":
-    approvers:
-     - team-dragon
-     - team-falcon
-     - team-raptor
-    reviewers:
-     - team-dragon
-     - team-falcon
-     - team-raptor
-  '\.md$|/docs/|^milv\.config\.yaml$':
-    approvers:
-      - team-documentation
-    reviewers:
-      - team-documentation
-    labels:
-      - area/documentation
+approvers:
+  - team-dragon
+  - team-falcon
+  - team-raptor
+reviewers:
+  - team-dragon
+  - team-falcon
+  - team-raptor
