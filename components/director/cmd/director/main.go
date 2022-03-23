@@ -373,7 +373,7 @@ func getPairingAdaptersMapping(ctx context.Context, filePath string) (map[string
 	logger := log.C(ctx)
 
 	if filePath == "" {
-		logger.Infof("No configuration for pairing adapters")
+		logger.Infof("No configuration for pairing adapter")
 		return nil, nil
 	}
 
