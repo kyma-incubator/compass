@@ -1,15 +1,17 @@
 filters:
   ".*":
     approvers:
-     - @kyma-incubator/cmp_team
+     - team-dragon
+     - team-falcon
+     - team-raptor
+    reviewers:
+     - team-dragon
+     - team-falcon
+     - team-raptor
   '\.md$|/docs/|^milv\.config\.yaml$':
     approvers:
-      - Peteva
-      - ekaterina-mitova
-      - nkanchev
+      - team-documentation
     reviewers:
-      - Peteva
-      - ekaterina-mitova
-      - nkanchev
+      - team-documentation
     labels:
       - area/documentation
