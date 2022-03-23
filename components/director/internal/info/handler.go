@@ -4,11 +4,10 @@ import (
 	"context"
 	"net/http"
 
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 )
-
-// Implemented ORD Version
-const ordVersion = "1.1.0"
 
 // Config contains the data that should be exported on the info endpoint
 type Config struct {
@@ -30,7 +29,7 @@ func prepareResponseData(c Config) responseData {
 		Issuer:     c.Issuer,
 		Subject:    c.Subject,
 		RootCA:     c.RootCA,
-		OrdVersion: ordVersion,
+		OrdVersion: ord.SpecVersion,
 	}
 }
 
