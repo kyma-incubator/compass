@@ -35,211 +35,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestOnboardingHandler(t *testing.T) {
-	t.Run("Success with tenant and customerID", func(t *testing.T) {
-		tenantWithCustomer := tenantfetcher.Tenant{
-			TenantID:               uuid.New().String(),
-			CustomerID:             uuid.New().String(),
-			Subdomain:              tenantfetcher.DefaultSubdomain,
-			SubscriptionProviderID: uuid.New().String(),
-		}
-		// WHEN
-		addTenantExpectStatusCode(t, tenantWithCustomer, http.StatusOK)
-
-		tenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, tenantWithCustomer.TenantID)
-		require.NoError(t, err)
-
-		parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, tenantWithCustomer.CustomerID)
-		require.NoError(t, err)
-
-		// THEN
-		assertTenant(t, tenant, tenantWithCustomer.TenantID, tenantWithCustomer.Subdomain)
-		assertTenant(t, parent, tenantWithCustomer.CustomerID, "")
-	})
-
-	t.Run("Success with only tenant", func(t *testing.T) {
-		providedTenantIDs := tenantfetcher.Tenant{
-			TenantID:               uuid.New().String(),
-			Subdomain:              tenantfetcher.DefaultSubdomain,
-			SubscriptionProviderID: uuid.New().String(),
-		}
-
-		addTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
-
-		tnt, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenantIDs.TenantID)
-		require.NoError(t, err)
-
-		// THEN
-		assertTenant(t, tnt, providedTenantIDs.TenantID, providedTenantIDs.Subdomain)
-	})
-
-	t.Run("Successful account tenant creation with matching account and subaccount tenant IDs", func(t *testing.T) {
-		id := uuid.New().String()
-		providedTenantIDs := tenantfetcher.Tenant{
-			TenantID:               id,
-			SubaccountID:           id,
-			Subdomain:              tenantfetcher.DefaultSubdomain,
-			SubscriptionProviderID: uuid.New().String(),
-		}
-
-		addTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
-
-		tnt, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenantIDs.TenantID)
-		require.NoError(t, err)
-
-		// THEN
-		assertTenant(t, tnt, providedTenantIDs.TenantID, providedTenantIDs.Subdomain)
-	})
-
-	t.Run("Successful account tenant creation with matching customer and account tenant IDs", func(t *testing.T) {
-		id := uuid.New().String()
-		tenant := tenantfetcher.Tenant{
-			CustomerID:             id,
-			TenantID:               id,
-			Subdomain:              tenantfetcher.DefaultSubdomain,
-			SubscriptionProviderID: uuid.New().String(),
-		}
-
-		addTenantExpectStatusCode(t, tenant, http.StatusOK)
-
-		tnt, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, tenant.TenantID)
-		require.NoError(t, err)
-
-		// THEN
-		assertTenant(t, tnt, tenant.TenantID, tenant.Subdomain)
-	})
-
-	t.Run("Should not add already existing tenants", func(t *testing.T) {
-		ctx := context.Background()
-
-		tenantWithCustomer := tenantfetcher.Tenant{
-			TenantID:               uuid.New().String(),
-			CustomerID:             uuid.New().String(),
-			Subdomain:              tenantfetcher.DefaultSubdomain,
-			SubscriptionProviderID: uuid.New().String(),
-		}
-		//GIVEN
-		oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
-		require.NoError(t, err)
-
-		//WHEN
-		for i := 0; i < 10; i++ {
-			addTenantExpectStatusCode(t, tenantWithCustomer, http.StatusOK)
-		}
-
-		tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
-		require.NoError(t, err)
-
-		// THEN
-		assert.Equal(t, oldTenantState.TotalCount+2, tenants.TotalCount)
-		assertTenantExists(ctx, t, tenantWithCustomer.TenantID)
-		assertTenantExists(ctx, t, tenantWithCustomer.CustomerID)
-	})
-
-	t.Run("Should fail when no tenantID is provided", func(t *testing.T) {
-		providedTenantIDs := tenantfetcher.Tenant{
-			CustomerID:             uuid.New().String(),
-			SubscriptionProviderID: uuid.New().String(),
-		}
-
-		oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
-		require.NoError(t, err)
-
-		addTenantExpectStatusCode(t, providedTenantIDs, http.StatusBadRequest)
-
-		tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
-		require.NoError(t, err)
-
-		// THEN
-		assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
-	})
-
-	t.Run("Should fail when no subdomain is provided", func(t *testing.T) {
-		providedTenantIDs := tenantfetcher.Tenant{
-			TenantID:               uuid.New().String(),
-			CustomerID:             uuid.New().String(),
-			SubscriptionProviderID: uuid.New().String(),
-		}
-
-		oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
-		require.NoError(t, err)
-
-		addTenantExpectStatusCode(t, providedTenantIDs, http.StatusBadRequest)
-
-		tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
-		require.NoError(t, err)
-
-		// THEN
-		assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
-	})
-
-	t.Run("Should fail when no SubscriptionProviderID is provided", func(t *testing.T) {
-		providedTenantIDs := tenantfetcher.Tenant{
-			TenantID:   uuid.New().String(),
-			CustomerID: uuid.New().String(),
-			Subdomain:  tenantfetcher.DefaultSubdomain,
-		}
-
-		oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
-		require.NoError(t, err)
-
-		addTenantExpectStatusCode(t, providedTenantIDs, http.StatusBadRequest)
-
-		tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
-		require.NoError(t, err)
-
-		// THEN
-		assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
-	})
-
-	t.Run("Should fail with subaccount tenant", func(t *testing.T) {
-		// GIVEN
-		parentTenant := tenantfetcher.Tenant{
-			TenantID:               uuid.New().String(),
-			Subdomain:              tenantfetcher.DefaultSubdomain,
-			SubscriptionProviderID: uuid.New().String(),
-		}
-		childTenant := tenantfetcher.Tenant{
-			SubaccountID:           uuid.New().String(),
-			TenantID:               parentTenant.TenantID,
-			Subdomain:              tenantfetcher.DefaultSubdomain,
-			SubscriptionProviderID: uuid.New().String(),
-		}
-
-		addTenantExpectStatusCode(t, parentTenant, http.StatusOK)
-
-		parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, parentTenant.TenantID)
-		require.NoError(t, err)
-		assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
-
-		// THEN
-		addTenantExpectStatusCode(t, childTenant, http.StatusInternalServerError)
-	})
-}
-
-func TestDecommissioningHandler(t *testing.T) {
-	t.Run("Success noop", func(t *testing.T) {
-		providedTenantIDs := tenantfetcher.Tenant{
-			TenantID:               uuid.New().String(),
-			Subdomain:              tenantfetcher.DefaultSubdomain,
-			SubscriptionProviderID: uuid.New().String(),
-		}
-
-		addTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
-
-		oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
-		require.NoError(t, err)
-
-		removeTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
-
-		newTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
-		require.NoError(t, err)
-
-		// THEN
-		assert.Equal(t, oldTenantState.TotalCount, newTenantState.TotalCount)
-	})
-}
-
 func TestRegionalOnboardingHandler(t *testing.T) {
 	t.Run("Regional account tenant creation", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
@@ -345,7 +140,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 			require.NoError(t, err)
 
-			addTenantExpectStatusCode(t, parentTenant, http.StatusOK)
+			addRegionalTenantExpectStatusCode(t, parentTenant, http.StatusOK)
 			parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, parentTenant.TenantID)
 			require.NoError(t, err)
 			assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
@@ -452,16 +247,8 @@ func TestGetDependenciesHandler(t *testing.T) {
 	})
 }
 
-func addTenantExpectStatusCode(t *testing.T, providedTenantIDs tenantfetcher.Tenant, expectedStatusCode int) {
-	makeTenantRequestExpectStatusCode(t, providedTenantIDs, http.MethodPut, config.TenantFetcherFullURL, expectedStatusCode)
-}
-
 func addRegionalTenantExpectStatusCode(t *testing.T, providedTenantIDs tenantfetcher.Tenant, expectedStatusCode int) {
 	makeTenantRequestExpectStatusCode(t, providedTenantIDs, http.MethodPut, config.TenantFetcherFullRegionalURL, expectedStatusCode)
-}
-
-func removeTenantExpectStatusCode(t *testing.T, providedTenantIDs tenantfetcher.Tenant, expectedStatusCode int) {
-	makeTenantRequestExpectStatusCode(t, providedTenantIDs, http.MethodDelete, config.TenantFetcherFullURL, expectedStatusCode)
 }
 
 func makeTenantRequestExpectStatusCode(t *testing.T, providedTenantIDs tenantfetcher.Tenant, httpMethod, url string, expectedStatusCode int) {
