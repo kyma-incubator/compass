@@ -291,7 +291,9 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	if err != nil {
 		return nil, err
 	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+	defer func() {
+		r.transact.RollbackUnlessCommitted(ctx, tx)
+	}()
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
