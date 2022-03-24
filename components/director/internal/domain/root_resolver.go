@@ -104,7 +104,10 @@ func NewRootResolver(
 	hydra := hydraClient.New(transport, nil)
 
 	metricsCollector.InstrumentOAuth20HTTPClient(oAuth20HTTPClient)
-	selfRegisterManager := runtime.NewSelfRegisterManager(selfRegConfig, &runtime.CallerProvider{})
+	selfRegisterManager, err := runtime.NewSelfRegisterManager(selfRegConfig, &runtime.CallerProvider{})
+	if err != nil {
+		return nil, err
+	}
 
 	tokenConverter := onetimetoken.NewConverter(oneTimeTokenCfg.LegacyConnectorURL)
 	authConverter := auth.NewConverterWithOTT(tokenConverter)

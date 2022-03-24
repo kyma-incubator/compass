@@ -33,6 +33,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const RegionKey = "region"
+
 var contextParam = mock.MatchedBy(func(ctx context.Context) bool {
 	persistenceOp, err := persistence.FromCtx(ctx)
 	return err == nil && persistenceOp != nil
@@ -48,7 +50,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 	gqlInput := graphql.RuntimeInput{
 		Name:        "Foo",
 		Description: &desc,
-		Labels:      graphql.Labels{"region": "region"},
+		Labels:      graphql.Labels{RegionKey: "region"},
 	}
 	modelInput := model.RuntimeInput{
 		Name:        "Foo",
@@ -57,7 +59,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 	selfRegModelInput := model.RuntimeInput{
 		Name:        "Foo",
 		Description: &desc,
-		Labels:      graphql.Labels{rtmtest.TestDistinguishLabel: "selfRegVal"},
+		Labels:      graphql.Labels{rtmtest.TestDistinguishLabel: "selfRegVal", RegionKey: "region"},
 	}
 	labels := map[string]interface{}{"xsappnameCMPClone": "clone"}
 
@@ -512,7 +514,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
 				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, labelNotFoundErr).Once()
 				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.RegionKey).Return(&model.Label{Value: testRegion}, nil).Once()
+				svc.On("GetLabel", contextParam, "foo", RegionKey).Return(&model.Label{Value: testRegion}, nil).Once()
 				return svc
 			},
 			ScenarioAssignmentFn: UnusedScenarioAssignmentService(),
@@ -569,7 +571,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
 				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, labelNotFoundErr).Once()
 				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.RegionKey).Return(&model.Label{Value: testRegion}, nil).Once()
+				svc.On("GetLabel", contextParam, "foo", RegionKey).Return(&model.Label{Value: testRegion}, nil).Once()
 				return svc
 			},
 			ScenarioAssignmentFn: UnusedScenarioAssignmentService(),
@@ -612,7 +614,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.RegionKey).Return(&model.Label{Value: testRegion}, nil).Once()
+				svc.On("GetLabel", contextParam, "foo", RegionKey).Return(&model.Label{Value: testRegion}, nil).Once()
 				return svc
 			},
 			ScenarioAssignmentFn: UnusedScenarioAssignmentService(),
@@ -643,7 +645,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.RegionKey).Return(nil, testErr).Once()
+				svc.On("GetLabel", contextParam, "foo", RegionKey).Return(nil, testErr).Once()
 				return svc
 			},
 			ScenarioAssignmentFn: UnusedScenarioAssignmentService(),

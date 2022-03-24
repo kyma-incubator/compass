@@ -219,7 +219,12 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 		if didRollback {
 			labelVal := str.CastOrEmpty(convertedIn.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
 			if labelVal != "" {
-				r.cleanupAndLogOnError(ctx, id, in.Labels["region"].(string))
+				label, ok := in.Labels["region"].(string)
+				if !ok {
+					log.C(ctx).Errorf("An error occured while casting region label value to string")
+				} else {
+					r.cleanupAndLogOnError(ctx, id, label)
+				}
 			}
 		}
 	}()
@@ -283,9 +288,7 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		r.transact.RollbackUnlessCommitted(ctx, tx)
-	}()
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -316,8 +319,13 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 			return nil, err
 		}
 
+		regionValue, ok := regionLabel.Value.(string)
+		if !ok {
+			return nil, errors.Wrap(err, "while casting region label value to string")
+		}
+
 		log.C(ctx).Infof("Executing clean-up for self-registered runtime with id %q", runtime.ID)
-		if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, runtime.ID, regionLabel.Value.(string)); err != nil {
+		if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, runtime.ID, regionValue); err != nil {
 			return nil, errors.Wrap(err, "An error occurred during cleanup of self-registered runtime: ")
 		}
 

@@ -16,7 +16,7 @@ type CallerProvider struct{}
 func (c *CallerProvider) GetCaller(config SelfRegConfig, region string) (ExternalSvcCaller, error) {
 	instanceConfig, exists := config.RegionToInstanceConfig[region]
 	if !exists {
-		return nil, errors.New(fmt.Sprintf("missing configuration for region: %s", region))
+		return nil, errors.Errorf("missing configuration for region: %s", region)
 	}
 
 	var credentials authpkg.Credentials

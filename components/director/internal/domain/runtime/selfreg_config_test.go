@@ -37,7 +37,8 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 			},
 		}
 
-		selfRegConfig.MapInstanceConfigs()
+		err := selfRegConfig.MapInstanceConfigs()
+		require.NoError(t, err)
 
 		require.Equal(t, expectedRegionToInstanceConfig["eu-1"], selfRegConfig.RegionToInstanceConfig["eu-1"])
 		require.Equal(t, expectedRegionToInstanceConfig["eu-2"], selfRegConfig.RegionToInstanceConfig["eu-2"])

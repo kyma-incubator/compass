@@ -28,7 +28,7 @@ type ExternalSvcCaller interface {
 	Call(*http.Request) (*http.Response, error)
 }
 
-// ExternalSvcCallerProvider provides ExternalSvcCaller to call external services with given authentication
+// ExternalSvcCallerProvider provides ExternalSvcCaller based on the provided SelfRegConfig and region
 //go:generate mockery --name=ExternalSvcCallerProvider --output=automock --outpkg=automock --case=underscore
 type ExternalSvcCallerProvider interface {
 	GetCaller(SelfRegConfig, string) (ExternalSvcCaller, error)
@@ -43,8 +43,11 @@ type selfRegisterManager struct {
 
 // NewSelfRegisterManager creates a new SelfRegisterManager which is responsible for doing preparation/clean-up during
 // self-registration of runtimes configured with values from cfg.
-func NewSelfRegisterManager(cfg SelfRegConfig, provider ExternalSvcCallerProvider) *selfRegisterManager {
-	return &selfRegisterManager{cfg: cfg, callerProvider: provider}
+func NewSelfRegisterManager(cfg SelfRegConfig, provider ExternalSvcCallerProvider) (*selfRegisterManager, error) {
+	if err := cfg.MapInstanceConfigs(); err != nil {
+		return nil, errors.Wrap(err, "while creating self register manager")
+	}
+	return &selfRegisterManager{cfg: cfg, callerProvider: provider}, nil
 }
 
 // PrepareRuntimeForSelfRegistration executes the prerequisite calls for self-registration in case the runtime
@@ -58,17 +61,17 @@ func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Cont
 	if distinguishLabel, exists := in.Labels[s.cfg.SelfRegisterDistinguishLabelKey]; exists && consumerInfo.Flow.IsCertFlow() { // this means that the runtime is being self-registered
 		regionValue, exists := in.Labels[regionLabel]
 		if !exists {
-			return labels, errors.New(fmt.Sprintf("missing %q label", regionLabel))
+			return labels, errors.Errorf("missing %q label", regionLabel)
 		}
 
 		region, ok := regionValue.(string)
 		if !ok {
-			return labels, errors.New(fmt.Sprintf("region value should be of type %q", "string"))
+			return labels, errors.Errorf("region value should be of type %q", "string")
 		}
 
 		instanceConfig, exists := s.cfg.RegionToInstanceConfig[region]
 		if !exists {
-			return labels, errors.New(fmt.Sprintf("missing configuration for region: %s", region))
+			return labels, errors.Errorf("missing configuration for region: %s", region)
 		}
 
 		request, err := s.createSelfRegPrepRequest(id, consumerInfo.ConsumerID, instanceConfig)
@@ -112,7 +115,7 @@ func (s *selfRegisterManager) CleanupSelfRegisteredRuntime(ctx context.Context, 
 
 	instanceConfig, exists := s.cfg.RegionToInstanceConfig[region]
 	if !exists {
-		return errors.New(fmt.Sprintf("missing configuration for region: %s", region))
+		return errors.Errorf("missing configuration for region: %s", region)
 	}
 
 	request, err := s.createSelfRegDelRequest(runtimeID, instanceConfig)
@@ -130,7 +133,7 @@ func (s *selfRegisterManager) CleanupSelfRegisteredRuntime(ctx context.Context, 
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.New(fmt.Sprintf("received unexpected status code %d while cleaning up self-registered runtime with id %q", resp.StatusCode, runtimeID))
+		return errors.Errorf("received unexpected status code %d while cleaning up self-registered runtime with id %q", resp.StatusCode, runtimeID)
 	}
 
 	log.C(ctx).Infof("Successfully executed clean-up self-registered runtime with id %q", runtimeID)

@@ -3,6 +3,8 @@ package runtime
 import (
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/tidwall/gjson"
 )
@@ -45,20 +47,25 @@ type InstanceConfig struct {
 	Key          string
 }
 
-// MapInstanceConfigs parses the InstanceConfigs json string to map with key: regin_name and value: InstanceConfig for the instance in the region
-func (c *SelfRegConfig) MapInstanceConfigs() {
+// MapInstanceConfigs parses the InstanceConfigs json string to map with key: region name and value: InstanceConfig for the instance in the region
+func (c *SelfRegConfig) MapInstanceConfigs() error {
+	if ok := gjson.Valid(c.InstanceConfigs); ok == false {
+		return errors.New("failed to validate instance configs")
+	}
 	bindingsResult := gjson.Parse(c.InstanceConfigs)
 	bindingsMap := bindingsResult.Map()
 	c.RegionToInstanceConfig = make(map[string]InstanceConfig)
 	for region, config := range bindingsMap {
 		i := InstanceConfig{
-			gjson.Get(config.String(), c.InstanceClientIDPath).String(),
-			gjson.Get(config.String(), c.InstanceClientSecretPath).String(),
-			gjson.Get(config.String(), c.InstanceURLPath).String(),
-			gjson.Get(config.String(), c.InstanceTokenURLPath).String(),
-			gjson.Get(config.String(), c.InstanceCertPath).String(),
-			gjson.Get(config.String(), c.InstanceKeyPath).String(),
+			ClientID:     gjson.Get(config.String(), c.InstanceClientIDPath).String(),
+			ClientSecret: gjson.Get(config.String(), c.InstanceClientSecretPath).String(),
+			URL:          gjson.Get(config.String(), c.InstanceURLPath).String(),
+			TokenURL:     gjson.Get(config.String(), c.InstanceTokenURLPath).String(),
+			Cert:         gjson.Get(config.String(), c.InstanceCertPath).String(),
+			Key:          gjson.Get(config.String(), c.InstanceKeyPath).String(),
 		}
 		c.RegionToInstanceConfig[region] = i
 	}
+
+	return nil
 }

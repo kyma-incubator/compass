@@ -191,7 +191,6 @@ func main() {
 		},
 	}
 	cfg.SelfRegConfig.ClientTimeout = cfg.ClientTimeout
-	cfg.SelfRegConfig.MapInstanceConfigs()
 
 	internalHTTPClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,

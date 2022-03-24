@@ -1,10 +1,7 @@
 package model
 
 // ScenariosKey missing godoc
-const (
-	ScenariosKey = "scenarios"
-	RegionKey    = "region"
-)
+const ScenariosKey = "scenarios"
 
 var (
 	// ScenariosDefaultValue missing godoc

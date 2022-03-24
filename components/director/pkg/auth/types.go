@@ -77,7 +77,7 @@ type OAuthMtlsCredentials struct {
 	AdditionalHeaders map[string]string
 }
 
-// NewOAuthMtlsCredentials creates OAuthMtlsCredentials from SelfRegConfig
+// NewOAuthMtlsCredentials creates OAuthMtlsCredentials based on the provided credentials and url
 func NewOAuthMtlsCredentials(clientID, certificate, key, tokenURL, oauthTokenPath string) (*OAuthMtlsCredentials, error) {
 	mtlsCert, err := cert.ParseCertificate(certificate, key)
 	if err != nil {
