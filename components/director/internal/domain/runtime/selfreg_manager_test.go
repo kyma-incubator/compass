@@ -23,7 +23,7 @@ const (
 	selfRegisterDistinguishLabelKey = "test-distinguish-label-key"
 	distinguishLblVal               = "test-value"
 	testUUID                        = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
-	testRegion                      = "test-region-2"
+	testRegion                      = "test-region"
 	fakeRegion                      = "fake-region"
 	regionLabelKey                  = "region"
 )
@@ -37,16 +37,30 @@ var testConfig = runtime.SelfRegConfig{
 	SelfRegisterNameQueryParam:      "testNameQuery",
 	SelfRegisterTenantQueryParam:    "testTenantQuery",
 	SelfRegisterRequestBodyPattern:  `{"%s":"test"}`,
+	InstanceClientIDPath:            "clientId",
+	InstanceClientSecretPath:        "clientSecret",
+	InstanceURLPath:                 "url",
+	InstanceTokenURLPath:            "tokenUrl",
+	InstanceCertPath:                "clientCert",
+	InstanceKeyPath:                 "clientKey",
+	InstanceConfigs: `{"test-region":{"clientId":"client_id","clientSecret":"client_secret","url":"https://test-url-second.com","tokenUrl":"https://test-token-url-second.com","clientCert":"cert","clientKey":"key"},
+					  "fake-region":{"clientId":"client_id_2","clientSecret":"client_secret_2","url":"https://test-url      -second.com","tokenUrl":"https://test-token-url-second.com","clientCert":"cert2","clientKey":"key2"}}`,
 	RegionToInstanceConfig: map[string]runtime.InstanceConfig{
 		"test-region": {
-			ClientID:     "test-client-id",
-			ClientSecret: "test-client-secret",
-			URL:          "https://test-url.com",
-		},
-		testRegion: {
-			ClientID:     "test-client-id-2",
-			ClientSecret: "test-client-secret-2",
+			ClientID:     "client_id",
+			ClientSecret: "client_secret",
 			URL:          "https://test-url-second.com",
+			TokenURL:     "https://test-token-url-second.com",
+			Cert:         "cert",
+			Key:          "key",
+		},
+		"fake-region": {
+			ClientID:     "client_id_2",
+			ClientSecret: "client_secret_2",
+			URL:          "https://test-url      -second.com",
+			TokenURL:     "https://test-token-url-second.com",
+			Cert:         "cert2",
+			Key:          "key2",
 		},
 	},
 
@@ -72,9 +86,6 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 		testConfig.SelfRegisterLabelKey: rtmtest.ResponseLabelValue,
 	}
 	emptyLabels := make(map[string]interface{})
-
-	fakeConfig := testConfig
-	fakeConfig.RegionToInstanceConfig[fakeRegion] = runtime.InstanceConfig{URL: "https://test-url    .com"}
 
 	ctxWithTokenConsumer := consumer.SaveToContext(context.TODO(), tokenConsumer)
 	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
@@ -151,7 +162,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 		},
 		{
 			Name:           "Error when can't create URL for preparation of self-registered runtime",
-			Config:         fakeConfig,
+			Config:         testConfig,
 			CallerProvider: rtmtest.CallerThatDoesNotGetCalled,
 			Region:         fakeRegion,
 			Input:          model.RuntimeInput{Labels: graphql.Labels{selfRegisterDistinguishLabelKey: "invalid value", regionLabelKey: fakeRegion}},
@@ -203,8 +214,6 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 
 func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 	ctx := context.TODO()
-	fakeConfig := testConfig
-	fakeConfig.RegionToInstanceConfig[fakeRegion] = runtime.InstanceConfig{URL: "https://test-url    .com"}
 
 	testCases := []struct {
 		Name                                string
@@ -237,7 +246,7 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 			Name:                                "Error when can't create URL for cleanup of self-registered runtime",
 			CallerProvider:                      rtmtest.CallerThatDoesNotGetCalled,
 			Region:                              fakeRegion,
-			Config:                              fakeConfig,
+			Config:                              testConfig,
 			SelfRegisteredDistinguishLabelValue: "invalid value",
 			Context:                             ctx,
 			ExpectedErr:                         errors.New("while creating url for cleanup of self-registered runtime"),
