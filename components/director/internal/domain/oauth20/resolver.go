@@ -6,7 +6,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
-	pubModel "github.com/kyma-incubator/compass/components/director/pkg/model"
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -22,8 +22,8 @@ import (
 // SystemAuthService missing godoc
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
-	CreateWithCustomID(ctx context.Context, id string, objectType pubModel.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
-	GetByIDForObject(ctx context.Context, objectType pubModel.SystemAuthReferenceObjectType, authID string) (*pubModel.SystemAuth, error)
+	CreateWithCustomID(ctx context.Context, id string, objectType pkgmodel.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
+	GetByIDForObject(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType, authID string) (*pkgmodel.SystemAuth, error)
 }
 
 // ApplicationService missing godoc
@@ -47,13 +47,13 @@ type IntegrationSystemService interface {
 // SystemAuthConverter missing godoc
 //go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
-	ToGraphQL(model *pubModel.SystemAuth) (graphql.SystemAuth, error)
+	ToGraphQL(model *pkgmodel.SystemAuth) (graphql.SystemAuth, error)
 }
 
 // Service missing godoc
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
 type Service interface {
-	CreateClientCredentials(ctx context.Context, objectType pubModel.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error)
+	CreateClientCredentials(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error)
 	DeleteClientCredentials(ctx context.Context, clientID string) error
 }
 
@@ -75,20 +75,20 @@ func NewResolver(transactioner persistence.Transactioner, svc Service, appSvc Ap
 
 // RequestClientCredentialsForRuntime missing godoc
 func (r *Resolver) RequestClientCredentialsForRuntime(ctx context.Context, id string) (graphql.SystemAuth, error) {
-	return r.generateClientCredentials(ctx, pubModel.RuntimeReference, id)
+	return r.generateClientCredentials(ctx, pkgmodel.RuntimeReference, id)
 }
 
 // RequestClientCredentialsForApplication missing godoc
 func (r *Resolver) RequestClientCredentialsForApplication(ctx context.Context, id string) (graphql.SystemAuth, error) {
-	return r.generateClientCredentials(ctx, pubModel.ApplicationReference, id)
+	return r.generateClientCredentials(ctx, pkgmodel.ApplicationReference, id)
 }
 
 // RequestClientCredentialsForIntegrationSystem missing godoc
 func (r *Resolver) RequestClientCredentialsForIntegrationSystem(ctx context.Context, id string) (graphql.SystemAuth, error) {
-	return r.generateClientCredentials(ctx, pubModel.IntegrationSystemReference, id)
+	return r.generateClientCredentials(ctx, pkgmodel.IntegrationSystemReference, id)
 }
 
-func (r *Resolver) generateClientCredentials(ctx context.Context, objType pubModel.SystemAuthReferenceObjectType, objID string) (graphql.SystemAuth, error) {
+func (r *Resolver) generateClientCredentials(ctx context.Context, objType pkgmodel.SystemAuthReferenceObjectType, objID string) (graphql.SystemAuth, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -153,13 +153,13 @@ func (r *Resolver) generateClientCredentials(ctx context.Context, objType pubMod
 	return r.systemAuthConv.ToGraphQL(sysAuth)
 }
 
-func (r *Resolver) checkObjectExist(ctx context.Context, objType pubModel.SystemAuthReferenceObjectType, objID string) (bool, error) {
+func (r *Resolver) checkObjectExist(ctx context.Context, objType pkgmodel.SystemAuthReferenceObjectType, objID string) (bool, error) {
 	switch objType {
-	case pubModel.RuntimeReference:
+	case pkgmodel.RuntimeReference:
 		return r.rtmSvc.Exist(ctx, objID)
-	case pubModel.ApplicationReference:
+	case pkgmodel.ApplicationReference:
 		return r.appSvc.Exist(ctx, objID)
-	case pubModel.IntegrationSystemReference:
+	case pkgmodel.IntegrationSystemReference:
 		return r.isSvc.Exists(ctx, objID)
 	}
 

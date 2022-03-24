@@ -6,7 +6,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	pubModel "github.com/kyma-incubator/compass/components/director/pkg/model"
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -16,13 +16,13 @@ import (
 // SystemAuthService missing godoc
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
-	GetByIDForObject(ctx context.Context, objectType pubModel.SystemAuthReferenceObjectType, authID string) (*pubModel.SystemAuth, error)
-	GetGlobal(ctx context.Context, id string) (*pubModel.SystemAuth, error)
-	GetByToken(ctx context.Context, token string) (*pubModel.SystemAuth, error)
-	DeleteByIDForObject(ctx context.Context, objectType pubModel.SystemAuthReferenceObjectType, authID string) error
-	Update(ctx context.Context, item *pubModel.SystemAuth) error
-	UpdateValue(ctx context.Context, id string, item *model.Auth) (*pubModel.SystemAuth, error)
-	InvalidateToken(ctx context.Context, id string) (*pubModel.SystemAuth, error)
+	GetByIDForObject(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType, authID string) (*pkgmodel.SystemAuth, error)
+	GetGlobal(ctx context.Context, id string) (*pkgmodel.SystemAuth, error)
+	GetByToken(ctx context.Context, token string) (*pkgmodel.SystemAuth, error)
+	DeleteByIDForObject(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType, authID string) error
+	Update(ctx context.Context, item *pkgmodel.SystemAuth) error
+	UpdateValue(ctx context.Context, id string, item *model.Auth) (*pkgmodel.SystemAuth, error)
+	InvalidateToken(ctx context.Context, id string) (*pkgmodel.SystemAuth, error)
 }
 
 // OAuth20Service missing godoc
@@ -34,13 +34,13 @@ type OAuth20Service interface {
 // OneTimeTokenService missing godoc
 //go:generate mockery --name=OneTimeTokenService --output=automock --outpkg=automock --case=underscore
 type OneTimeTokenService interface {
-	IsTokenValid(systemAuth *pubModel.SystemAuth) (bool, error)
+	IsTokenValid(systemAuth *pkgmodel.SystemAuth) (bool, error)
 }
 
 // SystemAuthConverter missing godoc
 //go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
-	ToGraphQL(model *pubModel.SystemAuth) (graphql.SystemAuth, error)
+	ToGraphQL(model *pkgmodel.SystemAuth) (graphql.SystemAuth, error)
 }
 
 // Resolver missing godoc
@@ -59,7 +59,7 @@ func NewResolver(transact persistence.Transactioner, svc SystemAuthService, oAut
 }
 
 // GenericDeleteSystemAuth missing godoc
-func (r *Resolver) GenericDeleteSystemAuth(objectType pubModel.SystemAuthReferenceObjectType) func(ctx context.Context, id string) (graphql.SystemAuth, error) {
+func (r *Resolver) GenericDeleteSystemAuth(objectType pkgmodel.SystemAuthReferenceObjectType) func(ctx context.Context, id string) (graphql.SystemAuth, error) {
 	return func(ctx context.Context, id string) (graphql.SystemAuth, error) {
 		tx, err := r.transact.Begin()
 		if err != nil {

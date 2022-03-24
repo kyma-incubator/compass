@@ -5,7 +5,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
-	pubModel "github.com/kyma-incubator/compass/components/director/pkg/model"
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/pkg/errors"
 
@@ -58,20 +58,20 @@ func fixGQLRuntimeSystemAuth(id string, auth *graphql.Auth, refObjID string) gra
 	}
 }
 
-func fixModelSystemAuth(id string, objectType pubModel.SystemAuthReferenceObjectType, objectID string, auth *model.Auth) *pubModel.SystemAuth {
-	systemAuth := pubModel.SystemAuth{
+func fixModelSystemAuth(id string, objectType pkgmodel.SystemAuthReferenceObjectType, objectID string, auth *model.Auth) *pkgmodel.SystemAuth {
+	systemAuth := pkgmodel.SystemAuth{
 		ID:    id,
 		Value: auth,
 	}
 
 	switch objectType {
-	case pubModel.ApplicationReference:
+	case pkgmodel.ApplicationReference:
 		systemAuth.AppID = &objectID
 		systemAuth.TenantID = &testTenant
-	case pubModel.RuntimeReference:
+	case pkgmodel.RuntimeReference:
 		systemAuth.RuntimeID = &objectID
 		systemAuth.TenantID = &testTenant
-	case pubModel.IntegrationSystemReference:
+	case pkgmodel.IntegrationSystemReference:
 		systemAuth.IntegrationSystemID = &objectID
 		systemAuth.TenantID = nil
 	}
@@ -181,19 +181,19 @@ func fixGQLAuthInput() *graphql.AuthInput {
 	}
 }
 
-func fixEntity(id string, objectType pubModel.SystemAuthReferenceObjectType, objectID string, withAuth bool) systemauth.Entity {
+func fixEntity(id string, objectType pkgmodel.SystemAuthReferenceObjectType, objectID string, withAuth bool) systemauth.Entity {
 	out := systemauth.Entity{
 		ID: id,
 	}
 
 	switch objectType {
-	case pubModel.ApplicationReference:
+	case pkgmodel.ApplicationReference:
 		out.AppID = repo.NewNullableString(&objectID)
 		out.TenantID = repo.NewNullableString(&testTenant)
-	case pubModel.RuntimeReference:
+	case pkgmodel.RuntimeReference:
 		out.RuntimeID = repo.NewNullableString(&objectID)
 		out.TenantID = repo.NewNullableString(&testTenant)
-	case pubModel.IntegrationSystemReference:
+	case pkgmodel.IntegrationSystemReference:
 		out.IntegrationSystemID = repo.NewNullableString(&objectID)
 		out.TenantID = repo.NewNullableString(nil)
 	}

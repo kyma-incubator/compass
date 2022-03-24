@@ -4,7 +4,7 @@ import (
 	"database/sql/driver"
 	"errors"
 
-	pubModel "github.com/kyma-incubator/compass/components/director/pkg/model"
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
@@ -157,8 +157,8 @@ func fixGQLAuth() *graphql.Auth {
 	}
 }
 
-func fixModelSystemAuth(id, intSysID string, auth *model.Auth) pubModel.SystemAuth {
-	return pubModel.SystemAuth{
+func fixModelSystemAuth(id, intSysID string, auth *model.Auth) pkgmodel.SystemAuth {
+	return pkgmodel.SystemAuth{
 		ID:                  id,
 		TenantID:            nil,
 		IntegrationSystemID: &intSysID,

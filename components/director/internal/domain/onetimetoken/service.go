@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	pubModel "github.com/kyma-incubator/compass/components/director/pkg/model"
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
@@ -26,10 +26,10 @@ import (
 // SystemAuthService missing godoc
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
-	Create(ctx context.Context, objectType pubModel.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
-	GetByToken(ctx context.Context, token string) (*pubModel.SystemAuth, error)
-	GetGlobal(ctx context.Context, authID string) (*pubModel.SystemAuth, error)
-	Update(ctx context.Context, item *pubModel.SystemAuth) error
+	Create(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
+	GetByToken(ctx context.Context, token string) (*pkgmodel.SystemAuth, error)
+	GetGlobal(ctx context.Context, authID string) (*pkgmodel.SystemAuth, error)
+	Update(ctx context.Context, item *pkgmodel.SystemAuth) error
 }
 
 // ApplicationConverter missing godoc
@@ -95,7 +95,7 @@ func NewTokenService(sysAuthSvc SystemAuthService, appSvc ApplicationService, ap
 }
 
 // GenerateOneTimeToken missing godoc
-func (s *service) GenerateOneTimeToken(ctx context.Context, objectID string, tokenType pubModel.SystemAuthReferenceObjectType) (*model.OneTimeToken, error) {
+func (s *service) GenerateOneTimeToken(ctx context.Context, objectID string, tokenType pkgmodel.SystemAuthReferenceObjectType) (*model.OneTimeToken, error) {
 	token, suggestedToken, err := s.getToken(ctx, objectID, tokenType)
 	if err != nil {
 		return nil, err
@@ -140,8 +140,8 @@ func (s *service) RegenerateOneTimeToken(ctx context.Context, sysAuthID string) 
 	return oneTimeToken, nil
 }
 
-func (s *service) getToken(ctx context.Context, objectID string, tokenType pubModel.SystemAuthReferenceObjectType) (*model.OneTimeToken, string, error) {
-	if tokenType == pubModel.ApplicationReference {
+func (s *service) getToken(ctx context.Context, objectID string, tokenType pkgmodel.SystemAuthReferenceObjectType) (*model.OneTimeToken, string, error) {
+	if tokenType == pkgmodel.ApplicationReference {
 		return s.getAppToken(ctx, objectID)
 	} else {
 		token, err := s.createToken(tokenType, nil)
@@ -149,7 +149,7 @@ func (s *service) getToken(ctx context.Context, objectID string, tokenType pubMo
 	}
 }
 
-func (s *service) createToken(tokenType pubModel.SystemAuthReferenceObjectType, oneTimeToken *model.OneTimeToken) (*model.OneTimeToken, error) {
+func (s *service) createToken(tokenType pkgmodel.SystemAuthReferenceObjectType, oneTimeToken *model.OneTimeToken) (*model.OneTimeToken, error) {
 	var err error
 	if oneTimeToken == nil {
 		oneTimeToken, err = s.getNewToken()
@@ -159,9 +159,9 @@ func (s *service) createToken(tokenType pubModel.SystemAuthReferenceObjectType, 
 	}
 
 	switch tokenType {
-	case pubModel.ApplicationReference:
+	case pkgmodel.ApplicationReference:
 		oneTimeToken.Type = tokens.ApplicationToken
-	case pubModel.RuntimeReference:
+	case pkgmodel.RuntimeReference:
 		oneTimeToken.Type = tokens.RuntimeToken
 	}
 	oneTimeToken.CreatedAt = s.timeService.Now()
@@ -176,7 +176,7 @@ func (s *service) createToken(tokenType pubModel.SystemAuthReferenceObjectType, 
 	return oneTimeToken, nil
 }
 
-func (s *service) saveToken(ctx context.Context, objectID string, tokenType pubModel.SystemAuthReferenceObjectType, oneTimeToken *model.OneTimeToken) error {
+func (s *service) saveToken(ctx context.Context, objectID string, tokenType pkgmodel.SystemAuthReferenceObjectType, oneTimeToken *model.OneTimeToken) error {
 	if _, err := s.sysAuthSvc.Create(ctx, tokenType, objectID, &model.AuthInput{OneTimeToken: oneTimeToken}); err != nil {
 		return errors.Wrap(err, "while creating System Auth")
 	}
@@ -203,7 +203,7 @@ func (s *service) getAppToken(ctx context.Context, id string) (*model.OneTimeTok
 		}
 	}
 
-	oneTimeToken, err = s.createToken(pubModel.ApplicationReference, oneTimeToken)
+	oneTimeToken, err = s.createToken(pkgmodel.ApplicationReference, oneTimeToken)
 	if err != nil {
 		return nil, "", err
 	}
@@ -355,7 +355,7 @@ func (s *service) getExpirationDurationForToken(tokenType tokens.TokenType) (tim
 	}
 }
 
-func (s *service) IsTokenValid(systemAuth *pubModel.SystemAuth) (bool, error) {
+func (s *service) IsTokenValid(systemAuth *pkgmodel.SystemAuth) (bool, error) {
 	if systemAuth.Value == nil {
 		return false, errors.Errorf("System Auth value for auth id %s is missing", systemAuth.ID)
 	}

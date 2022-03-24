@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	pubModel "github.com/kyma-incubator/compass/components/director/pkg/model"
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/google/uuid"
 
@@ -385,7 +385,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, pubModel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -432,7 +432,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, pubModel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -479,7 +479,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, pubModel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -590,7 +590,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, pubModel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -627,7 +627,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, pubModel.RuntimeReference, modelRuntime.ID).Return(nil, testErr)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(nil, testErr)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -777,7 +777,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, pubModel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -815,7 +815,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, pubModel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -855,7 +855,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, pubModel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -898,7 +898,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, pubModel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -940,7 +940,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, pubModel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -983,7 +983,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, pubModel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -1027,7 +1027,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, pubModel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -1082,7 +1082,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, pubModel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -1140,7 +1140,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, pubModel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -1190,7 +1190,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, pubModel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -1240,7 +1240,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, pubModel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -2012,7 +2012,7 @@ func TestResolver_Auths(t *testing.T) {
 
 	parentRuntime := fixGQLRuntime(t, "foo", "bar", "baz")
 
-	modelSysAuths := []pubModel.SystemAuth{
+	modelSysAuths := []pkgmodel.SystemAuth{
 		fixModelSystemAuth("bar", tnt, parentRuntime.ID, fixModelAuth()),
 		fixModelSystemAuth("baz", tnt, parentRuntime.ID, fixModelAuth()),
 		fixModelSystemAuth("faz", tnt, parentRuntime.ID, fixModelAuth()),
@@ -2041,7 +2041,7 @@ func TestResolver_Auths(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			SysAuthSvcFn: func() *automock.SystemAuthService {
 				sysAuthSvc := &automock.SystemAuthService{}
-				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), pubModel.RuntimeReference, parentRuntime.ID).Return(modelSysAuths, nil).Once()
+				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), pkgmodel.RuntimeReference, parentRuntime.ID).Return(modelSysAuths, nil).Once()
 				return sysAuthSvc
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
@@ -2060,7 +2060,7 @@ func TestResolver_Auths(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			SysAuthSvcFn: func() *automock.SystemAuthService {
 				sysAuthSvc := &automock.SystemAuthService{}
-				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), pubModel.RuntimeReference, parentRuntime.ID).Return(nil, testErr).Once()
+				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), pkgmodel.RuntimeReference, parentRuntime.ID).Return(nil, testErr).Once()
 				return sysAuthSvc
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
@@ -2091,7 +2091,7 @@ func TestResolver_Auths(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			SysAuthSvcFn: func() *automock.SystemAuthService {
 				sysAuthSvc := &automock.SystemAuthService{}
-				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), pubModel.RuntimeReference, parentRuntime.ID).Return(modelSysAuths, nil).Once()
+				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), pkgmodel.RuntimeReference, parentRuntime.ID).Return(modelSysAuths, nil).Once()
 				return sysAuthSvc
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
@@ -2269,8 +2269,8 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 	})
 }
 
-func fixOAuths() []pubModel.SystemAuth {
-	return []pubModel.SystemAuth{
+func fixOAuths() []pkgmodel.SystemAuth {
+	return []pkgmodel.SystemAuth{
 		{
 			ID:       "foo",
 			TenantID: str.Ptr("foo"),

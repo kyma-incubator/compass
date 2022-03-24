@@ -7,7 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	pubModel "github.com/kyma-incubator/compass/components/director/pkg/model"
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
@@ -33,7 +33,7 @@ func NewConverter(authConverter AuthConverter) *converter {
 }
 
 // ToGraphQL missing godoc
-func (c *converter) ToGraphQL(in *pubModel.SystemAuth) (graphql.SystemAuth, error) {
+func (c *converter) ToGraphQL(in *pkgmodel.SystemAuth) (graphql.SystemAuth, error) {
 	if in == nil {
 		return nil, nil
 	}
@@ -52,7 +52,7 @@ func (c *converter) ToGraphQL(in *pubModel.SystemAuth) (graphql.SystemAuth, erro
 	systemAuthTypeRuntime := graphql.SystemAuthReferenceTypeRuntime
 	systemAuthTypeIntSystem := graphql.SystemAuthReferenceTypeIntegrationSystem
 	switch objectType {
-	case pubModel.ApplicationReference:
+	case pkgmodel.ApplicationReference:
 		return &graphql.AppSystemAuth{
 			ID:                in.ID,
 			Auth:              auth,
@@ -60,7 +60,7 @@ func (c *converter) ToGraphQL(in *pubModel.SystemAuth) (graphql.SystemAuth, erro
 			TenantID:          in.TenantID,
 			ReferenceObjectID: in.AppID,
 		}, nil
-	case pubModel.IntegrationSystemReference:
+	case pkgmodel.IntegrationSystemReference:
 		return &graphql.IntSysSystemAuth{
 			ID:                in.ID,
 			Auth:              auth,
@@ -68,7 +68,7 @@ func (c *converter) ToGraphQL(in *pubModel.SystemAuth) (graphql.SystemAuth, erro
 			TenantID:          in.TenantID,
 			ReferenceObjectID: in.IntegrationSystemID,
 		}, nil
-	case pubModel.RuntimeReference:
+	case pkgmodel.RuntimeReference:
 		return &graphql.RuntimeSystemAuth{
 			ID:                in.ID,
 			Auth:              auth,
@@ -82,7 +82,7 @@ func (c *converter) ToGraphQL(in *pubModel.SystemAuth) (graphql.SystemAuth, erro
 }
 
 // ToEntity missing godoc
-func (c *converter) ToEntity(in pubModel.SystemAuth) (Entity, error) {
+func (c *converter) ToEntity(in pkgmodel.SystemAuth) (Entity, error) {
 	value := sql.NullString{}
 	if in.Value != nil {
 		valueMarshalled, err := json.Marshal(in.Value)
@@ -104,18 +104,18 @@ func (c *converter) ToEntity(in pubModel.SystemAuth) (Entity, error) {
 }
 
 // FromEntity missing godoc
-func (c *converter) FromEntity(in Entity) (pubModel.SystemAuth, error) {
+func (c *converter) FromEntity(in Entity) (pkgmodel.SystemAuth, error) {
 	var value *model.Auth
 	if in.Value.Valid {
 		var tmpAuth model.Auth
 		err := json.Unmarshal([]byte(in.Value.String), &tmpAuth)
 		if err != nil {
-			return pubModel.SystemAuth{}, err
+			return pkgmodel.SystemAuth{}, err
 		}
 		value = &tmpAuth
 	}
 
-	return pubModel.SystemAuth{
+	return pkgmodel.SystemAuth{
 		ID:                  in.ID,
 		TenantID:            repo.StringPtrFromNullableString(in.TenantID),
 		AppID:               repo.StringPtrFromNullableString(in.AppID),

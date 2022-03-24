@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	pubModel "github.com/kyma-incubator/compass/components/director/pkg/model"
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
@@ -69,8 +69,8 @@ type WebhookService interface {
 // SystemAuthService missing godoc
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
-	ListForObject(ctx context.Context, objectType pubModel.SystemAuthReferenceObjectType, objectID string) ([]pubModel.SystemAuth, error)
-	DeleteMultipleByIDForObject(ctx context.Context, systemAuths []pubModel.SystemAuth) error
+	ListForObject(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType, objectID string) ([]pkgmodel.SystemAuth, error)
+	DeleteMultipleByIDForObject(ctx context.Context, systemAuths []pkgmodel.SystemAuth) error
 }
 
 // WebhookConverter missing godoc
@@ -85,13 +85,13 @@ type WebhookConverter interface {
 // SystemAuthConverter missing godoc
 //go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
-	ToGraphQL(in *pubModel.SystemAuth) (graphql.SystemAuth, error)
+	ToGraphQL(in *pkgmodel.SystemAuth) (graphql.SystemAuth, error)
 }
 
 // OAuth20Service missing godoc
 //go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore
 type OAuth20Service interface {
-	DeleteMultipleClientCredentials(ctx context.Context, auths []pubModel.SystemAuth) error
+	DeleteMultipleClientCredentials(ctx context.Context, auths []pkgmodel.SystemAuth) error
 }
 
 // RuntimeService missing godoc
@@ -120,7 +120,7 @@ type BundleConverter interface {
 // OneTimeTokenService missing godoc
 //go:generate mockery --name=OneTimeTokenService --output=automock --outpkg=automock --case=underscore
 type OneTimeTokenService interface {
-	IsTokenValid(systemAuth *pubModel.SystemAuth) (bool, error)
+	IsTokenValid(systemAuth *pkgmodel.SystemAuth) (bool, error)
 }
 
 // Resolver missing godoc
@@ -354,7 +354,7 @@ func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graph
 		return nil, err
 	}
 
-	auths, err := r.sysAuthSvc.ListForObject(ctx, pubModel.ApplicationReference, app.ID)
+	auths, err := r.sysAuthSvc.ListForObject(ctx, pkgmodel.ApplicationReference, app.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -387,7 +387,7 @@ func (r *Resolver) UnpairApplication(ctx context.Context, id string) (*graphql.A
 		return nil, err
 	}
 
-	auths, err := r.sysAuthSvc.ListForObject(ctx, pubModel.ApplicationReference, app.ID)
+	auths, err := r.sysAuthSvc.ListForObject(ctx, pkgmodel.ApplicationReference, app.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -557,7 +557,7 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	sysAuths, err := r.sysAuthSvc.ListForObject(ctx, pubModel.ApplicationReference, obj.ID)
+	sysAuths, err := r.sysAuthSvc.ListForObject(ctx, pkgmodel.ApplicationReference, obj.ID)
 	if err != nil {
 		return nil, err
 	}

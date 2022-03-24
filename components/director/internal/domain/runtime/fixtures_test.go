@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	pubModel "github.com/kyma-incubator/compass/components/director/pkg/model"
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -245,8 +245,8 @@ func fixGQLAuth() *graphql.Auth {
 	}
 }
 
-func fixModelSystemAuth(id, tenant, runtimeID string, auth *model.Auth) pubModel.SystemAuth {
-	return pubModel.SystemAuth{
+func fixModelSystemAuth(id, tenant, runtimeID string, auth *model.Auth) pkgmodel.SystemAuth {
+	return pkgmodel.SystemAuth{
 		ID:        id,
 		TenantID:  &tenant,
 		RuntimeID: &runtimeID,

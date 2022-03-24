@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	pubModel "github.com/kyma-incubator/compass/components/director/pkg/model"
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
@@ -74,7 +74,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		connectorURL              string
 		shouldHaveError           bool
 		errorMsg                  string
-		tokenType                 pubModel.SystemAuthReferenceObjectType
+		tokenType                 pkgmodel.SystemAuthReferenceObjectType
 		expectedToken             interface{}
 		intSystemToAdapterMapping map[string]string
 		systemAuthSvc             func() onetimetoken.SystemAuthService
@@ -90,7 +90,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			ctx:         ctx,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", ctx, pubModel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctx, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
@@ -116,7 +116,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			shouldHaveError:           false,
 			objectID:                  appID,
-			tokenType:                 pubModel.ApplicationReference,
+			tokenType:                 pkgmodel.ApplicationReference,
 			connectorURL:              connectorURL,
 			intSystemToAdapterMapping: nil,
 			timeService:               directorTime.NewService(),
@@ -127,7 +127,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			ctx:         contextWithEnabledSuggestion,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", contextWithEnabledSuggestion, pubModel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", contextWithEnabledSuggestion, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
@@ -154,7 +154,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			shouldHaveError:           false,
 			objectID:                  appID,
-			tokenType:                 pubModel.ApplicationReference,
+			tokenType:                 pkgmodel.ApplicationReference,
 			connectorURL:              connectorURL,
 			intSystemToAdapterMapping: nil,
 			timeService:               &Timer{},
@@ -177,7 +177,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			ctx:         contextWithEnabledSuggestion,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", contextWithEnabledSuggestion, pubModel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", contextWithEnabledSuggestion, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
@@ -204,7 +204,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			shouldHaveError:           false,
 			objectID:                  appID,
-			tokenType:                 pubModel.ApplicationReference,
+			tokenType:                 pkgmodel.ApplicationReference,
 			connectorURL:              connectorURL,
 			intSystemToAdapterMapping: nil,
 			timeService:               directorTime.NewService(),
@@ -235,7 +235,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			shouldHaveError:           true,
 			objectID:                  appID,
-			tokenType:                 pubModel.ApplicationReference,
+			tokenType:                 pkgmodel.ApplicationReference,
 			errorMsg:                  "not found",
 			connectorURL:              connectorURL,
 			intSystemToAdapterMapping: nil,
@@ -245,7 +245,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			ctx:         ctx,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", ctx, pubModel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctx, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", errors.New("db error"))
 				return systemAuthSvc
@@ -271,7 +271,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			shouldHaveError:           true,
 			objectID:                  appID,
-			tokenType:                 pubModel.ApplicationReference,
+			tokenType:                 pkgmodel.ApplicationReference,
 			errorMsg:                  "db error",
 			connectorURL:              connectorURL,
 			intSystemToAdapterMapping: nil,
@@ -282,7 +282,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			ctx:         ctx,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", ctx, pubModel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctx, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
@@ -341,7 +341,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			shouldHaveError: false,
 			objectID:        appID,
-			tokenType:       pubModel.ApplicationReference,
+			tokenType:       pkgmodel.ApplicationReference,
 			expectedToken:   tokenValue,
 			connectorURL:    connectorURL,
 			intSystemToAdapterMapping: map[string]string{
@@ -354,7 +354,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			ctx:         ctxWithoutExternalTenant,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", ctxWithoutExternalTenant, pubModel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctxWithoutExternalTenant, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
@@ -414,7 +414,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			shouldHaveError: false,
 			objectID:        appID,
-			tokenType:       pubModel.ApplicationReference,
+			tokenType:       pkgmodel.ApplicationReference,
 			expectedToken:   tokenValue,
 			connectorURL:    connectorURL,
 			intSystemToAdapterMapping: map[string]string{
@@ -427,7 +427,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			ctx:         contextWithEnabledSuggestion,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", contextWithEnabledSuggestion, pubModel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", contextWithEnabledSuggestion, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
@@ -486,7 +486,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			shouldHaveError: false,
 			objectID:        appID,
-			tokenType:       pubModel.ApplicationReference,
+			tokenType:       pkgmodel.ApplicationReference,
 			expectedToken:   tokenValue,
 			connectorURL:    connectorURL,
 			intSystemToAdapterMapping: map[string]string{
@@ -499,7 +499,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			ctx:         ctx,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", ctx, pubModel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctx, pkgmodel.ApplicationReference, appID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
@@ -527,7 +527,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			shouldHaveError:           false,
 			objectID:                  appID,
-			tokenType:                 pubModel.ApplicationReference,
+			tokenType:                 pkgmodel.ApplicationReference,
 			expectedToken:             tokenValue,
 			connectorURL:              connectorURL,
 			intSystemToAdapterMapping: map[string]string{},
@@ -594,7 +594,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			shouldHaveError: true,
 			objectID:        appID,
-			tokenType:       pubModel.ApplicationReference,
+			tokenType:       pkgmodel.ApplicationReference,
 			errorMsg:        "wrong status code",
 			connectorURL:    connectorURL,
 			intSystemToAdapterMapping: map[string]string{
@@ -632,7 +632,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			shouldHaveError: true,
 			objectID:        appID,
-			tokenType:       pubModel.ApplicationReference,
+			tokenType:       pkgmodel.ApplicationReference,
 			errorMsg:        "cannot read tenant from context",
 			connectorURL:    connectorURL,
 			intSystemToAdapterMapping: map[string]string{
@@ -671,7 +671,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			shouldHaveError: true,
 			objectID:        appID,
-			tokenType:       pubModel.ApplicationReference,
+			tokenType:       pkgmodel.ApplicationReference,
 			errorMsg:        "some-error",
 			connectorURL:    connectorURL,
 			intSystemToAdapterMapping: map[string]string{
@@ -705,7 +705,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			shouldHaveError:           true,
 			objectID:                  appID,
-			tokenType:                 pubModel.ApplicationReference,
+			tokenType:                 pkgmodel.ApplicationReference,
 			errorMsg:                  "error generating token",
 			connectorURL:              connectorURL,
 			intSystemToAdapterMapping: nil,
@@ -715,7 +715,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			ctx:         ctx,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", ctx, pubModel.RuntimeReference, runtimeID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctx, pkgmodel.RuntimeReference, runtimeID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", nil)
 				return systemAuthSvc
@@ -739,7 +739,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			shouldHaveError:           false,
 			objectID:                  runtimeID,
-			tokenType:                 pubModel.RuntimeReference,
+			tokenType:                 pkgmodel.RuntimeReference,
 			expectedToken:             tokenValue,
 			connectorURL:              connectorURL,
 			intSystemToAdapterMapping: nil,
@@ -770,7 +770,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			shouldHaveError:           true,
 			objectID:                  runtimeID,
-			tokenType:                 pubModel.RuntimeReference,
+			tokenType:                 pkgmodel.RuntimeReference,
 			errorMsg:                  "error generating token",
 			connectorURL:              connectorURL,
 			intSystemToAdapterMapping: nil,
@@ -780,7 +780,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			ctx:         ctx,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				systemAuthSvc := &automock.SystemAuthService{}
-				systemAuthSvc.On("Create", ctx, pubModel.RuntimeReference, runtimeID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
+				systemAuthSvc.On("Create", ctx, pkgmodel.RuntimeReference, runtimeID, mock.MatchedBy(func(authInput *model.AuthInput) bool {
 					return authInput.OneTimeToken.Token == tokenValue
 				})).Return("", errors.New("db error"))
 				return systemAuthSvc
@@ -804,7 +804,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			shouldHaveError:           true,
 			objectID:                  runtimeID,
-			tokenType:                 pubModel.RuntimeReference,
+			tokenType:                 pkgmodel.RuntimeReference,
 			errorMsg:                  "db error",
 			connectorURL:              connectorURL,
 			intSystemToAdapterMapping: nil,
@@ -835,7 +835,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				assert.Empty(t, token)
 			} else {
 				assert.NoError(t, err)
-				if test.tokenType == pubModel.ApplicationReference {
+				if test.tokenType == pkgmodel.ApplicationReference {
 					assert.Equal(t, tokens.ApplicationToken, token.Type)
 				} else {
 					assert.Equal(t, tokens.RuntimeToken, token.Type)
@@ -903,7 +903,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		tokenGenerator := &automock.TokenGenerator{}
 		timeService := &timeMocks.Service{}
 		intSystemToAdapterMapping := make(map[string]string)
-		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&pubModel.SystemAuth{RuntimeID: &runtimeID, Value: &model.Auth{}}, nil)
+		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&pkgmodel.SystemAuth{RuntimeID: &runtimeID, Value: &model.Auth{}}, nil)
 		defer sysAuthSvc.AssertExpectations(t)
 		tokenGenerator.On("NewToken").Return("", errors.New("error while token generating"))
 		defer tokenGenerator.AssertExpectations(t)
@@ -929,7 +929,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		intSystemToAdapterMapping := make(map[string]string)
 
 		timeService.On("Now").Return(time.Now())
-		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&pubModel.SystemAuth{RuntimeID: &runtimeID, Value: &model.Auth{}}, nil)
+		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&pkgmodel.SystemAuth{RuntimeID: &runtimeID, Value: &model.Auth{}}, nil)
 		sysAuthSvc.On("Update", context.Background(), mock.Anything).Return(errors.New(updateErrMsg))
 		defer sysAuthSvc.AssertExpectations(t)
 
@@ -957,7 +957,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		now := time.Now()
 		timeService.On("Now").Return(now)
 
-		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&pubModel.SystemAuth{RuntimeID: &runtimeID}, nil)
+		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&pkgmodel.SystemAuth{RuntimeID: &runtimeID}, nil)
 		sysAuthSvc.On("Update", context.Background(), mock.Anything).Return(nil)
 		defer sysAuthSvc.AssertExpectations(t)
 
@@ -993,7 +993,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		now := time.Now()
 		timeService.On("Now").Return(now)
 
-		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&pubModel.SystemAuth{RuntimeID: &runtimeID, Value: &model.Auth{}}, nil)
+		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&pkgmodel.SystemAuth{RuntimeID: &runtimeID, Value: &model.Auth{}}, nil)
 		sysAuthSvc.On("Update", context.Background(), mock.Anything).Return(nil)
 		defer sysAuthSvc.AssertExpectations(t)
 
@@ -1049,7 +1049,7 @@ func TestIsTokenValid(t *testing.T) {
 	tokenGenerator := &automock.TokenGenerator{}
 	systemAuthSvc := &automock.SystemAuthService{}
 
-	validOTTSystemAuth := &pubModel.SystemAuth{
+	validOTTSystemAuth := &pkgmodel.SystemAuth{
 		ID:                  "id",
 		TenantID:            nil,
 		AppID:               nil,
@@ -1073,7 +1073,7 @@ func TestIsTokenValid(t *testing.T) {
 
 	testCases := []struct {
 		description string
-		systemAuth  *pubModel.SystemAuth
+		systemAuth  *pkgmodel.SystemAuth
 
 		shouldHaveError bool
 		errorMsg        string
@@ -1085,7 +1085,7 @@ func TestIsTokenValid(t *testing.T) {
 		},
 		{
 			description: "Should return false with error when the system auth value is nil",
-			systemAuth: &pubModel.SystemAuth{
+			systemAuth: &pkgmodel.SystemAuth{
 				ID:                  "123",
 				TenantID:            nil,
 				AppID:               nil,
@@ -1098,7 +1098,7 @@ func TestIsTokenValid(t *testing.T) {
 		},
 		{
 			description: "Should return false with error when the system auth value is nil",
-			systemAuth: &pubModel.SystemAuth{
+			systemAuth: &pkgmodel.SystemAuth{
 				ID: "123",
 			},
 			shouldHaveError: true,
@@ -1106,7 +1106,7 @@ func TestIsTokenValid(t *testing.T) {
 		},
 		{
 			description: "Should return false with error when the system auth OTT is nil",
-			systemAuth: &pubModel.SystemAuth{
+			systemAuth: &pkgmodel.SystemAuth{
 				ID:    "123",
 				Value: &model.Auth{},
 			},
@@ -1115,7 +1115,7 @@ func TestIsTokenValid(t *testing.T) {
 		},
 		{
 			description: "Should return false when the system auth OTT is used",
-			systemAuth: &pubModel.SystemAuth{
+			systemAuth: &pkgmodel.SystemAuth{
 				ID: "234",
 				Value: &model.Auth{
 					OneTimeToken: &model.OneTimeToken{
@@ -1129,7 +1129,7 @@ func TestIsTokenValid(t *testing.T) {
 		},
 		{
 			description: "Should return false when the system auth OTT is expired",
-			systemAuth: &pubModel.SystemAuth{
+			systemAuth: &pkgmodel.SystemAuth{
 				ID: "234",
 				Value: &model.Auth{
 					OneTimeToken: &model.OneTimeToken{
@@ -1144,7 +1144,7 @@ func TestIsTokenValid(t *testing.T) {
 		},
 		{
 			description: "Should return false when the system auth OTT has no OTT type",
-			systemAuth: &pubModel.SystemAuth{
+			systemAuth: &pkgmodel.SystemAuth{
 				ID: "234",
 				Value: &model.Auth{
 					OneTimeToken: &model.OneTimeToken{
