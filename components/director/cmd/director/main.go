@@ -10,6 +10,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	cfg "github.com/kyma-incubator/compass/components/director/pkg/config"
 
 	"github.com/kyma-incubator/compass/components/director/internal/info"
 
@@ -115,7 +116,7 @@ type config struct {
 
 	Features features.Config
 
-	SelfRegConfig runtime.SelfRegConfig
+	SelfRegConfig cfg.SelfRegConfig
 
 	OperationsNamespace string `envconfig:"default=compass-system"`
 

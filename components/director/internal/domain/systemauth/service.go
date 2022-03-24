@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	model2 "github.com/kyma-incubator/compass/components/director/internal/model"
+	intModel "github.com/kyma-incubator/compass/components/director/internal/model"
 
-	model "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -48,16 +48,16 @@ func NewService(repo Repository, uidService UIDService) *service {
 }
 
 // Create missing godoc
-func (s *service) Create(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model2.AuthInput) (string, error) {
+func (s *service) Create(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *intModel.AuthInput) (string, error) {
 	return s.create(ctx, s.uidService.Generate(), objectType, objectID, authInput)
 }
 
 // CreateWithCustomID missing godoc
-func (s *service) CreateWithCustomID(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model2.AuthInput) (string, error) {
+func (s *service) CreateWithCustomID(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *intModel.AuthInput) (string, error) {
 	return s.create(ctx, id, objectType, objectID, authInput)
 }
 
-func (s *service) create(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model2.AuthInput) (string, error) {
+func (s *service) create(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *intModel.AuthInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		if !model.IsIntegrationSystemNoTenantFlow(err, objectType) {
@@ -160,7 +160,7 @@ func (s *service) Update(ctx context.Context, item *model.SystemAuth) error {
 }
 
 // UpdateValue missing godoc
-func (s *service) UpdateValue(ctx context.Context, id string, item *model2.Auth) (*model.SystemAuth, error) {
+func (s *service) UpdateValue(ctx context.Context, id string, item *intModel.Auth) (*model.SystemAuth, error) {
 	systemAuth, err := s.repo.GetByIDGlobal(ctx, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting System Auth with id '%s'", id)

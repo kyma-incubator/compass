@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ToGraphQLInput converts graphql.Auth to graphql.AuthInput
+// ToGraphQLInput converts model.Auth to graphql.AuthInput
 func ToGraphQLInput(in *model.Auth) (*graphql.AuthInput, error) {
 	if in == nil {
 		return nil, errors.New("Missing system auth")

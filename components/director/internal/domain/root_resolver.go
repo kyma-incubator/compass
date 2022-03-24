@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
-	systemauthmodel "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 	"github.com/pkg/errors"
 
 	httptransport "github.com/go-openapi/runtime/client"
@@ -45,7 +45,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	authpkg "github.com/kyma-incubator/compass/components/director/pkg/auth"
-	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
@@ -88,14 +88,14 @@ type RootResolver struct {
 func NewRootResolver(
 	appNameNormalizer normalizer.Normalizator,
 	transact persistence.Transactioner,
-	cfgProvider *configprovider.Provider,
+	cfgProvider *config.Provider,
 	oneTimeTokenCfg onetimetoken.Config,
 	oAuth20Cfg oauth20.Config,
 	pairingAdaptersMapping map[string]string,
 	featuresConfig features.Config,
 	metricsCollector *metrics.Collector,
 	httpClient, internalHTTPClient *http.Client,
-	selfRegConfig runtime.SelfRegConfig,
+	selfRegConfig config.SelfRegConfig,
 	tokenLength int,
 	hydraURL *url.URL,
 	accessStrategyExecutorProvider *accessstrategy.Provider,
@@ -707,19 +707,19 @@ func (r *mutationResolver) RequestClientCredentialsForIntegrationSystem(ctx cont
 
 // DeleteSystemAuthForRuntime missing godoc
 func (r *mutationResolver) DeleteSystemAuthForRuntime(ctx context.Context, authID string) (graphql.SystemAuth, error) {
-	fn := r.systemAuth.GenericDeleteSystemAuth(systemauthmodel.RuntimeReference)
+	fn := r.systemAuth.GenericDeleteSystemAuth(model.RuntimeReference)
 	return fn(ctx, authID)
 }
 
 // DeleteSystemAuthForApplication missing godoc
 func (r *mutationResolver) DeleteSystemAuthForApplication(ctx context.Context, authID string) (graphql.SystemAuth, error) {
-	fn := r.systemAuth.GenericDeleteSystemAuth(systemauthmodel.ApplicationReference)
+	fn := r.systemAuth.GenericDeleteSystemAuth(model.ApplicationReference)
 	return fn(ctx, authID)
 }
 
 // DeleteSystemAuthForIntegrationSystem missing godoc
 func (r *mutationResolver) DeleteSystemAuthForIntegrationSystem(ctx context.Context, authID string) (graphql.SystemAuth, error) {
-	fn := r.systemAuth.GenericDeleteSystemAuth(systemauthmodel.IntegrationSystemReference)
+	fn := r.systemAuth.GenericDeleteSystemAuth(model.IntegrationSystemReference)
 	return fn(ctx, authID)
 }
 

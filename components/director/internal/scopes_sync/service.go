@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -23,15 +23,15 @@ type SyncService interface {
 // SystemAuthRepo missing godoc
 //go:generate mockery --name=SystemAuthRepo --output=automock --outpkg=automock --case=underscore
 type SystemAuthRepo interface {
-	ListGlobalWithConditions(ctx context.Context, conditions repo.Conditions) ([]systemauth.SystemAuth, error)
+	ListGlobalWithConditions(ctx context.Context, conditions repo.Conditions) ([]model.SystemAuth, error)
 }
 
 // OAuthService missing godoc
 //go:generate mockery --name=OAuthService --output=automock --outpkg=automock --case=underscore
 type OAuthService interface {
 	ListClients() ([]*models.OAuth2Client, error)
-	UpdateClient(ctx context.Context, clientID string, objectType systemauth.SystemAuthReferenceObjectType) error
-	GetClientDetails(objType systemauth.SystemAuthReferenceObjectType) (*oauth20.ClientDetails, error)
+	UpdateClient(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error
+	GetClientDetails(objType model.SystemAuthReferenceObjectType) (*oauth20.ClientDetails, error)
 }
 
 type service struct {
@@ -124,7 +124,7 @@ func (s *service) listHydraClients() (map[string]*oauth20.ClientDetails, error) 
 	return clientsMap, nil
 }
 
-func (s *service) systemAuthsWithOAuth(ctx context.Context) ([]systemauth.SystemAuth, error) {
+func (s *service) systemAuthsWithOAuth(ctx context.Context) ([]model.SystemAuth, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "while opening database transaction")

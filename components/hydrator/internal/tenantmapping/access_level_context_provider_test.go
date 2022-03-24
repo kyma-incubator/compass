@@ -13,8 +13,8 @@ import (
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping/automock"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
-	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -39,7 +39,7 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 	reqData := oathkeeper.ReqData{
 		Body: oathkeeper.ReqBody{
 			Extra: map[string]interface{}{
-				cert.ConsumerTypeExtraField:  systemauth.IntegrationSystemReference,
+				cert.ConsumerTypeExtraField:  model.IntegrationSystemReference,
 				cert.AccessLevelsExtraField:  []interface{}{tenantEntity.Subaccount},
 				oathkeeper.ExternalTenantKey: consumerTenantID,
 			},

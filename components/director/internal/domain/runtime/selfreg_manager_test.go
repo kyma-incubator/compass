@@ -7,7 +7,8 @@ import (
 	"testing"
 	"time"
 
-	oathkeeper2 "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -25,7 +26,7 @@ const (
 	testUUID                        = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
 )
 
-var testConfig = runtime.SelfRegConfig{
+var testConfig = config.SelfRegConfig{
 	SelfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
 	SelfRegisterLabelKey:            "test-label-key",
 	SelfRegisterLabelValuePrefix:    "test-prefix",
@@ -43,11 +44,11 @@ var testConfig = runtime.SelfRegConfig{
 func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 	tokenConsumer := consumer.Consumer{
 		ConsumerID: "test-consumer-id",
-		Flow:       oathkeeper2.OAuth2Flow,
+		Flow:       oathkeeper.OAuth2Flow,
 	}
 	certConsumer := consumer.Consumer{
 		ConsumerID: "test-consumer-id",
-		Flow:       oathkeeper2.CertificateFlow,
+		Flow:       oathkeeper.CertificateFlow,
 	}
 	lblInput := model.RuntimeInput{
 		Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal},
@@ -66,7 +67,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 
 	testCases := []struct {
 		Name           string
-		Config         runtime.SelfRegConfig
+		Config         config.SelfRegConfig
 		Caller         func(*testing.T) *automock.ExternalSvcCaller
 		Input          model.RuntimeInput
 		Context        context.Context
@@ -155,7 +156,7 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 
 	testCases := []struct {
 		Name                                string
-		Config                              runtime.SelfRegConfig
+		Config                              config.SelfRegConfig
 		Caller                              func(*testing.T) *automock.ExternalSvcCaller
 		SelfRegisteredDistinguishLabelValue string
 		Context                             context.Context

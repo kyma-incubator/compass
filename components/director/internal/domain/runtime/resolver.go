@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+	pubModel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -39,7 +39,7 @@ type EventingService interface {
 // OAuth20Service missing godoc
 //go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore
 type OAuth20Service interface {
-	DeleteMultipleClientCredentials(ctx context.Context, auths []systemauth.SystemAuth) error
+	DeleteMultipleClientCredentials(ctx context.Context, auths []pubModel.SystemAuth) error
 }
 
 // RuntimeService missing godoc
@@ -76,13 +76,13 @@ type RuntimeConverter interface {
 // SystemAuthConverter missing godoc
 //go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
 type SystemAuthConverter interface {
-	ToGraphQL(in *systemauth.SystemAuth) (graphql.SystemAuth, error)
+	ToGraphQL(in *pubModel.SystemAuth) (graphql.SystemAuth, error)
 }
 
 // SystemAuthService missing godoc
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
-	ListForObject(ctx context.Context, objectType systemauth.SystemAuthReferenceObjectType, objectID string) ([]systemauth.SystemAuth, error)
+	ListForObject(ctx context.Context, objectType pubModel.SystemAuthReferenceObjectType, objectID string) ([]pubModel.SystemAuth, error)
 }
 
 // BundleInstanceAuthService missing godoc
@@ -358,7 +358,7 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 		}
 	}
 
-	auths, err := r.sysAuthSvc.ListForObject(ctx, systemauth.RuntimeReference, runtime.ID)
+	auths, err := r.sysAuthSvc.ListForObject(ctx, pubModel.RuntimeReference, runtime.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -547,7 +547,7 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*graphql.
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	sysAuths, err := r.sysAuthSvc.ListForObject(ctx, systemauth.RuntimeReference, obj.ID)
+	sysAuths, err := r.sysAuthSvc.ListForObject(ctx, pubModel.RuntimeReference, obj.ID)
 	if err != nil {
 		return nil, err
 	}

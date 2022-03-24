@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -249,7 +249,7 @@ func TestUpdateSystemAuthQuery(t *testing.T) {
 		authDataModel, err := auth.ToModel(authData)
 		require.NoError(t, err)
 
-		sysAuth := &systemauth.SystemAuth{
+		sysAuth := &model.SystemAuth{
 			ID:       authID,
 			TenantID: str.Ptr(expectedTenantID.String()),
 			AppID:    str.Ptr(refObjID.String()),

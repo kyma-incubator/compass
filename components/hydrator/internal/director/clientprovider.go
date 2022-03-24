@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
-
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	gcli "github.com/machinebox/graphql"
 )
@@ -16,26 +14,26 @@ type ClientProvider interface {
 	Client() Client
 }
 
-type clientProvider struct {
+type DirectorClientProvider struct {
 	directorURL       string
 	timeout           time.Duration
 	skipSSLValidation bool
 }
 
-func NewClientProvider(directorURL string, timeout time.Duration, skipSSLValidation bool) clientProvider {
-	return clientProvider{
+func NewClientProvider(directorURL string, timeout time.Duration, skipSSLValidation bool) DirectorClientProvider {
+	return DirectorClientProvider{
 		directorURL:       directorURL,
 		timeout:           timeout,
 		skipSSLValidation: skipSSLValidation,
 	}
 }
 
-func (cp clientProvider) Client() Client {
+func (cp DirectorClientProvider) Client() Client {
 	authorizedClient := newAuthorizedHTTPClient(cp.timeout, cp.skipSSLValidation)
 	gqlClient := gcli.NewClient(cp.directorURL, gcli.WithHTTPClient(authorizedClient))
 
-	sysAuthConv := systemauth.NewConverter()
-	return NewClient(gqlClient, sysAuthConv)
+	//sysAuthConv := NewConverter() TODO:: remove
+	return NewClient(gqlClient)
 }
 
 func newAuthorizedHTTPClient(timeout time.Duration, skipSSLValidation bool) *http.Client {

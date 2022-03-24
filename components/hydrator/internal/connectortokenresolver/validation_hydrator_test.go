@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	connector "github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -119,7 +119,7 @@ func TestValidationHydrator_ServeHTTP(t *testing.T) {
 		modelAuth, err := auth.ToModel(gqlAuth)
 		require.NoError(t, err)
 
-		sysAuth := &systemauth.SystemAuth{
+		sysAuth := &model.SystemAuth{
 			ID:    clientID,
 			Value: modelAuth,
 		}
@@ -154,7 +154,7 @@ func TestValidationHydrator_ServeHTTP(t *testing.T) {
 		modelAuth, err := auth.ToModel(gqlAuth)
 		require.NoError(t, err)
 
-		sysAuth := &systemauth.SystemAuth{
+		sysAuth := &model.SystemAuth{
 			ID:    clientID,
 			Value: modelAuth,
 		}

@@ -8,7 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
@@ -84,7 +84,7 @@ func (p *certServiceContextProvider) Match(_ context.Context, data oathkeeper.Re
 	return false, nil, nil
 }
 
-func (p *certServiceContextProvider) directorScopes(consumerType systemauth.SystemAuthReferenceObjectType) (string, error) {
+func (p *certServiceContextProvider) directorScopes(consumerType model.SystemAuthReferenceObjectType) (string, error) {
 	declaredScopes, err := p.scopesGetter.GetRequiredScopes(buildPath(consumerType))
 	if err != nil {
 		return "", errors.Wrap(err, "while fetching scopes")

@@ -5,7 +5,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
-	systemauthmodel "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+	pubModel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/pkg/errors"
 
@@ -58,20 +58,20 @@ func fixGQLRuntimeSystemAuth(id string, auth *graphql.Auth, refObjID string) gra
 	}
 }
 
-func fixModelSystemAuth(id string, objectType systemauthmodel.SystemAuthReferenceObjectType, objectID string, auth *model.Auth) *systemauthmodel.SystemAuth {
-	systemAuth := systemauthmodel.SystemAuth{
+func fixModelSystemAuth(id string, objectType pubModel.SystemAuthReferenceObjectType, objectID string, auth *model.Auth) *pubModel.SystemAuth {
+	systemAuth := pubModel.SystemAuth{
 		ID:    id,
 		Value: auth,
 	}
 
 	switch objectType {
-	case systemauthmodel.ApplicationReference:
+	case pubModel.ApplicationReference:
 		systemAuth.AppID = &objectID
 		systemAuth.TenantID = &testTenant
-	case systemauthmodel.RuntimeReference:
+	case pubModel.RuntimeReference:
 		systemAuth.RuntimeID = &objectID
 		systemAuth.TenantID = &testTenant
-	case systemauthmodel.IntegrationSystemReference:
+	case pubModel.IntegrationSystemReference:
 		systemAuth.IntegrationSystemID = &objectID
 		systemAuth.TenantID = nil
 	}
@@ -181,19 +181,19 @@ func fixGQLAuthInput() *graphql.AuthInput {
 	}
 }
 
-func fixEntity(id string, objectType systemauthmodel.SystemAuthReferenceObjectType, objectID string, withAuth bool) systemauth.Entity {
+func fixEntity(id string, objectType pubModel.SystemAuthReferenceObjectType, objectID string, withAuth bool) systemauth.Entity {
 	out := systemauth.Entity{
 		ID: id,
 	}
 
 	switch objectType {
-	case systemauthmodel.ApplicationReference:
+	case pubModel.ApplicationReference:
 		out.AppID = repo.NewNullableString(&objectID)
 		out.TenantID = repo.NewNullableString(&testTenant)
-	case systemauthmodel.RuntimeReference:
+	case pubModel.RuntimeReference:
 		out.RuntimeID = repo.NewNullableString(&objectID)
 		out.TenantID = repo.NewNullableString(&testTenant)
-	case systemauthmodel.IntegrationSystemReference:
+	case pubModel.IntegrationSystemReference:
 		out.IntegrationSystemID = repo.NewNullableString(&objectID)
 		out.TenantID = repo.NewNullableString(nil)
 	}

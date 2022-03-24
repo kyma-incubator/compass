@@ -3,7 +3,7 @@ package claims
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 	"github.com/pkg/errors"
 )
 

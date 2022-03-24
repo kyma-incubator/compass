@@ -8,9 +8,8 @@ import (
 	urlpkg "net/url"
 	"path"
 	"strings"
-	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/config"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -25,31 +24,32 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// SelfRegConfig is configuration for the runtime self-registration flow
-type SelfRegConfig struct {
-	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
-	SelfRegisterLabelKey            string `envconfig:"APP_SELF_REGISTER_LABEL_KEY,optional"`
-	SelfRegisterLabelValuePrefix    string `envconfig:"APP_SELF_REGISTER_LABEL_VALUE_PREFIX,optional"`
-	SelfRegisterResponseKey         string `envconfig:"APP_SELF_REGISTER_RESPONSE_KEY,optional"`
-	SelfRegisterPath                string `envconfig:"APP_SELF_REGISTER_PATH,optional"`
-	SelfRegisterNameQueryParam      string `envconfig:"APP_SELF_REGISTER_NAME_QUERY_PARAM,optional"`
-	SelfRegisterTenantQueryParam    string `envconfig:"APP_SELF_REGISTER_TENANT_QUERY_PARAM,optional"`
-	SelfRegisterRequestBodyPattern  string `envconfig:"APP_SELF_REGISTER_REQUEST_BODY_PATTERN,optional"`
-
-	ClientID       string         `envconfig:"APP_SELF_REGISTER_CLIENT_ID,optional"`
-	ClientSecret   string         `envconfig:"APP_SELF_REGISTER_CLIENT_SECRET,optional"`
-	OAuthMode      oauth.AuthMode `envconfig:"APP_SELF_REGISTER_OAUTH_MODE,default=oauth-mtls"`
-	URL            string         `envconfig:"APP_SELF_REGISTER_URL,optional"`
-	TokenURL       string         `envconfig:"APP_SELF_REGISTER_TOKEN_URL,optional"`
-	OauthTokenPath string         `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"`
-
-	SkipSSLValidation bool `envconfig:"APP_SELF_REGISTER_SKIP_SSL_VALIDATION,default=false"`
-
-	ClientTimeout time.Duration `envconfig:"default=30s"`
-
-	Cert string `envconfig:"APP_SELF_REGISTER_OAUTH_X509_CERT,optional"`
-	Key  string `envconfig:"APP_SELF_REGISTER_OAUTH_X509_KEY,optional"`
-}
+// TODO:: remove
+//// SelfRegConfig is configuration for the runtime self-registration flow
+//type SelfRegConfig struct {
+//	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
+//	SelfRegisterLabelKey            string `envconfig:"APP_SELF_REGISTER_LABEL_KEY,optional"`
+//	SelfRegisterLabelValuePrefix    string `envconfig:"APP_SELF_REGISTER_LABEL_VALUE_PREFIX,optional"`
+//	SelfRegisterResponseKey         string `envconfig:"APP_SELF_REGISTER_RESPONSE_KEY,optional"`
+//	SelfRegisterPath                string `envconfig:"APP_SELF_REGISTER_PATH,optional"`
+//	SelfRegisterNameQueryParam      string `envconfig:"APP_SELF_REGISTER_NAME_QUERY_PARAM,optional"`
+//	SelfRegisterTenantQueryParam    string `envconfig:"APP_SELF_REGISTER_TENANT_QUERY_PARAM,optional"`
+//	SelfRegisterRequestBodyPattern  string `envconfig:"APP_SELF_REGISTER_REQUEST_BODY_PATTERN,optional"`
+//
+//	ClientID       string         `envconfig:"APP_SELF_REGISTER_CLIENT_ID,optional"`
+//	ClientSecret   string         `envconfig:"APP_SELF_REGISTER_CLIENT_SECRET,optional"`
+//	OAuthMode      oauth.AuthMode `envconfig:"APP_SELF_REGISTER_OAUTH_MODE,default=oauth-mtls"`
+//	URL            string         `envconfig:"APP_SELF_REGISTER_URL,optional"`
+//	TokenURL       string         `envconfig:"APP_SELF_REGISTER_TOKEN_URL,optional"`
+//	OauthTokenPath string         `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"`
+//
+//	SkipSSLValidation bool `envconfig:"APP_SELF_REGISTER_SKIP_SSL_VALIDATION,default=false"`
+//
+//	ClientTimeout time.Duration `envconfig:"default=30s"`
+//
+//	Cert string `envconfig:"APP_SELF_REGISTER_OAUTH_X509_CERT,optional"`
+//	Key  string `envconfig:"APP_SELF_REGISTER_OAUTH_X509_KEY,optional"`
+//}
 
 // ExternalSvcCaller is used to call external services with given authentication
 //go:generate mockery --name=ExternalSvcCaller --output=automock --outpkg=automock --case=underscore
@@ -58,13 +58,13 @@ type ExternalSvcCaller interface {
 }
 
 type selfRegisterManager struct {
-	cfg    SelfRegConfig
+	cfg    config.SelfRegConfig
 	caller ExternalSvcCaller
 }
 
 // NewSelfRegisterManager creates a new SelfRegisterManager which is responsible for doing preparation/clean-up during
 // self-registration of runtimes configured with values from cfg.
-func NewSelfRegisterManager(cfg SelfRegConfig, caller ExternalSvcCaller) *selfRegisterManager {
+func NewSelfRegisterManager(cfg config.SelfRegConfig, caller ExternalSvcCaller) *selfRegisterManager {
 	return &selfRegisterManager{cfg: cfg, caller: caller}
 }
 

@@ -74,7 +74,7 @@ func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oath
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.ID), m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.User, UserObjectContextProvider)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.UserObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
 	return objCtx, nil

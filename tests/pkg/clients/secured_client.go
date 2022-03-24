@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"testing"
 
-	model2 "github.com/kyma-incubator/compass/tests/pkg/model"
+	testModel "github.com/kyma-incubator/compass/tests/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 
@@ -19,16 +19,16 @@ import (
 )
 
 type SecuredClient interface {
-	GetMgmInfo(t *testing.T, url string) (*model2.ManagementInfoResponse, *model2.Error)
-	RenewCertificate(t *testing.T, url string, csr string) (*model2.CrtResponse, *model2.Error)
-	RevokeCertificate(t *testing.T, url string) *model2.Error
+	GetMgmInfo(t *testing.T, url string) (*testModel.ManagementInfoResponse, *testModel.Error)
+	RenewCertificate(t *testing.T, url string, csr string) (*testModel.CrtResponse, *testModel.Error)
+	RevokeCertificate(t *testing.T, url string) *testModel.Error
 
-	ListServices(t *testing.T, url string) ([]model.Service, *model2.Error)
-	CreateService(t *testing.T, url string, service model.ServiceDetails) (*model2.CreateServiceResponse, *model2.Error)
-	GetService(t *testing.T, url string, id string) (*model.ServiceDetails, *model2.Error)
-	UpdateService(t *testing.T, url string, id string, service model.ServiceDetails) (*model.ServiceDetails, *model2.Error)
-	DeleteService(t *testing.T, url string, id string) *model2.Error
-	CleanupService(t *testing.T, url string, id string) *model2.Error
+	ListServices(t *testing.T, url string) ([]model.Service, *testModel.Error)
+	CreateService(t *testing.T, url string, service model.ServiceDetails) (*testModel.CreateServiceResponse, *testModel.Error)
+	GetService(t *testing.T, url string, id string) (*model.ServiceDetails, *testModel.Error)
+	UpdateService(t *testing.T, url string, id string, service model.ServiceDetails) (*model.ServiceDetails, *testModel.Error)
+	DeleteService(t *testing.T, url string, id string) *testModel.Error
+	CleanupService(t *testing.T, url string, id string) *testModel.Error
 }
 
 type securedConnectorClient struct {
@@ -70,29 +70,29 @@ func newTLSClientWithCert(skipVerify bool, key *rsa.PrivateKey, certs []byte) (*
 	}, nil
 }
 
-func (cc *securedConnectorClient) GetMgmInfo(t *testing.T, url string) (*model2.ManagementInfoResponse, *model2.Error) {
+func (cc *securedConnectorClient) GetMgmInfo(t *testing.T, url string) (*testModel.ManagementInfoResponse, *testModel.Error) {
 	request := requestWithTenantHeaders(t, cc.tenant, url, http.MethodGet)
 
-	var mgmInfoResponse model2.ManagementInfoResponse
+	var mgmInfoResponse testModel.ManagementInfoResponse
 	errorResp := cc.secureConnectorRequest(t, request, &mgmInfoResponse, http.StatusOK)
 
 	return &mgmInfoResponse, errorResp
 }
 
-func (cc *securedConnectorClient) RenewCertificate(t *testing.T, url string, csr string) (*model2.CrtResponse, *model2.Error) {
-	body, err := json.Marshal(model2.CsrRequest{Csr: csr})
+func (cc *securedConnectorClient) RenewCertificate(t *testing.T, url string, csr string) (*testModel.CrtResponse, *testModel.Error) {
+	body, err := json.Marshal(testModel.CsrRequest{Csr: csr})
 	require.NoError(t, err)
 
 	request, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(body))
 	require.NoError(t, err)
 
-	var certificateResponse model2.CrtResponse
+	var certificateResponse testModel.CrtResponse
 	errorResp := cc.secureConnectorRequest(t, request, &certificateResponse, http.StatusCreated)
 
 	return &certificateResponse, errorResp
 }
 
-func (cc *securedConnectorClient) RevokeCertificate(t *testing.T, url string) *model2.Error {
+func (cc *securedConnectorClient) RevokeCertificate(t *testing.T, url string) *testModel.Error {
 	request, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer([]byte{}))
 	require.NoError(t, err)
 	request.Close = true
@@ -100,7 +100,7 @@ func (cc *securedConnectorClient) RevokeCertificate(t *testing.T, url string) *m
 	return cc.secureConnectorRequest(t, request, nil, http.StatusCreated)
 }
 
-func (cc *securedConnectorClient) ListServices(t *testing.T, url string) ([]model.Service, *model2.Error) {
+func (cc *securedConnectorClient) ListServices(t *testing.T, url string) ([]model.Service, *testModel.Error) {
 	request := requestWithTenantHeaders(t, cc.tenant, url, http.MethodGet)
 
 	var services []model.Service
@@ -109,16 +109,16 @@ func (cc *securedConnectorClient) ListServices(t *testing.T, url string) ([]mode
 	return services, errorResp
 }
 
-func (cc *securedConnectorClient) CreateService(t *testing.T, url string, service model.ServiceDetails) (*model2.CreateServiceResponse, *model2.Error) {
+func (cc *securedConnectorClient) CreateService(t *testing.T, url string, service model.ServiceDetails) (*testModel.CreateServiceResponse, *testModel.Error) {
 	request := requestWithTenantHeadersAndBody(t, cc.tenant, url, http.MethodPost, service)
 
-	var createServiceResponse model2.CreateServiceResponse
+	var createServiceResponse testModel.CreateServiceResponse
 	errorResp := cc.secureConnectorRequest(t, request, &createServiceResponse, http.StatusOK)
 
 	return &createServiceResponse, errorResp
 }
 
-func (cc *securedConnectorClient) GetService(t *testing.T, url string, id string) (*model.ServiceDetails, *model2.Error) {
+func (cc *securedConnectorClient) GetService(t *testing.T, url string, id string) (*model.ServiceDetails, *testModel.Error) {
 	request := requestWithTenantHeaders(t, cc.tenant, fmt.Sprintf("%s/%s", url, id), http.MethodGet)
 
 	var serviceDetails model.ServiceDetails
@@ -127,7 +127,7 @@ func (cc *securedConnectorClient) GetService(t *testing.T, url string, id string
 	return &serviceDetails, errorResp
 }
 
-func (cc *securedConnectorClient) UpdateService(t *testing.T, url string, id string, service model.ServiceDetails) (*model.ServiceDetails, *model2.Error) {
+func (cc *securedConnectorClient) UpdateService(t *testing.T, url string, id string, service model.ServiceDetails) (*model.ServiceDetails, *testModel.Error) {
 	request := requestWithTenantHeadersAndBody(t, cc.tenant, fmt.Sprintf("%s/%s", url, id), http.MethodPut, service)
 
 	var serviceDetails model.ServiceDetails
@@ -136,19 +136,19 @@ func (cc *securedConnectorClient) UpdateService(t *testing.T, url string, id str
 	return &serviceDetails, errorResp
 }
 
-func (cc *securedConnectorClient) DeleteService(t *testing.T, url string, id string) *model2.Error {
+func (cc *securedConnectorClient) DeleteService(t *testing.T, url string, id string) *testModel.Error {
 	request := requestWithTenantHeaders(t, cc.tenant, fmt.Sprintf("%s/%s", url, id), http.MethodDelete)
 
 	return cc.secureConnectorRequest(t, request, nil, http.StatusNoContent)
 }
 
-func (cc *securedConnectorClient) CleanupService(t *testing.T, url string, id string) *model2.Error {
+func (cc *securedConnectorClient) CleanupService(t *testing.T, url string, id string) *testModel.Error {
 	request := requestWithTenantHeaders(t, cc.tenant, fmt.Sprintf("%s/%s", url, id), http.MethodDelete)
 
 	return cc.cleanupRequest(t, request)
 }
 
-func (cc *securedConnectorClient) secureConnectorRequest(t *testing.T, request *http.Request, data interface{}, expectedStatus int) *model2.Error {
+func (cc *securedConnectorClient) secureConnectorRequest(t *testing.T, request *http.Request, data interface{}, expectedStatus int) *testModel.Error {
 	response, err := cc.httpClient.Do(request)
 	require.NoError(t, err)
 	defer func() {
@@ -168,7 +168,7 @@ func (cc *securedConnectorClient) secureConnectorRequest(t *testing.T, request *
 	return nil
 }
 
-func (cc *securedConnectorClient) cleanupRequest(t *testing.T, request *http.Request) *model2.Error {
+func (cc *securedConnectorClient) cleanupRequest(t *testing.T, request *http.Request) *testModel.Error {
 	response, err := cc.httpClient.Do(request)
 	require.NoError(t, err)
 

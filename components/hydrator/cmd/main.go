@@ -74,7 +74,6 @@ type config struct {
 	ConfigurationFile       string
 	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
 
-	StaticUsersSrc  string `envconfig:"default=/data/static-users.yaml"`
 	StaticGroupsSrc string `envconfig:"default=/data/static-groups.yaml"`
 
 	CSRSubject            istiocertresolver.CSRSubjectConfig
@@ -194,7 +193,7 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 	authnMappingHandlerFunc := authnmappinghandler.NewHandler(oathkeeper.NewReqDataParser(), httpClient, authnmappinghandler.DefaultTokenVerifierProvider, authenticators)
 
 	logger.Infof("Registering Tenant Mapping endpoint on %s...", cfg.Handler.TenantMappingEndpoint)
-	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(authenticators, directorClientProvider, cfg.StaticUsersSrc, cfg.StaticGroupsSrc, cfgProvider)
+	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(authenticators, directorClientProvider, cfg.StaticGroupsSrc, cfgProvider)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.Handler.RuntimeMappingEndpoint)
@@ -222,19 +221,14 @@ func newReadinessHandler() func(writer http.ResponseWriter, request *http.Reques
 	}
 }
 
-func getTenantMappingHandlerFunc(authenticators []authenticator.Config, clientProvider director.ClientProvider, staticUsersSrc string, staticGroupsSrc string, cfgProvider *configprovider.Provider) (*tenantmapping.Handler, error) {
-	staticUsersRepo, err := tenantmapping.NewStaticUserRepository(staticUsersSrc)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating StaticUser repository instance")
-	}
-
+func getTenantMappingHandlerFunc(authenticators []authenticator.Config, clientProvider director.ClientProvider, staticGroupsSrc string, cfgProvider *configprovider.Provider) (*tenantmapping.Handler, error) {
 	staticGroupsRepo, err := tenantmapping.NewStaticGroupRepository(staticGroupsSrc)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating StaticGroup repository instance")
 	}
 
 	objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-		tenantmappingconst.UserObjectContextProvider:          tenantmapping.NewUserContextProvider(clientProvider.Client(), staticUsersRepo, staticGroupsRepo),
+		tenantmappingconst.UserObjectContextProvider:          tenantmapping.NewUserContextProvider(clientProvider.Client(), staticGroupsRepo),
 		tenantmappingconst.SystemAuthObjectContextProvider:    tenantmapping.NewSystemAuthContextProvider(clientProvider.Client(), cfgProvider),
 		tenantmappingconst.AuthenticatorObjectContextProvider: tenantmapping.NewAuthenticatorContextProvider(clientProvider.Client(), authenticators),
 		tenantmappingconst.CertServiceObjectContextProvider:   tenantmapping.NewCertServiceContextProvider(clientProvider.Client(), cfgProvider),

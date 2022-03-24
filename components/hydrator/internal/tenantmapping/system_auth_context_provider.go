@@ -8,8 +8,8 @@ import (
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -72,9 +72,9 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 	var tenantCtx TenantContext
 
 	switch refObjectType {
-	case systemauth.IntegrationSystemReference:
+	case model.IntegrationSystemReference:
 		tenantCtx, scopes, err = m.getTenantAndScopesForIntegrationSystem(ctx, reqData)
-	case systemauth.ApplicationReference, systemauth.RuntimeReference:
+	case model.ApplicationReference, model.RuntimeReference:
 		tenantCtx, scopes, err = m.getTenantAndScopesForApplicationOrRuntime(ctx, sysAuth.TenantID, refObjectType, reqData, authDetails.AuthFlow)
 	default:
 		return ObjectContext{}, errors.Errorf("unsupported reference object type (%s)", refObjectType)
@@ -165,7 +165,7 @@ func (m *systemAuthContextProvider) getTenantAndScopesForIntegrationSystem(ctx c
 	return NewTenantContext(externalTenantID, tenantMapping.InternalID), scopes, nil
 }
 
-func (m *systemAuthContextProvider) getTenantAndScopesForApplicationOrRuntime(ctx context.Context, tenantID *string, refObjType systemauth.SystemAuthReferenceObjectType, reqData oathkeeper.ReqData, authFlow oathkeeper.AuthFlow) (TenantContext, string, error) {
+func (m *systemAuthContextProvider) getTenantAndScopesForApplicationOrRuntime(ctx context.Context, tenantID *string, refObjType model.SystemAuthReferenceObjectType, reqData oathkeeper.ReqData, authFlow oathkeeper.AuthFlow) (TenantContext, string, error) {
 	var externalTenantID, scopes string
 	var err error
 
@@ -222,7 +222,7 @@ func (m *systemAuthContextProvider) getTenantAndScopesForApplicationOrRuntime(ct
 	return NewTenantContext(externalTenantID, *tenantID), scopes, nil
 }
 
-func buildPath(refObjectType systemauth.SystemAuthReferenceObjectType) string {
+func buildPath(refObjectType model.SystemAuthReferenceObjectType) string {
 	lowerCaseType := strings.ToLower(string(refObjectType))
 	transformedObjType := strings.ReplaceAll(lowerCaseType, " ", "_")
 	return fmt.Sprintf("%s.%s", scopesPerConsumerTypePrefix, transformedObjType)

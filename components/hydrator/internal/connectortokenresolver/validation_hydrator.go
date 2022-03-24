@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
@@ -25,7 +25,7 @@ type validationHydrator struct {
 // DirectorClient missing godoc
 //go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore
 type DirectorClient interface {
-	GetSystemAuthByToken(ctx context.Context, token string) (*systemauth.SystemAuth, error)
+	GetSystemAuthByToken(ctx context.Context, token string) (*model.SystemAuth, error)
 	InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) error
 }
 

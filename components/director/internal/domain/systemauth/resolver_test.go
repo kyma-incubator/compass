@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	systemauthmodel "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+	pubModel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -28,7 +28,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 
 	id := "foo"
 	objectID := "bar"
-	objectType := systemauthmodel.RuntimeReference
+	objectType := pubModel.RuntimeReference
 	modelSystemAuth := fixModelSystemAuth(id, objectType, objectID, fixModelAuth())
 	oauthModelSystemAuth := fixModelSystemAuth(id, objectType, objectID, &model.Auth{
 		Credential: model.CredentialData{
@@ -278,7 +278,7 @@ func TestResolver_SystemAuth(t *testing.T) {
 
 	id := "foo"
 	objectID := "bar"
-	objectType := systemauthmodel.RuntimeReference
+	objectType := pubModel.RuntimeReference
 	modelSystemAuth := fixModelSystemAuth(id, objectType, objectID, fixModelAuth())
 	gqlSystemAuth := fixGQLIntSysSystemAuth(id, fixGQLAuth(), objectID)
 
@@ -467,7 +467,7 @@ func TestResolver_SystemAuthByToken(t *testing.T) {
 	id := "foo"
 	token := "token"
 	objectID := "bar"
-	objectType := systemauthmodel.RuntimeReference
+	objectType := pubModel.RuntimeReference
 	modelSystemAuth := fixModelSystemAuth(id, objectType, objectID, fixModelAuth())
 	gqlSystemAuth := fixGQLIntSysSystemAuth(id, fixGQLAuth(), objectID)
 
@@ -692,7 +692,7 @@ func TestResolver_UpdateSystemAuth(t *testing.T) {
 
 	id := "foo"
 	objectID := "bar"
-	objectType := systemauthmodel.RuntimeReference
+	objectType := pubModel.RuntimeReference
 	modelSystemAuth := fixModelSystemAuth(id, objectType, objectID, fixModelAuth())
 	gqlSystemAuth := fixGQLIntSysSystemAuth(id, fixGQLAuth(), objectID)
 	inputAuth := fixGQLAuthInput()
@@ -931,7 +931,7 @@ func TestResolver_InvalidateSystemAuthOneTimeToken(t *testing.T) {
 
 	id := "foo"
 	objectID := "bar"
-	objectType := systemauthmodel.RuntimeReference
+	objectType := pubModel.RuntimeReference
 	modelSystemAuth := fixModelSystemAuth(id, objectType, objectID, fixModelAuth())
 	gqlSystemAuth := fixGQLIntSysSystemAuth(id, fixGQLAuth(), objectID)
 

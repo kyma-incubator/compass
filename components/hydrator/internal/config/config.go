@@ -5,8 +5,8 @@ import "github.com/pkg/errors"
 type HandlerConfig struct {
 	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
 	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping/{authenticator}"`
-	ValidationIstioCertEndpoint   string `envconfig:"default=/v1/certificate/data/resolve"`
 	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
+	ValidationIstioCertEndpoint   string `envconfig:"default=/v1/certificate/data/resolve"`
 	TokenResolverEndpoint         string `envconfig:"default=/v1/tokens/resolve"`
 }
 

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+	pubModel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/stretchr/testify/mock"
 
@@ -33,7 +33,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		svc := &automock.TokenService{}
-		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, systemauth.ApplicationReference).Return(tokenModel, nil)
+		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, pubModel.ApplicationReference).Return(tokenModel, nil)
 		conv := &automock.TokenConverter{}
 		conv.On("ToGraphQLForApplication", *tokenModel).Return(expectedToken, nil)
 		persist, transact := txGen.ThatSucceeds()
@@ -71,7 +71,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 	t.Run("Error - transaction commit failed", func(t *testing.T) {
 		// GIVEN
 		svc := &automock.TokenService{}
-		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, systemauth.ApplicationReference).Return(tokenModel, nil)
+		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, pubModel.ApplicationReference).Return(tokenModel, nil)
 		persist, transact := txGen.ThatFailsOnCommit()
 		conv := &automock.TokenConverter{}
 		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
@@ -87,7 +87,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 	t.Run("Error - service return error", func(t *testing.T) {
 		// GIVEN
 		svc := &automock.TokenService{}
-		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, systemauth.ApplicationReference).Return(tokenModel, testErr)
+		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, pubModel.ApplicationReference).Return(tokenModel, testErr)
 		persist, transact := txGen.ThatDoesntExpectCommit()
 		conv := &automock.TokenConverter{}
 		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
@@ -118,7 +118,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 	t.Run("Error - converter returns error", func(t *testing.T) {
 		// GIVEN
 		svc := &automock.TokenService{}
-		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, systemauth.ApplicationReference).Return(tokenModel, nil)
+		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, pubModel.ApplicationReference).Return(tokenModel, nil)
 		conv := &automock.TokenConverter{}
 		conv.On("ToGraphQLForApplication", *tokenModel).Return(graphql.OneTimeTokenForApplication{}, errors.New("some-error"))
 		persist, transact := txGen.ThatSucceeds()
@@ -143,7 +143,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		svc := &automock.TokenService{}
-		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, systemauth.RuntimeReference).Return(tokenModel, nil)
+		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, pubModel.RuntimeReference).Return(tokenModel, nil)
 		persist, transact := txGen.ThatSucceeds()
 		conv := &automock.TokenConverter{}
 		conv.On("ToGraphQLForRuntime", *tokenModel).Return(expectedToken)
@@ -165,7 +165,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 	t.Run("Error - transaction commit failed", func(t *testing.T) {
 		// GIVEN
 		svc := &automock.TokenService{}
-		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, systemauth.RuntimeReference).Return(tokenModel, nil)
+		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, pubModel.RuntimeReference).Return(tokenModel, nil)
 		persist, transact := txGen.ThatFailsOnCommit()
 		conv := &automock.TokenConverter{}
 		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
@@ -184,7 +184,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 	t.Run("Error - service return error", func(t *testing.T) {
 		// GIVEN
 		svc := &automock.TokenService{}
-		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, systemauth.RuntimeReference).Return(tokenModel, testErr)
+		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, pubModel.RuntimeReference).Return(tokenModel, testErr)
 		persist, transact := txGen.ThatDoesntExpectCommit()
 		conv := &automock.TokenConverter{}
 		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)

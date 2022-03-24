@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
@@ -32,7 +32,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		expectedTenantID := uuid.New()
 		expectedScopes := []string{"application:read"}
 
-		sysAuth := &systemauth.SystemAuth{
+		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
 			TenantID: str.Ptr(expectedTenantID.String()),
 			AppID:    str.Ptr(refObjID.String()),
@@ -68,7 +68,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		expectedExternalTenantID := uuid.New().String()
 		expectedScopes := "application:read"
 
-		sysAuth := &systemauth.SystemAuth{
+		sysAuth := &model.SystemAuth{
 			ID:                  authID.String(),
 			TenantID:            str.Ptr(expectedTenantID.String()),
 			IntegrationSystemID: str.Ptr(refObjID.String()),
@@ -113,7 +113,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		expectedTenantID := uuid.New()
 		expectedScopes := "application:read"
 
-		sysAuth := &systemauth.SystemAuth{
+		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
 			TenantID: str.Ptr(expectedTenantID.String()),
 			AppID:    str.Ptr(refObjID.String()),
@@ -171,14 +171,14 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		sysAuthValue, err := auth.ToModel(authData)
 		require.NoError(t, err)
 
-		sysAuth := &systemauth.SystemAuth{
+		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
 			TenantID: str.Ptr(expectedTenantID.String()),
 			AppID:    str.Ptr(refObjID.String()),
 			Value:    sysAuthValue,
 		}
 
-		sysAuthUpdate := &systemauth.SystemAuth{
+		sysAuthUpdate := &model.SystemAuth{
 			ID:       authID.String(),
 			TenantID: str.Ptr(expectedTenantID.String()),
 			AppID:    str.Ptr(refObjID.String()),
@@ -236,7 +236,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 	t.Run("returns error when unable to get the ReferenceObjectType of underlying SystemAuth", func(t *testing.T) {
 		authID := uuid.New()
 
-		sysAuth := &systemauth.SystemAuth{
+		sysAuth := &model.SystemAuth{
 			ID: authID.String(),
 		}
 
@@ -260,7 +260,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 
-		sysAuth := &systemauth.SystemAuth{
+		sysAuth := &model.SystemAuth{
 			ID:                  authID.String(),
 			IntegrationSystemID: str.Ptr(refObjID.String()),
 		}
@@ -284,7 +284,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 
-		sysAuth := &systemauth.SystemAuth{
+		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
 			TenantID: str.Ptr("123"),
 			AppID:    str.Ptr(refObjID.String()),
@@ -319,7 +319,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		tenant1ID := uuid.New()
 		tenant2ID := uuid.New()
 
-		sysAuth := &systemauth.SystemAuth{
+		sysAuth := &model.SystemAuth{
 			ID:        authID.String(),
 			TenantID:  str.Ptr(tenant1ID.String()),
 			RuntimeID: str.Ptr(refObjID.String()),
@@ -358,7 +358,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		refObjID := uuid.New()
 		tenant2ID := uuid.New()
 
-		sysAuth := &systemauth.SystemAuth{
+		sysAuth := &model.SystemAuth{
 			ID:    authID.String(),
 			AppID: str.Ptr(refObjID.String()),
 		}
@@ -389,7 +389,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		refObjID := uuid.New()
 		tenant1ID := uuid.New()
 
-		sysAuth := &systemauth.SystemAuth{
+		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
 			TenantID: str.Ptr(tenant1ID.String()),
 			AppID:    str.Ptr(refObjID.String()),
@@ -413,7 +413,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 		expectedTenantID := uuid.New()
-		sysAuth := &systemauth.SystemAuth{
+		sysAuth := &model.SystemAuth{
 			ID:       authID.String(),
 			TenantID: str.Ptr(expectedTenantID.String()),
 			AppID:    str.Ptr(refObjID.String()),

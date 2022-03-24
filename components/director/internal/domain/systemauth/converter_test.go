@@ -3,7 +3,7 @@ package systemauth_test
 import (
 	"testing"
 
-	model "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth/automock"
 

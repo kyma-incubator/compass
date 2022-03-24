@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"testing"
 
-	model "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"

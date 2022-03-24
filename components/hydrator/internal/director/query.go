@@ -3,7 +3,7 @@ package director
 import (
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
@@ -157,7 +157,7 @@ func TenantByLowestOwnerForResourceQuery(resourceID, resourceType string) string
 	}`, resourceID, resourceType)
 }
 
-func UpdateSystemAuthQuery(sysAuth *systemauth.SystemAuth) (string, error) {
+func UpdateSystemAuthQuery(sysAuth *model.SystemAuth) (string, error) {
 	authInput, err := auth.ToGraphQLInput(sysAuth.Value)
 	if err != nil {
 		return "", err

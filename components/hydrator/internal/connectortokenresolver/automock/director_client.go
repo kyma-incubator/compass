@@ -5,7 +5,7 @@ package automock
 import (
 	context "context"
 
-	systemauth "github.com/kyma-incubator/compass/components/director/pkg/systemauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -15,15 +15,15 @@ type DirectorClient struct {
 }
 
 // GetSystemAuthByToken provides a mock function with given fields: ctx, token
-func (_m *DirectorClient) GetSystemAuthByToken(ctx context.Context, token string) (*systemauth.SystemAuth, error) {
+func (_m *DirectorClient) GetSystemAuthByToken(ctx context.Context, token string) (*model.SystemAuth, error) {
 	ret := _m.Called(ctx, token)
 
-	var r0 *systemauth.SystemAuth
-	if rf, ok := ret.Get(0).(func(context.Context, string) *systemauth.SystemAuth); ok {
+	var r0 *model.SystemAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.SystemAuth); ok {
 		r0 = rf(ctx, token)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*systemauth.SystemAuth)
+			r0 = ret.Get(0).(*model.SystemAuth)
 		}
 	}
 
