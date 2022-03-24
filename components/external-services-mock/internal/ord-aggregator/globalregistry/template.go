@@ -9,7 +9,7 @@ const ordConfig = `{
                 "systemInstanceAware": true,
                 "accessStrategies": [
                     {
-                        "type": "open",
+                        "type": "sap:cmp-mtls:v1",
                         "customType": "",
                         "customDescription": ""
                     }
