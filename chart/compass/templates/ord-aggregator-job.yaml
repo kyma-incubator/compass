@@ -29,7 +29,6 @@ spec:
             - ip: {{ .Values.global.minikubeIP }}
               hostnames:
                 - "{{ .Values.global.externalServicesMock.ordCertSecuredHost }}.{{ .Values.global.ingress.domainName }}"
-                - "{{ .Values.global.externalServicesMock.ordGlobalCertSecuredHost }}.{{ .Values.global.ingress.domainName }}"
           {{ end }}
           serviceAccountName: {{ $.Chart.Name }}-ord-aggregator
           containers:
