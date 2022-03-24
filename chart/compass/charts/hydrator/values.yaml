@@ -7,7 +7,6 @@ deployment:
   image:
     pullPolicy: IfNotPresent
   resources: {}
-  resourcesCloudsqlProxy: {}
   resourcesIstioProxy:
     requests: {}
     limits: {}
@@ -28,11 +27,6 @@ deployment:
     allowPrivilegeEscalation: false
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
   nodeSelector: {}
-
-database:
-  dbPool:
-    maxOpenConnections: 2
-    maxIdleConnections: 1
 
 adminGroupNames: "mps-superadmin, runtimeAdmin, runtimeNamespaceAdmin"
 operatorGroupNames: "runtimeOperator"

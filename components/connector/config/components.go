@@ -20,8 +20,7 @@ type Components struct {
 	CertificateService     certificates.Service
 	RevokedCertsRepository revocation.RevokedCertificatesRepository
 
-	ExternalIssuerSubjectConsts certificates.ExternalIssuerSubjectConsts
-	CSRSubjectConsts            certificates.CSRSubjectConsts
+	CSRSubjectConsts certificates.CSRSubjectConsts
 }
 
 func InitInternalComponents(cfg Config, k8sClientSet kubernetes.Interface, directorGCLI tokens.GraphQLClient) (Components, certificates.Loader) {
