@@ -8,9 +8,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/subscription"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
-	"github.com/pkg/errors"
-
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
