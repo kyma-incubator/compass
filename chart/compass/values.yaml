@@ -746,20 +746,16 @@ global:
       skipPattern: ""
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
-    directorFQDN: http://compass-director.compass-system.svc.cluster.local
-    connectorFQDN: http://compass-connector.compass-system.svc.cluster.local
     externalServicesMockFQDN: http://compass-external-services-mock.compass-system.svc.cluster.local
     ordServiceFQDN: http://compass-ord-service.compass-system.svc.cluster.local
     systemBrokerFQDN: http://compass-system-broker.compass-system.svc.cluster.local
     tenantFetcherFQDN: http://compass-tenant-fetcher.compass-system.svc.cluster.local
     hydratorFQDN: http://compass-hydrator.compass-system.svc.cluster.local
-
     basicCredentials:
       manage: false
       secretName: "test-basic-credentials-secret"
-      subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
-      subscriptionProviderIdValue: "id-value!t12345"
-
+    subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+    subscriptionProviderIdValue: "id-value!t12345"
     db:
       maxOpenConnections: 3
       maxIdleConnections: 1

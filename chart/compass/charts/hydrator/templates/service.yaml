@@ -9,7 +9,7 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.global.tenantFetcher.port }}
+    - port: {{ .Values.global.hydrator.port }}
       protocol: TCP
       name: http
     - port: {{ .Values.global.istio.proxy.port }}
