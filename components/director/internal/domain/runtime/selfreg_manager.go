@@ -146,9 +146,9 @@ func (s *selfRegisterManager) GetSelfRegDistinguishingLabelKey() string {
 	return s.cfg.SelfRegisterDistinguishLabelKey
 }
 
-func (s *selfRegisterManager) createSelfRegPrepRequest(runtimeID, tenant, targetUrl string) (*http.Request, error) {
+func (s *selfRegisterManager) createSelfRegPrepRequest(runtimeID, tenant, targetURL string) (*http.Request, error) {
 	selfRegLabelVal := s.cfg.SelfRegisterLabelValuePrefix + runtimeID
-	url, err := urlpkg.Parse(targetUrl)
+	url, err := urlpkg.Parse(targetURL)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating url for preparation of self-registered runtime")
 	}
@@ -167,9 +167,9 @@ func (s *selfRegisterManager) createSelfRegPrepRequest(runtimeID, tenant, target
 	return request, nil
 }
 
-func (s *selfRegisterManager) createSelfRegDelRequest(runtimeID, targetUrl string) (*http.Request, error) {
+func (s *selfRegisterManager) createSelfRegDelRequest(runtimeID, targetURL string) (*http.Request, error) {
 	selfRegLabelVal := s.cfg.SelfRegisterLabelValuePrefix + runtimeID
-	url, err := urlpkg.Parse(targetUrl)
+	url, err := urlpkg.Parse(targetURL)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating url for cleanup of self-registered runtime")
 	}

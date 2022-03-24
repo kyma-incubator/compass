@@ -48,6 +48,8 @@ type InstanceConfig struct {
 	Key          string
 }
 
+// Validate checks if all required fields are populated based on Oauth Mode.
+// In the end, the error message is aggregated by joining all error messages.
 func (i *InstanceConfig) Validate(oauthMode oauth.AuthMode) error {
 	errorMessages := make([]string, 0)
 
@@ -85,7 +87,7 @@ func (i *InstanceConfig) Validate(oauthMode oauth.AuthMode) error {
 
 // MapInstanceConfigs parses the InstanceConfigs json string to map with key: region name and value: InstanceConfig for the instance in the region
 func (c *SelfRegConfig) MapInstanceConfigs(oauthMode oauth.AuthMode) error {
-	if ok := gjson.Valid(c.InstanceConfigs); ok == false {
+	if ok := gjson.Valid(c.InstanceConfigs); !ok {
 		return errors.New("failed to validate instance configs")
 	}
 	bindingsResult := gjson.Parse(c.InstanceConfigs)

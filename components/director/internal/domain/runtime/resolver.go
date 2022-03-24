@@ -224,7 +224,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 			if labelVal != "" {
 				label, ok := in.Labels["region"].(string)
 				if !ok {
-					log.C(ctx).Errorf("An error occured while casting region label value to string")
+					log.C(ctx).Errorf("An error occurred while casting region label value to string")
 				} else {
 					r.cleanupAndLogOnError(ctx, id, label)
 				}
