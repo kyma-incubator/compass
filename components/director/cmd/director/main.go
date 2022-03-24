@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/subscription"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
@@ -144,6 +146,8 @@ type config struct {
 	DataloaderWait     time.Duration `envconfig:"default=10ms"`
 
 	CertLoaderConfig certloader.Config
+
+	SubscriptionConfig subscription.Config
 }
 
 func main() {
@@ -222,6 +226,7 @@ func main() {
 		cfg.OneTimeToken.Length,
 		adminURL,
 		accessStrategyExecutorProvider,
+		cfg.SubscriptionConfig,
 	)
 	exitOnError(err, "Failed to initialize root resolver")
 
