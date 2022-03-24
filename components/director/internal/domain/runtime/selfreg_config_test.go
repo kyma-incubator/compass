@@ -20,6 +20,7 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 		{
 			Name: "Success for MTLS mode",
 			Config: SelfRegConfig{
+				OAuthMode:                oauth.Mtls,
 				InstanceClientIDPath:     "clientId",
 				InstanceClientSecretPath: "clientSecret",
 				InstanceURLPath:          "url",
@@ -29,7 +30,6 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 				InstanceConfigs: `{"eu-1":{"clientId":"client_id","url":"url","tokenUrl":"token-url","clientCert":"cert","clientKey":"key"},
 							      "eu-2":{"clientId":"client_id_2","url":"url-2","tokenUrl":"token-url-2","clientCert":"cert2","clientKey":"key2"}}`,
 			},
-			OauthMode: oauth.Mtls,
 			ExpectedRegionToInstance: map[string]InstanceConfig{
 				"eu-1": {
 					ClientID: "client_id",
@@ -51,6 +51,7 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 		{
 			Name: "Success for Standard mode",
 			Config: SelfRegConfig{
+				OAuthMode:                oauth.Standard,
 				InstanceClientIDPath:     "clientId",
 				InstanceClientSecretPath: "clientSecret",
 				InstanceURLPath:          "url",
@@ -60,7 +61,6 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 				InstanceConfigs: `{"eu-1":{"clientId":"client_id","clientSecret":"client_secret","url":"url","tokenUrl":"token-url"},
 							      "eu-2":{"clientId":"client_id_2","clientSecret":"client_secret","url":"url-2","tokenUrl":"token-url-2"}}`,
 			},
-			OauthMode: oauth.Standard,
 			ExpectedRegionToInstance: map[string]InstanceConfig{
 				"eu-1": {
 					ClientID:     "client_id",
@@ -80,6 +80,7 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 		{
 			Name: "Returns error when Client ID and URLs are missing",
 			Config: SelfRegConfig{
+				OAuthMode:                oauth.Standard,
 				InstanceClientIDPath:     "clientId",
 				InstanceClientSecretPath: "clientSecret",
 				InstanceURLPath:          "url",
@@ -89,13 +90,13 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 				InstanceConfigs: `{"eu-1":{"clientId":"client_id","clientSecret":"client_secret","url":"url","tokenUrl":"token-url"},
 							      "eu-2":{"clientSecret":"client_secret"}}`,
 			},
-			OauthMode:                oauth.Standard,
 			ExpectedRegionToInstance: nil,
 			ExpectedErr:              errors.Errorf("while validating instance for region: %q: Client ID is missing, Token URL is missing, URL is missing", "eu-2"),
 		},
 		{
 			Name: "Returns error when Client Secret is missing in Standard flow",
 			Config: SelfRegConfig{
+				OAuthMode:                oauth.Standard,
 				InstanceClientIDPath:     "clientId",
 				InstanceClientSecretPath: "clientSecret",
 				InstanceURLPath:          "url",
@@ -105,13 +106,13 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 				InstanceConfigs: `{"eu-1":{"clientId":"client_id","clientSecret":"client_secret","url":"url","tokenUrl":"token-url"},
 							      "eu-2":{"clientId":"client_id","url":"url-2","tokenUrl":"token-url-2"}}`,
 			},
-			OauthMode:                oauth.Standard,
 			ExpectedRegionToInstance: nil,
 			ExpectedErr:              errors.Errorf("while validating instance for region: %q: Client Secret is missing", "eu-2"),
 		},
 		{
 			Name: "Returns error when Certificate and Key is missing in MTLS flow",
 			Config: SelfRegConfig{
+				OAuthMode:                oauth.Mtls,
 				InstanceClientIDPath:     "clientId",
 				InstanceClientSecretPath: "clientSecret",
 				InstanceURLPath:          "url",
@@ -121,7 +122,6 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 				InstanceConfigs: `{"eu-1":{"clientId":"client_id","url":"url","tokenUrl":"token-url","clientCert":"cert","clientKey":"key"},
 							      "eu-2":{"clientId":"client_id","url":"url-2","tokenUrl":"token-url-2"}}`,
 			},
-			OauthMode:                oauth.Mtls,
 			ExpectedRegionToInstance: nil,
 			ExpectedErr:              errors.Errorf("while validating instance for region: %q: Certificate is missing, Key is missing", "eu-2"),
 		},
@@ -129,7 +129,7 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			err := testCase.Config.MapInstanceConfigs(testCase.OauthMode)
+			err := testCase.Config.MapInstanceConfigs()
 
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)

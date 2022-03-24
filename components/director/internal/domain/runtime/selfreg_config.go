@@ -86,7 +86,7 @@ func (i *InstanceConfig) Validate(oauthMode oauth.AuthMode) error {
 }
 
 // MapInstanceConfigs parses the InstanceConfigs json string to map with key: region name and value: InstanceConfig for the instance in the region
-func (c *SelfRegConfig) MapInstanceConfigs(oauthMode oauth.AuthMode) error {
+func (c *SelfRegConfig) MapInstanceConfigs() error {
 	if ok := gjson.Valid(c.InstanceConfigs); !ok {
 		return errors.New("failed to validate instance configs")
 	}
@@ -103,7 +103,7 @@ func (c *SelfRegConfig) MapInstanceConfigs(oauthMode oauth.AuthMode) error {
 			Key:          gjson.Get(config.String(), c.InstanceKeyPath).String(),
 		}
 
-		if err := i.Validate(oauthMode); err != nil {
+		if err := i.Validate(c.OAuthMode); err != nil {
 			c.RegionToInstanceConfig = nil
 			return errors.Wrapf(err, "while validating instance for region: %q", region)
 		}

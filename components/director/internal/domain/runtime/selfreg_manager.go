@@ -44,7 +44,7 @@ type selfRegisterManager struct {
 // NewSelfRegisterManager creates a new SelfRegisterManager which is responsible for doing preparation/clean-up during
 // self-registration of runtimes configured with values from cfg.
 func NewSelfRegisterManager(cfg SelfRegConfig, provider ExternalSvcCallerProvider) (*selfRegisterManager, error) {
-	if err := cfg.MapInstanceConfigs(cfg.OAuthMode); err != nil {
+	if err := cfg.MapInstanceConfigs(); err != nil {
 		return nil, errors.Wrap(err, "while creating self register manager")
 	}
 	return &selfRegisterManager{cfg: cfg, callerProvider: provider}, nil
