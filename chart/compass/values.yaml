@@ -379,7 +379,7 @@ global:
     timeout_ms: 120000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:write tenant_subscription:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
@@ -483,7 +483,6 @@ global:
       name: "provider"
       subscriptionProviderIdProperty: "subscriptionProviderIdProperty"
     server:
-      handlerEndpoint: "/v1/callback/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
       dependenciesEndpoint: "/v1/dependencies"
       tenantPathParam: "tenantId"

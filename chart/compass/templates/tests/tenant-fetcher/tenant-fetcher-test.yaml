@@ -62,8 +62,6 @@ spec:
                   key: {{ .Values.global.externalServicesMock.oauthSecret.clientSecretKey }}
             - name: APP_ROOT_API
               value: "{{ .Values.global.tenantFetcher.prefix }}"
-            - name: APP_HANDLER_ENDPOINT
-              value: "{{ .Values.global.tenantFetcher.server.handlerEndpoint }}"
             - name: APP_REGIONAL_HANDLER_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.server.regionalHandlerEndpoint }}"
             - name: APP_DEPENDENCIES_ENDPOINT
