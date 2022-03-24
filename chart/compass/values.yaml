@@ -191,7 +191,7 @@ global:
       path: "/v1/info"
     selfRegister:
       secret:
-        name: "compass-instance-to-region"
+        name: "region-instances-credentials"
         key: "keyConfig"
       clientIdPath: "clientId"
       clientSecretPath: "clientSecret"
@@ -664,6 +664,8 @@ global:
     ordCertSecuredHost: compass-external-services-mock-sap-mtls-ord
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
+    regionInstancesCredentials:
+      manage: false
     oauthSecret:
       manage: false
       name: compass-external-services-mock-oauth-credentials

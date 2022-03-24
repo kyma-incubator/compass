@@ -115,7 +115,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Config:         testConfig,
 			CallerProvider: rtmtest.CallerThatDoesNotGetCalled,
 			Region:         testRegion,
-			Input:          model.RuntimeInput{Labels: graphql.Labels{regionLabelKey: testRegion}},
+			Input:          lblInputWithoutRegion,
 			Context:        ctxWithTokenConsumer,
 			ExpectedErr:    nil,
 			ExpectedOutput: emptyLabels,
@@ -128,6 +128,18 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Input:          lblInputWithoutRegion,
 			Context:        ctxWithCertConsumer,
 			ExpectedErr:    fmt.Errorf("missing %q label", regionLabelKey),
+			ExpectedOutput: emptyLabels,
+		},
+		{
+			Name:           "Error when region label is not string",
+			Config:         testConfig,
+			CallerProvider: rtmtest.CallerThatDoesNotGetCalled,
+			Region:         testRegion,
+			Input: model.RuntimeInput{
+				Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal, regionLabelKey: struct{}{}},
+			},
+			Context:        ctxWithCertConsumer,
+			ExpectedErr:    fmt.Errorf("region value should be of type %q", "string"),
 			ExpectedOutput: emptyLabels,
 		},
 		{
@@ -304,4 +316,16 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNewSelfRegisterManager(t *testing.T) {
+	t.Run("Error when creating self register manager fails", func(t *testing.T) {
+		config := runtime.SelfRegConfig{
+			InstanceConfigs: `{"url"`,
+		}
+		manager, err := runtime.NewSelfRegisterManager(config, nil)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to validate instance configs")
+		require.Nil(t, manager)
+	})
 }

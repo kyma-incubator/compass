@@ -44,7 +44,7 @@ type selfRegisterManager struct {
 // NewSelfRegisterManager creates a new SelfRegisterManager which is responsible for doing preparation/clean-up during
 // self-registration of runtimes configured with values from cfg.
 func NewSelfRegisterManager(cfg SelfRegConfig, provider ExternalSvcCallerProvider) (*selfRegisterManager, error) {
-	if err := cfg.MapInstanceConfigs(); err != nil {
+	if err := cfg.MapInstanceConfigs(cfg.OAuthMode); err != nil {
 		return nil, errors.Wrap(err, "while creating self register manager")
 	}
 	return &selfRegisterManager{cfg: cfg, callerProvider: provider}, nil
@@ -74,7 +74,7 @@ func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Cont
 			return labels, errors.Errorf("missing configuration for region: %s", region)
 		}
 
-		request, err := s.createSelfRegPrepRequest(id, consumerInfo.ConsumerID, instanceConfig)
+		request, err := s.createSelfRegPrepRequest(id, consumerInfo.ConsumerID, instanceConfig.URL)
 		if err != nil {
 			return labels, err
 		}
@@ -118,7 +118,7 @@ func (s *selfRegisterManager) CleanupSelfRegisteredRuntime(ctx context.Context, 
 		return errors.Errorf("missing configuration for region: %s", region)
 	}
 
-	request, err := s.createSelfRegDelRequest(runtimeID, instanceConfig)
+	request, err := s.createSelfRegDelRequest(runtimeID, instanceConfig.URL)
 	if err != nil {
 		return err
 	}
@@ -146,9 +146,9 @@ func (s *selfRegisterManager) GetSelfRegDistinguishingLabelKey() string {
 	return s.cfg.SelfRegisterDistinguishLabelKey
 }
 
-func (s *selfRegisterManager) createSelfRegPrepRequest(runtimeID, tenant string, instanceConfig InstanceConfig) (*http.Request, error) {
+func (s *selfRegisterManager) createSelfRegPrepRequest(runtimeID, tenant, targetUrl string) (*http.Request, error) {
 	selfRegLabelVal := s.cfg.SelfRegisterLabelValuePrefix + runtimeID
-	url, err := urlpkg.Parse(instanceConfig.URL)
+	url, err := urlpkg.Parse(targetUrl)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating url for preparation of self-registered runtime")
 	}
@@ -167,9 +167,9 @@ func (s *selfRegisterManager) createSelfRegPrepRequest(runtimeID, tenant string,
 	return request, nil
 }
 
-func (s *selfRegisterManager) createSelfRegDelRequest(runtimeID string, instanceConfig InstanceConfig) (*http.Request, error) {
+func (s *selfRegisterManager) createSelfRegDelRequest(runtimeID, targetUrl string) (*http.Request, error) {
 	selfRegLabelVal := s.cfg.SelfRegisterLabelValuePrefix + runtimeID
-	url, err := urlpkg.Parse(instanceConfig.URL)
+	url, err := urlpkg.Parse(targetUrl)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating url for cleanup of self-registered runtime")
 	}

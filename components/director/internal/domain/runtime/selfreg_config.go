@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -47,8 +48,43 @@ type InstanceConfig struct {
 	Key          string
 }
 
+func (i *InstanceConfig) Validate(oauthMode oauth.AuthMode) error {
+	errorMessages := make([]string, 0)
+
+	if i.ClientID == "" {
+		errorMessages = append(errorMessages, "Client ID is missing")
+	}
+	if i.TokenURL == "" {
+		errorMessages = append(errorMessages, "Token URL is missing")
+	}
+	if i.URL == "" {
+		errorMessages = append(errorMessages, "URL is missing")
+	}
+
+	switch oauthMode {
+	case oauth.Standard:
+		if i.ClientSecret == "" {
+			errorMessages = append(errorMessages, "Client Secret is missing")
+		}
+	case oauth.Mtls:
+		if i.Cert == "" {
+			errorMessages = append(errorMessages, "Certificate is missing")
+		}
+		if i.Key == "" {
+			errorMessages = append(errorMessages, "Key is missing")
+		}
+	}
+
+	errorMsg := strings.Join(errorMessages, ", ")
+	if errorMsg != "" {
+		return errors.New(errorMsg)
+	}
+
+	return nil
+}
+
 // MapInstanceConfigs parses the InstanceConfigs json string to map with key: region name and value: InstanceConfig for the instance in the region
-func (c *SelfRegConfig) MapInstanceConfigs() error {
+func (c *SelfRegConfig) MapInstanceConfigs(oauthMode oauth.AuthMode) error {
 	if ok := gjson.Valid(c.InstanceConfigs); ok == false {
 		return errors.New("failed to validate instance configs")
 	}
@@ -64,6 +100,12 @@ func (c *SelfRegConfig) MapInstanceConfigs() error {
 			Cert:         gjson.Get(config.String(), c.InstanceCertPath).String(),
 			Key:          gjson.Get(config.String(), c.InstanceKeyPath).String(),
 		}
+
+		if err := i.Validate(oauthMode); err != nil {
+			c.RegionToInstanceConfig = nil
+			return errors.Wrapf(err, "while validating instance for region: %q", region)
+		}
+
 		c.RegionToInstanceConfig[region] = i
 	}
 
