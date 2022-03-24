@@ -98,7 +98,7 @@ global:
       version: "PR-2242"
     director:
       dir:
-      version: "PR-2267"
+      version: "PR-2258"
     gateway:
       dir:
       version: "PR-2242"
@@ -529,6 +529,7 @@ global:
       maxOpenConnections: 2
       maxIdleConnections: 2
     globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8086/.well-known/open-resource-discovery
+    maxOrdParallelDownloads: 4
   systemFetcher:
     enabled: false
     name: "system-fetcher"
