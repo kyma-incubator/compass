@@ -8,10 +8,10 @@ require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220304163903-75aff5226d4a
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20220304163903-75aff5226d4a
-	github.com/kyma-incubator/compass/components/director v0.0.0-20220316133005-7cfd84199aae
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220304163903-75aff5226d4a
+	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220324100256-29207f254337
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20220324100256-29207f254337
+	github.com/kyma-incubator/compass/components/director v0.0.0-20220324100256-29207f254337
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220324100256-29207f254337
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.19
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
@@ -24,9 +24,6 @@ require (
 	k8s.io/api v0.20.2 // DO NOT BUMP
 	k8s.io/apimachinery v0.20.2 // DO NOT BUMP
 )
-
-// TODO:: remove
-replace github.com/kyma-incubator/compass/components/director => /Users/i507827/SAPDevelop/go-workspace/src/github.com/kyma-incubator/compass/components/director
 
 require golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 

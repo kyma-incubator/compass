@@ -18,9 +18,9 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jmoiron/sqlx v1.3.4
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20220302135528-60a022f8069c
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20220324100256-29207f254337
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220104122431-99ed924ea212
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220225151654-65d225649f67
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220304163903-75aff5226d4a
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.19
 	github.com/lib/pq v1.10.4
@@ -100,7 +100,6 @@ require (
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.26.0 // indirect
 	github.com/prometheus/procfs v0.6.0 // indirect
-	github.com/samlitowitz/goimportcycle v1.0.4 // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
@@ -120,7 +119,6 @@ require (
 	golang.org/x/tools v0.1.9 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.1.0 // indirect
-	gonum.org/v1/gonum v0.11.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
