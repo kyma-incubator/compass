@@ -18,6 +18,7 @@ package tests
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"testing"
 	"time"
@@ -60,6 +61,7 @@ var (
 	testConfig config
 
 	certSecuredGraphQLClient *graphql.Client
+	certSecuredHttpClient    *http.Client
 	certCache                certloader.Cache
 )
 
@@ -81,6 +83,7 @@ func TestMain(m *testing.M) {
 	}
 
 	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, certCache.Get().Certificate, testConfig.SkipSSLValidation)
+	certSecuredHttpClient = gql.NewCertAuthorizedHTTPClient(certCache.Get().PrivateKey, certCache.Get().Certificate, testConfig.SkipSSLValidation)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)
