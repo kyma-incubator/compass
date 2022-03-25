@@ -1529,31 +1529,5 @@ func assertExtra(t *testing.T, expectedBody, actualBody string) {
 
 	expectedScopes := strings.Split(expectedExtra["scope"].String(), " ")
 	actualScopes := strings.Split(actualExtra["scope"].String(), " ")
-	require.True(t, scopesAreEqual(expectedScopes, actualScopes))
-}
-
-func scopesAreEqual(expectedScopes, actualScopes []string) bool {
-	if len(actualScopes) != len(expectedScopes) {
-		return false
-	}
-
-	scopesMap := make(map[string]bool, len(expectedScopes))
-	for _, value := range expectedScopes {
-		scopesMap[value] = false
-	}
-
-	for _, value := range actualScopes {
-		if _, ok := scopesMap[value]; !ok {
-			return false
-		}
-		scopesMap[value] = true
-	}
-
-	for _, value := range scopesMap {
-		if !value {
-			return false
-		}
-	}
-
-	return true
+	require.ElementsMatch(t, expectedScopes, actualScopes)
 }
