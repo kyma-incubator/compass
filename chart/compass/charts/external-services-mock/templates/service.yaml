@@ -40,7 +40,7 @@ spec:
     - port: {{ .Values.global.externalServicesMock.ordGlobalRegistryUnsecuredPort }}
       targetPort: {{ .Values.global.externalServicesMock.ordGlobalRegistryUnsecuredPort }}
       protocol: TCP
-      name: http-ord-unsecured-gr
+      name: http-ord-uns-gr
     selector:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}

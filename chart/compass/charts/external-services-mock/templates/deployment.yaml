@@ -140,7 +140,7 @@ spec:
               - name: http-ord-gr
                 containerPort: {{ .Values.global.externalServicesMock.ordGlobalRegistryCertPort }}
                 protocol: TCP
-              - name: http-ord-unsecured-gr
+              - name: http-ord-uns-gr
                 containerPort: {{ .Values.global.externalServicesMock.ordGlobalRegistryUnsecuredPort }}
                 protocol: TCP
               resources:
