@@ -348,7 +348,7 @@ func initSecuredGlobalRegistryORDServer(cfg config) *http.Server {
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_global_registry.HandleFuncOrdDocument())
 
 	return &http.Server{
-		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.GlobalRegistryPort),
+		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.GlobalRegistryCertPort),
 		Handler: router,
 	}
 }
