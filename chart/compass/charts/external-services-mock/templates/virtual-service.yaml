@@ -71,7 +71,7 @@ spec:
         - destination:
             host: {{ .Values.global.externalServicesMock.host }}
             port:
-              number: {{ .Values.global.externalServicesMock.ordGlobalRegistryPort }}
+              number: {{ .Values.global.externalServicesMock.ordGlobalRegistryCertPort }}
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService

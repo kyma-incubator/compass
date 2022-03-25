@@ -291,8 +291,8 @@ func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 	servers = append(servers, initUnsecuredORDServer(cfg))
 	servers = append(servers, initBasicSecuredORDServer(cfg))
 	servers = append(servers, initOauthSecuredORDServer(cfg, key))
-	servers = append(servers, initUnsecuredGlobalRegistryORDServer(cfg))
 	servers = append(servers, initSecuredGlobalRegistryORDServer(cfg))
+	servers = append(servers, initUnsecuredGlobalRegistryORDServer(cfg))
 	return servers
 }
 
