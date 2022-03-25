@@ -8,9 +8,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/subscription"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
-	"github.com/pkg/errors"
-
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
@@ -44,10 +41,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-	authpkg "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
@@ -108,39 +103,14 @@ func NewRootResolver(
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
 	}
 
-	var credentials authpkg.Credentials
-	if selfRegConfig.OAuthMode == oauth.Standard {
-		credentials = &authpkg.OAuthCredentials{
-			ClientID:     selfRegConfig.ClientID,
-			ClientSecret: selfRegConfig.ClientSecret,
-			TokenURL:     selfRegConfig.URL + selfRegConfig.OauthTokenPath,
-		}
-	} else if selfRegConfig.OAuthMode == oauth.Mtls {
-		mtlsCredentials, err := authpkg.NewOAuthMtlsCredentials(&selfRegConfig)
-		if err != nil {
-			return nil, errors.Wrap(err, "while creating OAuth Mtls credentials")
-		}
-		credentials = mtlsCredentials
-	} else {
-		return nil, errors.New(fmt.Sprintf("unsupported OAuth mode: %s", selfRegConfig.OAuthMode))
-	}
-
-	config := securehttp.CallerConfig{
-		Credentials:       credentials,
-		ClientTimeout:     selfRegConfig.ClientTimeout,
-		SkipSSLValidation: selfRegConfig.SkipSSLValidation,
-	}
-
-	caller, err := securehttp.NewCaller(config)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating caller")
-	}
-
 	transport := httptransport.NewWithClient(hydraURL.Host, hydraURL.Path, []string{hydraURL.Scheme}, oAuth20HTTPClient)
 	hydra := hydraClient.New(transport, nil)
 
 	metricsCollector.InstrumentOAuth20HTTPClient(oAuth20HTTPClient)
-	selfRegisterManager := runtime.NewSelfRegisterManager(selfRegConfig, caller)
+	selfRegisterManager, err := runtime.NewSelfRegisterManager(selfRegConfig, &runtime.CallerProvider{})
+	if err != nil {
+		return nil, err
+	}
 
 	tokenConverter := onetimetoken.NewConverter(oneTimeTokenCfg.LegacyConnectorURL)
 	authConverter := auth.NewConverterWithOTT(tokenConverter)
