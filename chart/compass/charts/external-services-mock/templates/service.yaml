@@ -33,8 +33,8 @@ spec:
       targetPort: {{ .Values.global.externalServicesMock.oauthSecuredPort }}
       protocol: TCP
       name: http-oauth
-    - port: {{ .Values.global.externalServicesMock.ordGlobalRegistryPort }}
-      targetPort: {{ .Values.global.externalServicesMock.ordGlobalRegistryPort }}
+    - port: {{ .Values.global.externalServicesMock.ordGlobalRegistryCertPort }}
+      targetPort: {{ .Values.global.externalServicesMock.ordGlobalRegistryCertPort }}
       protocol: TCP
       name: http-ord-gr
     - port: {{ .Values.global.externalServicesMock.ordGlobalRegistryUnsecuredPort }}
