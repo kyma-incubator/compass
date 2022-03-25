@@ -25,24 +25,24 @@ type CallerConfig struct {
 
 // Caller can be used to call secured http endpoints with given credentials
 type Caller struct {
-	credentials auth.Credentials
+	Credentials auth.Credentials
 
-	provider director_http.AuthorizationProvider
+	Provider director_http.AuthorizationProvider
 	client   *http.Client
 }
 
 // NewCaller creates a new Caller
 func NewCaller(config CallerConfig) (*Caller, error) {
 	c := &Caller{
-		credentials: config.Credentials,
+		Credentials: config.Credentials,
 		client:      &http.Client{Timeout: config.ClientTimeout},
 	}
 
 	switch config.Credentials.Type() {
 	case auth.BasicCredentialType:
-		c.provider = auth.NewBasicAuthorizationProvider()
+		c.Provider = auth.NewBasicAuthorizationProvider()
 	case auth.OAuthCredentialType:
-		c.provider = auth.NewTokenAuthorizationProvider(&http.Client{Timeout: config.ClientTimeout})
+		c.Provider = auth.NewTokenAuthorizationProvider(&http.Client{Timeout: config.ClientTimeout})
 	case auth.OAuthMtlsCredentialType:
 		oauthCfg := oauth.Config{
 			TokenRequestTimeout: config.ClientTimeout,
@@ -52,9 +52,9 @@ func NewCaller(config CallerConfig) (*Caller, error) {
 		if !ok {
 			return nil, errors.New("failed to cast credentials to mtls oauth credentials type")
 		}
-		c.provider = auth.NewMtlsTokenAuthorizationProvider(oauthCfg, credentials.CertCache, auth.DefaultMtlsClientCreator)
+		c.Provider = auth.NewMtlsTokenAuthorizationProvider(oauthCfg, credentials.CertCache, auth.DefaultMtlsClientCreator)
 	}
-	c.client.Transport = director_http.NewCorrelationIDTransport(director_http.NewSecuredTransport(http.DefaultTransport, c.provider))
+	c.client.Transport = director_http.NewCorrelationIDTransport(director_http.NewSecuredTransport(http.DefaultTransport, c.Provider))
 	return c, nil
 }
 
@@ -70,6 +70,6 @@ func (c *Caller) Call(req *http.Request) (*http.Response, error) {
 
 func (c *Caller) addCredentialsToContext(req *http.Request) *http.Request {
 	authCtx := req.Context()
-	authCtx = auth.SaveToContext(authCtx, c.credentials)
+	authCtx = auth.SaveToContext(authCtx, c.Credentials)
 	return req.WithContext(authCtx)
 }
