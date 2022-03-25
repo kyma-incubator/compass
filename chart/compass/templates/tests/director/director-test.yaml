@@ -205,6 +205,9 @@ rules:
     resources: ["cronjobs"]
     resourceNames: ["director-external-certificate-rotation-job"]
     verbs: ["get"]
+  - apiGroups: ["*"]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list"]
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1

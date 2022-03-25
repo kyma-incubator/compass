@@ -1,17 +1,21 @@
 package k8s
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
 	"strings"
 	"testing"
 	"time"
 
-	"k8s.io/api/batch/v1beta1"
-
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/batch/v1"
+	"k8s.io/api/batch/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -125,5 +129,44 @@ func WaitForJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clients
 			}
 		}
 		time.Sleep(time.Second * 5)
+	}
+}
+
+func PrintJobLogs(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace, containerName string) {
+	t.Logf("Job %q logs:\n", jobName)
+	labelSelector := metav1.LabelSelector{MatchLabels: map[string]string{"job-name": jobName}}
+	listOptions := metav1.ListOptions{
+		LabelSelector: labels.Set(labelSelector.MatchLabels).String(),
+	}
+	podsList, err := k8sClient.CoreV1().Pods(namespace).List(ctx, listOptions)
+	if err != nil {
+		t.Errorf("Failed to list pods for job %q in namespace %q: %s", jobName, namespace, err)
+		return
+	}
+
+	for _, pod := range podsList.Items {
+		req := k8sClient.CoreV1().Pods(namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Container: containerName})
+
+		podLogs, err := req.Stream(ctx)
+		if err != nil {
+			if strings.Contains(err.Error(), fmt.Sprintf("container %q in pod %q is waiting to start", containerName, pod.Name)) {
+				continue
+			}
+			t.Errorf("Failed to get logs from pod %q: %s", pod.Name, err)
+			return
+		}
+
+		buf := new(bytes.Buffer)
+		if _, err = io.Copy(buf, podLogs); err != nil {
+			t.Errorf("Failed to copy logs from pod %q into buffer: %s", pod.Name, err)
+			return
+		}
+
+		t.Log(buf.String())
+
+		if err := podLogs.Close(); err != nil {
+			t.Errorf("Failed to close %q logs body: %s", pod.Name, err)
+			return
+		}
 	}
 }

@@ -149,6 +149,9 @@ rules:
   resources: ["cronjobs"]
   resourceNames: ["{{ .Chart.Name }}-tenant-fetcher-account-fetcher", "{{ .Chart.Name }}-tenant-fetcher-subaccount-fetcher"]
   verbs: ["get"]
+- apiGroups: ["*"]
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "list"]
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
