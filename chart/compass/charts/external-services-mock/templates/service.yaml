@@ -37,6 +37,10 @@ spec:
       targetPort: {{ .Values.global.externalServicesMock.ordGlobalRegistryPort }}
       protocol: TCP
       name: http-ord-gr
+    - port: {{ .Values.global.externalServicesMock.ordGlobalRegistryUnsecuredPort }}
+      targetPort: {{ .Values.global.externalServicesMock.ordGlobalRegistryUnsecuredPort }}
+      protocol: TCP
+      name: http-ord-unsecured-gr
     selector:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}

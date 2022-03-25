@@ -138,7 +138,10 @@ spec:
                 containerPort: {{ .Values.global.externalServicesMock.oauthSecuredPort }}
                 protocol: TCP
               - name: http-ord-gr
-                containerPort: {{ .Values.global.externalServicesMock.ordGlobalRegistryPort }}
+                containerPort: {{ .Values.global.externalServicesMock.ordGlobalRegistryCertPort }}
+                protocol: TCP
+              - name: http-ord-unsecured-gr
+                containerPort: {{ .Values.global.externalServicesMock.ordGlobalRegistryUnsecuredPort }}
                 protocol: TCP
               resources:
                 {{- toYaml .Values.deployment.resources | nindent 16 }}
