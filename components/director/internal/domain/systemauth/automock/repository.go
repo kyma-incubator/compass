@@ -57,13 +57,13 @@ func (_m *Repository) DeleteByIDForObjectGlobal(ctx context.Context, id string, 
 	return r0
 }
 
-// GetByID provides a mock function with given fields: ctx, tenant, id
-func (_m *Repository) GetByID(ctx context.Context, tenant string, id string) (*pkgmodel.SystemAuth, error) {
-	ret := _m.Called(ctx, tenant, id)
+// GetByIDForObject provides a mock function with given fields: ctx, tenant, id, objType
+func (_m *Repository) GetByIDForObject(ctx context.Context, tenant string, id string, objType pkgmodel.SystemAuthReferenceObjectType) (*pkgmodel.SystemAuth, error) {
+	ret := _m.Called(ctx, tenant, id, objType)
 
 	var r0 *pkgmodel.SystemAuth
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *pkgmodel.SystemAuth); ok {
-		r0 = rf(ctx, tenant, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, pkgmodel.SystemAuthReferenceObjectType) *pkgmodel.SystemAuth); ok {
+		r0 = rf(ctx, tenant, id, objType)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*pkgmodel.SystemAuth)
@@ -71,8 +71,31 @@ func (_m *Repository) GetByID(ctx context.Context, tenant string, id string) (*p
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, tenant, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, pkgmodel.SystemAuthReferenceObjectType) error); ok {
+		r1 = rf(ctx, tenant, id, objType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetByIDForObjectGlobal provides a mock function with given fields: ctx, id, objType
+func (_m *Repository) GetByIDForObjectGlobal(ctx context.Context, id string, objType pkgmodel.SystemAuthReferenceObjectType) (*pkgmodel.SystemAuth, error) {
+	ret := _m.Called(ctx, id, objType)
+
+	var r0 *pkgmodel.SystemAuth
+	if rf, ok := ret.Get(0).(func(context.Context, string, pkgmodel.SystemAuthReferenceObjectType) *pkgmodel.SystemAuth); ok {
+		r0 = rf(ctx, id, objType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*pkgmodel.SystemAuth)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, pkgmodel.SystemAuthReferenceObjectType) error); ok {
+		r1 = rf(ctx, id, objType)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -93,8 +93,10 @@ graphql:
     writeTenants: ["tenant:write"]
     deleteTenants: ["tenant:write"]
     updateTenant: ["tenant:write"]
-    updateSystemAuth: ["ory_internal"]
-    invalidateSystemAuthOneTimeToken: ["ory_internal"]
+    subscribeTenantToRuntime: ["tenant_subscription:write"]
+    unsubscribeTenantFromRuntime: ["tenant_subscription:write"]
+    updateSystemAuth: [ "ory_internal" ]
+    invalidateSystemAuthOneTimeToken: [ "ory_internal" ]
 
   field:
     fetch_request:

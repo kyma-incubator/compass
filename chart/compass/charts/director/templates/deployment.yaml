@@ -180,26 +180,23 @@ spec:
               value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY
               value: {{ .Values.global.tenantFetcher.server.consumerSubaccountIdsLabelKey }}
-            - name: APP_SELF_REGISTER_CLIENT_ID
+            - name: APP_SELF_REGISTER_AGGREGATED_INSTANCE_CONFIGS
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.global.director.selfRegister.secret.name }}
-                  key: {{ .Values.global.director.selfRegister.secret.clientIdKey }}
-            - name: APP_SELF_REGISTER_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.director.selfRegister.secret.name }}
-                  key: {{ .Values.global.director.selfRegister.secret.clientSecretKey }}
-            - name: APP_SELF_REGISTER_URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.director.selfRegister.secret.name }}
-                  key: {{ .Values.global.director.selfRegister.secret.urlKey }}
-            - name: APP_SELF_REGISTER_TOKEN_URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.director.selfRegister.secret.name }}
-                  key: {{ .Values.global.director.selfRegister.secret.tokenUrlKey }}
+                  key: {{ .Values.global.director.selfRegister.secret.key }}
+            - name: APP_SELF_REGISTER_INSTANCE_CLIENT_ID_PATH
+              value: {{ .Values.global.director.selfRegister.clientIdPath }}
+            - name: APP_SELF_REGISTER_INSTANCE_CLIENT_SECRET_PATH
+              value: {{ .Values.global.director.selfRegister.clientSecretPath }}
+            - name: APP_SELF_REGISTER_INSTANCE_URL_PATH
+              value: {{ .Values.global.director.selfRegister.urlPath }}
+            - name: APP_SELF_REGISTER_INSTANCE_TOKEN_URL_PATH
+              value: {{ .Values.global.director.selfRegister.tokenUrlPath }}
+            - name: APP_SELF_REGISTER_INSTANCE_X509_CERT_PATH
+              value: {{ .Values.global.director.selfRegister.clientCertPath }}
+            - name: APP_SELF_REGISTER_INSTANCE_X509_KEY_PATH
+              value: {{ .Values.global.director.selfRegister.clientKeyPath }}
             - name: APP_SELF_REGISTER_OAUTH_TOKEN_PATH
               value: {{ .Values.global.director.selfRegister.oauthTokenPath }}
             - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY # This variable get its value from tenant fetcher configuration(in tests charts too) because we need "self register" flow to be executed as part of the consumer-provider test, locally and on real environment as well
@@ -222,16 +219,6 @@ spec:
               value: {{ .Values.global.director.selfRegister.requestBodyPattern | quote }}
             - name: APP_SELF_REGISTER_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.http.client.skipSSLValidation }}"
-            - name: APP_SELF_REGISTER_OAUTH_X509_CERT
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.director.selfRegister.secret.name }}
-                  key: {{ .Values.global.director.selfRegister.secret.clientCertKey }}
-            - name: APP_SELF_REGISTER_OAUTH_X509_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.director.selfRegister.secret.name }}
-                  key: {{ .Values.global.director.selfRegister.secret.clientKeyKey }}
             - name: APP_SELF_REGISTER_OAUTH_MODE
               value: {{ .Values.global.director.selfRegister.oauthMode }}
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET

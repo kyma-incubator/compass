@@ -14,13 +14,13 @@ type SelfRegisterManager struct {
 	mock.Mock
 }
 
-// CleanupSelfRegisteredRuntime provides a mock function with given fields: ctx, selfRegisterLabelValue
-func (_m *SelfRegisterManager) CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterLabelValue string) error {
-	ret := _m.Called(ctx, selfRegisterLabelValue)
+// CleanupSelfRegisteredRuntime provides a mock function with given fields: ctx, selfRegisterLabelValue, region
+func (_m *SelfRegisterManager) CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterLabelValue string, region string) error {
+	ret := _m.Called(ctx, selfRegisterLabelValue, region)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, selfRegisterLabelValue)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, selfRegisterLabelValue, region)
 	} else {
 		r0 = ret.Error(0)
 	}

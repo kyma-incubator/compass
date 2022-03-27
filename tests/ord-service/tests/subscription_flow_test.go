@@ -89,7 +89,7 @@ func TestSelfRegisterFlow(t *testing.T) {
 	runtimeInput := graphql.RuntimeInput{
 		Name:        "selfRegisterRuntime",
 		Description: ptr.String("selfRegisterRuntime-description"),
-		Labels:      graphql.Labels{testConfig.ProviderLabelKey: testConfig.ProviderID},
+		Labels:      graphql.Labels{testConfig.ProviderLabelKey: testConfig.ProviderID, tenantfetcher.RegionKey: testConfig.Region},
 	}
 	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtimeInput)
 	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtime)
