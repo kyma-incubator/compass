@@ -2,13 +2,11 @@ package testctx
 
 import (
 	"context"
-	"net/url"
 	"reflect"
 	"strings"
 	"time"
 
 	gqlizer "github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/sirupsen/logrus"
 
@@ -61,16 +59,6 @@ func (o *Operation) WithTenant(tenant string) *Operation {
 	return o
 }
 
-func (o *Operation) WithQueryParam(key, value string) *Operation {
-	o.queryParams[key] = value
-	return o
-}
-
-func (o *Operation) WithQueryParams(queryParams map[string]string) *Operation {
-	o.queryParams = queryParams
-	return o
-}
-
 func (o *Operation) Run(req *gcli.Request, cli *gcli.Client, resp interface{}) error {
 	m := resultMapperFor(&resp)
 	req.Header.Set("Tenant", o.tenant)
@@ -78,20 +66,6 @@ func (o *Operation) Run(req *gcli.Request, cli *gcli.Client, resp interface{}) e
 	return withRetryOnTemporaryConnectionProblems(func() error {
 		return cli.Run(o.ctx, req, &m)
 	})
-}
-
-func (o *Operation) AddQueryParamsToURL() (*url.URL, error) {
-	url, err := url.Parse(gql.GetDirectorGraphQLURL())
-	if err != nil {
-		return nil, err
-	}
-
-	query := url.Query()
-	for key, val := range o.queryParams {
-		query.Set(key, val)
-	}
-	url.RawQuery = query.Encode()
-	return url, nil
 }
 
 func (tc *TestContext) RunOperation(ctx context.Context, cli *gcli.Client, req *gcli.Request, resp interface{}) error {

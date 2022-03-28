@@ -9,9 +9,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
-	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -21,6 +19,7 @@ import (
 
 const (
 	ScenariosLabel          = "scenarios"
+	RegionLabel             = "region"
 	IsNormalizedLabel       = "isNormalized"
 	QueryRuntimesCategory   = "query runtimes"
 	RegisterRuntimeCategory = "register runtime"
@@ -44,8 +43,8 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	// WHEN
 	registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
 	saveExampleInCustomDir(t, registerReq.Query(), RegisterRuntimeCategory, "register runtime")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerReq, &actualRuntime)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &actualRuntime)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, registerReq, &actualRuntime)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &actualRuntime)
 
 	//THEN
 	require.NoError(t, err)
@@ -57,7 +56,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 
 	// WHEN
 	addLabelReq := fixtures.FixSetRuntimeLabelRequest(actualRuntime.ID, "new_label", []string{"bbb"})
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, addLabelReq, &actualLabel)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addLabelReq, &actualLabel)
 
 	//THEN
 	require.NoError(t, err)
@@ -67,7 +66,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 
 	// get runtime and validate runtimes
 	getRuntimeReq := fixtures.FixGetRuntimeRequest(actualRuntime.ID)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getRuntimeReq, &actualRuntime)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRuntimeReq, &actualRuntime)
 	require.NoError(t, err)
 	if conf.DefaultScenarioEnabled {
 		assert.Len(t, actualRuntime.Labels, 4)
@@ -85,8 +84,8 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 
 	//WHEN
 	actualApp := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createAppReq, &actualApp)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &actualApp)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAppReq, &actualApp)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &actualApp)
 
 	//THEN
 	require.NoError(t, err)
@@ -108,7 +107,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	saveExample(t, updateRuntimeReq.Query(), "update runtime")
 	//WHEN
 	actualRuntime = graphql.RuntimeExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, updateRuntimeReq, &actualRuntime)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateRuntimeReq, &actualRuntime)
 
 	//THEN
 	require.NoError(t, err)
@@ -122,7 +121,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	// WHEN
 	delReq := fixtures.FixUnregisterRuntimeRequest(actualRuntime.ID)
 	saveExample(t, delReq.Query(), "unregister runtime")
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, delReq, nil)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, delReq, nil)
 
 	//THEN
 	require.NoError(t, err)
@@ -147,8 +146,8 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 
 	// WHEN
 	registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerReq, &actualRuntime)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualRuntime)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, registerReq, &actualRuntime)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualRuntime)
 
 	//THEN
 	require.NoError(t, err)
@@ -156,8 +155,8 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	assertions.AssertRuntime(t, givenInput, actualRuntime, conf.DefaultScenarioEnabled, true)
 
 	// update label definition
-	_ = fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), []string{testScenario, "DEFAULT"})
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), []string{"DEFAULT"})
+	_ = fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), []string{testScenario, "DEFAULT"})
+	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), []string{"DEFAULT"})
 
 	// register automatic sccenario assignment
 	givenScenarioAssignment := graphql.AutomaticScenarioAssignmentSetInput{
@@ -174,7 +173,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 
 	// WHEN
 	createAutomaticScenarioAssignmentReq := fixtures.FixCreateAutomaticScenarioAssignmentRequest(scenarioAssignmentInGQL)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createAutomaticScenarioAssignmentReq, &actualScenarioAssignment)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAutomaticScenarioAssignmentReq, &actualScenarioAssignment)
 
 	// THEN
 	require.NoError(t, err)
@@ -184,7 +183,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 
 	// get runtime - verify it is in scenario
 	getRuntimeReq := fixtures.FixGetRuntimeRequest(actualRuntime.ID)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getRuntimeReq, &actualRuntime)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRuntimeReq, &actualRuntime)
 
 	require.NoError(t, err)
 	scenarios, hasScenarios := actualRuntime.Labels["scenarios"]
@@ -196,7 +195,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 
 	// WHEN
 	delReq := fixtures.FixUnregisterRuntimeRequest(actualRuntime.ID)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, delReq, nil)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, delReq, nil)
 
 	//THEN
 	require.NoError(t, err)
@@ -204,7 +203,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	// get automatic scenario assignment - see that it's deleted
 	actualScenarioAssignments := graphql.AutomaticScenarioAssignmentPage{}
 	getScenarioAssignmentsReq := fixtures.FixAutomaticScenarioAssignmentsRequest()
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getScenarioAssignmentsReq, &actualScenarioAssignments)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getScenarioAssignmentsReq, &actualScenarioAssignments)
 	require.NoError(t, err)
 	assert.Equal(t, actualScenarioAssignments.TotalCount, 0)
 }
@@ -219,7 +218,7 @@ func TestQueryRuntimes(t *testing.T) {
 	defer func() {
 		for _, id := range idsToRemove {
 			if id != "" {
-				fixtures.UnregisterRuntime(t, ctx, dexGraphQLClient, tenantId, id)
+				fixtures.UnregisterRuntime(t, ctx, certSecuredGraphQLClient, tenantId, id)
 			}
 		}
 	}()
@@ -239,7 +238,7 @@ func TestQueryRuntimes(t *testing.T) {
 		require.NoError(t, err)
 		createReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
 		actualRuntime := graphql.Runtime{}
-		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, createReq, &actualRuntime)
+		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createReq, &actualRuntime)
 		require.NoError(t, err)
 		require.NotEmpty(t, actualRuntime.ID)
 		rtm.ID = actualRuntime.ID
@@ -249,7 +248,7 @@ func TestQueryRuntimes(t *testing.T) {
 
 	// WHEN
 	queryReq := fixtures.FixGetRuntimesRequestWithPagination()
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryReq, &actualPage)
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryReq, &actualPage)
 	saveExampleInCustomDir(t, queryReq.Query(), QueryRuntimesCategory, "query runtimes")
 
 	//THEN
@@ -284,8 +283,8 @@ func TestQuerySpecificRuntime(t *testing.T) {
 	require.NoError(t, err)
 	registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
 	createdRuntime := graphql.RuntimeExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerReq, &createdRuntime)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &createdRuntime)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, registerReq, &createdRuntime)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &createdRuntime)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, createdRuntime.ID)
@@ -293,7 +292,7 @@ func TestQuerySpecificRuntime(t *testing.T) {
 	// WHEN
 	queriedRuntime := graphql.Runtime{}
 	queryReq := fixtures.FixGetRuntimeRequest(createdRuntime.ID)
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, queryReq, &queriedRuntime)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryReq, &queriedRuntime)
 	saveExample(t, queryReq.Query(), "query runtime")
 
 	//THEN
@@ -321,8 +320,8 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 		registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInputGQL)
 
 		runtime := graphql.Runtime{}
-		err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, registerReq, &runtime)
-		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &graphql.RuntimeExt{Runtime: runtime})
+		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, registerReq, &runtime)
+		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &graphql.RuntimeExt{Runtime: runtime})
 
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
@@ -338,7 +337,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 
 		//WHEN
 		runtimePage := graphql.RuntimePage{}
-		err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, runtimesRequest, &runtimePage)
+		err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, runtimesRequest, &runtimePage)
 		require.NoError(t, err)
 
 		//THEN
@@ -356,7 +355,7 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 	//WHEN get last page with last runtime
 	runtimesRequest := fixtures.FixRuntimeRequestWithPaginationRequest(after, cursor)
 	lastRuntimePage := graphql.RuntimePage{}
-	err := testctx.Tc.RunOperation(ctx, dexGraphQLClient, runtimesRequest, &lastRuntimePage)
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, runtimesRequest, &lastRuntimePage)
 	require.NoError(t, err)
 	saveExampleInCustomDir(t, runtimesRequest.Query(), QueryRuntimesCategory, "query runtimes with pagination")
 
@@ -378,13 +377,13 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 	name := "test-create-runtime-without-labels"
 	runtimeInput := graphql.RuntimeInput{Name: name}
 
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &runtimeInput)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &runtimeInput)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
 	//WHEN
-	fetchedRuntime := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
+	fetchedRuntime := fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID)
 
 	//THEN
 	require.Equal(t, runtime.ID, fetchedRuntime.ID)
@@ -402,7 +401,7 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 	updateReq := fixtures.FixUpdateRuntimeRequest(fetchedRuntime.ID, runtimeInGQL)
 
 	// WHEN
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, updateReq, &secondRuntime)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateReq, &secondRuntime)
 
 	//THEN
 	require.NoError(t, err)
@@ -421,13 +420,13 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 		Labels: graphql.Labels{IsNormalizedLabel: "false"},
 	}
 
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &runtimeInput)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &runtime)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &runtimeInput)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
 	//WHEN
-	fetchedRuntime := fixtures.GetRuntime(t, ctx, dexGraphQLClient, tenantId, runtime.ID)
+	fetchedRuntime := fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID)
 
 	//THEN
 	require.Equal(t, runtime.ID, fetchedRuntime.ID)
@@ -445,7 +444,7 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 	updateReq := fixtures.FixUpdateRuntimeRequest(fetchedRuntime.ID, runtimeInGQL)
 
 	// WHEN
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, updateReq, &secondRuntime)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateReq, &secondRuntime)
 
 	//THEN
 	require.NoError(t, err)
@@ -458,10 +457,6 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		ctx := context.Background()
 		distinguishLabelValue := conf.SelfRegDistinguishLabelValue
 
-		// Build graphql director client configured with certificate
-		clientKey, rawCertChain := certs.ClientCertPair(t, conf.ExternalCA.Certificate, conf.ExternalCA.Key)
-		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, clientKey, rawCertChain, conf.SkipSSLValidation)
-
 		protectedConsumerSubaccountIdsLabel := "consumer_subaccount_ids"
 
 		runtimeInput := &graphql.RuntimeInput{
@@ -471,8 +466,8 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		}
 
 		t.Log("Successfully register runtime using certificate with protected labels and validate that they are excluded")
-		actualRtm := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, runtimeInput)
-		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &actualRtm)
+		actualRtm := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, runtimeInput)
+		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &actualRtm)
 
 		//THEN
 		require.NotEmpty(t, actualRtm.ID)
@@ -485,11 +480,11 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		runtimeInput = &graphql.RuntimeInput{
 			Name:        "runtime-create-update-delete",
 			Description: ptr.String("runtime-create-update-delete-description"),
-			Labels:      graphql.Labels{conf.SelfRegDistinguishLabelKey: []interface{}{distinguishLabelValue}, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue},
+			Labels:      graphql.Labels{conf.SelfRegDistinguishLabelKey: []interface{}{distinguishLabelValue}, RegionLabel: conf.SelfRegRegion},
 		}
 
-		actualRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, runtimeInput)
-		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &actualRuntime)
+		actualRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, runtimeInput)
+		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &actualRuntime)
 
 		//THEN
 		require.NotEmpty(t, actualRuntime.ID)
@@ -501,7 +496,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		// WHEN
 		addLabelReq := fixtures.FixSetRuntimeLabelRequest(actualRuntime.ID, "regular_label", []string{"labelValue"})
-		err := testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, addLabelReq, &actualLabel)
+		err := testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, addLabelReq, &actualLabel)
 
 		//THEN
 		require.NoError(t, err)
@@ -515,7 +510,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		// WHEN
 		pLabelReq := fixtures.FixSetRuntimeLabelRequest(actualRuntime.ID, protectedConsumerSubaccountIdsLabel, []string{"subaccountID-1", "subaccountID-2"})
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, pLabelReq, &protectedLabel)
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, pLabelReq, &protectedLabel)
 
 		//THEN
 		require.Error(t, err)
@@ -524,7 +519,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		t.Log("Successfully get runtime")
 		getRuntimeReq := fixtures.FixGetRuntimeRequest(actualRuntime.ID)
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, getRuntimeReq, &actualRuntime)
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, getRuntimeReq, &actualRuntime)
 		require.NoError(t, err)
 		require.NotEmpty(t, actualRuntime.ID)
 		assert.Len(t, actualRuntime.Labels, 5) // three labels from the different runtime inputs plus two additional during runtime registration - isNormalized and "self register" label
@@ -545,7 +540,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		//WHEN
 		actualRuntime = graphql.RuntimeExt{}
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, updateRuntimeReq, &actualRuntime)
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, updateRuntimeReq, &actualRuntime)
 
 		//THEN
 		require.NoError(t, err)
@@ -560,7 +555,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		t.Log("Successfully delete runtime using certificate")
 		// WHEN
 		delReq := fixtures.FixUnregisterRuntimeRequest(actualRuntime.ID)
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, delReq, nil)
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, delReq, nil)
 
 		//THEN
 		require.NoError(t, err)
@@ -572,15 +567,11 @@ func TestQueryRuntimesWithCertificate(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
-		// Build graphql director client configured with certificate
-		clientKey, rawCertChain := certs.ClientCertPair(t, conf.ExternalCA.Certificate, conf.ExternalCA.Key)
-		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, clientKey, rawCertChain, conf.SkipSSLValidation)
-
 		idsToRemove := make([]string, 0)
 		defer func() {
 			for _, id := range idsToRemove {
 				if id != "" {
-					fixtures.UnregisterRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, id)
+					fixtures.UnregisterRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, id)
 				}
 			}
 		}()
@@ -600,7 +591,7 @@ func TestQueryRuntimesWithCertificate(t *testing.T) {
 			require.NoError(t, err)
 			createReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
 			actualRuntime := graphql.Runtime{}
-			err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, createReq, &actualRuntime)
+			err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, createReq, &actualRuntime)
 			require.NoError(t, err)
 			require.NotEmpty(t, actualRuntime.ID)
 			rtm.ID = actualRuntime.ID
@@ -610,7 +601,7 @@ func TestQueryRuntimesWithCertificate(t *testing.T) {
 
 		// WHEN
 		queryReq := fixtures.FixGetRuntimesRequestWithPagination()
-		err := testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, queryReq, &actualPage)
+		err := testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryReq, &actualPage)
 
 		//THEN
 		require.NoError(t, err)
@@ -637,10 +628,6 @@ func TestQuerySpecificRuntimeWithCertificate(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
-		// Build graphql director client configured with certificate
-		clientKey, rawCertChain := certs.ClientCertPair(t, conf.ExternalCA.Certificate, conf.ExternalCA.Key)
-		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, clientKey, rawCertChain, conf.SkipSSLValidation)
-
 		runtimeInput := graphql.RuntimeInput{
 			Name: "runtime-specific-runtime",
 		}
@@ -648,8 +635,8 @@ func TestQuerySpecificRuntimeWithCertificate(t *testing.T) {
 		require.NoError(t, err)
 		registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
 		createdRuntime := graphql.RuntimeExt{}
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, registerReq, &createdRuntime)
-		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &createdRuntime)
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, registerReq, &createdRuntime)
+		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &createdRuntime)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, createdRuntime.ID)
@@ -657,7 +644,7 @@ func TestQuerySpecificRuntimeWithCertificate(t *testing.T) {
 		// WHEN
 		queriedRuntime := graphql.Runtime{}
 		queryReq := fixtures.FixGetRuntimeRequest(createdRuntime.ID)
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, queryReq, &queriedRuntime)
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryReq, &queriedRuntime)
 
 		//THEN
 		require.NoError(t, err)

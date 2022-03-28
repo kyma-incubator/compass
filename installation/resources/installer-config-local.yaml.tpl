@@ -57,10 +57,10 @@ data:
   global.systemFetcher.http.client.skipSSLValidation: "true"
   global.ordAggregator.http.client.skipSSLValidation: "true"
   global.http.client.skipSSLValidation: "true"
-  global.tests.http.client.skipSSLValidation.director: "true"
-  global.tests.http.client.skipSSLValidation.ordService: "true"
+  global.tests.http.client.skipSSLValidation: "true"
   global.externalCertConfiguration.secrets.externalCertSvcSecret.manage: "true"
   global.externalServicesMock.oauthSecret.manage: "true"
+  global.externalServicesMock.regionInstancesCredentials.manage: "true"
   global.tests.basicCredentials.manage: "true"
   global.tests.ordService.subscriptionOauthSecret.manage: "true"
 

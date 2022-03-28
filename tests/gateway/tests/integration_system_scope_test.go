@@ -17,14 +17,14 @@ import (
 func TestIntegrationSystemScenario(t *testing.T) {
 	ctx := context.Background()
 
-	t.Log("Register Integration System with Dex id token")
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, "integration-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys)
+	t.Log("Register Integration System via Certificate Secured Client")
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, "integration-system")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, intSys)
 	require.NoError(t, err)
 	require.NotEmpty(t, intSys.ID)
 
 	t.Log("Request Client Credentials for Integration System")
-	intSystemAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
+	intSystemAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
 
 	intSysOauthCredentialData, ok := intSystemAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
@@ -40,7 +40,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 			IntegrationSystemID: &intSys.ID,
 		}
 		appByIntSys, err := fixtures.RegisterApplicationFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appInput)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &appByIntSys)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &appByIntSys)
 		require.NoError(t, err)
 		require.NotEmpty(t, appByIntSys.ID)
 
@@ -87,7 +87,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 			Name: "test",
 		}
 		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, &runtimeInput)
-		defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &runtime)
+		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &runtime)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 

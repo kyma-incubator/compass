@@ -44,10 +44,10 @@ func TestDirectorPlaygroundAccess(t *testing.T) {
 		tenant := cfg.DefaultTestTenant
 
 		ctx := context.Background()
-		appID := createApplicationForCertPlaygroundTest(t, ctx, tenant, dexGraphQLClient)
-		defer fixtures.UnregisterApplication(t, ctx, dexGraphQLClient, tenant, appID)
+		appID := createApplicationForCertPlaygroundTest(t, ctx, tenant, certSecuredGraphQLClient)
+		defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenant, appID)
 
-		oneTimeToken := fixtures.GenerateOneTimeTokenForApplication(t, ctx, dexGraphQLClient, tenant, appID)
+		oneTimeToken := fixtures.GenerateOneTimeTokenForApplication(t, ctx, certSecuredGraphQLClient, tenant, appID)
 
 		certChain, clientKey := generateClientCertForApplication(t, oneTimeToken)
 		client := getClientWithCert(certChain, clientKey)

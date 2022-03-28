@@ -48,15 +48,15 @@ func TestAsyncAPIDeleteApplicationWithAppWebhook(stdT *testing.T) {
 
 		registerRequest := fixtures.FixRegisterApplicationRequest(appInputGQL)
 		app := graphql.ApplicationExt{}
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
 		require.NoError(t, err)
 
 		require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
 		require.Len(t, app.Webhooks, 1)
 		nearCreationTime := time.Now().Add(-1 * time.Second)
 
-		triggerAsyncDeletion(t, ctx, app, nearCreationTime, app.Webhooks[0].ID, dexGraphQLClient)
+		triggerAsyncDeletion(t, ctx, app, nearCreationTime, app.Webhooks[0].ID, certSecuredGraphQLClient)
 	})
 }
 
@@ -82,15 +82,15 @@ func TestAsyncAPIDeleteApplicationWithMTLSAppWebhook(stdT *testing.T) {
 
 		registerRequest := fixtures.FixRegisterApplicationRequest(appInputGQL)
 		app := graphql.ApplicationExt{}
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
 		require.NoError(t, err)
 
 		require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
 		require.Len(t, app.Webhooks, 1)
 		nearCreationTime := time.Now().Add(-1 * time.Second)
 
-		triggerAsyncDeletion(t, ctx, app, nearCreationTime, app.Webhooks[0].ID, dexGraphQLClient)
+		triggerAsyncDeletion(t, ctx, app, nearCreationTime, app.Webhooks[0].ID, certSecuredGraphQLClient)
 	})
 }
 
@@ -116,8 +116,8 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
 
 		registerTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplateInputGQL)
 		appTemplate := graphql.ApplicationTemplate{}
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerTemplateRequest, &appTemplate)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, registerTemplateRequest, &appTemplate)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
 		require.NoError(t, err)
 
 		require.Len(t, appTemplate.Webhooks, 1)
@@ -131,14 +131,14 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
 
 		registerAppRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTemplateInputGQL)
 		app := graphql.ApplicationExt{}
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerAppRequest, &app)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, registerAppRequest, &app)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
 		require.NoError(t, err)
 
 		require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
 		nearCreationTime := time.Now().Add(-1 * time.Second)
 
-		triggerAsyncDeletion(t, ctx, app, nearCreationTime, appTemplate.Webhooks[0].ID, dexGraphQLClient)
+		triggerAsyncDeletion(t, ctx, app, nearCreationTime, appTemplate.Webhooks[0].ID, certSecuredGraphQLClient)
 	})
 }
 
@@ -165,8 +165,8 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 
 		registerTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplateInputGQL)
 		appTemplate := graphql.ApplicationTemplate{}
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerTemplateRequest, &appTemplate)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, registerTemplateRequest, &appTemplate)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
 		require.NoError(t, err)
 
 		require.Len(t, appTemplate.Webhooks, 1)
@@ -180,8 +180,8 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 
 		registerAppRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTemplateInputGQL)
 		app := graphql.ApplicationExt{}
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerAppRequest, &app)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, registerAppRequest, &app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
 		require.NoError(t, err)
 
 		require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
@@ -194,10 +194,10 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 
 		registerAppWebhookRequest := fixtures.FixAddWebhookRequest(app.ID, appWebhookInputGQL)
 		webhookResult := graphql.Webhook{}
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerAppWebhookRequest, &webhookResult)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, registerAppWebhookRequest, &webhookResult)
 		require.NoError(t, err)
 
-		triggerAsyncDeletion(t, ctx, app, nearCreationTime, webhookResult.ID, dexGraphQLClient)
+		triggerAsyncDeletion(t, ctx, app, nearCreationTime, webhookResult.ID, certSecuredGraphQLClient)
 	})
 }
 
