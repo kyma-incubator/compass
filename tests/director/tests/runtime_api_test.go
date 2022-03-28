@@ -19,6 +19,7 @@ import (
 
 const (
 	ScenariosLabel          = "scenarios"
+	RegionLabel             = "region"
 	IsNormalizedLabel       = "isNormalized"
 	QueryRuntimesCategory   = "query runtimes"
 	RegisterRuntimeCategory = "register runtime"
@@ -479,7 +480,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		runtimeInput = &graphql.RuntimeInput{
 			Name:        "runtime-create-update-delete",
 			Description: ptr.String("runtime-create-update-delete-description"),
-			Labels:      graphql.Labels{conf.SelfRegDistinguishLabelKey: []interface{}{distinguishLabelValue}, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue},
+			Labels:      graphql.Labels{conf.SelfRegDistinguishLabelKey: []interface{}{distinguishLabelValue}, RegionLabel: conf.SelfRegRegion},
 		}
 
 		actualRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, runtimeInput)
