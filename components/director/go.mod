@@ -20,7 +20,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jmoiron/sqlx v1.3.4
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20220104122431-99ed924ea212
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20220327143459-11b81bddcce9
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220104122431-99ed924ea212
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220208132958-a8193aa87b45
 	github.com/lestrrat-go/iter v1.0.1
@@ -113,8 +113,8 @@ require (
 	go.mongodb.org/mongo-driver v1.7.3 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
-	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect
-	golang.org/x/sys v0.0.0-20210823070655-63515b42dcdf // indirect
+	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
+	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654 // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
