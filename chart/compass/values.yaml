@@ -127,7 +127,7 @@ global:
       version: "PR-56"
     e2e_tests:
       dir:
-      version: "PR-2263"
+      version: "PR-2283"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -706,13 +706,14 @@ global:
       externalCertTestJobName: "external-certificate-rotation-test-job"
       certSvcInstanceTestSecretName: "cert-svc-secret"
       consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
-      region: "eu-1"
       subscriptionOauthSecret:
         manage: false
         name: compass-subscription-secret
         clientIdKey: client-id
         clientSecretKey: client-secret
         oauthUrlKey: url
+    selfRegistration:
+      region: "eu-1"
     externalServicesMock:
       skipPattern: ""
     namespace: kyma-system
