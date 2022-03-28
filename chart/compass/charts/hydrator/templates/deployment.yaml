@@ -46,7 +46,7 @@ spec:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       containers:
         - name: {{ .Chart.Name }}
-          image: image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.hydrator.dir }}compass-hydrator:{{ $.Values.global.images.hydrator.version }}
+          image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.hydrator.dir }}compass-hydrator:{{ $.Values.global.images.hydrator.version }}
           imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           ports:
             - name: http
