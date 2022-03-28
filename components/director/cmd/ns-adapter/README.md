@@ -2,7 +2,15 @@
 
 ## Overview
 
-NS-Adapter listens for incoming **reports** on on-premice systems from external Notification Service. Based on the data from the report systems may be created, updated or deleted.
+### Basic concepts
+
+SAP Cloud Connector (SCC) - a component which runs on-premise, in customer datacenter, and provides connectivity from the Cloud to on-premise systems.
+
+Notification Service (NS) - a Cloud service in which SCCs are registered so that cloud applications can connect to on-premise systems exposed via these SCCs. An SCC registers in NS in the context of a subaccount. Multiple SCCs may be registered in NS in a single subaccount, and also one SCC may be registered in NS in multiple subaccounts. Only applications running in the subaccount in which the SCC is registered can access the on-premise systems exposed by the SCC.
+
+Full report - NS reports to CMP all SCCs currently registered in it, with all their exposed on-premise systems.
+
+Delta (incremental) report - NS reports to CMP only those SCCs, which changed since the last report.
 
 ## Details
 
@@ -13,15 +21,9 @@ This section describes the API schema that a Notification Service must implement
 Valid JWT token with "tenant.consumerTenant" and "tenant.externalTenant" claims. ConsumerTenant and externalTenant should contain the internal ID and the external ID from existing business_tenant_mappings record in Compass database.
 
 ### Reports
+The NS adapter will get two types of reports - `delta` and `full`. Each report consists of list of SCCs. Each SCC contains a list of on-premise systems exposed by it. When a report comes, the NS adapter will try to identify for each SCC what systems are new (and create new entities in CMP for them), what systems are missing (and mark them unreachable) and what systems are updated (and update them). In addition, when a full report comes, the NS adapter will identify if there are SCCs which are not contained in the report and mark all their systems as unreachable.
 
-There are two types of reports:
-- Delta:
-  - systems that are __present__ in the report but are __unknown__ to Compass will be created
-  - systems that are __present__ in the report and are __known__ to Compass will be updated
-  - systems that are __not present__ in the report but are __known__ to Compass will be deleted
-- Full:
-  - same as Delta
-  - systems from Compass labeled with `SCC` are deleted if the value of their label is not present in the report - there is no entity in the `value` array from the request body which has `subaccount` and `locationId` matching these from the systems `SCC` label
+Each on-premise system stored in CMP is labeled with `SCC` label with value `{"Subaccount":"{{subaccount of the SCC}}", "LocationID":"{{location-id of the SCC}}", "Host":"{{virtual host of the on-premise system}}"}`. The SCC label is used as unique identifier for the on-premise systems stored in CMP.
 
 |||
 |---------------------|--------------------------------------|
@@ -63,7 +65,7 @@ curl -v --request PUT \
         {
           "protocol": "HTTP",
           "host": "127.0.0.1:8080",
-          "type": "on-premice-system",
+          "type": "on-premise-system",
           "status": "disabled",
           "description": "system description",
           "systemNumber": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
@@ -77,7 +79,7 @@ curl -v --request PUT \
         {
           "protocol": "HTTP",
           "host": "127.0.0.1:8080",
-          "type": "on-premice-system",
+          "type": "on-premise-system",
           "status": "disabled",
           "description": "system description",
           "systemNumber": "dddddddd-dddd-dddd-dddd-dddddddddddd"
@@ -106,7 +108,7 @@ curl -v --request PUT \
         {
           "protocol": "HTTP",
           "host": "127.0.0.1:8080",
-          "type": "on-premice-system",
+          "type": "on-premise-system",
           "status": "disabled",
           "description": "system description",
           "systemNumber": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
@@ -120,7 +122,7 @@ curl -v --request PUT \
         {
           "protocol": "HTTP",
           "host": "127.0.0.1:8080",
-          "type": "on-premice-system",
+          "type": "on-premise-system",
           "status": "disabled",
           "description": "system description",
           "systemNumber": "dddddddd-dddd-dddd-dddd-dddddddddddd"
