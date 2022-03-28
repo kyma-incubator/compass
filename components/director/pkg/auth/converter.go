@@ -138,14 +138,14 @@ func requestAuthToInput(in *model.CredentialRequestAuth) (*graphql.CredentialReq
 	}
 
 	// TODO:: check why is commented and adapt/remove?
-	//if in.Csrf.Credential != nil {
-	//	csrfCredentialDataInput, err := credentialDataToInput(in.Csrf.Credential)
-	//	if err != nil {
-	//		return nil, err
-	//	}
+	// if in.Csrf.Credential != nil {
+	// 	csrfCredentialDataInput, err := credentialDataToInput(in.Csrf.Credential)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
 	//
-	//	requestAuth.Csrf.Credential = csrfCredentialDataInput
-	//}
+	// 	requestAuth.Csrf.Credential = csrfCredentialDataInput
+	// }
 
 	return requestAuth, nil
 }
@@ -197,7 +197,6 @@ func requestAuthToModel(in *graphql.CredentialRequestAuth) (*model.CredentialReq
 			if err := in.Csrf.AdditionalHeaders.UnmarshalGQL(headers); err != nil {
 				return nil, err
 			}
-
 		}
 
 		var params map[string][]string

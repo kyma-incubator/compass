@@ -204,7 +204,7 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 	return r.converter.ToGraphQL(runtime), nil
 }
 
-// Runtime returns a Runtime by a token issuer
+// RuntimeByTokenIssuer returns a Runtime by a token issuer
 func (r *Resolver) RuntimeByTokenIssuer(ctx context.Context, issuer string) (*graphql.Runtime, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
