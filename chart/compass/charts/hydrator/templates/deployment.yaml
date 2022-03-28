@@ -103,7 +103,6 @@ spec:
               value: {{ .Values.global.connector.certificateDataHeader | quote }}
             - name: APP_SUBJECT_CONSUMER_MAPPING_CONFIG
               value: {{ .Values.global.connector.subjectConsumerMappingConfig | quote }}
-
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}

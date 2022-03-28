@@ -39,9 +39,9 @@ func (s *subjectConsumerTypeMapping) validate() error {
 	}
 
 	supportedTenantTypes := map[string]bool{
-		string(tenantEntity.Customer):   true,
-		string(tenantEntity.Account):    true,
-		string(tenantEntity.Subaccount): true,
+		tenantEntity.Customer:   true,
+		tenantEntity.Account:    true,
+		tenantEntity.Subaccount: true,
 	}
 
 	if !supportedConsumerTypes[s.ConsumerType] {
@@ -60,6 +60,8 @@ type processor struct {
 	mappings  []subjectConsumerTypeMapping
 	ouPattern string
 }
+
+// TODO:: check if we need this file because it seems to be moved in hydrator component ?
 
 // NewProcessor returns a new subject processor configured with the given subject-to-consumer mapping, and subject organization unit pattern.
 // If the subject-to-consumer mapping is invalid, an error is returned.

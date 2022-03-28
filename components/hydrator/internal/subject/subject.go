@@ -16,6 +16,7 @@ const (
 	RuntimeType           = "Runtime"
 	IntegrationSystemType = "Integration System"
 	ApplicationType       = "Application"
+	SuperAdminType        = "Super Admin"
 )
 
 type subjectConsumerTypeMapping struct {
@@ -29,11 +30,25 @@ func (s *subjectConsumerTypeMapping) validate() error {
 	if len(s.Subject) < 1 {
 		return errors.New("subject is not provided")
 	}
-	if s.ConsumerType != RuntimeType && s.ConsumerType != IntegrationSystemType && s.ConsumerType != ApplicationType {
+
+	supportedConsumerTypes := map[string]bool{
+		RuntimeType:           true,
+		IntegrationSystemType: true,
+		ApplicationType:       true,
+		SuperAdminType:        true,
+	}
+
+	supportedTenantTypes := map[string]bool{
+		tenantEntity.Customer:   true,
+		tenantEntity.Account:    true,
+		tenantEntity.Subaccount: true,
+	}
+
+	if !supportedConsumerTypes[s.ConsumerType] {
 		return fmt.Errorf("consumer type %s is not valid", s.ConsumerType)
 	}
 	for _, al := range s.TenantAccessLevels {
-		if al != string(tenantEntity.Account) && al != string(tenantEntity.Subaccount) && al != string(tenantEntity.Customer) {
+		if !supportedTenantTypes[al] {
 			return fmt.Errorf("tenant access level %s is not valid", al)
 		}
 	}
