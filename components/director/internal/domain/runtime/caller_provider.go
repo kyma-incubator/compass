@@ -5,6 +5,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
 	authpkg "github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/pkg/errors"
 )
@@ -13,7 +14,7 @@ import (
 type CallerProvider struct{}
 
 // GetCaller provides ExternalSvcCaller to call external services with given authentication
-func (c *CallerProvider) GetCaller(config SelfRegConfig, region string) (ExternalSvcCaller, error) {
+func (c *CallerProvider) GetCaller(config config.SelfRegConfig, region string) (ExternalSvcCaller, error) {
 	instanceConfig, exists := config.RegionToInstanceConfig[region]
 	if !exists {
 		return nil, errors.Errorf("missing configuration for region: %s", region)

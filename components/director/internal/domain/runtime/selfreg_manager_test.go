@@ -47,7 +47,7 @@ var testConfig = config.SelfRegConfig{
 	InstanceKeyPath:                 "clientKey",
 	InstanceConfigs: `{"test-region":{"clientId":"client_id","clientSecret":"client_secret","url":"https://test-url-second.com","tokenUrl":"https://test-token-url-second.com","clientCert":"cert","clientKey":"key"},
 					  "fake-region":{"clientId":"client_id_2","clientSecret":"client_secret_2","url":"https://test-url      -second.com","tokenUrl":"https://test-token-url-second.com","clientCert":"cert2","clientKey":"key2"}}`,
-	RegionToInstanceConfig: map[string]runtime.InstanceConfig{
+	RegionToInstanceConfig: map[string]config.InstanceConfig{
 		"test-region": {
 			ClientID:     "client_id",
 			ClientSecret: "client_secret",
@@ -231,7 +231,7 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 
 	testCases := []struct {
 		Name                                string
-		Config                              runtime.SelfRegConfig
+		Config                              config.SelfRegConfig
 		CallerProvider                      func(*testing.T, config.SelfRegConfig, string) *automock.ExternalSvcCallerProvider
 		Region                              string
 		SelfRegisteredDistinguishLabelValue string
@@ -322,10 +322,10 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 
 func TestNewSelfRegisterManager(t *testing.T) {
 	t.Run("Error when creating self register manager fails", func(t *testing.T) {
-		config := runtime.SelfRegConfig{
+		cfg := config.SelfRegConfig{
 			InstanceConfigs: `{"url"`,
 		}
-		manager, err := runtime.NewSelfRegisterManager(config, nil)
+		manager, err := runtime.NewSelfRegisterManager(cfg, nil)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to validate instance configs")
 		require.Nil(t, manager)

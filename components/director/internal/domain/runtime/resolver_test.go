@@ -689,7 +689,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: UnusedOauth20Service(),

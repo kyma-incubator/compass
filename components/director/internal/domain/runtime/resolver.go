@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	labelPkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
-	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
@@ -15,8 +14,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/pkg/errors"
 )

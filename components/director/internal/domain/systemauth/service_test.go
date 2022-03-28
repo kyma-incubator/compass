@@ -336,7 +336,7 @@ func TestService_GetByIDForObject(t *testing.T) {
 			Name: "Success getting auth for Runtime",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("GetByIDForObject", contextThatHasTenant(testTenant), testTenant, sysAuthID, model.RuntimeReference).Return(modelSysAuth, nil)
+				sysAuthRepo.On("GetByIDForObject", contextThatHasTenant(testTenant), testTenant, sysAuthID, pkgmodel.RuntimeReference).Return(modelSysAuth, nil)
 				return sysAuthRepo
 			},
 			InputObjectType: pkgmodel.RuntimeReference,
@@ -347,7 +347,7 @@ func TestService_GetByIDForObject(t *testing.T) {
 			Name: "Success getting auth for Application",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("GetByIDForObject", contextThatHasTenant(testTenant), testTenant, sysAuthID, model.ApplicationReference).Return(modelSysAuth, nil)
+				sysAuthRepo.On("GetByIDForObject", contextThatHasTenant(testTenant), testTenant, sysAuthID, pkgmodel.ApplicationReference).Return(modelSysAuth, nil)
 				return sysAuthRepo
 			},
 			InputObjectType: pkgmodel.ApplicationReference,
@@ -358,7 +358,7 @@ func TestService_GetByIDForObject(t *testing.T) {
 			Name: "Success getting auth for Integration System",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("GetByIDForObjectGlobal", contextThatHasTenant(testTenant), sysAuthID, model.IntegrationSystemReference).Return(modelSysAuth, nil)
+				sysAuthRepo.On("GetByIDForObjectGlobal", contextThatHasTenant(testTenant), sysAuthID, pkgmodel.IntegrationSystemReference).Return(modelSysAuth, nil)
 				return sysAuthRepo
 			},
 			InputObjectType: pkgmodel.IntegrationSystemReference,
@@ -369,7 +369,7 @@ func TestService_GetByIDForObject(t *testing.T) {
 			Name: "Error getting System Auths",
 			sysAuthRepoFn: func() *automock.Repository {
 				sysAuthRepo := &automock.Repository{}
-				sysAuthRepo.On("GetByIDForObject", contextThatHasTenant(testTenant), testTenant, sysAuthID, model.RuntimeReference).Return(nil, testErr)
+				sysAuthRepo.On("GetByIDForObject", contextThatHasTenant(testTenant), testTenant, sysAuthID, pkgmodel.RuntimeReference).Return(nil, testErr)
 				return sysAuthRepo
 			},
 			InputObjectType: pkgmodel.RuntimeReference,

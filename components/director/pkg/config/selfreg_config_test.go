@@ -1,11 +1,10 @@
-package runtime
+package config
 
 import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/pkg/errors"
-
 	"github.com/stretchr/testify/require"
 )
 
