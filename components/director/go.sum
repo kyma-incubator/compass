@@ -428,6 +428,7 @@ github.com/goccy/go-json v0.7.6/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGF
 github.com/goccy/go-json v0.7.8/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
 github.com/goccy/go-json v0.8.1 h1:4/Wjm0JIJaTDm8K1KcGrLHJoa8EsJ13YWeX+6Kfq6uI=
 github.com/goccy/go-json v0.8.1/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
+github.com/goccy/go-json v0.9.4/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
 github.com/godbus/dbus/v5 v5.0.4/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/gogo/googleapis v1.1.0/go.mod h1:gf4bu3Q80BeJ6H1S1vYPm8/ELATdvryBaNFGgqEef3s=
 github.com/gogo/protobuf v1.0.0/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
@@ -492,6 +493,7 @@ github.com/google/go-cmp v0.5.4/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/
 github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.5.6 h1:BKbKCqvP6I+rmFHt06ZmyQtvB8xAkWdhFyr0ZUNZcxQ=
 github.com/google/go-cmp v0.5.6/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
+github.com/google/go-cmp v0.5.7/go.mod h1:n+brtR0CgQNWTVd5ZUFpTBC8YFBDLK/h/bpaJ8/DtOE=
 github.com/google/go-querystring v1.0.0/go.mod h1:odCYkC5MyYFN7vkCjXpyrEuKhc/BUO6wN/zVPAxq5ck=
 github.com/google/gofuzz v0.0.0-20161122191042-44d81051d367/go.mod h1:HP5RmnzzSNb993RKQDq4+1A4ia9nllfqcQFTQJedwGI=
 github.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
@@ -690,6 +692,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20211015131944-501a
 github.com/kyma-incubator/compass/components/director v0.0.0-20211203083226-ca92e79f1c22/go.mod h1:fBnQU42L9G/GTrvUo1evQYaJ1Hqg0oCH4oMwbOwofOg=
 github.com/kyma-incubator/compass/components/director v0.0.0-20211213121524-5fa2d76789f7/go.mod h1:zK2Cvzu8X5bUEIvJAsU4aF+Ahpp3mbJiXiECvxDDBxk=
 github.com/kyma-incubator/compass/components/director v0.0.0-20220104134431-dae62e3473c3/go.mod h1:zK2Cvzu8X5bUEIvJAsU4aF+Ahpp3mbJiXiECvxDDBxk=
+github.com/kyma-incubator/compass/components/hydrator v0.0.0-20220328064727-cd432e2ca7cf h1:1nKF/ob+ZAPAzQCqORhaCtn2JU867ekvAOreAHMBQcI=
+github.com/kyma-incubator/compass/components/hydrator v0.0.0-20220328064727-cd432e2ca7cf/go.mod h1:W5+0AhaPgCg+bHjXTDFXlCwN1xpHS/tXAB+yNx+Tc2g=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210213091620-beb5492e9d8b/go.mod h1:201wjhJxyaSA4pVp33VKOp91oNC+PQR591haj1t7KhA=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210301144857-4b0b2ea4c892/go.mod h1:oBe0oA/3Z7UvkFaZi2YJpgljC2MIbsCljIQbonWEMl4=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20210526113340-87c6e3c6f049/go.mod h1:RZyHP04D4gDIJtPhbQK4PT2loFvYKtXOmT7RMraNNik=
@@ -716,6 +720,7 @@ github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220104122431
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220104122431-99ed924ea212/go.mod h1:QFC/XVDIk9cMRiMwGnRe55bRAxs4j2tVaBMylHAJ5Ac=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220208132958-a8193aa87b45 h1:LHR4oaUylvv4JBFDBgT3pkHujViXyHzvInHNXf0xaho=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220208132958-a8193aa87b45/go.mod h1:M30JDO6D3wgLgJ6leIFawaH1tv8k0m+GuroKv+0o38Y=
+github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459-11b81bddcce9/go.mod h1:M30JDO6D3wgLgJ6leIFawaH1tv8k0m+GuroKv+0o38Y=
 github.com/lestrrat-go/backoff/v2 v2.0.7/go.mod h1:rHP/q/r9aT27n24JQLa7JhSQZCKBBOiM/uP402WwN8Y=
 github.com/lestrrat-go/backoff/v2 v2.0.8 h1:oNb5E5isby2kiro9AgdHLv5N5tint1AnDVVf2E2un5A=
 github.com/lestrrat-go/backoff/v2 v2.0.8/go.mod h1:rHP/q/r9aT27n24JQLa7JhSQZCKBBOiM/uP402WwN8Y=
@@ -737,6 +742,7 @@ github.com/lestrrat-go/jwx v1.2.6/go.mod h1:tJuGuAI3LC71IicTx82Mz1n3w9woAs2bYJZp
 github.com/lestrrat-go/jwx v1.2.7/go.mod h1:bw24IXWbavc0R2RsOtpXL7RtMyP589yZ1+L7kd09ZGA=
 github.com/lestrrat-go/jwx v1.2.14 h1:69OeaiFKCTn8xDmBGzHTgv/GBoO1LJcXw99GfYCDKzg=
 github.com/lestrrat-go/jwx v1.2.14/go.mod h1:3Q3Re8TaOcVTdpx4Tvz++OWmryDklihTDqrrwQiyS2A=
+github.com/lestrrat-go/jwx v1.2.19/go.mod h1:bWTBO7IHHVMtNunM8so9MT8wD+euEY1PzGEyCnuI2qM=
 github.com/lestrrat-go/option v0.0.0-20210103042652-6f1ecfceda35/go.mod h1:5ZHFbivi4xwXxhxY9XHDe2FHo6/Z7WWmtT7T5nBBp3I=
 github.com/lestrrat-go/option v1.0.0 h1:WqAWL8kh8VcSoD6xjSH34/1m8yxluXQbDeKNfvFeEO4=
 github.com/lestrrat-go/option v1.0.0/go.mod h1:5ZHFbivi4xwXxhxY9XHDe2FHo6/Z7WWmtT7T5nBBp3I=
