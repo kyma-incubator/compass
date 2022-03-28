@@ -137,6 +137,7 @@ func requestAuthToInput(in *model.CredentialRequestAuth) (*graphql.CredentialReq
 		},
 	}
 
+	// TODO:: check why is commented and adapt/remove?
 	//if in.Csrf.Credential != nil {
 	//	csrfCredentialDataInput, err := credentialDataToInput(in.Csrf.Credential)
 	//	if err != nil {
@@ -157,12 +158,21 @@ func ToModel(in *graphql.Auth) (*model.Auth, error) {
 
 	var headers map[string][]string
 	if len(in.AdditionalHeaders) != 0 {
-		in.AdditionalHeaders.UnmarshalGQL(headers)
+		if err := in.AdditionalHeaders.UnmarshalGQL(headers); err != nil {
+			return nil, err
+		}
 	}
 
 	var params map[string][]string
 	if len(in.AdditionalQueryParams) != 0 {
-		in.AdditionalQueryParams.UnmarshalGQL(params)
+		if err := in.AdditionalQueryParams.UnmarshalGQL(params); err != nil {
+			return nil, err
+		}
+	}
+
+	reqAuthModel, err := requestAuthToModel(in.RequestAuth)
+	if err != nil {
+		return nil, err
 	}
 
 	return &model.Auth{
@@ -170,27 +180,31 @@ func ToModel(in *graphql.Auth) (*model.Auth, error) {
 		AccessStrategy:        in.AccessStrategy,
 		AdditionalHeaders:     headers,
 		AdditionalQueryParams: params,
-		RequestAuth:           requestAuthToModel(in.RequestAuth),
+		RequestAuth:           reqAuthModel,
 		CertCommonName:        str.PtrStrToStr(in.CertCommonName),
 	}, nil
 }
 
-func requestAuthToModel(in *graphql.CredentialRequestAuth) *model.CredentialRequestAuth {
+func requestAuthToModel(in *graphql.CredentialRequestAuth) (*model.CredentialRequestAuth, error) {
 	if in == nil {
-		return nil
+		return nil, nil
 	}
 
 	var csrf *model.CSRFTokenCredentialRequestAuth
 	if in.Csrf != nil {
 		var headers map[string][]string
 		if len(in.Csrf.AdditionalHeaders) != 0 {
-			in.Csrf.AdditionalHeaders.UnmarshalGQL(headers)
+			if err := in.Csrf.AdditionalHeaders.UnmarshalGQL(headers); err != nil {
+				return nil, err
+			}
 
 		}
 
 		var params map[string][]string
 		if len(in.Csrf.AdditionalQueryParams) != 0 {
-			in.Csrf.AdditionalQueryParams.UnmarshalGQL(params)
+			if err := in.Csrf.AdditionalQueryParams.UnmarshalGQL(params); err != nil {
+				return nil, err
+			}
 		}
 
 		csrf = &model.CSRFTokenCredentialRequestAuth{
@@ -203,7 +217,7 @@ func requestAuthToModel(in *graphql.CredentialRequestAuth) *model.CredentialRequ
 
 	return &model.CredentialRequestAuth{
 		Csrf: csrf,
-	}
+	}, nil
 }
 
 func credentialToModel(in graphql.CredentialData) model.CredentialData {
