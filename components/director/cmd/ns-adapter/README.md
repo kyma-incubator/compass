@@ -30,7 +30,7 @@ Additionally, when a full report comes, the NS-Adapter identifies if there are S
 
 Each on-premise system stored in CMP is labeled with an `SCC` label with value `{"Subaccount":"{{subaccount of the SCC}}", "LocationID":"{{location-id of the SCC}}", "Host":"{{virtual host of the on-premise system}}"}`. The SCC label is used as a unique identifier for the on-premise systems stored in CMP.
 
-|||
+| | |
 |---------------------|--------------------------------------|
 |**Description**      | Upsert `ExposedSystems` is a bulk `create-or-update` operation on exposed on-premise systems. It takes a list of fully described exposed systems, and then, creates the systems that are new to CMP or updates the metadata for the existing ones.|
 |**URL**              | /api/v1/notifications                                  |
@@ -38,7 +38,7 @@ Each on-premise system stored in CMP is labeled with an `SCC` label with value `
 |**HTTP Method**      | PUT                                                    |
 |**HTTP Headers**     | Content-Type: application/json                         |
 |**HTTP Codes**       | [204 No Content](#204-no-content)                      |
-|                     | [200 OK](#200-OK)                                      |
+|                     | [200 OK](#200-ok)                                      |
 |                     | [400 Bad Request](#400-bad-request)                    |
 |                     | [401 Unauthorized](#401-unauthorized)                  |
 |                     | [408 Request Timeout](#408-request-timeout)            |
