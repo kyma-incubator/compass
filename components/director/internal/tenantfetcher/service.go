@@ -65,6 +65,7 @@ type QueryConfig struct {
 	RegionField    string `envconfig:"APP_QUERY_REGION_FIELD"`
 	PageStartValue string `envconfig:"default=0,APP_QUERY_PAGE_START"`
 	PageSizeValue  string `envconfig:"default=150,APP_QUERY_PAGE_SIZE"`
+	SubdomainField string `envconfig:"APP_QUERY_SUBDOMAIN_FIELD"`
 }
 
 // PageConfig missing godoc
@@ -345,6 +346,105 @@ func (s SubaccountService) SyncTenants() error {
 	return nil
 }
 
+// SyncTenant missing godoc
+func (s SubaccountService) SyncTenant(subaccountID string) error {
+	ctx := context.Background()
+	//startTime := time.Now()
+
+	//lastConsumedTenantTimestamp, lastResyncTimestamp, err := s.kubeClient.GetTenantFetcherConfigMapData(ctx)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//shouldFullResync, err := shouldFullResync(lastResyncTimestamp, s.fullResyncInterval)
+	//if err != nil {
+	//	return err
+	//}
+
+	//newLastResyncTimestamp := lastResyncTimestamp
+	//if shouldFullResync {
+	//	log.C(ctx).Infof("Last full resync was %s ago. Will perform a full resync.", s.fullResyncInterval)
+	//	lastConsumedTenantTimestamp = "1"
+	//	newLastResyncTimestamp = convertTimeToUnixMilliSecondString(startTime)
+	//}
+
+	for _, region := range s.tenantsRegions {
+		tenantToCreate, err := s.getSubaccountToCreateForRegion(subaccountID, region)
+		if err != nil {
+			return err
+		}
+		log.C(ctx).Printf("Got subaccount to create for region: %s", region)
+
+		//tenantsToDelete, err := s.getSubaccountsToDeleteForRegion(lastConsumedTenantTimestamp, region)
+		//if err != nil {
+		//	return err
+		//}
+		//log.C(ctx).Printf("Got subaccount to delete for region: %s", region)
+		//
+		//subaccountsToMove, err := s.getSubaccountsToMove(lastConsumedTenantTimestamp, region)
+		//if err != nil {
+		//	return err
+		//}
+		//log.C(ctx).Printf("Got subaccount to move for region: %s", region)
+
+		//tenantsToCreate = dedupeTenants(tenantsToCreate)
+		//tenantsToCreate = excludeTenants(tenantsToCreate, tenantsToDelete)
+
+		//totalNewEvents := len(tenantsToCreate)
+		//+ len(tenantsToDelete) + len(subaccountsToMove)
+		//log.C(ctx).Printf("Amount of new events: %d", totalNewEvents)
+		//if totalNewEvents == 0 {
+		//	continue
+		//}
+
+		tx, err := s.transact.Begin()
+		if err != nil {
+			return err
+		}
+		defer s.transact.RollbackUnlessCommitted(ctx, tx)
+		ctx = persistence.SaveToContext(ctx, tx)
+
+		currentTenants := make(map[string]string)
+		if len(tenantToCreate.Subdomain) != 0 && len(tenantToCreate.Parent) != 0 {
+			currentTenants, err = getCurrentTenants(ctx, s.tenantStorageService)
+			if err != nil {
+				return err
+			}
+		}
+
+		// Order of event processing matters
+		if len(tenantToCreate.Subdomain) != 0 && len(tenantToCreate.Parent) != 0 {
+			var tenantsToCreate = make([]model.BusinessTenantMappingInput, 0, 1)
+			tenantsToCreate = append(tenantsToCreate, tenantToCreate)
+			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, region, s.providerName, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
+				return errors.Wrap(err, "while storing subaccounts")
+			}
+		}
+		//if len(subaccountsToMove) > 0 {
+		//	if err := s.moveSubaccounts(ctx, subaccountsToMove); err != nil {
+		//		return errors.Wrap(err, "while moving subaccounts")
+		//	}
+		//}
+		//if len(tenantsToDelete) > 0 {
+		//	if err := deleteTenants(ctx, s.gqlClient, currentTenants, tenantsToDelete, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
+		//		return errors.Wrap(err, "while deleting subaccounts")
+		//	}
+		//}
+
+		log.C(ctx).Printf("Processed new events for region: %s", region)
+
+		if err = tx.Commit(); err != nil {
+			return err
+		}
+	}
+
+	//if err = s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixMilliSecondString(startTime), newLastResyncTimestamp); err != nil {
+	//	return err
+	//}
+
+	return nil
+}
+
 // SyncTenants missing godoc
 func (s GlobalAccountService) SyncTenants() error {
 	ctx := context.Background()
@@ -578,7 +678,7 @@ func (s GlobalAccountService) getAccountsToCreate(fromTimestamp string) ([]model
 }
 
 func (s SubaccountService) getSubaccountsToCreateForRegion(fromTimestamp string, region string) ([]model.BusinessTenantMappingInput, error) {
-	var tenantsToCreate []model.BusinessTenantMappingInput
+	var fetchedTenants []model.BusinessTenantMappingInput
 
 	configProvider := func() (QueryParams, PageConfig) {
 		return QueryParams{
@@ -596,16 +696,55 @@ func (s SubaccountService) getSubaccountsToCreateForRegion(fromTimestamp string,
 	if err != nil {
 		return nil, fmt.Errorf("while fetching created subaccounts: %v", err)
 	}
-	tenantsToCreate = append(tenantsToCreate, createdTenants...)
+	fetchedTenants = append(fetchedTenants, createdTenants...)
 
 	updatedTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, UpdatedSubaccountType, configProvider, s.toEventsPage)
 	if err != nil {
 		return nil, fmt.Errorf("while fetching updated subaccounts: %v", err)
 	}
 
+	fetchedTenants = append(fetchedTenants, updatedTenants...)
+
+	return fetchedTenants, nil
+}
+
+func (s SubaccountService) getSubaccountToCreateForRegion(subaccountID string, region string) (model.BusinessTenantMappingInput, error) {
+	var tenantsToCreate []model.BusinessTenantMappingInput
+	var tenantToCreate model.BusinessTenantMappingInput
+
+	configProvider := func() (QueryParams, PageConfig) {
+		return QueryParams{
+				s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
+				s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
+				s.queryConfig.SubdomainField: subaccountID,
+				s.queryConfig.RegionField:    region,
+			}, PageConfig{
+				TotalPagesField:   s.fieldMapping.TotalPagesField,
+				TotalResultsField: s.fieldMapping.TotalResultsField,
+				PageNumField:      s.queryConfig.PageNumField,
+			}
+	}
+	createdTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, CreatedSubaccountType, configProvider, s.toEventsPage)
+	if err != nil {
+		return tenantToCreate, fmt.Errorf("while fetching created subaccounts: %v", err)
+	}
+	tenantsToCreate = append(tenantsToCreate, createdTenants...)
+
+	updatedTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, UpdatedSubaccountType, configProvider, s.toEventsPage)
+	if err != nil {
+		return tenantToCreate, fmt.Errorf("while fetching updated subaccounts: %v", err)
+	}
+
+	if len(tenantsToCreate) < 1 {
+		return tenantToCreate, fmt.Errorf("while fetching subaccount by ID - subaccount not found: %v", err)
+	}
+	if len(tenantsToCreate) > 1 {
+		return tenantToCreate, fmt.Errorf("while fetching subaccount by ID - more than one subaccount found: %v", err)
+	}
+
 	tenantsToCreate = append(tenantsToCreate, updatedTenants...)
 
-	return tenantsToCreate, nil
+	return tenantsToCreate[0], nil
 }
 
 func (s GlobalAccountService) getAccountsToDelete(fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
