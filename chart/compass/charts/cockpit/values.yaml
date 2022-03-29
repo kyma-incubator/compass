@@ -14,4 +14,3 @@ service:
 statusPort: 6082
 ui:
   host: compass
-idpUrl: "https://idp"

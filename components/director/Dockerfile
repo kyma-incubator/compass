@@ -1,4 +1,4 @@
-FROM golang:1.17.6-alpine3.15 as builder
+FROM golang:1.17.8-alpine3.15 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/director
 WORKDIR ${BASE_APP_DIR}
@@ -21,6 +21,7 @@ COPY . .
 #
 
 RUN go build -v -o director ./cmd/director/main.go \
+  && go build -v -o ns-adapter ./cmd/ns-adapter/main.go \
   && go build -v -o tenantfetcher-job ./cmd/tenantfetcher-job/main.go \
   && go build -v -o tenantfetcher-svc ./cmd/tenantfetcher-svc/main.go \
   && go build -v -o tenantloader ./cmd/tenantloader/main.go \
@@ -28,6 +29,7 @@ RUN go build -v -o director ./cmd/director/main.go \
   && go build -v -o scopessynchronizer ./cmd/scopessynchronizer/main.go \
   && go build -v -o systemfetcher ./cmd/systemfetcher/main.go
 RUN mkdir /app && mv ./director /app/director \
+  && mv ./ns-adapter /app/ns-adapter \
   && mv ./tenantfetcher-job /app/tenantfetcher-job \
   && mv ./tenantfetcher-svc /app/tenantfetcher-svc \
   && mv ./tenantloader /app/tenantloader \

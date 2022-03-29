@@ -30,6 +30,13 @@ type HydraToken struct {
 	TokenType   string `json:"token_type"`
 }
 
+type OauthConfig struct {
+	TokenURL     string
+	ClientID     string
+	ClientSecret string
+	Data         url.Values
+}
+
 const (
 	RuntimeScopes                                    = "runtime:read runtime:write application:read runtime.auths:read bundle.instance_auths:read"
 	ApplicationScopes                                = "application:read application:write application.auths:read application.webhooks:read bundle.instance_auths:read document.fetch_request:read event_spec.fetch_request:read api_spec.fetch_request:read fetch-request.auth:read"
@@ -44,10 +51,11 @@ const (
 	credentialsGrantType = "client_credentials"
 	claimsKey            = "claims_key"
 
-	clientIDKey = "client_id"
-	scopeKey    = "scope"
-	userNameKey = "username"
-	passwordKey = "password"
+	clientIDKey     = "client_id"
+	clientSecretKey = "client_secret"
+	scopeKey        = "scope"
+	userNameKey     = "username"
+	passwordKey     = "password"
 )
 
 func FetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL string, scopes string) (*HydraToken, error) {
@@ -103,9 +111,31 @@ func GetClientCredentialsToken(t *testing.T, ctx context.Context, tokenURL, clie
 	data := url.Values{}
 	data.Add(grantTypeFieldName, credentialsGrantType)
 	data.Add(clientIDKey, clientID)
+	data.Add(clientSecretKey, clientSecret)
 	data.Add(claimsKey, staticMappingClaimsKey)
 
 	token := GetToken(t, ctx, tokenURL, clientID, clientSecret, data)
+	log.C(ctx).Info("Successfully issued client_credentials token")
+
+	return token
+}
+
+func GetClientCredentialsTokenWithClient(t *testing.T, ctx context.Context, client *http.Client, tokenURL, clientID, clientSecret, staticMappingClaimsKey string) string {
+	log.C(ctx).Info("Issuing client_credentials token...")
+	data := url.Values{}
+	data.Add(grantTypeFieldName, credentialsGrantType)
+	data.Add(clientIDKey, clientID)
+	data.Add(clientSecretKey, clientSecret)
+	data.Add(claimsKey, staticMappingClaimsKey)
+
+	oauthConfig := OauthConfig{
+		TokenURL:     tokenURL,
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		Data:         data,
+	}
+
+	token := GetTokenWithClient(t, ctx, client, oauthConfig)
 	log.C(ctx).Info("Successfully issued client_credentials token")
 
 	return token
@@ -127,13 +157,6 @@ func GetUserToken(t *testing.T, ctx context.Context, tokenURL, clientID, clientS
 }
 
 func GetToken(t *testing.T, ctx context.Context, tokenURL, clientID, clientSecret string, data url.Values) string {
-	req, err := http.NewRequest(http.MethodPost, tokenURL, bytes.NewBuffer([]byte(data.Encode())))
-	if err != nil {
-		fmt.Println(err)
-	}
-	req.SetBasicAuth(clientID, clientSecret)
-	req.Header.Add(contentTypeHeader, contentTypeApplicationURLEncoded)
-
 	httpClient := &http.Client{
 		Timeout: 10 * time.Second,
 		Transport: &http.Transport{
@@ -141,7 +164,28 @@ func GetToken(t *testing.T, ctx context.Context, tokenURL, clientID, clientSecre
 		},
 	}
 
-	resp, err := httpClient.Do(req)
+	oauthConfig := OauthConfig{
+		TokenURL:     tokenURL,
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		Data:         data,
+	}
+
+	return GetTokenWithClient(t, ctx, httpClient, oauthConfig)
+}
+
+func GetTokenWithClient(t *testing.T, ctx context.Context, client *http.Client, oauthConfig OauthConfig) string {
+	req, err := http.NewRequest(http.MethodPost, oauthConfig.TokenURL, bytes.NewBuffer([]byte(oauthConfig.Data.Encode())))
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	if oauthConfig.Data.Get(userNameKey) != "" && oauthConfig.Data.Get(passwordKey) != "" {
+		req.SetBasicAuth(oauthConfig.ClientID, oauthConfig.ClientSecret)
+	}
+	req.Header.Add(contentTypeHeader, contentTypeApplicationURLEncoded)
+
+	resp, err := client.Do(req)
 	require.NoError(t, err)
 	defer func() {
 		if err := resp.Body.Close(); err != nil {

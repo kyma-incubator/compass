@@ -124,6 +124,3 @@ do
   sleep $DELAY
   ITERATIONS_LEFT=$(( ITERATIONS_LEFT-1 ))
 done
-
-echo "Patching dex-connection testdefinition..."
-kubectl patch TestDefinition dex-connection -n kyma-system --type=json -p="[{\"op\": \"replace\", \"path\": \"/spec/template/spec/containers/0/image\", \"value\": \"eu.gcr.io/kyma-project/external/curlimages/curl:7.70.0\"}]"

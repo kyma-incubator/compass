@@ -248,6 +248,32 @@ func TestGetSingle(t *testing.T) {
 	})
 }
 
+func TestGetSingleForUpdate(t *testing.T) {
+	sut := repo.NewSingleGetter(appTableName, appColumns)
+	resourceType := resource.Application
+	m2mTable, ok := resourceType.TenantAccessTable()
+	require.True(t, ok)
+
+	t.Run("success", func(t *testing.T) {
+		// GIVEN
+		db, mock := testdb.MockDatabase(t)
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		defer mock.AssertExpectations(t)
+
+		expectedQuery := regexp.QuoteMeta(fmt.Sprintf("SELECT id, name, description FROM %s WHERE id = $1 AND %s FOR UPDATE", appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$2")))
+		rows := sqlmock.NewRows([]string{"id", "name", "description"}).AddRow(appID, appName, appDescription)
+		mock.ExpectQuery(expectedQuery).WithArgs(appID, tenantID).WillReturnRows(rows)
+		dest := App{}
+		// WHEN
+		err := sut.GetForUpdate(ctx, resourceType, tenantID, repo.Conditions{repo.NewEqualCondition("id", appID)}, repo.NoOrderBy, &dest)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, appID, dest.ID)
+		assert.Equal(t, appName, dest.Name)
+		assert.Equal(t, appDescription, dest.Description)
+	})
+}
+
 func TestGetSingleWithEmbeddedTenant(t *testing.T) {
 	givenID := "id"
 	sut := repo.NewSingleGetterWithEmbeddedTenant(userTableName, "tenant_id", []string{"id", "tenant_id", "first_name", "last_name", "age"})
