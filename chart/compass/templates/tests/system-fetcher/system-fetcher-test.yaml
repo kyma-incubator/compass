@@ -40,6 +40,8 @@ spec:
               value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080"
             - name: SYSTEM_FETCHER_PAGE_SIZE
               value: "{{ .Values.global.systemFetcher.paging.pageSize }}"
+            - name: SYSTEM_FETCHER_CONTAINER_NAME
+              value: "{{ .Values.global.systemFetcher.containerName }}"
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:

@@ -79,6 +79,8 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
+            - name: TENANT_FETCHER_CONTAINER_NAME
+              value: "{{ .Values.global.tenantFetcher.containerName }}"
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.19.1-alpine

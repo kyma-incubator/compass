@@ -53,8 +53,6 @@ const (
 	subaccountsJobName        = "tenant-fetcher-subaccount-test"
 	subaccountsCronJobName    = "compass-tenant-fetcher-subaccount-fetcher"
 
-	tenantFetcherContainerName = "fetcher"
-
 	mockEventsPagePattern = `
 {
 	"totalResults": %d,
@@ -111,7 +109,7 @@ func TestGlobalAccounts(t *testing.T) {
 
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, globalAccountsCronJobName, globalAccountsJobName, namespace)
 	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, globalAccountsJobName, namespace, tenantFetcherContainerName)
+		k8s.PrintJobLogs(t, ctx, k8sClient, globalAccountsJobName, namespace, cfg.TenantFetcherContainerName, false)
 		k8s.DeleteJob(t, ctx, k8sClient, globalAccountsJobName, namespace)
 	}()
 
@@ -205,7 +203,7 @@ func TestMoveSubaccounts(t *testing.T) {
 
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, subaccountsCronJobName, subaccountsJobName, namespace)
 	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, subaccountsJobName, namespace, tenantFetcherContainerName)
+		k8s.PrintJobLogs(t, ctx, k8sClient, subaccountsJobName, namespace, cfg.TenantFetcherContainerName, false)
 		k8s.DeleteJob(t, ctx, k8sClient, subaccountsJobName, namespace)
 	}()
 
@@ -301,7 +299,7 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, subaccountsCronJobName, subaccountsJobName, namespace)
 	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, subaccountsJobName, namespace, tenantFetcherContainerName)
+		k8s.PrintJobLogs(t, ctx, k8sClient, subaccountsJobName, namespace, cfg.TenantFetcherContainerName, true)
 		k8s.DeleteJob(t, ctx, k8sClient, subaccountsJobName, namespace)
 	}()
 
@@ -373,7 +371,7 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, subaccountsCronJobName, subaccountsJobName, namespace)
 	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, subaccountsJobName, namespace, tenantFetcherContainerName)
+		k8s.PrintJobLogs(t, ctx, k8sClient, subaccountsJobName, namespace, cfg.TenantFetcherContainerName, false)
 		k8s.DeleteJob(t, ctx, k8sClient, subaccountsJobName, namespace)
 	}()
 
@@ -414,7 +412,7 @@ func TestMoveMissingSubaccounts(t *testing.T) {
 
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, subaccountsCronJobName, subaccountsJobName, namespace)
 	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, subaccountsJobName, namespace, tenantFetcherContainerName)
+		k8s.PrintJobLogs(t, ctx, k8sClient, subaccountsJobName, namespace, cfg.TenantFetcherContainerName, false)
 		k8s.DeleteJob(t, ctx, k8sClient, subaccountsJobName, namespace)
 	}()
 

@@ -3,7 +3,6 @@ package k8s
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"strings"
 	"testing"
@@ -132,8 +131,11 @@ func WaitForJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clients
 	}
 }
 
-func PrintJobLogs(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace, containerName string) {
-	t.Logf("Job %q logs:\n", jobName)
+func PrintJobLogs(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clientset, jobName, namespace, containerName string, shouldJobFail bool) {
+	if shouldJobFail {
+		return
+	}
+
 	labelSelector := metav1.LabelSelector{MatchLabels: map[string]string{"job-name": jobName}}
 	listOptions := metav1.ListOptions{
 		LabelSelector: labels.Set(labelSelector.MatchLabels).String(),
@@ -145,13 +147,16 @@ func PrintJobLogs(t *testing.T, ctx context.Context, k8sClient *kubernetes.Clien
 	}
 
 	for _, pod := range podsList.Items {
+		if pod.Status.Phase != corev1.PodFailed {
+			continue
+		}
+
+		t.Logf("Job %q pod %q logs...\n", jobName, pod.Name)
+
 		req := k8sClient.CoreV1().Pods(namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Container: containerName})
 
 		podLogs, err := req.Stream(ctx)
 		if err != nil {
-			if strings.Contains(err.Error(), fmt.Sprintf("container %q in pod %q is waiting to start", containerName, pod.Name)) {
-				continue
-			}
 			t.Errorf("Failed to get logs from pod %q: %s", pod.Name, err)
 			return
 		}
