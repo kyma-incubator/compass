@@ -5,7 +5,6 @@ function prometheusMTLSPatch() {
   patchDeploymentsToInjectSidecar
   patchKymaServiceMonitorsForMTLS
   removeKymaPeerAuthsForPrometheus
-  patchDexPeerAuthForPrometheus
 }
 
 function patchPrometheusForMTLS() {
@@ -317,7 +316,6 @@ function patchKymaServiceMonitorsForMTLS() {
     monitoring-alertmanager
     monitoring-operator 
     monitoring-kube-state-metrics 
-    dex
     api-gateway
     monitoring-prometheus-pushgateway
   )
@@ -379,31 +377,3 @@ function removeKymaPeerAuthsForPrometheus() {
   done
 }
 
-function patchDexPeerAuthForPrometheus() {
-  crd="peerauthentication"
-  namespace="kyma-system"
-  name="dex-service"
-
-  patchDex=$(cat <<"EOF"
-  portLevelMtls:
-    5558:
-      mode: STRICT
-EOF
-  )
-
-  if kubectl get ns ${namespace} > /dev/null; then
-    echo "${patchDex}" > patch-dex.yaml
-    kubectl get ${crd} -n ${namespace} ${name} -o yaml > dex-pa.yaml
-
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-      sed -i '' -e '/^spec:/r patch-dex.yaml' dex-pa.yaml
-    else # assume Linux otherwise
-      sed -i '/^spec:/r patch-dex.yaml' dex-pa.yaml
-    fi
-
-    kubectl apply -f dex-pa.yaml
-
-    rm dex-pa.yaml
-    rm patch-dex.yaml
-  fi
-}

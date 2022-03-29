@@ -15,7 +15,8 @@ import (
 //go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
 type Repository interface {
 	Create(ctx context.Context, item model.SystemAuth) error
-	GetByID(ctx context.Context, tenant, id string) (*model.SystemAuth, error)
+	GetByIDForObject(ctx context.Context, tenant, id string, objType model.SystemAuthReferenceObjectType) (*model.SystemAuth, error)
+	GetByIDForObjectGlobal(ctx context.Context, id string, objType model.SystemAuthReferenceObjectType) (*model.SystemAuth, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.SystemAuth, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
 	ListForObjectGlobal(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
@@ -103,9 +104,9 @@ func (s *service) GetByIDForObject(ctx context.Context, objectType model.SystemA
 	var item *model.SystemAuth
 
 	if objectType == model.IntegrationSystemReference {
-		item, err = s.repo.GetByIDGlobal(ctx, authID)
+		item, err = s.repo.GetByIDForObjectGlobal(ctx, authID, objectType)
 	} else {
-		item, err = s.repo.GetByID(ctx, tnt, authID)
+		item, err = s.repo.GetByIDForObject(ctx, tnt, authID, objectType)
 	}
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting SystemAuth with ID %s", authID)
