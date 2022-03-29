@@ -28,7 +28,7 @@ spec:
       {{ end }}
       serviceAccountName: {{ .Chart.Name }}-e2e-system-fetcher
       containers:
-        - name: system-fetcher-tests
+        - name: {{ .Values.global.systemFetcher.containerName }}
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]

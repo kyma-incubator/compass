@@ -29,7 +29,7 @@ spec:
       {{ end }}
       serviceAccountName: {{ .Chart.Name }}-e2e-tenant-fetcher-job
       containers:
-        - name: tenant-fetcher-job-tests
+        - name: {{ .Values.global.tenantFetcher.containerName }}
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
