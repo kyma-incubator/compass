@@ -74,6 +74,7 @@ type ORDServers struct {
 	GlobalRegistryCertPort      int `envconfig:"default=8086"`
 	GlobalRegistryUnsecuredPort int `envconfig:"default=8087"`
 	CertSecuredBaseURL          string
+	CertSecuredGlobalBaseURL    string
 }
 
 type OAuthConfig struct {
@@ -334,7 +335,7 @@ func initUnsecuredORDServer(cfg config) *http.Server {
 func initUnsecuredGlobalRegistryORDServer(cfg config) *http.Server {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/.well-known/open-resource-discovery", ord_global_registry.HandleFuncOrdConfig())
+	router.HandleFunc("/.well-known/open-resource-discovery", ord_global_registry.HandleFuncOrdConfig(cfg.ORDServers.CertSecuredGlobalBaseURL))
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.GlobalRegistryUnsecuredPort),

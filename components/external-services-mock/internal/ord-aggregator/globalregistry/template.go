@@ -1,8 +1,8 @@
 package ord_global_registry
 
-const ordConfig = `{
+const ordConfigTemplate = `{
     "$schema": "../spec/v1/generated/Configuration.schema.json",
-    "baseUrl": "https://compass-external-services-mock-sap-mtls-global-ord.kyma.local",
+    "baseUrl": "%s",
 	"openResourceDiscoveryV1": {
         "documents": [
             {
