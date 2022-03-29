@@ -51,7 +51,7 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: {{ template "fullname" . }}-external-services-mock-external-mtls-global-ord
+  name: {{ template "fullname" . }}-external-services-mock-external-mtls-global-ord-registry
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "name" . }}
