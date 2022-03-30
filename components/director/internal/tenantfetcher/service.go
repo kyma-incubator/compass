@@ -59,13 +59,13 @@ type MovedSubaccountsFieldMapping struct {
 
 // QueryConfig contains the name of query parameters fields and default/start values
 type QueryConfig struct {
-	PageNumField   string `envconfig:"default=pageNum,APP_QUERY_PAGE_NUM_FIELD"`
-	PageSizeField  string `envconfig:"default=pageSize,APP_QUERY_PAGE_SIZE_FIELD"`
-	TimestampField string `envconfig:"default=timestamp,APP_QUERY_TIMESTAMP_FIELD"`
-	RegionField    string `envconfig:"APP_QUERY_REGION_FIELD"`
-	PageStartValue string `envconfig:"default=0,APP_QUERY_PAGE_START"`
-	PageSizeValue  string `envconfig:"default=150,APP_QUERY_PAGE_SIZE"`
-	SubdomainField string `envconfig:"APP_QUERY_SUBDOMAIN_FIELD"`
+	PageNumField    string `envconfig:"default=pageNum,APP_QUERY_PAGE_NUM_FIELD"`
+	PageSizeField   string `envconfig:"default=pageSize,APP_QUERY_PAGE_SIZE_FIELD"`
+	TimestampField  string `envconfig:"default=timestamp,APP_QUERY_TIMESTAMP_FIELD"`
+	RegionField     string `envconfig:"APP_QUERY_REGION_FIELD"`
+	PageStartValue  string `envconfig:"default=0,APP_QUERY_PAGE_START"`
+	PageSizeValue   string `envconfig:"default=150,APP_QUERY_PAGE_SIZE"`
+	SubaccountField string `envconfig:"default=entityId,APP_QUERY_SUBACCOUNT_FIELD"`
 }
 
 // PageConfig missing godoc
@@ -405,7 +405,7 @@ func (s SubaccountService) SyncTenant(subaccountID string) error {
 		ctx = persistence.SaveToContext(ctx, tx)
 
 		currentTenants := make(map[string]string)
-		if len(tenantToCreate.Subdomain) != 0 && len(tenantToCreate.Parent) != 0 {
+		if len(tenantToCreate.Parent) != 0 {
 			currentTenants, err = getCurrentTenants(ctx, s.tenantStorageService)
 			if err != nil {
 				return err
@@ -413,7 +413,7 @@ func (s SubaccountService) SyncTenant(subaccountID string) error {
 		}
 
 		// Order of event processing matters
-		if len(tenantToCreate.Subdomain) != 0 && len(tenantToCreate.Parent) != 0 {
+		if len(tenantToCreate.Parent) != 0 {
 			var tenantsToCreate = make([]model.BusinessTenantMappingInput, 0, 1)
 			tenantsToCreate = append(tenantsToCreate, tenantToCreate)
 			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, region, s.providerName, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
@@ -714,10 +714,10 @@ func (s SubaccountService) getSubaccountToCreateForRegion(subaccountID string, r
 
 	configProvider := func() (QueryParams, PageConfig) {
 		return QueryParams{
-				s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
-				s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
-				s.queryConfig.SubdomainField: subaccountID,
-				s.queryConfig.RegionField:    region,
+				s.queryConfig.PageNumField:    s.queryConfig.PageStartValue,
+				s.queryConfig.PageSizeField:   s.queryConfig.PageSizeValue,
+				s.queryConfig.SubaccountField: subaccountID,
+				s.queryConfig.RegionField:     region,
 			}, PageConfig{
 				TotalPagesField:   s.fieldMapping.TotalPagesField,
 				TotalResultsField: s.fieldMapping.TotalResultsField,
@@ -730,19 +730,12 @@ func (s SubaccountService) getSubaccountToCreateForRegion(subaccountID string, r
 	}
 	tenantsToCreate = append(tenantsToCreate, createdTenants...)
 
-	updatedTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, UpdatedSubaccountType, configProvider, s.toEventsPage)
-	if err != nil {
-		return tenantToCreate, fmt.Errorf("while fetching updated subaccounts: %v", err)
-	}
-
 	if len(tenantsToCreate) < 1 {
 		return tenantToCreate, fmt.Errorf("while fetching subaccount by ID - subaccount not found: %v", err)
 	}
 	if len(tenantsToCreate) > 1 {
 		return tenantToCreate, fmt.Errorf("while fetching subaccount by ID - more than one subaccount found: %v", err)
 	}
-
-	tenantsToCreate = append(tenantsToCreate, updatedTenants...)
 
 	return tenantsToCreate[0], nil
 }

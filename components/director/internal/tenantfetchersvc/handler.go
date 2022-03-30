@@ -19,6 +19,12 @@ const (
 	compassURL          = "https://github.com/kyma-incubator/compass"
 )
 
+// TenantFetcher is used to fectch tenants for creation;
+//go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore
+type TenantFetcher interface {
+	FetchTenantOnDemand(ctx context.Context, request *http.Request) error
+}
+
 // TenantSubscriber is used to apply subscription changes for tenants;
 //go:generate mockery --name=TenantSubscriber --output=automock --outpkg=automock --case=underscore
 type TenantSubscriber interface {
@@ -29,10 +35,11 @@ type TenantSubscriber interface {
 // HandlerConfig is the configuration required by the tenant handler.
 // It includes configurable parameters for incoming requests, including different tenant IDs json properties, and path parameters.
 type HandlerConfig struct {
-	RegionalHandlerEndpoint string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
-	DependenciesEndpoint    string `envconfig:"APP_DEPENDENCIES_ENDPOINT,default=/v1/dependencies"`
-	TenantPathParam         string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
-	RegionPathParam         string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
+	TenantOnDemandHandlerEndpoint string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/{tenantId}"`
+	RegionalHandlerEndpoint       string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
+	DependenciesEndpoint          string `envconfig:"APP_DEPENDENCIES_ENDPOINT,default=/v1/dependencies"`
+	TenantPathParam               string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
+	RegionPathParam               string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
 
 	DirectorGraphQLEndpoint     string        `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
 	ClientTimeout               time.Duration `envconfig:"default=60s"`
@@ -53,6 +60,7 @@ type TenantProviderConfig struct {
 }
 
 type handler struct {
+	fetcher    TenantFetcher
 	subscriber TenantSubscriber
 	config     HandlerConfig
 }
@@ -63,6 +71,19 @@ func NewTenantsHTTPHandler(subscriber TenantSubscriber, config HandlerConfig) *h
 		subscriber: subscriber,
 		config:     config,
 	}
+}
+
+// NewTenantFetcherHTTPHandler returns a new HTTP handler, responsible for creation and deletion of regional and non-regional tenants.
+func NewTenantFetcherHTTPHandler(fecther TenantFetcher, config HandlerConfig) *handler {
+	return &handler{
+		fetcher: fecther,
+		config:  config,
+	}
+}
+
+// FetchTenantOnDemand fetches CIS events for a provided subaccount and creates a tenant
+func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.Request) {
+	h.applySubscriptionChange(writer, request, h.subscriber.Subscribe)
 }
 
 // SubscribeTenant handles subscription for tenant. If tenant does not exist, will create it first.
