@@ -32,11 +32,9 @@ Note that `<APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY>` is optional.
 ## Development
 
 ### Prerequisites
-=======
+
 Tenant fetcher requires a running Director component.
 
 ### Run
 
-You can start the Tenant Fetcher via your IDE of choice.
-
-The up-to-date properties supported by the `run.sh` script can be found in the [Director component local documentation](../../README.md#local-development).
+You can start the Tenant Fetcher in your IDE. To get the latest list of properties supported by the `run.sh` script, see [Director - Local Development](../../README.md#local-development).
