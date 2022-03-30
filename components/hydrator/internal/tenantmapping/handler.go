@@ -189,26 +189,46 @@ func addTenantsToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqDat
 
 func addScopesToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) {
 	objScopes := make([]string, 0)
-scopesBuilder:
+	intersectableScopes := make([][]string, 0)
+
 	for _, objCtx := range objectContexts {
 		currentScopes := strings.Split(objCtx.Scopes, " ")
 		switch objCtx.ScopesMergeStrategy {
 		case overrideAllScopes:
-			objScopes = currentScopes
-			break scopesBuilder
+			reqData.Body.Extra["scope"] = strings.Join(currentScopes, " ")
+			return
 		case mergeWithOtherScopes:
 			objScopes = append(objScopes, currentScopes...)
 		default: // Intersect
-			if len(objScopes) > 0 {
-				objScopes = intersect(objScopes, currentScopes)
-			} else {
-				objScopes = currentScopes
-			}
+			intersectableScopes = append(intersectableScopes, currentScopes)
+		}
+	}
+
+	objScopes = removeDuplicateValues(objScopes)
+
+	for _, currentScopes := range intersectableScopes {
+		if len(objScopes) > 0 {
+			objScopes = intersect(objScopes, currentScopes)
+		} else {
+			objScopes = currentScopes
 		}
 	}
 
 	joined := strings.Join(objScopes, " ")
 	reqData.Body.Extra["scope"] = joined
+}
+
+func removeDuplicateValues(scopes []string) []string {
+	keys := make(map[string]struct{})
+	result := make([]string, 0, len(scopes))
+
+	for _, entry := range scopes {
+		if _, exists := keys[entry]; !exists {
+			keys[entry] = struct{}{}
+			result = append(result, entry)
+		}
+	}
+	return result
 }
 
 func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) {

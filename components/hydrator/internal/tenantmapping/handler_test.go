@@ -29,6 +29,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	overrideAllScopes        = "overrideAllScopes"
+	mergeWithOtherScopes     = "mergeWithOtherScopes"
+	intersectWithOtherScopes = "intersectWithOtherScopes"
+)
+
 func TestHandler(t *testing.T) {
 	username := "admin"
 	target := "http://example.com/foo"
@@ -688,6 +694,611 @@ func TestHandler(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, certServiceMockContextProvider)
 	})
 
+	t.Run("success for the request parsed as Certificate flow for External issuer and JWT flow with custom authenticator: scopes with mergeStrategy merge: merge scopes", func(t *testing.T) {
+		certKeys := tenantmapping.KeysExtra{
+			TenantKey:         "providerTenant",
+			ExternalTenantKey: "providerExternalTenant",
+		}
+
+		JWTKeys := tenantmapping.KeysExtra{
+			TenantKey:         "consumerTenant",
+			ExternalTenantKey: "externalTenant",
+		}
+
+		uniqueAttributeKey := "uniqueAttribute"
+		uniqueAttributeValue := "uniqueAttributeValue"
+		identityAttributeKey := "identity"
+		scopes := "application:read test"
+		authenticatorName := "testAuthenticator"
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					uniqueAttributeKey:   uniqueAttributeValue,
+					identityAttributeKey: username,
+					authenticator.CoordinatesKey: authenticator.Coordinates{
+						Name:  authenticatorName,
+						Index: 0,
+					},
+				},
+				Header: http.Header{
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{externalTenantID},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
+				},
+			},
+		}
+
+		certObjCtx := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         externalTenantID,
+			},
+			Scopes:              "test1 test2 test3",
+			ScopesMergeStrategy: mergeWithOtherScopes,
+			KeysExtra:           certKeys,
+			ConsumerID:          externalTenantID,
+			AuthFlow:            oathkeeper.CertificateFlow,
+			ConsumerType:        consumer.Runtime,
+			ContextProvider:     tenantmapping.CertServiceObjectContextProvider,
+		}
+
+		certServiceMockContextProvider := getMockContextProvider()
+		certServiceMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &externalCertAuthDetails, nil).Once()
+		certServiceMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, externalCertAuthDetails).Return(certObjCtx, nil).Once()
+
+		JWTObjCtxMock := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         tenantID.String(),
+			},
+			KeysExtra:           JWTKeys,
+			Scopes:              scopes,
+			ScopesMergeStrategy: mergeWithOtherScopes,
+			Region:              "region",
+			OauthClientID:       "client_id",
+			ConsumerID:          username,
+			AuthFlow:            oathkeeper.JWTAuthFlow,
+			ConsumerType:        "Static User",
+			ContextProvider:     tenantmapping.AuthenticatorObjectContextProvider,
+		}
+		authn := []authenticator.Config{
+			{
+				Name: authenticatorName,
+				Attributes: authenticator.Attributes{
+					UniqueAttribute: authenticator.Attribute{
+						Key:   uniqueAttributeKey,
+						Value: uniqueAttributeValue,
+					},
+					IdentityAttribute: authenticator.Attribute{
+						Key: identityAttributeKey,
+					},
+				},
+				TrustedIssuers: []authenticator.TrustedIssuer{{ScopePrefix: ""}},
+			},
+		}
+
+		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0], ScopePrefix: ""}
+
+		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumerID":"` + externalTenantID + `","consumerType":"Runtime","flow":"` + string(oathkeeper.CertificateFlow) + `","identity":"` + username + `","onBehalfOf":"admin","region":"region","scope":"application:read test test1 test2 test3","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"providerExternalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"providerTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":"client_id","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":{"Client-Certificate-Issuer":["` + oathkeeper.ExternalIssuer + `"],"Client-Id-From-Certificate":["` + externalTenantID + `"]}}`
+
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		authenticatorMockContextProvider := getMockContextProvider()
+		authenticatorMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &jwtAuthDetailsWithAuthenticator, nil).Once()
+		authenticatorMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetailsWithAuthenticator).Return(JWTObjCtxMock, nil).Once()
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
+
+		persist, transact := txGen.ThatSucceeds()
+
+		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
+			tenantmapping.CertServiceObjectContextProvider:   certServiceMockContextProvider,
+			tenantmapping.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
+		}
+
+		clientInstrumenter := &automock.ClientInstrumenter{}
+		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
+
+		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		assertExtra(t, expectedRespPayload, string(body))
+		require.Equal(t, gjson.Get(expectedRespPayload, "subject"), gjson.Get(strings.TrimSpace(string(body)), "subject"))
+		require.Equal(t, gjson.Get(expectedRespPayload, "header"), gjson.Get(strings.TrimSpace(string(body)), "header"))
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, certServiceMockContextProvider)
+	})
+
+	t.Run("success for the request parsed as Certificate flow for External issuer and JWT flow with custom authenticator: scopes with mergeStrategy merge: deduplicate scopes", func(t *testing.T) {
+		certKeys := tenantmapping.KeysExtra{
+			TenantKey:         "providerTenant",
+			ExternalTenantKey: "providerExternalTenant",
+		}
+
+		JWTKeys := tenantmapping.KeysExtra{
+			TenantKey:         "consumerTenant",
+			ExternalTenantKey: "externalTenant",
+		}
+
+		uniqueAttributeKey := "uniqueAttribute"
+		uniqueAttributeValue := "uniqueAttributeValue"
+		identityAttributeKey := "identity"
+		scopes := "application:read test"
+		authenticatorName := "testAuthenticator"
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					uniqueAttributeKey:   uniqueAttributeValue,
+					identityAttributeKey: username,
+					authenticator.CoordinatesKey: authenticator.Coordinates{
+						Name:  authenticatorName,
+						Index: 0,
+					},
+				},
+				Header: http.Header{
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{externalTenantID},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
+				},
+			},
+		}
+
+		certObjCtx := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         externalTenantID,
+			},
+			Scopes:              "test test1 test2 test3",
+			ScopesMergeStrategy: mergeWithOtherScopes,
+			KeysExtra:           certKeys,
+			ConsumerID:          externalTenantID,
+			AuthFlow:            oathkeeper.CertificateFlow,
+			ConsumerType:        consumer.Runtime,
+			ContextProvider:     tenantmapping.CertServiceObjectContextProvider,
+		}
+
+		certServiceMockContextProvider := getMockContextProvider()
+		certServiceMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &externalCertAuthDetails, nil).Once()
+		certServiceMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, externalCertAuthDetails).Return(certObjCtx, nil).Once()
+
+		JWTObjCtxMock := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         tenantID.String(),
+			},
+			KeysExtra:           JWTKeys,
+			Scopes:              scopes,
+			ScopesMergeStrategy: mergeWithOtherScopes,
+			Region:              "region",
+			OauthClientID:       "client_id",
+			ConsumerID:          username,
+			AuthFlow:            oathkeeper.JWTAuthFlow,
+			ConsumerType:        "Static User",
+			ContextProvider:     tenantmapping.AuthenticatorObjectContextProvider,
+		}
+		authn := []authenticator.Config{
+			{
+				Name: authenticatorName,
+				Attributes: authenticator.Attributes{
+					UniqueAttribute: authenticator.Attribute{
+						Key:   uniqueAttributeKey,
+						Value: uniqueAttributeValue,
+					},
+					IdentityAttribute: authenticator.Attribute{
+						Key: identityAttributeKey,
+					},
+				},
+				TrustedIssuers: []authenticator.TrustedIssuer{{ScopePrefix: ""}},
+			},
+		}
+
+		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0], ScopePrefix: ""}
+
+		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumerID":"` + externalTenantID + `","consumerType":"Runtime","flow":"` + string(oathkeeper.CertificateFlow) + `","identity":"` + username + `","onBehalfOf":"admin","region":"region","scope":"application:read test test1 test2 test3","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"providerExternalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"providerTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":"client_id","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":{"Client-Certificate-Issuer":["` + oathkeeper.ExternalIssuer + `"],"Client-Id-From-Certificate":["` + externalTenantID + `"]}}`
+
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		authenticatorMockContextProvider := getMockContextProvider()
+		authenticatorMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &jwtAuthDetailsWithAuthenticator, nil).Once()
+		authenticatorMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetailsWithAuthenticator).Return(JWTObjCtxMock, nil).Once()
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
+
+		persist, transact := txGen.ThatSucceeds()
+
+		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
+			tenantmapping.CertServiceObjectContextProvider:   certServiceMockContextProvider,
+			tenantmapping.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
+		}
+
+		clientInstrumenter := &automock.ClientInstrumenter{}
+		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
+
+		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		assertExtra(t, expectedRespPayload, string(body))
+		require.Equal(t, gjson.Get(expectedRespPayload, "subject"), gjson.Get(strings.TrimSpace(string(body)), "subject"))
+		require.Equal(t, gjson.Get(expectedRespPayload, "header"), gjson.Get(strings.TrimSpace(string(body)), "header"))
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, certServiceMockContextProvider)
+	})
+
+	t.Run("success for the request parsed as Certificate flow for External issuer and JWT flow with custom authenticator: scopes with mergeStrategy merge and intersect", func(t *testing.T) {
+		certKeys := tenantmapping.KeysExtra{
+			TenantKey:         "providerTenant",
+			ExternalTenantKey: "providerExternalTenant",
+		}
+
+		JWTKeys := tenantmapping.KeysExtra{
+			TenantKey:         "consumerTenant",
+			ExternalTenantKey: "externalTenant",
+		}
+
+		uniqueAttributeKey := "uniqueAttribute"
+		uniqueAttributeValue := "uniqueAttributeValue"
+		identityAttributeKey := "identity"
+		scopes := "application:read test"
+		authenticatorName := "testAuthenticator"
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					uniqueAttributeKey:   uniqueAttributeValue,
+					identityAttributeKey: username,
+					authenticator.CoordinatesKey: authenticator.Coordinates{
+						Name:  authenticatorName,
+						Index: 0,
+					},
+				},
+				Header: http.Header{
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{externalTenantID},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
+				},
+			},
+		}
+
+		certObjCtx := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         externalTenantID,
+			},
+			Scopes:              "test test1 test2 test3",
+			ScopesMergeStrategy: intersectWithOtherScopes,
+			KeysExtra:           certKeys,
+			ConsumerID:          externalTenantID,
+			AuthFlow:            oathkeeper.CertificateFlow,
+			ConsumerType:        consumer.Runtime,
+			ContextProvider:     tenantmapping.CertServiceObjectContextProvider,
+		}
+
+		certServiceMockContextProvider := getMockContextProvider()
+		certServiceMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &externalCertAuthDetails, nil).Once()
+		certServiceMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, externalCertAuthDetails).Return(certObjCtx, nil).Once()
+
+		JWTObjCtxMock := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         tenantID.String(),
+			},
+			KeysExtra:           JWTKeys,
+			Scopes:              scopes,
+			ScopesMergeStrategy: mergeWithOtherScopes,
+			Region:              "region",
+			OauthClientID:       "client_id",
+			ConsumerID:          username,
+			AuthFlow:            oathkeeper.JWTAuthFlow,
+			ConsumerType:        "Static User",
+			ContextProvider:     tenantmapping.AuthenticatorObjectContextProvider,
+		}
+		authn := []authenticator.Config{
+			{
+				Name: authenticatorName,
+				Attributes: authenticator.Attributes{
+					UniqueAttribute: authenticator.Attribute{
+						Key:   uniqueAttributeKey,
+						Value: uniqueAttributeValue,
+					},
+					IdentityAttribute: authenticator.Attribute{
+						Key: identityAttributeKey,
+					},
+				},
+				TrustedIssuers: []authenticator.TrustedIssuer{{ScopePrefix: ""}},
+			},
+		}
+
+		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0], ScopePrefix: ""}
+
+		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumerID":"` + externalTenantID + `","consumerType":"Runtime","flow":"` + string(oathkeeper.CertificateFlow) + `","identity":"` + username + `","onBehalfOf":"admin","region":"region","scope":"test","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"providerExternalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"providerTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":"client_id","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":{"Client-Certificate-Issuer":["` + oathkeeper.ExternalIssuer + `"],"Client-Id-From-Certificate":["` + externalTenantID + `"]}}`
+
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		authenticatorMockContextProvider := getMockContextProvider()
+		authenticatorMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &jwtAuthDetailsWithAuthenticator, nil).Once()
+		authenticatorMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetailsWithAuthenticator).Return(JWTObjCtxMock, nil).Once()
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
+
+		persist, transact := txGen.ThatSucceeds()
+
+		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
+			tenantmapping.CertServiceObjectContextProvider:   certServiceMockContextProvider,
+			tenantmapping.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
+		}
+
+		clientInstrumenter := &automock.ClientInstrumenter{}
+		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
+
+		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		assertExtra(t, expectedRespPayload, string(body))
+		require.Equal(t, gjson.Get(expectedRespPayload, "subject"), gjson.Get(strings.TrimSpace(string(body)), "subject"))
+		require.Equal(t, gjson.Get(expectedRespPayload, "header"), gjson.Get(strings.TrimSpace(string(body)), "header"))
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, certServiceMockContextProvider)
+	})
+
+	t.Run("success for the request parsed as Certificate flow for External issuer and JWT flow with custom authenticator: scopes with mergeStrategy merge and override", func(t *testing.T) {
+		certKeys := tenantmapping.KeysExtra{
+			TenantKey:         "providerTenant",
+			ExternalTenantKey: "providerExternalTenant",
+		}
+
+		JWTKeys := tenantmapping.KeysExtra{
+			TenantKey:         "consumerTenant",
+			ExternalTenantKey: "externalTenant",
+		}
+
+		uniqueAttributeKey := "uniqueAttribute"
+		uniqueAttributeValue := "uniqueAttributeValue"
+		identityAttributeKey := "identity"
+		scopes := "application:read test"
+		authenticatorName := "testAuthenticator"
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					uniqueAttributeKey:   uniqueAttributeValue,
+					identityAttributeKey: username,
+					authenticator.CoordinatesKey: authenticator.Coordinates{
+						Name:  authenticatorName,
+						Index: 0,
+					},
+				},
+				Header: http.Header{
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{externalTenantID},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
+				},
+			},
+		}
+
+		certObjCtx := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         externalTenantID,
+			},
+			Scopes:              "test test1 test2 test3",
+			ScopesMergeStrategy: overrideAllScopes,
+			KeysExtra:           certKeys,
+			ConsumerID:          externalTenantID,
+			AuthFlow:            oathkeeper.CertificateFlow,
+			ConsumerType:        consumer.Runtime,
+			ContextProvider:     tenantmapping.CertServiceObjectContextProvider,
+		}
+
+		certServiceMockContextProvider := getMockContextProvider()
+		certServiceMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &externalCertAuthDetails, nil).Once()
+		certServiceMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, externalCertAuthDetails).Return(certObjCtx, nil).Once()
+
+		JWTObjCtxMock := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         tenantID.String(),
+			},
+			KeysExtra:           JWTKeys,
+			Scopes:              scopes,
+			ScopesMergeStrategy: mergeWithOtherScopes,
+			Region:              "region",
+			OauthClientID:       "client_id",
+			ConsumerID:          username,
+			AuthFlow:            oathkeeper.JWTAuthFlow,
+			ConsumerType:        "Static User",
+			ContextProvider:     tenantmapping.AuthenticatorObjectContextProvider,
+		}
+		authn := []authenticator.Config{
+			{
+				Name: authenticatorName,
+				Attributes: authenticator.Attributes{
+					UniqueAttribute: authenticator.Attribute{
+						Key:   uniqueAttributeKey,
+						Value: uniqueAttributeValue,
+					},
+					IdentityAttribute: authenticator.Attribute{
+						Key: identityAttributeKey,
+					},
+				},
+				TrustedIssuers: []authenticator.TrustedIssuer{{ScopePrefix: ""}},
+			},
+		}
+
+		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0], ScopePrefix: ""}
+
+		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumerID":"` + externalTenantID + `","consumerType":"Runtime","flow":"` + string(oathkeeper.CertificateFlow) + `","identity":"` + username + `","onBehalfOf":"admin","region":"region","scope":"test test1 test2 test3","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"providerExternalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"providerTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":"client_id","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":{"Client-Certificate-Issuer":["` + oathkeeper.ExternalIssuer + `"],"Client-Id-From-Certificate":["` + externalTenantID + `"]}}`
+
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		authenticatorMockContextProvider := getMockContextProvider()
+		authenticatorMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &jwtAuthDetailsWithAuthenticator, nil).Once()
+		authenticatorMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetailsWithAuthenticator).Return(JWTObjCtxMock, nil).Once()
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
+
+		persist, transact := txGen.ThatSucceeds()
+
+		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
+			tenantmapping.CertServiceObjectContextProvider:   certServiceMockContextProvider,
+			tenantmapping.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
+		}
+
+		clientInstrumenter := &automock.ClientInstrumenter{}
+		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
+
+		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		assertExtra(t, expectedRespPayload, string(body))
+		require.Equal(t, gjson.Get(expectedRespPayload, "subject"), gjson.Get(strings.TrimSpace(string(body)), "subject"))
+		require.Equal(t, gjson.Get(expectedRespPayload, "header"), gjson.Get(strings.TrimSpace(string(body)), "header"))
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, certServiceMockContextProvider)
+	})
+
+	t.Run("success for the request parsed as Certificate flow for External issuer and JWT flow with custom authenticator: scopes with mergeStrategy intersect and override", func(t *testing.T) {
+		certKeys := tenantmapping.KeysExtra{
+			TenantKey:         "providerTenant",
+			ExternalTenantKey: "providerExternalTenant",
+		}
+
+		JWTKeys := tenantmapping.KeysExtra{
+			TenantKey:         "consumerTenant",
+			ExternalTenantKey: "externalTenant",
+		}
+
+		uniqueAttributeKey := "uniqueAttribute"
+		uniqueAttributeValue := "uniqueAttributeValue"
+		identityAttributeKey := "identity"
+		scopes := "application:read test"
+		authenticatorName := "testAuthenticator"
+		reqDataMock := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					uniqueAttributeKey:   uniqueAttributeValue,
+					identityAttributeKey: username,
+					authenticator.CoordinatesKey: authenticator.Coordinates{
+						Name:  authenticatorName,
+						Index: 0,
+					},
+				},
+				Header: http.Header{
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertKey):    []string{externalTenantID},
+					textproto.CanonicalMIMEHeaderKey(oathkeeper.ClientIDCertIssuer): []string{oathkeeper.ExternalIssuer},
+				},
+			},
+		}
+
+		certObjCtx := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         externalTenantID,
+			},
+			Scopes:              "test test1 test2 test3",
+			ScopesMergeStrategy: overrideAllScopes,
+			KeysExtra:           certKeys,
+			ConsumerID:          externalTenantID,
+			AuthFlow:            oathkeeper.CertificateFlow,
+			ConsumerType:        consumer.Runtime,
+			ContextProvider:     tenantmapping.CertServiceObjectContextProvider,
+		}
+
+		certServiceMockContextProvider := getMockContextProvider()
+		certServiceMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &externalCertAuthDetails, nil).Once()
+		certServiceMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, externalCertAuthDetails).Return(certObjCtx, nil).Once()
+
+		JWTObjCtxMock := tenantmapping.ObjectContext{
+			TenantContext: tenantmapping.TenantContext{
+				ExternalTenantID: externalTenantID,
+				TenantID:         tenantID.String(),
+			},
+			KeysExtra:           JWTKeys,
+			Scopes:              scopes,
+			ScopesMergeStrategy: intersectWithOtherScopes,
+			Region:              "region",
+			OauthClientID:       "client_id",
+			ConsumerID:          username,
+			AuthFlow:            oathkeeper.JWTAuthFlow,
+			ConsumerType:        "Static User",
+			ContextProvider:     tenantmapping.AuthenticatorObjectContextProvider,
+		}
+		authn := []authenticator.Config{
+			{
+				Name: authenticatorName,
+				Attributes: authenticator.Attributes{
+					UniqueAttribute: authenticator.Attribute{
+						Key:   uniqueAttributeKey,
+						Value: uniqueAttributeValue,
+					},
+					IdentityAttribute: authenticator.Attribute{
+						Key: identityAttributeKey,
+					},
+				},
+				TrustedIssuers: []authenticator.TrustedIssuer{{ScopePrefix: ""}},
+			},
+		}
+
+		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0], ScopePrefix: ""}
+
+		expectedRespPayload := `{"subject":"","extra":{"authenticator_coordinates":{"name":"` + authn[0].Name + `","index":0},"consumerID":"` + externalTenantID + `","consumerType":"Runtime","flow":"` + string(oathkeeper.CertificateFlow) + `","identity":"` + username + `","onBehalfOf":"admin","region":"region","scope":"test test1 test2 test3","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"providerExternalTenant\\\":\\\"` + externalTenantID + `\\\",\\\"providerTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":"client_id","` + uniqueAttributeKey + `":"` + uniqueAttributeValue + `"},"header":{"Client-Certificate-Issuer":["` + oathkeeper.ExternalIssuer + `"],"Client-Id-From-Certificate":["` + externalTenantID + `"]}}`
+
+		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
+		w := httptest.NewRecorder()
+
+		authenticatorMockContextProvider := getMockContextProvider()
+		authenticatorMockContextProvider.On("Match", mock.Anything, reqDataMock).Return(true, &jwtAuthDetailsWithAuthenticator, nil).Once()
+		authenticatorMockContextProvider.On("GetObjectContext", mock.Anything, reqDataMock, jwtAuthDetailsWithAuthenticator).Return(JWTObjCtxMock, nil).Once()
+
+		reqDataParserMock := &automock.ReqDataParser{}
+		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
+
+		persist, transact := txGen.ThatSucceeds()
+
+		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
+			tenantmapping.CertServiceObjectContextProvider:   certServiceMockContextProvider,
+			tenantmapping.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
+		}
+
+		clientInstrumenter := &automock.ClientInstrumenter{}
+		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
+
+		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler.ServeHTTP(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		assertExtra(t, expectedRespPayload, string(body))
+		require.Equal(t, gjson.Get(expectedRespPayload, "subject"), gjson.Get(strings.TrimSpace(string(body)), "subject"))
+		require.Equal(t, gjson.Get(expectedRespPayload, "header"), gjson.Get(strings.TrimSpace(string(body)), "header"))
+
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, certServiceMockContextProvider)
+	})
+
 	t.Run("error when sending different HTTP verb than POST", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
@@ -770,4 +1381,18 @@ func TestHandler(t *testing.T) {
 func getMockContextProvider() *automock.ObjectContextProvider {
 	provider := &automock.ObjectContextProvider{}
 	return provider
+}
+
+func assertExtra(t *testing.T, expectedBody, actualBody string) {
+	expectedExtra := gjson.Get(expectedBody, "extra").Map()
+	actualExtra := gjson.Get(strings.TrimSpace(actualBody), "extra").Map()
+	for k, v := range expectedExtra {
+		if k != "scope" {
+			require.Equal(t, v.Str, actualExtra[k].Str)
+		}
+	}
+
+	expectedScopes := strings.Split(expectedExtra["scope"].String(), " ")
+	actualScopes := strings.Split(actualExtra["scope"].String(), " ")
+	require.ElementsMatch(t, expectedScopes, actualScopes)
 }
