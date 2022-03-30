@@ -171,6 +171,8 @@ spec:
               value: {{ .Values.global.tests.ordService.consumerSubaccountID }}
             - name: TEST_CONSUMER_TENANT_ID
               value: {{ .Values.global.tests.ordService.consumerTenantID }}
+            - name: SKIP_TESTS_REGEX
+              value: {{ .Values.global.tests.ordService.skipPattern }}
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine

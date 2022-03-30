@@ -708,6 +708,7 @@ global:
       externalCertTestJobName: "external-certificate-rotation-test-job"
       certSvcInstanceTestSecretName: "cert-svc-secret"
       consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+      skipPattern: ""
       subscriptionOauthSecret:
         manage: false
         name: compass-subscription-secret
