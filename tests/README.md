@@ -37,7 +37,7 @@ Each Compass component has its own test directory. It contains local a Makefile 
 The sandbox tests enable the run of a single E2E test case of a given Compass component. In case of an error, you can modify the failed test and rerun it again, without building a new image and waiting for the whole test suite to finish. This facilitates the iteration and testing of different scenarios. You can find a brief description for each command in the [Local Makefile](#local-makefile) section.
 
 **Prerequisites:**
-In order to run the sandbox tests, you need to have one useful CLI tool called [`sponge`](https://rentes.github.io/unix/utilities/2015/07/27/moreutils-package/#sponge).
+To run the sandbox tests, you can use the [`sponge`](https://rentes.github.io/unix/utilities/2015/07/27/moreutils-package/#sponge) CLI tool.
 You can install it on Mac OS via Homebrew:
 ```bash
 brew install sponge
@@ -56,7 +56,7 @@ brew install sponge
     ```bash
     make run testName=<test-name>
     ```
-    Note that, `make run testName=TestConsumerProviderFlow` will run the whole test suite. However, if there are any nested tests in the suite, you can specify the one you want to carry out. To separate the test suite and the inner tests, you can use forward slash `/`. If the test name contains any spaces, you must replace them with underscore characters `_`.
+    Note that, `make run testName=TestConsumerProviderFlow` runs the whole test suite. However, if there are any nested tests in the suite, you can specify the one you want to carry out. To set apart the entire test suite and run any nested tests, you can use forward slash `/`. If the test name contains any spaces, you must replace them with underscore characters `_`.
     
     **Example:**
     ```bash
