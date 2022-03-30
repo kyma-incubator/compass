@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	directorErrors "github.com/kyma-incubator/compass/components/hydrator/internal/director"
+
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
@@ -153,7 +155,7 @@ func (m *systemAuthContextProvider) getTenantAndScopesForIntegrationSystem(ctx c
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
 	tenantMapping, err := m.directorClient.GetTenantByExternalID(ctx, externalTenantID)
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
+		if directorErrors.IsGQLNotFoundError(err) {
 			log.C(ctx).Warningf("Could not find external tenant with ID: %s, error: %s", externalTenantID, err.Error())
 
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)

@@ -122,8 +122,6 @@ graphql:
       auths: ["runtime.auths:read"]
     integration_system:
       auths: ["integration_system.auths:read"]
-    tenant:
-      externalId: ["internal"] # TODO:: Double check if we need it?
 
 clientCredentialsRegistrationGrantTypes:
   - "client_credentials"

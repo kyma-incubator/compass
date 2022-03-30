@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	directorErrors "github.com/kyma-incubator/compass/components/hydrator/internal/director"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -48,7 +49,7 @@ func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqDa
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
 	tenantMapping, err := p.directorClient.GetTenantByExternalID(ctx, externalTenantID)
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
+		if directorErrors.IsGQLNotFoundError(err) {
 			// tenant not in DB yet, might be because we have not imported all subaccounts yet
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)

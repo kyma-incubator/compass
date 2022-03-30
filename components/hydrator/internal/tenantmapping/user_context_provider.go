@@ -6,7 +6,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
-	directorErrors "github.com/kyma-incubator/compass/components/system-broker/pkg/director"
+	directorErrors "github.com/kyma-incubator/compass/components/hydrator/internal/director"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 

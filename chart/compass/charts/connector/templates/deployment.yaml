@@ -103,7 +103,7 @@ spec:
             - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
               value: "{{ .Values.http.client.skipSSLValidation }}"
             - name: APP_SUBJECT_CONSUMER_MAPPING_CONFIG
-              value: {{ .Values.global.connector.subjectConsumerMappingConfig | quote }}
+              value: {{ .Values.global.connector.subjectConsumerMappingConfig | quote }} # TODO:: do we need this it should be already moved to hydrator?
           {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}
