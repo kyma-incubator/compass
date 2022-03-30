@@ -30,6 +30,7 @@ spec:
             - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
             - "compass-external-services-mock.compass-system.svc.cluster.local"
             - "{{ .Values.global.externalServicesMock.certSecuredHost }}.{{.Values.global.ingress.domainName}}"
+            - "{{ .Values.global.externalServicesMock.ordGlobalCertSecuredHost }}.{{.Values.global.ingress.domainName}}"
       {{ end }}
       containers:
         - name: external-services-mock-tests
