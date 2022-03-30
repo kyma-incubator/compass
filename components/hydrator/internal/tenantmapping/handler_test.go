@@ -738,7 +738,7 @@ func TestHandler(t *testing.T) {
 			ConsumerID:          externalTenantID,
 			AuthFlow:            oathkeeper.CertificateFlow,
 			ConsumerType:        consumer.Runtime,
-			ContextProvider:     tenantmapping.CertServiceObjectContextProvider,
+			ContextProvider:     tenantmappingconsts.CertServiceObjectContextProvider,
 		}
 
 		certServiceMockContextProvider := getMockContextProvider()
@@ -758,7 +758,7 @@ func TestHandler(t *testing.T) {
 			ConsumerID:          username,
 			AuthFlow:            oathkeeper.JWTAuthFlow,
 			ConsumerType:        "Static User",
-			ContextProvider:     tenantmapping.AuthenticatorObjectContextProvider,
+			ContextProvider:     tenantmappingconsts.AuthenticatorObjectContextProvider,
 		}
 		authn := []authenticator.Config{
 			{
@@ -790,17 +790,15 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		persist, transact := txGen.ThatSucceeds()
-
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-			tenantmapping.CertServiceObjectContextProvider:   certServiceMockContextProvider,
-			tenantmapping.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
+			tenantmappingconsts.CertServiceObjectContextProvider:   certServiceMockContextProvider,
+			tenantmappingconsts.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -812,7 +810,7 @@ func TestHandler(t *testing.T) {
 		require.Equal(t, gjson.Get(expectedRespPayload, "subject"), gjson.Get(strings.TrimSpace(string(body)), "subject"))
 		require.Equal(t, gjson.Get(expectedRespPayload, "header"), gjson.Get(strings.TrimSpace(string(body)), "header"))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, certServiceMockContextProvider)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, certServiceMockContextProvider)
 	})
 
 	t.Run("success for the request parsed as Certificate flow for External issuer and JWT flow with custom authenticator: scopes with mergeStrategy merge: deduplicate scopes", func(t *testing.T) {
@@ -859,7 +857,7 @@ func TestHandler(t *testing.T) {
 			ConsumerID:          externalTenantID,
 			AuthFlow:            oathkeeper.CertificateFlow,
 			ConsumerType:        consumer.Runtime,
-			ContextProvider:     tenantmapping.CertServiceObjectContextProvider,
+			ContextProvider:     tenantmappingconsts.CertServiceObjectContextProvider,
 		}
 
 		certServiceMockContextProvider := getMockContextProvider()
@@ -879,7 +877,7 @@ func TestHandler(t *testing.T) {
 			ConsumerID:          username,
 			AuthFlow:            oathkeeper.JWTAuthFlow,
 			ConsumerType:        "Static User",
-			ContextProvider:     tenantmapping.AuthenticatorObjectContextProvider,
+			ContextProvider:     tenantmappingconsts.AuthenticatorObjectContextProvider,
 		}
 		authn := []authenticator.Config{
 			{
@@ -911,17 +909,15 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		persist, transact := txGen.ThatSucceeds()
-
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-			tenantmapping.CertServiceObjectContextProvider:   certServiceMockContextProvider,
-			tenantmapping.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
+			tenantmappingconsts.CertServiceObjectContextProvider:   certServiceMockContextProvider,
+			tenantmappingconsts.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -933,7 +929,7 @@ func TestHandler(t *testing.T) {
 		require.Equal(t, gjson.Get(expectedRespPayload, "subject"), gjson.Get(strings.TrimSpace(string(body)), "subject"))
 		require.Equal(t, gjson.Get(expectedRespPayload, "header"), gjson.Get(strings.TrimSpace(string(body)), "header"))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, certServiceMockContextProvider)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, certServiceMockContextProvider)
 	})
 
 	t.Run("success for the request parsed as Certificate flow for External issuer and JWT flow with custom authenticator: scopes with mergeStrategy merge and intersect", func(t *testing.T) {
@@ -980,7 +976,7 @@ func TestHandler(t *testing.T) {
 			ConsumerID:          externalTenantID,
 			AuthFlow:            oathkeeper.CertificateFlow,
 			ConsumerType:        consumer.Runtime,
-			ContextProvider:     tenantmapping.CertServiceObjectContextProvider,
+			ContextProvider:     tenantmappingconsts.CertServiceObjectContextProvider,
 		}
 
 		certServiceMockContextProvider := getMockContextProvider()
@@ -1000,7 +996,7 @@ func TestHandler(t *testing.T) {
 			ConsumerID:          username,
 			AuthFlow:            oathkeeper.JWTAuthFlow,
 			ConsumerType:        "Static User",
-			ContextProvider:     tenantmapping.AuthenticatorObjectContextProvider,
+			ContextProvider:     tenantmappingconsts.AuthenticatorObjectContextProvider,
 		}
 		authn := []authenticator.Config{
 			{
@@ -1032,17 +1028,15 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		persist, transact := txGen.ThatSucceeds()
-
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-			tenantmapping.CertServiceObjectContextProvider:   certServiceMockContextProvider,
-			tenantmapping.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
+			tenantmappingconsts.CertServiceObjectContextProvider:   certServiceMockContextProvider,
+			tenantmappingconsts.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -1054,7 +1048,7 @@ func TestHandler(t *testing.T) {
 		require.Equal(t, gjson.Get(expectedRespPayload, "subject"), gjson.Get(strings.TrimSpace(string(body)), "subject"))
 		require.Equal(t, gjson.Get(expectedRespPayload, "header"), gjson.Get(strings.TrimSpace(string(body)), "header"))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, certServiceMockContextProvider)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, certServiceMockContextProvider)
 	})
 
 	t.Run("success for the request parsed as Certificate flow for External issuer and JWT flow with custom authenticator: scopes with mergeStrategy merge and override", func(t *testing.T) {
@@ -1101,7 +1095,7 @@ func TestHandler(t *testing.T) {
 			ConsumerID:          externalTenantID,
 			AuthFlow:            oathkeeper.CertificateFlow,
 			ConsumerType:        consumer.Runtime,
-			ContextProvider:     tenantmapping.CertServiceObjectContextProvider,
+			ContextProvider:     tenantmappingconsts.CertServiceObjectContextProvider,
 		}
 
 		certServiceMockContextProvider := getMockContextProvider()
@@ -1121,7 +1115,7 @@ func TestHandler(t *testing.T) {
 			ConsumerID:          username,
 			AuthFlow:            oathkeeper.JWTAuthFlow,
 			ConsumerType:        "Static User",
-			ContextProvider:     tenantmapping.AuthenticatorObjectContextProvider,
+			ContextProvider:     tenantmappingconsts.AuthenticatorObjectContextProvider,
 		}
 		authn := []authenticator.Config{
 			{
@@ -1153,17 +1147,15 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		persist, transact := txGen.ThatSucceeds()
-
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-			tenantmapping.CertServiceObjectContextProvider:   certServiceMockContextProvider,
-			tenantmapping.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
+			tenantmappingconsts.CertServiceObjectContextProvider:   certServiceMockContextProvider,
+			tenantmappingconsts.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -1175,7 +1167,7 @@ func TestHandler(t *testing.T) {
 		require.Equal(t, gjson.Get(expectedRespPayload, "subject"), gjson.Get(strings.TrimSpace(string(body)), "subject"))
 		require.Equal(t, gjson.Get(expectedRespPayload, "header"), gjson.Get(strings.TrimSpace(string(body)), "header"))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, certServiceMockContextProvider)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, certServiceMockContextProvider)
 	})
 
 	t.Run("success for the request parsed as Certificate flow for External issuer and JWT flow with custom authenticator: scopes with mergeStrategy intersect and override", func(t *testing.T) {
@@ -1222,7 +1214,7 @@ func TestHandler(t *testing.T) {
 			ConsumerID:          externalTenantID,
 			AuthFlow:            oathkeeper.CertificateFlow,
 			ConsumerType:        consumer.Runtime,
-			ContextProvider:     tenantmapping.CertServiceObjectContextProvider,
+			ContextProvider:     tenantmappingconsts.CertServiceObjectContextProvider,
 		}
 
 		certServiceMockContextProvider := getMockContextProvider()
@@ -1242,7 +1234,7 @@ func TestHandler(t *testing.T) {
 			ConsumerID:          username,
 			AuthFlow:            oathkeeper.JWTAuthFlow,
 			ConsumerType:        "Static User",
-			ContextProvider:     tenantmapping.AuthenticatorObjectContextProvider,
+			ContextProvider:     tenantmappingconsts.AuthenticatorObjectContextProvider,
 		}
 		authn := []authenticator.Config{
 			{
@@ -1274,17 +1266,15 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		persist, transact := txGen.ThatSucceeds()
-
 		objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-			tenantmapping.CertServiceObjectContextProvider:   certServiceMockContextProvider,
-			tenantmapping.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
+			tenantmappingconsts.CertServiceObjectContextProvider:   certServiceMockContextProvider,
+			tenantmappingconsts.AuthenticatorObjectContextProvider: authenticatorMockContextProvider,
 		}
 
 		clientInstrumenter := &automock.ClientInstrumenter{}
 		clientInstrumenter.On("InstrumentClient", externalTenantID, string(oathkeeper.CertificateFlow), mock.Anything)
 
-		handler := tenantmapping.NewHandler(reqDataParserMock, transact, objectContextProviders, clientInstrumenter)
+		handler := tenantmapping.NewHandler(reqDataParserMock, objectContextProviders)
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -1296,7 +1286,7 @@ func TestHandler(t *testing.T) {
 		require.Equal(t, gjson.Get(expectedRespPayload, "subject"), gjson.Get(strings.TrimSpace(string(body)), "subject"))
 		require.Equal(t, gjson.Get(expectedRespPayload, "header"), gjson.Get(strings.TrimSpace(string(body)), "header"))
 
-		mock.AssertExpectationsForObjects(t, reqDataParserMock, persist, transact, certServiceMockContextProvider)
+		mock.AssertExpectationsForObjects(t, reqDataParserMock, certServiceMockContextProvider)
 	})
 
 	t.Run("error when sending different HTTP verb than POST", func(t *testing.T) {
