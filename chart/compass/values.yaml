@@ -494,6 +494,7 @@ global:
       regionPathParam: "region"
       subscriptionProviderLabelKey: "subscriptionProviderId"
       consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
+    containerName: "tenant-fetcher"
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     issuerLocality: "local" # In local setup we have manually created connector CA certificate with 'local' Locality property
@@ -593,6 +594,7 @@ global:
       pageSize: 200
       sizeParam: "$top"
       skipParam: "$skip"
+    containerName: "system-fetcher"
   tenantFetchers:
     job1:
       enabled: false
