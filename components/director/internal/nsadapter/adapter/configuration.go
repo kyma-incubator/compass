@@ -1,8 +1,9 @@
 package adapter
 
 import (
-	"github.com/kyma-incubator/compass/components/director/internal/healthz"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/healthz"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 

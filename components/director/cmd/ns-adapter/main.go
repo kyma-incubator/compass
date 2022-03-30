@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/schema"
-	"github.com/kyma-incubator/compass/components/director/internal/healthz"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/schema"
+	"github.com/kyma-incubator/compass/components/director/internal/healthz"
 
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
