@@ -91,7 +91,7 @@ mutation  {
 3. Register a Runtime into the `0ccd19fd-671e-4024-8b0f-887bb7e4ed4f` subaccount tenant:
    Create a Runtime in the `0ccd19fd-671e-4024-8b0f-887bb7e4ed4f` tenant:
     - Run the request in the context of the wanted `subaccount` tenant
-    - Run the request in the context of the parent tenant, and label the runtime with the wanted `subaccount` tenant:  
+    - Run the request in the context of the parent tenant, and label the runtime with the wanted `subaccount` tenant - the flow is kept for backwards compatability, and will result in runtime registration in the tenant provided as label, not the tenant from the request context:
       ```graphql
         mutation  {
             registerRuntime(in:{name: "warehouse-runtime-1", labels:{global_subaccount_id:"0ccd19fd-671e-4024-8b0f-887bb7e4ed4f"}}) {
