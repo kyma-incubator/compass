@@ -55,6 +55,16 @@ do
           COMPONENT='tenantfetcher-svc'
           shift
         ;;
+        --ns-adapter)
+          COMPONENT='ns-adapter'
+          export APP_SYSTEM_TO_TEMPLATE_MAPPINGS='[{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["on-premise"]}]'
+          shift
+        ;;
+        --jwks-endpoint)
+          export APP_JWKS_ENDPOINT=$2
+          shift
+          shift
+        ;;
         --debug-port)
             DEBUG_PORT=$2
             shift

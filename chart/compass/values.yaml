@@ -98,7 +98,7 @@ global:
       version: "PR-2242"
     director:
       dir:
-      version: "PR-2214"
+      version: "PR-2291"
     gateway:
       dir:
       version: "PR-2242"
@@ -121,13 +121,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2242"
+      version: "PR-2278"
     console:
       dir:
-      version: "PR-56"
+      version: "PR-62"
     e2e_tests:
       dir:
-      version: "PR-2251"
+      version: "PR-2282"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -191,13 +191,22 @@ global:
       path: "/v1/info"
     selfRegister:
       secret:
-        name: "compass-self-registration-credentials"
-        clientIdKey: client-id
-        clientSecretKey: client-secret
-        urlKey: url
-        tokenUrlKey: token-url
-        clientCertKey: client-cert
-        clientKeyKey: client-key
+        name: "region-instances-credentials"
+        key: "keyConfig"
+      clientIdPath: "clientId"
+      clientSecretPath: "clientSecret"
+      urlPath: "url"
+      tokenUrlPath: "tokenUrl"
+      clientCertPath: "clientCert"
+      clientKeyPath: "clientKey"
+      local:
+        templateMappings:
+          clientIDMapping: '{{ printf "\"%s\":\"client_id\"" .Values.global.director.selfRegister.clientIdPath }}'
+          clientSecretMapping: '{{ printf "\"%s\":\"client_secret\"" .Values.global.director.selfRegister.clientSecretPath }}'
+          urlMapping: '{{ printf "\"%s\":\"http://compass-external-services-mock.%s.svc.cluster.local:%s\"" .Values.global.director.selfRegister.urlPath .Release.Namespace (.Values.service.port | toString) }}'
+          tokenURLMapping: '{{ printf "\"%s\":\"https://%s.%s:%s\"" .Values.global.director.selfRegister.tokenUrlPath .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName (.Values.service.certPort | toString) }}'
+          x509CertificateMapping: '{{ printf "\"%s\":\"%s\"" .Values.global.director.selfRegister.clientCertPath .Values.global.connector.caCertificate }}'
+          x509KeyMapping: '{{ printf "\"%s\":\"%s\"" .Values.global.director.selfRegister.clientKeyPath .Values.global.connector.caKey }}'
       oauthTokenPath: "/cert/token"
       oauthMode: "oauth-mtls"
       label: "selfRegLabel"
@@ -370,7 +379,7 @@ global:
     timeout_ms: 120000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:write tenant_subscription:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
@@ -474,13 +483,13 @@ global:
       name: "provider"
       subscriptionProviderIdProperty: "subscriptionProviderIdProperty"
     server:
-      handlerEndpoint: "/v1/callback/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
       dependenciesEndpoint: "/v1/dependencies"
       tenantPathParam: "tenantId"
       regionPathParam: "region"
       subscriptionProviderLabelKey: "subscriptionProviderId"
       consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
+    containerName: "tenant-fetcher"
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     issuerLocality: "local" # In local setup we have manually created connector CA certificate with 'local' Locality property
@@ -529,7 +538,8 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
-    globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8086/.well-known/open-resource-discovery
+    globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8087/.well-known/open-resource-discovery
+    maxOrdParallelDownloads: 4
   systemFetcher:
     enabled: false
     name: "system-fetcher"
@@ -579,6 +589,7 @@ global:
       pageSize: 200
       sizeParam: "$top"
       skipParam: "$skip"
+    containerName: "system-fetcher"
   tenantFetchers:
     job1:
       enabled: false
@@ -651,11 +662,15 @@ global:
     unsecuredPort: 8083
     basicSecuredPort: 8084
     oauthSecuredPort: 8085
-    ordGlobalRegistryPort: 8086
+    ordGlobalRegistryCertPort: 8086
+    ordGlobalRegistryUnsecuredPort: 8087
     certSecuredHost: compass-external-services-mock-sap-mtls
     ordCertSecuredHost: compass-external-services-mock-sap-mtls-ord
+    ordGlobalCertSecuredHost: compass-external-services-mock-sap-mtls-global-ord-registry
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
+    regionInstancesCredentials:
+      manage: false
     oauthSecret:
       manage: false
       name: compass-external-services-mock-oauth-credentials
@@ -695,13 +710,14 @@ global:
       externalCertTestJobName: "external-certificate-rotation-test-job"
       certSvcInstanceTestSecretName: "cert-svc-secret"
       consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
-      region: "eu-1"
       subscriptionOauthSecret:
         manage: false
         name: compass-subscription-secret
         clientIdKey: client-id
         clientSecretKey: client-secret
         oauthUrlKey: url
+    selfRegistration:
+      region: "eu-1"
     externalServicesMock:
       skipPattern: ""
     namespace: kyma-system

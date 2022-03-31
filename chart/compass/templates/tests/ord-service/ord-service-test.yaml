@@ -94,7 +94,7 @@ spec:
             - name: TENANT_CONFIG_REGION_PATH_PARAM
               value: "{{ .Values.global.tenantFetcher.server.regionPathParam }}"
             - name: TENANT_CONFIG_REGION
-              value: {{ .Values.global.tests.ordService.region }}
+              value: {{ .Values.global.tests.selfRegistration.region }}
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
@@ -249,6 +249,9 @@ rules:
   resources: ["cronjobs"]
   resourceNames: ["director-external-certificate-rotation-job"]
   verbs: ["get"]
+- apiGroups: ["*"]
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "list"]
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1

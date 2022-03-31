@@ -2,6 +2,8 @@ package ord
 
 import (
 	"context"
+	"sync"
+	"sync/atomic"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -18,8 +20,22 @@ import (
 
 const applicationTypeLabel = "applicationType"
 
+// ServiceConfig contains configuration for the ORD aggregator service
+type ServiceConfig struct {
+	MaxParallelDownloads int
+}
+
+// NewServiceConfig creates new ServiceConfig from the supplied parameters
+func NewServiceConfig(maxParallelDownloads int) ServiceConfig {
+	return ServiceConfig{
+		MaxParallelDownloads: maxParallelDownloads,
+	}
+}
+
 // Service consists of various resource services responsible for service-layer ORD operations.
 type Service struct {
+	config ServiceConfig
+
 	transact persistence.Transactioner
 
 	labelRepo labelRepository
@@ -42,8 +58,9 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(transact persistence.Transactioner, labelRepo labelRepository, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client) *Service {
+func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, labelRepo labelRepository, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client) *Service {
 	return &Service{
+		config:             config,
 		transact:           transact,
 		appSvc:             appSvc,
 		labelRepo:          labelRepo,
@@ -84,19 +101,53 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 	pageCursor := ""
 	hasNextPage := true
 
+	queue := make(chan *model.Application)
+	appErrors := int32(0)
+
+	wg := &sync.WaitGroup{}
+	wg.Add(s.config.MaxParallelDownloads)
+
+	log.C(ctx).Infof("Starting %d workers...", s.config.MaxParallelDownloads)
+	for i := 0; i < s.config.MaxParallelDownloads; i++ {
+		go func() {
+			defer wg.Done()
+
+			for app := range queue {
+				if err := s.processApp(ctx, app, globalResourcesOrdIDs); err != nil {
+					log.C(ctx).WithError(err).Errorf("error while processing app %q", app.ID)
+					atomic.AddInt32(&appErrors, 1)
+				}
+			}
+		}()
+	}
+
+	var fetchErr error = nil
 	for hasNextPage {
 		page, err := s.listAppPage(ctx, pageSize, pageCursor)
 		if err != nil {
-			return errors.Wrapf(err, "error while fetching application page number %d", pageCount)
+			log.C(ctx).WithError(err).Errorf("error while fetching application page number %d", pageCount)
+			fetchErr = err
+			break
 		}
+
 		for _, app := range page.Data {
-			if err := s.processApp(ctx, app, globalResourcesOrdIDs); err != nil {
-				return errors.Wrapf(err, "error while processing app %q", app.ID)
-			}
+			queue <- app
 		}
+
 		pageCursor = page.PageInfo.EndCursor
 		hasNextPage = page.PageInfo.HasNextPage
 		pageCount++
+	}
+
+	close(queue)
+	wg.Wait()
+
+	if fetchErr != nil && appErrors != 0 {
+		return errors.Wrapf(fetchErr, "failed to process %d applications and failed to fetch the next application page", appErrors)
+	} else if appErrors != 0 {
+		return errors.Errorf("failed to process %d applications", appErrors)
+	} else if fetchErr != nil {
+		return errors.Wrapf(fetchErr, "failed to fetch the next application page")
 	}
 	return nil
 }

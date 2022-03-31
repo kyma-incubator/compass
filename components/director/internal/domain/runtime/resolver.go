@@ -4,28 +4,19 @@ import (
 	"context"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
-	labelPkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
-	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
+	labelPkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
-
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/pkg/errors"
 )
 
 // EventingService missing godoc
@@ -93,8 +84,15 @@ type BundleInstanceAuthService interface {
 //go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore
 type SelfRegisterManager interface {
 	PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeInput, id string) (map[string]interface{}, error)
-	CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterLabelValue string) error
+	CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterLabelValue, region string) error
 	GetSelfRegDistinguishingLabelKey() string
+}
+
+// SubscriptionService missing godoc
+//go:generate mockery --name=SubscriptionService --output=automock --outpkg=automock --case=underscore
+type SubscriptionService interface {
+	SubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error)
+	UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error)
 }
 
 // Resolver missing godoc
@@ -110,10 +108,14 @@ type Resolver struct {
 	bundleInstanceAuthSvc     BundleInstanceAuthService
 	selfRegManager            SelfRegisterManager
 	uidService                uidService
+	subscriptionSvc           SubscriptionService
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService, sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter, eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService, selfRegManager SelfRegisterManager, uidService uidService) *Resolver {
+func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService,
+	sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter,
+	eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService, selfRegManager SelfRegisterManager,
+	uidService uidService, subscriptionSvc SubscriptionService) *Resolver {
 	return &Resolver{
 		transact:                  transact,
 		runtimeService:            runtimeService,
@@ -126,6 +128,7 @@ func NewResolver(transact persistence.Transactioner, runtimeService RuntimeServi
 		bundleInstanceAuthSvc:     bundleInstanceAuthSvc,
 		selfRegManager:            selfRegManager,
 		uidService:                uidService,
+		subscriptionSvc:           subscriptionSvc,
 	}
 }
 
@@ -219,9 +222,12 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 		if didRollback {
 			labelVal := str.CastOrEmpty(convertedIn.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
 			if labelVal != "" {
-				r.cleanupAndLogOnError(ctx, id)
-			} else {
-				r.cleanupAndLogOnError(ctx, "")
+				label, ok := in.Labels["region"].(string)
+				if !ok {
+					log.C(ctx).Errorf("An error occurred while casting region label value to string")
+				} else {
+					r.cleanupAndLogOnError(ctx, id, label)
+				}
 			}
 		}
 	}()
@@ -281,16 +287,12 @@ func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.Runt
 
 // DeleteRuntime missing godoc
 func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runtime, error) {
-	var selfRegCleanup string
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		didRollback := r.transact.RollbackUnlessCommitted(ctx, tx)
-		if !didRollback { // if we did rollback we should not try to execute the cleanup
-			r.cleanupAndLogOnError(ctx, selfRegCleanup)
-		}
+		r.transact.RollbackUnlessCommitted(ctx, tx)
 	}()
 
 	ctx = persistence.SaveToContext(ctx, tx)
@@ -306,13 +308,37 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	}
 
 	_, err = r.runtimeService.GetLabel(ctx, runtime.ID, r.selfRegManager.GetSelfRegDistinguishingLabelKey())
+
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
 			return nil, errors.Wrapf(err, "while getting self register info label")
 		}
-		selfRegCleanup = "" // the deferred cleanup will do nothing
 	} else {
-		selfRegCleanup = id
+		regionLabel, err := r.runtimeService.GetLabel(ctx, runtime.ID, "region")
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting region label")
+		}
+
+		// Committing transaction as the cleanup sends request to external service
+		if err = tx.Commit(); err != nil {
+			return nil, err
+		}
+
+		regionValue, ok := regionLabel.Value.(string)
+		if !ok {
+			return nil, errors.Wrap(err, "while casting region label value to string")
+		}
+
+		log.C(ctx).Infof("Executing clean-up for self-registered runtime with id %q", runtime.ID)
+		if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, runtime.ID, regionValue); err != nil {
+			return nil, errors.Wrap(err, "An error occurred during cleanup of self-registered runtime: ")
+		}
+
+		tx, err = r.transact.Begin()
+		if err != nil {
+			return nil, err
+		}
+		ctx = persistence.SaveToContext(ctx, tx)
 	}
 
 	currentTimestamp := timestamp.DefaultGenerator
@@ -571,6 +597,50 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Runti
 	return eventing.RuntimeEventingConfigurationToGraphQL(eventingCfg), nil
 }
 
+// SubscribeTenant subscribes tenant to runtime labeled with `providerID` and `region`
+func (r *Resolver) SubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return false, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	success, err := r.subscriptionSvc.SubscribeTenant(ctx, providerID, subaccountTenantID, region)
+	if err != nil {
+		return false, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return false, err
+	}
+
+	return success, nil
+}
+
+// UnsubscribeTenant unsubscribes tenant to runtime labeled with `providerID` and `region`
+func (r *Resolver) UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return false, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	success, err := r.subscriptionSvc.UnsubscribeTenant(ctx, providerID, subaccountTenantID, region)
+	if err != nil {
+		return false, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return false, err
+	}
+
+	return success, nil
+}
+
 // deleteAssociatedScenarioAssignments ensures that scenario assignments which are responsible for creation of certain runtime labels are deleted,
 // if runtime doesn't have the scenarios label or is part of a scenario for which no scenario assignment exists => noop
 func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runtimeID string) error {
@@ -608,8 +678,8 @@ func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runt
 	return nil
 }
 
-func (r *Resolver) cleanupAndLogOnError(ctx context.Context, runtimeID string) {
-	if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, runtimeID); err != nil {
+func (r *Resolver) cleanupAndLogOnError(ctx context.Context, runtimeID, region string) {
+	if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, runtimeID, region); err != nil {
 		log.C(ctx).Errorf("An error occurred during cleanup of self-registered runtime: %v", err)
 	}
 }

@@ -27,6 +27,7 @@ spec:
               - "{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}"
               - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
               - "compass-external-services-mock.compass-system.svc.cluster.local"
+              - "{{ .Values.global.externalServicesMock.ordGlobalCertSecuredHost }}.{{.Values.global.ingress.domainName}}"
       {{ end }}
       serviceAccountName: {{ $.Chart.Name }}-e2e-ord-aggregator
       containers:

@@ -67,12 +67,14 @@ type config struct {
 // This is needed in order to ensure that every call in the context of an application happens in a single server isolated from others.
 // Prior to this separation there were cases when tests succeeded (false positive) due to mistakenly configured baseURL resulting in different flow - different access strategy returned.
 type ORDServers struct {
-	CertPort           int `envconfig:"default=8082"`
-	UnsecuredPort      int `envconfig:"default=8083"`
-	BasicPort          int `envconfig:"default=8084"`
-	OauthPort          int `envconfig:"default=8085"`
-	GlobalRegistryPort int `envconfig:"default=8086"`
-	CertSecuredBaseURL string
+	CertPort                    int `envconfig:"default=8082"`
+	UnsecuredPort               int `envconfig:"default=8083"`
+	BasicPort                   int `envconfig:"default=8084"`
+	OauthPort                   int `envconfig:"default=8085"`
+	GlobalRegistryCertPort      int `envconfig:"default=8086"`
+	GlobalRegistryUnsecuredPort int `envconfig:"default=8087"`
+	CertSecuredBaseURL          string
+	CertSecuredGlobalBaseURL    string
 }
 
 type OAuthConfig struct {
@@ -290,7 +292,8 @@ func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 	servers = append(servers, initUnsecuredORDServer(cfg))
 	servers = append(servers, initBasicSecuredORDServer(cfg))
 	servers = append(servers, initOauthSecuredORDServer(cfg, key))
-	servers = append(servers, initGlobalRegistryORDServer(cfg))
+	servers = append(servers, initSecuredGlobalRegistryORDServer(cfg))
+	servers = append(servers, initUnsecuredGlobalRegistryORDServer(cfg))
 	return servers
 }
 
@@ -329,15 +332,24 @@ func initUnsecuredORDServer(cfg config) *http.Server {
 	}
 }
 
-func initGlobalRegistryORDServer(cfg config) *http.Server {
+func initUnsecuredGlobalRegistryORDServer(cfg config) *http.Server {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/.well-known/open-resource-discovery", ord_global_registry.HandleFuncOrdConfig())
+	router.HandleFunc("/.well-known/open-resource-discovery", ord_global_registry.HandleFuncOrdConfig(cfg.ORDServers.CertSecuredGlobalBaseURL))
+
+	return &http.Server{
+		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.GlobalRegistryUnsecuredPort),
+		Handler: router,
+	}
+}
+
+func initSecuredGlobalRegistryORDServer(cfg config) *http.Server {
+	router := mux.NewRouter()
 
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_global_registry.HandleFuncOrdDocument())
 
 	return &http.Server{
-		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.GlobalRegistryPort),
+		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.GlobalRegistryCertPort),
 		Handler: router,
 	}
 }
