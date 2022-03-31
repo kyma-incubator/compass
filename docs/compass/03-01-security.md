@@ -186,7 +186,7 @@ User logs in to Compass UI
 
 1. Authenticator validates the token using keys provided by the identity service. 
 1. If the token is valid, OathKeeper sends the request to Hydrator.
-1. Hydrator calls Tenant Mapping Handler hosted by `Director`, which, in production environment, returns **the same** authentication session (as the `tenant` is already in place). For local development, user `tenant` and `scopes` are loaded from ConfigMap, where static `user - tenant and scopes` mapping is done.
+1. Hydrator calls Tenant Mapping Handler hosted by `Director`, which, in production environment, returns **the same** authentication session (as the `tenant` is already in place) even for local development. See the [installation document](https://github.com/kyma-incubator/compass/blob/main/docs/compass/04-01-installation.md#local-minikube-installation) for more details on how to configure OIDC Authentication Server.
 1. Hydrator passes response to ID_Token mutator which constructs a JWT token with scopes and `tenant` in the payload.
 1. The request is then forwarded to the desired component (such as `Director` or `Connector`) through the `Gateway` component.
 
@@ -194,21 +194,24 @@ User logs in to Compass UI
 
 **Scopes**
 
-For local development, user scopes are loaded from ConfigMap, where static `user - tenant and scopes` mapping is done.
+Scopes are loaded from a ConfigMap, where static `user group -  scopes` mapping is done.
 
-**Example ConfigMap for local development**
+**Example ConfigMap**
 
 ```yaml
-admin@kyma.cx:
-    tenant: edf2e0c0-58b1-45c6-b345-fabc9774600c
-    scopes:
-        - application:admin
-        - runtime:admin
-foo@bar.com:
-    tenant: c862d791-2735-4ffb-ae2d-3ace408d6cff
-    scopes:
-        - application:view
-        - runtime:view
+kind: ConfigMap
+apiVersion: v1
+metadata:
+   name: compass-director-static-groups
+   namespace: compass-system
+data:
+   static-groups.yaml: |
+      - groupname: "application-superadmin"
+        scopes:
+          - "application:read"
+          - "application:write"
+          - "application.auths:read"
+          - "application.webhooks:read"
 ```
 
 ### Client certificates
