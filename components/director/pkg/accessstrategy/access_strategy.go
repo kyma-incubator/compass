@@ -26,6 +26,11 @@ const (
 
 	// CustomAccessStrategy is an AccessStrategyType indicating that not a standard ORD security mechanism is used for the ORD document
 	CustomAccessStrategy Type = "custom"
+
+	// MinDescriptionLength represents the minimal accepted length of the Description field
+	MinDescriptionLength = 1
+	// MaxDescriptionLength represents the minimal accepted length of the Description field
+	MaxDescriptionLength = 5000
 )
 
 // AccessStrategies is a slice of AccessStrategy objects
@@ -47,7 +52,7 @@ func (as AccessStrategy) Validate() error {
 	return validation.ValidateStruct(&as,
 		validation.Field(&as.Type, validation.Required, validation.In(OpenAccessStrategy, CMPmTLSAccessStrategy, CustomAccessStrategy), validation.When(as.CustomType != "", validation.In(CustomAccessStrategy))),
 		validation.Field(&as.CustomType, validation.When(as.CustomType != "", validation.Match(regexp.MustCompile(CustomTypeRegex)))),
-		validation.Field(&as.CustomDescription, validation.When(as.Type != "custom", validation.Empty)),
+		validation.Field(&as.CustomDescription, validation.When(as.Type != "custom", validation.Empty).Else(validation.Length(MinDescriptionLength, MaxDescriptionLength))),
 	)
 }
 
