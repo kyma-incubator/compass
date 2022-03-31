@@ -4,7 +4,7 @@ Automatic Scenario Assignment (ASA) feature allows you to define an external sub
 
 ![](./assets/automatic-scenario-assign.svg) 
 
-1. Administrator defines Scenarios.
+1. Administrator defines Scenarios in a tenant of type "account".
 2. Administrator defines conditions to label Runtimes using Automatic Scenario Assignment. 
 3. User registers a Runtime that matches the conditions specified in the ASA.
 4. Runtime is automatically assigned to the matching Scenario. 
@@ -25,10 +25,9 @@ type Label {
 
 ```
 
-A condition is defined as a label selector in the **selector** field. 
+A tenant-matcher condition is defined as a label selector in the **selector** field - that behaviour is kept for backwards compatability, but the assignment will be based on the tenant where the runtime is created, not on the labels of the runtime. 
 The label key is validated to be `global_subaccount_id`. It is also validated, that the subaccount tenant is a child of the tenant where the scenario and ASA resides.
-
-Then, if a Runtime is labeled with `global_subaccount_id`, the Runtime is assigned to the given Scenario, even though they are in different tenants.
+Then, if a Runtime is created in `global_subaccount_id` tenant, the Runtime is automatically assigned to the given Scenario.
 
 ### Mutations
 
@@ -89,15 +88,17 @@ mutation  {
 }
 ```
 
-3. Register a Runtime with a label that indicates that it was created by the `WAREHOUSE` Administrator.
-```graphql
-mutation  {
-  registerRuntime(in:{name: "warehouse-runtime-1", labels:{global_subaccount_id:"0ccd19fd-671e-4024-8b0f-887bb7e4ed4f"}}) {
-    name
-    labels
-  }
-}
-```
+3. Register a Runtime into the `0ccd19fd-671e-4024-8b0f-887bb7e4ed4f` subaccount tenant. That can be done by:
+   - directly registering the runtime in the context of the tenant
+   - registering the runtime in the context of the subaccount tenant's parent, and providing the wanted tenant as a `global_subaccount_id` label - that behaviour is kept for backwards compatability.  
+      ```graphql
+        mutation  {
+            registerRuntime(in:{name: "warehouse-runtime-1", labels:{global_subaccount_id:"0ccd19fd-671e-4024-8b0f-887bb7e4ed4f"}}) {
+                name
+                labels
+            }
+        }
+      ```
 
 Automatic Scenario Assignment assigns the Runtime to the `WAREHOUSE` Scenario: 
 ```json
