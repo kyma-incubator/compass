@@ -1,6 +1,6 @@
 APP_NAME = compass-operations-controller
 APP_PATH = components/operations-controller
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.17.0
 VERIFY_IGNORE := /vendor\|/automock\|/api/v1alpha1/zz_generated.deepcopy.go
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 CRD_OPTIONS ?= "crd:trivialVersions=true"
@@ -53,7 +53,7 @@ TMP_DIR=$$(mktemp -d) ;\
 cd $$TMP_DIR ;\
 go mod init tmp ;\
 echo "Downloading $(2)" ;\
-GOBIN=$(abspath ./bin) go install $(2) ;\
+GOBIN=$(abspath ./bin) go get $(2) ;\
 rm -rf $$TMP_DIR ;\
 }
 endef
