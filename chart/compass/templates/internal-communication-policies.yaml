@@ -71,6 +71,7 @@ spec:
               - "compass-external-services-mock.*"
               - "{{ .Values.global.externalServicesMock.certSecuredHost }}.*"
               - "{{ .Values.global.externalServicesMock.ordCertSecuredHost }}.*"
+              - "{{ .Values.global.externalServicesMock.ordGlobalCertSecuredHost }}.*"
             {{end}}
     - from: # or anything other only if the request is authenticated via RequestAuthentication
         - source:

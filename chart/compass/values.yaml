@@ -124,7 +124,7 @@ global:
       version: "PR-2298"
     console:
       dir:
-      version: "PR-56"
+      version: "PR-62"
     e2e_tests:
       dir:
       version: "PR-2298"
@@ -489,6 +489,7 @@ global:
       regionPathParam: "region"
       subscriptionProviderLabelKey: "subscriptionProviderId"
       consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
+    containerName: "tenant-fetcher"
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     issuerLocality: "local" # In local setup we have manually created connector CA certificate with 'local' Locality property
@@ -537,7 +538,7 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
-    globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8086/.well-known/open-resource-discovery
+    globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8087/.well-known/open-resource-discovery
     maxOrdParallelDownloads: 4
   systemFetcher:
     enabled: false
@@ -586,6 +587,7 @@ global:
       pageSize: 200
       sizeParam: "$top"
       skipParam: "$skip"
+    containerName: "system-fetcher"
   tenantFetchers:
     job1:
       enabled: false
@@ -658,9 +660,11 @@ global:
     unsecuredPort: 8083
     basicSecuredPort: 8084
     oauthSecuredPort: 8085
-    ordGlobalRegistryPort: 8086
+    ordGlobalRegistryCertPort: 8086
+    ordGlobalRegistryUnsecuredPort: 8087
     certSecuredHost: compass-external-services-mock-sap-mtls
     ordCertSecuredHost: compass-external-services-mock-sap-mtls-ord
+    ordGlobalCertSecuredHost: compass-external-services-mock-sap-mtls-global-ord-registry
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
     regionInstancesCredentials:
