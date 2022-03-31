@@ -88,9 +88,10 @@ mutation  {
 }
 ```
 
-3. Register a Runtime into the `0ccd19fd-671e-4024-8b0f-887bb7e4ed4f` subaccount tenant. That can be done by:
-   - directly registering the runtime in the context of the tenant
-   - registering the runtime in the context of the subaccount tenant's parent, and providing the wanted tenant as a `global_subaccount_id` label - that behaviour is kept for backwards compatability.  
+3. Register a Runtime into the `0ccd19fd-671e-4024-8b0f-887bb7e4ed4f` subaccount tenant:
+   Create a Runtime in the `0ccd19fd-671e-4024-8b0f-887bb7e4ed4f` tenant:
+    - Run the request in the context of the wanted `subaccount` tenant
+    - Run the request in the context of the parent tenant, and label the runtime with the wanted `subaccount` tenant:  
       ```graphql
         mutation  {
             registerRuntime(in:{name: "warehouse-runtime-1", labels:{global_subaccount_id:"0ccd19fd-671e-4024-8b0f-887bb7e4ed4f"}}) {
@@ -160,20 +161,20 @@ Runtime is unassigned from the `WAREHOUSE` Scenario:
 
 ### Create ASA when Runtime exists
 
-You can also assign a Runtimes to a given Scenario using ASA when the Runtime already exists. If there is a Runtime that matches a new assignment, it is automatically assigned to the Scenario.
+You can also assign a Runtimes to a given Scenario using ASA when the Runtime already exists. If there is a Runtime that matches a new assignment, meaning that it is in the wanted `subaccount` tenant, it is automatically assigned to the Scenario.
 All requests below are done in the context of a tenant of type `account` which is a parent of the given `subaccount` tenant.
 
-1. Create a Runtime with the `global_subaccount_id:0ccd19fd-671e-4024-8b0f-887bb7e4ed4f` label:
-
-```graphql
-mutation  {
-  registerRuntime(in:{name: "marketing-runtime-1", labels:{global_subaccount_id:"0ccd19fd-671e-4024-8b0f-887bb7e4ed4f"}}) {
-    name
-    labels
-  }
-}
-
-```
+1. Create a Runtime in the `0ccd19fd-671e-4024-8b0f-887bb7e4ed4f` tenant:
+    - Run the request in the context of the wanted `subaccount` tenant
+    - Run the request in the context of the parent tenant, and label the runtime with the wanted `subaccount` tenant:
+      ```graphql
+        mutation  {
+            registerRuntime(in:{name: "warehouse-runtime-1", labels:{global_subaccount_id:"0ccd19fd-671e-4024-8b0f-887bb7e4ed4f"}}) {
+                name
+                labels
+            }
+        }
+      ```
 
 2. Create an assignment:
 ```graphql
