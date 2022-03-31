@@ -13,7 +13,7 @@ It is required because there is no strict convention regarding the correlation I
 This filter sets the `x-envoy-max-retries` header to 0, which will disable the default retry behavior, because it is not flexible enough with the currently supported Istio version. 
 
 ### ORY Oathkeeper Timeout Filter
-This filter was introduced because there are no timeouts on ARY Oathkeeper side, but we want to cancel requests that take more time than usual.
+This filter was introduced because there are no timeouts on ORY Oathkeeper side, but we want to cancel requests that take more time than usual.
 This filter is rather a workaround for missing Oathkeeper functionality. More details can be found in [the PR](https://github.com/kyma-incubator/compass/pull/1886) that introduced the filter.
 
 ### Limit Request Payload Size Filter
