@@ -18,6 +18,4 @@ Each RD Document contains a list of bundles, API and event definitions. Then, in
 
 The ORD Service component is developed in a separate GitHub [repository](https://github.com/kyma-incubator/ord-service).
 
-It exposes is a read-only OData API for the applications information available in Compass - application vendors, bundles, packages, API and event definitions.
-
-The ORD Service operates on `subaccount` tenancy level. It provides information only for the applications which are accessible from that tenant. Tenants gain access to applications via existing formations.
+It exposes is a read-only OData API for the applications' information available in Compass - application vendors, bundles, packages, API and event definitions.
