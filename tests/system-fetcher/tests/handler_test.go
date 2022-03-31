@@ -107,6 +107,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	namespace := "compass-system"
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
 	defer func() {
+		k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, cfg.SystemFetcherContainerName, false)
 		k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
 	}()
 
@@ -182,6 +183,7 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	namespace := "compass-system"
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
 	defer func() {
+		k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, cfg.SystemFetcherContainerName, false)
 		k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
 	}()
 
@@ -280,6 +282,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	namespace := "compass-system"
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
 	defer func() {
+		k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, cfg.SystemFetcherContainerName, false)
 		k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
 	}()
 
@@ -393,6 +396,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	namespace := "compass-system"
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
 	defer func(jobName string) {
+		k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, cfg.SystemFetcherContainerName, false)
 		k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
 	}(jobName)
 
@@ -497,6 +501,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	jobName = "system-fetcher-test2"
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
 	defer func() {
+		k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, cfg.SystemFetcherContainerName, false)
 		k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
 	}()
 
