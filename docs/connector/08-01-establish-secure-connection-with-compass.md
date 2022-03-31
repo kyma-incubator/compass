@@ -91,7 +91,7 @@ To establish a secure connection with Compass and generate the client certificat
  
     After you receive the certificates, decode the certificate chain with the base64 method and use it in your application: 
     ```bash
-    base64 -d {CERTIFICATE_CHAIN}
+    echo {CERTIFICATE_CHAIN} | base64 -d
     ```
     
  >**NOTE:** To learn how to renew a client certificate, read [this](08-02-maintain-secure-connection-with-compass.md) document.
