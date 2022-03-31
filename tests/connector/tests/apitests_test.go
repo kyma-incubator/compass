@@ -13,18 +13,18 @@ import (
 )
 
 func TestTokens(t *testing.T) {
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &graphql.RuntimeInput{
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &graphql.RuntimeInput{
 		Name: "test-tokens-runtime",
 	})
-	defer fixtures.CleanupRuntime(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &runtime)
+	defer fixtures.CleanupRuntime(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 	runtimeID := runtime.ID
 
-	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
+	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
 		Name: "test-tokens-app",
 	})
-	defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &app)
+	defer fixtures.CleanupApplication(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &app)
 	require.NoError(t, err)
 	appID := app.ID
 
@@ -102,8 +102,8 @@ func TestTokens(t *testing.T) {
 }
 
 func TestTokenSuggestion(t *testing.T) {
-	intSystem, err := fixtures.RegisterIntegrationSystem(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, "token-suggestion-int-sys")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, intSystem)
+	intSystem, err := fixtures.RegisterIntegrationSystem(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, "token-suggestion-int-sys")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, intSystem)
 	require.NoError(t, err)
 	require.NotEmpty(t, intSystem.ID)
 
@@ -167,13 +167,13 @@ func TestTokenSuggestion(t *testing.T) {
 		}
 		for _, test := range testCases {
 			t.Run(test.description, func(t *testing.T) {
-				app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, test.appInput)
-				defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &app)
+				app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, test.appInput)
+				defer fixtures.CleanupApplication(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &app)
 				require.NoError(t, err)
 				appID := app.ID
 
 				//when
-				token := fixtures.GenerateOneTimeTokenForApplicationWithSuggestedToken(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, appID)
+				token := fixtures.GenerateOneTimeTokenForApplicationWithSuggestedToken(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, appID)
 				test.validationFunc(t, token)
 				require.Equal(t, tokenFromLegacyURL(token), tokenFromRaw(token))
 			})
@@ -182,10 +182,10 @@ func TestTokenSuggestion(t *testing.T) {
 }
 
 func TestCertificateGeneration(t *testing.T) {
-	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
+	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
 		Name: "test-cert-gen-app",
 	})
-	defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &app)
+	defer fixtures.CleanupApplication(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &app)
 	require.NoError(t, err)
 	appID := app.ID
 
@@ -286,10 +286,10 @@ func TestCertificateGeneration(t *testing.T) {
 }
 
 func TestFullConnectorFlow(t *testing.T) {
-	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
+	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{
 		Name: "test-full-flow-app",
 	})
-	defer fixtures.CleanupApplication(t, ctx, directorClient.DexGraphqlClient, cfg.Tenant, &app)
+	defer fixtures.CleanupApplication(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &app)
 	require.NoError(t, err)
 	appID := app.ID
 

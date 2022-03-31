@@ -181,6 +181,25 @@ func (r *pgRepository) ListPageBySearchTerm(ctx context.Context, searchTerm stri
 	}, nil
 }
 
+// ListByExternalTenants retrieves all tenants with matching external ID from the Compass storage.
+func (r *pgRepository) ListByExternalTenants(ctx context.Context, externalTenant []string) ([]*model.BusinessTenantMapping, error) {
+	var entityCollection tenant.EntityCollection
+
+	conditions := repo.Conditions{
+		repo.NewInConditionForStringValues(externalTenantColumn, externalTenant)}
+
+	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
+		return nil, err
+	}
+
+	items := make([]*model.BusinessTenantMapping, 0, len(entityCollection))
+	for _, entity := range entityCollection {
+		tmModel := r.conv.FromEntity(&entity)
+		items = append(items, tmModel)
+	}
+	return items, nil
+}
+
 // Update updates the values of tenant with matching internal, and external IDs.
 func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMapping) error {
 	if model == nil {

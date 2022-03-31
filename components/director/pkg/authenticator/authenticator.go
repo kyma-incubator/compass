@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -31,6 +32,7 @@ func InitFromEnv(envPrefix string) ([]Config, error) {
 	authenticators := make(map[string]*Config)
 	attributesPattern := regexp.MustCompile(fmt.Sprintf("^%s_(.*)_AUTHENTICATOR_ATTRIBUTES$", envPrefix))
 	trustedIssuersPattern := regexp.MustCompile(fmt.Sprintf("^%s_(.*)_AUTHENTICATOR_TRUSTED_ISSUERS$", envPrefix))
+	clientIDSuffixPattern := regexp.MustCompile(fmt.Sprintf("^%s_(.*)_AUTHENTICATOR_CHECK_CLIENT_ID_SUFFIX$", envPrefix))
 
 	for _, env := range os.Environ() {
 		pair := strings.SplitN(env, "=", 2)
@@ -75,6 +77,34 @@ func InitFromEnv(envPrefix string) ([]Config, error) {
 					TrustedIssuers: trustedIssuers,
 				}
 			}
+		}
+
+		matches = clientIDSuffixPattern.FindStringSubmatch(key)
+		if len(matches) > 0 {
+			authenticatorName := matches[1]
+			checkSuffix, err := strconv.ParseBool(value)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to parse CheckSuffix")
+			}
+			if authenticator, exists := authenticators[authenticatorName]; exists {
+				authenticator.CheckSuffix = checkSuffix
+			} else {
+				authenticators[authenticatorName] = &Config{
+					Name:        authenticatorName,
+					CheckSuffix: checkSuffix,
+				}
+			}
+		}
+	}
+
+	for _, a := range authenticators {
+		if a.CheckSuffix {
+			acceptSuffix := make([]string, 0, len(a.TrustedIssuers))
+			for _, issuer := range a.TrustedIssuers {
+				// The issuer scope prefixes format is "<value>." while the client ID format is "<ID><value>" so the "." should be trimmed
+				acceptSuffix = append(acceptSuffix, strings.TrimSuffix(issuer.ScopePrefix, "."))
+			}
+			a.ClientIDSuffixes = acceptSuffix
 		}
 	}
 
