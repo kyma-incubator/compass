@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -99,9 +100,16 @@ type tenantSystems struct {
 // SyncSystems synchronizes applications between Compass and external source. It deletes the applications with deleted state in the external source from Compass,
 // and creates any new applications present in the external source.
 func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
-	tenants, err := s.listTenants(ctx)
+	allTenants, err := s.listTenants(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to list tenants")
+	}
+
+	tenants := make([]*model.BusinessTenantMapping, 0, len(allTenants))
+	for _, tnt := range allTenants {
+		if tnt.Type == tenantEntity.Account {
+			tenants = append(tenants, tnt)
+		}
 	}
 
 	systemsQueue := make(chan tenantSystems, s.config.SystemsQueueSize)
@@ -262,7 +270,9 @@ func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model
 		BaseURL:         &sc.BaseURL,
 		SystemNumber:    &sc.SystemNumber,
 		Labels: map[string]interface{}{
-			"managed": "true",
+			"managed":              "true",
+			"productId":            &sc.ProductId,
+			"ppmsProductVersionId": &sc.PpmsProductVersionId,
 		},
 	}, nil
 }
