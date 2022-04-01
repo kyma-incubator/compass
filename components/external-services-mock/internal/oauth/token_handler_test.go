@@ -220,9 +220,9 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		require.NotEmpty(t, response.AccessToken)
 	})
 
-	t.Run("Fail to issue client_credentials token with certificate when auth header is provided", func(t *testing.T) {
+	t.Run("Fail to issue client_credentials token with certificate when wrong auth header is provided", func(t *testing.T) {
 		//GIVEN
-		id, tenantHeader := "id", "x-zid"
+		id, secret, tenantHeader := "id", "wrong-secret", "x-zid"
 
 		data := url.Values{}
 		data.Add(oauth2.GrantTypeFieldName, oauth2.CredentialsGrantType)
@@ -232,7 +232,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		req.Header.Set(oauth2.ContentTypeHeader, oauth2.ContentTypeApplicationURLEncoded)
 		req.Header.Set(oauth2.XExternalHost, extHost)
 
-		encodedAuthValue := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:wrong-value", id)))
+		encodedAuthValue := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", id, secret)))
 		req.Header.Set("authorization", fmt.Sprintf("Basic %s", encodedAuthValue))
 
 		key, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -253,7 +253,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		bodyErr := gjson.GetBytes(body, "error")
 		require.True(t, bodyErr.Exists())
 		require.NotEmpty(t, bodyErr)
-		require.Contains(t, bodyErr.String(), "both authorization header and cert were passed")
+		require.Contains(t, bodyErr.String(), "client_secret from authorization header doesn't match the expected one")
 
 	})
 

@@ -122,25 +122,26 @@ func (h *handler) authenticateClientCredentialsRequest(r *http.Request) error {
 	authorization := r.Header.Get("authorization")
 	isReqWithCert := h.isRequestWithCert(r)
 
+	flowName := "oauth"
 	if isReqWithCert {
-		//Passing a value when asking for token with cert will result in an error
-		if authorization != "" {
-			log.C(ctx).Warn("Authorization header was passed in token request with cert")
-			return errors.New("both authorization header and cert were passed")
-		}
-		if err := h.validateClientID(r.FormValue(ClientIDKey), "from request body doesn't match the expected one"); err != nil {
-			return err
-		}
-	} else {
-		if id, secret, err := getBasicCredentials(authorization); err != nil {
-			log.C(ctx).Info("Did not find client_id or client_secret in the authorization header. Checking the request body...")
-			if err = h.validateOauthCredentials(r.FormValue(ClientIDKey), r.FormValue(ClientSecretKey), "from request body doesn't match the expected one"); err != nil {
+		flowName = "cert"
+	}
+
+	if id, secret, err := getBasicCredentials(authorization); err != nil {
+		log.C(ctx).Infof("Authorization header not found in %s flow. Checking the request body...", flowName)
+		if isReqWithCert {
+			if err = h.validateClientID(r.FormValue(ClientIDKey), "from request body doesn't match the expected one"); err != nil {
 				return err
 			}
 		} else {
-			if err = h.validateOauthCredentials(id, secret, "from authorization header doesn't match the expected one"); err != nil {
+			if err = h.validateClientIDAndSecret(r.FormValue(ClientIDKey), r.FormValue(ClientSecretKey), "from request body doesn't match the expected one"); err != nil {
 				return err
 			}
+		}
+	} else { //Auth header is provided
+		log.C(ctx).Infof("Authorization header found in %s flow.", flowName)
+		if err = h.validateClientIDAndSecret(id, secret, "from authorization header doesn't match the expected one"); err != nil {
+			return err
 		}
 	}
 
@@ -157,7 +158,7 @@ func (h *handler) authenticatePasswordCredentialsRequest(r *http.Request) error 
 		return errors.Wrap(err, "client_id or client_secret doesn't match the expected one")
 	}
 
-	if err = h.validateOauthCredentials(id, secret, "doesn't match the expected one"); err != nil {
+	if err = h.validateClientIDAndSecret(id, secret, "doesn't match the expected one"); err != nil {
 		return err
 	}
 
@@ -251,7 +252,7 @@ func (h *handler) validateClientID(clientId, errMsg string) error {
 	return nil
 }
 
-func (h *handler) validateOauthCredentials(clientId, clientSecret, errMsg string) error {
+func (h *handler) validateClientIDAndSecret(clientId, clientSecret, errMsg string) error {
 	if err := h.validateClientID(clientId, errMsg); err != nil {
 		return err
 	}
