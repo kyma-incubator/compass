@@ -248,6 +248,7 @@ func fixSystems() []systemfetcher.System {
 				ProductDescription:     "System1 description",
 				BaseURL:                "http://example1.com",
 				InfrastructureProvider: "test",
+				AdditionalURLs:         map[string]string{"mainUrl": "http://mainurl.com"},
 			},
 		},
 	}

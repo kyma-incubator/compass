@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	appType = "type-1"
+	appType    = "type-1"
+	mainUrlKey = "mainUrl"
 )
 
 func TestSyncSystems(t *testing.T) {
@@ -589,11 +590,12 @@ func fixAppsInputsWithTemplatesBySystems(systems []systemfetcher.System) []model
 	initStatusCond := model.ApplicationStatusConditionInitial
 	result := make([]model.ApplicationRegisterInputWithTemplate, 0, len(systems))
 	for i := range systems {
+		baseUrl := systems[i].AdditionalURLs[mainUrlKey]
 		input := model.ApplicationRegisterInputWithTemplate{
 			ApplicationRegisterInput: model.ApplicationRegisterInput{
 				Name:            systems[i].DisplayName,
 				Description:     &systems[i].ProductDescription,
-				BaseURL:         &systems[i].BaseURL,
+				BaseURL:         &baseUrl,
 				ProviderName:    &systems[i].InfrastructureProvider,
 				SystemNumber:    &systems[i].SystemNumber,
 				StatusCondition: &initStatusCond,
