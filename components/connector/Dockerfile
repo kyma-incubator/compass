@@ -13,7 +13,7 @@ RUN mkdir /app && mv ./main /app/main && mv ./licenses /app/licenses
 
 
 
-FROM alpine:3.15.0
+FROM alpine:3.15.3
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 
