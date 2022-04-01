@@ -24,7 +24,7 @@ const (
 
 	// ConcurrentDeleteOperationErrMsg is the error message returned by the Compass Director, when we try to delete an application, which is already undergoing a delete operation.
 	ConcurrentDeleteOperationErrMsg = "Concurrent operation [reason=delete operation is in progress]"
-	mainUrlKey                      = "mainUrl"
+	mainURLKey                      = "mainUrl"
 )
 
 //go:generate mockery --name=tenantService --output=automock --outpkg=automock --case=underscore --exported=true
@@ -263,13 +263,13 @@ func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model
 	}
 
 	initStatusCond := model.ApplicationStatusConditionInitial
-	baseUrl := sc.AdditionalURLs[mainUrlKey]
+	baseURL := sc.AdditionalURLs[mainURLKey]
 	return &model.ApplicationRegisterInput{
 		Name:            sc.DisplayName,
 		Description:     &sc.ProductDescription,
 		StatusCondition: &initStatusCond,
 		ProviderName:    &sc.InfrastructureProvider,
-		BaseURL:         &baseUrl,
+		BaseURL:         &baseURL,
 		SystemNumber:    &sc.SystemNumber,
 		Labels: map[string]interface{}{
 			"managed":              "true",
