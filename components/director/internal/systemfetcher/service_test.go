@@ -599,8 +599,8 @@ func fixAppsInputsWithTemplatesBySystems(systems []systemfetcher.System) []model
 				StatusCondition: &initStatusCond,
 				Labels: map[string]interface{}{
 					"managed":              "true",
-					"productId":            &systems[i].ProductId,
-					"ppmsProductVersionId": &systems[i].PpmsProductVersionId,
+					"productId":            &systems[i].ProductID,
+					"ppmsProductVersionId": &systems[i].PpmsProductVersionID,
 				},
 			},
 			TemplateID: systems[i].TemplateID,

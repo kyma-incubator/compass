@@ -271,8 +271,8 @@ func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model
 		SystemNumber:    &sc.SystemNumber,
 		Labels: map[string]interface{}{
 			"managed":              "true",
-			"productId":            &sc.ProductId,
-			"ppmsProductVersionId": &sc.PpmsProductVersionId,
+			"productId":            &sc.ProductID,
+			"ppmsProductVersionId": &sc.PpmsProductVersionID,
 		},
 	}, nil
 }
