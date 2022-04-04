@@ -2,6 +2,7 @@ package config
 
 type AuditlogConfig struct {
 	TokenURL          string `envconfig:"AUDITLOG_TOKEN_URL"`
+	TokenPath         string `envconfig:"AUDITLOG_TOKEN_PATH"`
 	ClientID          string `envconfig:"AUDITLOG_CLIENT_ID"`
 	X509Cert          string `envconfig:"AUDITLOG_X509_CERT"`
 	X509Key           string `envconfig:"AUDITLOG_X509_KEY"`

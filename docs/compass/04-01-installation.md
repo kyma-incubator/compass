@@ -15,6 +15,7 @@ The following certificates can be rotated:
 * Istio gateway certificate for the regular HTTPS gateway.
 * Istio gateway certificate for the MTLS gateway.
 
+The proper work of JWT token flows requires a set up and configured OpenID Connect (OIDC) Authorization Server. The OIDC Authorization Server is needed for the support of the respective users, user groups, and scopes. The OIDC server host and client-id are specified in [values.yaml](../../chart/compass/values.yaml) file inside the Compass Helm chart. A set of scopes are granted to the admin group. The admin group can be configured in the [director's values.yaml](../../chart/compass/charts/director/values.yaml) file.
 ##### Create issuers
 
 To issue certificates, the cert manager requires a resource called issuer.
@@ -160,25 +161,37 @@ To install Compass as central Management Plane on a cluster, follow these steps:
 For local development, install Compass with the minimal Kyma installation on Minikube from the `main` branch. To do so, run this script:
 
 ```bash
-./installation/cmd/run.sh
+./installation/cmd/run.sh --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID} --oidc-admin-group {OIDC_ADMIN_GROUP}
 ```
 
 The Kyma version is read from the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file. You can override it with the following command:
 
 ```bash
-./installation/cmd/run.sh --kyma-release {KYMA_VERSION}
+./installation/cmd/run.sh --kyma-release {KYMA_VERSION} --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID} --oidc-admin-group {OIDC_ADMIN_GROUP}
 ```
 You can also specify if you want the Kyma installation to contain only `minimal` components or whether you want `full` Kyma
 
 ```bash
-./installation/cmd/run.sh --kyma-installation full
+./installation/cmd/run.sh --kyma-installation full --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID} --oidc-admin-group {OIDC_ADMIN_GROUP}
 ```
 
 Optionally, you can use the `--dump-db` flag to populate the DB with sample data. As a result, a DB dump is downloaded from the Compass development environment and is imported into the DB during the installation of Compass. Note that using this flag also results in building a new `schema-migrator` image from the local files.
 
 ```bash
-./installation/cmd/run.sh --dump-db
+./installation/cmd/run.sh --dump-db --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID} --oidc-admin-group {OIDC_ADMIN_GROUP}
 ```
+
+> **_NOTE:_**  
+>To configure an OIDC identity provider that is required for the JWT flows, the OIDC configuration arguments (`--oidc-host`, `--oidc-client-id`, `--oidc-admin-group`) are mandatory. If they are omitted, the **run.sh** script tries to get the required values from the **~/.compass.yaml** file. To run the `run.sh` script, you need the [yq](https://mikefarah.gitbook.io/yq/) tool.
+>
+>The  **~/compass.yaml** file must have the following structure:
+>  > idpHost: {URL_TO_OIDC_SERVER}
+>  >
+>  > clientID: {OIDC_CLIENT_ID}
+>  >
+>  > adminGroupNames: {OIDC_ADMIN_GROUPS}
+>
+> Note that the JWT flows work properly only when the configuration arguments are passed and the **~.compass.yaml** file exists.
 
 ## Single cluster with Compass and Runtime Agent
 
@@ -248,7 +261,7 @@ Once Compass is installed, Runtime Agent will be configured to fetch the Runtime
 To install Compass and Runtime components on Minikube, run the following command. Kyma source code will be picked up according to the KYMA_VERSION file and Compass source code will be picked up from the local sources (locally checked out branch):
 
 ```bash
-./installation/cmd/run.sh --kyma-installation full
+./installation/cmd/run.sh --kyma-installation full --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID}
 ```
 
 > **Note:** To reduce memory and CPU usage, from the `installer-cr-kyma.yaml` file, comment out the components you don't want to use, such as `monitoring`, `tracing`, `logging`, or `kiali`.

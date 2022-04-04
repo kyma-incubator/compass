@@ -151,6 +151,20 @@ if [[ "${DIRECTION}" == "up" ]]; then
   rm  ${MIGRATION_STORAGE_PATH}/* || true
   cp -R migrations/${MIGRATION_PATH}/. ${MIGRATION_STORAGE_PATH}
 
+  PREVIOUS_MIGRATIONS_EXISTS=$(PGPASSWORD="${DB_PASSWORD}" psql -qtAX -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" -c "SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename  = 'schema_migrations');")
+  if [[ "$PREVIOUS_MIGRATIONS_EXISTS" == t ]]; then
+    echo "Previous migrations exist, verifying that the state is not dirty."
+    DATABASE_STATE=$(PGPASSWORD="${DB_PASSWORD}" psql -qtAX -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" -c "SELECT dirty FROM schema_migrations")
+    echo "DB state is dirty: $DATABASE_STATE"
+    if [[ "$DATABASE_STATE" == t ]]; then
+      CURRENT_VERSION=$(PGPASSWORD="${DB_PASSWORD}" psql -qtAX -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" -c "SELECT version FROM schema_migrations")
+      echo "Current schema version: $CURRENT_VERSION"
+      LAST_SUCCESSFUL_MIGRATION=$(ls -lr migrations/${MIGRATION_PATH} | grep -i -A 1 ${CURRENT_VERSION} | tail -n 1 | tr -s ' ' | cut -d ' ' -f9 | cut -d '_' -f1)
+      echo "Forcing DB schema version to last successful migration version - $LAST_SUCCESSFUL_MIGRATION"
+      migrate -path migrations/${MIGRATION_PATH} -database "$CONNECTION_STRING" force ${LAST_SUCCESSFUL_MIGRATION}
+    fi
+  fi
+
   echo '# STARTING MIGRATION #'
   $CMD
 else
