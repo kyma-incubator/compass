@@ -55,7 +55,8 @@ type config struct {
 
 	Log log.Config
 
-	RootAPI string `envconfig:"APP_ROOT_API,default=/tenants"`
+	TenantsRootAPI         string `envconfig:"APP_ROOT_API,default=/tenants"`
+	TenantsOnDemandRootAPI string `envconfig:"APP_ROOT_API,default=/tenantsondemand"`
 
 	Handler tenantfetcher.HandlerConfig
 
@@ -112,18 +113,18 @@ func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config) ht
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 
-	router := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
-	healthCheckRouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
+	tenantsAPIrouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
+	configureAuthMiddleware(ctx, httpClient, tenantsAPIrouter, cfg.SecurityConfig)
+	registerTenantsHandler(ctx, tenantsAPIrouter, cfg.Handler)
 
-	configureAuthMiddleware(ctx, httpClient, router, cfg.SecurityConfig)
-
-	registerHandler(ctx, router, cfg.Handler)
-
+	healthCheckRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
 	logger.Infof("Registering readiness endpoint...")
 	healthCheckRouter.HandleFunc("/readyz", newReadinessHandler())
-
 	logger.Infof("Registering liveness endpoint...")
 	healthCheckRouter.HandleFunc("/healthz", newReadinessHandler())
+
+	tenansOnDemandAPIrouter := mainRouter.PathPrefix(cfg.TenantsOnDemandRootAPI).Subrouter()
+	registerTenantsOnDemandHandler(ctx, tenansOnDemandAPIrouter, cfg.Handler)
 
 	return mainRouter
 }
@@ -181,7 +182,7 @@ func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, route
 	go periodicExecutor.Run(ctx)
 }
 
-func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.HandlerConfig) {
+func registerTenantsHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.HandlerConfig) {
 	gqlClient := newInternalGraphQLClient(cfg.DirectorGraphQLEndpoint, cfg.ClientTimeout, cfg.HTTPClientSkipSslValidation)
 	gqlClient.Log = func(s string) {
 		log.C(ctx).Debug(s)
@@ -202,6 +203,23 @@ func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.
 
 	log.C(ctx).Infof("Registering service dependencies endpoint on %s...", cfg.DependenciesEndpoint)
 	router.HandleFunc(cfg.DependenciesEndpoint, tenantHandler.Dependencies).Methods(http.MethodGet)
+}
+
+func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.HandlerConfig) {
+	gqlClient := newInternalGraphQLClient(cfg.DirectorGraphQLEndpoint, cfg.ClientTimeout, cfg.HTTPClientSkipSslValidation)
+	gqlClient.Log = func(s string) {
+		log.C(ctx).Debug(s)
+	}
+	directorClient := graphqlclient.NewDirector(gqlClient)
+
+	tenantConverter := tenant.NewConverter()
+
+	provisioner := tenantfetcher.NewTenantProvisioner(directorClient, tenantConverter, cfg.TenantProvider)
+	fetcher := tenantfetcher.NewCreateTenantFetcher(directorClient, provisioner)
+	tenantHandler := tenantfetcher.NewTenantFetcherHTTPHandler(fetcher, cfg)
+
+	log.C(ctx).Infof("Registering fetch tenant on-demand endpoint on %s...", cfg.TenantOnDemandHandlerEndpoint)
+	router.HandleFunc(cfg.TenantOnDemandHandlerEndpoint, tenantHandler.FetchTenantOnDemand).Methods(http.MethodPost)
 }
 
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {

@@ -2,7 +2,19 @@ package tenantfetchersvc
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	graphqlclient "github.com/kyma-incubator/compass/components/director/pkg/graphql_client"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	gcli "github.com/machinebox/graphql"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -12,6 +24,26 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/tidwall/gjson"
 )
+
+type config struct {
+	Database         persistence.DatabaseConfig
+	KubernetesConfig tenantfetcher.KubeConfig
+
+	OAuthConfig                 tenantfetcher.OAuth2Config
+	APIConfig                   tenantfetcher.APIConfig
+	AuthMode                    oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
+	ClientTimeout               time.Duration  `envconfig:"default=60s"`
+	DirectorGraphQLEndpoint     string         `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
+	HTTPClientSkipSslValidation bool           `envconfig:"default=false"`
+
+	QueryConfig                 tenantfetcher.QueryConfig
+	TenantFieldMapping          tenantfetcher.TenantFieldMapping
+	MovedSubaccountFieldMapping tenantfetcher.MovedSubaccountsFieldMapping
+
+	TenantProvider        string   `envconfig:"APP_TENANT_PROVIDER"`
+	SubaccountRegions     []string `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
+	TenantInsertChunkSize int      `envconfig:"default=500,APP_TENANT_INSERT_CHUNK_SIZE"`
+}
 
 const (
 	// InternalServerError message
@@ -73,7 +105,7 @@ func NewTenantsHTTPHandler(subscriber TenantSubscriber, config HandlerConfig) *h
 	}
 }
 
-// NewTenantFetcherHTTPHandler returns a new HTTP handler, responsible for creation and deletion of regional and non-regional tenants.
+// NewTenantFetcherHTTPHandler returns a new HTTP handler, responsible for creation of on-demand tenants.
 func NewTenantFetcherHTTPHandler(fecther TenantFetcher, config HandlerConfig) *handler {
 	return &handler{
 		fetcher: fecther,
@@ -83,7 +115,89 @@ func NewTenantFetcherHTTPHandler(fecther TenantFetcher, config HandlerConfig) *h
 
 // FetchTenantOnDemand fetches CIS events for a provided subaccount and creates a tenant
 func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.Request) {
-	h.applySubscriptionChange(writer, request, h.subscriber.Subscribe)
+	ctx := request.Context()
+
+	vars := mux.Vars(request)
+	tenantID, ok := vars[h.config.TenantPathParam]
+	if !ok {
+		log.C(ctx).Error("Tenant path parameter is missing from request")
+		http.Error(writer, "Tenant path parameter is missing from request", http.StatusBadRequest)
+		return
+	}
+
+	cfg := config{}
+	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
+	exitOnError(err, "Error while establishing the connection to the database")
+
+	defer func() {
+		err := closeFunc()
+		exitOnError(err, "Error while closing the connection to the database")
+	}()
+
+	tenantFetcherOnDemandSvc, err := createTenantFetcherOnDemandSvc(cfg, transact)
+	exitOnError(err, "failed to create tenant fetcher on-demand service")
+
+	tenantFetcherOnDemandSvc.SyncTenant(tenantID)
+
+	writeCreatedResponse(writer, ctx, tenantID)
+}
+
+func createTenantFetcherOnDemandSvc(cfg config, transact persistence.Transactioner) (*tenantfetcher.SubaccountOnDemandService, error) {
+	eventAPIClient, err := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.AuthMode, cfg.APIConfig, cfg.ClientTimeout)
+	if nil != err {
+		return nil, err
+	}
+
+	uidSvc := uid.NewService()
+
+	labelDefConverter := labeldef.NewConverter()
+	labelDefRepository := labeldef.NewRepository(labelDefConverter)
+
+	labelConverter := label.NewConverter()
+	labelRepository := label.NewRepository(labelConverter)
+	labelService := label.NewLabelService(labelRepository, labelDefRepository, uidSvc)
+
+	tenantStorageConv := tenant.NewConverter()
+	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
+	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepository, labelService)
+
+	gqlClient := newInternalGraphQLClient(cfg.DirectorGraphQLEndpoint, cfg.ClientTimeout, cfg.HTTPClientSkipSslValidation)
+	gqlClient.Log = func(s string) {
+		log.D().Debug(s)
+	}
+	directorClient := graphqlclient.NewDirector(gqlClient)
+
+	return tenantfetcher.NewSubaccountOnDemandService(cfg.SubaccountRegions, cfg.QueryConfig, cfg.TenantFieldMapping, eventAPIClient, transact, tenantStorageSvc, directorClient, cfg.TenantProvider, cfg.TenantInsertChunkSize, tenantStorageConv), nil
+}
+
+func newInternalGraphQLClient(url string, timeout time.Duration, skipSSLValidation bool) *gcli.Client {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: skipSSLValidation,
+		},
+	}
+
+	client := &http.Client{
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(tr, "Authorization")),
+		Timeout:   timeout,
+	}
+
+	return gcli.NewClient(url, gcli.WithHTTPClient(client))
+}
+
+func exitOnError(err error, context string) {
+	if err != nil {
+		wrappedError := errors.Wrap(err, context)
+		log.D().Fatal(wrappedError)
+	}
+}
+
+func writeCreatedResponse(writer http.ResponseWriter, ctx context.Context, tenantID string) {
+	writer.Header().Set("Content-Type", "text/plain")
+	writer.WriteHeader(http.StatusCreated)
+	if _, err := writer.Write([]byte(compassURL)); err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to write response body for tenant request creation for tenant %s: %v", tenantID, err)
+	}
 }
 
 // SubscribeTenant handles subscription for tenant. If tenant does not exist, will create it first.

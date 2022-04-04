@@ -12,8 +12,8 @@ type fetcher struct {
 	provisioner TenantProvisioner
 }
 
-// NewFetcher creates new fetcher
-func NewFetcher(directorClient DirectorGraphQLClient, provisioner TenantProvisioner) *fetcher {
+// NewCreateTenantFetcher creates new fetcher
+func NewCreateTenantFetcher(directorClient DirectorGraphQLClient, provisioner TenantProvisioner) *fetcher {
 	return &fetcher{
 		gqlClient:   directorClient,
 		provisioner: provisioner,

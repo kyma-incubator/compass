@@ -132,6 +132,25 @@ const (
 	retryDelayMilliseconds = 100
 )
 
+type SubaccountOnDemandService struct {
+	tenantsRegions []string
+
+	queryConfig  QueryConfig
+	fieldMapping TenantFieldMapping
+
+	eventAPIClient EventAPIClient
+	retryAttempts  uint
+	toEventsPage   func([]byte) *eventsPage
+
+	transact             persistence.Transactioner
+	tenantStorageService TenantStorageService
+
+	gqlClient             DirectorGraphQLClient
+	providerName          string
+	tenantInsertChunkSize int
+	tenantConverter       TenantConverter
+}
+
 // GlobalAccountService missing godoc
 type GlobalAccountService struct {
 	queryConfig           QueryConfig
@@ -169,6 +188,39 @@ type SubaccountService struct {
 	gqlClient                    DirectorGraphQLClient
 	tenantInsertChunkSize        int
 	tenantConverter              TenantConverter
+}
+
+// NewSubaccountOnDemandService missing godoc
+func NewSubaccountOnDemandService(regionNames []string,
+	queryConfig QueryConfig,
+	fieldMapping TenantFieldMapping,
+	client EventAPIClient,
+	transact persistence.Transactioner,
+	tenantStorageService TenantStorageService,
+	gqlClient DirectorGraphQLClient,
+	providerName string,
+	tenantInsertChunkSize int,
+	tenantConverter TenantConverter) *SubaccountOnDemandService {
+	return &SubaccountOnDemandService{
+		tenantsRegions: regionNames,
+		queryConfig:    queryConfig,
+		fieldMapping:   fieldMapping,
+		eventAPIClient: client,
+		retryAttempts:  retryAttempts,
+		toEventsPage: func(bytes []byte) *eventsPage {
+			return &eventsPage{
+				fieldMapping: fieldMapping,
+				payload:      bytes,
+				providerName: providerName,
+			}
+		},
+		transact:              transact,
+		tenantStorageService:  tenantStorageService,
+		gqlClient:             gqlClient,
+		providerName:          providerName,
+		tenantInsertChunkSize: tenantInsertChunkSize,
+		tenantConverter:       tenantConverter,
+	}
 }
 
 // NewGlobalAccountService missing godoc
@@ -347,26 +399,8 @@ func (s SubaccountService) SyncTenants() error {
 }
 
 // SyncTenant missing godoc
-func (s SubaccountService) SyncTenant(subaccountID string) error {
+func (s SubaccountOnDemandService) SyncTenant(subaccountID string) error {
 	ctx := context.Background()
-	//startTime := time.Now()
-
-	//lastConsumedTenantTimestamp, lastResyncTimestamp, err := s.kubeClient.GetTenantFetcherConfigMapData(ctx)
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//shouldFullResync, err := shouldFullResync(lastResyncTimestamp, s.fullResyncInterval)
-	//if err != nil {
-	//	return err
-	//}
-
-	//newLastResyncTimestamp := lastResyncTimestamp
-	//if shouldFullResync {
-	//	log.C(ctx).Infof("Last full resync was %s ago. Will perform a full resync.", s.fullResyncInterval)
-	//	lastConsumedTenantTimestamp = "1"
-	//	newLastResyncTimestamp = convertTimeToUnixMilliSecondString(startTime)
-	//}
 
 	for _, region := range s.tenantsRegions {
 		tenantToCreate, err := s.getSubaccountToCreateForRegion(subaccountID, region)
@@ -374,28 +408,6 @@ func (s SubaccountService) SyncTenant(subaccountID string) error {
 			return err
 		}
 		log.C(ctx).Printf("Got subaccount to create for region: %s", region)
-
-		//tenantsToDelete, err := s.getSubaccountsToDeleteForRegion(lastConsumedTenantTimestamp, region)
-		//if err != nil {
-		//	return err
-		//}
-		//log.C(ctx).Printf("Got subaccount to delete for region: %s", region)
-		//
-		//subaccountsToMove, err := s.getSubaccountsToMove(lastConsumedTenantTimestamp, region)
-		//if err != nil {
-		//	return err
-		//}
-		//log.C(ctx).Printf("Got subaccount to move for region: %s", region)
-
-		//tenantsToCreate = dedupeTenants(tenantsToCreate)
-		//tenantsToCreate = excludeTenants(tenantsToCreate, tenantsToDelete)
-
-		//totalNewEvents := len(tenantsToCreate)
-		//+ len(tenantsToDelete) + len(subaccountsToMove)
-		//log.C(ctx).Printf("Amount of new events: %d", totalNewEvents)
-		//if totalNewEvents == 0 {
-		//	continue
-		//}
 
 		tx, err := s.transact.Begin()
 		if err != nil {
@@ -405,31 +417,26 @@ func (s SubaccountService) SyncTenant(subaccountID string) error {
 		ctx = persistence.SaveToContext(ctx, tx)
 
 		currentTenants := make(map[string]string)
-		if len(tenantToCreate.Parent) != 0 {
+		if len(tenantToCreate.ExternalTenant) != 0 {
 			currentTenants, err = getCurrentTenants(ctx, s.tenantStorageService)
 			if err != nil {
 				return err
 			}
 		}
 
+		for k := range currentTenants {
+			if k == subaccountID {
+				return errors.Wrap(nil, "Tenant for provided subaccount already created")
+			}
+		}
 		// Order of event processing matters
-		if len(tenantToCreate.Parent) != 0 {
+		if len(tenantToCreate.ExternalTenant) != 0 {
 			var tenantsToCreate = make([]model.BusinessTenantMappingInput, 0, 1)
 			tenantsToCreate = append(tenantsToCreate, tenantToCreate)
 			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, region, s.providerName, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
-				return errors.Wrap(err, "while storing subaccounts")
+				return errors.Wrap(err, "while storing subaccount")
 			}
 		}
-		//if len(subaccountsToMove) > 0 {
-		//	if err := s.moveSubaccounts(ctx, subaccountsToMove); err != nil {
-		//		return errors.Wrap(err, "while moving subaccounts")
-		//	}
-		//}
-		//if len(tenantsToDelete) > 0 {
-		//	if err := deleteTenants(ctx, s.gqlClient, currentTenants, tenantsToDelete, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
-		//		return errors.Wrap(err, "while deleting subaccounts")
-		//	}
-		//}
 
 		log.C(ctx).Printf("Processed new events for region: %s", region)
 
@@ -437,10 +444,6 @@ func (s SubaccountService) SyncTenant(subaccountID string) error {
 			return err
 		}
 	}
-
-	//if err = s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixMilliSecondString(startTime), newLastResyncTimestamp); err != nil {
-	//	return err
-	//}
 
 	return nil
 }
@@ -708,7 +711,7 @@ func (s SubaccountService) getSubaccountsToCreateForRegion(fromTimestamp string,
 	return fetchedTenants, nil
 }
 
-func (s SubaccountService) getSubaccountToCreateForRegion(subaccountID string, region string) (model.BusinessTenantMappingInput, error) {
+func (s SubaccountOnDemandService) getSubaccountToCreateForRegion(subaccountID string, region string) (model.BusinessTenantMappingInput, error) {
 	var tenantsToCreate []model.BusinessTenantMappingInput
 	var tenantToCreate model.BusinessTenantMappingInput
 
