@@ -727,11 +727,11 @@ func (s SubaccountOnDemandService) getSubaccountToCreateForRegion(subaccountID s
 				PageNumField:      s.queryConfig.PageNumField,
 			}
 	}
-	createdTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, CreatedSubaccountType, configProvider, s.toEventsPage)
+	fetchedTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, CreatedSubaccountType, configProvider, s.toEventsPage)
 	if err != nil {
 		return tenantToCreate, fmt.Errorf("while fetching created subaccounts: %v", err)
 	}
-	tenantsToCreate = append(tenantsToCreate, createdTenants...)
+	tenantsToCreate = append(tenantsToCreate, fetchedTenants...)
 
 	if len(tenantsToCreate) < 1 {
 		return tenantToCreate, fmt.Errorf("while fetching subaccount by ID - subaccount not found: %v", err)
