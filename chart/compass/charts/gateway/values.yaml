@@ -38,3 +38,7 @@ rateLimit:
 
 metrics:
   port: 3001
+
+auditLog:
+  maxBodySizeBytes: 998000
+

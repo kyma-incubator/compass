@@ -41,6 +41,8 @@ type config struct {
 	NsadapterOrigin string `envconfig:"default=http://127.0.0.1:3005"`
 	MetricsAddress  string `envconfig:"default=127.0.0.1:3003"`
 	AuditlogEnabled bool   `envconfig:"default=false"`
+
+	AuditLogMessageBodySizeLimit int `envconfig:"APP_AUDIT_LOG_MSG_BODY_SIZE_LIMIT"`
 }
 
 func main() {
@@ -77,7 +79,10 @@ func main() {
 
 	correlationTr := httputil.NewCorrelationIDTransport(http.DefaultTransport)
 	tr := proxy.NewTransport(auditlogSink, auditlogSvc, correlationTr)
-	adapterTr := proxy.NewAdapterTransport(auditlogSink, auditlogSvc, correlationTr)
+	adapterCfg := proxy.AdapterConfig{
+		MsgBodySizeLimit: cfg.AuditLogMessageBodySizeLimit,
+	}
+	adapterTr := proxy.NewAdapterTransport(auditlogSink, auditlogSvc, correlationTr, adapterCfg)
 
 	err = proxyRequestsForComponent(ctx, router, "/connector", cfg.ConnectorOrigin, tr)
 	exitOnError(err, "Error while initializing proxy for Connector")

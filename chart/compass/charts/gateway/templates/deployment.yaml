@@ -179,6 +179,8 @@ spec:
                   name: {{ .Values.global.auditlog.configMapName }}
                   key: auditlog-channel-timeout
                   optional: true
+            - name: APP_AUDIT_LOG_MSG_BODY_SIZE_LIMIT
+              value: "{{.Values.auditLog.maxBodySizeBytes}}"
             {{ end }}
 {{- with .Values.deployment.securityContext }}
           securityContext:
