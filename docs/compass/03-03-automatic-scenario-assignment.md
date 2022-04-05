@@ -1,10 +1,10 @@
 # Automatic Scenario Assignment
 
-Automatic Scenario Assignment (ASA) feature allows you to define an external subaccount tenant ID where all runtimes will be assigned to the given scenario, assuming that the scenario will be in a parent tenant of `account` type. 
+Automatic Scenario Assignment (ASA) feature allows you to define an external subaccount tenant ID, in which all Runtimes are assigned to the given scenario, assuming that the scenario is in a parent tenant of type `account`. 
 
 ![](./assets/automatic-scenario-assign.svg) 
 
-1. Administrator defines Scenarios in a tenant of type "account".
+1. Administrator defines Scenarios in a tenant of type `account`.
 2. Administrator defines conditions to label Runtimes using Automatic Scenario Assignment. 
 3. User registers a Runtime that matches the conditions specified in the ASA.
 4. Runtime is automatically assigned to the matching Scenario. 
@@ -25,9 +25,7 @@ type Label {
 
 ```
 
-A tenant-matcher condition is defined as a label selector in the **selector** field - that behaviour is kept for backwards compatability, but the assignment will be based on the tenant where the runtime is created, not on the labels of the runtime. 
-The label key is validated to be `global_subaccount_id`. It is also validated, that the subaccount tenant is a child of the tenant where the scenario and ASA resides.
-Then, if a Runtime is created in `global_subaccount_id` tenant, the Runtime is automatically assigned to the given Scenario.
+A tenant-matching condition is defined as a label selector in the `selector` field. This behaviour is intended for backwards compatability. Yet, the assignment is based on the tenant, in which the Runtime is created and not on the labels of the Runtime. The label key is validated to be a `global_subaccount_id`. It is also validated that the subaccount tenant is a child of the tenant, in which the scenario and the ASA resides. Then, if a Runtime is created in the `global_subaccount_id` tenant, that Runtime is automatically assigned to the given Scenario.
 
 ### Mutations
 
@@ -37,12 +35,12 @@ Director API contains the following mutations for managing Automatic Scenario As
    deleteAutomaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment 
    deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput! @validate): [AutomaticScenarioAssignment!]! 
 ```
-When creating an assignment, you must fulfill the following conditions:
-- For a given Scenario, at most one Assignment exists
-- A given Scenario exists
-- Selector key is `global_subaccount_id`
-- Selector value type is an external tenant ID of type `subaccount`
-- The subaccount tenant ID is a child tenant of the request tenant
+When you create an assignment, make sure that the following conditions are met:
+- Only one Assignment exists for a given Scenario.
+- The given Scenario exists.
+- The selector key is of type `global_subaccount_id`.
+- The selector value type is an external tenant ID of type `subaccount`.
+- The subaccount tenant ID is a child tenant of the request tenant.
 
 ### Queries
 
@@ -90,8 +88,8 @@ mutation  {
 
 3. Register a Runtime into the `0ccd19fd-671e-4024-8b0f-887bb7e4ed4f` subaccount tenant:
    Create a Runtime in the `0ccd19fd-671e-4024-8b0f-887bb7e4ed4f` tenant:
-    - Run the request in the context of the wanted `subaccount` tenant
-    - Run the request in the context of the parent tenant, and label the runtime with the wanted `subaccount` tenant - the flow is kept for backwards compatability, and will result in runtime registration in the tenant provided as label, not the tenant from the request context:
+    - Run the request in the context of the wanted `subaccount` tenant.
+    - Run the request in the context of the parent tenant, and label the Runtime with the wanted `subaccount` tenant. The flow is intended for backwards compatability, and results in Runtime registration within the tenant provided as a label and not the tenant from the request context:
       ```graphql
         mutation  {
             registerRuntime(in:{name: "warehouse-runtime-1", labels:{global_subaccount_id:"0ccd19fd-671e-4024-8b0f-887bb7e4ed4f"}}) {
@@ -161,7 +159,7 @@ Runtime is unassigned from the `WAREHOUSE` Scenario:
 
 ### Create ASA when Runtime exists
 
-You can also assign a Runtimes to a given Scenario using ASA when the Runtime already exists. If there is a Runtime that matches a new assignment, meaning that it is in the wanted `subaccount` tenant, it is automatically assigned to the Scenario.
+You can also assign a Runtime to a given Scenario using ASA when the Runtime already exists. If there is a Runtime that matches a new assignment, meaning that it is in the wanted `subaccount` tenant, it is automatically assigned to the Scenario.
 All requests below are done in the context of a tenant of type `account` which is a parent of the given `subaccount` tenant.
 
 1. Create a Runtime in the `0ccd19fd-671e-4024-8b0f-887bb7e4ed4f` tenant:
