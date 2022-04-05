@@ -181,7 +181,7 @@ test-local-no-coverage:
 test-local:
 	@go test ./... -coverprofile cover.out.tmp
 	@cat cover.out.tmp | grep -v "_gen.go" | grep -v "hack" > cover.out
-	@echo -n Code Coverage: 
+	@echo -n 'Code Coverage: '
 	@go tool cover -func cover.out | grep total | tr -s "[:blank:]" | tr "[:blank:]" " " | cut -d " " -f 3
 	@rm cover.out.tmp cover.out
 
