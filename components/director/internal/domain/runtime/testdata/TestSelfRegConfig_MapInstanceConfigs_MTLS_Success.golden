@@ -1,0 +1,16 @@
+{
+  "eu-1": {
+    "clientId": "client_id",
+    "url": "url",
+    "tokenUrl": "token-url",
+    "clientCert": "cert",
+    "clientKey": "key"
+  },
+  "eu-2": {
+    "clientId": "client_id_2",
+    "url": "url-2",
+    "tokenUrl": "token-url-2",
+    "clientCert": "cert2",
+    "clientKey": "key2"
+  }
+}

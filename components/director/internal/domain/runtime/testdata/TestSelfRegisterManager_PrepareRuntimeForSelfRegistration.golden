@@ -1,0 +1,18 @@
+{
+  "test-region": {
+    "clientId": "client_id",
+    "clientSecret": "client_secret",
+    "url": "https://test-url-second.com",
+    "tokenUrl": "https://test-token-url-second.com",
+    "clientCert": "cert",
+    "clientKey": "key"
+  },
+  "fake-region": {
+    "clientId": "client_id_2",
+    "clientSecret": "client_secret_2",
+    "url": "https://test-url      -second.com",
+    "tokenUrl": "https://test-token-url-second.com",
+    "clientCert": "cert2",
+    "clientKey": "key2"
+  }
+}

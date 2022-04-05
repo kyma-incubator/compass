@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"io/ioutil"
 	"strings"
 	"time"
 
@@ -20,6 +21,7 @@ type SelfRegConfig struct {
 	SelfRegisterNameQueryParam      string `envconfig:"APP_SELF_REGISTER_NAME_QUERY_PARAM,optional"`
 	SelfRegisterTenantQueryParam    string `envconfig:"APP_SELF_REGISTER_TENANT_QUERY_PARAM,optional"`
 	SelfRegisterRequestBodyPattern  string `envconfig:"APP_SELF_REGISTER_REQUEST_BODY_PATTERN,optional"`
+	SelfRegisterSecretPath          string `envconfig:"APP_SELF_REGISTER_SECRET_PATH,optional"`
 
 	OAuthMode      oauth.AuthMode `envconfig:"APP_SELF_REGISTER_OAUTH_MODE,default=oauth-mtls"`
 	OauthTokenPath string         `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"`
@@ -34,7 +36,6 @@ type SelfRegConfig struct {
 	InstanceTokenURLPath     string                    `envconfig:"APP_SELF_REGISTER_INSTANCE_TOKEN_URL_PATH"`
 	InstanceCertPath         string                    `envconfig:"APP_SELF_REGISTER_INSTANCE_X509_CERT_PATH"`
 	InstanceKeyPath          string                    `envconfig:"APP_SELF_REGISTER_INSTANCE_X509_KEY_PATH"`
-	InstanceConfigs          string                    `envconfig:"APP_SELF_REGISTER_AGGREGATED_INSTANCE_CONFIGS"`
 	RegionToInstanceConfig   map[string]InstanceConfig `envconfig:"-"`
 }
 
@@ -48,9 +49,56 @@ type InstanceConfig struct {
 	Key          string
 }
 
-// Validate checks if all required fields are populated based on Oauth Mode.
+// MapInstanceConfigs parses the InstanceConfigs json string to map with key: region name and value: InstanceConfig for the instance in the region
+func (c *SelfRegConfig) MapInstanceConfigs() error {
+	secretData, err := c.getSelfRegSecret(c.SelfRegisterSecretPath)
+	if err != nil {
+		return errors.Wrapf(err, "while getting self registration secret")
+	}
+
+	if ok := gjson.Valid(secretData); !ok {
+		return errors.New("failed to validate instance configs")
+	}
+
+	bindingsResult := gjson.Parse(secretData)
+	bindingsMap := bindingsResult.Map()
+	c.RegionToInstanceConfig = make(map[string]InstanceConfig)
+	for region, config := range bindingsMap {
+		i := InstanceConfig{
+			ClientID:     gjson.Get(config.String(), c.InstanceClientIDPath).String(),
+			ClientSecret: gjson.Get(config.String(), c.InstanceClientSecretPath).String(),
+			URL:          gjson.Get(config.String(), c.InstanceURLPath).String(),
+			TokenURL:     gjson.Get(config.String(), c.InstanceTokenURLPath).String(),
+			Cert:         gjson.Get(config.String(), c.InstanceCertPath).String(),
+			Key:          gjson.Get(config.String(), c.InstanceKeyPath).String(),
+		}
+
+		if err := i.validate(c.OAuthMode); err != nil {
+			c.RegionToInstanceConfig = nil
+			return errors.Wrapf(err, "while validating instance for region: %q", region)
+		}
+
+		c.RegionToInstanceConfig[region] = i
+	}
+
+	return nil
+}
+
+func (c *SelfRegConfig) getSelfRegSecret(path string) (string, error) {
+	if path == "" {
+		return "", errors.New("self registration secret path cannot be empty")
+	}
+	secret, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", errors.Wrapf(err, "unable to read self registration secret file")
+	}
+
+	return string(secret), nil
+}
+
+// validate checks if all required fields are populated based on Oauth Mode.
 // In the end, the error message is aggregated by joining all error messages.
-func (i *InstanceConfig) Validate(oauthMode oauth.AuthMode) error {
+func (i *InstanceConfig) validate(oauthMode oauth.AuthMode) error {
 	errorMessages := make([]string, 0)
 
 	if i.ClientID == "" {
@@ -80,35 +128,6 @@ func (i *InstanceConfig) Validate(oauthMode oauth.AuthMode) error {
 	errorMsg := strings.Join(errorMessages, ", ")
 	if errorMsg != "" {
 		return errors.New(errorMsg)
-	}
-
-	return nil
-}
-
-// MapInstanceConfigs parses the InstanceConfigs json string to map with key: region name and value: InstanceConfig for the instance in the region
-func (c *SelfRegConfig) MapInstanceConfigs() error {
-	if ok := gjson.Valid(c.InstanceConfigs); !ok {
-		return errors.New("failed to validate instance configs")
-	}
-	bindingsResult := gjson.Parse(c.InstanceConfigs)
-	bindingsMap := bindingsResult.Map()
-	c.RegionToInstanceConfig = make(map[string]InstanceConfig)
-	for region, config := range bindingsMap {
-		i := InstanceConfig{
-			ClientID:     gjson.Get(config.String(), c.InstanceClientIDPath).String(),
-			ClientSecret: gjson.Get(config.String(), c.InstanceClientSecretPath).String(),
-			URL:          gjson.Get(config.String(), c.InstanceURLPath).String(),
-			TokenURL:     gjson.Get(config.String(), c.InstanceTokenURLPath).String(),
-			Cert:         gjson.Get(config.String(), c.InstanceCertPath).String(),
-			Key:          gjson.Get(config.String(), c.InstanceKeyPath).String(),
-		}
-
-		if err := i.Validate(c.OAuthMode); err != nil {
-			c.RegionToInstanceConfig = nil
-			return errors.Wrapf(err, "while validating instance for region: %q", region)
-		}
-
-		c.RegionToInstanceConfig[region] = i
 	}
 
 	return nil
