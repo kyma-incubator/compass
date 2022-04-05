@@ -414,31 +414,41 @@ func (s SubaccountOnDemandService) SyncTenant(subaccountID string) error {
 		return err
 	}
 
-	for _, region := range s.tenantsRegions {
-		tenantToCreate, err := s.getSubaccountToCreateForRegion(subaccountID, region)
-		if err != nil {
-			return err
+	for k := range currentTenants {
+		if k == subaccountID {
+			return errors.Wrap(nil, "Tenant for provided subaccount already created")
 		}
-		log.C(ctx).Printf("Got subaccount to create for region: %s", region)
+	}
 
-		for k := range currentTenants {
-			if k == subaccountID {
-				return errors.Wrap(nil, "Tenant for provided subaccount already created")
-			}
-		}
-		// Order of event processing matters
-		if len(tenantToCreate.ExternalTenant) != 0 {
-			var tenantsToCreate = []model.BusinessTenantMappingInput{*tenantToCreate}
-			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, region, s.providerName, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
-				return errors.Wrap(err, "while storing subaccount")
-			}
-		}
+	tenantToCreate, err := s.getSubaccountToCreate(subaccountID)
+	if err != nil {
+		return err
+	}
 
-		log.C(ctx).Printf("Processed new events for region: %s", region)
+	region := tenantToCreate.Region
 
-		if err = tx.Commit(); err != nil {
-			return err
+	isRegionSupported := false
+	for _, v := range s.tenantsRegions {
+		if v == region {
+			isRegionSupported = true
 		}
+	}
+	if !isRegionSupported {
+		return errors.Wrap(nil, "Region for provided subaccount is not supported")
+	}
+
+	log.C(ctx).Printf("Got subaccount to create for region: %s", region)
+
+	// Order of event processing matters
+	var tenantsToCreate = []model.BusinessTenantMappingInput{*tenantToCreate}
+	if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, region, s.providerName, 10, s.tenantConverter); err != nil {
+		return errors.Wrap(err, "while storing subaccount")
+	}
+
+	log.C(ctx).Printf("Processed new events for region: %s", region)
+
+	if err = tx.Commit(); err != nil {
+		return err
 	}
 
 	return nil
@@ -707,7 +717,7 @@ func (s SubaccountService) getSubaccountsToCreateForRegion(fromTimestamp string,
 	return fetchedTenants, nil
 }
 
-func (s SubaccountOnDemandService) getSubaccountToCreateForRegion(subaccountID string, region string) (*model.BusinessTenantMappingInput, error) {
+func (s SubaccountOnDemandService) getSubaccountToCreate(subaccountID string) (*model.BusinessTenantMappingInput, error) {
 	configProvider := func() (QueryParams, PageConfig) {
 		return QueryParams{
 				s.queryConfig.PageNumField:    s.queryConfig.PageStartValue,

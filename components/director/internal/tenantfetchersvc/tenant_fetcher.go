@@ -11,35 +11,12 @@ import (
 	graphqlclient "github.com/kyma-incubator/compass/components/director/pkg/graphql_client"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"net/http"
 	"time"
 )
-
-type config struct {
-	Database persistence.DatabaseConfig
-
-	//ClientTimeout               time.Duration  `envconfig:"default=60s"`
-	//DirectorGraphQLEndpoint     string         `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
-	//HTTPClientSkipSslValidation bool           `envconfig:"default=false"`
-
-	// event fetcher job
-	OAuthConfig tenantfetcher.OAuth2Config
-	APIConfig   tenantfetcher.APIConfig
-	AuthMode    oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
-
-	QueryConfig        tenantfetcher.QueryConfig
-	TenantFieldMapping tenantfetcher.TenantFieldMapping
-	SubaccountRegions  []string `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
-
-	//TenantProvider              string   `envconfig:"APP_TENANT_PROVIDER"`
-
-	// fetcher job
-	TenantInsertChunkSize int `envconfig:"default=500,APP_TENANT_INSERT_CHUNK_SIZE"`
-}
 
 type fetcher struct {
 	eventsCfg  EventsConfig
@@ -55,8 +32,7 @@ func NewTenantFetcher(eventsCfg EventsConfig, handlerCfg HandlerConfig) *fetcher
 }
 
 func (f *fetcher) FetchTenantOnDemand(ctx context.Context, tenantID string) error {
-	cfg := config{}
-	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
+	transact, closeFunc, err := persistence.Configure(ctx, f.handlerCfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
 	defer func() {

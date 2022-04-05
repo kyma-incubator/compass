@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -50,6 +51,8 @@ type HandlerConfig struct {
 
 	TenantProviderConfig
 	features.Config
+
+	Database persistence.DatabaseConfig
 }
 
 // TenantProviderConfig includes the configuration for tenant providers - the tenant ID json property names, the subdomain property name, and the tenant provider name.
