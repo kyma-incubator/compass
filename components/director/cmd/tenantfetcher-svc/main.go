@@ -206,17 +206,7 @@ func registerTenantsHandler(ctx context.Context, router *mux.Router, cfg tenantf
 }
 
 func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.HandlerConfig) {
-	gqlClient := newInternalGraphQLClient(cfg.DirectorGraphQLEndpoint, cfg.ClientTimeout, cfg.HTTPClientSkipSslValidation)
-	gqlClient.Log = func(s string) {
-		log.C(ctx).Debug(s)
-	}
-	directorClient := graphqlclient.NewDirector(gqlClient)
-
-	tenantConverter := tenant.NewConverter()
-
-	provisioner := tenantfetcher.NewTenantProvisioner(directorClient, tenantConverter, cfg.TenantProvider)
-	fetcher := tenantfetcher.NewCreateTenantFetcher(directorClient, provisioner)
-	tenantHandler := tenantfetcher.NewTenantFetcherHTTPHandler(fetcher, cfg)
+	tenantHandler := tenantfetcher.NewTenantFetcherHTTPHandler(tenantfetcher.NewTenantFetcher(), cfg)
 
 	log.C(ctx).Infof("Registering fetch tenant on-demand endpoint on %s...", cfg.TenantOnDemandHandlerEndpoint)
 	router.HandleFunc(cfg.TenantOnDemandHandlerEndpoint, tenantHandler.FetchTenantOnDemand).Methods(http.MethodPost)

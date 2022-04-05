@@ -20,36 +20,27 @@ import (
 )
 
 type config struct {
-	Database         persistence.DatabaseConfig
-	KubernetesConfig tenantfetcher.KubeConfig
-
+	Database                    persistence.DatabaseConfig
 	OAuthConfig                 tenantfetcher.OAuth2Config
 	APIConfig                   tenantfetcher.APIConfig
 	AuthMode                    oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
 	ClientTimeout               time.Duration  `envconfig:"default=60s"`
 	DirectorGraphQLEndpoint     string         `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
 	HTTPClientSkipSslValidation bool           `envconfig:"default=false"`
-
 	QueryConfig                 tenantfetcher.QueryConfig
 	TenantFieldMapping          tenantfetcher.TenantFieldMapping
 	MovedSubaccountFieldMapping tenantfetcher.MovedSubaccountsFieldMapping
-
-	TenantProvider        string   `envconfig:"APP_TENANT_PROVIDER"`
-	SubaccountRegions     []string `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
-	TenantInsertChunkSize int      `envconfig:"default=500,APP_TENANT_INSERT_CHUNK_SIZE"`
+	TenantProvider              string   `envconfig:"APP_TENANT_PROVIDER"`
+	SubaccountRegions           []string `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
+	TenantInsertChunkSize       int      `envconfig:"default=500,APP_TENANT_INSERT_CHUNK_SIZE"`
 }
 
 type fetcher struct {
-	gqlClient   DirectorGraphQLClient
-	provisioner TenantProvisioner
 }
 
-// NewCreateTenantFetcher creates new fetcher
-func NewCreateTenantFetcher(directorClient DirectorGraphQLClient, provisioner TenantProvisioner) *fetcher {
-	return &fetcher{
-		gqlClient:   directorClient,
-		provisioner: provisioner,
-	}
+// NewTenantFetcher creates new fetcher
+func NewTenantFetcher() *fetcher {
+	return &fetcher{}
 }
 
 func (f *fetcher) FetchTenantOnDemand(ctx context.Context, tenantID string) error {
