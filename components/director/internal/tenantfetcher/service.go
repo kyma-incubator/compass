@@ -402,27 +402,24 @@ func (s SubaccountService) SyncTenants() error {
 func (s SubaccountOnDemandService) SyncTenant(subaccountID string) error {
 	ctx := context.Background()
 
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	currentTenants, err := getCurrentTenants(ctx, s.tenantStorageService)
+	if err != nil {
+		return err
+	}
+
 	for _, region := range s.tenantsRegions {
 		tenantToCreate, err := s.getSubaccountToCreateForRegion(subaccountID, region)
 		if err != nil {
 			return err
 		}
 		log.C(ctx).Printf("Got subaccount to create for region: %s", region)
-
-		tx, err := s.transact.Begin()
-		if err != nil {
-			return err
-		}
-		defer s.transact.RollbackUnlessCommitted(ctx, tx)
-		ctx = persistence.SaveToContext(ctx, tx)
-
-		currentTenants := make(map[string]string)
-		if len(tenantToCreate.ExternalTenant) != 0 {
-			currentTenants, err = getCurrentTenants(ctx, s.tenantStorageService)
-			if err != nil {
-				return err
-			}
-		}
 
 		for k := range currentTenants {
 			if k == subaccountID {
@@ -431,8 +428,7 @@ func (s SubaccountOnDemandService) SyncTenant(subaccountID string) error {
 		}
 		// Order of event processing matters
 		if len(tenantToCreate.ExternalTenant) != 0 {
-			var tenantsToCreate = make([]model.BusinessTenantMappingInput, 0, 1)
-			tenantsToCreate = append(tenantsToCreate, tenantToCreate)
+			var tenantsToCreate = []model.BusinessTenantMappingInput{*tenantToCreate}
 			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, region, s.providerName, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
 				return errors.Wrap(err, "while storing subaccount")
 			}
@@ -711,16 +707,12 @@ func (s SubaccountService) getSubaccountsToCreateForRegion(fromTimestamp string,
 	return fetchedTenants, nil
 }
 
-func (s SubaccountOnDemandService) getSubaccountToCreateForRegion(subaccountID string, region string) (model.BusinessTenantMappingInput, error) {
-	var tenantsToCreate []model.BusinessTenantMappingInput
-	var tenantToCreate model.BusinessTenantMappingInput
-
+func (s SubaccountOnDemandService) getSubaccountToCreateForRegion(subaccountID string, region string) (*model.BusinessTenantMappingInput, error) {
 	configProvider := func() (QueryParams, PageConfig) {
 		return QueryParams{
 				s.queryConfig.PageNumField:    s.queryConfig.PageStartValue,
 				s.queryConfig.PageSizeField:   s.queryConfig.PageSizeValue,
 				s.queryConfig.SubaccountField: subaccountID,
-				s.queryConfig.RegionField:     region,
 			}, PageConfig{
 				TotalPagesField:   s.fieldMapping.TotalPagesField,
 				TotalResultsField: s.fieldMapping.TotalResultsField,
@@ -729,18 +721,17 @@ func (s SubaccountOnDemandService) getSubaccountToCreateForRegion(subaccountID s
 	}
 	fetchedTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, CreatedSubaccountType, configProvider, s.toEventsPage)
 	if err != nil {
-		return tenantToCreate, fmt.Errorf("while fetching created subaccounts: %v", err)
-	}
-	tenantsToCreate = append(tenantsToCreate, fetchedTenants...)
-
-	if len(tenantsToCreate) < 1 {
-		return tenantToCreate, fmt.Errorf("while fetching subaccount by ID - subaccount not found: %v", err)
-	}
-	if len(tenantsToCreate) > 1 {
-		return tenantToCreate, fmt.Errorf("while fetching subaccount by ID - more than one subaccount found: %v", err)
+		return nil, fmt.Errorf("while fetching subaccount by ID: %v", err)
 	}
 
-	return tenantsToCreate[0], nil
+	if len(fetchedTenants) < 1 {
+		return nil, fmt.Errorf("while fetching subaccount by ID - subaccount not found: %v", err)
+	}
+	if len(fetchedTenants) > 1 {
+		return nil, fmt.Errorf("while fetching subaccount by ID - more than one subaccount found: %v", err)
+	}
+
+	return &fetchedTenants[0], nil
 }
 
 func (s GlobalAccountService) getAccountsToDelete(fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {

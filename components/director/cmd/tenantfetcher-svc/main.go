@@ -58,7 +58,8 @@ type config struct {
 	TenantsRootAPI         string `envconfig:"APP_ROOT_API,default=/tenants"`
 	TenantsOnDemandRootAPI string `envconfig:"APP_ROOT_API,default=/tenantsondemand"`
 
-	Handler tenantfetcher.HandlerConfig
+	Handler   tenantfetcher.HandlerConfig
+	EventsCfg tenantfetcher.EventsConfig
 
 	SecurityConfig securityConfig
 }
@@ -124,7 +125,7 @@ func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config) ht
 	healthCheckRouter.HandleFunc("/healthz", newReadinessHandler())
 
 	tenansOnDemandAPIrouter := mainRouter.PathPrefix(cfg.TenantsOnDemandRootAPI).Subrouter()
-	registerTenantsOnDemandHandler(ctx, tenansOnDemandAPIrouter, cfg.Handler)
+	registerTenantsOnDemandHandler(ctx, tenansOnDemandAPIrouter, cfg.EventsCfg, cfg.Handler)
 
 	return mainRouter
 }
@@ -205,11 +206,12 @@ func registerTenantsHandler(ctx context.Context, router *mux.Router, cfg tenantf
 	router.HandleFunc(cfg.DependenciesEndpoint, tenantHandler.Dependencies).Methods(http.MethodGet)
 }
 
-func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.HandlerConfig) {
-	tenantHandler := tenantfetcher.NewTenantFetcherHTTPHandler(tenantfetcher.NewTenantFetcher(), cfg)
+func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, eventsCfg tenantfetcher.EventsConfig, tenantHandlerCfg tenantfetcher.HandlerConfig) {
+	fetcher := tenantfetcher.NewTenantFetcher(eventsCfg, tenantHandlerCfg)
+	tenantHandler := tenantfetcher.NewTenantFetcherHTTPHandler(fetcher, tenantHandlerCfg)
 
-	log.C(ctx).Infof("Registering fetch tenant on-demand endpoint on %s...", cfg.TenantOnDemandHandlerEndpoint)
-	router.HandleFunc(cfg.TenantOnDemandHandlerEndpoint, tenantHandler.FetchTenantOnDemand).Methods(http.MethodPost)
+	log.C(ctx).Infof("Registering fetch tenant on-demand endpoint on %s...", tenantHandlerCfg.TenantOnDemandHandlerEndpoint)
+	router.HandleFunc(tenantHandlerCfg.TenantOnDemandHandlerEndpoint, tenantHandler.FetchTenantOnDemand).Methods(http.MethodPost)
 }
 
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {

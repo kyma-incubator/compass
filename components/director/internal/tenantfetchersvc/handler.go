@@ -3,9 +3,12 @@ package tenantfetchersvc
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
@@ -59,6 +62,15 @@ type TenantProviderConfig struct {
 	SubscriptionProviderIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY,default=subscriptionProviderId"`
 }
 
+type EventsConfig struct {
+	OAuthConfig        tenantfetcher.OAuth2Config
+	APIConfig          tenantfetcher.APIConfig
+	AuthMode           oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
+	QueryConfig        tenantfetcher.QueryConfig
+	TenantFieldMapping tenantfetcher.TenantFieldMapping
+	SubaccountRegions  []string `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
+}
+
 type handler struct {
 	fetcher    TenantFetcher
 	subscriber TenantSubscriber
@@ -74,9 +86,9 @@ func NewTenantsHTTPHandler(subscriber TenantSubscriber, config HandlerConfig) *h
 }
 
 // NewTenantFetcherHTTPHandler returns a new HTTP handler, responsible for creation of on-demand tenants.
-func NewTenantFetcherHTTPHandler(fecther TenantFetcher, config HandlerConfig) *handler {
+func NewTenantFetcherHTTPHandler(fetcher TenantFetcher, config HandlerConfig) *handler {
 	return &handler{
-		fetcher: fecther,
+		fetcher: fetcher,
 		config:  config,
 	}
 }

@@ -20,27 +20,38 @@ import (
 )
 
 type config struct {
-	Database                    persistence.DatabaseConfig
-	OAuthConfig                 tenantfetcher.OAuth2Config
-	APIConfig                   tenantfetcher.APIConfig
-	AuthMode                    oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
-	ClientTimeout               time.Duration  `envconfig:"default=60s"`
-	DirectorGraphQLEndpoint     string         `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
-	HTTPClientSkipSslValidation bool           `envconfig:"default=false"`
-	QueryConfig                 tenantfetcher.QueryConfig
-	TenantFieldMapping          tenantfetcher.TenantFieldMapping
-	MovedSubaccountFieldMapping tenantfetcher.MovedSubaccountsFieldMapping
-	TenantProvider              string   `envconfig:"APP_TENANT_PROVIDER"`
-	SubaccountRegions           []string `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
-	TenantInsertChunkSize       int      `envconfig:"default=500,APP_TENANT_INSERT_CHUNK_SIZE"`
+	Database persistence.DatabaseConfig
+
+	//ClientTimeout               time.Duration  `envconfig:"default=60s"`
+	//DirectorGraphQLEndpoint     string         `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
+	//HTTPClientSkipSslValidation bool           `envconfig:"default=false"`
+
+	// event fetcher job
+	OAuthConfig tenantfetcher.OAuth2Config
+	APIConfig   tenantfetcher.APIConfig
+	AuthMode    oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
+
+	QueryConfig        tenantfetcher.QueryConfig
+	TenantFieldMapping tenantfetcher.TenantFieldMapping
+	SubaccountRegions  []string `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
+
+	//TenantProvider              string   `envconfig:"APP_TENANT_PROVIDER"`
+
+	// fetcher job
+	TenantInsertChunkSize int `envconfig:"default=500,APP_TENANT_INSERT_CHUNK_SIZE"`
 }
 
 type fetcher struct {
+	eventsCfg  EventsConfig
+	handlerCfg HandlerConfig
 }
 
 // NewTenantFetcher creates new fetcher
-func NewTenantFetcher() *fetcher {
-	return &fetcher{}
+func NewTenantFetcher(eventsCfg EventsConfig, handlerCfg HandlerConfig) *fetcher {
+	return &fetcher{
+		eventsCfg:  eventsCfg,
+		handlerCfg: handlerCfg,
+	}
 }
 
 func (f *fetcher) FetchTenantOnDemand(ctx context.Context, tenantID string) error {
@@ -53,18 +64,19 @@ func (f *fetcher) FetchTenantOnDemand(ctx context.Context, tenantID string) erro
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	tenantFetcherOnDemandSvc, err := createTenantFetcherOnDemandSvc(cfg, transact)
+	tenantFetcherOnDemandSvc, err := f.createTenantFetcherOnDemandSvc(transact)
 	exitOnError(err, "failed to create tenant fetcher on-demand service")
 
 	return tenantFetcherOnDemandSvc.SyncTenant(tenantID)
 }
 
-func createTenantFetcherOnDemandSvc(cfg config, transact persistence.Transactioner) (*tenantfetcher.SubaccountOnDemandService, error) {
-	eventAPIClient, err := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.AuthMode, cfg.APIConfig, cfg.ClientTimeout)
+func (f *fetcher) createTenantFetcherOnDemandSvc(transact persistence.Transactioner) (*tenantfetcher.SubaccountOnDemandService, error) {
+	eventAPIClient, err := tenantfetcher.NewClient(f.eventsCfg.OAuthConfig, f.eventsCfg.AuthMode, f.eventsCfg.APIConfig, f.handlerCfg.ClientTimeout)
 	if nil != err {
 		return nil, err
 	}
 
+	tenantStorageConv := tenant.NewConverter()
 	uidSvc := uid.NewService()
 
 	labelDefConverter := labeldef.NewConverter()
@@ -74,17 +86,16 @@ func createTenantFetcherOnDemandSvc(cfg config, transact persistence.Transaction
 	labelRepository := label.NewRepository(labelConverter)
 	labelService := label.NewLabelService(labelRepository, labelDefRepository, uidSvc)
 
-	tenantStorageConv := tenant.NewConverter()
 	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
 	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepository, labelService)
 
-	gqlClient := newInternalGraphQLClient(cfg.DirectorGraphQLEndpoint, cfg.ClientTimeout, cfg.HTTPClientSkipSslValidation)
+	gqlClient := newInternalGraphQLClient(f.handlerCfg.DirectorGraphQLEndpoint, f.handlerCfg.ClientTimeout, f.handlerCfg.HTTPClientSkipSslValidation)
 	gqlClient.Log = func(s string) {
 		log.D().Debug(s)
 	}
 	directorClient := graphqlclient.NewDirector(gqlClient)
 
-	return tenantfetcher.NewSubaccountOnDemandService(cfg.SubaccountRegions, cfg.QueryConfig, cfg.TenantFieldMapping, eventAPIClient, transact, tenantStorageSvc, directorClient, cfg.TenantProvider, cfg.TenantInsertChunkSize, tenantStorageConv), nil
+	return tenantfetcher.NewSubaccountOnDemandService(f.eventsCfg.SubaccountRegions, f.eventsCfg.QueryConfig, f.eventsCfg.TenantFieldMapping, eventAPIClient, transact, tenantStorageSvc, directorClient, f.handlerCfg.TenantProvider, 100, tenantStorageConv), nil
 }
 
 func newInternalGraphQLClient(url string, timeout time.Duration, skipSSLValidation bool) *gcli.Client {
