@@ -69,6 +69,7 @@ type securityConfig struct {
 	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
 	JwksEndpoint              string        `envconfig:"default=file://hack/default-jwks.json,APP_JWKS_ENDPOINT"`
 	SubscriptionCallbackScope string        `envconfig:"APP_SUBSCRIPTION_CALLBACK_SCOPE"`
+	FetchTenantOnDemandScope  string        `envconfig:"APP_FETCH_TENANT_ON_DEMAND_SCOPE"`
 }
 
 func main() {
@@ -114,18 +115,19 @@ func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config) ht
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 
-	tenantsAPIrouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
-	configureAuthMiddleware(ctx, httpClient, tenantsAPIrouter, cfg.SecurityConfig)
-	registerTenantsHandler(ctx, tenantsAPIrouter, cfg.Handler)
+	tenantsAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
+	configureAuthMiddleware(ctx, httpClient, tenantsAPIRouter, cfg.SecurityConfig, []string{cfg.SecurityConfig.SubscriptionCallbackScope})
+	registerTenantsHandler(ctx, tenantsAPIRouter, cfg.Handler)
+
+	tenansOnDemandAPIRouter := mainRouter.PathPrefix(cfg.TenantsOnDemandRootAPI).Subrouter()
+	configureAuthMiddleware(ctx, httpClient, tenansOnDemandAPIRouter, cfg.SecurityConfig, []string{cfg.SecurityConfig.FetchTenantOnDemandScope})
+	registerTenantsOnDemandHandler(ctx, tenansOnDemandAPIRouter, cfg.EventsCfg, cfg.Handler)
 
 	healthCheckRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
 	logger.Infof("Registering readiness endpoint...")
 	healthCheckRouter.HandleFunc("/readyz", newReadinessHandler())
 	logger.Infof("Registering liveness endpoint...")
 	healthCheckRouter.HandleFunc("/healthz", newReadinessHandler())
-
-	tenansOnDemandAPIrouter := mainRouter.PathPrefix(cfg.TenantsOnDemandRootAPI).Subrouter()
-	registerTenantsOnDemandHandler(ctx, tenansOnDemandAPIrouter, cfg.EventsCfg, cfg.Handler)
 
 	return mainRouter
 }
@@ -169,8 +171,8 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg securityConfig) {
-	scopeValidator := claims.NewScopesValidator([]string{cfg.SubscriptionCallbackScope})
+func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg securityConfig, requiredScopes []string) {
+	scopeValidator := claims.NewScopesValidator(requiredScopes)
 	middleware := auth.New(httpClient, cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
 	router.Use(middleware.Handler())
 

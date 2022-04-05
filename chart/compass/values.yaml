@@ -98,7 +98,7 @@ global:
       version: "PR-2297"
     director:
       dir:
-      version: "PR-2297"
+      version: "PR-2294"
     gateway:
       dir:
       version: "PR-2297"
@@ -473,6 +473,7 @@ global:
     prefix: /tenants
     port: 3000
     requiredAuthScope: Callback
+    fetchTenantAuthScope: fetch_tenant
     authentication:
       jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
     tenantProvider:

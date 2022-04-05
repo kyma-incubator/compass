@@ -96,11 +96,13 @@ spec:
             - name: APP_JWKS_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.authentication.jwksEndpoint }}"
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
-              value: "{{ .Values.global.tenantFetcher.requiredAuthScope }}"
+              value: {{ .Values.global.tenantFetcher.requiredAuthScope | quote }}
+            - name: APP_FETCH_TENANT_ON_DEMAND_SCOPE
+              value: {{ .Values.global.tenantFetcher.fetchTenantAuthScope | quote }}
             - name: APP_DIRECTOR_GRAPHQL_ENDPOINT
               value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
             - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
-              value: "{{ $.Values.global.http.client.skipSSLValidation }}"
+              value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
