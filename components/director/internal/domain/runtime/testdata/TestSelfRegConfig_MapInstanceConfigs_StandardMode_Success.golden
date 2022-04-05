@@ -1,0 +1,14 @@
+{
+  "eu-1": {
+    "clientId": "client_id",
+    "clientSecret": "client_secret",
+    "url": "url",
+    "tokenUrl": "token-url"
+  },
+  "eu-2": {
+    "clientId": "client_id_2",
+    "clientSecret": "client_secret",
+    "url": "url-2",
+    "tokenUrl": "token-url-2"
+  }
+}

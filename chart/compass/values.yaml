@@ -124,7 +124,7 @@ global:
       version: "PR-2297"
     console:
       dir:
-      version: "PR-63"
+      version: "PR-64"
     e2e_tests:
       dir:
       version: "PR-2297"
@@ -193,6 +193,7 @@ global:
       secret:
         name: "region-instances-credentials"
         key: "keyConfig"
+        path: "/tmp"
       clientIdPath: "clientId"
       clientSecretPath: "clientSecret"
       urlPath: "url"
