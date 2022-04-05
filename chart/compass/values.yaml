@@ -98,7 +98,7 @@ global:
       version: "PR-2242"
     director:
       dir:
-      version: "PR-2263"
+      version: "PR-2304"
     gateway:
       dir:
       version: "PR-2242"
@@ -193,6 +193,7 @@ global:
       secret:
         name: "region-instances-credentials"
         key: "keyConfig"
+        path: "/tmp"
       clientIdPath: "clientId"
       clientSecretPath: "clientSecret"
       urlPath: "url"
