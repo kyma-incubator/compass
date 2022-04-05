@@ -17,7 +17,7 @@ Compass is a multi-tenant system which consists of components that provide a way
 - `prometheus-postgres-exporter`
 - `external-services-mock` (not recommended to be deployed on production environments)
 
-To learn more about those components, read the [Compass documentation](https://github.com/kyma-incubator/compass/blob/main/README.md).
+To learn more about these components, see the [Compass](https://github.com/kyma-incubator/compass/blob/main/README.md) documentation.
 
 The Cockpit and ORD Service components are located in separate GitHub repositories:
 - Cockpit: [kyma-incubator/compass-console](https://github.com/kyma-incubator/compass-console)
@@ -27,11 +27,12 @@ The Cockpit and ORD Service components are located in separate GitHub repositori
 
 ### Configuration
 
-Compass has a standard Helm chart configuration. You can check all available configurations in the chart, and sub-charts' `values.yaml` files.
+Compass has a standard Helm chart configuration. You can check all available configurations in the chart, and sub-charts's `values.yaml` files.
 
-The values from those files can be overridden during installation via ConfigMaps created in the namespace where the Compass Installer is running. 
+The values from those files can be overridden during installation via `ConfigMaps` created in the namespace where the Compass Installer is running. 
+> **Note:** The `ConfigMaps` with overrides must be created before the installation is initiated.
 
-**Example**:
+**Example**
 
 `chart/compass/values.yaml`:
 ```yaml
@@ -48,7 +49,7 @@ deployment:
   maxReplicas: 1
 ```
 
-Those values can be overridden with the following ConfigMap:
+These values can be overridden with the following `ConfigMap`:
 ```yaml
 apiVersion: v1
 kind: ConfigMap
@@ -63,5 +64,3 @@ data:
     global.director.clientIDHeaderKey: "X-Client-ID"
     director.deployment.maxReplicas: "3"
 ```
-
-> **Note:** The `ConfigMaps` with overrides should be created _before_ the installation is initiated.
