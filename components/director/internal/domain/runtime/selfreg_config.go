@@ -21,7 +21,7 @@ type SelfRegConfig struct {
 	SelfRegisterNameQueryParam      string `envconfig:"APP_SELF_REGISTER_NAME_QUERY_PARAM,optional"`
 	SelfRegisterTenantQueryParam    string `envconfig:"APP_SELF_REGISTER_TENANT_QUERY_PARAM,optional"`
 	SelfRegisterRequestBodyPattern  string `envconfig:"APP_SELF_REGISTER_REQUEST_BODY_PATTERN,optional"`
-	SelfRegisterSecretPath          string `envconfig:"APP_SELF_REGISTER_SECRET_PATH,optional"`
+	SelfRegisterSecretPath          string `envconfig:"APP_SELF_REGISTER_SECRET_PATH"`
 
 	OAuthMode      oauth.AuthMode `envconfig:"APP_SELF_REGISTER_OAUTH_MODE,default=oauth-mtls"`
 	OauthTokenPath string         `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"`

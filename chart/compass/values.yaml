@@ -193,7 +193,7 @@ global:
       secret:
         name: "region-instances-credentials"
         key: "keyConfig"
-        path: "/var"
+        path: "/tmp"
       clientIdPath: "clientId"
       clientSecretPath: "clientSecret"
       urlPath: "url"
