@@ -110,6 +110,7 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 
 	err := h.fetcher.FetchTenantOnDemand(ctx, tenantID)
 	if err != nil {
+		log.C(ctx).Errorf("Error while processing request for creation of tenant %s: %v", tenantID, err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
@@ -118,9 +119,9 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 
 func writeCreatedResponse(writer http.ResponseWriter, ctx context.Context, tenantID string) {
 	writer.Header().Set("Content-Type", "text/plain")
-	writer.WriteHeader(http.StatusCreated)
+	writer.WriteHeader(http.StatusOK)
 	if _, err := writer.Write([]byte(compassURL)); err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to write response body for tenant request creation for tenant %s: %v", tenantID, err)
+		log.C(ctx).WithError(err).Errorf("Failed to write response body for request for creation of tenant %s: %v", tenantID, err)
 	}
 }
 

@@ -128,7 +128,8 @@ type TenantConverter interface {
 }
 
 const (
-	retryAttempts          = 7
+	// RetryAttempts Failed requests retry attempts number
+	RetryAttempts          = 7
 	retryDelayMilliseconds = 100
 	// size of a tenant and parent tenants if not already existing
 	chunkSizeForTenantOnDemand = 5
@@ -206,7 +207,7 @@ func NewSubaccountOnDemandService(
 		queryConfig:    queryConfig,
 		fieldMapping:   fieldMapping,
 		eventAPIClient: client,
-		retryAttempts:  retryAttempts,
+		retryAttempts:  RetryAttempts,
 		toEventsPage: func(bytes []byte) *eventsPage {
 			return &eventsPage{
 				fieldMapping: fieldMapping,
@@ -242,7 +243,7 @@ func NewGlobalAccountService(queryConfig QueryConfig,
 		eventAPIClient:       client,
 		tenantStorageService: tenantStorageService,
 		queryConfig:          queryConfig,
-		retryAttempts:        retryAttempts,
+		retryAttempts:        RetryAttempts,
 		fullResyncInterval:   fullResyncInterval,
 		toEventsPage: func(bytes []byte) *eventsPage {
 			return &eventsPage{
@@ -284,7 +285,7 @@ func NewSubaccountService(queryConfig QueryConfig,
 		runtimeStorageService:        runtimeStorageService,
 		queryConfig:                  queryConfig,
 		movedSubaccountsFieldMapping: movRuntime,
-		retryAttempts:                retryAttempts,
+		retryAttempts:                RetryAttempts,
 		labelRepo:                    labelRepo,
 		fullResyncInterval:           fullResyncInterval,
 		toEventsPage: func(bytes []byte) *eventsPage {
@@ -428,7 +429,7 @@ func (s SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID 
 
 	log.C(ctx).Printf("Provided subaccount stored successfully")
 
-	if err = tx.Commit(); err != nil {
+	if err := tx.Commit(); err != nil {
 		return err
 	}
 
@@ -701,6 +702,8 @@ func (s SubaccountService) getSubaccountsToCreateForRegion(fromTimestamp string,
 func (s SubaccountOnDemandService) getSubaccountToCreate(subaccountID string) (*model.BusinessTenantMappingInput, error) {
 	configProvider := func() (QueryParams, PageConfig) {
 		return QueryParams{
+				s.queryConfig.PageNumField:    s.queryConfig.PageStartValue,
+				s.queryConfig.PageSizeField:   s.queryConfig.PageSizeValue,
 				s.queryConfig.SubaccountField: subaccountID,
 			}, PageConfig{
 				TotalPagesField:   s.fieldMapping.TotalPagesField,
