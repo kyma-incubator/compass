@@ -71,7 +71,6 @@ type EventsConfig struct {
 	AuthMode           oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
 	QueryConfig        tenantfetcher.QueryConfig
 	TenantFieldMapping tenantfetcher.TenantFieldMapping
-	SubaccountRegions  []string `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
 }
 
 type handler struct {
@@ -108,8 +107,11 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 		return
 	}
 
-	h.fetcher.FetchTenantOnDemand(ctx, tenantID)
-
+	err := h.fetcher.FetchTenantOnDemand(ctx, tenantID)
+	if err != nil {
+		http.Error(writer, "Error while fetching tenant", http.StatusInternalServerError)
+		return
+	}
 	writeCreatedResponse(writer, ctx, tenantID)
 }
 

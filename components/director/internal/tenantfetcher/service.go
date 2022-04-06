@@ -130,6 +130,8 @@ type TenantConverter interface {
 const (
 	retryAttempts          = 7
 	retryDelayMilliseconds = 100
+	// size of a tenant and parent tenants if not already existing
+	chunkSizeForTenantOnDemand = 5
 )
 
 type SubaccountOnDemandService struct {
@@ -191,7 +193,7 @@ type SubaccountService struct {
 }
 
 // NewSubaccountOnDemandService missing godoc
-func NewSubaccountOnDemandService(regionNames []string,
+func NewSubaccountOnDemandService(
 	queryConfig QueryConfig,
 	fieldMapping TenantFieldMapping,
 	client EventAPIClient,
@@ -199,10 +201,8 @@ func NewSubaccountOnDemandService(regionNames []string,
 	tenantStorageService TenantStorageService,
 	gqlClient DirectorGraphQLClient,
 	providerName string,
-	tenantInsertChunkSize int,
 	tenantConverter TenantConverter) *SubaccountOnDemandService {
 	return &SubaccountOnDemandService{
-		tenantsRegions: regionNames,
 		queryConfig:    queryConfig,
 		fieldMapping:   fieldMapping,
 		eventAPIClient: client,
@@ -214,12 +214,11 @@ func NewSubaccountOnDemandService(regionNames []string,
 				providerName: providerName,
 			}
 		},
-		transact:              transact,
-		tenantStorageService:  tenantStorageService,
-		gqlClient:             gqlClient,
-		providerName:          providerName,
-		tenantInsertChunkSize: tenantInsertChunkSize,
-		tenantConverter:       tenantConverter,
+		transact:             transact,
+		tenantStorageService: tenantStorageService,
+		gqlClient:            gqlClient,
+		providerName:         providerName,
+		tenantConverter:      tenantConverter,
 	}
 }
 
@@ -397,11 +396,7 @@ func (s SubaccountService) SyncTenants() error {
 
 	return nil
 }
-
-// SyncTenant missing godoc
-func (s SubaccountOnDemandService) SyncTenant(subaccountID string) error {
-	ctx := context.Background()
-
+func (s SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID string) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -414,38 +409,23 @@ func (s SubaccountOnDemandService) SyncTenant(subaccountID string) error {
 		return err
 	}
 
-	for k := range currentTenants {
-		if k == subaccountID {
-			return errors.Wrap(nil, "Tenant for provided subaccount already created")
-		}
+	if _, ok := currentTenants[subaccountID]; !ok {
+		return errors.Wrap(nil, "Tenant for provided subaccount already created")
 	}
 
 	tenantToCreate, err := s.getSubaccountToCreate(subaccountID)
 	if err != nil {
 		return err
 	}
-
-	region := tenantToCreate.Region
-
-	isRegionSupported := false
-	for _, v := range s.tenantsRegions {
-		if v == region {
-			isRegionSupported = true
-		}
-	}
-	if !isRegionSupported {
-		return errors.Wrap(nil, "Region for provided subaccount is not supported")
-	}
-
-	log.C(ctx).Printf("Got subaccount to create for region: %s", region)
+	log.C(ctx).Printf("Got event for provided subaccount creation")
 
 	// Order of event processing matters
 	var tenantsToCreate = []model.BusinessTenantMappingInput{*tenantToCreate}
-	if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, region, s.providerName, 10, s.tenantConverter); err != nil {
+	if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, tenantToCreate.Region, s.providerName, chunkSizeForTenantOnDemand, s.tenantConverter); err != nil {
 		return errors.Wrap(err, "while storing subaccount")
 	}
 
-	log.C(ctx).Printf("Processed new events for region: %s", region)
+	log.C(ctx).Printf("Provided subaccount stored successfully")
 
 	if err = tx.Commit(); err != nil {
 		return err
@@ -720,8 +700,6 @@ func (s SubaccountService) getSubaccountsToCreateForRegion(fromTimestamp string,
 func (s SubaccountOnDemandService) getSubaccountToCreate(subaccountID string) (*model.BusinessTenantMappingInput, error) {
 	configProvider := func() (QueryParams, PageConfig) {
 		return QueryParams{
-				s.queryConfig.PageNumField:    s.queryConfig.PageStartValue,
-				s.queryConfig.PageSizeField:   s.queryConfig.PageSizeValue,
 				s.queryConfig.SubaccountField: subaccountID,
 			}, PageConfig{
 				TotalPagesField:   s.fieldMapping.TotalPagesField,
@@ -735,10 +713,10 @@ func (s SubaccountOnDemandService) getSubaccountToCreate(subaccountID string) (*
 	}
 
 	if len(fetchedTenants) < 1 {
-		return nil, fmt.Errorf("while fetching subaccount by ID - subaccount not found: %v", err)
+		return nil, fmt.Errorf("while fetching subaccount by ID that is not found")
 	}
 	if len(fetchedTenants) > 1 {
-		return nil, fmt.Errorf("while fetching subaccount by ID - more than one subaccount found: %v", err)
+		return nil, fmt.Errorf("while fetching subaccount by ID and more than one is found")
 	}
 
 	return &fetchedTenants[0], nil

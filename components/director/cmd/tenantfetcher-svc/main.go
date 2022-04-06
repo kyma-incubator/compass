@@ -56,7 +56,7 @@ type config struct {
 	Log log.Config
 
 	TenantsRootAPI         string `envconfig:"APP_ROOT_API,default=/tenants"`
-	TenantsOnDemandRootAPI string `envconfig:"APP_ROOT_API,default=/tenantsondemand"`
+	TenantsOnDemandRootAPI string `envconfig:"APP_ROOT_TENANTS_ON_DEMAND_API,default=/tenantsondemand"`
 
 	Handler   tenantfetcher.HandlerConfig
 	EventsCfg tenantfetcher.EventsConfig

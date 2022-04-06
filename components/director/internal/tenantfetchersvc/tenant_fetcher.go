@@ -43,7 +43,7 @@ func (f *fetcher) FetchTenantOnDemand(ctx context.Context, tenantID string) erro
 	tenantFetcherOnDemandSvc, err := f.createTenantFetcherOnDemandSvc(transact)
 	exitOnError(err, "failed to create tenant fetcher on-demand service")
 
-	return tenantFetcherOnDemandSvc.SyncTenant(tenantID)
+	return tenantFetcherOnDemandSvc.SyncTenant(ctx, tenantID)
 }
 
 func (f *fetcher) createTenantFetcherOnDemandSvc(transact persistence.Transactioner) (*tenantfetcher.SubaccountOnDemandService, error) {
@@ -71,7 +71,7 @@ func (f *fetcher) createTenantFetcherOnDemandSvc(transact persistence.Transactio
 	}
 	directorClient := graphqlclient.NewDirector(gqlClient)
 
-	return tenantfetcher.NewSubaccountOnDemandService(f.eventsCfg.SubaccountRegions, f.eventsCfg.QueryConfig, f.eventsCfg.TenantFieldMapping, eventAPIClient, transact, tenantStorageSvc, directorClient, f.handlerCfg.TenantProvider, 100, tenantStorageConv), nil
+	return tenantfetcher.NewSubaccountOnDemandService(f.eventsCfg.QueryConfig, f.eventsCfg.TenantFieldMapping, eventAPIClient, transact, tenantStorageSvc, directorClient, f.handlerCfg.TenantProvider, tenantStorageConv), nil
 }
 
 func newInternalGraphQLClient(url string, timeout time.Duration, skipSSLValidation bool) *gcli.Client {
