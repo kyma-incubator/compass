@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -66,7 +65,7 @@ type QueryConfig struct {
 	RegionField     string `envconfig:"APP_QUERY_REGION_FIELD"`
 	PageStartValue  string `envconfig:"default=0,APP_QUERY_PAGE_START"`
 	PageSizeValue   string `envconfig:"default=150,APP_QUERY_PAGE_SIZE"`
-	SubaccountField string `envconfig:"default=entityId,APP_QUERY_SUBACCOUNT_FIELD"`
+	SubaccountField string `envconfig:"default=entityId,APP_QUERY_ENTITY_FIELD"`
 }
 
 // PageConfig missing godoc
@@ -132,9 +131,7 @@ const (
 	retryAttempts          = 7
 	retryDelayMilliseconds = 100
 	// size of a tenant and parent tenants if not already existing
-	chunkSizeForTenantOnDemand           = 5
-	tenantAlreadyCreatedMsg              = "Tenant for provided subaccount already created"
-	errorProcessingSubaccountCreationMsg = "Error while processing the subaccount creation request"
+	chunkSizeForTenantOnDemand = 5
 )
 
 type SubaccountOnDemandService struct {
@@ -400,47 +397,42 @@ func (s SubaccountService) SyncTenants() error {
 	return nil
 }
 
-type ClientError struct {
-	Error string
-	Code  int
-}
-
-func (s SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID string) (error, *ClientError) {
+func (s SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID string) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
-		return err, &ClientError{errorProcessingSubaccountCreationMsg, http.StatusInternalServerError}
+		return err
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	currentTenants, err := getCurrentTenants(ctx, s.tenantStorageService)
 	if err != nil {
-		return err, &ClientError{errorProcessingSubaccountCreationMsg, http.StatusInternalServerError}
+		return err
 	}
 
 	if _, ok := currentTenants[subaccountID]; ok {
-		return errors.Wrap(nil, tenantAlreadyCreatedMsg), &ClientError{tenantAlreadyCreatedMsg, http.StatusConflict}
+		log.C(ctx).Printf("Subbaccount alredy exists in the database")
+		return nil
 	}
 
 	tenantToCreate, err := s.getSubaccountToCreate(subaccountID)
 	if err != nil {
-		return err, &ClientError{"Error while fetching creation events for the subaccount", http.StatusUnprocessableEntity}
+		return err
 	}
 	log.C(ctx).Printf("Got event for provided subaccount creation")
 
-	// Order of event processing matters
 	var tenantsToCreate = []model.BusinessTenantMappingInput{*tenantToCreate}
 	if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, tenantToCreate.Region, s.providerName, chunkSizeForTenantOnDemand, s.tenantConverter); err != nil {
-		return errors.Wrap(err, "while storing subaccount"), &ClientError{"Error while storing the subaccount", http.StatusInternalServerError}
+		return err
 	}
 
 	log.C(ctx).Printf("Provided subaccount stored successfully")
 
 	if err = tx.Commit(); err != nil {
-		return err, &ClientError{errorProcessingSubaccountCreationMsg, http.StatusInternalServerError}
+		return err
 	}
 
-	return nil, nil
+	return nil
 }
 
 // SyncTenants missing godoc

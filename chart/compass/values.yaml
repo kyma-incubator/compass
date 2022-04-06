@@ -485,6 +485,7 @@ global:
       name: "provider"
       subscriptionProviderIdProperty: "subscriptionProviderIdProperty"
     server:
+      fetchTenantEndpoint: "/v1/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
       dependenciesEndpoint: "/v1/dependencies"
       tenantPathParam: "tenantId"
@@ -492,6 +493,33 @@ global:
       subscriptionProviderLabelKey: "subscriptionProviderId"
       consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
     containerName: "tenant-fetcher"
+    oauth:
+      tokenPath: ""
+    secret:
+      name: "compass-tenant-fetcher-secret-job1"
+      clientIdKey: client-id
+      oauthMode: "oauth-mtls"
+      clientSecretKey: client-secret # not used for now
+      clientCertKey: client-cert
+      clientKeyKey: client-key
+      oauthUrlKey: url
+      skipSSLValidation: true
+    endpoints:
+      subaccountCreated: "127.0.0.1/events?type=subaccount-created"
+    fieldMapping:
+      totalPagesField: "totalPages"
+      totalResultsField: "totalResults"
+      tenantEventsField: "events"
+      idField: "id"
+      nameField: "name"
+      customerIdField: "customerId"
+      subdomainField: "subdomain"
+      discriminatorField: ""
+      discriminatorValue: ""
+      detailsField: "details"
+      entityTypeField: "entityType"
+      globalAccountID: "gaID"
+      regionField: "region"
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     issuerLocality: "local" # In local setup we have manually created connector CA certificate with 'local' Locality property

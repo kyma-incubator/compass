@@ -3,11 +3,12 @@ package tenantfetchersvc
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 
@@ -26,7 +27,7 @@ const (
 // TenantFetcher is used to fectch tenants for creation;
 //go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore
 type TenantFetcher interface {
-	FetchTenantOnDemand(ctx context.Context, tenantID string) (error, *tenantfetcher.ClientError)
+	FetchTenantOnDemand(ctx context.Context, tenantID string) error
 }
 
 // TenantSubscriber is used to apply subscription changes for tenants;
@@ -107,9 +108,9 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 		return
 	}
 
-	err, clientError := h.fetcher.FetchTenantOnDemand(ctx, tenantID)
+	err := h.fetcher.FetchTenantOnDemand(ctx, tenantID)
 	if err != nil {
-		http.Error(writer, clientError.Error, clientError.Code)
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 	writeCreatedResponse(writer, ctx, tenantID)

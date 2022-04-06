@@ -3,6 +3,9 @@ package tenantfetchersvc
 import (
 	"context"
 	"crypto/tls"
+	"net/http"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -14,8 +17,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	"net/http"
-	"time"
 )
 
 type fetcher struct {
@@ -31,7 +32,7 @@ func NewTenantFetcher(eventsCfg EventsConfig, handlerCfg HandlerConfig) *fetcher
 	}
 }
 
-func (f *fetcher) FetchTenantOnDemand(ctx context.Context, tenantID string) (error, *tenantfetcher.ClientError) {
+func (f *fetcher) FetchTenantOnDemand(ctx context.Context, tenantID string) error {
 	transact, closeFunc, err := persistence.Configure(ctx, f.handlerCfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
