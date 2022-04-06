@@ -35,8 +35,8 @@ type tenantService interface {
 
 //go:generate mockery --name=systemsService --output=automock --outpkg=automock --case=underscore --exported=true
 type systemsService interface {
-	Upsert(ctx context.Context, in model.ApplicationRegisterInput) error
-	UpsertFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) error
+	TrustedUpsert(ctx context.Context, in model.ApplicationRegisterInput) error
+	TrustedUpsertFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) error
 	GetByNameAndSystemNumber(ctx context.Context, name, systemNumber string) (*model.Application, error)
 }
 
@@ -224,11 +224,11 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 			}
 
 			if appInput.TemplateID == "" {
-				if err = s.systemsService.Upsert(ctx, appInput.ApplicationRegisterInput); err != nil {
+				if err = s.systemsService.TrustedUpsert(ctx, appInput.ApplicationRegisterInput); err != nil {
 					return errors.Wrap(err, "while upserting application")
 				}
 			} else {
-				if err = s.systemsService.UpsertFromTemplate(ctx, appInput.ApplicationRegisterInput, &appInput.TemplateID); err != nil {
+				if err = s.systemsService.TrustedUpsertFromTemplate(ctx, appInput.ApplicationRegisterInput, &appInput.TemplateID); err != nil {
 					return errors.Wrap(err, "while upserting application")
 				}
 			}
