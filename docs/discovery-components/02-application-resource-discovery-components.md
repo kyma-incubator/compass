@@ -1,21 +1,22 @@
-# Discovering Application APIs and Events
+# Application APIs and Events Discovery
 
-Just like with applications (also called _systems_), there are two ways for Compass to find out the APIs and events provided by an application - they can be registered **manually** via the Director GraphQL API, or they can be **automatically** discovered, if they have the appropriate webhook for that.
+Similarly to the applications (systems) discovery, there are a couple of ways, in which Compass finds the APIs and events provided by an application:
+- **Manually** - Register APIs and events via the Director's GraphQL API.
+- **Automatically** - Discovered automatically if they have an appropriate webhook for that.
 
-The ORD Aggregator component takes care of that discovery. It is modeled as a Kubernetes CronJob. It periodically synchronizes the available APIs, events, and specifications of a given application, with the actually available ones - it is assumed that the actual state is dynamic, and for example, APIs can be made available, or removed, and that should not require manual updates on Compass side.
+The ORD Aggregator component takes care of that discovery. It is modeled as a Kubernetes CronJob. It periodically synchronizes the available APIs, events, and specifications of a given application with the actually available ones. Presumably, the actual state is dynamic and APIs are made available (or removed) automatically, and this does not require manual updates on Compass side.
 
 ## Resource Discovery Aggregator
-The aggregator processes all applications on one CronJob run. If the application has a webhook for resource discovery, the aggregator synchronizes the application's vendors, bundles, packages, their API and event definitions along with their specifications.
-By synchronize it's meant that the required resources are created or removed from the Compass database.
+The aggregator processes all applications at one CronJob run. If the application has a webhook for resource discovery, the aggregator synchronizes the application's vendors, bundles, packages, their APIs, and event definitions along with their specifications. That is, the required resources are either created or removed from the Compass database.
 
 ### ORD Webhooks
-The webhook called from the Aggregator is a standard Compass webhook. It returns a list of the so-called _Resource Discovery Documents_.
-Each RD Document contains a list of bundles, API and event definitions. Then, in order to fetch the specifications of the APIs and events, the Aggregator can use different access strategies:
-* Open - indicates that the document is not secured
-* CMP mTLS - indicates that the document can be accessed with Compass' Externally issued certificate
+The webhook that is called by the Aggregator is a standard Compass webhook. It returns a list of documents called Resource Discovery (RD) Documents.
+Each RD Document contains a list of bundles, APIs, and event definitions. Then, to fetch the specifications of the APIs and events, the Aggregator uses different access strategies:
+- Open - Indicates that the document is not secured.
+- CMP mTLS - Indicates that the document can be accessed with Compass's externally issued certificate.
 
 ## Resource Discovery Service
 
-The ORD Service component is developed in a separate GitHub [repository](https://github.com/kyma-incubator/ord-service).
+The ORD Service component is developed in a separate GitHub repository at [ORD Service](https://github.com/kyma-incubator/ord-service).
 
-It exposes is a read-only OData API for the applications' information available in Compass - application vendors, bundles, packages, API and event definitions.
+It exposes an OData API that fetches read-only information about the applications that are available in Compass. The inoframtion includes application vendors, bundles, packages, APIs, and event definitions.
