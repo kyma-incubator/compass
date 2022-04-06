@@ -42,13 +42,13 @@ func (f *fetcher) FetchTenantOnDemand(ctx context.Context, tenantID string) erro
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	tenantFetcherOnDemandSvc, err := f.createTenantFetcherOnDemandSvc(transact)
+	tenantFetcherOnDemandSvc, err := f.createTenantFetcherOnDemandSvc(ctx, transact)
 	exitOnError(err, "failed to create tenant fetcher on-demand service")
 
 	return tenantFetcherOnDemandSvc.SyncTenant(ctx, tenantID)
 }
 
-func (f *fetcher) createTenantFetcherOnDemandSvc(transact persistence.Transactioner) (*tenantfetcher.SubaccountOnDemandService, error) {
+func (f *fetcher) createTenantFetcherOnDemandSvc(ctx context.Context, transact persistence.Transactioner) (*tenantfetcher.SubaccountOnDemandService, error) {
 	eventAPIClient, err := tenantfetcher.NewClient(f.eventsCfg.OAuthConfig, f.eventsCfg.AuthMode, f.eventsCfg.APIConfig, f.handlerCfg.ClientTimeout)
 	if nil != err {
 		return nil, err
@@ -69,7 +69,7 @@ func (f *fetcher) createTenantFetcherOnDemandSvc(transact persistence.Transactio
 
 	gqlClient := newInternalGraphQLClient(f.handlerCfg.DirectorGraphQLEndpoint, f.handlerCfg.ClientTimeout, f.handlerCfg.HTTPClientSkipSslValidation)
 	gqlClient.Log = func(s string) {
-		log.D().Debug(s)
+		log.C(ctx).Debug(s)
 	}
 	directorClient := graphqlclient.NewDirector(gqlClient)
 

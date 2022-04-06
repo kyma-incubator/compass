@@ -147,7 +147,7 @@ spec:
     url: "http://compass-gateway.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.gateway.port }}"
   match:
     methods: ["POST"]
-    url: <http|https>://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.tenantFetcher.prefix }}
+    url: <http|https>://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.tenantFetcher.prefix }}/<.*>
   authenticators:
     - handler: jwt
       config:

@@ -62,7 +62,7 @@ type QueryConfig struct {
 	PageNumField    string `envconfig:"default=pageNum,APP_QUERY_PAGE_NUM_FIELD"`
 	PageSizeField   string `envconfig:"default=pageSize,APP_QUERY_PAGE_SIZE_FIELD"`
 	TimestampField  string `envconfig:"default=timestamp,APP_QUERY_TIMESTAMP_FIELD"`
-	RegionField     string `envconfig:"APP_QUERY_REGION_FIELD"`
+	RegionField     string `envconfig:"default=region,APP_QUERY_REGION_FIELD"`
 	PageStartValue  string `envconfig:"default=0,APP_QUERY_PAGE_START"`
 	PageSizeValue   string `envconfig:"default=150,APP_QUERY_PAGE_SIZE"`
 	SubaccountField string `envconfig:"default=entityId,APP_QUERY_ENTITY_FIELD"`

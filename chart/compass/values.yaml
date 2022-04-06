@@ -499,7 +499,6 @@ global:
       name: "compass-tenant-fetcher-secret-job1"
       clientIdKey: client-id
       oauthMode: "oauth-mtls"
-      clientSecretKey: client-secret # not used for now
       clientCertKey: client-cert
       clientKeyKey: client-key
       oauthUrlKey: url
