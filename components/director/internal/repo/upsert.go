@@ -148,7 +148,7 @@ func (u *upserter) unsafeUpsert(ctx context.Context, resourceType resource.Type,
 	return upsertedID, nil
 }
 
-func (u *upserter) upsertTenantAccess(ctx context.Context, resourceType resource.Type, resourceId string, tenant string) error {
+func (u *upserter) upsertTenantAccess(ctx context.Context, resourceType resource.Type, resourceID string, tenant string) error {
 	m2mTable, ok := resourceType.TenantAccessTable()
 	if !ok {
 		return errors.Errorf("entity %s does not have access table", resourceType)
@@ -156,7 +156,7 @@ func (u *upserter) upsertTenantAccess(ctx context.Context, resourceType resource
 
 	return UpsertTenantAccessRecursively(ctx, m2mTable, &TenantAccess{
 		TenantID:   tenant,
-		ResourceID: resourceId,
+		ResourceID: resourceID,
 		Owner:      true,
 	})
 }
