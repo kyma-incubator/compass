@@ -3,9 +3,9 @@ package runtime
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/pkg/errors"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,6 +20,7 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 		{
 			Name: "Success for MTLS mode",
 			Config: SelfRegConfig{
+				SelfRegisterSecretPath:   "testdata/TestSelfRegConfig_MapInstanceConfigs_MTLS_Success.golden",
 				OAuthMode:                oauth.Mtls,
 				InstanceClientIDPath:     "clientId",
 				InstanceClientSecretPath: "clientSecret",
@@ -27,8 +28,6 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 				InstanceTokenURLPath:     "tokenUrl",
 				InstanceCertPath:         "clientCert",
 				InstanceKeyPath:          "clientKey",
-				InstanceConfigs: `{"eu-1":{"clientId":"client_id","url":"url","tokenUrl":"token-url","clientCert":"cert","clientKey":"key"},
-							      "eu-2":{"clientId":"client_id_2","url":"url-2","tokenUrl":"token-url-2","clientCert":"cert2","clientKey":"key2"}}`,
 			},
 			ExpectedRegionToInstance: map[string]InstanceConfig{
 				"eu-1": {
@@ -51,6 +50,7 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 		{
 			Name: "Success for Standard mode",
 			Config: SelfRegConfig{
+				SelfRegisterSecretPath:   "testdata/TestSelfRegConfig_MapInstanceConfigs_StandardMode_Success.golden",
 				OAuthMode:                oauth.Standard,
 				InstanceClientIDPath:     "clientId",
 				InstanceClientSecretPath: "clientSecret",
@@ -58,8 +58,6 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 				InstanceTokenURLPath:     "tokenUrl",
 				InstanceCertPath:         "clientCert",
 				InstanceKeyPath:          "clientKey",
-				InstanceConfigs: `{"eu-1":{"clientId":"client_id","clientSecret":"client_secret","url":"url","tokenUrl":"token-url"},
-							      "eu-2":{"clientId":"client_id_2","clientSecret":"client_secret","url":"url-2","tokenUrl":"token-url-2"}}`,
 			},
 			ExpectedRegionToInstance: map[string]InstanceConfig{
 				"eu-1": {
@@ -80,6 +78,7 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 		{
 			Name: "Returns error when Client ID and URLs are missing",
 			Config: SelfRegConfig{
+				SelfRegisterSecretPath:   "testdata/TestSelfRegConfig_MapInstanceConfigs_StandardMode_Missing_ClientID_URL.golden",
 				OAuthMode:                oauth.Standard,
 				InstanceClientIDPath:     "clientId",
 				InstanceClientSecretPath: "clientSecret",
@@ -87,8 +86,6 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 				InstanceTokenURLPath:     "tokenUrl",
 				InstanceCertPath:         "clientCert",
 				InstanceKeyPath:          "clientKey",
-				InstanceConfigs: `{"eu-1":{"clientId":"client_id","clientSecret":"client_secret","url":"url","tokenUrl":"token-url"},
-							      "eu-2":{"clientSecret":"client_secret"}}`,
 			},
 			ExpectedRegionToInstance: nil,
 			ExpectedErr:              errors.Errorf("while validating instance for region: %q: Client ID is missing, Token URL is missing, URL is missing", "eu-2"),
@@ -96,6 +93,7 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 		{
 			Name: "Returns error when Client Secret is missing in Standard flow",
 			Config: SelfRegConfig{
+				SelfRegisterSecretPath:   "testdata/TestSelfRegConfig_MapInstanceConfigs_StandardMode_Missing_ClientSecret.golden",
 				OAuthMode:                oauth.Standard,
 				InstanceClientIDPath:     "clientId",
 				InstanceClientSecretPath: "clientSecret",
@@ -103,8 +101,6 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 				InstanceTokenURLPath:     "tokenUrl",
 				InstanceCertPath:         "clientCert",
 				InstanceKeyPath:          "clientKey",
-				InstanceConfigs: `{"eu-1":{"clientId":"client_id","clientSecret":"client_secret","url":"url","tokenUrl":"token-url"},
-							      "eu-2":{"clientId":"client_id","url":"url-2","tokenUrl":"token-url-2"}}`,
 			},
 			ExpectedRegionToInstance: nil,
 			ExpectedErr:              errors.Errorf("while validating instance for region: %q: Client Secret is missing", "eu-2"),
@@ -112,6 +108,7 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 		{
 			Name: "Returns error when Certificate and Key is missing in MTLS flow",
 			Config: SelfRegConfig{
+				SelfRegisterSecretPath:   "testdata/TestSelfRegConfig_MapInstanceConfigs_MTLS_Missing_Cert_Key.golden",
 				OAuthMode:                oauth.Mtls,
 				InstanceClientIDPath:     "clientId",
 				InstanceClientSecretPath: "clientSecret",
@@ -119,8 +116,6 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 				InstanceTokenURLPath:     "tokenUrl",
 				InstanceCertPath:         "clientCert",
 				InstanceKeyPath:          "clientKey",
-				InstanceConfigs: `{"eu-1":{"clientId":"client_id","url":"url","tokenUrl":"token-url","clientCert":"cert","clientKey":"key"},
-							      "eu-2":{"clientId":"client_id","url":"url-2","tokenUrl":"token-url-2"}}`,
 			},
 			ExpectedRegionToInstance: nil,
 			ExpectedErr:              errors.Errorf("while validating instance for region: %q: Certificate is missing, Key is missing", "eu-2"),
