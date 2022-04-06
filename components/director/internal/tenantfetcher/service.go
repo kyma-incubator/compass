@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -131,7 +132,9 @@ const (
 	retryAttempts          = 7
 	retryDelayMilliseconds = 100
 	// size of a tenant and parent tenants if not already existing
-	chunkSizeForTenantOnDemand = 5
+	chunkSizeForTenantOnDemand           = 5
+	tenantAlreadyCreatedMsg              = "Tenant for provided subaccount already created"
+	errorProcessingSubaccountCreationMsg = "Error while processing the subaccount creation request"
 )
 
 type SubaccountOnDemandService struct {
@@ -396,42 +399,48 @@ func (s SubaccountService) SyncTenants() error {
 
 	return nil
 }
-func (s SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID string) error {
+
+type ClientError struct {
+	Error string
+	Code  int
+}
+
+func (s SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID string) (error, *ClientError) {
 	tx, err := s.transact.Begin()
 	if err != nil {
-		return err
+		return err, &ClientError{errorProcessingSubaccountCreationMsg, http.StatusInternalServerError}
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	currentTenants, err := getCurrentTenants(ctx, s.tenantStorageService)
 	if err != nil {
-		return err
+		return err, &ClientError{errorProcessingSubaccountCreationMsg, http.StatusInternalServerError}
 	}
 
-	if _, ok := currentTenants[subaccountID]; !ok {
-		return errors.Wrap(nil, "Tenant for provided subaccount already created")
+	if _, ok := currentTenants[subaccountID]; ok {
+		return errors.Wrap(nil, tenantAlreadyCreatedMsg), &ClientError{tenantAlreadyCreatedMsg, http.StatusConflict}
 	}
 
 	tenantToCreate, err := s.getSubaccountToCreate(subaccountID)
 	if err != nil {
-		return err
+		return err, &ClientError{"Error while fetching creation events for the subaccount", http.StatusUnprocessableEntity}
 	}
 	log.C(ctx).Printf("Got event for provided subaccount creation")
 
 	// Order of event processing matters
 	var tenantsToCreate = []model.BusinessTenantMappingInput{*tenantToCreate}
 	if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, tenantToCreate.Region, s.providerName, chunkSizeForTenantOnDemand, s.tenantConverter); err != nil {
-		return errors.Wrap(err, "while storing subaccount")
+		return errors.Wrap(err, "while storing subaccount"), &ClientError{"Error while storing the subaccount", http.StatusInternalServerError}
 	}
 
 	log.C(ctx).Printf("Provided subaccount stored successfully")
 
 	if err = tx.Commit(); err != nil {
-		return err
+		return err, &ClientError{errorProcessingSubaccountCreationMsg, http.StatusInternalServerError}
 	}
 
-	return nil
+	return nil, nil
 }
 
 // SyncTenants missing godoc

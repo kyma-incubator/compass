@@ -26,7 +26,7 @@ const (
 // TenantFetcher is used to fectch tenants for creation;
 //go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore
 type TenantFetcher interface {
-	FetchTenantOnDemand(ctx context.Context, tenantID string) error
+	FetchTenantOnDemand(ctx context.Context, tenantID string) (error, *tenantfetcher.ClientError)
 }
 
 // TenantSubscriber is used to apply subscription changes for tenants;
@@ -39,7 +39,7 @@ type TenantSubscriber interface {
 // HandlerConfig is the configuration required by the tenant handler.
 // It includes configurable parameters for incoming requests, including different tenant IDs json properties, and path parameters.
 type HandlerConfig struct {
-	TenantOnDemandHandlerEndpoint string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/{tenantId}"`
+	TenantOnDemandHandlerEndpoint string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{tenantId}"`
 	RegionalHandlerEndpoint       string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
 	DependenciesEndpoint          string `envconfig:"APP_DEPENDENCIES_ENDPOINT,default=/v1/dependencies"`
 	TenantPathParam               string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
@@ -107,9 +107,9 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 		return
 	}
 
-	err := h.fetcher.FetchTenantOnDemand(ctx, tenantID)
+	err, clientError := h.fetcher.FetchTenantOnDemand(ctx, tenantID)
 	if err != nil {
-		http.Error(writer, "Error while fetching tenant", http.StatusInternalServerError)
+		http.Error(writer, clientError.Error, clientError.Code)
 		return
 	}
 	writeCreatedResponse(writer, ctx, tenantID)

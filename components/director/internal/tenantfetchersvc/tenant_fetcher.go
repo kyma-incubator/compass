@@ -31,7 +31,7 @@ func NewTenantFetcher(eventsCfg EventsConfig, handlerCfg HandlerConfig) *fetcher
 	}
 }
 
-func (f *fetcher) FetchTenantOnDemand(ctx context.Context, tenantID string) error {
+func (f *fetcher) FetchTenantOnDemand(ctx context.Context, tenantID string) (error, *tenantfetcher.ClientError) {
 	transact, closeFunc, err := persistence.Configure(ctx, f.handlerCfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 

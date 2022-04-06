@@ -55,8 +55,7 @@ type config struct {
 
 	Log log.Config
 
-	TenantsRootAPI         string `envconfig:"APP_ROOT_API,default=/tenants"`
-	TenantsOnDemandRootAPI string `envconfig:"APP_ROOT_TENANTS_ON_DEMAND_API,default=/tenantsondemand"`
+	TenantsRootAPI string `envconfig:"APP_ROOT_API,default=/tenants"`
 
 	Handler   tenantfetcher.HandlerConfig
 	EventsCfg tenantfetcher.EventsConfig
@@ -119,7 +118,7 @@ func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config) ht
 	configureAuthMiddleware(ctx, httpClient, tenantsAPIRouter, cfg.SecurityConfig, []string{cfg.SecurityConfig.SubscriptionCallbackScope})
 	registerTenantsHandler(ctx, tenantsAPIRouter, cfg.Handler)
 
-	tenansOnDemandAPIRouter := mainRouter.PathPrefix(cfg.TenantsOnDemandRootAPI).Subrouter()
+	tenansOnDemandAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI + cfg.Handler.TenantOnDemandHandlerEndpoint).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, tenansOnDemandAPIRouter, cfg.SecurityConfig, []string{cfg.SecurityConfig.FetchTenantOnDemandScope})
 	registerTenantsOnDemandHandler(ctx, tenansOnDemandAPIRouter, cfg.EventsCfg, cfg.Handler)
 
