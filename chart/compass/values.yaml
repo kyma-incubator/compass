@@ -127,7 +127,7 @@ global:
       version: "PR-64"
     e2e_tests:
       dir:
-      version: "PR-2297"
+      version: "PR-2293"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -739,6 +739,7 @@ global:
       externalCertTestJobName: "external-certificate-rotation-test-job"
       certSvcInstanceTestSecretName: "cert-svc-secret"
       consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+      skipPattern: ""
       subscriptionOauthSecret:
         manage: false
         name: compass-subscription-secret
