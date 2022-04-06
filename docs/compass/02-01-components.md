@@ -8,11 +8,11 @@ These are the components related to Compass:
 ## Application/System
 
 Application represents any external system that you want to register to Compass with its API and Event definitions. These are the types of possible integration levels between an Application and Compass:
-- Manual integration - the Administrator manually provides API or Events metadata to Compass. Use this type of integration for simple use-case scenarios as it does not support all features.
-- Built-in integration - integration with Compass is built in the Application.
-- Proxy - a highly Application-specific proxy component provides the integration.
-- [Integration System](#integration-system) - a central service provides integration for the dedicated group of Applications across multiple tenants. It manages multiple instances of the given Application type. You can integrate multiple Integration Systems to support different types of Applications.
-- Discovery - the system can be fetched from an external systems registry
+- Manual integration - The Administrator manually provides API or Events metadata to Compass. Use this type of integration for simple use-case scenarios as it does not support all features.
+- Built-in integration - Integration with Compass is built in the Application.
+- Proxy - A highly Application-specific proxy component provides the integration.
+- [Integration System](#integration-system) - A central service provides integration for the dedicated group of Applications across multiple tenants. It manages multiple instances of the given Application type. You can integrate multiple Integration Systems to support different types of Applications.
+- Discovery - The system can be fetched from an external systems registry.
 
 ## Management Plane
 
@@ -36,13 +36,13 @@ The Compass Console is a UI that calls Compass APIs. This component is interchan
 
 Gateway proxies the tenant's incoming requests to the Director and Connector components. All communication, whether it comes from an Application or other external components, flows through Gateway.
 
-The Gateway components takes care of audit logging all create, update, and delete operations on Compass resources.
+The Gateway components takes care of audit logging and all create, update, and delete operations on Compass resources.
 
 ## Connector
 
 Connector establishes trust between Applications and Runtimes. Currently, only client certificates are supported.
 
-It also takes care of verifying externally issued client certificates - those are certificates which were not issued by Connector itself, but are still trusted to call Compass.
+It is also responsible for verifying externally issued client certificates. Those are certificates, which were not issued by the Connector itself but are still trusted to call Compass.
 
 ## Director
 
@@ -61,31 +61,29 @@ for more details.
 
 ## Operations Controller
 
-The Operations Controller is responsible for any asynchronous operations triggered in Compass, e.g. application deletion - if you want to unregister an application, you would also want to delete all related application credentials. If the application has a delete webhook, then Director should call it before removing the application from its database.
+The Operations Controller is responsible for any asynchronous operations triggered in Compass, for example, application deletion. If you want to deregister an application, you might also want to delete all related application credentials. If the application has a delete webhook, then Director calls it before removing the application from its database.
 
-When the Operation Controller is done with processing the asynchronous request, it calls Director to let it know that the operation can be finalized (e.g. if it's application unregister, then the application can be deleted from the Director DB).
+When the Operations Controller is done with the processing of the asynchronous request, it sends information to the Director that the operation can be finalized. For example, if it is application deregister, then the Director can delete the application from the database.
 
 ## System Fetcher
 
-The System Fetcher component takes care of discovering existing applications (systems) in an external provider system which supports the same tenancy model and can be used for querying applications for a given tenant.
+The System Fetcher component is responsble for the discovery of existing applications (systems) in an external provider system. The external provider system must support the same tenancy model and can be used for querying applications for a given tenant.
 
 ## ORD Service
 
-The Open Resource Discovery (ORD) Service is an OData V4 API exposing information about applications, their APIs and events.
-It is developed in a separate GitHub repository, and any additional details can be found [there](https://github.com/kyma-incubator/ord-service).
+The Open Resource Discovery (ORD) Service is an OData V4 API that exposes information about applications, their APIs, and events.
+It is developed in a separate GitHub repository and you can find further details for it at [Open Resource Discovery Service](https://github.com/kyma-incubator/ord-service).
 
 ## ORD Aggregator
 
-ORD Aggregator takes care of gathering APIs and events of applications, which are registered with a so called ORD webhook. It is used for automatic discovery of APIs and events without explicit need for the application to register its own resources in Compass.
+The ORD Aggregator is responsible for gathering APIs and events of applications, which are registered with an ORD webhook. It is used for automatic discovery of APIs and events without an explicit need for the application to register its own resources in Compass.
 
-## Tenant Fetcher (_Job_ and _Deployment_)
+## Tenant Fetcher Components
 
-The Tenant Fetcher components are responsible for managing tenants in Compass.
-The Tenant Fetcher job periodically fetches tenant events (for creation and deletion) from an external tenants service, and applies the according changes in Compass.
-
-The Tenant Fetcher deployment takes care for creating tenants when an external tenancy manager calls it.
-It is also responsible for providing access to a given tenant to a particular multi-tenant runtime.
+The Tenant Fetcher components are: Tenant Fetcher job and Tenant Fetcher deployment. They are responsible for managing tenants in Compass.
+- The Tenant Fetcher job periodically fetches tenant events (for creation and deletion) from an external tenant service and applies the corresponding changes in Compass.
+- The Tenant Fetcher deployment is responsible for creating tenants when an external tenancy manager calls it. It is also responsible for providing access of a given tenant to a particular multi-tenant runtime.
 
 ## System Broker
 
-The System Broker exposes an [Open Service Broker (OSB) API](https://www.openservicebrokerapi.org/) as well as an endpoint for fetching application specifications. More details regarding the component can be found in its [documentation](https://github.com/kyma-incubator/compass/tree/main/components/system-broker).
+The System Broker exposes an [Open Service Broker (OSB) API](https://www.openservicebrokerapi.org/), as well as, an endpoint for fetching application specifications. For more information about the component, see [System Broker](https://github.com/kyma-incubator/compass/tree/main/components/system-broker).
