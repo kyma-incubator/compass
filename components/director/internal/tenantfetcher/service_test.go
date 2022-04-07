@@ -71,7 +71,6 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	beforeEach := func() {
-
 		tenantFieldMapping = tenantfetcher.TenantFieldMapping{
 			NameField:       "name",
 			IDField:         "id",

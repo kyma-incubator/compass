@@ -138,17 +138,16 @@ const (
 
 // SubaccountOnDemandService for an on-demand creation of a tenant for a subaccount
 type SubaccountOnDemandService struct {
-	queryConfig           QueryConfig
-	fieldMapping          TenantFieldMapping
-	eventAPIClient        EventAPIClient
-	retryAttempts         uint
-	toEventsPage          func([]byte) *eventsPage
-	transact              persistence.Transactioner
-	tenantStorageService  TenantStorageService
-	gqlClient             DirectorGraphQLClient
-	providerName          string
-	tenantInsertChunkSize int
-	tenantConverter       TenantConverter
+	queryConfig          QueryConfig
+	fieldMapping         TenantFieldMapping
+	eventAPIClient       EventAPIClient
+	retryAttempts        uint
+	toEventsPage         func([]byte) *eventsPage
+	transact             persistence.Transactioner
+	tenantStorageService TenantStorageService
+	gqlClient            DirectorGraphQLClient
+	providerName         string
+	tenantConverter      TenantConverter
 }
 
 // GlobalAccountService missing godoc
@@ -395,7 +394,7 @@ func (s SubaccountService) SyncTenants() error {
 	return nil
 }
 
-// // SyncTenant fetches creation events for a subaccount and creates a tenant for the subaccount in case it doesn't exist
+//SyncTenant fetches creation events for a subaccount and creates a tenant for the subaccount in case it doesn't exist
 func (s SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID string) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
