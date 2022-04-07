@@ -3,3 +3,7 @@ kind: ServiceAccount
 metadata:
   name: {{ template "fullname" . }}
   namespace: {{ .Release.Namespace }}
+  {{- if eq .Values.global.database.embedded.enabled false }}
+  annotations:
+    iam.gke.io/gcp-service-account: {{ $.Values.global.database.sqlProxyServiceAccount | quote }}
+  {{- end }}

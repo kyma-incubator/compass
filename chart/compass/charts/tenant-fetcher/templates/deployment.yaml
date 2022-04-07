@@ -207,3 +207,16 @@ spec:
             initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}
+        {{if eq .Values.global.database.embedded.enabled false}}
+        - name: cloudsql-proxy
+          image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
+          command: ["/cloud_sql_proxy",
+                    "-instances={{ .Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432",
+                    "-term_timeout=2s"]
+          resources:
+          {{- toYaml .Values.deployment.resourcesCloudsqlProxy | nindent 12 }}
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+          {{ toYaml . | indent 12 }}
+          {{- end }}
+        {{end}}
