@@ -161,7 +161,7 @@ User logs in to Compass UI
 
 **Request flow:**
 
-1. Authenticator validates the token using keys provided by the identity service. In the production environment, the tenant **must be** included in the token payload. For local development, the `tenant` property is missing from the token issued by Dex.
+1. Authenticator validates the token using keys provided by the identity service. 
 1. If the token is valid, OathKeeper sends the request to Hydrator.
 1. Hydrator calls Tenant Mapping Handler hosted by `Director`, which, in production environment, returns **the same** authentication session (as the `tenant` is already in place). For local development, user `tenant` and `scopes` are loaded from ConfigMap, where static `user - tenant and scopes` mapping is done.
 1. Hydrator passes response to ID_Token mutator which constructs a JWT token with scopes and `tenant` in the payload.

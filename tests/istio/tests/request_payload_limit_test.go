@@ -14,15 +14,9 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/authentication"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
-	"github.com/kyma-incubator/compass/tests/pkg/server"
-	"github.com/sirupsen/logrus"
-
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
-
-	"github.com/kyma-incubator/compass/tests/pkg/tenant"
-
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/idtokenprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -41,23 +35,20 @@ func TestCallingCompassGateways(t *testing.T) {
 	var (
 		ctx    = context.TODO()
 		err    error
-		tenant = tenant.TestTenants.GetDefaultTenantID()
+		tenant = conf.DefaultTenant
 	)
 
-	dexToken := server.Token()
+	authorizedClient := gql.NewCertAuthorizedHTTPClient(certCache.Get().PrivateKey, certCache.Get().Certificate, conf.SkipSSLValidation)
 
-	authorizedClient := gql.NewAuthorizedHTTPClient(dexToken)
-
-	dexGraphQLClient := gql.NewAuthorizedGraphQLClient(dexToken)
 	logrus.Infof("Registering runtime with name: %s, within tenant: %s", runtimeInput.Name, tenant)
 
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenant, runtimeInput)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenant, &runtime)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenant, runtimeInput)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenant, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
 	logrus.Infof("Generating one-time token for runtime with id: %s", runtime.ID)
-	runtimeToken := fixtures.RequestOneTimeTokenForRuntime(t, ctx, dexGraphQLClient, tenant, runtime.ID)
+	runtimeToken := fixtures.RequestOneTimeTokenForRuntime(t, ctx, certSecuredGraphQLClient, tenant, runtime.ID)
 	oneTimeToken := &externalschema.Token{Token: runtimeToken.Token}
 
 	logrus.Info("Generating private key for cert...")
@@ -75,30 +66,47 @@ func TestCallingCompassGateways(t *testing.T) {
 		positiveDescription string
 		client              *http.Client
 		url                 string
+		requestSize         int
 	}{
 		{
-			negativeDescription: "fails when request is too big and passes through gateway",
+			negativeDescription: "fails when request is over 5MB and passes through gateway",
 			positiveDescription: "succeeds for a regular applications request passing through gateway",
-			url:                 conf.CompassGatewayURL + directorPath,
+			url:                 conf.DirectorExternalCertSecuredURL,
 			client:              authorizedClient,
+			requestSize:         conf.RequestPayloadLimit,
 		},
 		{
-			negativeDescription: "fails when request is too big and passes through MTLS gateway",
+			negativeDescription: "fails when request is over 2MB and reaches director",
+			positiveDescription: "succeeds for a regular applications request reaching director",
+			url:                 conf.DirectorExternalCertSecuredURL,
+			client:              authorizedClient,
+			requestSize:         2097152,
+		},
+		{
+			negativeDescription: "fails when request is over 5MB and passes through MTLS gateway",
 			positiveDescription: "succeeds for a regular applications request passing through MTLS gateway",
 			url:                 conf.CompassMTLSGatewayURL + directorPath,
 			client:              certSecuredClient,
+			requestSize:         conf.RequestPayloadLimit,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.negativeDescription, func(t *testing.T) {
 			t.Log("Creating a request with big payload...")
-			bigBodyPOSTRequest := getHTTPBigBodyPOSTRequest(t, test.url, tenant, conf.RequestPayloadLimit)
+			bigBodyPOSTRequest := getHTTPBigBodyPOSTRequest(t, test.url, tenant, test.requestSize)
 
 			t.Log("Executing request with big payload...")
 			resp, err := test.client.Do(bigBodyPOSTRequest)
 			require.NoError(t, err)
-			defer idtokenprovider.CloseRespBody(resp)
+
+			defer func() {
+				err := resp.Body.Close()
+				if err != nil {
+					logrus.Printf("WARNING: Unable to close response body. Cause: %v", err)
+				}
+			}()
+
 			t.Log("Successfully executed request with big payload")
 
 			require.Equal(t, http.StatusRequestEntityTooLarge, resp.StatusCode)
@@ -116,7 +124,12 @@ func TestCallingCompassGateways(t *testing.T) {
 			t.Log("Executing request for applications...")
 			appsResp, err := test.client.Do(applicationsPOSTRequest)
 			require.NoError(t, err)
-			defer idtokenprovider.CloseRespBody(appsResp)
+			defer func() {
+				err := appsResp.Body.Close()
+				if err != nil {
+					logrus.Printf("WARNING: Unable to close response body. Cause: %v", err)
+				}
+			}()
 			t.Log("Successfully executed request for applications")
 
 			require.Equal(t, http.StatusOK, appsResp.StatusCode)
@@ -131,12 +144,25 @@ func getHTTPBigBodyPOSTRequest(t *testing.T, url, tenant string, bodySize int) *
 		b.WriteByte('a')
 	}
 	s := b.String()
-	applicationRequest := fixtures.FixGetApplicationRequest(s)
-	reader := strings.NewReader(applicationRequest.Query())
-	req, err := http.NewRequest(http.MethodPost, url, reader)
+	applicationsGQLRequest := fixtures.FixGetApplicationRequest(s)
+	requestBodyObj := struct {
+		Query     string                 `json:"query"`
+		Variables map[string]interface{} `json:"variables"`
+	}{
+		Query:     applicationsGQLRequest.Query(),
+		Variables: applicationsGQLRequest.Vars(),
+	}
+
+	var requestBuffer bytes.Buffer
+	err := json.NewEncoder(&requestBuffer).Encode(requestBodyObj)
+	require.NoError(t, err)
+
+	req, err := http.NewRequest(http.MethodPost, url, &requestBuffer)
 	require.NoError(t, err)
 
 	req.Header.Set("Tenant", tenant)
+	req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	req.Header.Set("Accept", "application/json; charset=utf-8")
 	req = req.WithContext(context.TODO())
 	return req
 }

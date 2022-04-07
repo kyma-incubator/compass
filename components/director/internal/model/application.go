@@ -23,7 +23,9 @@ type Application struct {
 	Labels                json.RawMessage `json:"labels"`
 	CorrelationIDs        json.RawMessage `json:"correlationIds,omitempty"`
 	Type                  string          `json:"-"`
-	DocumentationLabels   json.RawMessage `json:"documentationLabels"`
+	// SystemStatus shows whether the on-premise system is reachable or unreachable
+	SystemStatus        *string
+	DocumentationLabels json.RawMessage `json:"documentationLabels"`
 
 	*BaseEntity
 }
@@ -38,6 +40,9 @@ func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timest
 	if app.Status == nil {
 		app.Status = &ApplicationStatus{}
 	}
+	app.Status.Condition = getApplicationStatusConditionOrDefault(update.StatusCondition)
+	app.Status.Timestamp = timestamp
+
 	if update.Description != nil {
 		app.Description = update.Description
 	}
@@ -50,8 +55,6 @@ func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timest
 	if update.ProviderName != nil {
 		app.ProviderName = update.ProviderName
 	}
-	app.Status.Condition = getApplicationStatusConditionOrDefault(update.StatusCondition)
-	app.Status.Timestamp = timestamp
 	if update.BaseURL != nil {
 		app.BaseURL = update.BaseURL
 	}
@@ -60,6 +63,9 @@ func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timest
 	}
 	if update.CorrelationIDs != nil {
 		app.CorrelationIDs = update.CorrelationIDs
+	}
+	if update.SystemStatus != nil {
+		app.SystemStatus = update.SystemStatus
 	}
 	if update.DocumentationLabels != nil {
 		app.DocumentationLabels = update.DocumentationLabels
@@ -128,6 +134,7 @@ type ApplicationRegisterInput struct {
 	SystemNumber        *string
 	OrdLabels           json.RawMessage
 	CorrelationIDs      json.RawMessage
+	SystemStatus        *string
 	DocumentationLabels json.RawMessage
 }
 
@@ -157,6 +164,7 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id string)
 		Labels:              i.OrdLabels,
 		CorrelationIDs:      i.CorrelationIDs,
 		SystemNumber:        i.SystemNumber,
+		SystemStatus:        i.SystemStatus,
 		DocumentationLabels: i.DocumentationLabels,
 		BaseEntity: &BaseEntity{
 			ID:    id,
@@ -184,5 +192,12 @@ type ApplicationUpdateInput struct {
 	BaseURL             *string
 	Labels              json.RawMessage
 	CorrelationIDs      json.RawMessage
+	SystemStatus        *string
 	DocumentationLabels json.RawMessage
+}
+
+// ApplicationWithLabel missing godoc
+type ApplicationWithLabel struct {
+	App      *Application
+	SccLabel *Label
 }

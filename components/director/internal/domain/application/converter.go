@@ -49,6 +49,7 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 		SystemNumber:          repo.NewNullableString(in.SystemNumber),
 		Labels:                repo.NewNullableStringFromJSONRawMessage(in.Labels),
 		CorrelationIDs:        repo.NewNullableStringFromJSONRawMessage(in.CorrelationIDs),
+		SystemStatus:          repo.NewNullableString(in.SystemStatus),
 		DocumentationLabels:   repo.NewNullableStringFromJSONRawMessage(in.DocumentationLabels),
 		BaseEntity: &repo.BaseEntity{
 			ID:        in.ID,
@@ -82,6 +83,7 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 		BaseURL:               repo.StringPtrFromNullableString(entity.BaseURL),
 		Labels:                repo.JSONRawMessageFromNullableString(entity.Labels),
 		CorrelationIDs:        repo.JSONRawMessageFromNullableString(entity.CorrelationIDs),
+		SystemStatus:          repo.StringPtrFromNullableString(entity.SystemStatus),
 		DocumentationLabels:   repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
@@ -110,6 +112,7 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 		ApplicationTemplateID: in.ApplicationTemplateID,
 		ProviderName:          in.ProviderName,
 		SystemNumber:          in.SystemNumber,
+		SystemStatus:          in.SystemStatus,
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,

@@ -24,8 +24,8 @@ func TestCreateLabel(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	name := "label-without-label-def"
-	application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, name, tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &application)
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, name, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
@@ -37,7 +37,7 @@ func TestCreateLabel(t *testing.T) {
 	label := graphql.Label{}
 
 	// WHEN
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, setLabelRequest, &label)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, setLabelRequest, &label)
 
 	//THEN
 	require.NoError(t, err)
@@ -54,7 +54,7 @@ func TestCreateLabel(t *testing.T) {
 	updatedLabel := graphql.Label{}
 
 	// WHEN
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, setLabelRequest, &updatedLabel)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, setLabelRequest, &updatedLabel)
 
 	//THEN
 	require.NoError(t, err)
@@ -70,7 +70,7 @@ func TestCreateLabel(t *testing.T) {
 	delLabel := graphql.Label{}
 
 	// THEN
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, deleteApplicationLabelRequest, &delLabel)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteApplicationLabelRequest, &delLabel)
 	require.NoError(t, err)
 	assert.Equal(t, labelKey, delLabel.Key)
 }
@@ -82,8 +82,8 @@ func TestCreateScenariosLabel(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
+	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
 
 	t.Log("Check if scenarios LabelDefinition exists")
 	labelKey := "scenarios"
@@ -91,7 +91,7 @@ func TestCreateScenariosLabel(t *testing.T) {
 	getLabelDefinition := fixtures.FixLabelDefinitionRequest(labelKey)
 	ld := graphql.LabelDefinition{}
 
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getLabelDefinition, &ld)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getLabelDefinition, &ld)
 	require.NoError(t, err)
 
 	t.Log("Check if app was labeled with scenarios=default")
@@ -99,7 +99,7 @@ func TestCreateScenariosLabel(t *testing.T) {
 	getApp := fixtures.FixGetApplicationRequest(app.ID)
 	actualApp := graphql.ApplicationExt{}
 	// WHEN
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, getApp, &actualApp)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getApp, &actualApp)
 
 	//THEN
 	require.NoError(t, err)
@@ -125,9 +125,9 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application")
-	app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, tenantId, app.ID, conf.DefaultScenarioEnabled)
+	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantId, app.ID, conf.DefaultScenarioEnabled)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 
@@ -159,7 +159,7 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	updateLabelDefinitionRequest := fixtures.FixUpdateLabelDefinitionRequest(ldInputGQL)
 	labelDefinition := graphql.LabelDefinition{}
 
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, updateLabelDefinitionRequest, &labelDefinition)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateLabelDefinitionRequest, &labelDefinition)
 
 	require.NoError(t, err)
 
@@ -170,13 +170,13 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	var labelValue interface{} = scenarios
 
 	t.Logf("Set scenario label value %s on application", additionalValue)
-	fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, app.ID, labelKey, labelValue)
+	fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, app.ID, labelKey, labelValue)
 
 	t.Log("Check if new scenario label value was set correctly")
 	appRequest := fixtures.FixGetApplicationRequest(app.ID)
 	app = graphql.ApplicationExt{}
 
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, appRequest, &app)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, appRequest, &app)
 	require.NoError(t, err)
 
 	scenariosLabel, ok := app.Labels[labelKey].([]interface{})
@@ -196,9 +196,9 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application")
-	app, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "app", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &app)
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, tenantId, app.ID, conf.DefaultScenarioEnabled)
+	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantId, app.ID, conf.DefaultScenarioEnabled)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 
@@ -230,7 +230,7 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 	labelDefinition := graphql.LabelDefinition{}
 
 	// WHEN
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, updateLabelDefinitionRequest, &labelDefinition)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateLabelDefinitionRequest, &labelDefinition)
 	errMsg := fmt.Sprintf(`rule.validSchema=while validating schema for key %s: items.enum: At least one of the items must match, items.enum.0: items.enum.0 does not match: "%s"`, labelKey, defaultValue)
 
 	// THEN
@@ -248,32 +248,32 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	labelKeyFoo := "foo"
 	labelKeyBar := "bar"
 
-	firstApp, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "first", tenantId)
+	firstApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "first", tenantId)
 	require.NotEmpty(t, firstApp.ID)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &firstApp)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &firstApp)
 	require.NoError(t, err)
 
 	//Create second application
-	secondApp, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, "second", tenantId)
+	secondApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "second", tenantId)
 	require.NotEmpty(t, secondApp.ID)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantId, &secondApp)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &secondApp)
 	require.NoError(t, err)
 
 	//Set label "foo" on both applications
 	labelValueFoo := "val"
 
-	firstAppLabel := fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, firstApp.ID, labelKeyFoo, labelValueFoo)
+	firstAppLabel := fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, firstApp.ID, labelKeyFoo, labelValueFoo)
 	require.NotEmpty(t, firstAppLabel.Key)
 	require.NotEmpty(t, firstAppLabel.Value)
 
-	secondAppLabel := fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, secondApp.ID, labelKeyFoo, labelValueFoo)
+	secondAppLabel := fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, secondApp.ID, labelKeyFoo, labelValueFoo)
 	require.NotEmpty(t, secondAppLabel.Key)
 	require.NotEmpty(t, secondAppLabel.Value)
 
 	//Set label "bar" on first application
 	labelValueBar := "barval"
 
-	firstAppBarLabel := fixtures.SetApplicationLabel(t, ctx, dexGraphQLClient, firstApp.ID, labelKeyBar, labelValueBar)
+	firstAppBarLabel := fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, firstApp.ID, labelKeyBar, labelValueBar)
 	require.NotEmpty(t, firstAppBarLabel.Key)
 	require.NotEmpty(t, firstAppBarLabel.Value)
 
@@ -288,7 +288,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 
 	applicationRequest := fixtures.FixApplicationsFilteredPageableRequest(labelFilterGQL, 5, "")
 	applicationPage := graphql.ApplicationPageExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, applicationRequest, &applicationPage)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, applicationRequest, &applicationPage)
 	require.NoError(t, err)
 
 	//THEN
@@ -310,7 +310,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 
 	applicationRequest = fixtures.FixApplicationsFilteredPageableRequest(labelFilterGQL, 5, "")
 	applicationPage = graphql.ApplicationPageExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, applicationRequest, &applicationPage)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, applicationRequest, &applicationPage)
 	require.NoError(t, err)
 
 	//THEN
@@ -333,33 +333,33 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	labelKeyBar := "bar"
 
 	inputFirst := fixtures.FixRuntimeInput("first")
-	firstRuntime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &inputFirst)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &firstRuntime)
+	firstRuntime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &inputFirst)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &firstRuntime)
 	require.NoError(t, err)
 	require.NotEmpty(t, firstRuntime.ID)
 
 	//Create second runtime
 	inputSecond := fixtures.FixRuntimeInput("second")
-	secondRuntime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, dexGraphQLClient, tenantId, &inputSecond)
-	defer fixtures.CleanupRuntime(t, ctx, dexGraphQLClient, tenantId, &secondRuntime)
+	secondRuntime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &inputSecond)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &secondRuntime)
 	require.NoError(t, err)
 	require.NotEmpty(t, secondRuntime.ID)
 
 	//Set label "foo" on both runtimes
 	labelValueFoo := "val"
 
-	firstRuntimeLabel := fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, firstRuntime.ID, labelKeyFoo, labelValueFoo)
+	firstRuntimeLabel := fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, firstRuntime.ID, labelKeyFoo, labelValueFoo)
 	require.NotEmpty(t, firstRuntimeLabel.Key)
 	require.NotEmpty(t, firstRuntimeLabel.Value)
 
-	secondRuntimeLabel := fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, secondRuntime.ID, labelKeyFoo, labelValueFoo)
+	secondRuntimeLabel := fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, secondRuntime.ID, labelKeyFoo, labelValueFoo)
 	require.NotEmpty(t, secondRuntimeLabel.Key)
 	require.NotEmpty(t, secondRuntimeLabel.Value)
 
 	//Set label "bar" on first runtime
 	labelValueBar := "barval"
 
-	firstRuntimeBarLabel := fixtures.SetRuntimeLabel(t, ctx, dexGraphQLClient, tenantId, firstRuntime.ID, labelKeyBar, labelValueBar)
+	firstRuntimeBarLabel := fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, firstRuntime.ID, labelKeyBar, labelValueBar)
 	require.NotEmpty(t, firstRuntimeBarLabel.Key)
 	require.NotEmpty(t, firstRuntimeBarLabel.Value)
 
@@ -374,7 +374,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 
 	runtimesRequest := fixtures.FixRuntimesFilteredPageableRequest(labelFilterGQL, 5, "")
 	runtimePage := graphql.RuntimePageExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, runtimesRequest, &runtimePage)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, runtimesRequest, &runtimePage)
 	require.NoError(t, err)
 
 	//THEN
@@ -396,7 +396,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 
 	runtimesRequest = fixtures.FixRuntimesFilteredPageableRequest(labelFilterGQL, 5, "")
 	runtimePage = graphql.RuntimePageExt{}
-	err = testctx.Tc.RunOperation(ctx, dexGraphQLClient, runtimesRequest, &runtimePage)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, runtimesRequest, &runtimePage)
 	require.NoError(t, err)
 
 	//THEN
@@ -435,13 +435,13 @@ func TestListLabelDefinitions(t *testing.T) {
 	saveExample(t, createRequest.Query(), "create label definition")
 
 	output := graphql.LabelDefinition{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, createRequest, &output)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createRequest, &output)
 
 	firstLabelDefinition := &output
 	defer tenant.TestTenants.CleanupTenant(tenantID)
 
 	//WHEN
-	labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, dexGraphQLClient, tenantID)
+	labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID)
 	saveExample(t, fixtures.FixLabelDefinitionsRequest().Query(), "query label definition")
 
 	//THEN
@@ -469,7 +469,7 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 	}
 	var schema interface{} = scenarioSchema
 
-	fixtures.CreateLabelDefinitionWithinTenant(t, ctx, dexGraphQLClient, ScenariosLabel, schema, tenantID)
+	fixtures.CreateLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, ScenariosLabel, schema, tenantID)
 
 	appInput := graphql.ApplicationRegisterInput{
 		Name: name,
@@ -478,19 +478,19 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 		},
 	}
 
-	application, err := fixtures.RegisterApplicationFromInput(t, ctx, dexGraphQLClient, tenantID, appInput)
+	application, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenantID, appInput)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
-	defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenantID, &application)
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, dexGraphQLClient, tenantID, application.ID, conf.DefaultScenarioEnabled)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &application)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID, conf.DefaultScenarioEnabled)
 
 	//WHEN
 	appLabelRequest := fixtures.FixSetApplicationLabelRequest(application.ID, ScenariosLabel, []string{"Christmas"})
-	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, appLabelRequest, nil))
+	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, appLabelRequest, nil))
 
 	//remove last label
 	appLabelRequest = fixtures.FixSetApplicationLabelRequest(application.ID, ScenariosLabel, []string{""})
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, appLabelRequest, nil)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, appLabelRequest, nil)
 
 	//THEN
 	require.Error(t, err)
@@ -506,7 +506,7 @@ func TestGetScenariosLabelDefinitionCreatesOneIfNotExists(t *testing.T) {
 	labelDefinition := graphql.LabelDefinition{}
 
 	// WHEN
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenantID, getLabelDefinitionRequest, &labelDefinition)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, getLabelDefinitionRequest, &labelDefinition)
 
 	// THEN
 	require.NoError(t, err)
