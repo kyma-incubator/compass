@@ -66,6 +66,7 @@ type TenantProviderConfig struct {
 	SubscriptionProviderIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY,default=subscriptionProviderId"`
 }
 
+// EventsConfig contains configuration for Events API requests
 type EventsConfig struct {
 	OAuthConfig        tenantfetcher.OAuth2Config
 	APIConfig          tenantfetcher.APIConfig

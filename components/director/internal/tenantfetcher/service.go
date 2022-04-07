@@ -136,6 +136,7 @@ const (
 	chunkSizeForTenantOnDemand = 5
 )
 
+// SubaccountOnDemandService for an on-demand creation of a tenant for a subaccount
 type SubaccountOnDemandService struct {
 	queryConfig           QueryConfig
 	fieldMapping          TenantFieldMapping
@@ -394,6 +395,7 @@ func (s SubaccountService) SyncTenants() error {
 	return nil
 }
 
+// // SyncTenant fetches creation events for a subaccount and creates a tenant for the subaccount in case it doesn't exist
 func (s SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID string) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
