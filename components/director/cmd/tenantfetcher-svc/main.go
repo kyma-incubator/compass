@@ -19,6 +19,10 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"net/http"
 	"os"
 	"time"
@@ -35,6 +39,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
+	tf "github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 	tenantfetcher "github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
 
 	"github.com/gorilla/mux"
@@ -208,11 +213,50 @@ func registerTenantsHandler(ctx context.Context, router *mux.Router, cfg tenantf
 }
 
 func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, eventsCfg tenantfetcher.EventsConfig, tenantHandlerCfg tenantfetcher.HandlerConfig) {
-	fetcher := tenantfetcher.NewTenantFetcher(eventsCfg, tenantHandlerCfg)
+	onDemandSvc, err := createTenantFetcherOnDemandSvc(ctx, eventsCfg, tenantHandlerCfg)
+	exitOnError(err, "failed to create tenant fetcher on-demand service")
+
+	fetcher := tenantfetcher.NewTenantFetcher(*onDemandSvc)
 	tenantHandler := tenantfetcher.NewTenantFetcherHTTPHandler(fetcher, tenantHandlerCfg)
 
 	log.C(ctx).Infof("Registering fetch tenant on-demand endpoint on %s...", tenantHandlerCfg.TenantOnDemandHandlerEndpoint)
 	router.HandleFunc(tenantHandlerCfg.TenantOnDemandHandlerEndpoint, tenantHandler.FetchTenantOnDemand).Methods(http.MethodPost)
+}
+
+func createTenantFetcherOnDemandSvc(ctx context.Context, eventsCfg tenantfetcher.EventsConfig, handlerCfg tenantfetcher.HandlerConfig) (*tf.SubaccountOnDemandService, error) {
+	transact, closeFunc, err := persistence.Configure(ctx, handlerCfg.Database)
+	exitOnError(err, "Error while establishing the connection to the database")
+
+	defer func() {
+		err := closeFunc()
+		exitOnError(err, "Error while closing the connection to the database")
+	}()
+
+	eventAPIClient, err := tf.NewClient(eventsCfg.OAuthConfig, eventsCfg.AuthMode, eventsCfg.APIConfig, handlerCfg.ClientTimeout)
+	if nil != err {
+		return nil, err
+	}
+
+	tenantStorageConv := tenant.NewConverter()
+	uidSvc := uid.NewService()
+
+	labelDefConverter := labeldef.NewConverter()
+	labelDefRepository := labeldef.NewRepository(labelDefConverter)
+
+	labelConverter := label.NewConverter()
+	labelRepository := label.NewRepository(labelConverter)
+	labelService := label.NewLabelService(labelRepository, labelDefRepository, uidSvc)
+
+	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
+	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepository, labelService)
+
+	gqlClient := newInternalGraphQLClient(handlerCfg.DirectorGraphQLEndpoint, handlerCfg.ClientTimeout, handlerCfg.HTTPClientSkipSslValidation)
+	gqlClient.Log = func(s string) {
+		log.D().Debug(s)
+	}
+	directorClient := graphqlclient.NewDirector(gqlClient)
+
+	return tf.NewSubaccountOnDemandService(eventsCfg.QueryConfig, eventsCfg.TenantFieldMapping, eventAPIClient, transact, tenantStorageSvc, directorClient, handlerCfg.TenantProvider, tenantStorageConv), nil
 }
 
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {

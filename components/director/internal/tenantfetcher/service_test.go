@@ -35,6 +35,7 @@ var (
 
 func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 	// GIVEN
+	subaccountID := "subaccount-1"
 	provider := "default"
 
 	var (
@@ -53,7 +54,6 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 
 		subaccountEvent1 []byte
 		subaccountEvent2 []byte
-		//subaccountEvents []byte
 	)
 
 	eventsToJSONArray := func(events ...[]byte) []byte {
@@ -61,7 +61,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 	}
 
 	pageOneQueryParams := tenantfetcher.QueryParams{
-		"entityId": "subaccount-1",
+		"entityId": subaccountID,
 		"pageSize": "1",
 		"pageNum":  "1",
 	}
@@ -82,23 +82,22 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 		}
 
 		busTenant1GUID = "d1f08f02-2fda-4511-962a-17fd1f1aa477"
-
 		parentTenant1 = fixBusinessTenantMappingInput(busTenant1GUID, busTenant1GUID, provider, "", "", "", tenant.Account)
 		parentTenants = []model.BusinessTenantMappingInput{parentTenant1}
 
-		busSubaccount1 = fixBusinessTenantMappingInput("foo", "subaccount-1", provider, "subdomain-1", "test-region", parentTenant1.ExternalTenant, tenant.Subaccount)
+		busSubaccount1 = fixBusinessTenantMappingInput("foo", subaccountID, provider, "subdomain-1", "test-region", parentTenant1.ExternalTenant, tenant.Subaccount)
 		busSubaccounts = []model.BusinessTenantMappingInput{busSubaccount1}
 		businessSubaccount1BusinessMapping = busSubaccount1.ToBusinessTenantMapping(busTenant1GUID)
 
 		subaccountEvent1Fields = map[string]string{
-			tenantFieldMapping.IDField:         "subaccount-1",
+			tenantFieldMapping.IDField:         subaccountID,
 			tenantFieldMapping.NameField:       "foo",
 			tenantFieldMapping.RegionField:     "test-region",
 			tenantFieldMapping.SubdomainField:  "subdomain-1",
 			tenantFieldMapping.EntityTypeField: "Subaccount",
 		}
 		subaccountEvent2Fields = map[string]string{
-			tenantFieldMapping.IDField:         "subaccount-1",
+			tenantFieldMapping.IDField:         subaccountID,
 			tenantFieldMapping.NameField:       "bar",
 			tenantFieldMapping.RegionField:     "test-region",
 			tenantFieldMapping.SubdomainField:  "subdomain-2",
@@ -118,28 +117,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 		ExpectedError      error
 	}{
 		{
-			Name:            "Success processing create tenant for subaccount request",
-			TransactionerFn: txGen.ThatSucceeds,
-			TenantStorageSvcFn: func() *automock.TenantStorageService {
-				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
-				return svc
-			},
-			APIClientFn: func() *automock.EventAPIClient {
-				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
-				return client
-			},
-			GqlClientFn: func() *automock.DirectorGraphQLClient {
-				tenantsToCreate := append(parentTenants[:1], busSubaccounts[:1]...)
-				gqlClient := &automock.DirectorGraphQLClient{}
-				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(tenantConverter.MultipleInputToGraphQLInput(tenantsToCreate))).Return(nil)
-				return gqlClient
-			},
-			ExpectedError: nil,
-		},
-		{
-			Name:            "Success when no current tenants in storage and on event for subaccount creation",
+			Name:            "Success processing create a tenant for a subaccount request",
 			TransactionerFn: txGen.ThatSucceeds,
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
@@ -187,7 +165,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 			ExpectedError: errors.New("while fetching subaccount by ID that is not found"),
 		},
 		{
-			Name:            "Error when multiple create events for a subaccount",
+			Name:            "Error when multiple create events found for a subaccount",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
@@ -203,7 +181,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 			ExpectedError: errors.New("while fetching subaccount by ID and more than one is found"),
 		},
 		{
-			Name:            "Error when expected page is empty",
+			Name:            "Error when events page is empty",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
@@ -219,7 +197,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 			ExpectedError: errors.New("while fetching subaccount by ID that is not found"),
 		},
 		{
-			Name:            "Error when couldn't fetch created subaccounts event page",
+			Name:            "Error when cannot fetch events page for a subaccount creation",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
@@ -278,7 +256,6 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
 				tenantsToCreate := append(parentTenants[:1], busSubaccount1)
-
 				gqlClient := &automock.DirectorGraphQLClient{}
 				gqlClient.On("WriteTenants", mock.Anything, tenantConverter.MultipleInputToGraphQLInput(tenantsToCreate)).Return(testErr)
 				return gqlClient
@@ -316,16 +293,14 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			beforeEach()
 			persist, transact := testCase.TransactionerFn()
-			apiClient := testCase.APIClientFn()
 			tenantStorageSvc := testCase.TenantStorageSvcFn()
+			apiClient := testCase.APIClientFn()
 			gqlClient := testCase.GqlClientFn()
 			svc := tenantfetcher.NewSubaccountOnDemandService(tenantfetcher.QueryConfig{
 				PageNumField:    "pageNum",
 				PageSizeField:   "pageSize",
-				TimestampField:  "timestamp",
-				RegionField:     "region",
-				PageSizeValue:   "1",
 				PageStartValue:  "1",
+				PageSizeValue:   "1",
 				SubaccountField: "entityId",
 			}, tenantfetcher.TenantFieldMapping{
 				DetailsField:           "eventData",
@@ -344,7 +319,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 			}, apiClient, transact, tenantStorageSvc, gqlClient, provider, tenantConverter)
 
 			// WHEN
-			err := svc.SyncTenant(context.TODO(), "subaccount-1")
+			err := svc.SyncTenant(context.TODO(), subaccountID)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -2660,10 +2635,6 @@ func UnusedRuntimeStorageSvc() *automock.RuntimeService {
 
 func UnusedLabelSvc() *automock.LabelService {
 	return &automock.LabelService{}
-}
-
-func UnusedLabelDefConverter() *automock.LabelDefConverter {
-	return &automock.LabelDefConverter{}
 }
 
 func UnusedGQLClient() *automock.DirectorGraphQLClient {

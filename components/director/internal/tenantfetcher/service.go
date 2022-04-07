@@ -44,6 +44,7 @@ type TenantFieldMapping struct {
 	DiscriminatorValue     string `envconfig:"optional,APP_MAPPING_VALUE_DISCRIMINATOR"`
 
 	RegionField     string `envconfig:"APP_MAPPING_FIELD_REGION"`
+	EntityIDField   string `envconfig:"default=entityId,APP_MAPPING_FIELD_ENTITY_ID"`
 	EntityTypeField string `envconfig:"default=entityType,APP_MAPPING_FIELD_ENTITY_TYPE"`
 
 	// This is not a value from the actual event but the key under which the GlobalAccountGUIDField will be stored to avoid collisions
@@ -136,18 +137,13 @@ const (
 )
 
 type SubaccountOnDemandService struct {
-	tenantsRegions []string
-
-	queryConfig  QueryConfig
-	fieldMapping TenantFieldMapping
-
-	eventAPIClient EventAPIClient
-	retryAttempts  uint
-	toEventsPage   func([]byte) *eventsPage
-
-	transact             persistence.Transactioner
-	tenantStorageService TenantStorageService
-
+	queryConfig           QueryConfig
+	fieldMapping          TenantFieldMapping
+	eventAPIClient        EventAPIClient
+	retryAttempts         uint
+	toEventsPage          func([]byte) *eventsPage
+	transact              persistence.Transactioner
+	tenantStorageService  TenantStorageService
 	gqlClient             DirectorGraphQLClient
 	providerName          string
 	tenantInsertChunkSize int
