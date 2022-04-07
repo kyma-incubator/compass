@@ -144,7 +144,7 @@ metadata:
 spec:
   # Configuration of oathkeeper for secure endpoint internal communication with compass gateway
   upstream:
-    url: "http://compass-gateway.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.gateway.port }}"
+    url: "http://compass-tenant-fetcher.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.gateway.port }}"
   match:
     methods: ["POST"]
     url: <http|https>://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.tenantFetcher.prefix }}/<.*>
