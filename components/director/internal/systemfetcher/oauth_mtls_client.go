@@ -22,8 +22,8 @@ type oauthMtlsClient struct {
 // NewOauthMtlsClient missing docs
 func NewOauthMtlsClient(oauthCfg oauth.Config, certCache auth.CertificateCache, client *http.Client) *oauthMtlsClient {
 	protocol := oauthCfg.TokenEndpointProtocol + "://"
-	tokenParsedURL, _ := url.Parse(oauthCfg.TokenBaseURL)
-	if len(tokenParsedURL.Scheme) != 0 {
+	tokenParsedURL, err := url.Parse(oauthCfg.TokenBaseURL)
+	if err == nil && len(tokenParsedURL.Scheme) != 0 {
 		protocol = ""
 	}
 	return &oauthMtlsClient{
