@@ -494,11 +494,14 @@ global:
       consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
     containerName: "tenant-fetcher"
     oauth:
+      client: ""
+      secret: ""
+      tokenURL: ""
       tokenPath: ""
     secret:
-      name: "compass-tenant-fetcher-secret-job1"
+      name: "compass-tenant-fetcher-secret"
       clientIdKey: client-id
-      oauthMode: "oauth-mtls"
+      oauthMode: oauth-mtls
       clientCertKey: client-cert
       clientKeyKey: client-key
       oauthUrlKey: url
