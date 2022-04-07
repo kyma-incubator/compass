@@ -1,55 +1,54 @@
 # Asynchronous Operations in Compass
 
-In order to increase the response time for requests in Compass, a new asynchronous mechanism for required external calls is introduced.
+To increase the response time for requests in Compass, a new asynchronous mechanism for required external calls is introduced.
 
 ## Use Cases
+The list below outlines the uses cases that have enabled asynchronous APIs in CMP. These asynchronous APIs contain additional logic that is run separately of the main transaction. The additional API logic for the asynchronous functionality is part of the API business logic.  
 
-Currently the following use cases exist for enabling asynchronously APIs for CMP and respectively for having out-of-transaction logic executed as part of the API business logic:
-
-* Register application → fetch ORD documents from the application
-* Request one time token for pairing from remote token issuer service
-* Delete application → Notify the integration system or the LoB application that it has to clean up any artifacts that were created specifically for this application pairing
-* Request credentials for a particular usage of the APIs in a application bundle → notify integration application or LoB application that a new set of credentials is needed
-* Delete credentials for a particular usage of the APIs in a application bundle →  notify the integration application or LoB application that a set of credentials is no longer needed
-* Fetch requests for fetching specs for apiDefinitions and eventDefinitions
+Asynchronous enabled operations:
+* When registering an application (system), separately fetch ORD documents from the application.
+* When pairing an application (system), separately request an one time token from a remote token issuer service.
+* When deleting an application (system), separately notify the integration system or the LoB application that it must clean up the artifacts that were created specifically for this application pairing.
+* When requesting (or deleting) credentials for a particular usage of the APIs in a application bundle, separately notify the integration application or the LoB application that a new set of credentials is needed (or no longer needed).
+* Separately fetch requests for fetching specifications for API definitions and event definitions.
 
 ## Asynchronous Flow
 
 ### Operations
 
-In order to achieve delayed execution of part of the business logic of the API (for example running remote calls separately from the transaction) we will introduce a new intermediary entity that holds information about what more should be done apart from storing/updating/deleting the resource in the database. We will refer to this entity as _operation_. Operations will also be used so that Compass can track the progress of asynchronous requests (_in progress_, _succeeded_, _failed_).
+To achieve a delayed run of a given part of the API business logic (for example, running remote calls separately from the main transaction), it is introduced an intermediary entity that holds some additional information. This information includes all additional tasks that must be performed, except for storing, updating, or deleting resources in the database. This intermediary entity is referred to as _operation_. Operations are also used so that Compass can track the progress of asynchronous requests. The statuses that are used are: _in progress_, _succeeded_, and _failed_.
 
-Operations are modeled as [Custom Resource Definitions](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) in Kubernetes, and are created by an entity called Scheduler - more details on the Scheduler can be found in the [next section](#scheduler).
+Operations are modeled as [Custom Resource Definitions](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) (CRD) in Kubernetes, and are created by an entity called Scheduler. For more information, see the section [Scheduler](#scheduler) that follows.
 
-An operation CRD holds the following information:
+An Operation CRD holds the following information:
 
-* **Specification** of the operation - describes what needs to be done
-    * **OperationID** - uniquely identifies an operation
-    * **OperationType** - Create, Update, Delete
-    * **OperationCategory** - semantically categorizes the operation (puts it in one "bucket" with other operations of the same category) - for GraphQL operations this would be the name of the mutation (e.g. registerApplication, unregisterRuntime) 
-    * **ResourceID** - the ID of the top level resource targeted by this operation (e.g. `applicationID`)
-    * **ResourceType** - the type of the top level resource targeted by this operation (for GraphQL mutations this would be the owning entity (e.g. for `registerApplication` that also contains bundles and APIs, this would be the `Application` type)
-    * **CorrelationID** - the correlation ID that was used for uniquely identifying this request. Storing it in the operation allows for whoever processes the operation later on, to also reuse the same correlation ID for outbound calls
-    * **WebhookIDs** - a set of webhooks that should be ran as part of this operation
-    * **RelatedResources** - an array of pairs of `ResourceType` and `ResourceID` that are related to the top level resource that is targeted by the operation
-    * **RequestObject** - JSON containing the referenced object details (e.g. application with its ID, name, template ID, etc.), tenant ID of the object, and also the headers from the initial incoming request, which can be forwarded when external calls are made.
+* **Specification** of the operation - Describes what needs to be done.
+    * **OperationID** - A unique identifier of an operation.
+    * **OperationType** - Operation type can be one of the following: create, update, or delete.
+    * **OperationCategory** - Semantic category of the operation. It is used to group operations of the same category. For example, GraphQL operations are grouped by the name of the mutation (registerApplication or unregisterRuntime). 
+    * **ResourceID** - The ID of the top-level resource that is targeted by the operation (for example, `applicationID`).
+    * **ResourceType** - The type of the top-level resource that is targeted by the operation. For example, for GraphQL mutations it is the owning entity; for  `registerApplication` that also contains bundles and APIs it is the `Application` type.
+    * **CorrelationID** - A correlation ID that is used to identify the request uniquely. When it is stored in the operation, it allows any follow-on processing of the operation to also reuse the same correlation ID for outbound calls.
+    * **WebhookIDs** - A set of webhooks that are run as part of the operation.
+    * **RelatedResources** - An array of `ResourceType` and `ResourceID` pairs, related to the top-level resource, which is targeted by the operation.
+    * **RequestObject** - A JSON that contains the referenced object details (for example, an application, its ID, name, template ID, etc.), tenant ID of the object, and the headers from the initial incoming request, which can be forwarded when external calls are made.
 
-* **Status** - describes how far the operation is with the execution and what is the final result
-    * **Webhooks** - contains details about the execution of the webhooks that need to finish in order for the operation to be successful
-        * **WebhookID**
-        * **RetriesCount** - how many times the webhook was retried so far
-        * **WebhookPollURL** - for determining the status of long running/async webhooks
-        * **LastPollTimestamp** - the last time polling the status for long running/async webhooks was attempted
-        * **State** - _Success_, _Failed_, _In Progress_
-    * **Condition** - _Ready_, _Error_ - when the operation is finished one will be `true` and the other - `false`, each of them can contain `message` property with additional details regarding the status (e.g. an error message from a remote call)
-    * **Phase** - _Success_, _Failed_, _In Progress_
+* **Status** - Used for the operation progress and the final result of it.
+    * **Webhooks** - Contains details about the execution of the webhooks that need to finish to ensure a successful operation. 
+        * **WebhookID** - A unique webhook identifier.
+        * **RetriesCount** - Number of webhook retries so far.
+        * **WebhookPollURL** - Determines the status of long running or asynchronous webhooks.
+        * **LastPollTimestamp** - A timestamp of the last polling attempt on the status of long running or asynchronous webhooks.
+        * **State** - A state of the webhook, such as, _In Progress_, _Success_, or _Failed_.
+    * **Condition** - Valid values are: _Ready_ and _Error_. When the operation finishes, its result is `true` or `false`. The result can contain a property `message` that has additional details regarding the status (for example, an error message from the remote call).
+    * **Phase** - Operation execution phase. Valid values are: _In Progress_, _Success_, or _Failed_.
 
 ### Scheduler
-The Scheduler is currently a part of Director and is used as a GoLang library that can create and update Operation CRDs when an asynchronous operation is being processed in Director.
+The Scheduler is part of the Director and is used as a GoLang library that can create and update Operation CRDs when an asynchronous operation is processed in Director.
 
-The Scheduler is responsible for checking if there is an operation currently in progress, and if it is, it cancels the request - the previous operation should be finalized before a new one is started.
+The Scheduler is responsible for checking the progress of the operations. If there is an operation in progress, it cancels the new requests as the previous operation must be finalized before a new one is started.
 
 ### Operations Controller
 The Operations Controller component is a [Kubernetes controller](https://kubernetes.io/docs/concepts/architecture/controller/) that takes care of _Operation CRDs_ created by the Scheduler.
 
-More details on its reconciliation loops can be found in the respective documents for the supported operation types.
+For more information about its reconciliation loops, see the corresponding documents of the supported operation types.
