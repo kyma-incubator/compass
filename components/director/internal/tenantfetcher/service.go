@@ -394,7 +394,7 @@ func (s SubaccountService) SyncTenants() error {
 	return nil
 }
 
-//SyncTenant fetches creation events for a subaccount and creates a tenant for the subaccount in case it doesn't exist
+// SyncTenant fetches creation events for a subaccount and creates a tenant for the subaccount in case it doesn't exist
 func (s SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID string) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
