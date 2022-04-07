@@ -127,6 +127,13 @@ spec:
             initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              port: {{ .Values.global.nsAdapter.external.port }}
+              path: "/readyz"
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            periodSeconds: {{.Values.readinessProbe.periodSeconds }}
           volumeMounts:
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy

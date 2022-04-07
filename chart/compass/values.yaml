@@ -89,31 +89,31 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2242"
+      version: "PR-2297"
     connectivity_adapter:
       dir:
-      version: "PR-2242"
+      version: "PR-2297"
     pairing_adapter:
       dir:
-      version: "PR-2242"
+      version: "PR-2297"
     director:
       dir:
-      version: "PR-2281"
+      version: "PR-2303"
     gateway:
       dir:
-      version: "PR-2242"
+      version: "PR-2297"
     operations_controller:
       dir:
-      version: "PR-2242"
+      version: "PR-2297"
     ord_service:
       dir:
-      version: "PR-63"
+      version: "PR-65"
     schema_migrator:
       dir:
-      version: "PR-2235"
+      version: "PR-2297"
     system_broker:
       dir:
-      version: "PR-2242"
+      version: "PR-2297"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -121,13 +121,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2278"
+      version: "PR-2297"
     console:
       dir:
-      version: "PR-62"
+      version: "PR-64"
     e2e_tests:
       dir:
-      version: "PR-2282"
+      version: "PR-2293"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -193,6 +193,7 @@ global:
       secret:
         name: "region-instances-credentials"
         key: "keyConfig"
+        path: "/tmp"
       clientIdPath: "clientId"
       clientSecretPath: "clientSecret"
       urlPath: "url"
@@ -710,6 +711,7 @@ global:
       externalCertTestJobName: "external-certificate-rotation-test-job"
       certSvcInstanceTestSecretName: "cert-svc-secret"
       consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+      skipPattern: ""
       subscriptionOauthSecret:
         manage: false
         name: compass-subscription-secret
