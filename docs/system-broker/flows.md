@@ -1,13 +1,12 @@
 # System Broker Flows
 
-The System Broker is an [Open Service Broker API](https://www.openservicebrokerapi.org/) compliant component, which provides access to applications (systems) credentials for OSB platforms.
+The System Broker is an [Open Service Broker API](https://www.openservicebrokerapi.org/) (OSB) compliant component, which provides access to applications (systems) credentials for OSB platforms.
 
 ## Broker Catalog
-The OSB catalog contains services, and their plans. Compass represents applications as services, and their bundles as plans - that way, one can requests credentials for a specific bundle.
+The OSB catalog contains services and their plans. Compass represents applications as services and their bundles as plans. This way, you can requests credentials for a specific bundle.
 
 ### Specifications
-URLs pointing to the specifications API are included in the OSB plan metadata as part of the catalog response.
-Specifications API returns a single JSON, XML, or YAML document containing the specification of the API, or event definition defined by the specified query parameters.
+URLs that point to the specifications API are included in the OSB plan metadata as part of the catalog response. Specifications API returns a single JSON, XML, or YAML document that contains the specification of the API, or event definition defined by the specified query parameters.
 
 Example link to a specifications file:
  `https://compass-gateway.kyma.local/broker/specifications?app_id=53acc071-42ec-4561-962d-bf3dbc286cb7&bundle_id=b2bb4664-930b-491f-a922-8ac586ec84f9&definition_id=0c17b77e-530b-47d8-a23f-ad462ed4ee0a`
@@ -65,11 +64,10 @@ Example catalog containing specifications metadata:
 ```
 
 ## Provision and Deprovision
-Provision and deprovision are asynchronous and require `accepts_incomplete=true`.
-Those are the operations that create and delete credentials for the chosen application and bundle.
+Provision and deprovision are asynchronous operations that require the `accepts_incomplete=true` parameter. These operations either create or delete credentials for the chosen application and bundle.
 
 ## Bind and Unbind
-Both are synchronous and do not trigger any external calls, just retrieve or delete the credentials present in the Director DB, which were created during the instance provisioning.
+Both bind and unbind operations are synchronous and do not trigger any external calls. They just retrieve or delete the credentials in the Director DB, which were created during the instance provisioning.
 
 Example OSB bind response:
 ```json
