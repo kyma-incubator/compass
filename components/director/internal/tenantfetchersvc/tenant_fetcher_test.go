@@ -2,13 +2,14 @@ package tenantfetchersvc
 
 import (
 	"context"
+	"testing"
+
 	domainTenant "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/stretchr/testify/require"
-	"testing"
 
 	tfautomock "github.com/kyma-incubator/compass/components/director/internal/tenantfetcher/automock"
 

@@ -19,13 +19,14 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"net/http"
-	"os"
-	"time"
 
 	graphqlclient "github.com/kyma-incubator/compass/components/director/pkg/graphql_client"
 	gcli "github.com/machinebox/graphql"
