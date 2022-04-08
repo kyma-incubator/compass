@@ -96,6 +96,14 @@ func main() {
 		exitOnError(errors.New("missing tenant path parameter"), "Error while loading app handler config")
 	}
 
+	transact, closeFunc, err := persistence.Configure(ctx, cfg.Handler.Database)
+	exitOnError(err, "Error while establishing the connection to the database")
+
+	defer func() {
+		err := closeFunc()
+		exitOnError(err, "Error while closing the connection to the database")
+	}()
+
 	httpClient := &http.Client{
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -103,7 +111,7 @@ func main() {
 		},
 	}
 
-	handler := initAPIHandler(ctx, httpClient, cfg)
+	handler := initAPIHandler(ctx, httpClient, cfg, transact)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
 	go func() {
@@ -115,7 +123,7 @@ func main() {
 	runMainSrv()
 }
 
-func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config) http.Handler {
+func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, transact persistence.Transactioner) http.Handler {
 	logger := log.C(ctx)
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
@@ -126,7 +134,7 @@ func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config) ht
 
 	tenansOnDemandAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, tenansOnDemandAPIRouter, cfg.SecurityConfig, []string{cfg.SecurityConfig.FetchTenantOnDemandScope})
-	registerTenantsOnDemandHandler(ctx, tenansOnDemandAPIRouter, cfg.EventsCfg, cfg.Handler)
+	registerTenantsOnDemandHandler(ctx, tenansOnDemandAPIRouter, cfg.EventsCfg, cfg.Handler, transact)
 
 	healthCheckRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
 	logger.Infof("Registering readiness endpoint...")
@@ -213,8 +221,8 @@ func registerTenantsHandler(ctx context.Context, router *mux.Router, cfg tenantf
 	router.HandleFunc(cfg.DependenciesEndpoint, tenantHandler.Dependencies).Methods(http.MethodGet)
 }
 
-func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, eventsCfg tenantfetcher.EventsConfig, tenantHandlerCfg tenantfetcher.HandlerConfig) {
-	onDemandSvc, err := createTenantFetcherOnDemandSvc(ctx, eventsCfg, tenantHandlerCfg)
+func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, eventsCfg tenantfetcher.EventsConfig, tenantHandlerCfg tenantfetcher.HandlerConfig, transact persistence.Transactioner) {
+	onDemandSvc, err := createTenantFetcherOnDemandSvc(eventsCfg, tenantHandlerCfg, transact)
 	exitOnError(err, "failed to create tenant fetcher on-demand service")
 
 	fetcher := tenantfetcher.NewTenantFetcher(*onDemandSvc)
@@ -224,15 +232,7 @@ func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, eve
 	router.HandleFunc(tenantHandlerCfg.TenantOnDemandHandlerEndpoint, tenantHandler.FetchTenantOnDemand).Methods(http.MethodPost)
 }
 
-func createTenantFetcherOnDemandSvc(ctx context.Context, eventsCfg tenantfetcher.EventsConfig, handlerCfg tenantfetcher.HandlerConfig) (*tf.SubaccountOnDemandService, error) {
-	transact, closeFunc, err := persistence.Configure(ctx, handlerCfg.Database)
-	exitOnError(err, "Error while establishing the connection to the database")
-
-	defer func() {
-		err := closeFunc()
-		exitOnError(err, "Error while closing the connection to the database")
-	}()
-
+func createTenantFetcherOnDemandSvc(eventsCfg tenantfetcher.EventsConfig, handlerCfg tenantfetcher.HandlerConfig, transact persistence.Transactioner) (*tf.SubaccountOnDemandService, error) {
 	eventAPIClient, err := tf.NewClient(eventsCfg.OAuthConfig, eventsCfg.AuthMode, eventsCfg.APIConfig, handlerCfg.ClientTimeout)
 	if nil != err {
 		return nil, err
