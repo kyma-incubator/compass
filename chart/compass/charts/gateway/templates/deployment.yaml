@@ -62,7 +62,7 @@ spec:
             - name: APP_AUDITLOG_ENABLED
               value: "{{ .Values.gateway.auditlog.enabled }}"
             - name: APP_AUDIT_LOG_MSG_BODY_SIZE_LIMIT
-              value: {{.Values.auditLog.maxBodySizeBytes}}
+              value: "{{ .Values.auditLog.maxBodySizeBytes }}"
             {{ if .Values.gateway.auditlog.enabled }}
             {{ if eq .Values.gateway.auditlog.authMode "basic"}}
             - name: APP_AUDITLOG_AUTH_MODE
