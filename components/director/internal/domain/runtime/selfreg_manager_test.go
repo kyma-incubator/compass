@@ -39,14 +39,13 @@ var testConfig = config.SelfRegConfig{
 	SelfRegisterNameQueryParam:      "testNameQuery",
 	SelfRegisterTenantQueryParam:    "testTenantQuery",
 	SelfRegisterRequestBodyPattern:  `{"%s":"test"}`,
+	SelfRegisterSecretPath:          "testdata/TestSelfRegisterManager_PrepareRuntimeForSelfRegistration.golden",
 	InstanceClientIDPath:            "clientId",
 	InstanceClientSecretPath:        "clientSecret",
 	InstanceURLPath:                 "url",
 	InstanceTokenURLPath:            "tokenUrl",
 	InstanceCertPath:                "clientCert",
 	InstanceKeyPath:                 "clientKey",
-	InstanceConfigs: `{"test-region":{"clientId":"client_id","clientSecret":"client_secret","url":"https://test-url-second.com","tokenUrl":"https://test-token-url-second.com","clientCert":"cert","clientKey":"key"},
-					  "fake-region":{"clientId":"client_id_2","clientSecret":"client_secret_2","url":"https://test-url      -second.com","tokenUrl":"https://test-token-url-second.com","clientCert":"cert2","clientKey":"key2"}}`,
 	RegionToInstanceConfig: map[string]config.InstanceConfig{
 		"test-region": {
 			ClientID:     "client_id",
@@ -322,12 +321,10 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 
 func TestNewSelfRegisterManager(t *testing.T) {
 	t.Run("Error when creating self register manager fails", func(t *testing.T) {
-		cfg := config.SelfRegConfig{
-			InstanceConfigs: `{"url"`,
-		}
+		cfg := config.SelfRegConfig{}
 		manager, err := runtime.NewSelfRegisterManager(cfg, nil)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "failed to validate instance configs")
+		require.Contains(t, err.Error(), "self registration secret path cannot be empty")
 		require.Nil(t, manager)
 	})
 }

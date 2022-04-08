@@ -180,11 +180,6 @@ spec:
               value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY
               value: {{ .Values.global.tenantFetcher.server.consumerSubaccountIdsLabelKey }}
-            - name: APP_SELF_REGISTER_AGGREGATED_INSTANCE_CONFIGS
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.director.selfRegister.secret.name }}
-                  key: {{ .Values.global.director.selfRegister.secret.key }}
             - name: APP_SELF_REGISTER_INSTANCE_CLIENT_ID_PATH
               value: {{ .Values.global.director.selfRegister.clientIdPath }}
             - name: APP_SELF_REGISTER_INSTANCE_CLIENT_SECRET_PATH
@@ -217,6 +212,8 @@ spec:
               value: {{ .Values.global.director.selfRegister.tenantQueryParam }}
             - name: APP_SELF_REGISTER_REQUEST_BODY_PATTERN
               value: {{ .Values.global.director.selfRegister.requestBodyPattern | quote }}
+            - name: APP_SELF_REGISTER_SECRET_PATH
+              value: "{{ .Values.global.director.selfRegister.secret.path }}/{{ .Values.global.director.selfRegister.secret.key }}"
             - name: APP_SELF_REGISTER_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.http.client.skipSSLValidation }}"
             - name: APP_SELF_REGISTER_OAUTH_MODE
@@ -242,6 +239,9 @@ spec:
             timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.readinessProbe.periodSeconds }}
           volumeMounts:
+            - name: self-reg-secret-volume
+              mountPath: {{ .Values.global.director.selfRegister.secret.path }}
+              readOnly: true
             - mountPath: /config
               name: director-config
             - mountPath: /data/static-groups.yaml
@@ -266,6 +266,9 @@ spec:
           {{- end }}
           {{end}}
       volumes:
+        - name: self-reg-secret-volume
+          secret:
+            secretName: {{ .Values.global.director.selfRegister.secret.name }}
         - name: director-config
           configMap:
             name: {{ template "fullname" . }}-config
