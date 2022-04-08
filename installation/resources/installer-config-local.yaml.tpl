@@ -168,7 +168,6 @@ data:
   global.tenantFetcher.secret.oauthUrlKey: "url"
   global.tenantFetcher.secret.skipSSLValidation: "true"
   global.tenantFetcher.oauth.client: "client_id"
-  global.tenantFetcher.oauth.secret: "client_secret"
   global.tenantFetcher.oauth.tokenURL: '{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'
   global.tenantFetcher.oauth.tokenPath: "/cert/token"
 ---
