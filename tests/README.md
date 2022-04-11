@@ -24,7 +24,7 @@ The global Makefile is located in the root tests directory `compass/tests/Makefi
 - `e2e-test-clean` - In case of early termination of the `e2e-test`, the command cleans up the `cluster-test-suite` and `test-definition` created by the `e2e-test` after the test is carried out.
 
 ### Local Makefile
-Each Compass component has its own test directory. It contains local a Makefile that supports the following commands:
+Each Compass component has its own test directory. It contains a local Makefile that supports the following commands:
 
 - `e2e-test` - Creates a new cluster-test-suite matching the given component's test-definition. Then, runs the tests and provides information about the current status. Finally, cleans up after the test is carried out.
 - `e2e-test-clean` - In case of early termination of the `e2e-test`, the command cleans up the `cluster-test-suite` and `test-definition` created by the `e2e-test` after the test is carried out.
