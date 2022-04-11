@@ -89,31 +89,31 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2242"
+      version: "PR-2297"
     connectivity_adapter:
       dir:
-      version: "PR-2242"
+      version: "PR-2297"
     pairing_adapter:
       dir:
-      version: "PR-2242"
+      version: "PR-2297"
     director:
       dir:
-      version: "PR-2263"
+      version: "PR-2303"
     gateway:
       dir:
-      version: "PR-2242"
+      version: "PR-2297"
     operations_controller:
       dir:
-      version: "PR-2242"
+      version: "PR-2297"
     ord_service:
       dir:
-      version: "PR-63"
+      version: "PR-65"
     schema_migrator:
       dir:
-      version: "PR-2235"
+      version: "PR-2297"
     system_broker:
       dir:
-      version: "PR-2242"
+      version: "PR-2297"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -121,13 +121,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2242"
+      version: "PR-2297"
     console:
       dir:
-      version: "PR-56"
+      version: "PR-64"
     e2e_tests:
       dir:
-      version: "PR-2290"
+      version: "PR-2293"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -193,6 +193,7 @@ global:
       secret:
         name: "region-instances-credentials"
         key: "keyConfig"
+        path: "/tmp"
       clientIdPath: "clientId"
       clientSecretPath: "clientSecret"
       urlPath: "url"
@@ -489,6 +490,7 @@ global:
       regionPathParam: "region"
       subscriptionProviderLabelKey: "subscriptionProviderId"
       consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
+    containerName: "tenant-fetcher"
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     issuerLocality: "local" # In local setup we have manually created connector CA certificate with 'local' Locality property
@@ -537,7 +539,7 @@ global:
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
-    globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8086/.well-known/open-resource-discovery
+    globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8087/.well-known/open-resource-discovery
     maxOrdParallelDownloads: 4
   systemFetcher:
     enabled: false
@@ -552,11 +554,11 @@ global:
     # can be put in the queue for processing before blocking. It is best for the queue to be about 2 times bigger than the parallellism
     queueSize: 100
     # fetchRequestTimeout - shows the timeout to wait for oauth token and for fetching systems (in one request) separately
-    fetchRequestTimeout: "5s"
+    fetchRequestTimeout: "15s"
     # directorRequestTimeout - graphql requests timeout to director
     directorRequestTimeout: "30s"
     dbPool:
-      maxOpenConnections: 2
+      maxOpenConnections: 20
       maxIdleConnections: 2
     # systemsAPIEndpoint - endpoint of the service to fetch systems from
     systemsAPIEndpoint: ""
@@ -578,7 +580,7 @@ global:
       tokenPath: "/cert/token"
       scopesClaim: "scopes"
       tenantHeaderName: "x-zid"
-      tokenRequestTimeout: 10s
+      tokenRequestTimeout: 15s
       skipSSLValidation: true
     secret:
       name: "compass-system-fetcher-secret"
@@ -588,6 +590,7 @@ global:
       pageSize: 200
       sizeParam: "$top"
       skipParam: "$skip"
+    containerName: "system-fetcher"
   tenantFetchers:
     job1:
       enabled: false
@@ -660,9 +663,11 @@ global:
     unsecuredPort: 8083
     basicSecuredPort: 8084
     oauthSecuredPort: 8085
-    ordGlobalRegistryPort: 8086
+    ordGlobalRegistryCertPort: 8086
+    ordGlobalRegistryUnsecuredPort: 8087
     certSecuredHost: compass-external-services-mock-sap-mtls
     ordCertSecuredHost: compass-external-services-mock-sap-mtls-ord
+    ordGlobalCertSecuredHost: compass-external-services-mock-sap-mtls-global-ord-registry
     unSecuredHost: compass-external-services-mock
     host: compass-external-services-mock.compass-system.svc.cluster.local
     regionInstancesCredentials:
@@ -706,6 +711,7 @@ global:
       externalCertTestJobName: "external-certificate-rotation-test-job"
       certSvcInstanceTestSecretName: "cert-svc-secret"
       consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+      skipPattern: ""
       subscriptionOauthSecret:
         manage: false
         name: compass-subscription-secret

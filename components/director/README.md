@@ -46,7 +46,7 @@ $ docker run --rm -p 5432:5432 -e POSTGRES_PASSWORD=pgsql@12345 postgres
 When you have the PostgreSQL instance running, you must import the database schema by running the following command:
 
 ```bash
-$ PGPASSWORD=pgsql@12345 psql -U postgres -W -h 127.0.0.1 -f <(cat components/schema-migrator/migrations/*.up.sql)
+$ PGPASSWORD=pgsql@12345 psql -U postgres -W -h 127.0.0.1 -f <(cat components/schema-migrator/migrations/director/*.up.sql)
 ```
 
 ### Configuration
