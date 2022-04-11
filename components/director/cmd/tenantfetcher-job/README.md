@@ -2,7 +2,7 @@
 
 ## Overview
 
-This application fetches events containing information about created, moved, and deleted tenants. Then, based on the event type, it performs the corresponding create, update, or move operation on the tenant event in the Director database.
+This application fetches events containing information about created, moved, and deleted tenants. Then, based on the event type, it performs the corresponding create, update, or delete operation on the tenant event in the Director database.
 
 ## Details
 
