@@ -50,5 +50,5 @@ The System Fetcher requires access to:
 1. API that can be called to fetch systems. For details about implementing the System Registry API that the System Fetcher can consume, see the [Systems Endpoint](#systems-endpoint) section in this document. 
 
 ### Run
-Since the ORD Aggregator is usually a short-lived process, it is useful to start and debug it directly from your IDE.
+Since the System Fetcher is usually a short-lived process, it is useful to start and debug it directly from your IDE.
 Make sure that you provide all required configuration properties as environment variables.
