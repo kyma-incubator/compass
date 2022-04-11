@@ -250,7 +250,7 @@ The scopes are added to the authentication session in Tenant Mapping Handler. Th
 
 **Compass Director Flow:**
 
-1. Runtime/Application makes a call to the Director and the externally-issued certificate-secured subdomain in it.
+1. Runtime/Application makes a call to the Director via an externally-issued client certificate on a certificate-secured endpoint of Compass. Compass is configured to trust externally-issued client certificates on that endpoint. 
 1. Istio verifies the client certificate. If the certificate is invalid, Istio rejects the request.
 1. The certificate info (subject and certificate hash) is added to the `Certificate-Data` header.
 1. The OathKeeper uses the Certificate Resolver as a mutator, which turns the `Certificate-Data` header into the `Client-Certificate-Hash` header and the `Client-Id-From-Certificate` header. If the certificate has expired, the two headers are set empty. Additionally, if the subject matches one of the subjects in a predefined configuration, then, an `extra` field is added to the *Auth Session*. The `extra` field contains a consumer type (integration system), access levels (contains a set of tenant types, which the consumer can access, for example, `account` only), and an optional internal consumer ID, which can be the GUID of an existing integration system.
