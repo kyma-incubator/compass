@@ -9,7 +9,7 @@ The Aggregator application collects, aggregates, and stores the ORD information 
 
 The Aggregator basic workflow is as follows:
 
-1. The Aggregator goes through all available Applications, stored in the Compass's database.
+1. The Aggregator goes through all available applications, stored in the Compass's database.
 2. For each application that has a webhook of type `OPEN_RESOURCE_DISCOVERY` it calls the URL that is attached to that webhook.
 3. That URL has predefined endpoints, which provide the necessary information to the Aggregator.
 4. The Aggregator aggregates and stores the provided information in the Compass's database.
