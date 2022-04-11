@@ -36,7 +36,7 @@ The Compass Console is a UI that calls Compass APIs. This component is interchan
 
 Gateway proxies the tenant's incoming requests to the Director and Connector components. All communication, whether it comes from an Application or other external components, flows through Gateway.
 
-The Gateway components takes care of audit logging and all create, update, and delete operations on Compass resources.
+The Gateway components takes care of audit logging all create, update, and delete operations on Compass resources.
 
 ## Connector
 
