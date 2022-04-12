@@ -148,6 +148,8 @@ type config struct {
 	CertLoaderConfig certloader.Config
 
 	SubscriptionConfig subscription.Config
+
+	TenantOnDemandURL string `envconfig:"optional,APP_FETCH_TENANT_URL"`
 }
 
 func main() {
@@ -227,6 +229,7 @@ func main() {
 		adminURL,
 		accessStrategyExecutorProvider,
 		cfg.SubscriptionConfig,
+		cfg.TenantOnDemandURL,
 	)
 	exitOnError(err, "Failed to initialize root resolver")
 
