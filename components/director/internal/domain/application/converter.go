@@ -192,6 +192,27 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) mo
 	}
 }
 
+// UpdateInputFromModel creates a model.ApplicationUpdateInput object
+func (c *converter) UpdateInputFromModel(in model.Application) model.ApplicationUpdateInput {
+	var statusCondition *model.ApplicationStatusCondition
+	if in.Status != nil {
+		statusCondition = &in.Status.Condition
+	}
+
+	return model.ApplicationUpdateInput{
+		ProviderName:        in.ProviderName,
+		Description:         in.Description,
+		HealthCheckURL:      in.HealthCheckURL,
+		IntegrationSystemID: in.IntegrationSystemID,
+		StatusCondition:     statusCondition,
+		BaseURL:             in.BaseURL,
+		Labels:              in.Labels,
+		CorrelationIDs:      in.CorrelationIDs,
+		SystemStatus:        in.SystemStatus,
+		DocumentationLabels: in.DocumentationLabels,
+	}
+}
+
 // CreateInputJSONToGQL missing godoc
 func (c *converter) CreateInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error) {
 	var appInput graphql.ApplicationRegisterInput

@@ -42,6 +42,10 @@ func TestAddAPIToBundle(t *testing.T) {
 	pack := fixtures.GetBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bndl.ID)
 	require.Equal(t, bndl.ID, pack.ID)
 
+	appWithBaseURL := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, tenantId, application.ID)
+	assert.NotNil(t, appWithBaseURL.BaseURL)
+	assert.Equal(t, input.TargetURL, *appWithBaseURL.BaseURL)
+
 	assertions.AssertAPI(t, []*graphql.APIDefinitionInput{&input}, []*graphql.APIDefinitionExt{&actualApi})
 	saveExample(t, req.Query(), "add api definition to bundle")
 }
