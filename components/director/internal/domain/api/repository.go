@@ -125,7 +125,7 @@ func (r *pgRepository) ListByBundleIDs(ctx context.Context, tenantID string, bun
 // ListByApplicationID lists all APIDefinitions for a given application ID.
 func (r *pgRepository) ListByApplicationID(ctx context.Context, tenantID, appID string) ([]*model.APIDefinition, error) {
 	apiCollection := APIDefCollection{}
-	if err := r.lister.List(ctx, resource.API, tenantID, &apiCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
+	if err := r.lister.ListWithSelectForUpdate(ctx, resource.API, tenantID, &apiCollection, repo.NewEqualCondition("app_id", appID)); err != nil {
 		return nil, err
 	}
 	apis := make([]*model.APIDefinition, 0, apiCollection.Len())

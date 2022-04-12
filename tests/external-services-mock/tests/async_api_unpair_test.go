@@ -42,15 +42,15 @@ func TestAsyncAPIUnpairApplicationWithAppWebhook(stdT *testing.T) {
 
 		registerRequest := fixtures.FixRegisterApplicationRequest(appInputGQL)
 		app := graphql.ApplicationExt{}
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
-		defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, testConfig.DefaultTestTenant, &app)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, registerRequest, &app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
 		require.NoError(t, err)
 
 		require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
 		require.Len(t, app.Webhooks, 1)
 		nearCreationTime := time.Now().Add(-1 * time.Second)
 
-		triggerAsyncUnpair(t, ctx, app, nearCreationTime, app.Webhooks[0].ID, dexGraphQLClient)
+		triggerAsyncUnpair(t, ctx, app, nearCreationTime, app.Webhooks[0].ID, certSecuredGraphQLClient)
 	})
 }
 

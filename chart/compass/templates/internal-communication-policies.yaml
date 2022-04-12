@@ -11,6 +11,12 @@ spec:
       fromHeaders:
         - name: X-Authorization
           prefix: "Bearer "
+    - issuer: {{ .Values.global.kubernetes.serviceAccountTokenIssuer }}
+      jwksUri: {{ .Values.global.kubernetes.serviceAccountTokenJWKS }}
+      forwardOriginalToken: true
+      fromHeaders:
+        - name: X-Authorization
+          prefix: "Bearer "
 ---
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
@@ -60,10 +66,12 @@ spec:
             hosts:
               - compass.{{ .Values.global.ingress.domainName }}
               - compass-mf.{{ .Values.global.ingress.domainName }}
+              - compass-gateway-sap-mtls.{{ .Values.global.ingress.domainName }}
             {{- if eq .Values.global.externalServicesMock.enabled true }}
               - "compass-external-services-mock.*"
               - "{{ .Values.global.externalServicesMock.certSecuredHost }}.*"
               - "{{ .Values.global.externalServicesMock.ordCertSecuredHost }}.*"
+              - "{{ .Values.global.externalServicesMock.ordGlobalCertSecuredHost }}.*"
             {{end}}
     - from: # or anything other only if the request is authenticated via RequestAuthentication
         - source:
@@ -83,6 +91,12 @@ spec:
       app.kubernetes.io/name: hydra
   jwtRules:
     - issuer: kubernetes/serviceaccount
+      jwksUri: {{ .Values.global.kubernetes.serviceAccountTokenJWKS }}
+      forwardOriginalToken: true
+      fromHeaders:
+        - name: X-Authorization
+          prefix: "Bearer "
+    - issuer: {{ .Values.global.kubernetes.serviceAccountTokenIssuer }}
       jwksUri: {{ .Values.global.kubernetes.serviceAccountTokenJWKS }}
       forwardOriginalToken: true
       fromHeaders:

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jmoiron/sqlx"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -21,7 +23,7 @@ type UpserterGlobal interface {
 
 // Upserter is an interface for upserting entities with externally managed tenant accesses (m2m table or view)
 type Upserter interface {
-	Upsert(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error
+	Upsert(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) (string, error)
 }
 
 type upserter struct {
@@ -75,52 +77,61 @@ func NewUpserterWithEmbeddedTenant(resourceType resource.Type, tableName string,
 
 // Upsert adds a new entity in the Compass DB in case it does not exist. If it already exists, updates it.
 // This upserter is suitable for resources that have m2m tenant relation as it does maintain tenant accesses.
-func (u *upserter) Upsert(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error {
+func (u *upserter) Upsert(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) (string, error) {
 	return u.unsafeUpsert(ctx, resourceType, tenant, dbEntity)
 }
 
-func (u *upserter) unsafeUpsert(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) error {
+func (u *upserter) unsafeUpsert(ctx context.Context, resourceType resource.Type, tenant string, dbEntity interface{}) (string, error) {
 	if dbEntity == nil {
-		return apperrors.NewInternalError("item cannot be nil")
+		return "", apperrors.NewInternalError("item cannot be nil")
 	}
 
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	query := buildQuery(u.tableName, u.insertColumns, u.conflictingColumns, u.updateColumns)
 	queryWithTenantIsolation, err := u.addTenantIsolation(query, resourceType, tenant)
 	if err != nil {
-		return err
+		return "", err
 	}
+	queryWithTenantIsolation += " RETURNING id;"
 
 	if entityWithExternalTenant, ok := dbEntity.(EntityWithExternalTenant); ok {
 		dbEntity = entityWithExternalTenant.DecorateWithTenantID(tenant)
 	}
 
-	log.C(ctx).Debugf("Executing DB query: %s", queryWithTenantIsolation)
-	res, err := persist.NamedExecContext(ctx, queryWithTenantIsolation, dbEntity)
-	if err = persistence.MapSQLError(ctx, err, resourceType, resource.Upsert, "while upserting row to '%s' table", u.tableName); err != nil {
-		return err
-	}
-
-	affected, err := res.RowsAffected()
+	preparedQuery, args, err := sqlx.Named(queryWithTenantIsolation, dbEntity)
 	if err != nil {
-		return errors.Wrap(err, "while checking affected rows")
+		return "", err
 	}
 
-	if err = assertSingleRowAffectedWhenUpserting(affected, true); err != nil {
-		return err
+	preparedQuery = sqlx.Rebind(sqlx.DOLLAR, preparedQuery)
+	upsertedID := ""
+
+	log.C(ctx).Debugf("Executing DB query: %s", preparedQuery)
+	err = persist.GetContext(ctx, &upsertedID, preparedQuery, args...)
+	if err = persistence.MapSQLError(ctx, err, resourceType, resource.Upsert, "while upserting row to '%s' table", u.tableName); err != nil {
+		return "", err
 	}
 
-	if resourceType.IsTopLevel() {
+	var id string
+	if identifiable, ok := dbEntity.(Identifiable); ok {
+		id = identifiable.GetID()
+	}
+
+	if len(id) == 0 {
+		return "", apperrors.NewInternalError("id cannot be empty, check if the entity implements Identifiable")
+	}
+
+	if resourceType.IsTopLevel() && id == upsertedID {
 		if err = u.upsertTenantAccess(ctx, resourceType, dbEntity, tenant); err != nil {
-			return err
+			return "", err
 		}
 	}
 
-	return nil
+	return upsertedID, nil
 }
 
 func (u *upserter) upsertTenantAccess(ctx context.Context, resourceType resource.Type, dbEntity interface{}, tenant string) error {
@@ -185,18 +196,9 @@ func (u *upserterGlobal) unsafeUpsert(ctx context.Context, resourceType resource
 	}
 
 	log.C(ctx).Warnf("Executing DB query: %s", query)
-	res, err := persist.NamedExecContext(ctx, query, dbEntity)
-	if err = persistence.MapSQLError(ctx, err, resourceType, resource.Upsert, "while upserting row to '%s' table", u.tableName); err != nil {
-		return err
-	}
-
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return errors.Wrap(err, "while checking affected rows")
-	}
-
-	isTenantScopedUpsert := u.tenantColumn != nil
-	return assertSingleRowAffectedWhenUpserting(affected, isTenantScopedUpsert)
+	_, err = persist.NamedExecContext(ctx, query, dbEntity)
+	err = persistence.MapSQLError(ctx, err, resourceType, resource.Upsert, "while upserting row to '%s' table", u.tableName)
+	return err
 }
 
 func (u *upserterGlobal) addTenantIsolation(query string) string {
@@ -227,15 +229,4 @@ func buildQuery(tableName string, insertColumns []string, conflictingColumns []s
 
 	stmtBuilder.WriteString(stmtWithUpsert)
 	return stmtBuilder.String()
-}
-
-func assertSingleRowAffectedWhenUpserting(affected int64, isTenantScopedUpsert bool) error {
-	if affected == 0 && isTenantScopedUpsert {
-		return apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
-	}
-
-	if affected != 1 {
-		return apperrors.NewInternalError(apperrors.ShouldUpsertSingleRowButUpsertedMsgF, affected)
-	}
-	return nil
 }

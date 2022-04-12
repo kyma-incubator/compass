@@ -17,6 +17,7 @@ import (
 // SingleGetter is an interface for getting tenant scoped entities with either externally managed tenant accesses (m2m table or view) or embedded tenant in them.
 type SingleGetter interface {
 	Get(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error
+	GetForUpdate(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error
 }
 
 // SingleGetterGlobal is an interface for getting global entities.
@@ -61,13 +62,24 @@ func NewSingleGetterGlobal(resourceType resource.Type, tableName string, selecte
 // If the tenantColumn is configured the isolation is based on equal condition on tenantColumn.
 // If the tenantColumn is not configured an entity with externally managed tenant accesses in m2m table / view is assumed.
 func (g *universalSingleGetter) Get(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
+	return g.getWithTenantIsolation(ctx, resourceType, tenant, conditions, orderByParams, dest, NoLock)
+}
+
+// GetForUpdate gets tenant scoped entities with tenant isolation subquery and locks them explicitly until the transaction is finished.
+// If the tenantColumn is configured the isolation is based on equal condition on tenantColumn.
+// If the tenantColumn is not configured an entity with externally managed tenant accesses in m2m table / view is assumed.
+func (g *universalSingleGetter) GetForUpdate(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
+	return g.getWithTenantIsolation(ctx, resourceType, tenant, conditions, orderByParams, dest, ForUpdateLock)
+}
+
+func (g *universalSingleGetter) getWithTenantIsolation(ctx context.Context, resourceType resource.Type, tenant string, conditions Conditions, orderByParams OrderByParams, dest interface{}, lockClause string) error {
 	if tenant == "" {
 		return apperrors.NewTenantRequiredError()
 	}
 
 	if g.tenantColumn != nil {
 		conditions = append(Conditions{NewEqualCondition(*g.tenantColumn, tenant)}, conditions...)
-		return g.get(ctx, resourceType, conditions, orderByParams, dest)
+		return g.get(ctx, resourceType, conditions, orderByParams, dest, NoLock)
 	}
 
 	tenantIsolation, err := NewTenantIsolationCondition(resourceType, tenant, false)
@@ -77,15 +89,15 @@ func (g *universalSingleGetter) Get(ctx context.Context, resourceType resource.T
 
 	conditions = append(conditions, tenantIsolation)
 
-	return g.get(ctx, resourceType, conditions, orderByParams, dest)
+	return g.get(ctx, resourceType, conditions, orderByParams, dest, lockClause)
 }
 
 // GetGlobal gets global entities without tenant isolation.
 func (g *universalSingleGetter) GetGlobal(ctx context.Context, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
-	return g.get(ctx, g.resourceType, conditions, orderByParams, dest)
+	return g.get(ctx, g.resourceType, conditions, orderByParams, dest, NoLock)
 }
 
-func (g *universalSingleGetter) get(ctx context.Context, resourceType resource.Type, conditions Conditions, orderByParams OrderByParams, dest interface{}) error {
+func (g *universalSingleGetter) get(ctx context.Context, resourceType resource.Type, conditions Conditions, orderByParams OrderByParams, dest interface{}, lockClause string) error {
 	if dest == nil {
 		return apperrors.NewInternalError("item cannot be nil")
 	}
@@ -94,7 +106,7 @@ func (g *universalSingleGetter) get(ctx context.Context, resourceType resource.T
 		return err
 	}
 
-	query, args, err := buildSelectQuery(g.tableName, g.selectedColumns, conditions, orderByParams, true)
+	query, args, err := buildSelectQuery(g.tableName, g.selectedColumns, conditions, orderByParams, lockClause, true)
 	if err != nil {
 		return errors.Wrap(err, "while building list query")
 	}

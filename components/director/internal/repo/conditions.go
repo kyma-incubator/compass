@@ -382,8 +382,8 @@ func newTenantIsolationConditionWithPlaceholder(resourceType resource.Type, tena
 	}
 
 	var stmtBuilder strings.Builder
-
 	var args []interface{}
+
 	if positionalArgs {
 		stmtBuilder.WriteString(fmt.Sprintf("(id IN (SELECT %s FROM %s WHERE %s = ?", M2MResourceIDColumn, m2mTable, M2MTenantIDColumn))
 		args = append(args, tenant)

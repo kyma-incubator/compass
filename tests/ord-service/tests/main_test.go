@@ -20,63 +20,71 @@ import (
 	"context"
 	"os"
 	"testing"
-	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/certs"
-	"github.com/kyma-incubator/compass/tests/pkg/clients"
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/server"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+	"github.com/kyma-incubator/compass/tests/pkg/util"
 	"github.com/machinebox/graphql"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"github.com/vrischmann/envconfig"
 )
 
 var (
-	dexGraphQLClient *graphql.Client
+	certCache                certloader.Cache
+	certSecuredGraphQLClient *graphql.Client
 )
 
 type TenantConfig struct {
-	TenantIDProperty               string
-	SubaccountTenantIDProperty     string
-	CustomerIDProperty             string
-	SubdomainProperty              string
-	SubscriptionProviderIDProperty string
-	TenantFetcherURL               string
-	RootAPI                        string
-	RegionalHandlerEndpoint        string
-	TenantPathParam                string
-	RegionPathParam                string
-	TenantFetcherFullRegionalURL   string `envconfig:"-"`
+	TenantFetcherURL             string
+	RootAPI                      string
+	RegionalHandlerEndpoint      string
+	TenantPathParam              string
+	RegionPathParam              string
+	Region                       string
+	TenantFetcherFullRegionalURL string `envconfig:"-"`
+}
+
+type SubscriptionConfig struct {
+	URL                          string
+	TokenURL                     string
+	ClientID                     string
+	ClientSecret                 string
+	ProviderLabelKey             string
+	ProviderID                   string
+	SelfRegisterLabelKey         string
+	SelfRegisterLabelValuePrefix string
 }
 
 type config struct {
 	TenantConfig
-	CA         certs.CAConfig
-	ExternalCA certs.CAConfig
-
-	DirectorURL                      string
+	CertLoaderConfig certloader.Config
+	certprovider.ExternalCertProviderConfig
+	SubscriptionConfig
+	ExternalServicesMockBaseURL      string
 	DirectorExternalCertSecuredURL   string
 	ORDServiceURL                    string
 	ORDExternalCertSecuredServiceURL string
 	ORDServiceStaticPrefix           string
 	ORDServiceDefaultResponseType    string
 	DefaultScenarioEnabled           bool `envconfig:"default=true"`
-	ExternalServicesMockURL          string
-	ClientID                         string
-	ClientSecret                     string
-	SubscriptionProviderLabelKey     string
-	ConsumerSubaccountIdsLabelKey    string
-	SelfRegisterDistinguishLabelKey  string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
-	SelfRegisterLabelKey             string `envconfig:"APP_SELF_REGISTER_LABEL_KEY"`
+	ConsumerTokenURL                 string
+	TokenPath                        string
+	ProviderClientID                 string
+	ProviderClientSecret             string
+	SkipSSLValidation                bool
+	BasicUsername                    string
+	BasicPassword                    string
 	AccountTenantID                  string
 	SubaccountTenantID               string
-	SkipSSLValidation                bool `envconfig:"default=false"`
+	TestConsumerAccountID            string
+	TestProviderSubaccountID         string
+	TestConsumerSubaccountID         string
+	TestConsumerTenantID             string
 }
 
 var testConfig config
@@ -84,7 +92,7 @@ var testConfig config
 func TestMain(m *testing.M) {
 	err := envconfig.Init(&testConfig)
 	if err != nil {
-		log.Fatal(errors.Wrap(err, "while initializing envconfig"))
+		log.D().Fatal(errors.Wrap(err, "while initializing envconfig"))
 	}
 
 	tenant.TestTenants.Init()
@@ -92,32 +100,17 @@ func TestMain(m *testing.M) {
 
 	ctx := context.Background()
 
-	k8sClientSet, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	certCache, err = certloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
 	if err != nil {
-		log.Fatal(errors.Wrap(err, "while initializing k8s client"))
+		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
 
-	secret, err := k8sClientSet.CoreV1().Secrets(testConfig.CA.SecretNamespace).Get(ctx, testConfig.CA.SecretName, metav1.GetOptions{}) // TODO:: Remove once the consumer-provider test is adapter to run on real environment
-	if err != nil {
-		log.Fatal(errors.Wrap(err, "while getting k8s secret"))
+	if err := util.WaitForCache(certCache); err != nil {
+		log.D().Fatal(err)
 	}
-
-	testConfig.CA.Certificate = secret.Data[testConfig.CA.SecretCertificateKey] // TODO:: Remove once the consumer-provider test is adapter to run on real environment
-	testConfig.CA.Key = secret.Data[testConfig.CA.SecretKeyKey]                 // TODO:: Remove once the consumer-provider test is adapter to run on real environment
-
-	extCrtSecret, err := k8sClientSet.CoreV1().Secrets(testConfig.ExternalCA.SecretNamespace).Get(ctx, testConfig.ExternalCA.SecretName, metav1.GetOptions{})
-	if err != nil {
-		log.Fatal(errors.Wrap(err, "while getting k8s secret"))
-	}
-
-	testConfig.ExternalCA.Key = extCrtSecret.Data[testConfig.ExternalCA.SecretKeyKey]
-	testConfig.ExternalCA.Certificate = extCrtSecret.Data[testConfig.ExternalCA.SecretCertificateKey]
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, certCache.Get().Certificate, testConfig.SkipSSLValidation)
 
 	testConfig.TenantFetcherFullRegionalURL = tenantfetcher.BuildTenantFetcherRegionalURL(testConfig.RegionalHandlerEndpoint, testConfig.TenantPathParam, testConfig.RegionPathParam, testConfig.TenantFetcherURL, testConfig.RootAPI)
-
-	dexToken := server.Token()
-
-	dexGraphQLClient = gql.NewAuthorizedGraphQLClient(dexToken)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)

@@ -65,10 +65,16 @@ func (r *repository) Create(ctx context.Context, item model.SystemAuth) error {
 	return r.creator.Create(ctx, entity)
 }
 
-// GetByID missing godoc
-func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.SystemAuth, error) {
+// GetByIDForObject missing godoc
+func (r *repository) GetByIDForObject(ctx context.Context, tenant, id string, objType model.SystemAuthReferenceObjectType) (*model.SystemAuth, error) {
+	column, err := referenceObjectField(objType)
+	if err != nil {
+		return nil, err
+	}
+	objTypeCond := repo.NewNotNullCondition(column)
+
 	var entity Entity
-	if err := r.singleGetter.Get(ctx, resource.SystemAuth, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.SystemAuth, tenant, repo.Conditions{repo.NewEqualCondition("id", id), objTypeCond}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 
@@ -84,6 +90,27 @@ func (r *repository) GetByID(ctx context.Context, tenant, id string) (*model.Sys
 func (r *repository) GetByIDGlobal(ctx context.Context, id string) (*model.SystemAuth, error) {
 	var entity Entity
 	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
+	}
+
+	itemModel, err := r.conv.FromEntity(entity)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting SystemAuth entity to model")
+	}
+
+	return &itemModel, nil
+}
+
+// GetByIDForObjectGlobal missing godoc
+func (r *repository) GetByIDForObjectGlobal(ctx context.Context, id string, objType model.SystemAuthReferenceObjectType) (*model.SystemAuth, error) {
+	column, err := referenceObjectField(objType)
+	if err != nil {
+		return nil, err
+	}
+	objTypeCond := repo.NewNotNullCondition(column)
+
+	var entity Entity
+	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id), objTypeCond}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 

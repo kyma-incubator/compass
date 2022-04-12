@@ -18,8 +18,12 @@ package auth
 
 import (
 	"context"
+	"crypto/tls"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 )
 
 type contextKey string
@@ -32,6 +36,8 @@ const (
 	BasicCredentialType CredentialType = "BasicCredentials"
 	// OAuthCredentialType missing godoc
 	OAuthCredentialType CredentialType = "OAuthCredentials"
+	// OAuthMtlsCredentialType is requesting OAuth token using Mtls
+	OAuthMtlsCredentialType CredentialType = "OAuthMtlsCredentials"
 )
 
 // CredentialType specifies a dedicated string type to differentiate every Credentials type
@@ -58,6 +64,34 @@ type OAuthCredentials struct {
 	AdditionalHeaders map[string]string
 }
 
+type certCache struct {
+	cert *tls.Certificate
+}
+
+// OAuthMtlsCredentials implements the Credentials interface for the OAuth flow with Mtls
+type OAuthMtlsCredentials struct {
+	ClientID          string
+	CertCache         CertificateCache
+	TokenURL          string
+	Scopes            string
+	AdditionalHeaders map[string]string
+}
+
+// NewOAuthMtlsCredentials creates OAuthMtlsCredentials based on the provided credentials and url
+func NewOAuthMtlsCredentials(clientID, certificate, key, tokenURL, oauthTokenPath string) (*OAuthMtlsCredentials, error) {
+	mtlsCert, err := cert.ParseCertificate(certificate, key)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing certificate for self-registration config")
+	}
+	return &OAuthMtlsCredentials{
+		ClientID: clientID,
+		CertCache: &certCache{
+			cert: mtlsCert,
+		},
+		TokenURL: tokenURL + oauthTokenPath,
+	}, nil
+}
+
 // Get returns the specified Credentials implementation
 func (bc *BasicCredentials) Get() interface{} {
 	return bc
@@ -76,6 +110,20 @@ func (oc *OAuthCredentials) Get() interface{} {
 // Type returns the specified Credentials implementation type
 func (oc *OAuthCredentials) Type() CredentialType {
 	return OAuthCredentialType
+}
+
+func (cc *certCache) Get() *tls.Certificate {
+	return cc.cert
+}
+
+// Get returns the specified Credentials implementation
+func (oc *OAuthMtlsCredentials) Get() interface{} {
+	return oc
+}
+
+// Type returns the specified Credentials implementation type
+func (oc *OAuthMtlsCredentials) Type() CredentialType {
+	return OAuthMtlsCredentialType
 }
 
 // LoadFromContext retrieves the credentials from the provided context

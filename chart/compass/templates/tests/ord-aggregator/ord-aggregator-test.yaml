@@ -23,10 +23,11 @@ spec:
           - ip: {{ .Values.global.minikubeIP }}
             hostnames:
               - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-              - "dex.{{ .Values.global.ingress.domainName }}"
               - "oauth2.{{ .Values.global.ingress.domainName }}"
               - "{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}"
+              - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
               - "compass-external-services-mock.compass-system.svc.cluster.local"
+              - "{{ .Values.global.externalServicesMock.ordGlobalCertSecuredHost }}.{{.Values.global.ingress.domainName}}"
       {{ end }}
       serviceAccountName: {{ $.Chart.Name }}-e2e-ord-aggregator
       containers:
@@ -38,10 +39,6 @@ spec:
           env:
             - name: ORD_SERVICE_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"
-            - name: ORD_SERVICE_HEALTHZ_URL
-              value: "{{ .Values.global.tests.ordServiceFQDN }}:{{ .Values.global.director.graphql.external.port }}/actuator/health"
-            - name: DIRECTOR_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: DIRECTOR_GRAPHQL_OAUTH_URL
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
@@ -58,54 +55,42 @@ spec:
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.oauthSecuredPort }}/.well-known/open-resource-discovery"
             - name: GLOBAL_REGISTRY_URL
               value: "{{ .Values.global.ordAggregator.globalRegistryUrl }}"
+            - name: DIRECTOR_EXTERNAL_CERT_SECURED_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
             - name: APP_EXTERNAL_CLIENT_CERT_KEY
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
             - name: APP_EXTERNAL_CLIENT_KEY_KEY
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+            - name: SKIP_SSL_VALIDATION
+              value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
             - name: BASIC_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.testCredentials.secretName }}
+                  name: {{ .Values.global.tests.basicCredentials.secretName }}
                   key: username
             - name: BASIC_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.testCredentials.secretName }}
+                  name: {{ .Values.global.tests.basicCredentials.secretName }}
                   key: password
             - name: CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.externalServicesMock.oauthSecretName }}
-                  key: client-id
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientIdKey }}
             - name: CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.externalServicesMock.oauthSecretName }}
-                  key: client-secret
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientSecretKey }}
             - name: ORD_SERVICE_DEFAULT_RESPONSE_TYPE
               value: {{ .Values.global.ordService.defaultResponseType }}
             - name: AGGREGATOR_SCHEDULE
               value: "{{ .Values.global.ordAggregator.schedule }}"
-            - name: USER_EMAIL
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: email
-            - name: USER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: admin-user
-                  key: password
             - name: DEFAULT_TEST_TENANT
               value: "{{ (index .Values.global.tenants 9).id }}"
-            - name: DOMAIN
-              value: "{{ .Values.global.ingress.domainName }}"
-            - name: APP_IS_WITH_TOKEN
-              value: "{{.Values.global.tests.token.server.enabled}}"
-            - name: APP_ADDRESS
-              value: "0.0.0.0:{{.Values.global.tests.token.server.port}}"
       restartPolicy: Never
 ---
 apiVersion: v1
@@ -124,8 +109,8 @@ metadata:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ $.Chart.Name }}-e2e-ord-aggregator
-  namespace: {{ $.Release.Namespace }}
+  name: {{ $.Chart.Name }}-e2e-ord-aggregator-client-cert
+  namespace: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}
   labels:
     app: {{ $.Chart.Name }}
     release: {{ $.Release.Name }}
