@@ -3,6 +3,7 @@ package application_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -1675,7 +1676,7 @@ func TestService_Upsert(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1713,7 +1714,7 @@ func TestService_Upsert(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1744,7 +1745,7 @@ func TestService_Upsert(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1781,7 +1782,7 @@ func TestService_Upsert(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1815,7 +1816,7 @@ func TestService_Upsert(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(testErr).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return("", testErr).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -2053,7 +2054,7 @@ func TestService_UpsertFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -2091,7 +2092,7 @@ func TestService_UpsertFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -2122,7 +2123,7 @@ func TestService_UpsertFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -2159,7 +2160,7 @@ func TestService_UpsertFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -2193,7 +2194,7 @@ func TestService_UpsertFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(testErr).Once()
+				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return("", testErr).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -3042,7 +3043,6 @@ func TestService_Get(t *testing.T) {
 	testCases := []struct {
 		Name                string
 		RepositoryFn        func() *automock.ApplicationRepository
-		Input               model.ApplicationRegisterInput
 		InputID             string
 		ExpectedApplication *model.Application
 		ExpectedErrMessage  string
@@ -3079,6 +3079,89 @@ func TestService_Get(t *testing.T) {
 
 			// WHEN
 			app, err := svc.Get(ctx, testCase.InputID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedApplication, app)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_GetSystem(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("test error")
+
+	tnt := "id"
+	locationID := "loc_id"
+	virtualHost := "vhost"
+	filter := labelfilter.NewForKeyWithQuery("scc", fmt.Sprintf("{\"Host\":\"%s\",\"Subaccount\":\"%s\",\"LocationID\":\"%s\"}", virtualHost, tnt, locationID))
+
+	desc := "Lorem ipsum"
+
+	applicationModel := &model.Application{
+		Name:        "foo",
+		Description: &desc,
+		BaseEntity:  &model.BaseEntity{ID: "foo"},
+	}
+
+	externalTnt := "external-tnt"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testCases := []struct {
+		Name                string
+		Ctx                 context.Context
+		RepositoryFn        func() *automock.ApplicationRepository
+		ExpectedApplication *model.Application
+		ExpectedErrMessage  string
+	}{
+		{
+			Name: "Success",
+			Ctx:  ctx,
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByFilter", ctx, tnt, []*labelfilter.LabelFilter{filter}).Return(applicationModel, nil).Once()
+				return repo
+			},
+			ExpectedApplication: applicationModel,
+		},
+		{
+			Name: "Returns error when application retrieval failed",
+			Ctx:  ctx,
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByFilter", ctx, tnt, []*labelfilter.LabelFilter{filter}).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when extracting tenant from context",
+			Ctx:  context.TODO(),
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				return repo
+			},
+			ExpectedErrMessage: "while loading tenant from context:",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
+
+			// WHEN
+			app, err := svc.GetSccSystem(testCase.Ctx, "id", locationID, virtualHost)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -3588,6 +3671,258 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			labelRepository.AssertExpectations(t)
 			appRepository.AssertExpectations(t)
 			cfgProvider.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_ListBySCC(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("test error")
+
+	tnt := "tenant"
+
+	app1ID := "foo"
+	app2ID := "bar"
+
+	app1 := fixModelApplication(app1ID, tnt, "foo", "Lorem Ipsum")
+	app2 := fixModelApplication(app2ID, tnt, "bar", "Lorem Ipsum")
+	applications := []*model.Application{app1, app2}
+
+	labelValue := stringPtr("{\"locationId\":\"locationId\", \"subaccount\":\"tenant\"}")
+
+	label1 := &model.Label{
+		ObjectID: app1ID,
+		Value:    labelValue,
+	}
+
+	label2 := &model.Label{
+		ObjectID: app2ID,
+		Value:    labelValue,
+	}
+
+	applicationsWitLabel := []*model.ApplicationWithLabel{
+		{
+			App:      app1,
+			SccLabel: label1,
+		},
+		{
+			App:      app2,
+			SccLabel: label2,
+		},
+	}
+
+	filter := &labelfilter.LabelFilter{Key: "scc", Query: stringPtr("{\"locationId\":\"locationId\", \"subaccount\":\"tenant\"}")}
+
+	externalTnt := "external-tnt"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testCases := []struct {
+		Name               string
+		Ctx                context.Context
+		RepositoryFn       func() *automock.ApplicationRepository
+		LabelRepositoryFn  func() *automock.LabelRepository
+		InputLabelFilter   *labelfilter.LabelFilter
+		ExpectedResult     []*model.ApplicationWithLabel
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			Ctx:  ctx,
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListAllByFilter", ctx, tnt, []*labelfilter.LabelFilter{filter}).Return(applications, nil).Once()
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{app1ID, app2ID}, "scc").Return([]*model.Label{label1, label2}, nil)
+				return repo
+			},
+			InputLabelFilter:   filter,
+			ExpectedResult:     applicationsWitLabel,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Success when no apps matching the filter are found",
+			Ctx:  ctx,
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListAllByFilter", ctx, tnt, []*labelfilter.LabelFilter{filter}).Return([]*model.Application{}, nil).Once()
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				return repo
+			},
+			InputLabelFilter:   filter,
+			ExpectedResult:     []*model.ApplicationWithLabel{},
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when failed to list labels for applications",
+			Ctx:  ctx,
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListAllByFilter", ctx, tnt, []*labelfilter.LabelFilter{filter}).Return(applications, nil).Once()
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{app1ID, app2ID}, "scc").Return(nil, testErr)
+				return repo
+			},
+			InputLabelFilter:   filter,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: "while getting labels with key scc for applications with IDs:",
+		},
+		{
+			Name: "Returns error when application listing failed",
+			Ctx:  ctx,
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListAllByFilter", ctx, tnt, []*labelfilter.LabelFilter{filter}).Return(nil, testErr).Once()
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				return repo
+			},
+			InputLabelFilter:   filter,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when extracting tenant from context",
+			Ctx:  context.TODO(),
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				return repo
+			},
+			ExpectedErrMessage: "while loading tenant from context:",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			appRepo := testCase.RepositoryFn()
+			labelRepo := testCase.LabelRepositoryFn()
+			svc := application.NewService(nil, nil, appRepo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
+
+			// WHEN
+			app, err := svc.ListBySCC(testCase.Ctx, filter)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, app)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			appRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_ListSCCs(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("test error")
+
+	tnt := "tenant"
+
+	key := "scc"
+
+	locationID1 := "locationID1"
+	locationID2 := "locationID2"
+	subaccount1 := "subaccount1"
+	subaccount2 := "subaccount2"
+
+	labelValue1 := map[string]interface{}{"LocationID": locationID1, "Subaccount": subaccount1}
+	labelValue2 := map[string]interface{}{"LocationID": locationID2, "Subaccount": subaccount2}
+
+	labels := []*model.Label{
+		{Value: labelValue1},
+		{Value: labelValue2},
+	}
+
+	sccs := []*model.SccMetadata{
+		{
+			Subaccount: subaccount1,
+			LocationID: locationID1,
+		},
+		{
+			Subaccount: subaccount2,
+			LocationID: locationID2,
+		},
+	}
+
+	filter := &labelfilter.LabelFilter{Key: "scc", Query: stringPtr("{\"locationId\":\"locationId\", \"subaccount\":\"tenant\"}")}
+
+	externalTnt := "external-tnt"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testCases := []struct {
+		Name               string
+		Ctx                context.Context
+		RepositoryFn       func() *automock.LabelRepository
+		InputLabelFilter   *labelfilter.LabelFilter
+		ExpectedResult     []*model.SccMetadata
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			Ctx:  ctx,
+			RepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListGlobalByKey", ctx, key).Return(labels, nil).Once()
+				return repo
+			},
+			InputLabelFilter:   filter,
+			ExpectedResult:     sccs,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when labels listing failed",
+			Ctx:  ctx,
+			RepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListGlobalByKey", ctx, key).Return(nil, testErr).Once()
+				return repo
+			},
+			InputLabelFilter:   filter,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := application.NewService(nil, nil, nil, nil, nil, repo, nil, nil, nil, nil, nil)
+
+			// WHEN
+			app, err := svc.ListSCCs(testCase.Ctx)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, app)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
 		})
 	}
 }
@@ -4203,14 +4538,4 @@ func applicationFromTemplateMatcher(name string, description *string, appTemplat
 	return func(app *model.Application) bool {
 		return applicationMatcher(name, description)(app) && app.ApplicationTemplateID == appTemplateID
 	}
-}
-
-func contextThatHasTenant(expectedTenant string) interface{} {
-	return mock.MatchedBy(func(actual context.Context) bool {
-		actualTenant, err := tenant.LoadFromContext(actual)
-		if err != nil {
-			return false
-		}
-		return actualTenant == expectedTenant
-	})
 }

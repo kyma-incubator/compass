@@ -1,39 +1,48 @@
 package tests
 
 import (
-	"log"
+	"context"
 	"os"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/vrischmann/envconfig"
-
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	config "github.com/kyma-incubator/compass/tests/pkg/config"
-	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	"github.com/kyma-incubator/compass/tests/pkg/util"
+	"github.com/machinebox/graphql"
+	"github.com/pkg/errors"
 )
 
-var conf = &config.IstioConfig{}
+var (
+	conf = &config.IstioConfig{}
+
+	certCache                certloader.Cache
+	certSecuredGraphQLClient *graphql.Client
+)
 
 func TestMain(m *testing.M) {
-	dbCfg := persistence.DatabaseConfig{}
-	err := envconfig.Init(&dbCfg)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	tenant.TestTenants.Init()
-	defer tenant.TestTenants.Cleanup()
-
+	var err error
 	testctx.Tc, err = testctx.NewTestContext()
 	if err != nil {
-		log.Fatal(err)
+		log.D().Fatal(err)
 	}
 
 	config.ReadConfig(conf)
 
-	exitVal := m.Run()
+	ctx := context.Background()
+	certCache, err = certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
+	if err != nil {
+		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
+	}
 
+	if err := util.WaitForCache(certCache); err != nil {
+		log.D().Fatal(err)
+	}
+
+	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, certCache.Get().PrivateKey, certCache.Get().Certificate, conf.SkipSSLValidation)
+
+	exitVal := m.Run()
 	os.Exit(exitVal)
 }

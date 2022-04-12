@@ -18,21 +18,20 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	graphqlclient "github.com/kyma-incubator/compass/components/director/pkg/graphql_client"
+	gcli "github.com/machinebox/graphql"
+
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 
 	auth "github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
@@ -60,8 +59,6 @@ type config struct {
 
 	Handler tenantfetcher.HandlerConfig
 
-	Database persistence.DatabaseConfig
-
 	SecurityConfig securityConfig
 }
 
@@ -87,19 +84,18 @@ func main() {
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Failed to configure Logger")
 
-	if cfg.Handler.HandlerEndpoint == "" || cfg.Handler.TenantPathParam == "" {
-		exitOnError(errors.New("missing handler endpoint or tenant path parameter"), "Error while loading app handler config")
+	if cfg.Handler.TenantPathParam == "" {
+		exitOnError(errors.New("missing tenant path parameter"), "Error while loading app handler config")
 	}
 
-	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
-	exitOnError(err, "Error while establishing the connection to the database")
+	httpClient := &http.Client{
+		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
 
-	defer func() {
-		err := closeFunc()
-		exitOnError(err, "Error while closing the connection to the database")
-	}()
-
-	handler := initAPIHandler(ctx, cfg, transact)
+	handler := initAPIHandler(ctx, httpClient, cfg)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
 	go func() {
@@ -111,7 +107,7 @@ func main() {
 	runMainSrv()
 }
 
-func initAPIHandler(ctx context.Context, cfg config, transact persistence.Transactioner) http.Handler {
+func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config) http.Handler {
 	logger := log.C(ctx)
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
@@ -119,9 +115,9 @@ func initAPIHandler(ctx context.Context, cfg config, transact persistence.Transa
 	router := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 	healthCheckRouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 
-	configureAuthMiddleware(ctx, router, cfg.SecurityConfig)
+	configureAuthMiddleware(ctx, httpClient, router, cfg.SecurityConfig)
 
-	registerHandler(ctx, router, cfg.Handler, transact)
+	registerHandler(ctx, router, cfg.Handler)
 
 	logger.Infof("Registering readiness endpoint...")
 	healthCheckRouter.HandleFunc("/readyz", newReadinessHandler())
@@ -171,9 +167,9 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func configureAuthMiddleware(ctx context.Context, router *mux.Router, cfg securityConfig) {
+func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg securityConfig) {
 	scopeValidator := claims.NewScopesValidator([]string{cfg.SubscriptionCallbackScope})
-	middleware := auth.New(cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
+	middleware := auth.New(httpClient, cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
 	router.Use(middleware.Handler())
 
 	log.C(ctx).Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)
@@ -185,36 +181,18 @@ func configureAuthMiddleware(ctx context.Context, router *mux.Router, cfg securi
 	go periodicExecutor.Run(ctx)
 }
 
-func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.HandlerConfig, transact persistence.Transactioner) {
-	uidSvc := uid.NewService()
+func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.HandlerConfig) {
+	gqlClient := newInternalGraphQLClient(cfg.DirectorGraphQLEndpoint, cfg.ClientTimeout, cfg.HTTPClientSkipSslValidation)
+	gqlClient.Log = func(s string) {
+		log.C(ctx).Debug(s)
+	}
+	directorClient := graphqlclient.NewDirector(gqlClient)
 
-	labelConv := label.NewConverter()
-	labelRepo := label.NewRepository(labelConv)
-	labelDefConv := labeldef.NewConverter()
-	labelDefRepo := labeldef.NewRepository(labelDefConv)
-	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
+	tenantConverter := tenant.NewConverter()
 
-	converter := tenant.NewConverter()
-	tenantRepo := tenant.NewRepository(converter)
-	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-
-	runtimeConverter := runtime.NewConverter()
-	runtimeRepo := runtime.NewRepository(runtimeConverter)
-	assignmentConv := scenarioassignment.NewConverter()
-	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
-	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo, runtimeRepo)
-	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, cfg.DefaultScenarioEnabled)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelSvc, uidSvc, scenarioAssignmentEngine, tenantSvc, cfg.ProtectedLabelPattern, cfg.ImmutableLabelPattern)
-
-	provisioner := tenantfetcher.NewTenantProvisioner(tenantSvc, cfg.TenantProvider)
-	subscriber := tenantfetcher.NewSubscriber(provisioner, runtimeSvc, labelSvc, uidSvc, tenantSvc, cfg.SubscriptionProviderLabelKey, cfg.ConsumerSubaccountIDsLabelKey)
-	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(subscriber, transact, cfg)
-
-	log.C(ctx).Infof("Registering Tenant Onboarding endpoint on %s...", cfg.HandlerEndpoint)
-	router.HandleFunc(cfg.HandlerEndpoint, tenantHandler.Create).Methods(http.MethodPut)
-
-	log.C(ctx).Infof("Registering Tenant Decommissioning endpoint on %s...", cfg.HandlerEndpoint)
-	router.HandleFunc(cfg.HandlerEndpoint, tenantHandler.DeleteByExternalID).Methods(http.MethodDelete)
+	provisioner := tenantfetcher.NewTenantProvisioner(directorClient, tenantConverter, cfg.TenantProvider)
+	subscriber := tenantfetcher.NewSubscriber(directorClient, provisioner)
+	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(subscriber, cfg)
 
 	log.C(ctx).Infof("Registering Regional Tenant Onboarding endpoint on %s...", cfg.RegionalHandlerEndpoint)
 	router.HandleFunc(cfg.RegionalHandlerEndpoint, tenantHandler.SubscribeTenant).Methods(http.MethodPut)
@@ -230,4 +208,17 @@ func newReadinessHandler() func(writer http.ResponseWriter, request *http.Reques
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
 	}
+}
+
+func newInternalGraphQLClient(url string, timeout time.Duration, skipSSLValidation bool) *gcli.Client {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: skipSSLValidation,
+		},
+	}
+	client := &http.Client{
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(tr, "Authorization")),
+		Timeout:   timeout,
+	}
+	return gcli.NewClient(url, gcli.WithHTTPClient(client))
 }

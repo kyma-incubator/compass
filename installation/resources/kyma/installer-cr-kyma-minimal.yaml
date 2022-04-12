@@ -20,8 +20,6 @@ spec:
       namespace: "istio-system"
     - name: "xip-patch"
       namespace: "kyma-installer"
-    - name: "dex"
-      namespace: "kyma-system"
     - name: "ory"
       namespace: "kyma-system"
     - name: "core"

@@ -5,8 +5,6 @@ function prometheusMTLSPatch() {
   patchDeploymentsToInjectSidecar
   patchKymaServiceMonitorsForMTLS
   removeKymaPeerAuthsForPrometheus
-  patchDexPeerAuthForPrometheus
-  patchMonitoringTests
 }
 
 function patchPrometheusForMTLS() {
@@ -318,7 +316,6 @@ function patchKymaServiceMonitorsForMTLS() {
     monitoring-alertmanager
     monitoring-operator 
     monitoring-kube-state-metrics 
-    dex
     api-gateway
     monitoring-prometheus-pushgateway
   )
@@ -380,63 +377,3 @@ function removeKymaPeerAuthsForPrometheus() {
   done
 }
 
-function patchDexPeerAuthForPrometheus() {
-  crd="peerauthentication"
-  namespace="kyma-system"
-  name="dex-service"
-
-  patchDex=$(cat <<"EOF"
-  portLevelMtls:
-    5558:
-      mode: STRICT
-EOF
-  )
-
-  if kubectl get ns ${namespace} > /dev/null; then
-    echo "${patchDex}" > patch-dex.yaml
-    kubectl get ${crd} -n ${namespace} ${name} -o yaml > dex-pa.yaml
-
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-      sed -i '' -e '/^spec:/r patch-dex.yaml' dex-pa.yaml
-    else # assume Linux otherwise
-      sed -i '/^spec:/r patch-dex.yaml' dex-pa.yaml
-    fi
-
-    kubectl apply -f dex-pa.yaml
-
-    rm dex-pa.yaml
-    rm patch-dex.yaml
-  fi
-}
-
-function patchMonitoringTests() {
-  crd="testdefinitions"
-  namespace="kyma-system"
-  name="monitoring"
-
-  patchSidecarContainerCommand=$(cat <<"EOF"
-        - until curl -fsI http://localhost:15021/healthz/ready; do echo \"Waiting
-          for Sidecar...\"; sleep 3; done; echo \"Sidecar available. Running the command...\";
-          ./test-monitoring; x=$(echo $?); curl -fsI -X POST http://localhost:15020/quitquitquit
-          && exit $x
-EOF
-  )
-
-  echo "${patchSidecarContainerCommand}" > patchSidecarContainerCommand.yaml
-  kubectl get ${crd} -n ${namespace} ${name} -o yaml > testdef.yaml
-
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' -e 's/sidecar.istio.io\/inject: "false"/sidecar.istio.io\/inject: "true"/g' testdef.yaml
-    sed -i '' -e '/- .\/test-monitoring/r patchSidecarContainerCommand.yaml' testdef.yaml
-    sed -i '' -e 's/- .\/test-monitoring//g' testdef.yaml
-  else # assume Linux otherwise
-    sed -i 's/sidecar.istio.io\/inject: "false"/sidecar.istio.io\/inject: "true"/g' testdef.yaml
-    sed -i '/- .\/test-monitoring/r patchSidecarContainerCommand.yaml' testdef.yaml
-    sed -i 's/- .\/test-monitoring//g' testdef.yaml
-  fi
-
-  kubectl apply -f testdef.yaml || true
-
-  rm testdef.yaml
-  rm patchSidecarContainerCommand.yaml
-}

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/internal/subscription"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/kyma-incubator/compass/components/director/internal/consumer"
@@ -41,10 +41,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-	authpkg "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
@@ -98,33 +96,21 @@ func NewRootResolver(
 	tokenLength int,
 	hydraURL *url.URL,
 	accessStrategyExecutorProvider *accessstrategy.Provider,
-	cache certloader.Cache,
-) *RootResolver {
+	subscriptionConfig subscription.Config,
+) (*RootResolver, error) {
 	oAuth20HTTPClient := &http.Client{
 		Timeout:   oAuth20Cfg.HTTPClientTimeout,
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
 	}
 
-	oauthCredentials := &authpkg.OAuthCredentials{
-		ClientID:     selfRegConfig.ClientID,
-		ClientSecret: selfRegConfig.ClientSecret,
-		TokenURL:     selfRegConfig.URL + selfRegConfig.OauthTokenPath,
-	}
-
-	config := securehttp.CallerConfig{
-		Credentials:       oauthCredentials,
-		ClientTimeout:     selfRegConfig.ClientTimeout,
-		SkipSSLValidation: selfRegConfig.SkipSSLValidation,
-		Cache:             cache,
-	}
-
-	caller := securehttp.NewCaller(config)
-
 	transport := httptransport.NewWithClient(hydraURL.Host, hydraURL.Path, []string{hydraURL.Scheme}, oAuth20HTTPClient)
 	hydra := hydraClient.New(transport, nil)
 
 	metricsCollector.InstrumentOAuth20HTTPClient(oAuth20HTTPClient)
-	selfRegisterManager := runtime.NewSelfRegisterManager(selfRegConfig, caller)
+	selfRegisterManager, err := runtime.NewSelfRegisterManager(selfRegConfig, &runtime.CallerProvider{})
+	if err != nil {
+		return nil, err
+	}
 
 	tokenConverter := onetimetoken.NewConverter(oneTimeTokenCfg.LegacyConnectorURL)
 	authConverter := auth.NewConverterWithOTT(tokenConverter)
@@ -199,6 +185,7 @@ func NewRootResolver(
 	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdaptersMapping, timeService)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
 	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentSvc, tenantSvc)
+	subscriptionSvc := subscription.NewService(runtimeSvc, tenantSvc, labelSvc, uidSvc, subscriptionConfig.ProviderLabelKey, subscriptionConfig.ConsumerSubaccountIDsLabelKey)
 
 	return &RootResolver{
 		appNameNormalizer:  appNameNormalizer,
@@ -209,7 +196,7 @@ func NewRootResolver(
 		eventing:           eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:                document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
 		formation:          formation.NewResolver(transact, formationSvc, formationConv),
-		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc),
+		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc, subscriptionSvc),
 		runtimeContext:     runtimectx.NewResolver(transact, runtimeCtxSvc, runtimeContextConverter),
 		healthCheck:        healthcheck.NewResolver(healthCheckSvc),
 		webhook:            webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, webhookConverter),
@@ -223,7 +210,7 @@ func NewRootResolver(
 		mpBundle:           bundleutil.NewResolver(transact, bundleSvc, bundleInstanceAuthSvc, bundleReferenceSvc, apiSvc, eventAPISvc, docSvc, bundleConverter, bundleInstanceAuthConv, apiConverter, eventAPIConverter, docConverter, specSvc),
 		bundleInstanceAuth: bundleinstanceauth.NewResolver(transact, bundleInstanceAuthSvc, bundleSvc, bundleInstanceAuthConv, bundleConverter),
 		scenarioAssignment: scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv, tenantSvc),
-	}
+	}, nil
 }
 
 // BundlesDataloader missing godoc
@@ -795,7 +782,16 @@ func (r *mutationResolver) DeleteTenants(ctx context.Context, in []string) (int,
 	return r.tenant.Delete(ctx, in)
 }
 
-// UpdateTenant updates tenant by external id
+// SubscribeTenantToRuntime subscribes given tenant to runtime
+func (r *mutationResolver) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountID string, region string) (bool, error) {
+	return r.runtime.SubscribeTenant(ctx, providerID, subaccountID, region)
+}
+
+// UnsubscribeTenantFromRuntime unsubscribes given tenant from runtime
+func (r *mutationResolver) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountID string, region string) (bool, error) {
+	return r.runtime.UnsubscribeTenant(ctx, providerID, subaccountID, region)
+}
+
 func (r *mutationResolver) UpdateTenant(ctx context.Context, id string, in graphql.BusinessTenantMappingInput) (*graphql.Tenant, error) {
 	return r.tenant.Update(ctx, id, in)
 }

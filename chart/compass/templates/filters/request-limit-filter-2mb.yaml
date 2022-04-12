@@ -1,0 +1,30 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  annotations:
+    meta.helm.sh/release-name: compass
+    meta.helm.sh/release-namespace: compass-system
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: {{ .Chart.Name }}-limit-request-payload-2mb
+  namespace: {{ .Values.global.istio.namespace }}
+spec:
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: SIDECAR_INBOUND
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.buffer
+          typed_config:
+            '@type': type.googleapis.com/udpa.type.v1.TypedStruct
+            value:
+              maxRequestBytes: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit2MB }}
+  workloadSelector:
+    labels:
+      reqlimit: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit2MBLabel }}
