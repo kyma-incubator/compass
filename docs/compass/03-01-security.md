@@ -58,10 +58,10 @@ You can configure a custom JWT-based authentication for Compass with trusted iss
 
 #### Consumer-Provider Flows
 As mentioned above, there are use cases where you can manage Compass resources from a different multi-tenant system, which shares the same tenancy model and knows the external tenant IDs, which are also used by Compass. In this case, Compass trusts those systems and allows them to manage resources on behalf of the user. The following options are valid for this flow:
-- The multi-tenant system is represented as an Integration System. In this case, the provider tenant is specified in the `Tenant` header. The scopes which are granted to the request, are the ones assigned to integration systems, by default. They are granted by the context provider, mentioned above.
-- The multi-tenant system is represented as a Runtime. In this case, the second context provider that matches is a custom authenticator, where the provider tenant is part of a JWT, along with the scopes that are granted. The scopes are taken from the context provider in this case.
+- The multi-tenant system is represented as an Integration System. In this case, the consumer tenant is specified in the `Tenant` header. The scopes which are granted to the request, are the ones assigned to integration systems, by default. They are granted by the context provider, mentioned above.
+- The multi-tenant system is represented as a Runtime. In this case, the second context provider that matches is a custom authenticator, where the consumer tenant is part of a JWT, along with the scopes that are granted. The scopes are taken from the context provider in this case.
 
-Both cases feature two context providers, which are used in a pair. One of context providers must be an externally-issued certificate context provider. It extracts the consumer tenant ID from the certificate. Later on, Compass checks if the consumer tenant has access to the provider tenant. For more information, see the [Authentication Flows](03-01-security.md#authentication-flows) section in this document.
+Both cases feature two context providers, which are used in a pair. One of context providers must be an externally-issued certificate context provider. It extracts the provider tenant ID from the certificate. Later on, Compass checks if the provider tenant has access to the consumer tenant. For more information, see the [Authentication Flows](03-01-security.md#authentication-flows) section in this document.
 
 ### GraphQL security
 
@@ -306,7 +306,7 @@ An integration system is any multi-tenant application, which has access to all t
 The Integration Systems either can use OAuth credentials for authentication (created via the `requestClientCredentialsForIntegrationSystem` mutation), or a client certificate, issued by an external issuer, which is trusted by Compass.
 
 The latter authentication mechanism is plugged into Compass Connector. It can be configured to trust a specific certificate subject and based on that subject, to set the Consumer type to _Integration System_, and grant it access to a set of tenant types. This mechanism is more restrictive than the one that uses OAuth client.
-The provider tenant is specified in the `Tenant` header.
+The consumer tenant is specified in the `Tenant` header.
 
 **Compass Director Flow:**
 
@@ -330,10 +330,10 @@ _Not productive yet_
 
 _Used in production_
 
-This flow is similar to the externally-issued certificate flow, too. Again, two context providers are matched. One with externally-issued certificate and one with a custom authentication with JWT. Compass validates that the consumer tenant has access to the provider tenant.
+This flow is similar to the externally-issued certificate flow, too. Again, two context providers are matched. One with externally-issued certificate and one with a custom authentication with JWT. Compass validates that the provider tenant has access to the consumer tenant.
 
 **Scopes**
-The first context provider returns Runtime scopes and the second provider returns the scopes that are present in the JWT. The scopes that are returned by the provider that uses JWT must be used.
+The first context provider returns Runtime scopes and the second provider returns the scopes that are present in the JWT. The scopes that are returned by the context provider that uses JWT must be used.
 
 ## Internal Authentication
 
