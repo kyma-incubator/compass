@@ -24,7 +24,7 @@ spec:
           remove:
             {{- range .Values.global.gateway.headers.request.remove }}
             - {{ . }}
-      {{- end }}
+            {{- end }}
     - match:
         - uri:
             exact: {{ .Values.global.tenantFetcher.prefix }}
