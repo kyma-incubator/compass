@@ -12,6 +12,7 @@ type fetchOnDemandService struct {
 	tenantFetcherURL string
 }
 
+// NewFetchOnDemandService returns object responsible for fetching tenants
 func NewFetchOnDemandService(client *http.Client, url string) *fetchOnDemandService {
 	return &fetchOnDemandService{
 		client:           client,
@@ -19,6 +20,7 @@ func NewFetchOnDemandService(client *http.Client, url string) *fetchOnDemandServ
 	}
 }
 
+// FetchOnDemand calls an API which fetch details for the given tenant and store them in the database
 func (s *fetchOnDemandService) FetchOnDemand(tenant string) error {
 	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/%s", s.tenantFetcherURL, tenant), nil)
 	if err != nil {
