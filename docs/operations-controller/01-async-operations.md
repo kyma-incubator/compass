@@ -2,15 +2,10 @@
 
 To increase the response time for requests in Compass, a new asynchronous mechanism for required external calls is introduced.
 
-## Use Cases
-The list below outlines the uses cases that have enabled asynchronous APIs in CMP. These asynchronous APIs contain additional logic that is run separately of the main transaction. The additional API logic for the asynchronous functionality is part of the API business logic.  
+## Use
+The operation below outlines the use case that has enabled asynchronous API in CMP. This asynchronous API contains additional logic that is run separately of the main transaction. The additional API logic for the asynchronous functionality is part of the API business logic.
 
-Asynchronous enabled operations:
-* When registering an application (system), separately fetch ORD documents from the application.
-* When pairing an application (system), separately request an one time token from a remote token issuer service.
-* When deleting an application (system), separately notify the integration system or the LoB application that it must clean up the artifacts that were created specifically for this application pairing.
-* When requesting (or deleting) credentials for a particular usage of the APIs in a application bundle, separately notify the integration application or the LoB application that a new set of credentials is needed (or no longer needed).
-* Separately fetch requests for fetching specifications for API definitions and event definitions.
+Currently, asynchronous operation is supported when deleting an application (system), and separately notifying the integration system or the LoB application that it must clean up the artifacts that were created specifically for this application pairing.
 
 ## Asynchronous Flow
 
