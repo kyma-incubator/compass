@@ -149,6 +149,7 @@ data:
   global.tenantFetchers.subaccount-fetcher.endpoints.subaccountUpdated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-update"
   global.tenantFetchers.subaccount-fetcher.endpoints.subaccountMoved: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-move"
 
+  global.director.fetchTenantEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenants/v1/fetch"
 ---
 apiVersion: v1
 kind: ConfigMap

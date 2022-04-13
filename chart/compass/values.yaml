@@ -121,7 +121,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2297"
+      version: "PR-2307"
     console:
       dir:
       version: "PR-64"
@@ -219,6 +219,7 @@ global:
       requestBodyPattern: '{"key": "%s"}'
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
+    fetchTenantEndpoint: "https://compass-gateway-internal.kyma.local/teantns/v1/fetch"
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
     mtlsTokenPath: "/cert/token"
