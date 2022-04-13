@@ -1,24 +1,47 @@
 # Compass installation
 
-You can install Compass both on a cluster and on your local machine in two modes.
+You can install Compass both on a cluster and on your local machine in the following modes:
+- Single Kyma cluster
+- Compass as a Central Management Plane
 
-## Compass cluster with essential Kyma components
+The installed Compass version can be one of the following:
+ | Installation option                                | Value to use with the installation command   	| Example value          	|
+ |----------------------------------------------------|-----------------------------------------------|-------------------------|
+ | From the Compass `main` branch                    	| `main`                                       	| `main`                 	|
+ | From a specific commit on the Compass `main` branch| `main-{COMMIT_HASH}`                         	| `main-34edf09a`        	|
+ | From a specific PR on the Compass repository       | `PR-{PR_NUMBER}`                             	| `PR-1420`     	         |
 
-Compass as a central Management Plane cluster requires minimal Kyma installation. Steps to perform the installation vary depending on the installation environment.
+The Kyma version is read from the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file on a specific commit.
 
-#### Prerequisites
+## Prerequisites for cluster installation
 
-In case certificate rotation is needed, you can install [cert manager](https://github.com/jetstack/cert-manager) to take care of certificates.
+### Managed PostgreSQL Database
+
+For more information about how you can use GCP managed PostgreSQL database instance with Compass, see: [Configure Managed GCP PostgreSQL](https://github.com/kyma-incubator/compass/blob/main/chart/compass/configure-managed-gcp-postgresql.md).
+
+### Custom domain
+For more information about using custom domains, see [Custom Domain](https://github.com/kyma-project/kyma/blob/1.24.11/docs/kyma/04-04-use-your-own-domain.md) in the the Kyma installation guide, and the resources in the [Certificate Management](#certificate-management) section of this document.
+
+ > **NOTE:** If you installed Kyma on a cluster with a custom domain, you must also apply global overrides to the `compass-installer` namespace. To do that either manually replicate the overrides ConfigMap from `kyma-installer` to `compass-installer` namespace, or (if you have installed `yq`) run the following command:
+    
+  ```bash
+  kubectl get configmap -n kyma-installer {OVERRIDE_NAME} -o yaml \
+  | yq eval 'del(.metadata.resourceVersion, .metadata.uid, .metadata.annotations, .metadata.creationTimestamp, .metadata.selfLink, .metadata.managedFields, .metadata.namespace)' - | kubectl apply -n compass-installer -f -
+  ```
+
+### Certificate Management
+
+In case certificate rotation is needed, you can install JetStack's [Certificate Manager](https://github.com/jetstack/cert-manager) to take care of the certificates.
 
 The following certificates can be rotated:
 * Connector intermediate certificate that is used to issue Application and Runtime client certificates.
 * Istio gateway certificate for the regular HTTPS gateway.
-* Istio gateway certificate for the MTLS gateway.
+* Istio gateway certificate for the mTLS gateway.
 
+#### Create issuers
 The proper work of JWT token flows requires a set up and configured OpenID Connect (OIDC) Authorization Server. The OIDC Authorization Server is needed for the support of the respective users, user groups, and scopes. The OIDC server host and client-id are specified in [values.yaml](../../chart/compass/values.yaml) file inside the Compass Helm chart. A set of scopes are granted to the admin group. The admin group can be configured in the [director's values.yaml](../../chart/compass/charts/director/values.yaml) file.
-##### Create issuers
 
-To issue certificates, the cert manager requires a resource called issuer.
+To issue certificates, the Certificate Manager requires a resource called issuer.
 
 Example with self provided CA certificate:
 
@@ -54,9 +77,9 @@ spec:
               key: <secret_key>
 ```
 
-For more inforamtion about the different cluster issuer configurations, see the following document: [ACME Issuer](https://cert-manager.io/docs/configuration/acme/)
+For more information about the different cluster issuer configurations, see: [ACME Issuer](https://cert-manager.io/docs/configuration/acme/)
 
-##### Connector certificate
+#### Connector certificate
 
 ```yaml
 apiVersion: cert-manager.io/v1alpha2
@@ -82,11 +105,11 @@ spec:
 
 ```
 
-Cert manager's role is to rotate certificates as defined in the resources. Make sure that the certificate as shown in the example is specified as `isCA: true`. This means that the certificate is used to issue other certificates.
+Certificate Manager's role is to rotate certificates as defined in the resources. Make sure that the certificate as shown in the example is specified as `isCA: true`. This means that the certificate is used to issue other certificates.
 
-##### Domain certificates
+#### Domain certificates
 
-Cert manager can also rotate Istio gateway certificates. The following example shows such certificate:
+Certificate Manager can also rotate Istio gateway certificates. The following example shows such certificate:
 
 ```yaml
 apiVersion: cert-manager.io/v1alpha2
@@ -107,58 +130,52 @@ spec:
 
 In this case, as this certificate is not used to issue other certificates, it is not a CA certificate. Additionally, its validity depends on the settings by the issuer (for example **Let's encrypt**).
 
+## Compass as a Central Management Plane
+
+This is a multi-cluster installation mode, in which one cluster is needed with Compass. This mode allows you to integrate your Runtimes with Applications and manage them in one central place.
+
+Compass as a Central Management Plane cluster requires minimal Kyma installation. The installation steps can vary depending on the installation environment.
+
 ### Cluster installation
 
-
-To install Compass as central Management Plane on a cluster, follow these steps:
-
-1. Select installation option for Compass and Kyma. ​There are three possible installation options:
-
-   | Installation option     	| Value to use with the installation command   	| Example value          	|
-   |-------------------------	|-------------------	|-------------------------	|
-   | From the Compass `main` branch 	| `main`          	| `main`                	|
-   | From a specific commit on the Compass `main` branch 	| `main-{COMMIT_HASH}` 	| `main-34edf09a` 	|
-   | From a specific PR on the Compass repository       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
-
-   The Kyma version is read from the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file on a specific commit.
-
-   Once you decide on the installation option, use this command:
-
+1. Select installation option for Compass and Kyma. Then, use this command:
     ```bash
     export INSTALLATION_OPTION={CHOSEN_INSTALLATION_OPTION_HERE}
     ```
-1. Prepare the cluster for custom installation. Read how to prepare the cluster [with the `xip.io` domain](https://kyma-project.io/docs/#installation-install-kyma-on-a-cluster-prepare-the-cluster) or [with a custom domain](https://kyma-project.io/docs/#installation-install-kyma-with-your-own-domain-prepare-the-cluster). Remember to apply all global overrides in both the `kyma-installer` and `compass-installer` Namespaces.
-1. Apply overrides using the following command from the root directory of the Compass repository:
+1. Prepare the cluster for custom Kyma installation. See the prerequisites in this document above and the prerequisites in the [Kyma documentation](https://github.com/kyma-project/kyma/blob/1.24.11/docs/kyma/04-03-cluster-installation.md) depending on the infrastructure of your provider. 
 
+1. Apply overrides using the following command from the root directory of the Compass repository:
     ```bash
     kubectl create namespace kyma-installer || true \
-        && kubectl apply -f ./installation/resources/installer-overrides-compass-gateway.yaml
+        && kubectl apply -f ./installation/resources/kyma/installer-cr-kyma-minimal.yaml
     ```
-1. Perform minimal Kyma installation with the following command:
+    >**NOTE:** Before starting the respective installation, apply all global overrides in both the `kyma-installer` and `compass-installer` namespaces.
 
+1. Perform minimal Kyma installation with the following command:
     ```bash
     kubectl apply -f "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/kyma-installer.yaml"
     ```
-1. Check the Kyma installation progress. To do so, download the script and check the progress of the installation:
 
+1. Check the Kyma installation progress. To do so, download the script and check the progress of the installation:
     ```bash
     source <(curl -s "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/is-kyma-installed.sh")
     ```
-1. Perform Kyma post-installation steps for a cluster [with the `xip.io` domain](https://kyma-project.io/docs/#installation-install-kyma-on-a-cluster-post-installation-steps) or [with a custom domain](https://kyma-project.io/docs/#installation-install-kyma-with-your-own-domain-configure-dns-for-the-cluster-load-balancer).
-1. Install Compass with the following command:
 
+1. If required, perform Kyma [post-installation steps](https://github.com/kyma-project/kyma/blob/1.24.11/docs/kyma/04-03-cluster-installation.md#post-installation-steps).
+
+1. Install Compass using the following command:
     ```bash
     kubectl apply -f "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/compass-installer.yaml"
-    ```​   
-1. Check the Compass installation progress. To do so, download the script and check the progress of the installation:
+    ```
 
+1. Check the Compass installation progress. To do so, download the script and check the progress of the installation:
      ```bash
     source <(curl -s "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/is-installed.sh")
     ```
 
 ### Local Minikube installation
 
-For local development, install Compass with the minimal Kyma installation on Minikube from the `main` branch. To do so, run this script:
+For local development, install Compass with the minimal Kyma installation on Minikube from the `main` branch. To do so, run the following script:
 
 ```bash
 ./installation/cmd/run.sh --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID} --oidc-admin-group {OIDC_ADMIN_GROUP}
@@ -175,11 +192,18 @@ You can also specify if you want the Kyma installation to contain only `minimal`
 ./installation/cmd/run.sh --kyma-installation full --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID} --oidc-admin-group {OIDC_ADMIN_GROUP}
 ```
 
-Optionally, you can use the `--dump-db` flag to populate the DB with sample data. As a result, a DB dump is downloaded from the Compass development environment and is imported into the DB during the installation of Compass. Note that using this flag also results in building a new `schema-migrator` image from the local files.
-
+Optionally, you can use the `--dump-db` flag to populate the DB with sample data. As a result, a DB dump is downloaded from the Compass development environment and is imported into the DB during the installation of Compass. Note that you can only use this feature if you are part of the Compass contributors. Otherwise, you will not have access to the development environment, from which the data is obtained.
+Note that using this flag also results in building a new `schema-migrator` image from the local files.
 ```bash
 ./installation/cmd/run.sh --dump-db --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID} --oidc-admin-group {OIDC_ADMIN_GROUP}
 ```
+
+
+>**NOTE:** The versions of the components that are installed depend on their tag versions listed in the `values.yaml` file in the Helm charts.
+If you want to build and deploy the local source code version of a component (for example, Director), you can run the following command in the component directory:
+  ```bash
+  make deploy-on-minikube
+  ```
 
 > **_NOTE:_**  
 >To configure an OIDC identity provider that is required for the JWT flows, the OIDC configuration arguments (`--oidc-host`, `--oidc-client-id`, `--oidc-admin-group`) are mandatory. If they are omitted, the **run.sh** script tries to get the required values from the **~/.compass.yaml** file. To run the `run.sh` script, you need the [yq](https://mikefarah.gitbook.io/yq/) tool.
@@ -195,15 +219,15 @@ Optionally, you can use the `--dump-db` flag to populate the DB with sample data
 
 ## Single cluster with Compass and Runtime Agent
 
-You can install Compass on a single cluster with all Kyma components, including the Runtime Agent. In this mode, the Runtime Agent is already connected to Compass. This mode is useful for all kind of testing and development purposes.
+This is a single-tenant mode, which provides the complete cluster Kyma installation with all components, including the Runtime Agent. You can install Compass on top of it.
+In this mode, the Runtime Agent is already connected to Compass. This mode facilitates various kind of testing and development.
 
 ### Cluster installation
 
 To install Compass and Runtime components on a single cluster, follow these steps:
 
-1. [Install Kyma with the Runtime Agent](https://kyma-project.io/docs/main/components/runtime-agent#installation-installation).
-1. Apply the required overrides using the following command:
-
+1. Apply the [Installation](https://github.com/kyma-project/kyma/blob/1.24.11/docs/runtime-agent/04-01-installation-modes.md) configuration that enables the Runtime Agent, and then, install Kyma, see [Install Kyma on a cluster](https://github.com/kyma-project/kyma/blob/1.24.11/docs/kyma/04-03-cluster-installation.md). 
+1. Apply the required overrides configuration in Compass that also enables the automatic registration of the Kyma runtime into Compass:
     ```bash
     kubectl create namespace compass-installer || true && cat <<EOF | kubectl apply -f -
     apiVersion: v1
@@ -216,40 +240,17 @@ To install Compass and Runtime components on a single cluster, follow these step
         component: compass
         kyma-project.io/installation: ""
     data:
-          # The name of the currently used gateway
-          global.istio.gateway.name: "kyma-gateway"
-          # The Namespace of the currently used gateway
-          global.istio.gateway.namespace: "kyma-system"
-          global.connector.secrets.ca.name: "connector-service-app-ca"
-          # The Namespace with a Secret that contains a certificate for the Connector Service
-          global.connector.secrets.ca.namespace: "kyma-integration"
-          # The parameter that enables the Compass gateway, as the default Kyma gateway is disabled in this installation mode
-          gateway.gateway.enabled: "false"
-          global.agentPreconfiguration: "true"
+      global.agentPreconfiguration: "true"
     EOF
     ```
 
-   > **NOTE:** If you installed Kyma on a cluster with a custom domain, remember to apply global overrides to the `compass-installer` Namespace as well. To do that, run this command:
-
-    ```bash
-    kubectl get configmap -n kyma-installer {OVERRIDE_NAME} -oyaml --export | kubectl apply -n compass-installer -f -
-    ```
-1. Install Compass. ​There are three possible installation options:
-
-   | Installation option     	| Value to use with the installation command   	| Example value          	|
-       |-------------------------	|-------------------	|-------------------------	|
-   | From the `main` branch 	| `main`          	| `main`                	|
-   | From a specific commit on the `main` branch 	| `main-{COMMIT_HASH}` 	| `main-34edf09a` 	|
-   | From a specific PR       	| `PR-{PR_NUMBER}`         	| `PR-1420`     	|
-
-   Once you decide on the installation option, use these commands:
-
+1. Choose an installation option from the ones listed at the beginning of this document and install Compass:
     ```bash
     export INSTALLATION_OPTION={CHOSEN_INSTALLATION_OPTION}
     kubectl apply -f "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/compass-installer.yaml"
     ```
-1. Check the Compass installation progress. To do so, download the script and check the progress of the installation:
 
+1. Check the Compass installation progress. To do so, download the script and check the progress of the installation:
     ```bash
     source <(curl -s "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/is-installed.sh")
     ```
@@ -258,10 +259,16 @@ Once Compass is installed, Runtime Agent will be configured to fetch the Runtime
 
 ### Local Minikube installation
 
-To install Compass and Runtime components on Minikube, run the following command. Kyma source code will be picked up according to the KYMA_VERSION file and Compass source code will be picked up from the local sources (locally checked out branch):
+To install Compass and Runtime components on Minikube, run the command below. Kyma source code will be picked up according to the KYMA_VERSION file and Compass source code will be picked up from the local sources (locally checked out branch).
 
 ```bash
 ./installation/cmd/run.sh --kyma-installation full --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID}
 ```
+
+>**NOTE:** The versions of the components that are installed depend on their tag versions listed in the `values.yaml` file in the Helm charts.
+If you want to build and deploy the local source code version of a component (for example, Director), you can run the following command in the component directory:
+  ```bash
+  make deploy-on-minikube
+  ```
 
 > **Note:** To reduce memory and CPU usage, from the `installer-cr-kyma.yaml` file, comment out the components you don't want to use, such as `monitoring`, `tracing`, `logging`, or `kiali`.
