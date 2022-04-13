@@ -1,26 +1,26 @@
 aliases:
-  documentation-reviewers:
-    - kazydek
-    - klaudiagrz
-    - bszwarc
-    - mmitoraj
-    - majakurcius
-    - alexandra-simeonova
-    - Peteva
-    - ekaterina-mitova
-  documentation-approvers:
-    - kazydek
-    - klaudiagrz
-    - bszwarc
-    - mmitoraj
-    - majakurcius
+  team-dragon:
+    - desislavaa
+    - StefanCholakov
+    - krasish
+    - KirilKabakchiev
+  team-raptor:
+    - DimitarPetrov
+    - PetarTodorovv
+    - nyordanoff
+    - StanislavStefanov
+    - la4ezar
+    - KirilKabakchiev
+    - ivantenevvasilev
+  team-falcon:
+    - NickyMateev
+    - dzahariev
+    - alextargov
+    - kaloyanspiridonov
+    - SvetlinZarev-SAP
+    - KirilKabakchiev
+  technical-writers: # Special value respected by kyma's prow installation.
     - alexandra-simeonova
     - Peteva
     - ekaterina-mitova
     - nkanchev
-  console-approvers:
-    - parostatkiem
-    - Wawrzyn321
-    - kwiatekus
-    - dariadomagala
-    - akucharska

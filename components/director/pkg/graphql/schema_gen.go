@@ -112,6 +112,7 @@ type ComplexityRoot struct {
 		ProviderName          func(childComplexity int) int
 		Status                func(childComplexity int) int
 		SystemNumber          func(childComplexity int) int
+		SystemStatus          func(childComplexity int) int
 		UpdatedAt             func(childComplexity int) int
 		Webhooks              func(childComplexity int) int
 	}
@@ -386,12 +387,14 @@ type ComplexityRoot struct {
 		SetBundleInstanceAuth                         func(childComplexity int, authID string, in BundleInstanceAuthSetInput) int
 		SetDefaultEventingForApplication              func(childComplexity int, appID string, runtimeID string) int
 		SetRuntimeLabel                               func(childComplexity int, runtimeID string, key string, value interface{}) int
+		SubscribeTenantToRuntime                      func(childComplexity int, providerID string, subaccountID string, region string) int
 		UnassignFormation                             func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
 		UnpairApplication                             func(childComplexity int, id string, mode *OperationMode) int
 		UnregisterApplication                         func(childComplexity int, id string, mode *OperationMode) int
 		UnregisterIntegrationSystem                   func(childComplexity int, id string) int
 		UnregisterRuntime                             func(childComplexity int, id string) int
 		UnregisterRuntimeContext                      func(childComplexity int, id string) int
+		UnsubscribeTenantFromRuntime                  func(childComplexity int, providerID string, subaccountID string, region string) int
 		UpdateAPIDefinition                           func(childComplexity int, id string, in APIDefinitionInput) int
 		UpdateApplication                             func(childComplexity int, id string, in ApplicationUpdateInput) int
 		UpdateApplicationTemplate                     func(childComplexity int, id string, in ApplicationTemplateUpdateInput) int
@@ -665,6 +668,8 @@ type MutationResolver interface {
 	WriteTenants(ctx context.Context, in []*BusinessTenantMappingInput) (int, error)
 	DeleteTenants(ctx context.Context, in []string) (int, error)
 	UpdateTenant(ctx context.Context, id string, in BusinessTenantMappingInput) (*Tenant, error)
+	SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountID string, region string) (bool, error)
+	UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountID string, region string) (bool, error)
 }
 type OneTimeTokenForApplicationResolver interface {
 	Raw(ctx context.Context, obj *OneTimeTokenForApplication) (*string, error)
@@ -1013,6 +1018,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.SystemNumber(childComplexity), true
+
+	case "Application.systemStatus":
+		if e.complexity.Application.SystemStatus == nil {
+			break
+		}
+
+		return e.complexity.Application.SystemStatus(childComplexity), true
 
 	case "Application.updatedAt":
 		if e.complexity.Application.UpdatedAt == nil {
@@ -2546,6 +2558,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SetRuntimeLabel(childComplexity, args["runtimeID"].(string), args["key"].(string), args["value"].(interface{})), true
 
+	case "Mutation.subscribeTenantToRuntime":
+		if e.complexity.Mutation.SubscribeTenantToRuntime == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_subscribeTenantToRuntime_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SubscribeTenantToRuntime(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["region"].(string)), true
+
 	case "Mutation.unassignFormation":
 		if e.complexity.Mutation.UnassignFormation == nil {
 			break
@@ -2617,6 +2641,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UnregisterRuntimeContext(childComplexity, args["id"].(string)), true
+
+	case "Mutation.unsubscribeTenantFromRuntime":
+		if e.complexity.Mutation.UnsubscribeTenantFromRuntime == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_unsubscribeTenantFromRuntime_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UnsubscribeTenantFromRuntime(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["region"].(string)), true
 
 	case "Mutation.updateAPIDefinition":
 		if e.complexity.Mutation.UpdateAPIDefinition == nil {
@@ -4374,6 +4410,7 @@ type Application {
 	createdAt: Timestamp
 	updatedAt: Timestamp
 	deletedAt: Timestamp
+	systemStatus: String
 	error: String
 }
 
@@ -5118,6 +5155,8 @@ type Mutation {
 	writeTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.writeTenants")
 	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
 	updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")
+	subscribeTenantToRuntime(providerID: String!, subaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenantToRuntime")
+	unsubscribeTenantFromRuntime(providerID: String!, subaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenantFromRuntime")
 }
 
 `, BuiltIn: false},
@@ -6448,6 +6487,36 @@ func (ec *executionContext) field_Mutation_setRuntimeLabel_args(ctx context.Cont
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_subscribeTenantToRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["providerID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["providerID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["subaccountID"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["subaccountID"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["region"]; ok {
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["region"] = arg2
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_unassignFormation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -6561,6 +6630,36 @@ func (ec *executionContext) field_Mutation_unregisterRuntime_args(ctx context.Co
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_unsubscribeTenantFromRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["providerID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["providerID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["subaccountID"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["subaccountID"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["region"]; ok {
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["region"] = arg2
 	return args, nil
 }
 
@@ -8847,6 +8946,37 @@ func (ec *executionContext) _Application_deletedAt(ctx context.Context, field gr
 	res := resTmp.(*Timestamp)
 	fc.Result = res
 	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Application_systemStatus(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SystemStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_error(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -17700,6 +17830,136 @@ func (ec *executionContext) _Mutation_updateTenant(ctx context.Context, field gr
 	return ec.marshalNTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_subscribeTenantToRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_subscribeTenantToRuntime_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().SubscribeTenantToRuntime(rctx, args["providerID"].(string), args["subaccountID"].(string), args["region"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.subscribeTenantToRuntime")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(bool); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be bool`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_unsubscribeTenantFromRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_unsubscribeTenantFromRuntime_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UnsubscribeTenantFromRuntime(rctx, args["providerID"].(string), args["subaccountID"].(string), args["region"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.unsubscribeTenantFromRuntime")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(bool); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be bool`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _OAuthCredentialData_clientId(ctx context.Context, field graphql.CollectedField, obj *OAuthCredentialData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -24604,6 +24864,8 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._Application_updatedAt(ctx, field, obj)
 		case "deletedAt":
 			out.Values[i] = ec._Application_deletedAt(ctx, field, obj)
+		case "systemStatus":
+			out.Values[i] = ec._Application_systemStatus(ctx, field, obj)
 		case "error":
 			out.Values[i] = ec._Application_error(ctx, field, obj)
 		default:
@@ -26187,6 +26449,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "updateTenant":
 			out.Values[i] = ec._Mutation_updateTenant(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "subscribeTenantToRuntime":
+			out.Values[i] = ec._Mutation_subscribeTenantToRuntime(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "unsubscribeTenantFromRuntime":
+			out.Values[i] = ec._Mutation_unsubscribeTenantFromRuntime(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

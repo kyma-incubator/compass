@@ -92,6 +92,10 @@ data:
   grafana.sidecar.resources.limits.cpu: 200m
   grafana.sidecar.resources.requests.memory: 64Mi
   grafana.sidecar.resources.requests.cpu: 50m
+  grafana.kyma.authProxy.enabled: "false"
+  grafana.env.GF_AUTH_ANONYMOUS_ENABLED: "true"
+  grafana.env.GF_AUTH_GENERIC_OAUTH_ENABLED: "false"
+  global.monitoring_integration_tests.enabled: "false" # Tests rely on dex security which we already removed.
   prometheusOperator.configReloaderMemory: 256Mi
   prometheus-istio.server.resources.limits.memory: 1Gi
 ---
@@ -168,6 +172,7 @@ data:
   kcproxy.resources.requests.memory: 32Mi
   authProxy.resources.limits.memory: 256Mi
   authProxy.resources.requests.memory: 32Mi
+  authProxy.enabled: "false"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -183,6 +188,7 @@ data:
   kcproxy.resources.requests.memory: 32Mi
   authProxy.resources.limits.memory: 256Mi
   authProxy.resources.requests.memory: 32Mi
+  authProxy.enabled: "false"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -194,6 +200,7 @@ metadata:
     component: logging
     kyma-project.io/installation: ""
 data:
+  global.logging_integration_tests.enabled: "false"
   logui.resources.limits.cpu: 160m
   logui.resources.limits.memory: 128Mi
   loki.resources.limits.memory: 512Mi

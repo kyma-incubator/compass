@@ -167,7 +167,6 @@ func fixTokenClaims(t *testing.T) proxy.Claims {
 		Scopes:       "scopes",
 	}
 }
-
 func fixClaims() proxy.Claims {
 	return proxy.Claims{
 		Tenant:         "e36c520b-caa2-4677-b289-8a171184192b",
@@ -178,10 +177,7 @@ func fixClaims() proxy.Claims {
 	}
 }
 
-func fixBearerHeader(t *testing.T) string {
-
-	claims := fixTokenClaims(t)
-
+func fixBearerHeaderWithTokenClaims(t *testing.T, claims interface{}) string {
 	marshalledClaims, err := json.Marshal(&claims)
 	require.NoError(t, err)
 
@@ -190,6 +186,12 @@ func fixBearerHeader(t *testing.T) string {
 	tokenClaims := base64.RawURLEncoding.EncodeToString(marshalledClaims)
 	tokenHeader := base64.RawURLEncoding.EncodeToString([]byte(header))
 	return fmt.Sprintf("Bearer %s", fmt.Sprintf("%s.%s.", tokenHeader, tokenClaims))
+}
+
+func fixBearerHeader(t *testing.T) string {
+	claims := fixTokenClaims(t)
+
+	return fixBearerHeaderWithTokenClaims(t, claims)
 }
 
 func fixGraphQLResponse() model.GraphqlResponse {

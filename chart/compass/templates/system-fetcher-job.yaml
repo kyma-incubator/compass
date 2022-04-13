@@ -30,7 +30,7 @@ spec:
           {{ end }}
           serviceAccountName: {{ $.Chart.Name }}-system-fetcher
           containers:
-            - name: system-fetcher
+            - name: {{ .Values.global.systemFetcher.containerName }}
               image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
               imagePullPolicy: IfNotPresent
               volumeMounts:

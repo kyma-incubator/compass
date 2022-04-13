@@ -66,8 +66,8 @@ func TestRefetchAPISpecDifferentSpec(stdT *testing.T) {
 				tenant := testConfig.DefaultTestTenant
 
 				appName := "app-test-bundle"
-				application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
-				defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant, &application)
+				application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenant)
+				defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant, &application)
 				require.NoError(t, err)
 				require.NotEmpty(t, application.ID)
 
@@ -86,8 +86,8 @@ func TestRefetchAPISpecDifferentSpec(stdT *testing.T) {
 					},
 				}
 
-				bndl := fixtures.CreateBundleWithInput(t, ctx, dexGraphQLClient, tenant, application.ID, bndlInput)
-				defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+				bndl := fixtures.CreateBundleWithInput(t, ctx, certSecuredGraphQLClient, tenant, application.ID, bndlInput)
+				defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenant, bndl.ID)
 				bndlID := bndl.ID
 				assertions.AssertSpecInBundleNotNil(t, bndl)
 				spec := *bndl.APIDefinitions.Data[0].Spec.APISpec.Data
@@ -96,13 +96,13 @@ func TestRefetchAPISpecDifferentSpec(stdT *testing.T) {
 				apiID := bndl.APIDefinitions.Data[0].ID
 				req := fixtures.FixRefetchAPISpecRequest(apiID)
 
-				err = testctx.Tc.RunOperationWithCustomTenant(ctx, dexGraphQLClient, tenant, req, &refetchedSpec)
+				err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant, req, &refetchedSpec)
 				require.NoError(t, err)
 
 				require.NotNil(t, refetchedSpec.APISpec.Data)
 				assert.NotEqual(t, spec, *refetchedSpec.APISpec.Data)
 
-				bndl = fixtures.GetBundle(t, ctx, dexGraphQLClient, tenant, application.ID, bndlID)
+				bndl = fixtures.GetBundle(t, ctx, certSecuredGraphQLClient, tenant, application.ID, bndlID)
 
 				assertions.AssertSpecInBundleNotNil(t, bndl)
 				assert.Equal(t, *refetchedSpec.APISpec.Data, *bndl.APIDefinitions.Data[0].Spec.Data)
@@ -156,8 +156,8 @@ func TestCreateAPIWithFetchRequestWithWrongCredentials(stdT *testing.T) {
 				tenant := testConfig.DefaultTestTenant
 
 				appName := "app-test-bundle"
-				application, err := fixtures.RegisterApplication(t, ctx, dexGraphQLClient, appName, tenant)
-				defer fixtures.CleanupApplication(t, ctx, dexGraphQLClient, tenant, &application)
+				application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, appName, tenant)
+				defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant, &application)
 				require.NoError(t, err)
 				require.NotEmpty(t, application.ID)
 
@@ -176,8 +176,8 @@ func TestCreateAPIWithFetchRequestWithWrongCredentials(stdT *testing.T) {
 					},
 				}
 
-				bndl := fixtures.CreateBundleWithInput(t, ctx, dexGraphQLClient, tenant, application.ID, bndlInput)
-				defer fixtures.DeleteBundle(t, ctx, dexGraphQLClient, tenant, bndl.ID)
+				bndl := fixtures.CreateBundleWithInput(t, ctx, certSecuredGraphQLClient, tenant, application.ID, bndlInput)
+				defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenant, bndl.ID)
 
 				assert.True(t, len(bndl.APIDefinitions.Data) > 0)
 				assert.NotNil(t, bndl.APIDefinitions.Data[0])

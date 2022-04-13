@@ -32,8 +32,15 @@ spec:
         {{ end }}
       labels:
         app: {{ .Chart.Name }}
+        reqlimit: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit2MBLabel }}
         release: {{ .Release.Name }}
     spec:
+      {{ if .Values.global.isLocalEnv }}
+      hostAliases:
+        - ip: {{ .Values.global.minikubeIP }}
+          hostnames:
+            - "{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}"
+      {{ end }}
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
@@ -164,6 +171,8 @@ spec:
               value: {{ $config.authenticator.trusted_issuers | quote }}
             - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_ATTRIBUTES
               value: {{ $config.authenticator.attributes | quote }}
+            - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_CHECK_CLIENT_ID_SUFFIX
+              value: {{ $config.authenticator.checkSuffix | quote }}
             {{- end }}
             {{- end }}
             - name: APP_HEALTH_CONFIG_INDICATORS
@@ -181,21 +190,18 @@ spec:
               value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY
               value: {{ .Values.global.tenantFetcher.server.consumerSubaccountIdsLabelKey }}
-            - name: APP_SELF_REGISTER_CLIENT_ID
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.director.selfRegister.secret.name }}
-                  key: {{ .Values.global.director.selfRegister.secret.clientIdKey }}
-            - name: APP_SELF_REGISTER_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.director.selfRegister.secret.name }}
-                  key: {{ .Values.global.director.selfRegister.secret.clientSecretKey }}
-            - name: APP_SELF_REGISTER_URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.global.director.selfRegister.secret.name }}
-                  key: {{ .Values.global.director.selfRegister.secret.urlKey }}
+            - name: APP_SELF_REGISTER_INSTANCE_CLIENT_ID_PATH
+              value: {{ .Values.global.director.selfRegister.clientIdPath }}
+            - name: APP_SELF_REGISTER_INSTANCE_CLIENT_SECRET_PATH
+              value: {{ .Values.global.director.selfRegister.clientSecretPath }}
+            - name: APP_SELF_REGISTER_INSTANCE_URL_PATH
+              value: {{ .Values.global.director.selfRegister.urlPath }}
+            - name: APP_SELF_REGISTER_INSTANCE_TOKEN_URL_PATH
+              value: {{ .Values.global.director.selfRegister.tokenUrlPath }}
+            - name: APP_SELF_REGISTER_INSTANCE_X509_CERT_PATH
+              value: {{ .Values.global.director.selfRegister.clientCertPath }}
+            - name: APP_SELF_REGISTER_INSTANCE_X509_KEY_PATH
+              value: {{ .Values.global.director.selfRegister.clientKeyPath }}
             - name: APP_SELF_REGISTER_OAUTH_TOKEN_PATH
               value: {{ .Values.global.director.selfRegister.oauthTokenPath }}
             - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY # This variable get its value from tenant fetcher configuration(in tests charts too) because we need "self register" flow to be executed as part of the consumer-provider test, locally and on real environment as well
@@ -216,8 +222,12 @@ spec:
               value: {{ .Values.global.director.selfRegister.tenantQueryParam }}
             - name: APP_SELF_REGISTER_REQUEST_BODY_PATTERN
               value: {{ .Values.global.director.selfRegister.requestBodyPattern | quote }}
+            - name: APP_SELF_REGISTER_SECRET_PATH
+              value: "{{ .Values.global.director.selfRegister.secret.path }}/{{ .Values.global.director.selfRegister.secret.key }}"
             - name: APP_SELF_REGISTER_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.http.client.skipSSLValidation }}"
+            - name: APP_SELF_REGISTER_OAUTH_MODE
+              value: {{ .Values.global.director.selfRegister.oauthMode }}
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
             - name: APP_EXTERNAL_CLIENT_CERT_KEY
@@ -239,11 +249,11 @@ spec:
             timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.readinessProbe.periodSeconds }}
           volumeMounts:
+            - name: self-reg-secret-volume
+              mountPath: {{ .Values.global.director.selfRegister.secret.path }}
+              readOnly: true
             - mountPath: /config
               name: director-config
-            - mountPath: /data/static-users.yaml
-              name: static-users
-              subPath: static-users.yaml
             - mountPath: /data/static-groups.yaml
               name: static-groups
               subPath: static-groups.yaml
@@ -266,12 +276,12 @@ spec:
           {{- end }}
           {{end}}
       volumes:
+        - name: self-reg-secret-volume
+          secret:
+            secretName: {{ .Values.global.director.selfRegister.secret.name }}
         - name: director-config
           configMap:
             name: {{ template "fullname" . }}-config
-        - name: static-users
-          configMap:
-            name: {{ template "fullname" . }}-static-users
         - name: static-groups
           configMap:
             name: {{ template "fullname" . }}-static-groups

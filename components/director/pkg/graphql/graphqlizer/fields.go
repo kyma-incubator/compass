@@ -100,6 +100,7 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		description
 		baseUrl
 		systemNumber
+		systemStatus
 		integrationSystemID
 		applicationTemplateID
 		labels

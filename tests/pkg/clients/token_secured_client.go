@@ -91,8 +91,8 @@ func GenerateRuntimeCertificate(t *testing.T, token *externalschema.Token, conne
 	return generateCertificateForToken(t, connectorClient, token.Token, clientKey)
 }
 
-func GetConfiguration(t *testing.T, staticClient *StaticUserClient, connectorClient *TokenSecuredClient, appID string) externalschema.Configuration {
-	token, err := staticClient.GenerateApplicationToken(t, appID)
+func GetConfiguration(t *testing.T, client *CertSecuredGraphQLClient, connectorClient *TokenSecuredClient, appID string) externalschema.Configuration {
+	token, err := client.GenerateApplicationToken(t, appID)
 	require.NoError(t, err)
 
 	configuration, err := connectorClient.Configuration(token.Token)
@@ -102,8 +102,8 @@ func GetConfiguration(t *testing.T, staticClient *StaticUserClient, connectorCli
 	return configuration
 }
 
-func GenerateApplicationCertificate(t *testing.T, staticClient *StaticUserClient, connectorClient *TokenSecuredClient, appID string, clientKey *rsa.PrivateKey) (externalschema.CertificationResult, externalschema.Configuration) {
-	token, err := staticClient.GenerateApplicationToken(t, appID)
+func GenerateApplicationCertificate(t *testing.T, client *CertSecuredGraphQLClient, connectorClient *TokenSecuredClient, appID string, clientKey *rsa.PrivateKey) (externalschema.CertificationResult, externalschema.Configuration) {
+	token, err := client.GenerateApplicationToken(t, appID)
 	require.NoError(t, err)
 
 	return generateCertificateForToken(t, connectorClient, token.Token, clientKey)
