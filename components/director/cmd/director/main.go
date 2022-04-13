@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -150,6 +151,8 @@ type config struct {
 	SubscriptionConfig subscription.Config
 
 	TenantOnDemandURL string `envconfig:"optional,APP_FETCH_TENANT_URL"`
+
+	SkipSSLValidation bool `envconfig:"default=false,APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"`
 }
 
 func main() {
@@ -198,9 +201,14 @@ func main() {
 	}
 	cfg.SelfRegConfig.ClientTimeout = cfg.ClientTimeout
 
+	internalClientTransport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: cfg.SkipSSLValidation,
+		},
+	}
 	internalHTTPClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
-		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(internalClientTransport, "Authorization")),
 	}
 
 	appRepo := applicationRepo()
