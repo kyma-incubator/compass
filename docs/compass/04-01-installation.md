@@ -26,7 +26,7 @@ For more information about using custom domains, see [Custom Domain](https://git
     
   ```bash
   kubectl get configmap -n kyma-installer {OVERRIDE_NAME} -o yaml \
-  | yq eval 'del(.metadata.resourceVersion, .metadata.uid, .metadata.annotations, .metadata.creationTimestamp, .metadata.selfLink, .metadata.managedFields, .metadata.namespace)' -
+  | yq eval 'del(.metadata.resourceVersion, .metadata.uid, .metadata.annotations, .metadata.creationTimestamp, .metadata.selfLink, .metadata.managedFields, .metadata.namespace)' - | kubectl apply -n compass-installer -f -
   ```
 
 ### Certificate Management
