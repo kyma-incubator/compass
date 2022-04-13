@@ -50,11 +50,11 @@ The diagram below represents registering IntegrationSystem and pairing it with D
 
 1. An Integration System Administrator executes mutation  `registerIntegrationSystem` with the following input:
 ```graphql
-registerIntegrationSystem(in:{name: "IntegrationSystemFromBigProvider"})
+registerIntegrationSystem(in:{name: "integration-system"})
 ```
 
 2. After creating IntegrationSystem, Administrator enables communication between IntegrationSystem and Director by
-creating Client Credentials: `requestClientCredentialsForIntegrationSystem(integrationSystemID:ID!)`.
+creating Client Credentials: `requestClientCredentialsForIntegrationSystem(id: ID!)`.
 Director creates pair Client ID and Client Secret by requesting internal API of Hydra Admin and returns those pair to the 
 Administrator.
 
