@@ -219,7 +219,7 @@ global:
       requestBodyPattern: '{"key": "%s"}'
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
-    fetchTenantEndpoint: "https://compass-gateway-internal.kyma.local/teantns/v1/fetch"
+    fetchTenantEndpoint: '{{ printf "https://%s.%s/%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host  .Values.global.ingress.domainName  Values.global.tenantFetcher.prefix"
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
     mtlsTokenPath: "/cert/token"
