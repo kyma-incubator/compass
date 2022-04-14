@@ -38,7 +38,7 @@ func TestFetcher_FetchTenantOnDemand(t *testing.T) {
 		TenantStorageSvcFn func() *tfautomock.TenantStorageService
 		APIClientFn        func() *tfautomock.EventAPIClient
 		GqlClientFn        func() *tfautomock.DirectorGraphQLClient
-		ExpectedError      error
+		ExpectedErrorMsg   error
 	}{
 		{
 			Name:            "Success when tenant exists",
@@ -48,9 +48,9 @@ func TestFetcher_FetchTenantOnDemand(t *testing.T) {
 				svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{&businessSubaccount1BusinessMapping}, nil).Once()
 				return svc
 			},
-			APIClientFn:   UnusedEventAPIClient,
-			GqlClientFn:   UnusedGQLClient,
-			ExpectedError: nil,
+			APIClientFn:      UnusedEventAPIClient,
+			GqlClientFn:      UnusedGQLClient,
+			ExpectedErrorMsg: nil,
 		},
 		{
 			Name:               "Error when cannot create tenant",
@@ -58,7 +58,7 @@ func TestFetcher_FetchTenantOnDemand(t *testing.T) {
 			TenantStorageSvcFn: UnusedTenantStorageSvc,
 			APIClientFn:        UnusedEventAPIClient,
 			GqlClientFn:        UnusedGQLClient,
-			ExpectedError:      testErr,
+			ExpectedErrorMsg:   testErr,
 		},
 	}
 
@@ -79,9 +79,9 @@ func TestFetcher_FetchTenantOnDemand(t *testing.T) {
 			err := subscriber.FetchTenantOnDemand(context.TODO(), tenantID)
 
 			// THEN
-			if testCase.ExpectedError != nil {
+			if testCase.ExpectedErrorMsg != nil {
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+				assert.Contains(t, err.Error(), testCase.ExpectedErrorMsg.Error())
 			} else {
 				require.NoError(t, err)
 			}

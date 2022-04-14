@@ -136,7 +136,7 @@ const (
 	chunkSizeForTenantOnDemand = 5
 )
 
-// SubaccountOnDemandService for an on-demand creation of a tenant for a subaccount
+// SubaccountOnDemandService for an on-demand creation of a subaccount tenant
 type SubaccountOnDemandService struct {
 	queryConfig          QueryConfig
 	fieldMapping         TenantFieldMapping
@@ -394,7 +394,7 @@ func (s SubaccountService) SyncTenants() error {
 	return nil
 }
 
-// SyncTenant fetches creation events for a subaccount and creates a tenant for the subaccount in case it doesn't exist
+// SyncTenant fetches creation events for a subaccount and creates a subaccount tenant in case it doesn't exist
 func (s SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID string) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
@@ -409,7 +409,7 @@ func (s SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID 
 	}
 
 	if _, ok := currentTenants[subaccountID]; ok {
-		log.C(ctx).Printf("Subbaccount alredy exists in the database")
+		log.C(ctx).Infof("Subbaccount %s alredy exists in the database", subaccountID)
 		return nil
 	}
 
@@ -417,14 +417,14 @@ func (s SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID 
 	if err != nil {
 		return err
 	}
-	log.C(ctx).Printf("Got event for provided subaccount creation")
+	log.C(ctx).Infof("Got create event for provided subaccount %s", subaccountID)
 
 	var tenantsToCreate = []model.BusinessTenantMappingInput{*tenantToCreate}
 	if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, tenantToCreate.Region, s.providerName, chunkSizeForTenantOnDemand, s.tenantConverter); err != nil {
 		return err
 	}
 
-	log.C(ctx).Printf("Provided subaccount stored successfully")
+	log.C(ctx).Infof("Provided subaccount %s stored successfully", subaccountID)
 
 	if err := tx.Commit(); err != nil {
 		return err
@@ -714,10 +714,10 @@ func (s SubaccountOnDemandService) getSubaccountToCreate(subaccountID string) (*
 	}
 
 	if len(fetchedTenants) < 1 {
-		return nil, fmt.Errorf("while fetching subaccount by ID that is not found")
+		return nil, fmt.Errorf("no create events for subaccount with ID %s were found", subaccountID)
 	}
 	if len(fetchedTenants) > 1 {
-		return nil, fmt.Errorf("while fetching subaccount by ID and more than one is found")
+		return nil, fmt.Errorf("expected one create event for tenant with ID %s, found %d", subaccountID, len(fetchedTenants))
 	}
 
 	return &fetchedTenants[0], nil

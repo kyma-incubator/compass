@@ -113,7 +113,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 		TenantStorageSvcFn func() *automock.TenantStorageService
 		APIClientFn        func() *automock.EventAPIClient
 		GqlClientFn        func() *automock.DirectorGraphQLClient
-		ExpectedError      error
+		ExpectedErrorMsg   error
 	}{
 		{
 			Name:            "Success processing create a tenant for a subaccount request",
@@ -134,7 +134,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 				gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(tenantConverter.MultipleInputToGraphQLInput(tenantsToCreate))).Return(nil)
 				return gqlClient
 			},
-			ExpectedError: nil,
+			ExpectedErrorMsg: nil,
 		},
 		{
 			Name:            "Success when tenant already exists",
@@ -144,9 +144,9 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 				svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{businessSubaccount1BusinessMapping}, nil).Once()
 				return svc
 			},
-			APIClientFn:   UnusedEventAPIClient,
-			GqlClientFn:   UnusedGQLClient,
-			ExpectedError: nil,
+			APIClientFn:      UnusedEventAPIClient,
+			GqlClientFn:      UnusedGQLClient,
+			ExpectedErrorMsg: nil,
 		},
 		{
 			Name:            "Error when no event found for subaccount",
@@ -160,8 +160,8 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedSubaccountType)
 				return client
 			},
-			GqlClientFn:   UnusedGQLClient,
-			ExpectedError: errors.New("while fetching subaccount by ID that is not found"),
+			GqlClientFn:      UnusedGQLClient,
+			ExpectedErrorMsg: errors.New("no create events for subaccount with ID subaccount-1 were found"),
 		},
 		{
 			Name:            "Error when multiple create events found for a subaccount",
@@ -176,8 +176,8 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1, subaccountEvent2), 2, 1), nil).Once()
 				return client
 			},
-			GqlClientFn:   UnusedGQLClient,
-			ExpectedError: errors.New("while fetching subaccount by ID and more than one is found"),
+			GqlClientFn:      UnusedGQLClient,
+			ExpectedErrorMsg: errors.New("expected one create event for tenant with ID subaccount-1, found 2"),
 		},
 		{
 			Name:            "Error when events page is empty",
@@ -192,8 +192,8 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(nil, nil).Once()
 				return client
 			},
-			GqlClientFn:   UnusedGQLClient,
-			ExpectedError: errors.New("while fetching subaccount by ID that is not found"),
+			GqlClientFn:      UnusedGQLClient,
+			ExpectedErrorMsg: errors.New("no create events for subaccount with ID subaccount-1 were found"),
 		},
 		{
 			Name:            "Error when cannot fetch events page for a subaccount creation",
@@ -208,8 +208,8 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(nil, testErr).Times(tenantfetcher.RetryAttempts)
 				return client
 			},
-			GqlClientFn:   UnusedGQLClient,
-			ExpectedError: errors.New("while fetching subaccount by ID: All attempts fail"),
+			GqlClientFn:      UnusedGQLClient,
+			ExpectedErrorMsg: errors.New("while fetching subaccount by ID: All attempts fail"),
 		},
 		{
 			Name:               "Error when couldn't start transaction",
@@ -217,7 +217,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 			TenantStorageSvcFn: UnusedTenantStorageSvc,
 			APIClientFn:        UnusedEventAPIClient,
 			GqlClientFn:        UnusedGQLClient,
-			ExpectedError:      testErr,
+			ExpectedErrorMsg:   testErr,
 		},
 		{
 			Name:            "Error when couldn't commit transaction",
@@ -238,7 +238,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 				gqlClient.On("WriteTenants", mock.Anything, tenantConverter.MultipleInputToGraphQLInput(tenantsToCreate)).Return(nil)
 				return gqlClient
 			},
-			ExpectedError: testErr,
+			ExpectedErrorMsg: testErr,
 		},
 		{
 			Name:            "Error when tenant creation fails",
@@ -259,7 +259,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 				gqlClient.On("WriteTenants", mock.Anything, tenantConverter.MultipleInputToGraphQLInput(tenantsToCreate)).Return(testErr)
 				return gqlClient
 			},
-			ExpectedError: testErr,
+			ExpectedErrorMsg: testErr,
 		},
 		{
 			Name:            "Error when receiving event with wrong format",
@@ -283,8 +283,8 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(wrongTenantEvents, 1, 1), nil).Once()
 				return client
 			},
-			GqlClientFn:   UnusedGQLClient,
-			ExpectedError: errors.New("while fetching subaccount by ID that is not found"),
+			GqlClientFn:      UnusedGQLClient,
+			ExpectedErrorMsg: errors.New("no create events for subaccount with ID subaccount-1 were found"),
 		},
 	}
 
@@ -321,9 +321,9 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 			err := svc.SyncTenant(context.TODO(), subaccountID)
 
 			// THEN
-			if testCase.ExpectedError != nil {
+			if testCase.ExpectedErrorMsg != nil {
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+				assert.Contains(t, err.Error(), testCase.ExpectedErrorMsg.Error())
 			} else {
 				require.NoError(t, err)
 			}

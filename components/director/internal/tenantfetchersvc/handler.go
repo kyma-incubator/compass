@@ -2,6 +2,7 @@ package tenantfetchersvc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -97,21 +98,23 @@ func NewTenantFetcherHTTPHandler(fetcher TenantFetcher, config HandlerConfig) *h
 	}
 }
 
-// FetchTenantOnDemand fetches CIS events for a provided subaccount and creates a tenant
+// FetchTenantOnDemand fetches External tenants registry events for a provided subaccount and creates a subaccount tenant
 func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
 	vars := mux.Vars(request)
 	tenantID, ok := vars[h.config.TenantPathParam]
 	if !ok {
-		log.C(ctx).Error("Tenant path parameter is missing from request")
+		log.C(ctx).WithError(errors.New("tenant path parameter is missing from request")).Error()
 		http.Error(writer, "Tenant path parameter is missing from request", http.StatusBadRequest)
 		return
 	}
 
+	log.C(ctx).Infof("Fetching create event for tenant with ID %s", tenantID)
+
 	err := h.fetcher.FetchTenantOnDemand(ctx, tenantID)
 	if err != nil {
-		log.C(ctx).Errorf("Error while processing request for creation of tenant %s: %v", tenantID, err)
+		log.C(ctx).WithError(err).Errorf("Error while processing request for creation of tenant %s: %v", tenantID, err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
