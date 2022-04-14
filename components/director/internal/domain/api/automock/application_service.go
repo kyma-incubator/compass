@@ -13,8 +13,8 @@ type ApplicationService struct {
 	mock.Mock
 }
 
-// TryUpdateBaseUrl provides a mock function with given fields: ctx, appID, targetURL
-func (_m *ApplicationService) TryUpdateBaseUrl(ctx context.Context, appID string, targetURL string) error {
+// TryUpdateBaseURL provides a mock function with given fields: ctx, appID, targetURL
+func (_m *ApplicationService) TryUpdateBaseURL(ctx context.Context, appID string, targetURL string) error {
 	ret := _m.Called(ctx, appID, targetURL)
 
 	var r0 error

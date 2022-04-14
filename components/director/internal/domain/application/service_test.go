@@ -2589,7 +2589,7 @@ func TestService_Update(t *testing.T) {
 	}
 }
 
-func TestService_TryUpdateBaseUrl(t *testing.T) {
+func TestService_TryUpdateBaseURL(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 	ctxErr := errors.New("while loading tenant from context: cannot read tenant from context")
@@ -2702,7 +2702,7 @@ func TestService_TryUpdateBaseUrl(t *testing.T) {
 			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
-			err := svc.TryUpdateBaseUrl(testCase.Context, testCase.InputID, testCase.TargetURL)
+			err := svc.TryUpdateBaseURL(testCase.Context, testCase.InputID, testCase.TargetURL)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {

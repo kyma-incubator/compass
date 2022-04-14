@@ -503,8 +503,8 @@ func (s *service) Upsert(ctx context.Context, in model.ApplicationRegisterInput)
 	return s.genericUpsert(ctx, tenant, in, upserterFunc)
 }
 
-// TryUpdateBaseUrl Gets application by ID. If the application does not have a BaseURL set, the API TargetURL is parsed and set as BaseURL
-func (s *service) TryUpdateBaseUrl(ctx context.Context, appID, targetURL string) error {
+// TryUpdateBaseURL Gets application by ID. If the application does not have a BaseURL set, the API TargetURL is parsed and set as BaseURL
+func (s *service) TryUpdateBaseURL(ctx context.Context, appID, targetURL string) error {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
