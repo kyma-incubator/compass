@@ -2,6 +2,8 @@ package log
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/log/automock"
+	"github.com/stretchr/testify/mock"
 	"testing"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -21,8 +23,10 @@ func TestGraphQlRequestDetailsLogging(t *testing.T) {
 				}},
 			},
 		})
+		mutationInstrumenter := &automock.GraphqlQueryRequestInstrumenter{}
+		mutationInstrumenter.On("InstrumentGraphqlQueryRequest", mock.Anything, mock.Anything).Once()
 
-		middleware := NewGqlLoggingInterceptor()
+		middleware := NewGqlLoggingInterceptor(mutationInstrumenter)
 		middleware.InterceptOperation(ctx, func(ctx context.Context) graphql.ResponseHandler {
 			return nil
 		})

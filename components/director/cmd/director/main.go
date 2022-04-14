@@ -283,7 +283,7 @@ func main() {
 	operationMiddleware := operation.NewMiddleware(cfg.AppURL + cfg.LastOperationPath)
 
 	gqlServ := handler.NewDefaultServer(executableSchema)
-	gqlServ.Use(log.NewGqlLoggingInterceptor())
+	gqlServ.Use(log.NewGqlLoggingInterceptor(metricsCollector))
 	gqlServ.Use(operationMiddleware)
 	gqlServ.SetErrorPresenter(presenter.Do)
 	gqlServ.SetRecoverFunc(panichandler.RecoverFn)

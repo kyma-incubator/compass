@@ -24,6 +24,7 @@ type Collector struct {
 	hydraRequestTotal      *prometheus.CounterVec
 	hydraRequestDuration   *prometheus.HistogramVec
 	clientTotal            *prometheus.CounterVec
+	mutationCount          *prometheus.CounterVec
 }
 
 // NewCollector missing godoc
@@ -61,6 +62,12 @@ func NewCollector(config Config) *Collector {
 			Name:      "total_requests_per_client",
 			Help:      "Total requests per client",
 		}, []string{"client_id", "auth_flow", "details"}),
+		mutationCount: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: Namespace,
+			Subsystem: DirectorSubsystem,
+			Name:      "graphql_requests_per_operation",
+			Help:      "Graphql Requests Per Operation",
+		}, []string{"query_operation", "query_type"}),
 	}
 }
 
@@ -71,6 +78,7 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 	c.hydraRequestTotal.Describe(ch)
 	c.hydraRequestDuration.Describe(ch)
 	c.clientTotal.Describe(ch)
+	c.mutationCount.Describe(ch)
 }
 
 // Collect missing godoc
@@ -80,6 +88,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	c.hydraRequestTotal.Collect(ch)
 	c.hydraRequestDuration.Collect(ch)
 	c.clientTotal.Collect(ch)
+	c.mutationCount.Collect(ch)
 }
 
 // GraphQLHandlerWithInstrumentation missing godoc
@@ -116,5 +125,12 @@ func (c *Collector) InstrumentClient(clientID, authFlow, details string) {
 		"client_id": clientID,
 		"auth_flow": authFlow,
 		"details":   details,
+	}).Inc()
+}
+
+func (c *Collector) InstrumentGraphqlQueryRequest(queryType, queryOperation string) {
+	c.mutationCount.With(prometheus.Labels{
+		"query_operation": queryOperation,
+		"query_type":      queryType,
 	}).Inc()
 }
