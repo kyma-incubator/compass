@@ -19,6 +19,9 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"net/http"
 	"os"
 	"time"
@@ -121,6 +124,87 @@ func main() {
 	}()
 
 	runMainSrv()
+	runTenantFetcherJob(ctx, cfg, transact)
+}
+
+func runTenantFetcherJob(ctx context.Context, cfg config, transact persistence.Transactioner) chan bool {
+	ticker := time.NewTicker(5 * time.Minute)
+	interrupt := make(chan bool, 1)
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				syncTenants(ctx, cfg, transact)
+			case <-interrupt:
+				ticker.Stop()
+			}
+		}
+	}()
+	return interrupt
+}
+func syncTenants(ctx context.Context, cfg config, transact persistence.Transactioner) {
+	tenantsFetcherSvc, err := createTenantsFetcherSvc(ctx, cfg, transact)
+	exitOnError(err, "failed to create tenants fetcher service")
+
+	tenantsFetcherSvc.SyncTenants()
+}
+
+func createTenantsFetcherSvc(ctx context.Context, cfg config, transact persistence.Transactioner) (tf.TenantSyncService, error) {
+	eventsCfg := cfg.EventsCfg
+	handlerCfg := cfg.Handler
+
+	uidSvc := uid.NewService()
+
+	labelDefConverter := labeldef.NewConverter()
+	labelDefRepository := labeldef.NewRepository(labelDefConverter)
+
+	labelConverter := label.NewConverter()
+	labelRepository := label.NewRepository(labelConverter)
+	labelService := label.NewLabelService(labelRepository, labelDefRepository, uidSvc)
+
+	tenantStorageConv := tenant.NewConverter()
+	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
+	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepository, labelService)
+
+	runtimeConverter := runtime.NewConverter()
+	runtimeRepository := runtime.NewRepository(runtimeConverter)
+
+	scenarioAssignConv := scenarioassignment.NewConverter()
+	scenarioAssignRepo := scenarioassignment.NewRepository(scenarioAssignConv)
+	scenarioAssignEngine := scenarioassignment.NewEngine(labelService, labelRepository, scenarioAssignRepo, runtimeRepository)
+
+	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignConv)
+	labelDefService := labeldef.NewService(labelDefRepository, labelRepository, scenarioAssignmentRepo, tenantStorageRepo, uidSvc, handlerCfg.Features.DefaultScenarioEnabled)
+
+	runtimeService := runtime.NewService(runtimeRepository, labelRepository, labelDefService, labelService, uidSvc, scenarioAssignEngine, tenantStorageSvc, handlerCfg.Features.ProtectedLabelPattern, handlerCfg.Features.ImmutableLabelPattern)
+
+	var metricsPusher *metrics.Pusher
+	if handlerCfg.MetricsPushEndpoint != "" {
+		metricsPusher = metrics.NewPusher(handlerCfg.MetricsPushEndpoint, handlerCfg.ClientTimeout)
+	}
+
+	kubeClient, err := tf.NewKubernetesClient(ctx, handlerCfg.Kubernetes)
+	exitOnError(err, "Failed to initialize Kubernetes client")
+
+	eventAPIClient, err := tf.NewClient(eventsCfg.OAuthConfig, eventsCfg.AuthMode, eventsCfg.APIConfig, handlerCfg.ClientTimeout)
+	if nil != err {
+		return nil, err
+	}
+
+	if metricsPusher != nil {
+		eventAPIClient.SetMetricsPusher(metricsPusher)
+	}
+
+	gqlClient := newInternalGraphQLClient(handlerCfg.DirectorGraphQLEndpoint, handlerCfg.ClientTimeout, handlerCfg.HTTPClientSkipSslValidation)
+	gqlClient.Log = func(s string) {
+		log.D().Debug(s)
+	}
+	directorClient := graphqlclient.NewDirector(gqlClient)
+
+	if handlerCfg.ShouldSyncSubaccounts {
+		return tf.NewSubaccountService(eventsCfg.QueryConfig, transact, kubeClient, eventsCfg.TenantFieldMapping, eventsCfg.MovedSubaccountFieldMapping, handlerCfg.TenantProvider, eventsCfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelRepository, handlerCfg.FullResyncInterval, directorClient, handlerCfg.TenantInsertChunkSize, tenantStorageConv), nil
+	}
+	return tf.NewGlobalAccountService(eventsCfg.QueryConfig, transact, kubeClient, eventsCfg.TenantFieldMapping, handlerCfg.TenantProvider, eventsCfg.AccountsRegion, eventAPIClient, tenantStorageSvc, handlerCfg.FullResyncInterval, directorClient, handlerCfg.TenantInsertChunkSize, tenantStorageConv), nil
 }
 
 func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, transact persistence.Transactioner) http.Handler {
