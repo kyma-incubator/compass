@@ -21,7 +21,7 @@ The Async Unpair test uses the endpoint that returns "In Progress" until dynamic
 
 1. Register an Application with webhook of type `UNPAIR_APPLICATION`.
 1. Verify that the application exists.
-1. Trigger asynchronous deletion of the application (call `unregisterApplication` mutation with `mode: async`).
+1. Trigger asynchronous deletion of the application (call `unpairApplication` mutation with `mode: async`).
 1. Check that `Operation` resource exists for that application and it's status is `In Progress`.
 1. Configure the `External Services Mock` server to return successful deletion of the external resources.
 1. Verify that the application still exists.
