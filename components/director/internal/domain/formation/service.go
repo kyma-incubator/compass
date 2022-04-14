@@ -121,10 +121,10 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
 	switch objectType {
 	case graphql.FormationObjectTypeApplication, graphql.FormationObjectTypeRuntime:
-		f, err := s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectType.ToLabelableObject(), addFormation)
+		f, err := s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), addFormation)
 		if err != nil {
 			if apperrors.IsNotFoundError(err) {
-				labelInput := newLabelInput(formation.Name, objectID, objectType.ToLabelableObject())
+				labelInput := newLabelInput(formation.Name, objectID, objectTypeToLabelableObject(objectType))
 				if err = s.labelService.CreateLabel(ctx, tnt, s.uuidService.Generate(), labelInput); err != nil {
 					return nil, err
 				}
@@ -315,4 +315,16 @@ func newAutomaticScenarioAssignmentModel(formation, callerTenant, targetTenant s
 		Tenant:         callerTenant,
 		TargetTenantID: targetTenant,
 	}
+}
+
+func objectTypeToLabelableObject(objectType graphql.FormationObjectType) (labelableObj model.LabelableObject) {
+	switch objectType {
+	case graphql.FormationObjectTypeApplication:
+		labelableObj = model.ApplicationLabelableObject
+	case graphql.FormationObjectTypeRuntime:
+		labelableObj = model.RuntimeLabelableObject
+	case graphql.FormationObjectTypeTenant:
+		labelableObj = model.TenantLabelableObject
+	}
+	return labelableObj
 }

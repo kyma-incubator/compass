@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"strconv"
-
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
 type CredentialData interface {
@@ -1059,18 +1057,19 @@ type FormationObjectType string
 
 const (
 	FormationObjectTypeApplication FormationObjectType = "APPLICATION"
-	FormationObjectTypeRuntime     FormationObjectType = "RUNTIME"
 	FormationObjectTypeTenant      FormationObjectType = "TENANT"
+	FormationObjectTypeRuntime     FormationObjectType = "RUNTIME"
 )
 
 var AllFormationObjectType = []FormationObjectType{
 	FormationObjectTypeApplication,
 	FormationObjectTypeTenant,
+	FormationObjectTypeRuntime,
 }
 
 func (e FormationObjectType) IsValid() bool {
 	switch e {
-	case FormationObjectTypeApplication, FormationObjectTypeTenant:
+	case FormationObjectTypeApplication, FormationObjectTypeTenant, FormationObjectTypeRuntime:
 		return true
 	}
 	return false
@@ -1095,18 +1094,6 @@ func (e *FormationObjectType) UnmarshalGQL(v interface{}) error {
 
 func (e FormationObjectType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-func (f FormationObjectType) ToLabelableObject() (obj model.LabelableObject) {
-	switch f {
-	case FormationObjectTypeApplication:
-		obj = model.ApplicationLabelableObject
-	case FormationObjectTypeRuntime:
-		obj = model.RuntimeLabelableObject
-	case FormationObjectTypeTenant:
-		obj = model.TenantLabelableObject
-	}
-	return obj
 }
 
 type HealthCheckStatusCondition string
