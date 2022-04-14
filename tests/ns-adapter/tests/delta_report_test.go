@@ -501,6 +501,13 @@ func TestDeltaReport(stdT *testing.T) {
 }
 
 func sendRequest(t *testing.T, body []byte, reportType string, token string) *http.Response {
+	resp, err := sendRequestWithTimeout(body, reportType, token, 15*time.Second)
+	require.NoError(t, err)
+
+	return resp
+}
+
+func sendRequestWithTimeout(body []byte, reportType string, token string, timeout time.Duration) (*http.Response, error) {
 	buffer := bytes.NewBuffer(body)
 	req, err := http.NewRequest(http.MethodPut, testConfig.AdapterURL, buffer)
 	if err != nil {
@@ -514,15 +521,12 @@ func sendRequest(t *testing.T, body []byte, reportType string, token string) *ht
 
 	//client := gql.NewAuthorizedHTTPClient(token)
 	client := &http.Client{
-		Timeout: 15 * time.Second,
+		Timeout: timeout,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 	}
-	resp, err := client.Do(req)
-	require.NoError(t, err)
-
-	return resp
+	return client.Do(req)
 }
 
 func createApplicationFromTemplateInput(name, templateName, description, subaccount, locId, systemType, host, protocol, systemNumber, systemStatus string) graphql.ApplicationFromTemplateInput {

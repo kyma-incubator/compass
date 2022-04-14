@@ -3,9 +3,11 @@ package tests
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -19,6 +21,8 @@ type SccKey struct {
 	Subaccount string
 	LocationId string
 }
+
+const testTenant = "08b6da37-e911-48fb-a0cb-fa635a6c4321"
 
 func TestFullReport(stdT *testing.T) {
 	t := testingx.NewT(stdT)
@@ -94,24 +98,24 @@ func TestFullReport(stdT *testing.T) {
 
 	expectedLabel := map[string]interface{}{
 		"Host":       "127.0.0.1:3000",
-		"Subaccount": "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+		"Subaccount": testTenant,
 		"LocationID": "",
 	}
 
 	expectedLabelWithLocId := map[string]interface{}{
 		"Host":       "127.0.0.1:3000",
-		"Subaccount": "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+		"Subaccount": testTenant,
 		"LocationID": "loc-id",
 	}
 
 	//&LabelFilter{key, &query}
-	filterQueryWithLocationID := fmt.Sprintf("{\"LocationID\":\"%s\", \"Subaccount\":\"%s\"}", "loc-id", "08b6da37-e911-48fb-a0cb-fa635a6c4321")
+	filterQueryWithLocationID := fmt.Sprintf("{\"LocationID\":\"%s\", \"Subaccount\":\"%s\"}", "loc-id", testTenant)
 	sccLabelFilterWithLocationID := graphql.LabelFilter{
 		Key:   "scc",
 		Query: &filterQueryWithLocationID,
 	}
 
-	filterQueryWithoutLocationID := fmt.Sprintf("{\"LocationID\":\"%s\", \"Subaccount\":\"%s\"}", "", "08b6da37-e911-48fb-a0cb-fa635a6c4321")
+	filterQueryWithoutLocationID := fmt.Sprintf("{\"LocationID\":\"%s\", \"Subaccount\":\"%s\"}", "", testTenant)
 	sccLabelFilterWithoutLocationID := graphql.LabelFilter{
 		Key:   "scc",
 		Query: &filterQueryWithoutLocationID,
@@ -138,7 +142,7 @@ func TestFullReport(stdT *testing.T) {
 		report := baseReport
 		report.Value = append(report.Value,
 			SCC{
-				Subaccount: "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+				Subaccount: testTenant,
 				LocationID: "",
 				ExposedSystems: []System{{
 					Protocol:     "http",
@@ -161,9 +165,66 @@ func TestFullReport(stdT *testing.T) {
 		require.Equal(t, 1, len(apps))
 
 		app := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, app)
 
 		validateApplication(t, app, "nonSAPsys", "http", "", expectedLabel, "reachable")
+	})
+
+	t.Run("Full report with large request body", func(t *testing.T) {
+		ctx := context.Background()
+		appsToCreate := 10_000
+
+		//WHEN
+		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
+		require.NoError(t, err)
+		require.Empty(t, apps)
+
+		report := baseReport
+		report.Value = append(report.Value,
+			SCC{
+				Subaccount:     testTenant,
+				LocationID:     "",
+				ExposedSystems: []System{},
+			})
+
+		for i := 0; i < appsToCreate; i++ {
+			report.Value[0].ExposedSystems = append(report.Value[0].ExposedSystems, System{
+				Protocol:     "http",
+				Host:         fmt.Sprintf("virtual-host-%d:3000", i),
+				SystemType:   "nonSAPsys",
+				Description:  "",
+				Status:       "reachable",
+				SystemNumber: "",
+			})
+		}
+
+		body, err := json.Marshal(report)
+		require.NoError(t, err)
+		log.C(ctx).Infof("Sending request with body length of %d bytes", len(body))
+
+		defer func() {
+			for {
+				apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
+				require.NoError(t, err, "failed to clean-up after test")
+
+				if len(apps) == 0 {
+					break
+				}
+
+				log.C(ctx).Infof("Cleaning up %d applications", len(apps))
+				for i := 0; i < len(apps); i++ {
+					fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, apps[i])
+				}
+			}
+
+			log.C(ctx).Infof("Successfully cleaned up after test")
+		}()
+
+		//fixtures.CleanupApplication
+
+		resp, err := sendRequestWithTimeout(body, "full", token, 5*time.Minute)
+		require.NoError(t, err, "failed to send request with a large request body")
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 	})
 
 	t.Run("Full report - create systems for two sccs connected to one subaccount", func(t *testing.T) {
@@ -181,7 +242,7 @@ func TestFullReport(stdT *testing.T) {
 		report := baseReport
 		report.Value = append(report.Value,
 			SCC{
-				Subaccount: "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+				Subaccount: testTenant,
 				LocationID: "",
 				ExposedSystems: []System{{
 					Protocol:     "http",
@@ -193,7 +254,7 @@ func TestFullReport(stdT *testing.T) {
 				}},
 			},
 			SCC{
-				Subaccount: "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+				Subaccount: testTenant,
 				LocationID: "loc-id",
 				ExposedSystems: []System{{
 					Protocol:     "http",
@@ -215,13 +276,13 @@ func TestFullReport(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		appOne := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appOne)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, appOne)
 
 		apps, err = retrieveApps(t, ctx, sccLabelFilterWithLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		appTwo := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appTwo)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, appTwo)
 
 		validateApplication(t, appOne, "nonSAPsys", "http", "system_one", expectedLabel, "reachable")
 		validateApplication(t, appTwo, "nonSAPsys", "http", "system_two", expectedLabelWithLocId, "reachable")
@@ -242,7 +303,7 @@ func TestFullReport(stdT *testing.T) {
 		report := baseReport
 		report.Value = append(report.Value,
 			SCC{
-				Subaccount: "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+				Subaccount: testTenant,
 				LocationID: "",
 				ExposedSystems: []System{{
 					Protocol:     "http",
@@ -254,7 +315,7 @@ func TestFullReport(stdT *testing.T) {
 				}},
 			},
 			SCC{
-				Subaccount: "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+				Subaccount: testTenant,
 				LocationID: "loc-id",
 				ExposedSystems: []System{{
 					Protocol:     "http",
@@ -276,13 +337,13 @@ func TestFullReport(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		appOne := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appOne)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, appOne)
 
 		apps, err = retrieveApps(t, ctx, sccLabelFilterWithLocationID)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(apps))
 		appTwo := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", appTwo)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, appTwo)
 
 		validateApplication(t, appOne, "nonSAPsys", "http", "system_one", expectedLabel, "reachable")
 		validateApplication(t, appTwo, "nonSAPsys", "http", "system_two", expectedLabelWithLocId, "reachable")
@@ -290,7 +351,7 @@ func TestFullReport(stdT *testing.T) {
 		report = baseReport
 		report.Value = append(report.Value,
 			SCC{
-				Subaccount: "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+				Subaccount: testTenant,
 				LocationID: "",
 				ExposedSystems: []System{{
 					Protocol:     "http",
@@ -302,7 +363,7 @@ func TestFullReport(stdT *testing.T) {
 				}},
 			},
 			SCC{
-				Subaccount:     "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+				Subaccount:     testTenant,
 				LocationID:     "loc-id",
 				ExposedSystems: []System{},
 			})
@@ -332,7 +393,7 @@ func TestFullReport(stdT *testing.T) {
 
 		// Register application
 		appFromTmpl := createApplicationFromTemplateInput(
-			"on-promise-system-1", "S4HANA", "description of the system", "08b6da37-e911-48fb-a0cb-fa635a6c4321", "",
+			"on-promise-system-1", "S4HANA", "description of the system", testTenant, "",
 			"nonSAPsys", "127.0.0.1:3000", "mail", "", "reachable")
 
 		appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
@@ -341,15 +402,15 @@ func TestFullReport(stdT *testing.T) {
 		outputApp := graphql.ApplicationExt{}
 		//WHEN
 
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", createAppFromTmplRequest, &outputApp)
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", &outputApp)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testTenant, createAppFromTmplRequest, &outputApp)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, &outputApp)
 		require.NoError(t, err)
 		require.NotEmpty(t, outputApp.ID)
 
 		report := baseReport
 		report.Value = append(report.Value,
 			SCC{
-				Subaccount: "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+				Subaccount: testTenant,
 				LocationID: "",
 				ExposedSystems: []System{{
 					Protocol:     "mail",
@@ -380,7 +441,7 @@ func TestFullReport(stdT *testing.T) {
 
 		// Register application
 		appFromTmpl := createApplicationFromTemplateInput(
-			"on-promise-system-1", "S4HANA", "description of the system", "08b6da37-e911-48fb-a0cb-fa635a6c4321", "",
+			"on-promise-system-1", "S4HANA", "description of the system", testTenant, "",
 			"nonSAPsys", "127.0.0.1:3000", "mail", "", "reachable")
 
 		appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
@@ -389,15 +450,15 @@ func TestFullReport(stdT *testing.T) {
 		outputApp := graphql.ApplicationExt{}
 		//WHEN
 
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", createAppFromTmplRequest, &outputApp)
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", &outputApp)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testTenant, createAppFromTmplRequest, &outputApp)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, &outputApp)
 		require.NoError(t, err)
 		require.NotEmpty(t, outputApp.ID)
 
 		report := baseReport
 		report.Value = append(report.Value,
 			SCC{
-				Subaccount:     "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+				Subaccount:     testTenant,
 				LocationID:     "",
 				ExposedSystems: []System{},
 			})
@@ -425,7 +486,7 @@ func TestFullReport(stdT *testing.T) {
 		report := baseReport
 		report.Value = append(report.Value,
 			SCC{
-				Subaccount: "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+				Subaccount: testTenant,
 				LocationID: "",
 				ExposedSystems: []System{{
 					Protocol:     "http",
@@ -448,7 +509,7 @@ func TestFullReport(stdT *testing.T) {
 		require.Equal(t, 1, len(apps))
 
 		app := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, app)
 
 		validateApplication(t, app, "nonSAPsys", "http", "", expectedLabel, "reachable")
 	})
@@ -460,7 +521,7 @@ func TestFullReport(stdT *testing.T) {
 		report := baseReport
 		report.Value = append(report.Value,
 			SCC{
-				Subaccount: "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+				Subaccount: testTenant,
 				LocationID: "",
 				ExposedSystems: []System{{
 					Protocol:     "mail",
@@ -483,12 +544,12 @@ func TestFullReport(stdT *testing.T) {
 		require.Equal(t, 1, len(apps))
 
 		app := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, app)
 
 		report = baseReport
 		report.Value = append(report.Value,
 			SCC{
-				Subaccount: "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+				Subaccount: testTenant,
 				LocationID: "",
 				ExposedSystems: []System{{
 					Protocol:     "mail",
@@ -520,7 +581,7 @@ func TestFullReport(stdT *testing.T) {
 		report := baseReport
 		report.Value = append(report.Value,
 			SCC{
-				Subaccount: "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+				Subaccount: testTenant,
 				LocationID: "",
 				ExposedSystems: []System{{
 					Protocol:     "mail",
@@ -543,7 +604,7 @@ func TestFullReport(stdT *testing.T) {
 		require.Equal(t, 1, len(apps))
 
 		app := apps[0]
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, "08b6da37-e911-48fb-a0cb-fa635a6c4321", app)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, app)
 		validateApplication(t, apps[0], "nonSAPsys", "mail", "initial description", expectedLabel, "reachable")
 
 		report = baseReport
@@ -570,7 +631,7 @@ func TestFullReport(stdT *testing.T) {
 		report := baseReport
 		report.Value = append(report.Value,
 			SCC{
-				Subaccount:     "08b6da37-e911-48fb-a0cb-fa635a6c4321",
+				Subaccount:     testTenant,
 				LocationID:     "",
 				ExposedSystems: []System{},
 			})
