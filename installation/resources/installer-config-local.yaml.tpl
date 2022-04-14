@@ -49,6 +49,7 @@ data:
   global.oathkeeper.mutators.authenticationMappingServices.tenant-fetcher.authenticator.enabled: "true"
   global.oathkeeper.mutators.authenticationMappingServices.subscriber.authenticator.enabled: "true"
   global.oathkeeper.mutators.authenticationMappingServices.nsadapter.authenticator.enabled: "true"
+  global.director.metrics.enableGraphqlQueryInstrumentation: "true"
   gateway.gateway.auditlog.enabled: "true"
   gateway.gateway.auditlog.authMode: "oauth-mtls"
   system-broker.http.client.skipSSLValidation: "true"
