@@ -58,7 +58,7 @@ func (c *SecuredTransport) RoundTrip(request *http.Request) (*http.Response, err
 
 	logger.Debug("Successfully prepared authorization for request")
 	request.Header.Set("Authorization", authorization)
-
+	logger.Errorf("!!! Authorization [%s]", authorization)
 	return c.roundTripper.RoundTrip(request)
 }
 
