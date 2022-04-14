@@ -703,7 +703,7 @@ func (r *mutationResolver) UpdateSystemAuth(ctx context.Context, authID string, 
 	return r.systemAuth.UpdateSystemAuth(ctx, authID, in)
 }
 
-// UpdateSystemAuth missing godoc
+// InvalidateSystemAuthOneTimeToken missing godoc
 func (r *mutationResolver) InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (graphql.SystemAuth, error) {
 	return r.systemAuth.InvalidateSystemAuthOneTimeToken(ctx, authID)
 }
