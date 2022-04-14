@@ -129,6 +129,7 @@ func (c *Collector) InstrumentClient(clientID, authFlow, details string) {
 	}).Inc()
 }
 
+// InstrumentGraphqlQueryRequest instruments a graphql request given queryType and queryOperation
 func (c *Collector) InstrumentGraphqlQueryRequest(queryType, queryOperation string) {
 	c.mutationCount.With(prometheus.Labels{
 		"query_operation": queryOperation,

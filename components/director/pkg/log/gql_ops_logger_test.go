@@ -2,9 +2,10 @@ package log
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log/automock"
 	"github.com/stretchr/testify/mock"
-	"testing"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/vektah/gqlparser/v2/ast"
