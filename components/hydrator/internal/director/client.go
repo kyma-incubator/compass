@@ -25,23 +25,11 @@ type Client interface {
 	GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (*schema.Runtime, error)
 }
 
-// TODO:: remove
-//type SystemAuhConverter interface {
-//	GraphQLToModel(in *schema.AppSystemAuth) (*model.SystemAuth, error)
-//}
-
 type Config struct {
 	URL               string        `envconfig:"default=http://127.0.0.1:3000/graphql"`
 	ClientTimeout     time.Duration `envconfig:"default=115s"`
 	SkipSSLValidation bool          `envconfig:"default=false"`
 }
-
-// TODO:: remove
-//type converter struct {}
-//
-//func NewConverter() *converter {
-//	return &converter{}
-//}
 
 type client struct {
 	gqlClient *graphql.Client

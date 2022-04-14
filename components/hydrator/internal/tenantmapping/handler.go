@@ -59,15 +59,18 @@ type ClientInstrumenter interface {
 type Handler struct {
 	reqDataParser          ReqDataParser
 	objectContextProviders map[string]ObjectContextProvider
+	clientInstrumenter     ClientInstrumenter
 }
 
 // NewHandler missing godoc
 func NewHandler(
 	reqDataParser ReqDataParser,
-	objectContextProviders map[string]ObjectContextProvider) *Handler {
+	objectContextProviders map[string]ObjectContextProvider,
+	clientInstrumenter ClientInstrumenter) *Handler {
 	return &Handler{
 		reqDataParser:          reqDataParser,
 		objectContextProviders: objectContextProviders,
+		clientInstrumenter:     clientInstrumenter,
 	}
 }
 
@@ -149,6 +152,8 @@ func (h *Handler) getObjectContexts(ctx context.Context, reqData oathkeeper.ReqD
 		}
 	}
 
+	h.instrumentClient(objectContexts, authDetails)
+
 	return objectContexts, nil
 }
 
@@ -158,6 +163,28 @@ func respond(ctx context.Context, writer http.ResponseWriter, body oathkeeper.Re
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while encoding data: %v", err)
 	}
+}
+
+func (h *Handler) instrumentClient(objectContexts []ObjectContext, authDetails []*oathkeeper.AuthDetails) {
+	details := oathkeeper.AuthDetails{}
+
+	if len(objectContexts) == 1 {
+		details = *authDetails[0]
+	} else {
+		for _, d := range authDetails {
+			if d.CertIssuer != "" {
+				details = *d
+				break
+			}
+		}
+	}
+
+	flowDetails := details.CertIssuer
+	if details.Authenticator != nil {
+		flowDetails = details.Authenticator.Name
+	}
+
+	h.clientInstrumenter.InstrumentClient(details.AuthID, string(details.AuthFlow), flowDetails)
 }
 
 func addTenantsToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) error {

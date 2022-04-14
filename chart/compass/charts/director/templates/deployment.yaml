@@ -76,10 +76,6 @@ spec:
               value: "0.0.0.0:{{ .Values.global.director.operations.port }}"
             - name: APP_METRICS_ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.metrics.port }}"
-            - name: APP_METRICS_ENABLE_CLIENT_ID_INSTRUMENTATION
-              value: "{{ .Values.global.director.metrics.enableClientInstrumentation }}"
-            - name: APP_METRICS_CENSORED_FLOWS
-              value: "{{ .Values.global.director.metrics.censoredFlows }}"
             - name: APP_PLAYGROUND_API_ENDPOINT
               value: "{{ .Values.global.director.prefix }}/graphql"
             - name: APP_JWKS_ENDPOINT

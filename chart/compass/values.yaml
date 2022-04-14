@@ -184,8 +184,6 @@ global:
       port: 8080
     metrics:
       port: 3003
-      enableClientInstrumentation: true
-      censoredFlows: "JWT"
     operations:
       port: 3002
       path: "/operation"
@@ -312,6 +310,14 @@ global:
           - "Client-Id-From-Certificate"
           - "Client-Certificate-Hash"
           - "Certificate-Data"
+  hydrator:
+    port: 3000
+    prefix: /hydrators
+    host: compass-hydrator.compass-system.svc.cluster.local
+    metrics:
+      port: 3003
+      enableClientInstrumentation: true
+      censoredFlows: "JWT"
   operations_controller:
     enabled: true
   connectivity_adapter:
@@ -658,10 +664,6 @@ global:
       dbPool:
         maxOpenConnections: 1
         maxIdleConnections: 1
-  hydrator:
-    port: 3000
-    prefix: /hydrators
-    host: compass-hydrator.compass-system.svc.cluster.local
   metrics:
     enabled: true
     pushEndpoint: http://monitoring-prometheus-pushgateway.kyma-system.svc.cluster.local:9091

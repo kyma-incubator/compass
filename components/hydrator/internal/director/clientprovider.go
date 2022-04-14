@@ -32,7 +32,6 @@ func (cp DirectorClientProvider) Client() Client {
 	authorizedClient := newAuthorizedHTTPClient(cp.timeout, cp.skipSSLValidation)
 	gqlClient := gcli.NewClient(cp.directorURL, gcli.WithHTTPClient(authorizedClient))
 
-	//sysAuthConv := NewConverter() TODO:: remove
 	return NewClient(gqlClient)
 }
 

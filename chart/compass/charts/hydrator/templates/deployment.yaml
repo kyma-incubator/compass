@@ -52,6 +52,9 @@ spec:
             - name: http
               containerPort: {{ .Values.deployment.args.containerPort }}
               protocol: TCP
+            - name: metrics
+              containerPort: {{ .Values.global.hydrator.metrics.port }}
+              protocol: TCP
           resources:
             {{- toYaml .Values.deployment.resources | nindent 12 }}
           {{- with .Values.deployment.securityContext }}
@@ -73,6 +76,12 @@ spec:
               value: /config/config.yaml
             - name: APP_REVOCATION_CONFIG_MAP_NAME
               value: "{{ tpl .Values.global.connector.revocation.configmap.namespace . }}/{{ .Values.global.connector.revocation.configmap.name }}"
+            - name: APP_METRICS_ADDRESS
+              value: "0.0.0.0:{{ .Values.global.hydrator.metrics.port }}"
+            - name: APP_METRICS_ENABLE_CLIENT_ID_INSTRUMENTATION
+              value: "{{ .Values.global.hydrator.metrics.enableClientInstrumentation }}"
+            - name: APP_METRICS_CENSORED_FLOWS
+              value: "{{ .Values.global.hydrator.metrics.censoredFlows }}"
             {{- range $authenMappingServiceName, $config := .Values.global.oathkeeper.mutators.authenticationMappingServices }}
             {{- if eq $config.authenticator.enabled true }}
             - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_TRUSTED_ISSUERS

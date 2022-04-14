@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"time"
@@ -26,8 +27,11 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	"github.com/kyma-incubator/compass/components/director/pkg/namespacedname"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/istiocertresolver"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/metrics"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/revocation"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/subject"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
@@ -76,6 +80,8 @@ type config struct {
 
 	StaticGroupsSrc string `envconfig:"default=/data/static-groups.yaml"`
 
+	MetricsConfig metrics.Config
+
 	CSRSubject            istiocertresolver.CSRSubjectConfig
 	ExternalIssuerSubject istiocertresolver.ExternalIssuerSubjectConfig
 
@@ -108,27 +114,39 @@ func main() {
 		exitOnError(errors.New("missing handler endpoint"), "Error while loading app handler config")
 	}
 
-	handler := initAPIHandlers(ctx, authenticators, cfg)
-	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
+	logger := log.C(ctx)
+
+	logger.Infof("Registering metrics collectors...")
+	metricsCollector := metrics.NewCollector(cfg.MetricsConfig)
+	prometheus.MustRegister(metricsCollector)
+
+	metricsHandler := http.NewServeMux()
+	metricsHandler.Handle("/metrics", promhttp.Handler())
+
+	handler := initAPIHandlers(ctx, logger, authenticators, cfg, metricsCollector)
+
+	runMetricsSrv, shutdownMetricsSrv := createServer(ctx, metricsHandler, cfg.MetricsConfig.Address, "metrics", cfg.ServerTimeout, cfg.ShutdownTimeout)
+	runMainSrv, shutdownMainSrv := createServer(ctx, handler, cfg.Address, "main", cfg.ServerTimeout, cfg.ShutdownTimeout)
 
 	go func() {
 		<-ctx.Done()
 		// Interrupt signal received - shut down the servers
+		shutdownMetricsSrv()
 		shutdownMainSrv()
 	}()
 
+	go runMetricsSrv()
 	runMainSrv()
 }
 
-func initAPIHandlers(ctx context.Context, authenticators []authenticator.Config, cfg config) http.Handler {
-	logger := log.C(ctx)
+func initAPIHandlers(ctx context.Context, logger *logrus.Entry, authenticators []authenticator.Config, cfg config, metricsCollector *metrics.Collector) http.Handler {
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 
 	router := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
 	healthCheckRouter := mainRouter.NewRoute().Subrouter()
 
-	registerHydratorHandlers(ctx, router, authenticators, cfg)
+	registerHydratorHandlers(ctx, router, authenticators, cfg, metricsCollector)
 
 	logger.Infof("Registering readiness endpoint...")
 	healthCheckRouter.HandleFunc("/readyz", newReadinessHandler())
@@ -146,27 +164,27 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func createServer(ctx context.Context, cfg config, handler http.Handler, name string) (func(), func()) {
+func createServer(ctx context.Context, handler http.Handler, serverAddress, name string, serverTimeout, shutdownTimeout time.Duration) (func(), func()) {
 	logger := log.C(ctx)
 
-	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, cfg.ServerTimeout)
+	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, serverTimeout)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	srv := &http.Server{
-		Addr:              cfg.Address,
+		Addr:              serverAddress,
 		Handler:           handlerWithTimeout,
-		ReadHeaderTimeout: cfg.ServerTimeout,
+		ReadHeaderTimeout: serverTimeout,
 	}
 
 	runFn := func() {
-		logger.Infof("Running %s server on %s...", name, cfg.Address)
+		logger.Infof("Running %s server on %s...", name, serverAddress)
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 			logger.Errorf("%s HTTP server ListenAndServe: %v", name, err)
 		}
 	}
 
 	shutdownFn := func() {
-		ctx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 		defer cancel()
 
 		logger.Infof("Shutting down %s server...", name)
@@ -178,7 +196,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func registerHydratorHandlers(ctx context.Context, router *mux.Router, authenticators []authenticator.Config, cfg config) {
+func registerHydratorHandlers(ctx context.Context, router *mux.Router, authenticators []authenticator.Config, cfg config, metricsCollector *metrics.Collector) {
 	logger := log.C(ctx)
 
 	httpClient := &http.Client{
@@ -193,7 +211,7 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 	authnMappingHandlerFunc := authnmappinghandler.NewHandler(oathkeeper.NewReqDataParser(), httpClient, authnmappinghandler.DefaultTokenVerifierProvider, authenticators)
 
 	logger.Infof("Registering Tenant Mapping endpoint on %s...", cfg.Handler.TenantMappingEndpoint)
-	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(authenticators, directorClientProvider, cfg.StaticGroupsSrc, cfgProvider)
+	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(authenticators, directorClientProvider, cfg.StaticGroupsSrc, cfgProvider, metricsCollector)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.Handler.RuntimeMappingEndpoint)
@@ -206,11 +224,11 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 	connectorCertResolverHandlerFunc, revokedCertsLoader, err := getCertificateResolverHandler(ctx, cfg)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
-	router.HandleFunc(cfg.Handler.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
-	router.HandleFunc(cfg.Handler.TenantMappingEndpoint, tenantMappingHandlerFunc.ServeHTTP)
-	router.HandleFunc(cfg.Handler.RuntimeMappingEndpoint, runtimeMappingHandlerFunc.ServeHTTP)
-	router.HandleFunc(cfg.Handler.TokenResolverEndpoint, connectorTokenResolverHandlerFunc.ServeHTTP)
-	router.HandleFunc(cfg.Handler.ValidationIstioCertEndpoint, connectorCertResolverHandlerFunc.ServeHTTP)
+	router.HandleFunc(cfg.Handler.AuthenticationMappingEndpoint, metricsCollector.GraphQLHandlerWithInstrumentation(authnMappingHandlerFunc))
+	router.HandleFunc(cfg.Handler.TenantMappingEndpoint, metricsCollector.GraphQLHandlerWithInstrumentation(tenantMappingHandlerFunc))
+	router.HandleFunc(cfg.Handler.RuntimeMappingEndpoint, metricsCollector.GraphQLHandlerWithInstrumentation(runtimeMappingHandlerFunc))
+	router.HandleFunc(cfg.Handler.TokenResolverEndpoint, metricsCollector.GraphQLHandlerWithInstrumentation(connectorTokenResolverHandlerFunc))
+	router.HandleFunc(cfg.Handler.ValidationIstioCertEndpoint, metricsCollector.GraphQLHandlerWithInstrumentation(connectorCertResolverHandlerFunc))
 
 	go revokedCertsLoader.Run(ctx)
 }
@@ -221,7 +239,7 @@ func newReadinessHandler() func(writer http.ResponseWriter, request *http.Reques
 	}
 }
 
-func getTenantMappingHandlerFunc(authenticators []authenticator.Config, clientProvider director.ClientProvider, staticGroupsSrc string, cfgProvider *configprovider.Provider) (*tenantmapping.Handler, error) {
+func getTenantMappingHandlerFunc(authenticators []authenticator.Config, clientProvider director.ClientProvider, staticGroupsSrc string, cfgProvider *configprovider.Provider, metricsCollector *metrics.Collector) (*tenantmapping.Handler, error) {
 	staticGroupsRepo, err := tenantmapping.NewStaticGroupRepository(staticGroupsSrc)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating StaticGroup repository instance")
@@ -236,7 +254,7 @@ func getTenantMappingHandlerFunc(authenticators []authenticator.Config, clientPr
 	}
 	reqDataParser := oathkeeper.NewReqDataParser()
 
-	return tenantmapping.NewHandler(reqDataParser, objectContextProviders), nil
+	return tenantmapping.NewHandler(reqDataParser, objectContextProviders, metricsCollector), nil
 }
 
 func getRuntimeMappingHandlerFunc(ctx context.Context, clientProvider director.ClientProvider, cachePeriod time.Duration) *runtimemapping.Handler {
