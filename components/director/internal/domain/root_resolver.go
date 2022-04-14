@@ -248,6 +248,11 @@ func (r *RootResolver) FetchRequestDocumentDataloader(ids []dataloader.ParamFetc
 	return r.doc.FetchRequestDocumentDataLoader(ids)
 }
 
+// RuntimeContextsDataloader missing godoc
+func (r *RootResolver) RuntimeContextsDataloader(ids []dataloader.ParamRuntimeContext) ([]*graphql.RuntimeContextPage, []error) {
+	return r.runtime.RuntimeContextsDataLoader(ids)
+}
+
 // Mutation missing godoc
 func (r *RootResolver) Mutation() graphql.MutationResolver {
 	return &mutationResolver{r}
@@ -397,16 +402,6 @@ func (r *queryResolver) Runtimes(ctx context.Context, filter []*graphql.LabelFil
 // Runtime missing godoc
 func (r *queryResolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, error) {
 	return r.runtime.Runtime(ctx, id)
-}
-
-// RuntimeContexts missing godoc
-func (r *queryResolver) RuntimeContexts(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimeContextPage, error) {
-	return r.runtimeContext.RuntimeContexts(ctx, filter, first, after)
-}
-
-// RuntimeContext missing godoc
-func (r *queryResolver) RuntimeContext(ctx context.Context, id string) (*graphql.RuntimeContext, error) {
-	return r.runtimeContext.RuntimeContext(ctx, id)
 }
 
 // LabelDefinitions missing godoc
@@ -585,8 +580,8 @@ func (r *mutationResolver) UnregisterRuntime(ctx context.Context, id string) (*g
 }
 
 // RegisterRuntimeContext missing godoc
-func (r *mutationResolver) RegisterRuntimeContext(ctx context.Context, in graphql.RuntimeContextInput) (*graphql.RuntimeContext, error) {
-	return r.runtimeContext.RegisterRuntimeContext(ctx, in)
+func (r *mutationResolver) RegisterRuntimeContext(ctx context.Context, runtimeID string, in graphql.RuntimeContextInput) (*graphql.RuntimeContext, error) {
+	return r.runtimeContext.RegisterRuntimeContext(ctx, runtimeID, in)
 }
 
 // UpdateRuntimeContext missing godoc
@@ -856,6 +851,16 @@ func (r *runtimeResolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*g
 // EventingConfiguration missing godoc
 func (r *runtimeResolver) EventingConfiguration(ctx context.Context, obj *graphql.Runtime) (*graphql.RuntimeEventingConfiguration, error) {
 	return r.runtime.EventingConfiguration(ctx, obj)
+}
+
+// RuntimeContexts missing godoc
+func (r *runtimeResolver) RuntimeContexts(ctx context.Context, obj *graphql.Runtime, first *int, after *graphql.PageCursor) (*graphql.RuntimeContextPage, error) {
+	return r.runtime.RuntimeContexts(ctx, obj, first, after)
+}
+
+// RuntimeContext missing godoc
+func (r *runtimeResolver) RuntimeContext(ctx context.Context, obj *graphql.Runtime, id string) (*graphql.RuntimeContext, error) {
+	return r.runtime.RuntimeContext(ctx, obj, id)
 }
 
 type apiSpecResolver struct{ *RootResolver }

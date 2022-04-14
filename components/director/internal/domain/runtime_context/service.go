@@ -18,8 +18,10 @@ import (
 type RuntimeContextRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
+	GetForRuntime(ctx context.Context, tenant, id, runtimeID string) (*model.RuntimeContext, error)
 	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.RuntimeContext, error)
 	List(ctx context.Context, runtimeID string, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error)
+	ListByRuntimeIDs(ctx context.Context, tenantID string, runtimeIDs []string, pageSize int, cursor string) ([]*model.RuntimeContextPage, error)
 	Create(ctx context.Context, tenant string, item *model.RuntimeContext) error
 	Update(ctx context.Context, tenant string, item *model.RuntimeContext) error
 	Delete(ctx context.Context, tenant, id string) error
@@ -68,8 +70,8 @@ func NewService(repo RuntimeContextRepository,
 	}
 }
 
-// List missing godoc
-func (s *service) List(ctx context.Context, runtimeID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error) {
+// ListByFilter missing godoc
+func (s *service) ListByFilter(ctx context.Context, runtimeID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error) {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
@@ -82,14 +84,43 @@ func (s *service) List(ctx context.Context, runtimeID string, filter []*labelfil
 	return s.repo.List(ctx, runtimeID, rtmCtxTenant, filter, pageSize, cursor)
 }
 
-// Get missing godoc
-func (s *service) Get(ctx context.Context, id string) (*model.RuntimeContext, error) {
+// ListByRuntimeIDs missing godoc
+func (s *service) ListByRuntimeIDs(ctx context.Context, runtimeIDs []string, pageSize int, cursor string) ([]*model.RuntimeContextPage, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
+	}
+
+	return s.repo.ListByRuntimeIDs(ctx, tnt, runtimeIDs, pageSize, cursor)
+}
+
+// GetByID missing godoc
+func (s *service) GetByID(ctx context.Context, id string) (*model.RuntimeContext, error) {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
 	runtimeCtx, err := s.repo.GetByID(ctx, rtmCtxTenant, id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Runtime Context with ID %s", id)
+	}
+
+	return runtimeCtx, nil
+}
+
+// GetForRuntime missing godoc
+func (s *service) GetForRuntime(ctx context.Context, id, runtimeID string) (*model.RuntimeContext, error) {
+	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	runtimeCtx, err := s.repo.GetForRuntime(ctx, rtmCtxTenant, id, runtimeID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Runtime Context with ID %s", id)
 	}
@@ -125,27 +156,6 @@ func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (str
 		return "", errors.Wrapf(err, "while creating Runtime Context")
 	}
 
-	/*err = s.scenariosService.EnsureScenariosLabelDefinitionExists(ctx, rtmCtxTenant) TODO: Revisit when scenarios for runtime contexts are introduced
-	if err != nil {
-		return "", errors.Wrapf(err, "while ensuring Label Definition with key %s exists", model.ScenariosKey)
-	}
-
-	scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctx, in.Labels)
-	if err != nil {
-		return "", errors.Wrap(err, "while merging scenarios from input and assignments")
-	}
-
-	if len(scenarios) > 0 {
-		in.Labels[model.ScenariosKey] = scenarios
-	} else {
-		s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels)
-	}*/
-
-	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmCtxTenant, model.RuntimeContextLabelableObject, id, in.Labels)
-	if err != nil {
-		return id, errors.Wrapf(err, "while creating multiple labels for Runtime Context")
-	}
-
 	return id, nil
 }
 
@@ -164,28 +174,6 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeContext
 
 	if err = s.repo.Update(ctx, rtmCtxTenant, rtmCtx); err != nil {
 		return errors.Wrapf(err, "while updating Runtime Context with id %s", id)
-	}
-
-	if err = s.labelRepo.DeleteAll(ctx, rtmCtxTenant, model.RuntimeContextLabelableObject, id); err != nil {
-		return errors.Wrapf(err, "while deleting all labels for Runtime Context with id %s", id)
-	}
-
-	if in.Labels == nil {
-		return nil
-	}
-
-	/*scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctx, in.Labels) TODO: Revisit when scenarios for runtime contexts are introduced
-	if err != nil {
-		return errors.Wrap(err, "while merging scenarios from input and assignments")
-	}
-
-	if len(scenarios) > 0 {
-		in.Labels[model.ScenariosKey] = scenarios
-	}*/
-
-	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmCtxTenant, model.RuntimeContextLabelableObject, id, in.Labels)
-	if err != nil {
-		return errors.Wrapf(err, "while creating multiple labels for Runtime Context with id %s", id)
 	}
 
 	return nil

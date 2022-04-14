@@ -2,6 +2,7 @@ package runtimectx
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -20,6 +21,8 @@ const runtimeContextsTable string = `public.runtime_contexts`
 
 var (
 	runtimeContextColumns = []string{"id", "runtime_id", "key", "value"}
+	updatableColumns      = []string{"key", "value"}
+	orderByColumns        = repo.OrderByParams{repo.NewAscOrderBy("runtime_id"), repo.NewAscOrderBy("id")}
 )
 
 type pgRepository struct {
@@ -28,6 +31,7 @@ type pgRepository struct {
 	singleGetterGlobal repo.SingleGetterGlobal
 	deleter            repo.Deleter
 	pageableQuerier    repo.PageableQuerier
+	unionLister        repo.UnionLister
 	creator            repo.Creator
 	updater            repo.Updater
 	conv               entityConverter
@@ -47,8 +51,9 @@ func NewRepository(conv entityConverter) *pgRepository {
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.RuntimeContext, runtimeContextsTable, runtimeContextColumns),
 		deleter:            repo.NewDeleter(runtimeContextsTable),
 		pageableQuerier:    repo.NewPageableQuerier(runtimeContextsTable, runtimeContextColumns),
+		unionLister:        repo.NewUnionLister(runtimeContextsTable, runtimeContextColumns),
 		creator:            repo.NewCreator(runtimeContextsTable, runtimeContextColumns),
-		updater:            repo.NewUpdater(runtimeContextsTable, []string{"key", "value"}, []string{"id"}),
+		updater:            repo.NewUpdater(runtimeContextsTable, updatableColumns, []string{"id"}),
 		conv:               conv,
 	}
 }
@@ -67,6 +72,22 @@ func (r *pgRepository) Delete(ctx context.Context, tenant string, id string) err
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error) {
 	var runtimeCtxEnt RuntimeContext
 	if err := r.singleGetter.Get(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &runtimeCtxEnt); err != nil {
+		return nil, err
+	}
+
+	return r.conv.FromEntity(&runtimeCtxEnt), nil
+}
+
+// GetForRuntime missing godoc
+func (r *pgRepository) GetForRuntime(ctx context.Context, tenant, id, runtimeID string) (*model.RuntimeContext, error) {
+	var runtimeCtxEnt RuntimeContext
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("id", id),
+		repo.NewEqualCondition("runtime_id", runtimeID),
+	}
+
+	if err := r.singleGetter.Get(ctx, resource.RuntimeContext, tenant, conditions, repo.NoOrderBy, &runtimeCtxEnt); err != nil {
 		return nil, err
 	}
 
@@ -161,6 +182,48 @@ func (r *pgRepository) List(ctx context.Context, runtimeID string, tenant string
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
+}
+
+// ListByRuntimeIDs missing godoc
+func (r *pgRepository) ListByRuntimeIDs(ctx context.Context, tenantID string, runtimeIDs []string, pageSize int, cursor string) ([]*model.RuntimeContextPage, error) {
+	var runtimeCtxsCollection RuntimeContextCollection
+
+	counts, err := r.unionLister.List(ctx, resource.Bundle, tenantID, runtimeIDs, "runtime_id", pageSize, cursor, orderByColumns, &runtimeCtxsCollection)
+	if err != nil {
+		return nil, err
+	}
+
+	runtmieContextByID := map[string][]*model.RuntimeContext{}
+	for _, runtimeContextEntity := range runtimeCtxsCollection {
+		rc := r.conv.FromEntity(&runtimeContextEntity)
+		runtmieContextByID[runtimeContextEntity.RuntimeID] = append(runtmieContextByID[runtimeContextEntity.RuntimeID], rc)
+	}
+
+	offset, err := pagination.DecodeOffsetCursor(cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "while decoding page cursor")
+	}
+
+	runtimeContextPages := make([]*model.RuntimeContextPage, 0, len(runtimeIDs))
+	for _, runtimeID := range runtimeIDs {
+		totalCount := counts[runtimeID]
+		hasNextPage := false
+		endCursor := ""
+		if totalCount > offset+len(runtmieContextByID[runtimeID]) {
+			hasNextPage = true
+			endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
+		}
+
+		page := &pagination.Page{
+			StartCursor: cursor,
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
+		}
+
+		runtimeContextPages = append(runtimeContextPages, &model.RuntimeContextPage{Data: runtmieContextByID[runtimeID], TotalCount: totalCount, PageInfo: page})
+	}
+
+	return runtimeContextPages, nil
 }
 
 // Create missing godoc
