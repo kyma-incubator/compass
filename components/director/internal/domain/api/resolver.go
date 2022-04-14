@@ -2,9 +2,6 @@ package api
 
 import (
 	"context"
-	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"net/url"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
@@ -59,14 +56,7 @@ type BundleService interface {
 // ApplicationService is responsible for the service-layer Application operations.
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
 type ApplicationService interface {
-	Get(ctx context.Context, id string) (*model.Application, error)
-	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
-}
-
-// ApplicationConverter is responsible for the service-layer Application operations.
-//go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore
-type ApplicationConverter interface {
-	UpdateInputFromModel(in model.Application) model.ApplicationUpdateInput
+	TryUpdateBaseUrl(ctx context.Context, appID, targetURL string) error
 }
 
 // Resolver is an object responsible for resolver-layer APIDefinition operations
@@ -81,11 +71,10 @@ type Resolver struct {
 	specService   SpecService
 	specConverter SpecConverter
 	appSvc        ApplicationService
-	appConverter  ApplicationConverter
 }
 
 // NewResolver returns a new object responsible for resolver-layer APIDefinition operations.
-func NewResolver(transact persistence.Transactioner, svc APIService, rtmSvc RuntimeService, bndlSvc BundleService, bndlRefSvc BundleReferenceService, converter APIConverter, frConverter FetchRequestConverter, specService SpecService, specConverter SpecConverter, appSvc ApplicationService, appConverter ApplicationConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc APIService, rtmSvc RuntimeService, bndlSvc BundleService, bndlRefSvc BundleReferenceService, converter APIConverter, frConverter FetchRequestConverter, specService SpecService, specConverter SpecConverter, appSvc ApplicationService) *Resolver {
 	return &Resolver{
 		transact:      transact,
 		svc:           svc,
@@ -97,7 +86,6 @@ func NewResolver(transact persistence.Transactioner, svc APIService, rtmSvc Runt
 		specService:   specService,
 		specConverter: specConverter,
 		appSvc:        appSvc,
-		appConverter:  appConverter,
 	}
 }
 
@@ -136,8 +124,8 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 		return nil, err
 	}
 
-	if err = r.updateApplicationBaseUrl(ctx, api.ApplicationID, in.TargetURL); err != nil {
-		return nil, err
+	if err = r.appSvc.TryUpdateBaseUrl(ctx, api.ApplicationID, in.TargetURL); err != nil {
+		return nil, errors.Wrapf(err, "while trying to update baseURL")
 	}
 
 	spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)
@@ -355,26 +343,4 @@ func (r *Resolver) FetchRequestAPIDefDataLoader(keys []dataloader.ParamFetchRequ
 
 	log.C(ctx).Infof("Successfully fetched requests for Specifications %v", specIDs)
 	return gqlFetchRequests, nil
-}
-
-func (r *Resolver) updateApplicationBaseUrl(ctx context.Context, appID, targetURL string) error {
-	app, err := r.appSvc.Get(ctx, appID)
-	if err != nil {
-		return errors.Wrapf(err, "while getting application with ID %s", appID)
-	}
-
-	if app.BaseURL != nil && len(*app.BaseURL) > 0 {
-		return nil
-	}
-
-	u, err := url.Parse(targetURL)
-	if err != nil {
-		return errors.Wrapf(err, "while parsing targetURL")
-	}
-
-	app.BaseURL = str.Ptr(fmt.Sprintf("%s://%s", u.Scheme, u.Host))
-
-	convertedIn := r.appConverter.UpdateInputFromModel(*app)
-
-	return r.appSvc.Update(ctx, appID, convertedIn)
 }
