@@ -11,8 +11,9 @@ import (
 
 // Config configures the behaviour of the metrics collector.
 type Config struct {
-	EnableClientIDInstrumentation bool     `envconfig:"default=true,APP_METRICS_ENABLE_CLIENT_ID_INSTRUMENTATION"`
-	CensoredFlows                 []string `envconfig:"optional,APP_METRICS_CENSORED_FLOWS"`
+	EnableClientIDInstrumentation     bool     `envconfig:"default=true,APP_METRICS_ENABLE_CLIENT_ID_INSTRUMENTATION"`
+	EnableGraphqlQueryInstrumentation bool     `envconfig:"default=false,APP_METRICS_ENABLE_GRAPHQL_QUERY_INSTRUMENTATION"`
+	CensoredFlows                     []string `envconfig:"optional,APP_METRICS_CENSORED_FLOWS"`
 }
 
 // Collector missing godoc
