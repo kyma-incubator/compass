@@ -7,13 +7,19 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Client is responsible for making HTTP requests.
+//go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore
+type Client interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
 type fetchOnDemandService struct {
-	client           *http.Client
+	client           Client
 	tenantFetcherURL string
 }
 
 // NewFetchOnDemandService returns object responsible for fetching tenants
-func NewFetchOnDemandService(client *http.Client, url string) *fetchOnDemandService {
+func NewFetchOnDemandService(client Client, url string) *fetchOnDemandService {
 	return &fetchOnDemandService{
 		client:           client,
 		tenantFetcherURL: url,
