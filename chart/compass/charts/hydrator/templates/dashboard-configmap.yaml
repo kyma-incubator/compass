@@ -195,7 +195,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum by (pod) (rate(compass_hydrator_graphql_request_total[1m]) * 60)",
+              "expr": "sum by (pod) (rate(compass_hydrator_request_total[1m]) * 60)",
               "format": "time_series",
               "instant": false,
               "interval": "",
@@ -209,7 +209,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "GraphQL requests rate [req/min]",
+          "title": "Requests Rate [req/min]",
           "tooltip": {
             "shared": true,
             "sort": 0,
@@ -302,7 +302,7 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "histogram_quantile(0.50, sum(irate(compass_hydrator_graphql_request_duration_seconds_bucket[1m])) by (le))",
+              "expr": "histogram_quantile(0.50, sum(irate(compass_hydrator_request_duration_seconds_bucket[1m])) by (le))",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -311,7 +311,7 @@ data:
               "step": 2
             },
             {
-              "expr": "histogram_quantile(0.90, sum(irate(compass_hydrator_graphql_request_duration_seconds_bucket[1m])) by (le))",
+              "expr": "histogram_quantile(0.90, sum(irate(compass_hydrator_request_duration_seconds_bucket[1m])) by (le))",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -320,7 +320,7 @@ data:
               "step": 2
             },
             {
-              "expr": "histogram_quantile(0.95, sum(irate(compass_hydrator_graphql_request_duration_seconds_bucket[1m])) by (le))",
+              "expr": "histogram_quantile(0.95, sum(irate(compass_hydrator_request_duration_seconds_bucket[1m])) by (le))",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -329,7 +329,7 @@ data:
               "step": 2
             },
             {
-              "expr": "histogram_quantile(0.99, sum(irate(compass_hydrator_graphql_request_duration_seconds_bucket[1m])) by (le))",
+              "expr": "histogram_quantile(0.99, sum(irate(compass_hydrator_request_duration_seconds_bucket[1m])) by (le))",
               "format": "time_series",
               "hide": false,
               "intervalFactor": 1,
@@ -342,7 +342,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "GraphQL Request Handling Duration",
+          "title": "Request Handling Duration",
           "tooltip": {
             "shared": true,
             "sort": 0,

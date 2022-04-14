@@ -225,11 +225,11 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 	connectorCertResolverHandlerFunc, revokedCertsLoader, err := getCertificateResolverHandler(ctx, cfg)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
-	router.HandleFunc(cfg.Handler.AuthenticationMappingEndpoint, metricsCollector.GraphQLHandlerWithInstrumentation(authnMappingHandlerFunc))
-	router.HandleFunc(cfg.Handler.TenantMappingEndpoint, metricsCollector.GraphQLHandlerWithInstrumentation(tenantMappingHandlerFunc))
-	router.HandleFunc(cfg.Handler.RuntimeMappingEndpoint, metricsCollector.GraphQLHandlerWithInstrumentation(runtimeMappingHandlerFunc))
-	router.HandleFunc(cfg.Handler.TokenResolverEndpoint, metricsCollector.GraphQLHandlerWithInstrumentation(connectorTokenResolverHandlerFunc))
-	router.HandleFunc(cfg.Handler.ValidationIstioCertEndpoint, metricsCollector.GraphQLHandlerWithInstrumentation(connectorCertResolverHandlerFunc))
+	router.HandleFunc(cfg.Handler.AuthenticationMappingEndpoint, metricsCollector.HandlerInstrumentation(authnMappingHandlerFunc))
+	router.HandleFunc(cfg.Handler.TenantMappingEndpoint, metricsCollector.HandlerInstrumentation(tenantMappingHandlerFunc))
+	router.HandleFunc(cfg.Handler.RuntimeMappingEndpoint, metricsCollector.HandlerInstrumentation(runtimeMappingHandlerFunc))
+	router.HandleFunc(cfg.Handler.TokenResolverEndpoint, metricsCollector.HandlerInstrumentation(connectorTokenResolverHandlerFunc))
+	router.HandleFunc(cfg.Handler.ValidationIstioCertEndpoint, metricsCollector.HandlerInstrumentation(connectorCertResolverHandlerFunc))
 
 	go revokedCertsLoader.Run(ctx)
 }

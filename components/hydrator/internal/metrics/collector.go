@@ -20,9 +20,9 @@ const (
 type Collector struct {
 	config Config
 
-	clientTotal            *prometheus.CounterVec
-	graphQLRequestTotal    *prometheus.CounterVec
-	graphQLRequestDuration *prometheus.HistogramVec
+	clientTotal     *prometheus.CounterVec
+	requestTotal    *prometheus.CounterVec
+	requestDuration *prometheus.HistogramVec
 }
 
 // NewCollector missing godoc
@@ -36,17 +36,17 @@ func NewCollector(config Config) *Collector {
 			Name:      "total_requests_per_client",
 			Help:      "Total requests per client",
 		}, []string{"client_id", "auth_flow", "details"}),
-		graphQLRequestTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
+		requestTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: Namespace,
 			Subsystem: HydratorSubsystem,
-			Name:      "graphql_request_total",
-			Help:      "Total handled GraphQL Requests",
+			Name:      "request_total",
+			Help:      "Total handled Requests",
 		}, []string{"code", "method"}),
-		graphQLRequestDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		requestDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: Namespace,
 			Subsystem: HydratorSubsystem,
-			Name:      "graphql_request_duration_seconds",
-			Help:      "Duration of handling GraphQL requests",
+			Name:      "request_duration_seconds",
+			Help:      "Duration of handling requests",
 		}, []string{"code", "method"}),
 	}
 }
@@ -54,15 +54,15 @@ func NewCollector(config Config) *Collector {
 // Describe missing godoc
 func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 	c.clientTotal.Describe(ch)
-	c.graphQLRequestTotal.Describe(ch)
-	c.graphQLRequestDuration.Describe(ch)
+	c.requestTotal.Describe(ch)
+	c.requestDuration.Describe(ch)
 }
 
 // Collect missing godoc
 func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	c.clientTotal.Collect(ch)
-	c.graphQLRequestTotal.Collect(ch)
-	c.graphQLRequestDuration.Collect(ch)
+	c.requestTotal.Collect(ch)
+	c.requestDuration.Collect(ch)
 }
 
 // InstrumentClient instruments a given client caller.
@@ -88,9 +88,9 @@ func (c *Collector) InstrumentClient(clientID, authFlow, details string) {
 	}).Inc()
 }
 
-// GraphQLHandlerWithInstrumentation missing godoc
-func (c *Collector) GraphQLHandlerWithInstrumentation(handler http.Handler) http.HandlerFunc {
-	return promhttp.InstrumentHandlerCounter(c.graphQLRequestTotal,
-		promhttp.InstrumentHandlerDuration(c.graphQLRequestDuration, handler),
+// HandlerInstrumentation instruments a handler that counts total requests and requests duration
+func (c *Collector) HandlerInstrumentation(handler http.Handler) http.HandlerFunc {
+	return promhttp.InstrumentHandlerCounter(c.requestTotal,
+		promhttp.InstrumentHandlerDuration(c.requestDuration, handler),
 	)
 }
