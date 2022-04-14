@@ -67,3 +67,4 @@ cover.out.tmp
 cover.out
 
 main
+*.test
