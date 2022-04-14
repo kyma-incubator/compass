@@ -18,10 +18,11 @@ package main
 
 import (
 	"context"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
