@@ -108,7 +108,7 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 
 	tenants := make([]*model.BusinessTenantMapping, 0, len(allTenants))
 	for _, tnt := range allTenants {
-		if tnt.Type == tenantEntity.Account && tnt.ExternalTenant == "4f26b6fa-ddfb-44d3-94dc-73165fe5f1b7" {
+		if tnt.Type == tenantEntity.Account && tnt.ExternalTenant == "CA159936TID000000000730446664" {
 			log.C(ctx).Errorf(">>>TENANT with id [%s] successfully added", tnt.ID)
 			tenants = append(tenants, tnt)
 		}
