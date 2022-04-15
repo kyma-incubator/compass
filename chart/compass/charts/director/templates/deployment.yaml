@@ -78,7 +78,7 @@ spec:
               value: "0.0.0.0:{{ .Values.global.director.metrics.port }}"
             - name: APP_METRICS_ENABLE_CLIENT_ID_INSTRUMENTATION
               value: "{{ .Values.global.director.metrics.enableClientInstrumentation }}"
-            - name: APP_METRICS_ENABLE_GRAPHQL_QUERY_INSTRUMENTATION
+            - name: APP_METRICS_ENABLE_GRAPHQL_REQUEST_INSTRUMENTATION
               value: "{{ .Values.global.director.metrics.enableGraphqlQueryInstrumentation }}"
             - name: APP_METRICS_CENSORED_FLOWS
               value: "{{ .Values.global.director.metrics.censoredFlows }}"

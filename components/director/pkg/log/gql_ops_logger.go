@@ -12,19 +12,12 @@ const (
 	logKeySelectionSet  string = "gql-operation"
 )
 
-// GraphqlQueryRequestInstrumenter collects metrics for different client and auth flows.
-//go:generate mockery --name=GraphqlQueryRequestInstrumenter --output=automock --outpkg=automock --case=underscore
-type GraphqlQueryRequestInstrumenter interface {
-	InstrumentGraphqlQueryRequest(queryType, queryOperation string)
-}
-
 // NewGqlLoggingInterceptor creates a new opsInterceptor instance
-func NewGqlLoggingInterceptor(graphqlQueryRequestInstrumenter GraphqlQueryRequestInstrumenter) *opsInterceptor {
-	return &opsInterceptor{graphqlQueryRequestInstrumenter: graphqlQueryRequestInstrumenter}
+func NewGqlLoggingInterceptor() *opsInterceptor {
+	return &opsInterceptor{}
 }
 
 type opsInterceptor struct {
-	graphqlQueryRequestInstrumenter GraphqlQueryRequestInstrumenter
 }
 
 func (m *opsInterceptor) ExtensionName() string {
@@ -47,8 +40,6 @@ func (m *opsInterceptor) InterceptOperation(ctx context.Context, next graphql.Op
 				if len(selectionSet) != 0 {
 					selectionSet += ","
 				}
-
-				m.graphqlQueryRequestInstrumenter.InstrumentGraphqlQueryRequest(string(opsCtx.Operation.Operation), field.Name)
 
 				selectionSet += field.Name
 			}
