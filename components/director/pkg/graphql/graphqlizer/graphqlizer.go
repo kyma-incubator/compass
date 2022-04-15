@@ -50,7 +50,7 @@ func (g *Graphqlizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegist
 		statusCondition: {{ .StatusCondition }},
 		{{- end }}
 		{{- if .BaseURL }}
-		baseURL: "{{ .BaseURL }}"
+		baseUrl: "{{ .BaseURL }}"
 		{{- end }}
 	}`)
 }
