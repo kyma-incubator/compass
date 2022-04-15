@@ -22,9 +22,9 @@ func TestFetchOnDemand(t *testing.T) {
 	testErr := errors.New("error")
 
 	testCases := []struct {
-		Name          string
-		Client        func() *automock.Client
-		ExpectedError error
+		Name             string
+		Client           func() *automock.Client
+		ExpectedErrorMsg string
 	}{
 		{
 			Name: "Success",
@@ -43,7 +43,7 @@ func TestFetchOnDemand(t *testing.T) {
 				client.On("Do", mock.Anything).Return(nil, testErr).Once()
 				return client
 			},
-			ExpectedError: testErr,
+			ExpectedErrorMsg: testErr.Error(),
 		},
 		{
 			Name: "Error when status code is not 200",
@@ -54,7 +54,7 @@ func TestFetchOnDemand(t *testing.T) {
 				}, nil).Once()
 				return client
 			},
-			ExpectedError: errors.New(fmt.Sprintf("received status code %d when trying to fetch tenant with ID %s", http.StatusInternalServerError, tenantID)),
+			ExpectedErrorMsg: fmt.Sprintf("received status code %d when trying to fetch tenant with ID %s", http.StatusInternalServerError, tenantID),
 		},
 	}
 
@@ -67,9 +67,9 @@ func TestFetchOnDemand(t *testing.T) {
 			err := svc.FetchOnDemand(tenantID)
 
 			// THEN
-			if testCase.ExpectedError != nil {
+			if len(testCase.ExpectedErrorMsg) > 0 {
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+				assert.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
 			} else {
 				assert.NoError(t, err)
 			}

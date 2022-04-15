@@ -114,12 +114,12 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 		http.Error(writer, "Region path parameter is missing from request", http.StatusBadRequest)
 		return
 	}
-	log.C(ctx).Printf("Fetching tenant details for tenant with id %s", tenantId)
+	log.C(ctx).Infof("Fetching tenant details for tenant with id %s", tenantId)
 
 	writer.WriteHeader(http.StatusOK)
 	writer.Header().Set("Content-Type", "application/json")
 	if _, err := writer.Write([]byte("{}")); err != nil {
-		log.C(request.Context()).WithError(err).Errorf("Failed to write response body for fetch tenant request")
+		log.C(ctx).WithError(err).Errorf("Failed to write response body for fetch tenant request")
 		return
 	}
 }
