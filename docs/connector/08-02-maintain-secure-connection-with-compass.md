@@ -70,7 +70,7 @@ After you have established a secure connection with Compass, you can fetch the c
     To decode the certificate chain, run:
     
     ```bash
-    base64 -d {CERTIFICATE_CHAIN} 
+    echo {CERTIFICATE_CHAIN} | base64 -d
     ```
     
 >**NOTE:** To learn how to revoke a client certificate, read [this](08-03-revoke-client-certificate.md) document.
