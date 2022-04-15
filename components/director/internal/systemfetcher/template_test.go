@@ -129,7 +129,7 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 		{
 			name:             "Fails when app template has placeholders without assigned values",
 			system:           testSystem,
-			expectedErr:      errors.New("failed to find key \"nonexistentKey\" in system input"),
+			expectedErr:      errors.New("missing or empty key \"nonexistentKey\" in system input"),
 			appInputOverride: appInputOverride,
 			placeholderMappings: []systemfetcher.PlaceholderMapping{
 				{
