@@ -51,23 +51,18 @@ func TestOathkeeperSecurity(t *testing.T) {
 		changedAppID := "aaabbbcc-b340-418d-b653-d95b5e347d74"
 
 		newSubject := certs.ChangeCommonName(configuration.CertificateSigningRequestInfo.Subject, changedAppID)
-		certDataHeader := certs.CreateCertDataHeader("df6ab69b34100a1808ddc6211010fa289518f14606d0c8eaa03a0f53ecba578a", newSubject)
-
-		forbiddenHeaders := map[string][]string{
-			cfg.CertificateDataHeader: {certDataHeader},
-		}
 
 		csr := certs.CreateCsr(t, newSubject, clientKey)
 
 		t.Run("when calling token-secured API", func(t *testing.T) {
 			// when
-			_, err := connectorClient.Configuration("", forbiddenHeaders)
+			_, err := connectorClient.Configuration("")
 
 			// then
 			require.Error(t, err)
 
 			// when
-			_, err = connectorClient.SignCSR(certs.EncodeBase64(csr), "", forbiddenHeaders)
+			_, err = connectorClient.SignCSR(certs.EncodeBase64(csr), "")
 
 			// then
 			require.Error(t, err)
@@ -75,14 +70,14 @@ func TestOathkeeperSecurity(t *testing.T) {
 
 		t.Run("when calling certificate-secured API", func(t *testing.T) {
 			// when
-			cfg, err := securedClient.Configuration(forbiddenHeaders)
+			cfg, err := securedClient.Configuration()
 
 			// then
 			require.NoError(t, err)
 			require.Equal(t, configuration.CertificateSigningRequestInfo.Subject, cfg.CertificateSigningRequestInfo.Subject)
 
 			// when
-			_, err = securedClient.SignCSR(certs.EncodeBase64(csr), forbiddenHeaders)
+			_, err = securedClient.SignCSR(certs.EncodeBase64(csr))
 
 			// then
 			require.Error(t, err)
