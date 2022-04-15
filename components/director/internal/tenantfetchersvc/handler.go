@@ -60,9 +60,10 @@ type HandlerConfig struct {
 	MetricsPushEndpoint string `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
 	Features            features.Config
 
-	ShouldSyncSubaccounts bool          `envconfig:"default=false,APP_SYNC_SUBACCOUNTS"`
-	FullResyncInterval    time.Duration `envconfig:"default=12h"`
-	TenantInsertChunkSize int           `envconfig:"default=500,APP_TENANT_INSERT_CHUNK_SIZE"`
+	TenantFetcherJobIntervalMins int           `envconfig:"default=5,APP_TENANT_FETCH_JOB_INTERVAL_MINS"`
+	ShouldSyncSubaccounts        bool          `envconfig:"default=false,APP_SYNC_SUBACCOUNTS"`
+	FullResyncInterval           time.Duration `envconfig:"default=12h"`
+	TenantInsertChunkSize        int           `envconfig:"default=500,APP_TENANT_INSERT_CHUNK_SIZE"`
 }
 
 // TenantProviderConfig includes the configuration for tenant providers - the tenant ID json property names, the subdomain property name, and the tenant provider name.

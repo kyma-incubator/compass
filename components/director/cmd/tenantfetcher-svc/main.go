@@ -124,24 +124,32 @@ func main() {
 	}()
 
 	runMainSrv()
-	runTenantFetcherJob(ctx, cfg, transact)
+
+	interruptJob := make(chan bool, 1)
+	runTenantFetcherJob(ctx, cfg, transact, interruptJob)
+	<-interruptJob
 }
 
-func runTenantFetcherJob(ctx context.Context, cfg config, transact persistence.Transactioner) chan bool {
-	ticker := time.NewTicker(5 * time.Minute)
-	interrupt := make(chan bool, 1)
+func runTenantFetcherJob(ctx context.Context, cfg config, transact persistence.Transactioner, interrupt chan bool) {
+	jobInterval := cfg.Handler.TenantFetcherJobIntervalMins
+	ticker := time.NewTicker(time.Duration(jobInterval) * time.Minute)
+
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
+				log.C(ctx).Infof("Scheduled sync of tenants to be executed, job interval is %d minutes", jobInterval)
 				syncTenants(ctx, cfg, transact)
-			case <-interrupt:
-				ticker.Stop()
+			case <-ctx.Done():
+				log.C(ctx).Error("Context is canceled and tenant fetcher job will be interrupted")
+				stopTenantFetcherJobTicker(ctx, ticker)
+				interrupt <- true
+				return
 			}
 		}
 	}()
-	return interrupt
 }
+
 func syncTenants(ctx context.Context, cfg config, transact persistence.Transactioner) {
 	tenantsFetcherSvc, err := createTenantsFetcherSvc(ctx, cfg, transact)
 	exitOnError(err, "failed to create tenants fetcher service")
@@ -207,17 +215,22 @@ func createTenantsFetcherSvc(ctx context.Context, cfg config, transact persisten
 	return tf.NewGlobalAccountService(eventsCfg.QueryConfig, transact, kubeClient, eventsCfg.TenantFieldMapping, handlerCfg.TenantProvider, eventsCfg.AccountsRegion, eventAPIClient, tenantStorageSvc, handlerCfg.FullResyncInterval, directorClient, handlerCfg.TenantInsertChunkSize, tenantStorageConv), nil
 }
 
+func stopTenantFetcherJobTicker(ctx context.Context, tenantFetcherJobTicker *time.Ticker) {
+	tenantFetcherJobTicker.Stop()
+	log.C(ctx).Info("Tenant fetcher job ticker is stopped")
+}
+
 func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, transact persistence.Transactioner) http.Handler {
 	logger := log.C(ctx)
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 
 	tenantsAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
-	configureAuthMiddleware(ctx, httpClient, tenantsAPIRouter, cfg.SecurityConfig, cfg.SecurityConfig.SubscriptionCallbackScope)
+	configureAuthMiddleware(ctx, httpClient, tenantsAPIRouter, cfg.SecurityConfig, []string{cfg.SecurityConfig.SubscriptionCallbackScope})
 	registerTenantsHandler(ctx, tenantsAPIRouter, cfg.Handler)
 
 	tenantsOnDemandAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
-	configureAuthMiddleware(ctx, httpClient, tenantsOnDemandAPIRouter, cfg.SecurityConfig, cfg.SecurityConfig.FetchTenantOnDemandScope)
+	configureAuthMiddleware(ctx, httpClient, tenantsOnDemandAPIRouter, cfg.SecurityConfig, []string{cfg.SecurityConfig.FetchTenantOnDemandScope})
 	registerTenantsOnDemandHandler(ctx, tenantsOnDemandAPIRouter, cfg.EventsCfg, cfg.Handler, transact)
 
 	healthCheckRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
@@ -268,7 +281,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg securityConfig, requiredScopes ...string) {
+func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg securityConfig, requiredScopes []string) {
 	scopeValidator := claims.NewScopesValidator(requiredScopes)
 	middleware := auth.New(httpClient, cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
 	router.Use(middleware.Handler())
@@ -284,6 +297,9 @@ func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, route
 
 func registerTenantsHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.HandlerConfig) {
 	gqlClient := newInternalGraphQLClient(cfg.DirectorGraphQLEndpoint, cfg.ClientTimeout, cfg.HTTPClientSkipSslValidation)
+	gqlClient.Log = func(s string) {
+		log.C(ctx).Debug(s)
+	}
 	directorClient := graphqlclient.NewDirector(gqlClient)
 
 	tenantConverter := tenant.NewConverter()
@@ -333,6 +349,9 @@ func createTenantFetcherOnDemandSvc(eventsCfg tenantfetcher.EventsConfig, handle
 	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepository, labelService)
 
 	gqlClient := newInternalGraphQLClient(handlerCfg.DirectorGraphQLEndpoint, handlerCfg.ClientTimeout, handlerCfg.HTTPClientSkipSslValidation)
+	gqlClient.Log = func(s string) {
+		log.D().Debug(s)
+	}
 	directorClient := graphqlclient.NewDirector(gqlClient)
 
 	return tf.NewSubaccountOnDemandService(eventsCfg.QueryConfig, eventsCfg.TenantFieldMapping, eventAPIClient, transact, tenantStorageSvc, directorClient, handlerCfg.TenantProvider, tenantStorageConv), nil
@@ -354,12 +373,5 @@ func newInternalGraphQLClient(url string, timeout time.Duration, skipSSLValidati
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(tr, "Authorization")),
 		Timeout:   timeout,
 	}
-
-	gqlClient := gcli.NewClient(url, gcli.WithHTTPClient(client))
-
-	gqlClient.Log = func(s string) {
-		log.D().Debug(s)
-	}
-
-	return gqlClient
+	return gcli.NewClient(url, gcli.WithHTTPClient(client))
 }
