@@ -16,6 +16,8 @@ import (
 var fourSystemsResp = `[{
 			"displayName": "name1",
 			"productDescription": "description",
+			"productId": "FSM",
+			"ppmsProductVersionId": "123456",
 			"baseUrl": "url",
 			"infrastructureProvider": "provider1",
 			"templateProp": "type1"
@@ -23,6 +25,8 @@ var fourSystemsResp = `[{
 		{
 			"displayName": "name2",
 			"productDescription": "description",
+			"productId": "FSM",
+			"ppmsProductVersionId": "123456",
 			"baseUrl": "url",
 			"infrastructureProvider": "provider1",
 			"templateProp": "type1"
@@ -30,12 +34,16 @@ var fourSystemsResp = `[{
 		{
 			"displayName": "name3",
 			"productDescription": "description",
+			"productId": "FSM",
+			"ppmsProductVersionId": "123456",
 			"baseUrl": "url",
 			"infrastructureProvider": "provider1",
 			"templateProp": "type1"
 		}, {
 			"displayName": "name4",
 			"productDescription": "description",
+			"productId": "FSM",
+			"ppmsProductVersionId": "123456",
 			"baseUrl": "url",
 			"infrastructureProvider": "provider1",
 			"templateProp": "type1"
@@ -48,15 +56,13 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	mock, url := fixHTTPClient(t)
 	mock.bodiesToReturn = [][]byte{systemsJSON}
 	mock.expectedFilterCriteria = "filter1"
-	mock.expectedTenantFilterCriteria = "ffff and tenant eq 'tenant1'"
 
 	client := systemfetcher.NewClient(systemfetcher.APIConfig{
-		Endpoint:                    url + "/fetch",
-		FilterCriteria:              "filter1",
-		FilterTenantCriteriaPattern: "ffff and tenant eq '%s'",
-		PageSize:                    4,
-		PagingSkipParam:             "$skip",
-		PagingSizeParam:             "$top",
+		Endpoint:        url + "/fetch",
+		FilterCriteria:  "filter1",
+		PageSize:        4,
+		PagingSkipParam: "$skip",
+		PagingSizeParam: "$top",
 	}, mock.httpClient)
 
 	t.Run("Success", func(t *testing.T) {
@@ -64,7 +70,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		mock.pageCount = 1
 		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
 		require.NoError(t, err)
-		require.Len(t, systems, 2)
+		require.Len(t, systems, 1)
 		require.Equal(t, systems[0].TemplateID, "")
 	})
 
@@ -93,7 +99,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		mock.pageCount = 1
 		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
 		require.NoError(t, err)
-		require.Len(t, systems, 4)
+		require.Len(t, systems, 2)
 		require.Equal(t, systems[0].TemplateID, "type1")
 		require.Equal(t, systems[1].TemplateID, "")
 	})
@@ -119,7 +125,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		mock.pageCount = 2
 		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
 		require.NoError(t, err)
-		require.Len(t, systems, 10)
+		require.Len(t, systems, 5)
 	})
 
 	t.Run("Does not map to the last template mapping if haven't matched before", func(t *testing.T) {
@@ -166,7 +172,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		mock.pageCount = 1
 		systems, err := client.FetchSystemsForTenant(context.Background(), "tenant1")
 		require.NoError(t, err)
-		require.Len(t, systems, 6)
+		require.Len(t, systems, 3)
 		require.Equal(t, systems[0].TemplateID, "type1")
 		require.Equal(t, systems[1].TemplateID, "type2")
 		require.Equal(t, systems[2].TemplateID, "")
@@ -191,13 +197,12 @@ func TestFetchSystemsForTenant(t *testing.T) {
 }
 
 type mockData struct {
-	expectedFilterCriteria       string
-	expectedTenantFilterCriteria string
-	statusCodeToReturn           int
-	bodiesToReturn               [][]byte
-	httpClient                   systemfetcher.APIClient
-	callNumber                   int
-	pageCount                    int
+	expectedFilterCriteria string
+	statusCodeToReturn     int
+	bodiesToReturn         [][]byte
+	httpClient             systemfetcher.APIClient
+	callNumber             int
+	pageCount              int
 }
 
 func fixHTTPClient(t *testing.T) (*mockData, string) {
@@ -209,11 +214,7 @@ func fixHTTPClient(t *testing.T) (*mockData, string) {
 	}
 	mux.HandleFunc("/fetch", func(w http.ResponseWriter, r *http.Request) {
 		filter := r.URL.Query().Get("$filter")
-		if mock.callNumber < mock.pageCount {
-			require.Equal(t, mock.expectedFilterCriteria, filter)
-		} else {
-			require.Equal(t, mock.expectedTenantFilterCriteria, filter)
-		}
+		require.Equal(t, mock.expectedFilterCriteria, filter)
 
 		requests = append(requests, filter)
 		w.Header().Set("Content-Type", "application/json")
@@ -247,6 +248,7 @@ func fixSystems() []systemfetcher.System {
 				ProductDescription:     "System1 description",
 				BaseURL:                "http://example1.com",
 				InfrastructureProvider: "test",
+				AdditionalURLs:         map[string]string{"mainUrl": "http://mainurl.com"},
 			},
 		},
 	}
