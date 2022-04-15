@@ -11,6 +11,7 @@ type ConnectorTestConfig struct {
 	DirectorMtlsURL                string
 	HydratorURL                    string `envconfig:"default=http://compass-hydrator:3000"`
 
+	CertificateDataHeader        string `envconfig:"default=Certificate-Data"`
 	RevocationConfigMapName      string `envconfig:"default=revocations-config"`
 	RevocationConfigMapNamespace string `envconfig:"default=compass-system"`
 

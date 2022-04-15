@@ -36,6 +36,8 @@ spec:
             value: 'https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql'
           - name: APP_HYDRATOR_URL
             value: '{{ .Values.global.tests.hydratorFQDN }}:{{ .Values.global.hydrator.port }}{{ .Values.global.hydrator.prefix}}'
+          - name: APP_CERTIFICATE_DATA_HEADER
+            value: {{ .Values.global.hydrator.certificateDataHeader }}
           - name: APP_REVOCATION_CONFIG_MAP_NAMESPACE
             value: {{ tpl .Values.global.connector.revocation.configmap.namespace . }}
           - name: APP_REVOCATION_CONFIG_MAP_NAME
