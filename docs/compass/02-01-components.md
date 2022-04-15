@@ -48,6 +48,10 @@ It is also responsible for verifying externally issued client certificates. Thos
 
 Director handles the process of managing Applications and Runtimes. It also requests Application webhook APIs for credentials and exposes health information about Runtimes. This component has access to the storage.
 
+## Hydrator
+
+Hydrator componet is responsible for the authentication and authorization aspect of the project, leveraging the [ORY OathKeeper](https://github.com/ory/oathkeeper) functionality. In that component we have also custom data processing in form of Oathkeeper hydrator mutators used along with the other default mutators.
+
 ## Integration System
 
 Integration System is any system that provides integration for multiple tenants. It exists in a global scope without tenant assignment.
