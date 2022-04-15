@@ -76,8 +76,6 @@ spec:
             - name: APP_ROOT_CA_SECRET_CERTIFICATE_KEY
               value: {{ .Values.global.connector.secrets.rootCA.certificateKey | quote }}
             {{ end }}
-            - name: APP_CERTIFICATE_DATA_HEADER
-              value: {{ .Values.global.connector.certificateDataHeader | quote }}
             - name: APP_REVOCATION_CONFIG_MAP_NAME
               value: "{{ tpl .Values.global.connector.revocation.configmap.namespace . }}/{{ .Values.global.connector.revocation.configmap.name }}"
             - name: APP_CSR_SUBJECT_COUNTRY
@@ -102,8 +100,6 @@ spec:
               value: "https://{{ .Values.global.director.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}/graphql"
             - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
               value: "{{ .Values.http.client.skipSSLValidation }}"
-            - name: APP_SUBJECT_CONSUMER_MAPPING_CONFIG
-              value: {{ .Values.global.connector.subjectConsumerMappingConfig | quote }} # TODO:: do we need this it should be already moved to hydrator?
           {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}

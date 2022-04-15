@@ -36,7 +36,6 @@ type Config struct {
 		CertificateKey string `envconfig:"optional"`
 	}
 
-	CertificateDataHeader   string `envconfig:"default=Certificate-Data"`
 	RevocationConfigMapName string `envconfig:"default=compass-system/revocations-Config"`
 
 	DirectorURL                    string `envconfig:"default=127.0.0.1:3003"`
@@ -50,8 +49,6 @@ type Config struct {
 	OneTimeTokenURL             string
 	HttpClientSkipSslValidation bool          `envconfig:"default=false"`
 	HTTPClientTimeout           time.Duration `envconfig:"default=30s"`
-
-	SubjectConsumerMappingConfig string `envconfig:"default=[]"`
 }
 
 func (c *Config) String() string {
@@ -59,20 +56,20 @@ func (c *Config) String() string {
 		"CSRSubjectCountry: %s, CSRSubjectOrganization: %s, CSRSubjectOrganizationalUnit: %s, "+
 		"CSRSubjectLocality: %s, CSRSubjectProvince: %s, "+
 		"CertificateValidityTime: %s, CASecretName: %s, CASecretCertificateKey: %s, CASecretKeyKey: %s, "+
-		"RootCASecretName: %s, RootCASecretCertificateKey: %s, CertificateDataHeader: %s, "+
+		"RootCASecretName: %s, RootCASecretCertificateKey: %s, "+
 		"CertificateSecuredConnectorURL: %s, "+
 		"RevocationConfigMapName: %s, "+
 		"DirectorURL: %s "+
 		"KubernetesClientPollInteval: %s, KubernetesClientPollTimeout: %s"+
-		"OneTimeTokenURL: %s, HTTPClienttimeout: %s, SubjectConsumerMappingConfig: %s",
+		"OneTimeTokenURL: %s, HTTPClienttimeout: %s",
 		c.ExternalAddress, c.APIEndpoint, c.HydratorAddress,
 		c.CSRSubject.Country, c.CSRSubject.Organization, c.CSRSubject.OrganizationalUnit,
 		c.CSRSubject.Locality, c.CSRSubject.Province,
 		c.CertificateValidityTime, c.CASecret.Name, c.CASecret.CertificateKey, c.CASecret.KeyKey,
-		c.RootCASecret.Name, c.RootCASecret.CertificateKey, c.CertificateDataHeader,
+		c.RootCASecret.Name, c.RootCASecret.CertificateKey,
 		c.CertificateSecuredConnectorURL,
 		c.RevocationConfigMapName,
 		c.DirectorURL,
 		c.KubernetesClient.PollInteval, c.KubernetesClient.PollTimeout,
-		c.OneTimeTokenURL, c.HTTPClientTimeout, c.SubjectConsumerMappingConfig)
+		c.OneTimeTokenURL, c.HTTPClientTimeout)
 }

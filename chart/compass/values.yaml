@@ -263,7 +263,6 @@ global:
         # This is the reason for the confusing name of our root certificate. https://preliminary.istio.io/v1.6/docs/tasks/traffic-management/ingress/secure-ingress/#configure-a-mutual-tls-ingress-gateway
         cacert: compass-gateway-mtls-certs-cacert # For cert-rotation the cacert should be in different secret
         certificateKey: cacert
-    certificateDataHeader: "Certificate-Data"
     revocation:
       configmap:
         name: revocations-config
@@ -271,7 +270,6 @@ global:
     # If key and certificate are not provided they will be generated
     caKey: ""
     caCertificate: ""
-    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"},{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}]'
   system_broker:
     enabled: true
     port: 5001
@@ -311,9 +309,11 @@ global:
           - "Client-Certificate-Hash"
           - "Certificate-Data"
   hydrator:
+    host: compass-hydrator.compass-system.svc.cluster.local
     port: 3000
     prefix: /hydrators
-    host: compass-hydrator.compass-system.svc.cluster.local
+    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"},{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}]'
+    certificateDataHeader: "Certificate-Data"
     metrics:
       port: 3003
       enableClientInstrumentation: true

@@ -109,9 +109,9 @@ spec:
             - name: APP_EXTERNAL_ISSUER_SUBJECT_ORGANIZATIONAL_UNIT_PATTERN
               value: {{ .Values.deployment.args.externalIssuerSubject.organizationalUnitPattern | quote }}
             - name: APP_CERTIFICATE_DATA_HEADER
-              value: {{ .Values.global.connector.certificateDataHeader | quote }}
+              value: {{ .Values.global.hydrator.certificateDataHeader | quote }}
             - name: APP_SUBJECT_CONSUMER_MAPPING_CONFIG
-              value: {{ .Values.global.connector.subjectConsumerMappingConfig | quote }}
+              value: {{ .Values.global.hydrator.subjectConsumerMappingConfig | quote }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
