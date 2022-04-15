@@ -47,10 +47,10 @@ func (g *Graphqlizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegist
 		integrationSystemID: "{{ .IntegrationSystemID }}",
 		{{- end }}
 		{{- if .StatusCondition }}
-		statusCondition: {{ .StatusCondition }}
+		statusCondition: {{ .StatusCondition }},
 		{{- end }}
 		{{- if .BaseURL }}
-		baseURL: {{ .BaseURL }}
+		baseURL: "{{ .BaseURL }}"
 		{{- end }}
 	}`)
 }
