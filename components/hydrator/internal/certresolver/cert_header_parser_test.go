@@ -1,11 +1,12 @@
-package istiocertresolver_test
+package certresolver_test
 
 import (
 	"context"
 	"net/http"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/hydrator/internal/istiocertresolver"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/certresolver"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/subject"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
@@ -18,7 +19,7 @@ const (
 )
 
 func TestParseCertHeader(t *testing.T) {
-	connectorSubjectConsts := istiocertresolver.CSRSubjectConfig{
+	connectorSubjectConsts := subject.CSRSubjectConfig{
 		Country:            "DE",
 		Organization:       "organization",
 		OrganizationalUnit: "OrgUnit",
@@ -26,7 +27,7 @@ func TestParseCertHeader(t *testing.T) {
 		Province:           "Waldorf",
 	}
 
-	externalSubjectConsts := istiocertresolver.ExternalIssuerSubjectConfig{
+	externalSubjectConsts := subject.ExternalIssuerSubjectConfig{
 		Country:                   "DE",
 		Organization:              "organization",
 		OrganizationalUnitPattern: "(?i)[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|Region|SAP Cloud Platform Clients",
@@ -43,7 +44,7 @@ func TestParseCertHeader(t *testing.T) {
 	for _, testCase := range []struct {
 		name                            string
 		certHeader                      string
-		subjectConsts                   istiocertresolver.CSRSubjectConfig
+		subjectConsts                   subject.CSRSubjectConfig
 		issuer                          string
 		subjectMatcher                  func(string) bool
 		clientIDFunc                    func(string) string
@@ -58,7 +59,7 @@ func TestParseCertHeader(t *testing.T) {
 			certHeader: "Hash=f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad;Subject=\"CN=test-application,OU=OrgUnit,O=organization,L=Waldorf,ST=Waldorf,C=DE\";URI=spiffe://cluster.local/ns/kyma-integration/sa/default;" +
 				"Hash=6d1f9f3a6ac94ff925841aeb9c15bb3323014e3da2c224ea7697698acf413226;Subject=\"\";URI=spiffe://cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account",
 			issuer:                          oathkeeper.ConnectorIssuer,
-			subjectMatcher:                  istiocertresolver.ConnectorCertificateSubjectMatcher(connectorSubjectConsts),
+			subjectMatcher:                  subject.ConnectorCertificateSubjectMatcher(connectorSubjectConsts),
 			clientIDFunc:                    cert.GetCommonName,
 			found:                           true,
 			expectedHash:                    "f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad",
@@ -70,7 +71,7 @@ func TestParseCertHeader(t *testing.T) {
 			certHeader: "Hash=f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad;Subject=\"CN=test-application,OU=OrgUnit,O=organization,L=Waldorf,ST=Waldorf,C=DE\";URI=spiffe://cluster.local/ns/kyma-integration/sa/default;" +
 				"Hash=6d1f9f3a6ac94ff925841aeb9c15bb3323014e3da2c224ea7697698acf413226;Subject=\"\";URI=spiffe://cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account",
 			issuer:         oathkeeper.ConnectorIssuer,
-			subjectMatcher: istiocertresolver.ConnectorCertificateSubjectMatcher(connectorSubjectConsts),
+			subjectMatcher: subject.ConnectorCertificateSubjectMatcher(connectorSubjectConsts),
 			clientIDFunc:   cert.GetCommonName,
 			authSessionExtraFromSubjectFunc: func(ctx context.Context, s string) map[string]interface{} {
 				return expectedAuthSessionExtra
@@ -85,7 +86,7 @@ func TestParseCertHeader(t *testing.T) {
 			certHeader: "Hash=f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad;Subject=\"CN=test-application,OU=2d149cda-a4fe-45c9-a21d-915c52fb56a1,OU=Region,OU=SAP Cloud Platform Clients,O=organization,L=Waldorf,ST=Waldorf,C=DE\";URI=spiffe://cluster.local/ns/kyma-integration/sa/default;" +
 				"Hash=6d1f9f3a6ac94ff925841aeb9c15bb3323014e3da2c224ea7697698acf413226;Subject=\"\";URI=spiffe://cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account",
 			issuer:                          oathkeeper.ExternalIssuer,
-			subjectMatcher:                  istiocertresolver.ExternalCertIssuerSubjectMatcher(externalSubjectConsts),
+			subjectMatcher:                  subject.ExternalCertIssuerSubjectMatcher(externalSubjectConsts),
 			clientIDFunc:                    cert.GetUUIDOrganizationalUnit,
 			found:                           true,
 			expectedHash:                    "f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad",
@@ -97,7 +98,7 @@ func TestParseCertHeader(t *testing.T) {
 			certHeader: "Hash=f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad;Subject=\"CN=common-name,OU=123e4567-e89b-12d3-a456-426614174001+OU=SAP Cloud Platform Clients+OU=Region,O=organization,L=locality,C=DE\";URI=spiffe://cluster.local/ns/kyma-integration/sa/default;" +
 				"Hash=6d1f9f3a6ac94ff925841aeb9c15bb3323014e3da2c224ea7697698acf413226;Subject=\"\";URI=spiffe://cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account",
 			issuer:                          oathkeeper.ExternalIssuer,
-			subjectMatcher:                  istiocertresolver.ExternalCertIssuerSubjectMatcher(externalSubjectConsts),
+			subjectMatcher:                  subject.ExternalCertIssuerSubjectMatcher(externalSubjectConsts),
 			clientIDFunc:                    cert.GetUUIDOrganizationalUnit,
 			found:                           true,
 			expectedHash:                    "f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad",
@@ -109,7 +110,7 @@ func TestParseCertHeader(t *testing.T) {
 			certHeader: "Hash=f4cf22fb633d4df500e371daf703d4b4d14a0ea9d69cd631f95f9e6ba840f8ad;Subject=\"\";URI=spiffe://cluster.local/ns/kyma-integration/sa/default;" +
 				"Hash=6d1f9f3a6ac94ff925841aeb9c15bb3323014e3da2c224ea7697698acf413226;Subject=\"\";URI=spiffe://cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account",
 			issuer:                          oathkeeper.ConnectorIssuer,
-			subjectMatcher:                  istiocertresolver.ConnectorCertificateSubjectMatcher(connectorSubjectConsts),
+			subjectMatcher:                  subject.ConnectorCertificateSubjectMatcher(connectorSubjectConsts),
 			clientIDFunc:                    cert.GetCommonName,
 			found:                           false,
 			authSessionExtraFromSubjectFunc: noopAuthSessionExtra,
@@ -118,7 +119,7 @@ func TestParseCertHeader(t *testing.T) {
 			name:                            "should not found certificate data if header is invalid",
 			certHeader:                      "invalid header",
 			issuer:                          oathkeeper.ConnectorIssuer,
-			subjectMatcher:                  istiocertresolver.ConnectorCertificateSubjectMatcher(connectorSubjectConsts),
+			subjectMatcher:                  subject.ConnectorCertificateSubjectMatcher(connectorSubjectConsts),
 			clientIDFunc:                    cert.GetCommonName,
 			found:                           false,
 			authSessionExtraFromSubjectFunc: noopAuthSessionExtra,
@@ -127,7 +128,7 @@ func TestParseCertHeader(t *testing.T) {
 			name:                            "should not found certificate data if header is empty",
 			certHeader:                      "",
 			issuer:                          oathkeeper.ConnectorIssuer,
-			subjectMatcher:                  istiocertresolver.ConnectorCertificateSubjectMatcher(connectorSubjectConsts),
+			subjectMatcher:                  subject.ConnectorCertificateSubjectMatcher(connectorSubjectConsts),
 			clientIDFunc:                    cert.GetCommonName,
 			found:                           false,
 			authSessionExtraFromSubjectFunc: noopAuthSessionExtra,
@@ -139,7 +140,7 @@ func TestParseCertHeader(t *testing.T) {
 
 			r.Header.Set(certHeader, testCase.certHeader)
 
-			hp := istiocertresolver.NewHeaderParser(certHeader, testCase.issuer, testCase.subjectMatcher, testCase.clientIDFunc, testCase.authSessionExtraFromSubjectFunc)
+			hp := certresolver.NewHeaderParser(certHeader, testCase.issuer, testCase.subjectMatcher, testCase.clientIDFunc, testCase.authSessionExtraFromSubjectFunc)
 
 			// when
 			certificateData := hp.GetCertificateData(r)

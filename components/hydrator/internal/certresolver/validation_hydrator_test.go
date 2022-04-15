@@ -1,4 +1,4 @@
-package istiocertresolver_test
+package certresolver_test
 
 import (
 	"bytes"
@@ -7,8 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/hydrator/internal/istiocertresolver"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/istiocertresolver/automock"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/certresolver"
+
+	"github.com/kyma-incubator/compass/components/hydrator/internal/certresolver/automock"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
@@ -18,13 +19,13 @@ import (
 )
 
 func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
-	var certificateData = &istiocertresolver.CertificateData{
+	var certificateData = &certresolver.CertificateData{
 		ClientID:         "abcd-client-id",
 		CertificateHash:  "qwertyuiop",
 		AuthSessionExtra: nil,
 	}
 
-	var certificateDataWithExtra = &istiocertresolver.CertificateData{
+	var certificateDataWithExtra = &certresolver.CertificateData{
 		ClientID:        "abcd-client-id",
 		CertificateHash: "qwertyuiop",
 		AuthSessionExtra: map[string]interface{}{
@@ -54,7 +55,7 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		revokedCertificatesCache := &automock.RevokedCertificatesCache{}
 		revokedCertificatesCache.On("Get").Return(certsHash)
 
-		validator := istiocertresolver.NewValidationHydrator(revokedCertificatesCache, certHeaderParser)
+		validator := certresolver.NewValidationHydrator(revokedCertificatesCache, certHeaderParser)
 
 		// when
 		validator.ServeHTTP(rr, req)
@@ -86,7 +87,7 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		revokedCertificatesCache := &automock.RevokedCertificatesCache{}
 		revokedCertificatesCache.On("Get").Return(certsHash)
 
-		validator := istiocertresolver.NewValidationHydrator(revokedCertificatesCache, certHeaderParser)
+		validator := certresolver.NewValidationHydrator(revokedCertificatesCache, certHeaderParser)
 
 		// when
 		validator.ServeHTTP(rr, req)
@@ -117,7 +118,7 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		revokedCertificatesCache := &automock.RevokedCertificatesCache{}
 		revokedCertificatesCache.AssertNotCalled(t, "Get")
 
-		validator := istiocertresolver.NewValidationHydrator(nil, certHeaderParser)
+		validator := certresolver.NewValidationHydrator(nil, certHeaderParser)
 
 		// when
 		validator.ServeHTTP(rr, req)
@@ -149,7 +150,7 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		revokedCertificatesCache := &automock.RevokedCertificatesCache{}
 		revokedCertificatesCache.On("Get").Return(certsHash)
 
-		validator := istiocertresolver.NewValidationHydrator(revokedCertificatesCache, certHeaderParser)
+		validator := certresolver.NewValidationHydrator(revokedCertificatesCache, certHeaderParser)
 
 		// when
 		validator.ServeHTTP(rr, req)
@@ -171,7 +172,7 @@ func TestValidationHydrator_ResolveIstioCertHeader(t *testing.T) {
 		require.NoError(t, err)
 		rr := httptest.NewRecorder()
 
-		validator := istiocertresolver.NewValidationHydrator(nil, nil)
+		validator := certresolver.NewValidationHydrator(nil, nil)
 
 		// when
 		validator.ServeHTTP(rr, req)

@@ -21,5 +21,5 @@ spec:
       route:
         - destination:
             port:
-              number: {{ .Values.global.director.graphql.external.port }}
+              number: {{ .Values.global.hydrator.port }}
             host: {{ template "fullname" . }}

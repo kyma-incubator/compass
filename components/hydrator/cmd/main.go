@@ -27,7 +27,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	"github.com/kyma-incubator/compass/components/director/pkg/namespacedname"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/istiocertresolver"
+	"github.com/kyma-incubator/compass/components/hydrator/internal/certresolver"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/metrics"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/revocation"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/subject"
@@ -83,8 +83,8 @@ type config struct {
 
 	MetricsConfig metrics.Config
 
-	CSRSubject            istiocertresolver.CSRSubjectConfig
-	ExternalIssuerSubject istiocertresolver.ExternalIssuerSubjectConfig
+	CSRSubject            subject.CSRSubjectConfig
+	ExternalIssuerSubject subject.ExternalIssuerSubjectConfig
 
 	CertificateDataHeader        string `envconfig:"default=Certificate-Data"`
 	RevocationConfigMapName      string `envconfig:"default=compass-system/revocations-config"`
@@ -158,45 +158,6 @@ func initAPIHandlers(ctx context.Context, logger *logrus.Entry, authenticators [
 	return mainRouter
 }
 
-func exitOnError(err error, context string) {
-	if err != nil {
-		wrappedError := errors.Wrap(err, context)
-		log.D().Fatal(wrappedError)
-	}
-}
-
-func createServer(ctx context.Context, handler http.Handler, serverAddress, name string, serverTimeout, shutdownTimeout time.Duration) (func(), func()) {
-	logger := log.C(ctx)
-
-	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, serverTimeout)
-	exitOnError(err, "Error while configuring tenant mapping handler")
-
-	srv := &http.Server{
-		Addr:              serverAddress,
-		Handler:           handlerWithTimeout,
-		ReadHeaderTimeout: serverTimeout,
-	}
-
-	runFn := func() {
-		logger.Infof("Running %s server on %s...", name, serverAddress)
-		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			logger.Errorf("%s HTTP server ListenAndServe: %v", name, err)
-		}
-	}
-
-	shutdownFn := func() {
-		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
-		defer cancel()
-
-		logger.Infof("Shutting down %s server...", name)
-		if err := srv.Shutdown(ctx); err != nil {
-			logger.Errorf("%s HTTP server Shutdown: %v", name, err)
-		}
-	}
-
-	return runFn, shutdownFn
-}
-
 func registerHydratorHandlers(ctx context.Context, router *mux.Router, authenticators []authenticator.Config, cfg config, metricsCollector *metrics.Collector) {
 	logger := log.C(ctx)
 
@@ -208,6 +169,9 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 	directorClientProvider := director.NewClientProvider(cfg.Director.URL, cfg.Director.ClientTimeout, cfg.Director.SkipSSLValidation)
 	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 
+	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.Handler.RuntimeMappingEndpoint)
+	runtimeMappingHandlerFunc := getRuntimeMappingHandlerFunc(ctx, directorClientProvider, cfg.JWKSSyncPeriod)
+
 	logger.Infof("Registering Authentication Mapping endpoint on %s...", cfg.Handler.AuthenticationMappingEndpoint)
 	authnMappingHandlerFunc := authnmappinghandler.NewHandler(oathkeeper.NewReqDataParser(), httpClient, authnmappinghandler.DefaultTokenVerifierProvider, authenticators)
 
@@ -215,29 +179,34 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(authenticators, directorClientProvider, cfg.StaticGroupsSrc, cfgProvider, metricsCollector)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
-	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.Handler.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc := getRuntimeMappingHandlerFunc(ctx, directorClientProvider, cfg.JWKSSyncPeriod)
+	logger.Infof("Registering Certificate Resolver endpoint on %s...", cfg.Handler.CertResolverEndpoint)
+	certResolverHandlerFunc, revokedCertsLoader, err := getCertificateResolverHandler(ctx, cfg)
+	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	logger.Infof("Registering Connector Token Resolver endpoint on %s...", cfg.Handler.TokenResolverEndpoint)
 	connectorTokenResolverHandlerFunc := getTokenResolverHandler(directorClientProvider)
 
-	logger.Infof("Registering Connector Certificate Resolver endpoint on %s...", cfg.Handler.TokenResolverEndpoint)
-	connectorCertResolverHandlerFunc, revokedCertsLoader, err := getCertificateResolverHandler(ctx, cfg)
-	exitOnError(err, "Error while configuring tenant mapping handler")
-
+	router.HandleFunc(cfg.Handler.RuntimeMappingEndpoint, metricsCollector.HandlerInstrumentation(runtimeMappingHandlerFunc))
 	router.HandleFunc(cfg.Handler.AuthenticationMappingEndpoint, metricsCollector.HandlerInstrumentation(authnMappingHandlerFunc))
 	router.HandleFunc(cfg.Handler.TenantMappingEndpoint, metricsCollector.HandlerInstrumentation(tenantMappingHandlerFunc))
-	router.HandleFunc(cfg.Handler.RuntimeMappingEndpoint, metricsCollector.HandlerInstrumentation(runtimeMappingHandlerFunc))
+	router.HandleFunc(cfg.Handler.CertResolverEndpoint, metricsCollector.HandlerInstrumentation(certResolverHandlerFunc))
 	router.HandleFunc(cfg.Handler.TokenResolverEndpoint, metricsCollector.HandlerInstrumentation(connectorTokenResolverHandlerFunc))
-	router.HandleFunc(cfg.Handler.ValidationIstioCertEndpoint, metricsCollector.HandlerInstrumentation(connectorCertResolverHandlerFunc))
 
 	go revokedCertsLoader.Run(ctx)
 }
 
-func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {
-	return func(writer http.ResponseWriter, request *http.Request) {
-		writer.WriteHeader(http.StatusOK)
-	}
+func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
+	provider := configprovider.NewProvider(cfg.ConfigurationFile)
+	err := provider.Load()
+	exitOnError(err, "Error on loading configuration file")
+	executor.NewPeriodic(cfg.ConfigurationFileReload, func(ctx context.Context) {
+		if err := provider.Load(); err != nil {
+			exitOnError(err, "Error from Reloader watch")
+		}
+		log.C(ctx).Infof("Successfully reloaded configuration file.")
+	}).Run(ctx)
+
+	return provider
 }
 
 func getTenantMappingHandlerFunc(authenticators []authenticator.Config, clientProvider director.ClientProvider, staticGroupsSrc string, cfgProvider *configprovider.Provider, metricsCollector *metrics.Collector) (*tenantmapping.Handler, error) {
@@ -275,7 +244,7 @@ func getRuntimeMappingHandlerFunc(ctx context.Context, clientProvider director.C
 		tokenVerifier)
 }
 
-func getCertificateResolverHandler(ctx context.Context, cfg config) (istiocertresolver.ValidationHydrator, revocation.Loader, error) {
+func getCertificateResolverHandler(ctx context.Context, cfg config) (certresolver.ValidationHydrator, revocation.Loader, error) {
 	k8sClientSet, err := kubernetes.NewKubernetesClientSet(ctx, cfg.KubeConfig.PollInterval, cfg.KubeConfig.PollTimeout, cfg.KubeConfig.Timeout)
 	if err != nil {
 		return nil, nil, err
@@ -300,28 +269,59 @@ func getCertificateResolverHandler(ctx context.Context, cfg config) (istiocertre
 		return nil, nil, err
 	}
 
-	externalCertHeaderParser := istiocertresolver.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ExternalIssuer,
-		istiocertresolver.ExternalCertIssuerSubjectMatcher(cfg.ExternalIssuerSubject), subjectProcessor.AuthIDFromSubjectFunc(), subjectProcessor.AuthSessionExtraFromSubjectFunc())
-	connectorCertHeaderParser := istiocertresolver.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ConnectorIssuer,
-		istiocertresolver.ConnectorCertificateSubjectMatcher(cfg.CSRSubject), cert.GetCommonName, subjectProcessor.EmptyAuthSessionExtraFunc())
+	connectorCertHeaderParser := certresolver.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ConnectorIssuer,
+		subject.ConnectorCertificateSubjectMatcher(cfg.CSRSubject), cert.GetCommonName, subjectProcessor.EmptyAuthSessionExtraFunc())
+	externalCertHeaderParser := certresolver.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ExternalIssuer,
+		subject.ExternalCertIssuerSubjectMatcher(cfg.ExternalIssuerSubject), subjectProcessor.AuthIDFromSubjectFunc(), subjectProcessor.AuthSessionExtraFromSubjectFunc())
 
-	return istiocertresolver.NewValidationHydrator(revokedCertsCache, connectorCertHeaderParser, externalCertHeaderParser), revokedCertsLoader, nil
+	return certresolver.NewValidationHydrator(revokedCertsCache, connectorCertHeaderParser, externalCertHeaderParser), revokedCertsLoader, nil
 }
 
 func getTokenResolverHandler(clientProvider director.ClientProvider) http.Handler {
 	return connectortokenresolver.NewValidationHydrator(clientProvider.Client())
 }
 
-func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
-	provider := configprovider.NewProvider(cfg.ConfigurationFile)
-	err := provider.Load()
-	exitOnError(err, "Error on loading configuration file")
-	executor.NewPeriodic(cfg.ConfigurationFileReload, func(ctx context.Context) {
-		if err := provider.Load(); err != nil {
-			exitOnError(err, "Error from Reloader watch")
-		}
-		log.C(ctx).Infof("Successfully reloaded configuration file.")
-	}).Run(ctx)
+func createServer(ctx context.Context, handler http.Handler, serverAddress, name string, serverTimeout, shutdownTimeout time.Duration) (func(), func()) {
+	logger := log.C(ctx)
 
-	return provider
+	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, serverTimeout)
+	exitOnError(err, "Error while configuring tenant mapping handler")
+
+	srv := &http.Server{
+		Addr:              serverAddress,
+		Handler:           handlerWithTimeout,
+		ReadHeaderTimeout: serverTimeout,
+	}
+
+	runFn := func() {
+		logger.Infof("Running %s server on %s...", name, serverAddress)
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			logger.Errorf("%s HTTP server ListenAndServe: %v", name, err)
+		}
+	}
+
+	shutdownFn := func() {
+		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		defer cancel()
+
+		logger.Infof("Shutting down %s server...", name)
+		if err := srv.Shutdown(ctx); err != nil {
+			logger.Errorf("%s HTTP server Shutdown: %v", name, err)
+		}
+	}
+
+	return runFn, shutdownFn
+}
+
+func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusOK)
+	}
+}
+
+func exitOnError(err error, context string) {
+	if err != nil {
+		wrappedError := errors.Wrap(err, context)
+		log.D().Fatal(wrappedError)
+	}
 }

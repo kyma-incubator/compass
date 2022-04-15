@@ -1,4 +1,4 @@
-package istiocertresolver
+package certresolver
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
-//go:generate mockery --name=certificateHeaderParser --output=automock --outpkg=automock --case=underscore --exported=true
+//go:generate mockery --name=certificateHeaderParser --output=automock --outpkg=automock --case=underscore
 type certificateHeaderParser interface {
 	GetCertificateData(*http.Request) *CertificateData
 	GetIssuer() string
