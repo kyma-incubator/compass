@@ -98,6 +98,24 @@ type tenantSystems struct {
 	systems []System
 }
 
+func splitBusinessTenantMappingsToChunks(slice []*model.BusinessTenantMapping, chunkSize int) [][]*model.BusinessTenantMapping {
+	var chunks [][]*model.BusinessTenantMapping
+	for {
+		if len(slice) == 0 {
+			break
+		}
+
+		if len(slice) < chunkSize {
+			chunkSize = len(slice)
+		}
+
+		chunks = append(chunks, slice[0:chunkSize])
+		slice = slice[chunkSize:]
+	}
+
+	return chunks
+}
+
 // SyncSystems synchronizes applications between Compass and external source. It deletes the applications with deleted state in the external source from Compass,
 // and creates any new applications present in the external source.
 func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
@@ -130,32 +148,38 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 		}
 	}()
 
-	wg := sync.WaitGroup{}
-	for _, t := range tenants {
-		wg.Add(1)
-		s.workers <- struct{}{}
-		go func(t *model.BusinessTenantMapping) {
-			defer func() {
-				wg.Done()
-				<-s.workers
-			}()
-			systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, t.ExternalTenant)
-			if err != nil {
-				log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s", t.ExternalTenant)))
-				return
-			}
-			if len(systems) > 0 {
-				systemsQueue <- tenantSystems{
-					tenant:  t,
-					systems: systems,
-				}
-			}
-		}(t)
-	}
+	chunks := splitBusinessTenantMappingsToChunks(tenants, 20)
 
-	wg.Wait()
-	close(systemsQueue)
-	wgDB.Wait()
+	for _, chunk := range chunks {
+		time.Sleep(time.Second * 1)
+
+		wg := sync.WaitGroup{}
+		for _, t := range chunk {
+			wg.Add(1)
+			s.workers <- struct{}{}
+			go func(t *model.BusinessTenantMapping) {
+				defer func() {
+					wg.Done()
+					<-s.workers
+				}()
+				systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, t.ExternalTenant)
+				if err != nil {
+					log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s", t.ExternalTenant)))
+					return
+				}
+				if len(systems) > 0 {
+					systemsQueue <- tenantSystems{
+						tenant:  t,
+						systems: systems,
+					}
+				}
+			}(t)
+		}
+
+		wg.Wait()
+		close(systemsQueue)
+		wgDB.Wait()
+	}
 
 	return nil
 }
