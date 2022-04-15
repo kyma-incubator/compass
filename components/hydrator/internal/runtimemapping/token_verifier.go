@@ -8,7 +8,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 
 	"github.com/lestrrat-go/iter/arrayiter"
 

@@ -7,7 +7,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 
 	"github.com/pkg/errors"
 

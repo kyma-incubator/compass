@@ -20,11 +20,11 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
+
 	directorErrors "github.com/kyma-incubator/compass/components/hydrator/internal/director"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/tidwall/gjson"
 
@@ -34,7 +34,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
-	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 	"github.com/pkg/errors"
 )
 

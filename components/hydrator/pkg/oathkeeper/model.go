@@ -9,10 +9,10 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/model"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"

@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	oathkeeper2 "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
@@ -57,7 +57,7 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 				return
 			}
 
-			if consumerInfo.Flow == oathkeeper2.OneTimeTokenFlow {
+			if consumerInfo.Flow == oathkeeper.OneTimeTokenFlow {
 				logger.Infof("AuthFlow is %s. Will not update status of %s with ID: %s", consumerInfo.Flow, consumerInfo.ConsumerType, consumerInfo.ConsumerID)
 				next.ServeHTTP(w, r)
 				return

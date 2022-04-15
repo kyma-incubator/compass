@@ -9,17 +9,17 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
+
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping/automock"
 	tenantmappingconsts "github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 
 	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/stretchr/testify/assert"
 

@@ -5,7 +5,7 @@ package automock
 import (
 	context "context"
 
-	oathkeeper "github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	oathkeeper "github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 	mock "github.com/stretchr/testify/mock"
 
 	tenantmapping "github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"

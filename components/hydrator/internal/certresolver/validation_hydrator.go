@@ -22,11 +22,11 @@ type RevokedCertificatesCache interface {
 }
 
 type validationHydrator struct {
-	certHeaderParsers []certificateHeaderParser
+	certHeaderParsers []CertificateHeaderParser
 	revokedCertsCache RevokedCertificatesCache
 }
 
-func NewValidationHydrator(cache RevokedCertificatesCache, certHeaderParsers ...certificateHeaderParser) ValidationHydrator {
+func NewValidationHydrator(cache RevokedCertificatesCache, certHeaderParsers ...CertificateHeaderParser) ValidationHydrator {
 	return &validationHydrator{
 		certHeaderParsers: certHeaderParsers,
 		revokedCertsCache: cache,
@@ -34,8 +34,8 @@ func NewValidationHydrator(cache RevokedCertificatesCache, certHeaderParsers ...
 }
 
 // ServeHTTP checks the certificate forwarded by the istio mtls gateway against all the configured CertificateHeaderParsers
-// First certificateHeaderParser that matches (successfully parse the subject) is used to extract the clientID, certificate hash and issuer.
-// If there is no matching certificateHeaderParser, an empty oathkeeper session is returned.
+// First CertificateHeaderParser that matches (successfully parse the subject) is used to extract the clientID, certificate hash and issuer.
+// If there is no matching CertificateHeaderParser, an empty oathkeeper session is returned.
 func (vh *validationHydrator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var (
 		ctx         = r.Context()

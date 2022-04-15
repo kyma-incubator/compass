@@ -3,7 +3,7 @@ package consumer
 import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 )
 
 // ConsumerType missing godoc

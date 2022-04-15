@@ -2,7 +2,7 @@ package tenantmapping
 
 import (
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
-	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 )
 
 const (

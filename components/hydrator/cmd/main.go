@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
@@ -34,16 +36,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
-	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/authnmappinghandler"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/connectortokenresolver"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/runtimemapping"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 	tenantmappingconst "github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"

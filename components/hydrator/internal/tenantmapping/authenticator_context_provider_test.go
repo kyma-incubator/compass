@@ -21,20 +21,20 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/director/automock"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 
 	"strings"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
-
 	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )

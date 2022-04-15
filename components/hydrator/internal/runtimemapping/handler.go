@@ -8,7 +8,7 @@ import (
 
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 

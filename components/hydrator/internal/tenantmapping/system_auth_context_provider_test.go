@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/model"
 
@@ -17,9 +19,8 @@ import (
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping/automock"
 
 	"github.com/google/uuid"
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
-	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

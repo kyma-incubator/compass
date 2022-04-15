@@ -27,6 +27,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
+
 	"golang.org/x/oauth2"
 
 	"github.com/gorilla/mux"
@@ -35,13 +37,11 @@ import (
 
 	"github.com/tidwall/gjson"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
-
 	goidc "github.com/coreos/go-oidc/v3/oidc"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 	"github.com/pkg/errors"
 )
 

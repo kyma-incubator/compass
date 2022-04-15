@@ -10,8 +10,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )

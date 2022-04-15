@@ -6,7 +6,7 @@ import (
 	"net/textproto"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"

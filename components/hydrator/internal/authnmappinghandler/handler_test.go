@@ -12,15 +12,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
+
 	"github.com/kyma-incubator/compass/components/hydrator/internal/authnmappinghandler"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/authnmappinghandler/automock"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 
 	"github.com/gorilla/mux"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/stretchr/testify/mock"

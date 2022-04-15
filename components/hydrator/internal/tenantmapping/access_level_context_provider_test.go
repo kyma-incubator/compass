@@ -14,7 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping/automock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"

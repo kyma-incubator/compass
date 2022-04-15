@@ -19,7 +19,8 @@ package authenticator_test
 import (
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
+
 	"github.com/stretchr/testify/assert"
 )
 
