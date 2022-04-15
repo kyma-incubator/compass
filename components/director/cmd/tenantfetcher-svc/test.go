@@ -16,25 +16,29 @@ func main() {
 		log.C(ctx).Info("Server shutdowned")
 	}()
 
-	interrupt := make(chan bool, 1)
-	runTenantFetcherJob2(ctx, 1, interrupt)
+	interruptSubaccountJob := make(chan bool, 5)
+	runTenantFetcherJob2(ctx, 5, true, interruptSubaccountJob)
+	interruptGlobalAccountJob := make(chan bool, 5)
+	runTenantFetcherJob2(ctx, 10, false, interruptGlobalAccountJob)
 
-	//time.Sleep(3 * time.Second)
-	//cancel()
+	time.Sleep(20 * time.Second)
+	cancel()
 
-	<-interrupt
+	<-interruptSubaccountJob
+	<-interruptGlobalAccountJob
 }
-func runTenantFetcherJob2(ctx context.Context, jobInterval int, interrupt chan bool) {
+func runTenantFetcherJob2(ctx context.Context, jobInterval int, syncSubaccount bool, interrupt chan bool) {
 	tenantFetcherJobTicker := time.NewTicker(time.Duration(jobInterval) * time.Second)
 
 	go func() {
 		for {
 			select {
 			case <-tenantFetcherJobTicker.C:
-				log.C(ctx).Infof("Scheduled sync of tenants to be executed, job interval is %d minutes", jobInterval)
+				log.C(ctx).Infof("Scheduled %s tenant fetcher job will be executed, job interval is %d minutes", tenantType2(syncSubaccount), jobInterval)
 			case <-ctx.Done():
-				log.C(ctx).Error("Context is canceled and tenant fetcher job will be interrupted")
-				stopTenantFetcherJobTicker2(ctx, tenantFetcherJobTicker)
+				log.C(ctx).Errorf("Context is canceled and %s tenant fetcher job will be interrupted",
+					tenantType2(syncSubaccount))
+				stopTenantFetcherJobTicker2(ctx, syncSubaccount, tenantFetcherJobTicker)
 				interrupt <- true
 				return
 			}
@@ -42,7 +46,15 @@ func runTenantFetcherJob2(ctx context.Context, jobInterval int, interrupt chan b
 	}()
 }
 
-func stopTenantFetcherJobTicker2(ctx context.Context, tenantFetcherJobTicker *time.Ticker) {
+func tenantType2(syncSubaccount bool) string {
+	tenantType := "subaccount"
+	if !syncSubaccount {
+		tenantType = "global account"
+	}
+	return tenantType
+}
+
+func stopTenantFetcherJobTicker2(ctx context.Context, syncSubaccount bool, tenantFetcherJobTicker *time.Ticker) {
 	tenantFetcherJobTicker.Stop()
-	log.C(ctx).Info("Tenant fetcher job ticker is stopped")
+	log.C(ctx).Infof("Tenant fetcher job ticker for %ss is stopped", tenantType2(syncSubaccount))
 }

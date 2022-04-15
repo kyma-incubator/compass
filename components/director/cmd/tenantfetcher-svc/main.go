@@ -54,7 +54,10 @@ import (
 	"github.com/vrischmann/envconfig"
 )
 
-const envPrefix = "APP"
+const (
+	envPrefix       = "APP"
+	syncSubaccounts = true
+)
 
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:8080"`
@@ -125,39 +128,53 @@ func main() {
 
 	runMainSrv()
 
-	interruptJob := make(chan bool, 1)
-	runTenantFetcherJob(ctx, cfg, transact, interruptJob)
-	<-interruptJob
+	stopSubaccountsJob := make(chan bool, 1)
+	runTenantFetcherJob(ctx, cfg, transact, syncSubaccounts, stopSubaccountsJob)
+
+	stopGlobalAccountsJob := make(chan bool, 1)
+	runTenantFetcherJob(ctx, cfg, transact, !syncSubaccounts, stopGlobalAccountsJob)
+
+	<-stopSubaccountsJob
+	<-stopGlobalAccountsJob
 }
 
-func runTenantFetcherJob(ctx context.Context, cfg config, transact persistence.Transactioner, interrupt chan bool) {
+func runTenantFetcherJob(ctx context.Context, cfg config, transact persistence.Transactioner, syncSubaccounts bool, stopJob chan bool) {
 	jobInterval := cfg.Handler.TenantFetcherJobIntervalMins
 	ticker := time.NewTicker(time.Duration(jobInterval) * time.Minute)
+	jobType := jobType(syncSubaccounts)
 
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
-				log.C(ctx).Infof("Scheduled sync of tenants to be executed, job interval is %d minutes", jobInterval)
-				syncTenants(ctx, cfg, transact)
+				log.C(ctx).Infof("Scheduled %s tenant fetcher job will be executed, job interval is %d minutes", jobType, jobInterval)
+				syncTenants(ctx, cfg, transact, syncSubaccounts)
 			case <-ctx.Done():
-				log.C(ctx).Error("Context is canceled and tenant fetcher job will be interrupted")
-				stopTenantFetcherJobTicker(ctx, ticker)
-				interrupt <- true
+				log.C(ctx).Errorf("Context is canceled and scheduled %s tenant fetcher job will be stopped", jobType)
+				stopTenantFetcherJobTicker(ctx, ticker, jobType)
+				stopJob <- true
 				return
 			}
 		}
 	}()
 }
 
-func syncTenants(ctx context.Context, cfg config, transact persistence.Transactioner) {
-	tenantsFetcherSvc, err := createTenantsFetcherSvc(ctx, cfg, transact)
+func jobType(syncSubaccounts bool) string {
+	jobType := "subaccount"
+	if !syncSubaccounts {
+		jobType = "global account"
+	}
+	return jobType
+}
+
+func syncTenants(ctx context.Context, cfg config, transact persistence.Transactioner, syncSubaccounts bool) {
+	tenantsFetcherSvc, err := createTenantsFetcherSvc(ctx, cfg, transact, syncSubaccounts)
 	exitOnError(err, "failed to create tenants fetcher service")
 
 	tenantsFetcherSvc.SyncTenants()
 }
 
-func createTenantsFetcherSvc(ctx context.Context, cfg config, transact persistence.Transactioner) (tf.TenantSyncService, error) {
+func createTenantsFetcherSvc(ctx context.Context, cfg config, transact persistence.Transactioner, syncSubaccounts bool) (tf.TenantSyncService, error) {
 	eventsCfg := cfg.EventsCfg
 	handlerCfg := cfg.Handler
 
@@ -209,15 +226,15 @@ func createTenantsFetcherSvc(ctx context.Context, cfg config, transact persisten
 	}
 	directorClient := graphqlclient.NewDirector(gqlClient)
 
-	if handlerCfg.ShouldSyncSubaccounts {
+	if syncSubaccounts {
 		return tf.NewSubaccountService(eventsCfg.QueryConfig, transact, kubeClient, eventsCfg.TenantFieldMapping, eventsCfg.MovedSubaccountFieldMapping, handlerCfg.TenantProvider, eventsCfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelRepository, handlerCfg.FullResyncInterval, directorClient, handlerCfg.TenantInsertChunkSize, tenantStorageConv), nil
 	}
 	return tf.NewGlobalAccountService(eventsCfg.QueryConfig, transact, kubeClient, eventsCfg.TenantFieldMapping, handlerCfg.TenantProvider, eventsCfg.AccountsRegion, eventAPIClient, tenantStorageSvc, handlerCfg.FullResyncInterval, directorClient, handlerCfg.TenantInsertChunkSize, tenantStorageConv), nil
 }
 
-func stopTenantFetcherJobTicker(ctx context.Context, tenantFetcherJobTicker *time.Ticker) {
+func stopTenantFetcherJobTicker(ctx context.Context, tenantFetcherJobTicker *time.Ticker, jobType string) {
 	tenantFetcherJobTicker.Stop()
-	log.C(ctx).Info("Tenant fetcher job ticker is stopped")
+	log.C(ctx).Infof("Tenant fetcher job ticker for %ss is stopped", jobType)
 }
 
 func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, transact persistence.Transactioner) http.Handler {
