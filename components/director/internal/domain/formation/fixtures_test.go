@@ -4,7 +4,6 @@ import "github.com/kyma-incubator/compass/components/director/internal/domain/fo
 
 func UnusedLabelService() *automock.LabelService {
 	return &automock.LabelService{}
-
 }
 
 func UnusedLabelRepo() *automock.LabelRepository {
