@@ -31,6 +31,7 @@ type upserter struct {
 	insertColumns      []string
 	conflictingColumns []string
 	updateColumns      []string
+	isTrusted          bool
 }
 
 type upserterGlobal struct {
@@ -49,6 +50,17 @@ func NewUpserter(tableName string, insertColumns []string, conflictingColumns []
 		insertColumns:      insertColumns,
 		conflictingColumns: conflictingColumns,
 		updateColumns:      updateColumns,
+	}
+}
+
+// NewTrustedUpserter is a constructor for Upserter about entities with externally managed tenant accesses (m2m table or view) which ignores the tenant isolation
+func NewTrustedUpserter(tableName string, insertColumns []string, conflictingColumns []string, updateColumns []string) Upserter {
+	return &upserter{
+		tableName:          tableName,
+		insertColumns:      insertColumns,
+		conflictingColumns: conflictingColumns,
+		updateColumns:      updateColumns,
+		isTrusted:          true,
 	}
 }
 
@@ -92,17 +104,19 @@ func (u *upserter) unsafeUpsert(ctx context.Context, resourceType resource.Type,
 	}
 
 	query := buildQuery(u.tableName, u.insertColumns, u.conflictingColumns, u.updateColumns)
-	queryWithTenantIsolation, err := u.addTenantIsolation(query, resourceType, tenant)
-	if err != nil {
-		return "", err
+	if !u.isTrusted {
+		query, err = u.addTenantIsolation(query, resourceType, tenant)
+		if err != nil {
+			return "", err
+		}
 	}
-	queryWithTenantIsolation += " RETURNING id;"
+	query += " RETURNING id;"
 
 	if entityWithExternalTenant, ok := dbEntity.(EntityWithExternalTenant); ok {
 		dbEntity = entityWithExternalTenant.DecorateWithTenantID(tenant)
 	}
 
-	preparedQuery, args, err := sqlx.Named(queryWithTenantIsolation, dbEntity)
+	preparedQuery, args, err := sqlx.Named(query, dbEntity)
 	if err != nil {
 		return "", err
 	}
@@ -125,8 +139,8 @@ func (u *upserter) unsafeUpsert(ctx context.Context, resourceType resource.Type,
 		return "", apperrors.NewInternalError("id cannot be empty, check if the entity implements Identifiable")
 	}
 
-	if resourceType.IsTopLevel() && id == upsertedID {
-		if err = u.upsertTenantAccess(ctx, resourceType, dbEntity, tenant); err != nil {
+	if resourceType.IsTopLevel() {
+		if err = u.upsertTenantAccess(ctx, resourceType, upsertedID, tenant); err != nil {
 			return "", err
 		}
 	}
@@ -134,24 +148,15 @@ func (u *upserter) unsafeUpsert(ctx context.Context, resourceType resource.Type,
 	return upsertedID, nil
 }
 
-func (u *upserter) upsertTenantAccess(ctx context.Context, resourceType resource.Type, dbEntity interface{}, tenant string) error {
+func (u *upserter) upsertTenantAccess(ctx context.Context, resourceType resource.Type, resourceID string, tenant string) error {
 	m2mTable, ok := resourceType.TenantAccessTable()
 	if !ok {
 		return errors.Errorf("entity %s does not have access table", resourceType)
 	}
 
-	var id string
-	if identifiable, ok := dbEntity.(Identifiable); ok {
-		id = identifiable.GetID()
-	}
-
-	if len(id) == 0 {
-		return apperrors.NewInternalError("id cannot be empty, check if the entity implements Identifiable")
-	}
-
 	return UpsertTenantAccessRecursively(ctx, m2mTable, &TenantAccess{
 		TenantID:   tenant,
-		ResourceID: id,
+		ResourceID: resourceID,
 		Owner:      true,
 	})
 }

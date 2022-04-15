@@ -3,15 +3,21 @@ package fixtures
 import (
 	"context"
 	"strings"
+	"time"
+
+	"github.com/avast/retry-go"
 
 	"github.com/pkg/errors"
-
-	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	retryAttempts          = 7
+	retryDelayMilliseconds = 100
 )
 
 func GetApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.ApplicationExt {
@@ -109,8 +115,15 @@ func CleanupApplication(t require.TestingT, ctx context.Context, gqlClient *gcli
 	}
 	deleteRequest := FixUnregisterApplicationRequest(app.ID)
 
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, deleteRequest, &app)
-	assertions.AssertNoErrorForOtherThanNotFound(t, err)
+	deleteApplicationFunc := func() error {
+		err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, deleteRequest, &app)
+		if err != nil && !strings.Contains(strings.ToLower(err.Error()), "not found") {
+			return err
+		}
+		return nil
+	}
+	err := retry.Do(deleteApplicationFunc, retry.Attempts(retryAttempts), retry.Delay(retryDelayMilliseconds*time.Millisecond))
+	require.NoError(t, err)
 }
 
 func DeleteApplicationLabel(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id, labelKey string) {
