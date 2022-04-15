@@ -225,7 +225,6 @@ github.com/google/go-cmp v0.5.2/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/
 github.com/google/go-cmp v0.5.4/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.5.7 h1:81/ik6ipDQS2aGcBfIN5dHDB36BwrStyeAQquSYCV4o=
-github.com/google/go-cmp v0.5.7/go.mod h1:n+brtR0CgQNWTVd5ZUFpTBC8YFBDLK/h/bpaJ8/DtOE=
 github.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
 github.com/google/gofuzz v1.1.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
 github.com/google/gofuzz v1.2.0 h1:xRy4A+RhZaiKjJ1bPfwQ8sedCA+YS2YcCHW6ec7JMi0=
@@ -330,8 +329,8 @@ github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-2022032
 github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220327143459-11b81bddcce9/go.mod h1:EPQuWKlrkBDEK2Fj4G3qrnPCQhAvM48z7JzbWD2dUts=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20220327143459-11b81bddcce9 h1:IkH2NJXblSFOFnlyv64/5i8NVhUojwOXZnCGX/y1tCo=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20220327143459-11b81bddcce9/go.mod h1:papmLljVTKqwoZxuiM+IOmi8QBFusKVi2k+9wLTRr8o=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220327143459-11b81bddcce9 h1:H+zSCjKr3D7AwEO4XMSfrEjHLWhsvq6aHs6MWjlFrwA=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220327143459-11b81bddcce9/go.mod h1:017nxy7CUKOD3VjYyxMIEzKMvUXTjvJfSjPBq7kiJlk=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220415134336-20653fe979b9 h1:etO3xcdxk+AwkC81aNhvJ7Din68RCitpJtYP2lzAPIg=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220415134336-20653fe979b9/go.mod h1:gHTOACHLlXMxX0CMAJRW4SY/kgACRTxjrLU8nwOceLY=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459-11b81bddcce9 h1:WftrXM5d9PtBBo4J+eyCnwNEoFi8KDtINUD7jSp0jCA=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459-11b81bddcce9/go.mod h1:M30JDO6D3wgLgJ6leIFawaH1tv8k0m+GuroKv+0o38Y=
 github.com/lestrrat-go/backoff/v2 v2.0.8 h1:oNb5E5isby2kiro9AgdHLv5N5tint1AnDVVf2E2un5A=
