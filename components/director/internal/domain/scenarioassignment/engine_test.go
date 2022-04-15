@@ -603,8 +603,8 @@ func Test_engine_GetScenariosFromMatchingASAs(t *testing.T) {
 	}{
 		{
 			Name:           "Success",
-			LabelServiceFn: unusedLabelService(),
-			LabelRepoFn:    unusedLabelRepoFn(),
+			LabelServiceFn: unusedLabelService,
+			LabelRepoFn:    unusedLabelRepo,
 			ScenarioAssignmentRepoFn: func() *automock.Repository {
 				repo := &automock.Repository{}
 				repo.On("ListAll", ctx, tenantID).Return(testScenarios, nil)
@@ -622,22 +622,22 @@ func Test_engine_GetScenariosFromMatchingASAs(t *testing.T) {
 		},
 		{
 			Name:           "Returns error when can't list ASAs",
-			LabelServiceFn: unusedLabelService(),
-			LabelRepoFn:    unusedLabelRepoFn(),
+			LabelServiceFn: unusedLabelService,
+			LabelRepoFn:    unusedLabelRepo,
 			ScenarioAssignmentRepoFn: func() *automock.Repository {
 				repo := &automock.Repository{}
 				repo.On("ListAll", ctx, tenantID).Return(nil, testErr)
 				return repo
 			},
-			RuntimeRepoFn:     unusedRuntimeRepoFn(),
+			RuntimeRepoFn:     unusedRuntimeRepo,
 			RuntimeID:         runtimeID,
 			ExpectedError:     testErr,
 			ExpectedScenarios: nil,
 		},
 		{
 			Name:           "Returns error when can't list ASAs",
-			LabelServiceFn: unusedLabelService(),
-			LabelRepoFn:    unusedLabelRepoFn(),
+			LabelServiceFn: unusedLabelService,
+			LabelRepoFn:    unusedLabelRepo,
 			ScenarioAssignmentRepoFn: func() *automock.Repository {
 				repo := &automock.Repository{}
 				repo.On("ListAll", ctx, tenantID).Return(testScenarios, nil)

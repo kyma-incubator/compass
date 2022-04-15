@@ -183,20 +183,14 @@ func matchExpectedScenarios(t *testing.T, expected map[string][]string) func(lab
 	}
 }
 
-func unusedLabelService() func() *automock.LabelUpsertService {
-	return func() *automock.LabelUpsertService {
-		return &automock.LabelUpsertService{}
-	}
+func unusedLabelService() *automock.LabelUpsertService {
+	return &automock.LabelUpsertService{}
 }
 
-func unusedLabelRepoFn() func() *automock.LabelRepository {
-	return func() *automock.LabelRepository {
-		return &automock.LabelRepository{}
-	}
+func unusedLabelRepo() *automock.LabelRepository {
+	return &automock.LabelRepository{}
 }
 
-func unusedRuntimeRepoFn() func() *automock.RuntimeRepository {
-	return func() *automock.RuntimeRepository {
-		return &automock.RuntimeRepository{}
-	}
+func unusedRuntimeRepo() *automock.RuntimeRepository {
+	return &automock.RuntimeRepository{}
 }
