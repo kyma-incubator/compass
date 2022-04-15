@@ -187,21 +187,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	require.Equal(t, newFormation, assignFormation.Name)
 
 	t.Log("Check if new scenario label value was set correctly")
-	appRequest := fixtures.FixGetRuntimeRequest(rtm.ID)
-	rtm = graphql.RuntimeExt{}
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, appRequest, &rtm)
-	require.NoError(t, err)
-
-	scenariosLabel, ok := rtm.Labels[labelKey].([]interface{})
-	require.True(t, ok)
-
-	formations := []string{asaFormation, newFormation}
-
-	var actualScenariosEnum []string
-	for _, v := range scenariosLabel {
-		actualScenariosEnum = append(actualScenariosEnum, v.(string))
-	}
-	assert.ElementsMatch(t, formations, actualScenariosEnum)
+	checkRuntimeFormationLabels(t, ctx, rtm.ID, labelKey, []string{asaFormation, newFormation})
 
 	t.Logf("Assign runtime to formation %s which was already assigned by ASA", asaFormation)
 	assignReq = fixtures.FixAssignFormationRequest(rtm.ID, "RUNTIME", asaFormation)
@@ -210,21 +196,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	require.Equal(t, asaFormation, assignFormation.Name)
 
 	t.Log("Check if the formation label value is still assigned")
-	appRequest = fixtures.FixGetRuntimeRequest(rtm.ID)
-	rtm = graphql.RuntimeExt{}
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, appRequest, &rtm)
-	require.NoError(t, err)
-
-	scenariosLabel, ok = rtm.Labels[labelKey].([]interface{})
-	require.True(t, ok)
-
-	formations = []string{asaFormation, newFormation}
-	actualScenariosEnum = make([]string, 0, 2)
-
-	for _, v := range scenariosLabel {
-		actualScenariosEnum = append(actualScenariosEnum, v.(string))
-	}
-	assert.ElementsMatch(t, formations, actualScenariosEnum)
+	checkRuntimeFormationLabels(t, ctx, rtm.ID, labelKey, []string{asaFormation, newFormation})
 
 	t.Logf("Try to unassign runtime from formation %q which was assigned by ASA", asaFormation)
 	unassignReq := fixtures.FixUnassignFormationRequest(rtm.ID, "RUNTIME", asaFormation)
@@ -234,21 +206,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	require.Equal(t, asaFormation, unassignFormation.Name)
 
 	t.Log("Check that the formation label value is still assigned")
-	appRequest = fixtures.FixGetRuntimeRequest(rtm.ID)
-	rtm = graphql.RuntimeExt{}
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, appRequest, &rtm)
-	require.NoError(t, err)
-
-	scenariosLabel, ok = rtm.Labels[labelKey].([]interface{})
-	require.True(t, ok)
-
-	formations = []string{newFormation, asaFormation}
-	actualScenariosEnum = make([]string, 0, 2)
-
-	for _, v := range scenariosLabel {
-		actualScenariosEnum = append(actualScenariosEnum, v.(string))
-	}
-	assert.ElementsMatch(t, formations, actualScenariosEnum)
+	checkRuntimeFormationLabels(t, ctx, rtm.ID, labelKey, []string{asaFormation, newFormation})
 
 	t.Log("Should not delete formation while runtime is assigned")
 	deleteRequest := fixtures.FixDeleteFormationRequest(newFormation)
@@ -361,4 +319,20 @@ func TestTenantFormationFlow(t *testing.T) {
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, deleteUnusedRequest, &deleteUnusedFormation)
 	assert.NoError(t, err)
 	assert.Equal(t, secondFormation, deleteUnusedFormation.Name)
+}
+
+func checkRuntimeFormationLabels(t *testing.T, ctx context.Context, rtmID, formationLabelKey string, expectedFormations []string) {
+	appRequest := fixtures.FixGetRuntimeRequest(rtmID)
+	rtm := graphql.RuntimeExt{}
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, appRequest, &rtm)
+	require.NoError(t, err)
+
+	scenariosLabel, ok := rtm.Labels[formationLabelKey].([]interface{})
+	require.True(t, ok)
+
+	var actualScenariosEnum []string
+	for _, v := range scenariosLabel {
+		actualScenariosEnum = append(actualScenariosEnum, v.(string))
+	}
+	assert.ElementsMatch(t, expectedFormations, actualScenariosEnum)
 }
