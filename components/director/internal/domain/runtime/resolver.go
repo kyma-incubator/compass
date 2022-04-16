@@ -131,7 +131,7 @@ type Resolver struct {
 func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService,
 	sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService, selfRegManager SelfRegisterManager,
-	uidService uidService, subscriptionSvc SubscriptionService) *Resolver {
+	uidService uidService, subscriptionSvc SubscriptionService, runtimeContextService RuntimeContextService, runtimeContextConverter RuntimeContextConverter) *Resolver {
 	return &Resolver{
 		transact:                  transact,
 		runtimeService:            runtimeService,
@@ -145,6 +145,8 @@ func NewResolver(transact persistence.Transactioner, runtimeService RuntimeServi
 		selfRegManager:            selfRegManager,
 		uidService:                uidService,
 		subscriptionSvc:           subscriptionSvc,
+		runtimeContextService:     runtimeContextService,
+		runtimeContextConverter:   runtimeContextConverter,
 	}
 }
 
@@ -589,9 +591,6 @@ func (r *Resolver) RuntimeContextsDataLoader(keys []dataloader.ParamRuntimeConte
 	gqlRtmCtxs := make([]*graphql.RuntimeContextPage, 0, len(runtimeContextPages))
 	for _, page := range runtimeContextPages {
 		rtmCtxs := r.runtimeContextConverter.MultipleToGraphQL(page.Data)
-		if err != nil {
-			return nil, []error{err}
-		}
 
 		gqlRtmCtxs = append(gqlRtmCtxs, &graphql.RuntimeContextPage{Data: rtmCtxs, TotalCount: page.TotalCount, PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(page.PageInfo.StartCursor),

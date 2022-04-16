@@ -3,11 +3,9 @@ package runtimectx
 import (
 	"context"
 	"fmt"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/pkg/errors"
@@ -68,64 +66,6 @@ func NewService(repo RuntimeContextRepository,
 		labelUpsertService: labelUpsertService,
 		uidService:         uidService,
 	}
-}
-
-// ListByFilter missing godoc
-func (s *service) ListByFilter(ctx context.Context, runtimeID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error) {
-	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	if pageSize < 1 || pageSize > 200 {
-		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
-	}
-
-	return s.repo.List(ctx, runtimeID, rtmCtxTenant, filter, pageSize, cursor)
-}
-
-// ListByRuntimeIDs missing godoc
-func (s *service) ListByRuntimeIDs(ctx context.Context, runtimeIDs []string, pageSize int, cursor string) ([]*model.RuntimeContextPage, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	if pageSize < 1 || pageSize > 200 {
-		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
-	}
-
-	return s.repo.ListByRuntimeIDs(ctx, tnt, runtimeIDs, pageSize, cursor)
-}
-
-// GetByID missing godoc
-func (s *service) GetByID(ctx context.Context, id string) (*model.RuntimeContext, error) {
-	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	runtimeCtx, err := s.repo.GetByID(ctx, rtmCtxTenant, id)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Runtime Context with ID %s", id)
-	}
-
-	return runtimeCtx, nil
-}
-
-// GetForRuntime missing godoc
-func (s *service) GetForRuntime(ctx context.Context, id, runtimeID string) (*model.RuntimeContext, error) {
-	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	runtimeCtx, err := s.repo.GetForRuntime(ctx, rtmCtxTenant, id, runtimeID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Runtime Context with ID %s", id)
-	}
-
-	return runtimeCtx, nil
 }
 
 // Exist missing godoc
@@ -194,6 +134,64 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	// All labels are deleted (cascade delete)
 
 	return nil
+}
+
+// GetByID missing godoc
+func (s *service) GetByID(ctx context.Context, id string) (*model.RuntimeContext, error) {
+	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	runtimeCtx, err := s.repo.GetByID(ctx, rtmCtxTenant, id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Runtime Context with ID %s", id)
+	}
+
+	return runtimeCtx, nil
+}
+
+// GetForRuntime missing godoc
+func (s *service) GetForRuntime(ctx context.Context, id, runtimeID string) (*model.RuntimeContext, error) {
+	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	runtimeCtx, err := s.repo.GetForRuntime(ctx, rtmCtxTenant, id, runtimeID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Runtime Context with ID %s", id)
+	}
+
+	return runtimeCtx, nil
+}
+
+// ListByFilter missing godoc
+func (s *service) ListByFilter(ctx context.Context, runtimeID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error) {
+	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
+	}
+
+	return s.repo.List(ctx, runtimeID, rtmCtxTenant, filter, pageSize, cursor)
+}
+
+// ListByRuntimeIDs missing godoc
+func (s *service) ListByRuntimeIDs(ctx context.Context, runtimeIDs []string, pageSize int, cursor string) ([]*model.RuntimeContextPage, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
+	}
+
+	return s.repo.ListByRuntimeIDs(ctx, tnt, runtimeIDs, pageSize, cursor)
 }
 
 // ListLabels missing godoc

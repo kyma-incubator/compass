@@ -188,7 +188,7 @@ func (r *pgRepository) List(ctx context.Context, runtimeID string, tenant string
 func (r *pgRepository) ListByRuntimeIDs(ctx context.Context, tenantID string, runtimeIDs []string, pageSize int, cursor string) ([]*model.RuntimeContextPage, error) {
 	var runtimeCtxsCollection RuntimeContextCollection
 
-	counts, err := r.unionLister.List(ctx, resource.Bundle, tenantID, runtimeIDs, "runtime_id", pageSize, cursor, orderByColumns, &runtimeCtxsCollection)
+	counts, err := r.unionLister.List(ctx, resource.RuntimeContext, tenantID, runtimeIDs, "runtime_id", pageSize, cursor, orderByColumns, &runtimeCtxsCollection)
 	if err != nil {
 		return nil, err
 	}
