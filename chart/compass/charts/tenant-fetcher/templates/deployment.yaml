@@ -193,6 +193,32 @@ spec:
               value: {{ .Values.global.tenantFetcher.fieldMapping.entityTypeField }}
             - name: APP_GLOBAL_ACCOUNT_KEY
               value: {{ default "gaID" .Values.global.tenantFetcher.fieldMapping.globalAccountID }}
+            - name: APP_USE_KUBERNETES
+              value: "true"
+            - name: APP_CONFIGMAP_NAMESPACE
+              value: { { $config.kubernetes.configMapNamespace } }
+            - name: APP_CONFIGMAP_TIMESTAMP_FIELD
+              value: "lastConsumedTenantTimestamp"
+            - name: APP_CONFIGMAP_RESYNC_TIMESTAMP_FIELD
+              value: "lastFullResyncTimestamp"
+            - name: APP_LAST_EXECUTION_TIME_CONFIG_MAP_NAME
+              value: { { $configmapName } }
+            - name: APP_METRICS_PUSH_ENDPOINT
+              value: { { $.Values.global.metrics.pushEndpoint } }
+            - name: APP_DEFAULT_SCENARIO_ENABLED
+              value: { { $.Values.global.enableCompassDefaultScenarioAssignment | quote } }
+            - name: APP_TENANT_INSERT_CHUNK_SIZE
+              value: { { default "500" $config.tenantInsertChunkSize | quote } }
+            - name: APP_ACCOUNT_REGION
+              value: { { default "central" $config.accountRegion } }
+            - name: APP_SUBACCOUNT_REGIONS
+              value: { { default "central" $config.subaccountRegions | quote } }
+            - name: APP_MAPPING_FIELD_ID
+              value: { { $config.fieldMapping.idField } }
+            - name: APP_MOVED_SUBACCOUNT_SOURCE_TENANT_FIELD
+              value: { { default "sourceGlobalAccountGUID" $config.fieldMapping.movedSubaccountSourceField } }
+            - name: APP_MOVED_SUBACCOUNT_TARGET_TENANT_FIELD
+              value: { { default "targetGlobalAccountGUID" $config.fieldMapping.movedSubaccountTargetField } }
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
