@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/imdario/mergo"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
@@ -660,6 +662,38 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	}
 
 	return nil
+}
+
+// Merge missing godoc
+func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Application, error) {
+	destApp, err := s.Get(ctx, destID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting destination application")
+	}
+
+	srcApp, err := s.Get(ctx, srcID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting source application")
+	}
+
+	if str.PtrStrToStr(srcApp.BaseURL) != str.PtrStrToStr(destApp.BaseURL) {
+		return nil, errors.Errorf("BaseURL for applications %s and %s are not the same", destID, srcID)
+	}
+
+	if srcApp.Status == nil {
+		return nil, errors.Errorf("Could not determine status of source application with id %s", srcID)
+	}
+
+	if srcApp.Status.Condition == model.ApplicationStatusConditionConnected {
+		return nil, errors.Errorf("Cannot merge application with id %s, because it is in a %s status", srcID, model.ApplicationStatusConditionConnected)
+	}
+
+	srcApps := *srcApp
+	if err := mergo.Merge(destApp, srcApps); err != nil {
+		return nil, errors.Wrapf(err, "while trying to merge applications")
+	}
+
+	return destApp, nil
 }
 
 // ensureApplicationNotPartOfScenarioWithRuntime Checks if an application has scenarios associated with it. if a runtime is part of any scenario, then the application is considered being used by that runtime.

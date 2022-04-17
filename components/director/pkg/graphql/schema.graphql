@@ -1273,6 +1273,7 @@ type Mutation {
 	- [delete application template](examples/delete-application-template/delete-application-template.graphql)
 	"""
 	deleteApplicationTemplate(id: ID!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.deleteApplicationTemplate")
+	mergeApplications(destinationID: ID!, sourceID: ID!): Application! @hasScopes(path: "graphql.mutation.mergeApplications")
 	"""
 	**Examples**
 	- [register runtime](examples/register-runtime/register-runtime.graphql)
