@@ -98,7 +98,7 @@ func (r *renderer) getTemplateInputs(s System) (*model.ApplicationFromTemplateIn
 	for _, pm := range r.placeholdersMapping {
 		placeholderInput := gjson.GetBytes(systemJSON, pm.SystemKey).String()
 		if len(placeholderInput) == 0 && !pm.Optional {
-			return nil, fmt.Errorf("failed to find key %q in system input %s", pm.SystemKey, string(systemJSON))
+			return nil, fmt.Errorf("missing or empty key %q in system input %s", pm.SystemKey, string(systemJSON))
 		}
 		inputValues = append(inputValues, &model.ApplicationTemplateValueInput{
 			Placeholder: pm.PlaceholderName,

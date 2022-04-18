@@ -44,7 +44,6 @@ data:
   global.systemFetcher.enabled: "true"
   global.systemFetcher.systemsAPIEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/systemfetcher/systems"
   global.systemFetcher.systemsAPIFilterCriteria: "no"
-  global.systemFetcher.systemsAPIFilterTenantCriteriaPattern: "tenant=%s"
   global.systemFetcher.systemToTemplateMappings: '[{"Name": "temp1", "SourceKey": ["prop"], "SourceValue": ["val1"] }, {"Name": "temp2", "SourceKey": ["prop"], "SourceValue": ["val2"] }]'
   global.oathkeeper.mutators.authenticationMappingServices.tenant-fetcher.authenticator.enabled: "true"
   global.oathkeeper.mutators.authenticationMappingServices.subscriber.authenticator.enabled: "true"

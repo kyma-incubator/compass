@@ -57,6 +57,7 @@ type ApplicationRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Application) error
 	Update(ctx context.Context, tenant string, item *model.Application) error
 	Upsert(ctx context.Context, tenant string, model *model.Application) (string, error)
+	TrustedUpsert(ctx context.Context, tenant string, model *model.Application) (string, error)
 	TechnicalUpdate(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteGlobal(ctx context.Context, id string) error
@@ -482,7 +483,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 	return nil
 }
 
-// Upsert missing godoc
+// Upsert persists application or update it if it already exists
 func (s *service) Upsert(ctx context.Context, in model.ApplicationRegisterInput) error {
 	tenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -500,8 +501,26 @@ func (s *service) Upsert(ctx context.Context, in model.ApplicationRegisterInput)
 	return s.genericUpsert(ctx, tenant, in, upserterFunc)
 }
 
-// UpsertFromTemplate missing godoc
-func (s *service) UpsertFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) error {
+// TrustedUpsert persists application or update it if it already exists ignoring tenant isolation
+func (s *service) TrustedUpsert(ctx context.Context, in model.ApplicationRegisterInput) error {
+	tenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	upserterFunc := func(ctx context.Context, tenant string, application *model.Application) (string, error) {
+		id, err := s.appRepo.TrustedUpsert(ctx, tenant, application)
+		if err != nil {
+			return "", errors.Wrapf(err, "while upserting Application with name %s", application.Name)
+		}
+		return id, nil
+	}
+
+	return s.genericUpsert(ctx, tenant, in, upserterFunc)
+}
+
+// TrustedUpsertFromTemplate persists application from template id or update it if it already exists ignoring tenant isolation
+func (s *service) TrustedUpsertFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) error {
 	tenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
@@ -509,7 +528,7 @@ func (s *service) UpsertFromTemplate(ctx context.Context, in model.ApplicationRe
 
 	upserterFunc := func(ctx context.Context, tenant string, application *model.Application) (string, error) {
 		application.ApplicationTemplateID = appTemplateID
-		id, err := s.appRepo.Upsert(ctx, tenant, application)
+		id, err := s.appRepo.TrustedUpsert(ctx, tenant, application)
 		if err != nil {
 			return "", errors.Wrapf(err, "while upserting Application with name %s from template", application.Name)
 		}
