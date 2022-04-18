@@ -2,8 +2,9 @@ package runtime
 
 import (
 	"context"
-	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"strings"
+
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"

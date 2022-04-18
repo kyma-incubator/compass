@@ -2,8 +2,9 @@ package runtime_test
 
 import (
 	"context"
-	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"testing"
+
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	"github.com/google/uuid"
 
@@ -2220,7 +2221,6 @@ func TestResolver_RuntimeContext(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "Runtime cannot be empty")
 	})
-
 }
 
 func TestResolver_RuntimeContexts(t *testing.T) {

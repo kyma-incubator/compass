@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"

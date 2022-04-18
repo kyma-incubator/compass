@@ -48,7 +48,6 @@ func (c *converter) InputFromGraphQLWithRuntimeID(in graphql.RuntimeContextInput
 
 // InputFromGraphQL converts graphql.RuntimeContextInput to model.RuntimeContextInput. The resulting model.RuntimeContextInput is then used for updating already existing RuntimeContext.
 func (c *converter) InputFromGraphQL(in graphql.RuntimeContextInput) model.RuntimeContextInput {
-
 	return model.RuntimeContextInput{
 		Key:   in.Key,
 		Value: in.Value,

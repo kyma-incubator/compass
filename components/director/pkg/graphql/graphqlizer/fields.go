@@ -430,11 +430,10 @@ func (fp *GqlFieldsProvider) ForRuntime(ctx ...FieldCtx) string {
 
 // ForRuntimeContext missing godoc
 func (fp *GqlFieldsProvider) ForRuntimeContext() string {
-	return fmt.Sprint(`
-		id
-		key
-		value
-		labels`)
+	return `id
+			key
+			value
+			labels`
 }
 
 // ForApplicationLabel missing godoc
