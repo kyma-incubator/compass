@@ -29,8 +29,9 @@ spec:
 {{- with .Values.slave.podLabels }}
 {{ toYaml . | indent 8 }}
 {{- end }}
-{{- with .Values.slave.podAnnotations }}
       annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+{{- with .Values.slave.podAnnotations }}
 {{ toYaml . | indent 8 }}
 {{- end }}
     spec:

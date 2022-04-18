@@ -25,6 +25,7 @@ spec:
 {{ toYaml .Values.podLabels | trim | indent 8 }}
 {{- end }}
       annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
 {{- if .Values.annotations }}
 {{ toYaml .Values.annotations | indent 8 }}

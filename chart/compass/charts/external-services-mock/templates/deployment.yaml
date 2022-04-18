@@ -13,6 +13,8 @@ spec:
             release: {{ .Release.Name }}
     template:
         metadata:
+            annotations:
+                cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
             labels:
                 app: {{ .Chart.Name }}
                 release: {{ .Release.Name }}

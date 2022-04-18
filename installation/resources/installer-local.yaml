@@ -105,12 +105,14 @@ spec:
     matchLabels:
       name: compass-installer
   # Installer is designed to be run as a single instance only
-  # We enforce it by changing default rolling update to recreate startegy.
+  # We enforce it by changing default rolling update to recreate strategy.
   # With that k8s will first delete old pod and then provision new one during upgrade.
   strategy:
     type: Recreate
   template:
     metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
       labels:
         name: compass-installer
     spec:
