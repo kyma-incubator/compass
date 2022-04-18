@@ -182,7 +182,7 @@ global:
     metrics:
       port: 3003
       enableClientInstrumentation: true
-      enableGraphqlQueryInstrumentation: false
+      enableGraphqlRequestInstrumentation: false
       censoredFlows: "JWT"
     operations:
       port: 3002
