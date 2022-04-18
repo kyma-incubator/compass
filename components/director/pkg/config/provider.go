@@ -44,8 +44,6 @@ func (p *Provider) getValueForJSONPath(path string) (interface{}, error) {
 		return nil, apperrors.NewInternalError("required configuration not loaded")
 	}
 	jPath := fmt.Sprintf("$.%s", path)
-	fmt.Printf("jPath --> %s <--\n", jPath)                 // todo:: remove
-	fmt.Printf("cachedConfig --> %v <--\n", p.cachedConfig) // todo:: remove
 	res, err := jsonpath.JsonPathLookup(p.cachedConfig, jPath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while searching configuration using path %s", jPath)
