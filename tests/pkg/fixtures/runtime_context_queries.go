@@ -10,7 +10,7 @@ import (
 )
 
 func CreateRuntimeContext(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, runtimeID, key, value string) graphql.RuntimeContextExt {
-	rtmCtx, err := testctx.Tc.Graphqlizer.RuntimeContextInputToGQL(FixRuntimeContextCreateInput(t, key, value))
+	rtmCtx, err := testctx.Tc.Graphqlizer.RuntimeContextInputToGQL(FixRuntimeContextInput(key, value))
 	require.NoError(t, err)
 
 	addRtmCtxRequest := FixAddRuntimeContextRequest(runtimeID, rtmCtx)
