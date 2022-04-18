@@ -21,3 +21,6 @@ readinessProbe:
   initialDelaySeconds: 5
   timeoutSeconds: 2
   periodSeconds: 5
+timeouts:
+  server: "300s"
+  client: "30s"
