@@ -71,7 +71,7 @@ spec:
             - name: APP_DIRECTOR_URL
               value: "https://{{ .Values.global.director.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}/graphql"
             - name: APP_DIRECTOR_SKIP_SSL_VALIDATION
-              value: {{ .Values.http.client.skipSSLValidation | quote }}
+              value: {{ .Values.global.hydrator.http.client.skipSSLValidation | quote }}
             - name: APP_CONFIGURATION_FILE
               value: /config/config.yaml
             - name: APP_REVOCATION_CONFIG_MAP_NAME

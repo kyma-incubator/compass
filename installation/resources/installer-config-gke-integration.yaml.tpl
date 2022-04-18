@@ -26,7 +26,6 @@ data:
   global.oathkeeper.mutators.authenticationMappingServices.nsadapter.authenticator.enabled: "true"
   system-broker.http.client.skipSSLValidation: "true"
   connector.http.client.skipSSLValidation: "true"
-  hydrator.http.client.skipSSLValidation: "true"
   operations-controller.http.client.skipSSLValidation: "true"
   global.systemFetcher.http.client.skipSSLValidation: "true"
   global.ordAggregator.http.client.skipSSLValidation: "true"
@@ -37,6 +36,7 @@ data:
   global.externalServicesMock.regionInstancesCredentials.manage: "true"
   global.tests.basicCredentials.manage: "true"
   global.tests.ordService.subscriptionOauthSecret.manage: "true"
+  global.hydrator.http.client.skipSSLValidation: "true"
 
   global.tenantFetchers.account-fetcher.enabled: "true"
   global.tenantFetchers.account-fetcher.dbPool.maxOpenConnections: "1"

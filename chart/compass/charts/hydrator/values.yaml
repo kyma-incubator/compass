@@ -33,7 +33,3 @@ operatorGroupNames: "runtimeOperator"
 
 configFile:
   name: "config.yaml"
-
-http:
-  client:
-    skipSSLValidation: false
