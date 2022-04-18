@@ -66,19 +66,6 @@ func RegisterApplicationFromInput(t require.TestingT, ctx context.Context, gqlCl
 	return app, err
 }
 
-// todo:: delete
-func TestRegisterApplicationFromInput(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, correlationId string, in graphql.ApplicationRegisterInput) (graphql.ApplicationExt, error) {
-	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
-	require.NoError(t, err)
-
-	createRequest := FixRegisterApplicationRequest(appInputGQL)
-
-	app := graphql.ApplicationExt{}
-
-	err = testctx.Tc.TestRunOperationWithCustomTenant(ctx, gqlClient, tenantID, correlationId, createRequest, &app)
-	return app, err
-}
-
 func AppsForRuntime(ctx context.Context, gqlClient *gcli.Client, tenantID, runtimeID string) (graphql.ApplicationPageExt, error) {
 	req := FixApplicationForRuntimeRequest(runtimeID)
 	var applicationPage graphql.ApplicationPageExt

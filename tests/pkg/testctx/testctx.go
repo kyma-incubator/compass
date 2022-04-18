@@ -68,17 +68,6 @@ func (o *Operation) Run(req *gcli.Request, cli *gcli.Client, resp interface{}) e
 	})
 }
 
-// todo:: delete
-func (o *Operation) TestRun(req *gcli.Request, cli *gcli.Client, resp interface{}, correlationId string) error {
-	m := resultMapperFor(&resp)
-	req.Header.Set("Tenant", o.tenant)
-	req.Header.Set("X-Request-Id", correlationId)
-
-	return withRetryOnTemporaryConnectionProblems(func() error {
-		return cli.Run(o.ctx, req, &m)
-	})
-}
-
 func (tc *TestContext) RunOperation(ctx context.Context, cli *gcli.Client, req *gcli.Request, resp interface{}) error {
 	return tc.NewOperation(ctx).Run(req, cli, resp)
 }
@@ -89,11 +78,6 @@ func (tc *TestContext) RunOperationWithoutTenant(ctx context.Context, cli *gcli.
 
 func (tc *TestContext) RunOperationWithCustomTenant(ctx context.Context, cli *gcli.Client, tenant string, req *gcli.Request, resp interface{}) error {
 	return tc.NewOperation(ctx).WithTenant(tenant).Run(req, cli, resp)
-}
-
-// todo:: delete
-func (tc *TestContext) TestRunOperationWithCustomTenant(ctx context.Context, cli *gcli.Client, tenant, correlationId string, req *gcli.Request, resp interface{}) error {
-	return tc.NewOperation(ctx).WithTenant(tenant).TestRun(req, cli, resp, correlationId)
 }
 
 func withRetryOnTemporaryConnectionProblems(risky func() error) error {

@@ -65,15 +65,11 @@ func (hp *headerParser) GetCertificateData(r *http.Request) *CertificateData {
 		return nil
 	}
 
-	log.C(r.Context()).Infof("cert resolver, certificateInfo --> %v <--", certificateInfo) // todo:: remove
-
 	certData := &CertificateData{
 		ClientID:         hp.getClientIDFromSubject(certificateInfo.Subject),
 		CertificateHash:  certificateInfo.Hash,
 		AuthSessionExtra: hp.getAuthSessionExtraFromSubject(r.Context(), certificateInfo.Subject),
 	}
-
-	log.C(r.Context()).Infof("cert resolver, certData --> %v <--", certData) // todo:: remove
 
 	return certData
 }
