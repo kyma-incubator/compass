@@ -33,6 +33,15 @@ func FixDeleteRuntimeContextRequest(runtimeContextID string) *gcli.Request {
 		}`, runtimeContextID, testctx.Tc.GQLFieldsProvider.ForRuntimeContext()))
 }
 
+func FixGetRuntimeContextsRequest(runtimeID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: runtime(id: "%s") {
+				%s
+				}
+			}`, runtimeID, testctx.Tc.GQLFieldsProvider.ForRuntime()))
+}
+
 func FixRuntimeContextRequest(runtimeID string, runtimeContextID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
@@ -40,7 +49,7 @@ func FixRuntimeContextRequest(runtimeID string, runtimeContextID string) *gcli.R
 				%s
 				}
 			}`, runtimeID, testctx.Tc.GQLFieldsProvider.ForRuntime(graphqlizer.FieldCtx{
-			"Application.bundle": fmt.Sprintf(`bundle(id: "%s") {%s}`, runtimeContextID, testctx.Tc.GQLFieldsProvider.ForRuntimeContext()),
+			"Runtime.runtimeContext": fmt.Sprintf(`runtimeContext(id: "%s") {%s}`, runtimeContextID, testctx.Tc.GQLFieldsProvider.ForRuntimeContext()),
 		})))
 }
 

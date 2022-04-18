@@ -32,12 +32,12 @@ func TestAddRuntimeContext(t *testing.T) {
 	// WHEN
 	t.Log("Create runtimeContext")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addRtmCtxRequest, &output)
+	defer fixtures.DeleteRuntimeContext(t, ctx, certSecuredGraphQLClient, tenantId, output.ID)
 
 	// THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
 	assertions.AssertRuntimeContext(t, &rtmCtxInput, &output)
-	defer fixtures.DeleteRuntimeContext(t, ctx, certSecuredGraphQLClient, tenantId, output.ID)
 
 	saveExample(t, addRtmCtxRequest.Query(), "register runtime context")
 
@@ -67,7 +67,7 @@ func TestQueryRuntimeContexts(t *testing.T) {
 	rtmCtx2 := fixtures.CreateRuntimeContext(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, "queryRuntimeContexts2", "queryRuntimeContexts2")
 	defer fixtures.DeleteRuntimeContext(t, ctx, certSecuredGraphQLClient, tenantId, rtmCtx2.ID)
 
-	rtmCtxsRequest := fixtures.FixDeleteRuntimeContextRequest(runtime.ID)
+	rtmCtxsRequest := fixtures.FixGetRuntimeContextsRequest(runtime.ID)
 	runtimeGql := graphql.RuntimeExt{}
 
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, rtmCtxsRequest, &runtimeGql)
@@ -120,7 +120,6 @@ func TestDeleteRuntimeContext(t *testing.T) {
 	require.NotEmpty(t, runtime.ID)
 
 	rtmCtx := fixtures.CreateRuntimeContext(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, "deleteRuntimeContext", "deleteRuntimeContext")
-	defer fixtures.DeleteRuntimeContext(t, ctx, certSecuredGraphQLClient, tenantId, rtmCtx.ID)
 
 	rtmCtxDeleteReq := fixtures.FixDeleteRuntimeContextRequest(rtmCtx.ID)
 	rtmCtxGql := graphql.RuntimeContext{}
