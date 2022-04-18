@@ -50,6 +50,7 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 	ctx = log.ContextWithLogger(ctx, logger)
 
 	scopes, err := p.directorScopes(consumerType)
+	log.C(ctx).Infof("required scopes --> %s <--", scopes)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to get scopes for consumer type %s: %v", consumerType, err)
 		return ObjectContext{}, apperrors.NewInternalError(fmt.Sprintf("Failed to extract scopes for consumer with type %s", consumerType))

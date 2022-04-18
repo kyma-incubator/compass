@@ -84,11 +84,19 @@ func (vh *validationHydrator) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		authSession.Header = map[string][]string{}
 	}
 
+	log.C(ctx).Infof("cert resolver, ory auth sessionn, certDdata clientID --> %s <--", certData.ClientID)                              // todo:: remove
+	log.C(ctx).Infof("cert resolver, ory auth sessionn, certDdata CertificateHashCertificateHash --> %s <--", certData.CertificateHash) // todo:: remove
+	log.C(ctx).Infof("cert resolver, ory auth sessionn, issuer --> %s <--", issuer)                                                     // todo:: remove
+
 	authSession.Header.Add(oathkeeper.ClientIdFromCertificateHeader, certData.ClientID)
 	authSession.Header.Add(oathkeeper.ClientCertificateHashHeader, certData.CertificateHash)
 	authSession.Header.Add(oathkeeper.ClientCertificateIssuerHeader, issuer)
 
+	log.C(ctx).Infof("cert resolver, ory auth sessionn, certDdata AuthSessionExtra --> %v <--", certData.AuthSessionExtra) // todo:: remove
+
 	authSession.Extra = appendExtra(authSession.Extra, certData.AuthSessionExtra)
+
+	log.C(ctx).Infof("cert resolver, ory auth sessionn, final AuthSessionExtra --> %v <--", authSession.Extra) // todo:: remove
 
 	log.C(ctx).Info("Certificate header validated successfully")
 	respondWithAuthSession(ctx, w, authSession)

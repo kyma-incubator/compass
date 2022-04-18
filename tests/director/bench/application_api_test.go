@@ -19,7 +19,7 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 	appsCount := 5
 	for i := 0; i < appsCount; i++ {
 		app := fixtures.CreateApp(fmt.Sprintf("director-%d", i))
-		appResp, err := fixtures.RegisterApplicationFromInput(b, ctx, certSecuredGraphQLClient, tenantID, app)
+		appResp, err := fixtures.TestRegisterApplicationFromInput(b, ctx, certSecuredGraphQLClient, tenantID, "pesho-test-bench-director", app)
 		defer fixtures.CleanupApplication(b, ctx, certSecuredGraphQLClient, tenantID, &appResp)
 		require.NoError(b, err)
 	}

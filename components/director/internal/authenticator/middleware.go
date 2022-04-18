@@ -91,6 +91,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 			bearerToken, err := a.getBearerToken(r)
+			log.C(ctx).Infof("bearer token in middleware --> %s <--", bearerToken) // todo:: remove
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("An error has occurred while getting token from header. Error code: %d: %v", http.StatusBadRequest, err)
 				apperrors.WriteAppError(ctx, w, err, http.StatusBadRequest)
