@@ -666,6 +666,11 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 
 // Merge missing godoc
 func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Application, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
 	destApp, err := s.Get(ctx, destID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting destination application")
@@ -676,8 +681,20 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 		return nil, errors.Wrapf(err, "while getting source application")
 	}
 
-	if str.PtrStrToStr(srcApp.BaseURL) != str.PtrStrToStr(destApp.BaseURL) {
+	srcBaseURL := str.PtrStrToStr(srcApp.BaseURL)
+	destBaseURL := str.PtrStrToStr(destApp.BaseURL)
+	if len(srcBaseURL) == 0 || len(destBaseURL) == 0 {
+		return nil, errors.Errorf("BaseURL cannot be empty")
+	}
+
+	if srcBaseURL != destBaseURL {
 		return nil, errors.Errorf("BaseURL for applications %s and %s are not the same", destID, srcID)
+	}
+
+	srcTemplateID := str.PtrStrToStr(srcApp.ApplicationTemplateID)
+	destTemplateID := str.PtrStrToStr(destApp.ApplicationTemplateID)
+	if len(srcTemplateID) == 0 || len(destTemplateID) == 0 || srcTemplateID != destTemplateID {
+		return nil, errors.Errorf("Application templates are not the same")
 	}
 
 	if srcApp.Status == nil {
@@ -688,9 +705,16 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 		return nil, errors.Errorf("Cannot merge application with id %s, because it is in a %s status", srcID, model.ApplicationStatusConditionConnected)
 	}
 
-	srcApps := *srcApp
-	if err := mergo.Merge(destApp, srcApps); err != nil {
+	if err := mergo.Merge(destApp, *srcApp); err != nil {
 		return nil, errors.Wrapf(err, "while trying to merge applications")
+	}
+
+	if err := s.appRepo.Update(ctx, appTenant, destApp); err != nil {
+		return nil, err
+	}
+
+	if err := s.Delete(ctx, srcID); err != nil {
+		return nil, err
 	}
 
 	return destApp, nil
