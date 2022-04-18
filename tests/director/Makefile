@@ -32,10 +32,18 @@ sandbox-test:
 run:
 	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-director-local-0 -c director-tests -- ./director.test -test.run $(testName) -test.v
 
+bench-run:
+	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-director-local-0 -c director-tests -- ./director.bench -test.bench $(testName) -test.v
+
 sandbox-deploy-test:
 	env GOOS=linux go test -c ./tests -o director.test
 	kubectl cp ./director.test kyma-system/oct-tp-compass-e2e-tests-compass-e2e-director-local-0:/ -c director-tests
 	rm ./director.test
+
+sandbox-deploy-bench-test:
+	env GOOS=linux go test -c ./bench -o director.bench
+	kubectl cp ./director.bench kyma-system/oct-tp-compass-e2e-tests-compass-e2e-director-local-0:/ -c director-tests
+	rm ./director.bench
 
 sandbox-test-clean:
 	@kubectl delete testdefinitions.testing.kyma-project.io -n kyma-system compass-e2e-director-local || true
