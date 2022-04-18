@@ -93,7 +93,7 @@ func TestRepository_Create(t *testing.T) {
 		Name: "Create RuntimeCtx Label",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta("SELECT 1 FROM runtime_contexts_tenants WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
+				Query:    regexp.QuoteMeta("SELECT 1 FROM tenant_runtime_contexts WHERE tenant_id = $1 AND id = $2 AND owner = $3"),
 				Args:     []driver.Value{tenantID, refID, true},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -117,6 +117,7 @@ func TestRepository_Create(t *testing.T) {
 		DBEntity:            runtimeCtxLabelEntity,
 		NilModelEntity:      nilLabelModel,
 		TenantID:            tenantID,
+		IsTopLevelEntity:    true,
 	}
 
 	appLabelSuite.Run(t)
@@ -320,7 +321,7 @@ func TestRepository_Upsert(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		escapedGetQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, key, value, version FROM public.labels WHERE key = $1 AND runtime_context_id = $2 AND (id IN (SELECT id FROM runtime_contexts_labels_tenants WHERE tenant_id = $3))`)
-		escapedCheckParentAccessQuery := regexp.QuoteMeta("SELECT 1 FROM runtime_contexts_tenants WHERE tenant_id = $1 AND id = $2 AND owner = $3")
+		escapedCheckParentAccessQuery := regexp.QuoteMeta("SELECT 1 FROM tenant_runtime_contexts WHERE tenant_id = $1 AND id = $2 AND owner = $3")
 		escapedInsertQuery := regexp.QuoteMeta("INSERT INTO public.labels ( id, tenant_id, app_id, runtime_id, runtime_context_id, key, value, version ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ? )")
 
 		mockedRows := sqlmock.NewRows(fixColumns)

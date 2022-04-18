@@ -25,9 +25,6 @@ func TestRuntimeContextInput_ToRuntimeContext(t *testing.T) {
 				Key:       key,
 				Value:     val,
 				RuntimeID: runtimeID,
-				Labels: map[string]interface{}{
-					"test": []string{"val", "val2"},
-				},
 			},
 			Expected: &model.RuntimeContext{
 				ID:        id,
