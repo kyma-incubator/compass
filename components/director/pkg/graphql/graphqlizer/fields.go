@@ -427,6 +427,15 @@ func (fp *GqlFieldsProvider) ForRuntime() string {
 		eventingConfiguration { defaultURL }`, fp.ForSystemAuth())
 }
 
+// ForRuntimeContext missing godoc
+func (fp *GqlFieldsProvider) ForRuntimeContext() string {
+	return fmt.Sprint(`
+		id
+		key
+		value
+		labels`)
+}
+
 // ForApplicationLabel missing godoc
 func (fp *GqlFieldsProvider) ForApplicationLabel() string {
 	return `
