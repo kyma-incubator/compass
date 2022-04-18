@@ -54,10 +54,7 @@ import (
 	"github.com/vrischmann/envconfig"
 )
 
-const (
-	envPrefix       = "APP"
-	syncSubaccounts = true
-)
+const envPrefix = "APP"
 
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:8080"`
@@ -129,26 +126,26 @@ func main() {
 	runMainSrv()
 
 	stopSubaccountsJob := make(chan bool, 1)
-	runTenantFetcherJob(ctx, cfg, transact, syncSubaccounts, stopSubaccountsJob)
+	runTenantFetcherJob(ctx, cfg, transact, stopSubaccountsJob)
 
 	stopGlobalAccountsJob := make(chan bool, 1)
-	runTenantFetcherJob(ctx, cfg, transact, !syncSubaccounts, stopGlobalAccountsJob)
+	runTenantFetcherJob(ctx, cfg, transact, stopGlobalAccountsJob)
 
 	<-stopSubaccountsJob
 	<-stopGlobalAccountsJob
 }
 
-func runTenantFetcherJob(ctx context.Context, cfg config, transact persistence.Transactioner, syncSubaccounts bool, stopJob chan bool) {
+func runTenantFetcherJob(ctx context.Context, cfg config, transact persistence.Transactioner, stopJob chan bool) {
 	jobInterval := cfg.Handler.TenantFetcherJobIntervalMins
 	ticker := time.NewTicker(time.Duration(jobInterval) * time.Minute)
-	jobType := jobType(syncSubaccounts)
+	jobType := jobType(cfg)
 
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
 				log.C(ctx).Infof("Scheduled %s tenant fetcher job will be executed, job interval is %d minutes", jobType, jobInterval)
-				syncTenants(ctx, cfg, transact, syncSubaccounts)
+				syncTenants(ctx, cfg, transact)
 			case <-ctx.Done():
 				log.C(ctx).Errorf("Context is canceled and scheduled %s tenant fetcher job will be stopped", jobType)
 				stopTenantFetcherJobTicker(ctx, ticker, jobType)
@@ -159,22 +156,22 @@ func runTenantFetcherJob(ctx context.Context, cfg config, transact persistence.T
 	}()
 }
 
-func jobType(syncSubaccounts bool) string {
-	jobType := "subaccount"
-	if !syncSubaccounts {
-		jobType = "global account"
+func jobType(cfg config) string {
+	jobType := "global account"
+	if !cfg.Handler.ShouldSyncSubaccounts {
+		jobType = "subaccount"
 	}
 	return jobType
 }
 
-func syncTenants(ctx context.Context, cfg config, transact persistence.Transactioner, syncSubaccounts bool) {
-	tenantsFetcherSvc, err := createTenantsFetcherSvc(ctx, cfg, transact, syncSubaccounts)
+func syncTenants(ctx context.Context, cfg config, transact persistence.Transactioner) {
+	tenantsFetcherSvc, err := createTenantsFetcherSvc(ctx, cfg, transact)
 	exitOnError(err, "failed to create tenants fetcher service")
 
 	tenantsFetcherSvc.SyncTenants()
 }
 
-func createTenantsFetcherSvc(ctx context.Context, cfg config, transact persistence.Transactioner, syncSubaccounts bool) (tf.TenantSyncService, error) {
+func createTenantsFetcherSvc(ctx context.Context, cfg config, transact persistence.Transactioner) (tf.TenantSyncService, error) {
 	eventsCfg := cfg.EventsCfg
 	handlerCfg := cfg.Handler
 
@@ -226,7 +223,7 @@ func createTenantsFetcherSvc(ctx context.Context, cfg config, transact persisten
 	}
 	directorClient := graphqlclient.NewDirector(gqlClient)
 
-	if syncSubaccounts {
+	if handlerCfg.ShouldSyncSubaccounts {
 		return tf.NewSubaccountService(eventsCfg.QueryConfig, transact, kubeClient, eventsCfg.TenantFieldMapping, eventsCfg.MovedSubaccountFieldMapping, handlerCfg.TenantProvider, eventsCfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelRepository, handlerCfg.FullResyncInterval, directorClient, handlerCfg.TenantInsertChunkSize, tenantStorageConv), nil
 	}
 	return tf.NewGlobalAccountService(eventsCfg.QueryConfig, transact, kubeClient, eventsCfg.TenantFieldMapping, handlerCfg.TenantProvider, eventsCfg.AccountsRegion, eventAPIClient, tenantStorageSvc, handlerCfg.FullResyncInterval, directorClient, handlerCfg.TenantInsertChunkSize, tenantStorageConv), nil

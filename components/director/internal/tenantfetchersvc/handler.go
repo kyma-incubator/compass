@@ -61,6 +61,7 @@ type HandlerConfig struct {
 	Features            features.Config
 
 	TenantFetcherJobIntervalMins int           `envconfig:"default=5,APP_TENANT_FETCH_JOB_INTERVAL_MINS"`
+	ShouldSyncSubaccounts        bool          `envconfig:"default=false,APP_SYNC_SUBACCOUNTS"`
 	FullResyncInterval           time.Duration `envconfig:"default=12h"`
 	TenantInsertChunkSize        int           `envconfig:"default=500,APP_TENANT_INSERT_CHUNK_SIZE"`
 }
