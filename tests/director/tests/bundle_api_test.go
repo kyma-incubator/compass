@@ -42,6 +42,45 @@ func TestAddAPIToBundle(t *testing.T) {
 	pack := fixtures.GetBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bndl.ID)
 	require.Equal(t, bndl.ID, pack.ID)
 
+	appWithBaseURL := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, tenantId, application.ID)
+	assert.NotNil(t, appWithBaseURL.BaseURL)
+	assert.Equal(t, input.TargetURL, *appWithBaseURL.BaseURL)
+
+	assertions.AssertAPI(t, []*graphql.APIDefinitionInput{&input}, []*graphql.APIDefinitionExt{&actualApi})
+	saveExample(t, req.Query(), "add api definition to bundle")
+}
+
+func TestAddAPIToBundleForApplicationWithAlreadySetBaseURL(t *testing.T) {
+	ctx := context.Background()
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	baseURL := "https://compass.kyma.local/api"
+	application, err := fixtures.RegisterApplicationWithBaseURL(t, ctx, certSecuredGraphQLClient, baseURL, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
+	require.NoError(t, err)
+	require.NotEmpty(t, application.ID)
+
+	bndlName := "test-bundle"
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bndlName)
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
+
+	input := fixtures.FixAPIDefinitionInput()
+	inStr, err := testctx.Tc.Graphqlizer.APIDefinitionInputToGQL(input)
+	require.NoError(t, err)
+
+	actualApi := graphql.APIDefinitionExt{}
+	req := fixtures.FixAddAPIToBundleRequest(bndl.ID, inStr)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, req, &actualApi)
+	require.NoError(t, err)
+
+	pack := fixtures.GetBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bndl.ID)
+	require.Equal(t, bndl.ID, pack.ID)
+
+	appWithBaseURL := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, tenantId, application.ID)
+	assert.NotNil(t, appWithBaseURL.BaseURL)
+	assert.NotEqual(t, input.TargetURL, *appWithBaseURL.BaseURL)
+
 	assertions.AssertAPI(t, []*graphql.APIDefinitionInput{&input}, []*graphql.APIDefinitionExt{&actualApi})
 	saveExample(t, req.Query(), "add api definition to bundle")
 }
