@@ -69,7 +69,7 @@ func fixModelApplication(id, tenant, name, description string) *model.Applicatio
 	}
 }
 
-func fixModelApplicationWithAllUpdatableFields(id, tenant, name, description, url string, conditionStatus model.ApplicationStatusCondition, conditionTimestamp time.Time) *model.Application {
+func fixModelApplicationWithAllUpdatableFields(id, name, description, url string, baseURL *string, conditionStatus model.ApplicationStatusCondition, conditionTimestamp time.Time) *model.Application {
 	return &model.Application{
 		Status: &model.ApplicationStatus{
 			Condition: conditionStatus,
@@ -81,6 +81,7 @@ func fixModelApplicationWithAllUpdatableFields(id, tenant, name, description, ur
 		HealthCheckURL:      &url,
 		ProviderName:        &providerName,
 		BaseEntity:          &model.BaseEntity{ID: id},
+		BaseURL:             baseURL,
 	}
 }
 
