@@ -121,6 +121,5 @@ func TestConverter_ModelFromGraphQLTokenInput(t *testing.T) {
 			// then
 			assert.Equal(t, testCase.Expected, res)
 		})
-
 	}
 }
