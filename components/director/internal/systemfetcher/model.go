@@ -31,6 +31,8 @@ type AdditionalAttributes map[string]string
 type SystemBase struct {
 	SystemNumber           string               `json:"systemNumber"`
 	DisplayName            string               `json:"displayName"`
+	ProductID              string               `json:"productId"`
+	PpmsProductVersionID   string               `json:"ppmsProductVersionId"`
 	ProductDescription     string               `json:"productDescription"`
 	BaseURL                string               `json:"baseUrl"`
 	InfrastructureProvider string               `json:"infrastructureProvider"`
