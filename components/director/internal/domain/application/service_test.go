@@ -3020,6 +3020,305 @@ func TestService_Unpair(t *testing.T) {
 	}
 }
 
+func TestService_Merge(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+	destID := "foo"
+	srcID := "bar"
+	tnt := "tenant"
+	externalTnt := "external-tnt"
+	baseURL := "http://localhost.com"
+	templateID := "12346789"
+	otherTemplateID := "qwerty"
+	destName := "dest app"
+	srcName := "src app"
+	srcDescription := "Long src description"
+
+	scenarios := []interface{}{"Easter"}
+	scenarioLabel := &model.Label{
+		ID:    uuid.New().String(),
+		Key:   model.ScenariosKey,
+		Value: scenarios,
+	}
+
+	srcModel := fixDetailedModelApplication(t, srcID, tnt, srcName, srcDescription)
+	srcModel.ApplicationTemplateID = &templateID
+	srcModel.Status.Timestamp = time.Time{}
+
+	destModel := fixModelApplication(destID, tnt, destName, "")
+	destModel.ApplicationTemplateID = &templateID
+	destModel.BaseURL = srcModel.BaseURL
+	destModel.Status.Timestamp = time.Time{}
+
+	mergedDestModel := fixDetailedModelApplication(t, destID, tnt, destName, srcDescription)
+	mergedDestModel.ApplicationTemplateID = &templateID
+	mergedDestModel.Status.Timestamp = time.Time{}
+
+	srcModelWithoutBaseURL := fixDetailedModelApplication(t, srcID, tnt, srcName, srcDescription)
+	srcModelWithoutBaseURL.BaseURL = nil
+
+	srcModelWithDifferentBaseURL := fixDetailedModelApplication(t, srcID, tnt, srcName, srcDescription)
+	srcModelWithDifferentBaseURL.BaseURL = &baseURL
+
+	srcModelWithDifferentTemplateID := fixDetailedModelApplication(t, srcID, tnt, srcName, srcDescription)
+	srcModelWithDifferentTemplateID.ApplicationTemplateID = &otherTemplateID
+
+	srcModelConnected := fixDetailedModelApplication(t, srcID, tnt, srcName, srcDescription)
+	srcModelConnected.Status.Condition = model.ApplicationStatusConditionConnected
+	srcModelConnected.ApplicationTemplateID = &templateID
+	//runtimeModel := &model.Runtime{
+	//	Name: "test-runtime",
+	//}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testCases := []struct {
+		Name                           string
+		AppRepoFn                      func() *automock.ApplicationRepository
+		LabelRepoFn                    func() *automock.LabelRepository
+		RuntimeRepoFn                  func() *automock.RuntimeRepository
+		ExpectedDestinationApplication *model.Application
+		Ctx                            context.Context
+		SourceID                       string
+		DestinationID                  string
+		ExpectedErrMessage             string
+	}{
+		{
+			Name: "Success",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
+				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
+				repo.On("Update", ctx, tnt, destModel).Return(nil).Once()
+				repo.On("Delete", ctx, tnt, srcModel.ID).Return(nil).Once()
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", ctx, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				return repo
+			},
+			Ctx:                            ctx,
+			DestinationID:                  destID,
+			SourceID:                       srcID,
+			ExpectedDestinationApplication: mergedDestModel,
+			ExpectedErrMessage:             "",
+		},
+		{
+			Name: "Error when tenant is not in context",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.AssertNotCalled(t, "GetByID")
+				repo.AssertNotCalled(t, "Exists")
+				repo.AssertNotCalled(t, "Update")
+				repo.AssertNotCalled(t, "Delete")
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.AssertNotCalled(t, "ListAll")
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.AssertNotCalled(t, "GetByKey")
+				return repo
+			},
+			Ctx:                context.Background(),
+			DestinationID:      destID,
+			SourceID:           srcID,
+			ExpectedErrMessage: "while loading tenant from context: cannot read tenant from context",
+		},
+		{
+			Name: "Error when cannot get destination application",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, destModel.ID).Return(nil, testErr).Once()
+				repo.AssertNotCalled(t, "Exists")
+				repo.AssertNotCalled(t, "Update")
+				repo.AssertNotCalled(t, "Delete")
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.AssertNotCalled(t, "ListAll")
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.AssertNotCalled(t, "GetByKey")
+				return repo
+			},
+			Ctx:                ctx,
+			DestinationID:      destID,
+			SourceID:           srcID,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Error when cannot get source application",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
+				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(nil, testErr).Once()
+				repo.AssertNotCalled(t, "Exists")
+				repo.AssertNotCalled(t, "Update")
+				repo.AssertNotCalled(t, "Delete")
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.AssertNotCalled(t, "ListAll")
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.AssertNotCalled(t, "GetByKey")
+				return repo
+			},
+			Ctx:                ctx,
+			DestinationID:      destID,
+			SourceID:           srcID,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Error when source app and destination app BaseURL do not match",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
+				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModelWithDifferentTemplateID, nil).Once()
+				repo.AssertNotCalled(t, "Exists")
+				repo.AssertNotCalled(t, "Update")
+				repo.AssertNotCalled(t, "Delete")
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.AssertNotCalled(t, "ListAll")
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.AssertNotCalled(t, "GetByKey")
+				return repo
+			},
+			Ctx:                ctx,
+			DestinationID:      destID,
+			SourceID:           srcID,
+			ExpectedErrMessage: "Application templates are not the same. Destination app template: 12346789. Source app template: qwerty",
+		},
+		{
+			Name: "Error when source app is in CONNECTED status",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
+				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModelConnected, nil).Once()
+				repo.AssertNotCalled(t, "Exists")
+				repo.AssertNotCalled(t, "Update")
+				repo.AssertNotCalled(t, "Delete")
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.AssertNotCalled(t, "ListAll")
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.AssertNotCalled(t, "GetByKey")
+				return repo
+			},
+			Ctx:                ctx,
+			DestinationID:      destID,
+			SourceID:           srcID,
+			ExpectedErrMessage: "Cannot merge application with id bar, because it is in a CONNECTED status",
+		},
+		{
+			Name: "Error when source deletion fails",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
+				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
+				repo.AssertNotCalled(t, "Update")
+				repo.On("Delete", ctx, tnt, srcModel.ID).Return(testErr).Once()
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", ctx, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				return repo
+			},
+			Ctx:                ctx,
+			DestinationID:      destID,
+			SourceID:           srcID,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Error when destination app update fails",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
+				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
+				repo.On("Update", ctx, tnt, mergedDestModel).Return(testErr)
+				repo.On("Delete", ctx, tnt, srcModel.ID).Return(nil).Once()
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", ctx, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				return repo
+			},
+			Ctx:                ctx,
+			DestinationID:      destID,
+			SourceID:           srcID,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			appRepo := testCase.AppRepoFn()
+			runtimeRepo := testCase.RuntimeRepoFn()
+			labelRepo := testCase.LabelRepoFn()
+			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, nil, nil, nil, nil)
+
+			// WHEN
+			destApp, err := svc.Merge(testCase.Ctx, testCase.DestinationID, testCase.SourceID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedDestinationApplication, destApp)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			appRepo.AssertExpectations(t)
+			runtimeRepo.AssertExpectations(t)
+			labelRepo.AssertExpectations(t)
+		})
+	}
+}
+
 func TestService_Get(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")

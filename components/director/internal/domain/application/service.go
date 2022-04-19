@@ -665,7 +665,8 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	return nil
 }
 
-// Merge missing godoc
+// Merge Merges properties from Source Application into Destination Application, provided that the Destination's
+// Application does not have a value set for a given property. Then the Source Application is being deleted.
 func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Application, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -684,18 +685,14 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 
 	srcBaseURL := str.PtrStrToStr(srcApp.BaseURL)
 	destBaseURL := str.PtrStrToStr(destApp.BaseURL)
-	if len(srcBaseURL) == 0 || len(destBaseURL) == 0 {
-		return nil, errors.Errorf("BaseURL cannot be empty")
-	}
-
-	if srcBaseURL != destBaseURL {
-		return nil, errors.Errorf("BaseURL for applications %s and %s are not the same", destID, srcID)
+	if len(srcBaseURL) == 0 || len(destBaseURL) == 0 || srcBaseURL != destBaseURL {
+		return nil, errors.Errorf("BaseURL for applications %s and %s are not the same. Destination app BaseURL: %s. Source app BaseURL: %s", destID, srcID, destBaseURL, srcBaseURL)
 	}
 
 	srcTemplateID := str.PtrStrToStr(srcApp.ApplicationTemplateID)
 	destTemplateID := str.PtrStrToStr(destApp.ApplicationTemplateID)
 	if len(srcTemplateID) == 0 || len(destTemplateID) == 0 || srcTemplateID != destTemplateID {
-		return nil, errors.Errorf("Application templates are not the same")
+		return nil, errors.Errorf("Application templates are not the same. Destination app template: %s. Source app template: %s", destTemplateID, srcTemplateID)
 	}
 
 	if srcApp.Status == nil {
@@ -710,12 +707,12 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 		return nil, errors.Wrapf(err, "while trying to merge applications with ids %s and %s", destID, srcID)
 	}
 
-	if err := s.appRepo.Update(ctx, appTenant, destApp); err != nil {
+	log.C(ctx).Infof("Deleting source application with id %s", srcID)
+	if err := s.Delete(ctx, srcID); err != nil {
 		return nil, err
 	}
 
-	log.C(ctx).Infof("Deleting source application with id %s", srcID)
-	if err := s.Delete(ctx, srcID); err != nil {
+	if err := s.appRepo.Update(ctx, appTenant, destApp); err != nil {
 		return nil, err
 	}
 

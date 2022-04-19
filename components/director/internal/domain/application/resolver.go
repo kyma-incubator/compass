@@ -442,7 +442,8 @@ func (r *Resolver) SetApplicationLabel(ctx context.Context, applicationID string
 	}, nil
 }
 
-// MergeApplications missing godoc
+// MergeApplications Merges properties from Source Application into Destination Application, provided that the Destination's
+// Application does not have a value set for a given property. Then the Source Application is being deleted.
 func (r *Resolver) MergeApplications(ctx context.Context, destID string, sourceID string) (*graphql.Application, error) {
 	log.C(ctx).Infof("Merging source app with id %s into destination app with id %s", sourceID, destID)
 
