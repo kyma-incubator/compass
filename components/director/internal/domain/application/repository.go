@@ -49,6 +49,7 @@ type pgRepository struct {
 	updater               repo.Updater
 	globalUpdater         repo.UpdaterGlobal
 	upserter              repo.Upserter
+	trustedUpserter       repo.Upserter
 	conv                  EntityConverter
 }
 
@@ -67,6 +68,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		updater:               repo.NewUpdater(applicationTable, updatableColumns, []string{"id"}),
 		globalUpdater:         repo.NewUpdaterGlobal(resource.Application, applicationTable, updatableColumns, []string{"id"}),
 		upserter:              repo.NewUpserter(applicationTable, applicationColumns, matchingSystemColumns, upsertableColumns),
+		trustedUpserter:       repo.NewTrustedUpserter(applicationTable, applicationColumns, matchingSystemColumns, upsertableColumns),
 		conv:                  conv,
 	}
 }
@@ -369,6 +371,20 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, model *model.A
 
 // Upsert inserts application for given tenant or update it if it already exists
 func (r *pgRepository) Upsert(ctx context.Context, tenant string, model *model.Application) (string, error) {
+	return r.genericUpsert(ctx, tenant, model, r.upserter)
+}
+
+// TrustedUpsert inserts application for given tenant or update it if it already exists ignoring tenant isolation
+func (r *pgRepository) TrustedUpsert(ctx context.Context, tenant string, model *model.Application) (string, error) {
+	return r.genericUpsert(ctx, tenant, model, r.trustedUpserter)
+}
+
+// TechnicalUpdate missing godoc
+func (r *pgRepository) TechnicalUpdate(ctx context.Context, model *model.Application) error {
+	return r.updateSingle(ctx, "", model, true)
+}
+
+func (r *pgRepository) genericUpsert(ctx context.Context, tenant string, model *model.Application, upserter repo.Upserter) (string, error) {
 	if model == nil {
 		return "", apperrors.NewInternalError("model can not be empty")
 	}
@@ -380,12 +396,7 @@ func (r *pgRepository) Upsert(ctx context.Context, tenant string, model *model.A
 	}
 
 	log.C(ctx).Debugf("Upserting Application entity with id %s to db", model.ID)
-	return r.upserter.Upsert(ctx, resource.Application, tenant, appEnt)
-}
-
-// TechnicalUpdate missing godoc
-func (r *pgRepository) TechnicalUpdate(ctx context.Context, model *model.Application) error {
-	return r.updateSingle(ctx, "", model, true)
+	return upserter.Upsert(ctx, resource.Application, tenant, appEnt)
 }
 
 func (r *pgRepository) updateSingle(ctx context.Context, tenant string, model *model.Application, isTechnical bool) error {

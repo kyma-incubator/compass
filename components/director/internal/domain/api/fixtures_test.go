@@ -31,6 +31,7 @@ const (
 	successors       = `["sap.s4:apiResource:API_BILL_OF_MATERIAL_SRV:v2"]`
 	resourceHash     = "123456"
 	publicVisibility = "public"
+	targetURL        = "https://test-url.com/api"
 )
 
 var fixedTimestamp = time.Now()
@@ -184,7 +185,7 @@ func fixModelAPIDefinitionInput(name, description string, group string) (*model.
 	return &model.APIDefinitionInput{
 		Name:         name,
 		Description:  &description,
-		TargetURLs:   api.ConvertTargetURLToJSONArray("https://test-url.com"),
+		TargetURLs:   api.ConvertTargetURLToJSONArray(targetURL),
 		Group:        &group,
 		VersionInput: v,
 	}, spec
@@ -214,7 +215,7 @@ func fixGQLAPIDefinitionInput(name, description string, group string) *graphql.A
 	return &graphql.APIDefinitionInput{
 		Name:        name,
 		Description: &description,
-		TargetURL:   "https://test-url.com",
+		TargetURL:   targetURL,
 		Group:       &group,
 		Spec:        spec,
 		Version:     v,
