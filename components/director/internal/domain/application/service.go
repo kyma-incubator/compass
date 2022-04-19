@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"github.com/imdario/mergo"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -706,13 +707,14 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 	}
 
 	if err := mergo.Merge(destApp, *srcApp); err != nil {
-		return nil, errors.Wrapf(err, "while trying to merge applications")
+		return nil, errors.Wrapf(err, "while trying to merge applications with ids %s and %s", destID, srcID)
 	}
 
 	if err := s.appRepo.Update(ctx, appTenant, destApp); err != nil {
 		return nil, err
 	}
 
+	log.C(ctx).Infof("Deleting source application with id %s", srcID)
 	if err := s.Delete(ctx, srcID); err != nil {
 		return nil, err
 	}
