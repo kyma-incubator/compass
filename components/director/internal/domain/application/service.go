@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -499,6 +501,35 @@ func (s *service) Upsert(ctx context.Context, in model.ApplicationRegisterInput)
 	}
 
 	return s.genericUpsert(ctx, tenant, in, upserterFunc)
+}
+
+// UpdateBaseURL Gets application by ID. If the application does not have a BaseURL set, the API TargetURL is parsed and set as BaseURL
+func (s *service) UpdateBaseURL(ctx context.Context, appID, targetURL string) error {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	app, err := s.Get(ctx, appID)
+	if err != nil {
+		return err
+	}
+
+	if app.BaseURL != nil && len(*app.BaseURL) > 0 {
+		log.C(ctx).Infof("BaseURL for Application %s already exists. Will not update it.", appID)
+		return nil
+	}
+
+	log.C(ctx).Infof("BaseURL for Application %s does not exist. Will update it.", appID)
+
+	parsedTargetURL, err := url.Parse(targetURL)
+	if err != nil {
+		return errors.Wrapf(err, "while parsing targetURL")
+	}
+
+	app.BaseURL = str.Ptr(fmt.Sprintf("%s://%s", parsedTargetURL.Scheme, parsedTargetURL.Host))
+
+	return s.appRepo.Update(ctx, appTenant, app)
 }
 
 // TrustedUpsert persists application or update it if it already exists ignoring tenant isolation
