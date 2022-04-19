@@ -137,10 +137,20 @@ func (c *converter) ModelFromGraphQLTokenInput(in *graphql.OneTimeTokenInput) *m
 		return nil
 	}
 
+	var connectorURL string
+	if in.ConnectorURL != nil {
+		connectorURL = *in.ConnectorURL
+	}
+
+	var tokenType tokens.TokenType
+	if in.Type != nil {
+		tokenType = tokens.TokenType(*in.Type)
+	}
+
 	return &model.OneTimeToken{
 		Token:        in.Token,
-		ConnectorURL: str.PtrStrToStr(in.ConnectorURL),
-		Type:         tokens.TokenType(*in.Type),
+		ConnectorURL: connectorURL,
+		Type:         tokenType,
 		CreatedAt:    timestampToTime(in.CreatedAt),
 		UsedAt:       timestampToTime(in.UsedAt),
 		ExpiresAt:    timestampToTime(in.ExpiresAt),

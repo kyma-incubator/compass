@@ -65,9 +65,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 				svc := &automock.OAuth20Service{}
 				return svc
 			},
-			OneTimeTokenFn: func() *automock.OneTimeTokenService {
-				return &automock.OneTimeTokenService{}
-			},
+			OneTimeTokenFn: unusedOneTimeTokenSvc,
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
 				conv.On("ToGraphQL", modelSystemAuth).Return(gqlSystemAuth, nil).Once()
@@ -93,9 +91,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 				svc.On("DeleteClientCredentials", contextParam, oauthModelSystemAuth.Value.Credential.Oauth.ClientID).Return(nil)
 				return svc
 			},
-			OneTimeTokenFn: func() *automock.OneTimeTokenService {
-				return &automock.OneTimeTokenService{}
-			},
+			OneTimeTokenFn: unusedOneTimeTokenSvc,
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
 				conv.On("ToGraphQL", oauthModelSystemAuth).Return(gqlSystemAuth, nil).Once()
@@ -119,9 +115,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 				svc := &automock.OAuth20Service{}
 				return svc
 			},
-			OneTimeTokenFn: func() *automock.OneTimeTokenService {
-				return &automock.OneTimeTokenService{}
-			},
+			OneTimeTokenFn: unusedOneTimeTokenSvc,
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
 				return conv
@@ -145,9 +139,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 				svc := &automock.OAuth20Service{}
 				return svc
 			},
-			OneTimeTokenFn: func() *automock.OneTimeTokenService {
-				return &automock.OneTimeTokenService{}
-			},
+			OneTimeTokenFn: unusedOneTimeTokenSvc,
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
 				conv.On("ToGraphQL", modelSystemAuth).Return(gqlSystemAuth, nil).Once()
@@ -172,9 +164,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 				svc.On("DeleteClientCredentials", contextParam, oauthModelSystemAuth.Value.Credential.Oauth.ClientID).Return(testErr)
 				return svc
 			},
-			OneTimeTokenFn: func() *automock.OneTimeTokenService {
-				return &automock.OneTimeTokenService{}
-			},
+			OneTimeTokenFn: unusedOneTimeTokenSvc,
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
 				conv.On("ToGraphQL", oauthModelSystemAuth).Return(gqlSystemAuth, nil).Once()
@@ -197,9 +187,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 				svc := &automock.OAuth20Service{}
 				return svc
 			},
-			OneTimeTokenFn: func() *automock.OneTimeTokenService {
-				return &automock.OneTimeTokenService{}
-			},
+			OneTimeTokenFn: unusedOneTimeTokenSvc,
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
 				return conv
@@ -224,9 +212,7 @@ func TestResolver_GenericDeleteSystemAuth(t *testing.T) {
 				svc.On("DeleteClientCredentials", contextParam, oauthModelSystemAuth.Value.Credential.Oauth.ClientID).Return(nil)
 				return svc
 			},
-			OneTimeTokenFn: func() *automock.OneTimeTokenService {
-				return &automock.OneTimeTokenService{}
-			},
+			OneTimeTokenFn: unusedOneTimeTokenSvc,
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
 				conv.On("ToGraphQL", oauthModelSystemAuth).Return(gqlSystemAuth, nil).Once()
@@ -306,9 +292,7 @@ func TestResolver_SystemAuth(t *testing.T) {
 				svc := &automock.OAuth20Service{}
 				return svc
 			},
-			OneTimeTokenFn: func() *automock.OneTimeTokenService {
-				return &automock.OneTimeTokenService{}
-			},
+			OneTimeTokenFn: unusedOneTimeTokenSvc,
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
 				conv.On("ToGraphQL", modelSystemAuth).Return(gqlSystemAuth, nil).Once()
@@ -333,9 +317,7 @@ func TestResolver_SystemAuth(t *testing.T) {
 				svc := &automock.OAuth20Service{}
 				return svc
 			},
-			OneTimeTokenFn: func() *automock.OneTimeTokenService {
-				return &automock.OneTimeTokenService{}
-			},
+			OneTimeTokenFn: unusedOneTimeTokenSvc,
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
 				conv.AssertNotCalled(t, "ToGraphQL")
@@ -360,9 +342,7 @@ func TestResolver_SystemAuth(t *testing.T) {
 				svc := &automock.OAuth20Service{}
 				return svc
 			},
-			OneTimeTokenFn: func() *automock.OneTimeTokenService {
-				return &automock.OneTimeTokenService{}
-			},
+			OneTimeTokenFn: unusedOneTimeTokenSvc,
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
 				conv.AssertNotCalled(t, "ToGraphQL")
@@ -386,9 +366,7 @@ func TestResolver_SystemAuth(t *testing.T) {
 				svc := &automock.OAuth20Service{}
 				return svc
 			},
-			OneTimeTokenFn: func() *automock.OneTimeTokenService {
-				return &automock.OneTimeTokenService{}
-			},
+			OneTimeTokenFn: unusedOneTimeTokenSvc,
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
 				conv.AssertNotCalled(t, "ToGraphQL")
@@ -412,9 +390,7 @@ func TestResolver_SystemAuth(t *testing.T) {
 				svc := &automock.OAuth20Service{}
 				return svc
 			},
-			OneTimeTokenFn: func() *automock.OneTimeTokenService {
-				return &automock.OneTimeTokenService{}
-			},
+			OneTimeTokenFn: unusedOneTimeTokenSvc,
 			ConverterFn: func() *automock.SystemAuthConverter {
 				conv := &automock.SystemAuthConverter{}
 				conv.On("ToGraphQL", modelSystemAuth).Return(nil, testErr).Once()
@@ -1188,4 +1164,8 @@ func TestResolver_InvalidateSystemAuthOneTimeToken(t *testing.T) {
 			}
 		})
 	}
+}
+
+func unusedOneTimeTokenSvc() *automock.OneTimeTokenService {
+	return &automock.OneTimeTokenService{}
 }

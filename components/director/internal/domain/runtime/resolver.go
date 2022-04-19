@@ -222,8 +222,7 @@ func (r *Resolver) RuntimeByTokenIssuer(ctx context.Context, issuer string) (*gr
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 

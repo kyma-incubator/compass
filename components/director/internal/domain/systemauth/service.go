@@ -160,7 +160,7 @@ func (s *service) Update(ctx context.Context, item *model.SystemAuth) error {
 	return s.repo.Update(ctx, item)
 }
 
-// UpdateValue missing godoc
+// UpdateValue get SystemAuth by provided id and update it with the given input
 func (s *service) UpdateValue(ctx context.Context, id string, item *intModel.Auth) (*model.SystemAuth, error) {
 	systemAuth, err := s.repo.GetByIDGlobal(ctx, id)
 	if err != nil {

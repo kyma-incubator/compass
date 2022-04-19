@@ -560,6 +560,57 @@ func TestService_GetByToken(t *testing.T) {
 	})
 }
 
+func TestService_UpdateValue(t *testing.T) {
+	authID := "authID"
+	modelAuth := fixModelAuth()
+
+	t.Run("error when systemAuth cannot be fetched from repo", func(t *testing.T) {
+		// GIVEN
+		repo := &automock.Repository{}
+		defer repo.AssertExpectations(t)
+		repo.On("GetByIDGlobal", context.Background(), authID).Return(nil, errors.New("could not fetch"))
+		svc := systemauth.NewService(repo, nil)
+		// WHEN
+		item, err := svc.UpdateValue(context.Background(), authID, modelAuth)
+		// THEN
+		assert.Nil(t, item)
+		assert.Error(t, err, fmt.Sprintf("while getting SystemAuth with ID %s could not fetch", authID))
+	})
+
+	t.Run("Error when systemAuth cannot be updated", func(t *testing.T) {
+		// GIVEN
+		repo := &automock.Repository{}
+		defer repo.AssertExpectations(t)
+		repo.On("GetByIDGlobal", context.Background(), authID).Return(&pkgmodel.SystemAuth{}, nil)
+		repo.On("Update", context.Background(), mock.Anything).Return(errors.New("could not update"))
+		svc := systemauth.NewService(repo, nil)
+		// WHEN
+		item, err := svc.UpdateValue(context.Background(), authID, modelAuth)
+		// THEN
+		assert.Nil(t, item)
+		assert.Error(t, err, fmt.Sprintf("while getting SystemAuth with ID %s could not update", authID))
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		repo := &automock.Repository{}
+		defer repo.AssertExpectations(t)
+		sysAuth := &pkgmodel.SystemAuth{
+			Value: modelAuth,
+		}
+		repo.On("GetByIDGlobal", context.Background(), authID).Return(sysAuth, nil)
+		repo.On("Update", context.Background(), sysAuth).Return(nil)
+		svc := systemauth.NewService(repo, nil)
+		// WHEN
+		item, err := svc.UpdateValue(context.Background(), authID, modelAuth)
+
+		// THEN
+		assert.Nil(t, err)
+		assert.Equal(t, sysAuth, item)
+	})
+
+}
+
 func contextThatHasTenant(expectedTenant string) interface{} {
 	return mock.MatchedBy(func(actual context.Context) bool {
 		actualTenant, err := tenant.LoadFromContext(actual)

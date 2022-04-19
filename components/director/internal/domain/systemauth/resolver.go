@@ -115,8 +115,7 @@ func (r *Resolver) SystemAuth(ctx context.Context, id string) (graphql.SystemAut
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -138,8 +137,7 @@ func (r *Resolver) SystemAuthByToken(ctx context.Context, token string) (graphql
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -172,8 +170,7 @@ func (r *Resolver) UpdateSystemAuth(ctx context.Context, id string, in graphql.A
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -206,8 +203,7 @@ func (r *Resolver) InvalidateSystemAuthOneTimeToken(ctx context.Context, id stri
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 

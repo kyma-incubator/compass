@@ -87,3 +87,40 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		})
 	}
 }
+
+func TestConverter_ModelFromGraphQLTokenInput(t *testing.T) {
+	// GIVEN
+	testCases := []struct {
+		Name     string
+		Input    *graphql.OneTimeTokenInput
+		Expected *model.OneTimeToken
+	}{
+		{
+			Name:     "All properties given",
+			Input:    fixOneTimeTokenGQLInput(),
+			Expected: fixOneTimeTokenInput(),
+		},
+		{
+			Name:     "Empty",
+			Input:    &graphql.OneTimeTokenInput{},
+			Expected: &model.OneTimeToken{},
+		},
+		{
+			Name:     "Nil",
+			Input:    nil,
+			Expected: nil,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// WHEN
+			converter := auth.NewConverter()
+			res := converter.ModelFromGraphQLTokenInput(testCase.Input)
+
+			// then
+			assert.Equal(t, testCase.Expected, res)
+		})
+
+	}
+}

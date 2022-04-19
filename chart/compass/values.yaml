@@ -234,8 +234,6 @@ global:
       clientKeyKey: client-key
   log:
     format: "kibana"
-  testCredentials:
-    secretName: "test-credentials-secret"
   enableCompassDefaultScenarioAssignment: true
   tenantConfig:
     useDefaultTenants: true

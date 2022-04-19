@@ -27,7 +27,8 @@
     - "fetch-request.auth:read"
     - "webhooks.auth:read"
     - "formation:write"
-{{- end }}{{ range $name := regexSplit "," .Values.operatorGroupNames -1 }}
+{{- end -}}
+{{ range $name := regexSplit "," .Values.operatorGroupNames -1 }}
 - groupname: "{{ trim $name }}"
   scopes:
     - "application:read"

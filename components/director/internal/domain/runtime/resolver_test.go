@@ -1598,6 +1598,111 @@ func TestResolver_Runtimes(t *testing.T) {
 	}
 }
 
+func TestResolver_RuntimeByTokenIssuer(t *testing.T) {
+	// GIVEN
+	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Bar")
+	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Bar")
+	testErr := errors.New("Test error")
+
+	testCases := []struct {
+		Name             string
+		PersistenceFn    func() *persistenceautomock.PersistenceTx
+		TransactionerFn  func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn        func() *automock.RuntimeService
+		ConverterFn      func() *automock.RuntimeConverter
+		SelfRegManagerFn func() *automock.SelfRegisterManager
+		InputID          string
+		ExpectedRuntime  *graphql.Runtime
+		ExpectedErr      error
+	}{
+		{
+			Name: "Success",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				return persistTx
+			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("GetByTokenIssuer", contextParam, "foo").Return(modelRuntime, nil).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+				return conv
+			},
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputID:          "foo",
+			ExpectedRuntime:  gqlRuntime,
+			ExpectedErr:      nil,
+		},
+		{
+			Name: "Success when runtime not found returns nil",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				return persistTx
+			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("GetByTokenIssuer", contextParam, "foo").Return(modelRuntime, apperrors.NewNotFoundError(resource.Runtime, "foo")).Once()
+
+				return svc
+			},
+			ConverterFn:      UnusedRuntimeConverter(),
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputID:          "foo",
+			ExpectedRuntime:  nil,
+			ExpectedErr:      nil,
+		},
+		{
+			Name: "Returns error when runtime retrieval failed",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				return persistTx
+			},
+			TransactionerFn: txtest.TransactionerThatDoesARollback,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("GetByTokenIssuer", contextParam, "foo").Return(nil, testErr).Once()
+
+				return svc
+			},
+			ConverterFn:      UnusedRuntimeConverter(),
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputID:          "foo",
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persistTx := testCase.PersistenceFn()
+			transact := testCase.TransactionerFn(persistTx)
+			svc := testCase.ServiceFn()
+			converter := testCase.ConverterFn()
+			selfRegManager := testCase.SelfRegManagerFn()
+			uuidSvc := &automock.UidService{}
+
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil)
+
+			// WHEN
+			result, err := resolver.RuntimeByTokenIssuer(context.TODO(), testCase.InputID)
+
+			// then
+			assert.Equal(t, testCase.ExpectedRuntime, result)
+			assert.Equal(t, testCase.ExpectedErr, err)
+
+			mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx)
+		})
+	}
+}
+
 func TestResolver_SetRuntimeLabel(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
