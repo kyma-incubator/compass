@@ -28,7 +28,7 @@ data:
       "editable": true,
       "gnetId": null,
       "graphTooltip": 0,
-      "id": 38,
+      "id": 40,
       "links": [],
       "panels": [
         {
@@ -508,7 +508,7 @@ data:
               "instant": false,
               "interval": "10s",
               "intervalFactor": 1,
-              "legendFormat": "{{ `{{ container }}` }} - Current",
+              "legendFormat": "{{`{{ container }}`}} - Current",
               "metric": "container_memory_usage_bytes",
               "refId": "A",
               "step": 15
@@ -520,7 +520,7 @@ data:
               "instant": false,
               "interval": "10s",
               "intervalFactor": 2,
-              "legendFormat": "{{ `{{container}}` }} - Requests",
+              "legendFormat": "{{`{{container}}`}} - Requests",
               "metric": "kube_pod_container_resource_requests_memory_bytes",
               "refId": "B",
               "step": 20
@@ -532,7 +532,7 @@ data:
               "instant": false,
               "interval": "10s",
               "intervalFactor": 2,
-              "legendFormat": "{{ `{{container}}` }} - Limit",
+              "legendFormat": "{{`{{container}}`}} - Limit",
               "metric": "kube_pod_container_resource_limits_memory_bytes",
               "refId": "C",
               "step": 20
@@ -643,7 +643,7 @@ data:
               "instant": false,
               "interval": "10s",
               "intervalFactor": 1,
-              "legendFormat": "{{ `{{container}}` }} - Current",
+              "legendFormat": "{{`{{container}}`}} - Current",
               "metric": "container_memory_usage_bytes",
               "refId": "A",
               "step": 15
@@ -654,7 +654,7 @@ data:
               "instant": false,
               "interval": "10s",
               "intervalFactor": 2,
-              "legendFormat": "{{ `{{container}}` }} - Requests",
+              "legendFormat": "{{`{{container}}`}} - Requests",
               "metric": "kube_pod_container_resource_requests_memory_bytes",
               "refId": "B",
               "step": 20
@@ -665,7 +665,7 @@ data:
               "instant": false,
               "interval": "10s",
               "intervalFactor": 2,
-              "legendFormat": "{{ `{{container}}` }} - Limit",
+              "legendFormat": "{{`{{container}}`}} - Limit",
               "metric": "kube_pod_container_resource_limits_memory_bytes",
               "refId": "C",
               "step": 20
@@ -775,7 +775,7 @@ data:
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
-              "legendFormat": "{{ `{{pod}}` }} - bytes allocated",
+              "legendFormat": "{{`{{pod}}`}} - bytes allocated",
               "metric": "go_memstats_alloc_bytes",
               "refId": "A",
               "step": 4
@@ -785,7 +785,7 @@ data:
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
-              "legendFormat": "{{ `{{pod}}` }} - alloc rate",
+              "legendFormat": "{{`{{pod}}`}} - alloc rate",
               "metric": "go_memstats_alloc_bytes_total",
               "refId": "B",
               "step": 4
@@ -795,7 +795,7 @@ data:
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
-              "legendFormat": "{{ `{{pod}}` }} - stack inuse",
+              "legendFormat": "{{`{{pod}}`}} - stack inuse",
               "metric": "go_memstats_stack_inuse_bytes",
               "refId": "C",
               "step": 4
@@ -806,7 +806,7 @@ data:
               "hide": false,
               "interval": "",
               "intervalFactor": 2,
-              "legendFormat": "{{ `{{pod}}` }} - heap inuse",
+              "legendFormat": "{{`{{pod}}`}} - heap inuse",
               "metric": "go_memstats_heap_inuse_bytes",
               "refId": "D",
               "step": 4
@@ -911,7 +911,7 @@ data:
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
-              "legendFormat": "{{ `{{pod}}` }}",
+              "legendFormat": "{{`{{pod}}`}}",
               "refId": "A"
             }
           ],
@@ -1011,7 +1011,7 @@ data:
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
-              "legendFormat": "{{ `{{pod}}` }} - {{ `{{quantile}}` }}",
+              "legendFormat": "{{`{{pod}}`}} - {{`{{quantile}}`}}",
               "refId": "A"
             }
           ],
@@ -1111,7 +1111,7 @@ data:
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
-              "legendFormat": "{{ `{{pod}}` }}",
+              "legendFormat": "{{`{{pod}}`}}",
               "refId": "A"
             }
           ],
@@ -1216,7 +1216,7 @@ data:
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
-              "legendFormat": "{{ `{{pod}}` }}",
+              "legendFormat": "{{`{{pod}}`}}",
               "metric": "process_open_fds",
               "refId": "A",
               "step": 4
@@ -1337,7 +1337,7 @@ data:
               "instant": false,
               "interval": "",
               "intervalFactor": 2,
-              "legendFormat": "{{ `{{ pod }}` }}",
+              "legendFormat": "{{`{{ pod }}`}}",
               "refId": "A",
               "step": 4
             }
@@ -1583,7 +1583,7 @@ data:
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
-              "legendFormat": "{{ `{{pod}}` }}",
+              "legendFormat": "{{`{{pod}}`}}",
               "refId": "A",
               "step": 30
             }
@@ -1684,7 +1684,7 @@ data:
               "instant": false,
               "interval": "",
               "intervalFactor": 1,
-              "legendFormat": "{{ `{{pod}}` }} - In use",
+              "legendFormat": "{{`{{pod}}`}} - In use",
               "refId": "A"
             },
             {
@@ -1693,7 +1693,7 @@ data:
               "instant": false,
               "interval": "",
               "intervalFactor": 1,
-              "legendFormat": "{{ `{{pod}}` }} - Idle",
+              "legendFormat": "{{`{{pod}}`}} - Idle",
               "refId": "B"
             },
             {
@@ -1701,7 +1701,7 @@ data:
               "format": "time_series",
               "interval": "",
               "intervalFactor": 1,
-              "legendFormat": "{{ `{{pod}}` }} - Maximum",
+              "legendFormat": "{{`{{pod}}`}} - Maximum",
               "refId": "C"
             }
           ],
@@ -1931,7 +1931,7 @@ data:
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
-              "legendFormat": "{{ `{{ code }}` }} ({{ `{{desc}}` }})",
+              "legendFormat": "{{`{{ code }}`}} ({{`{{desc}}`}})",
               "refId": "A",
               "step": 4
             }
@@ -2043,7 +2043,7 @@ data:
               "hide": false,
               "interval": "",
               "intervalFactor": 2,
-              "legendFormat": "{{ `{{ code }}` }} ({{ `{{ desc }}` }})",
+              "legendFormat": "{{`{{ code }}`}} ({{`{{ desc }}`}})",
               "refId": "D",
               "step": 2
             }
@@ -2257,7 +2257,7 @@ data:
               "format": "time_series",
               "interval": "",
               "intervalFactor": 2,
-              "legendFormat": "{{ `{{ code }}` }}",
+              "legendFormat": "{{`{{ code }}`}}",
               "refId": "A"
             }
           ],
@@ -2315,7 +2315,7 @@ data:
           },
           "id": 56,
           "panels": [],
-          "title": "GraphQL Requests by endpoint",
+          "title": "GraphQL Requests per endpoint",
           "type": "row"
         },
         {
@@ -2376,7 +2376,7 @@ data:
               "expr": "sum by (query_operation) (increase(compass_director_graphql_requests_per_operation[2m]) / 2)",
               "interval": "",
               "intervalFactor": 1,
-              "legendFormat": "{{ `{{ query_operation }}` }}",
+              "legendFormat": "{{`{{ query_operation }}`}}",
               "refId": "A"
             }
           ],
@@ -2384,7 +2384,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "Mutation requests per endpoint",
+          "title": "Mutation requests per endpoint [req/min]",
           "tooltip": {
             "shared": true,
             "sort": 2,
@@ -2481,7 +2481,7 @@ data:
               "expr": "sum by (query_operation) (increase(compass_director_graphql_requests_per_operation{query_type=\"query\"}[2m]) / 2)",
               "interval": "",
               "intervalFactor": 1,
-              "legendFormat": "{{ `{{ query_operation }}` }}",
+              "legendFormat": "{{`{{ query_operation }}`}}",
               "refId": "A"
             }
           ],
@@ -2489,7 +2489,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "Query requests per endpoint",
+          "title": "Query requests per endpoint [req/min]",
           "tooltip": {
             "shared": true,
             "sort": 2,
@@ -2529,7 +2529,7 @@ data:
           }
         }
       ],
-      "refresh": "30s",
+      "refresh": "",
       "schemaVersion": 27,
       "style": "dark",
       "tags": [
@@ -2561,5 +2561,5 @@ data:
       "title": "Compass / Director",
       "uid": "RsjU_VRGz",
       "version": 1
-    } 
+    }
 {{- end }}
