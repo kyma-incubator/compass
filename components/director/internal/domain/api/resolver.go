@@ -56,7 +56,7 @@ type BundleService interface {
 // ApplicationService is responsible for the service-layer Application operations.
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
 type ApplicationService interface {
-	TryUpdateBaseURL(ctx context.Context, appID, targetURL string) error
+	UpdateBaseURL(ctx context.Context, appID, targetURL string) error
 }
 
 // Resolver is an object responsible for resolver-layer APIDefinition operations
@@ -124,7 +124,7 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 		return nil, err
 	}
 
-	if err = r.appSvc.TryUpdateBaseURL(ctx, api.ApplicationID, in.TargetURL); err != nil {
+	if err = r.appSvc.UpdateBaseURL(ctx, api.ApplicationID, in.TargetURL); err != nil {
 		return nil, errors.Wrapf(err, "while trying to update baseURL")
 	}
 

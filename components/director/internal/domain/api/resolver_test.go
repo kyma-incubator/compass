@@ -85,7 +85,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("TryUpdateBaseURL", txtest.CtxWithDBMatcher(), appID, targetURL).Return(nil).Once()
+				svc.On("UpdateBaseURL", txtest.CtxWithDBMatcher(), appID, targetURL).Return(nil).Once()
 
 				return svc
 			},
@@ -112,7 +112,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.AssertNotCalled(t, "TryUpdateBaseURL")
+				svc.AssertNotCalled(t, "UpdateBaseURL")
 
 				return svc
 			},
@@ -143,7 +143,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.AssertNotCalled(t, "TryUpdateBaseURL")
+				svc.AssertNotCalled(t, "UpdateBaseURL")
 
 				return svc
 			},
@@ -175,7 +175,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.AssertNotCalled(t, "TryUpdateBaseURL")
+				svc.AssertNotCalled(t, "UpdateBaseURL")
 
 				return svc
 			},
@@ -208,7 +208,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.AssertNotCalled(t, "TryUpdateBaseURL")
+				svc.AssertNotCalled(t, "UpdateBaseURL")
 
 				return svc
 			},
@@ -242,7 +242,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.AssertNotCalled(t, "TryUpdateBaseURL")
+				svc.AssertNotCalled(t, "UpdateBaseURL")
 
 				return svc
 			},
@@ -251,7 +251,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 		},
 
 		{
-			Name:            "Returns error when TryUpdateBaseURL fails",
+			Name:            "Returns error when UpdateBaseURL fails",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.APIService {
 				svc := &automock.APIService{}
@@ -279,7 +279,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("TryUpdateBaseURL", txtest.CtxWithDBMatcher(), appID, targetURL).Return(testErr).Once()
+				svc.On("UpdateBaseURL", txtest.CtxWithDBMatcher(), appID, targetURL).Return(testErr).Once()
 
 				return svc
 			},
@@ -315,7 +315,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("TryUpdateBaseURL", txtest.CtxWithDBMatcher(), appID, targetURL).Return(nil).Once()
+				svc.On("UpdateBaseURL", txtest.CtxWithDBMatcher(), appID, targetURL).Return(nil).Once()
 
 				return svc
 			},
@@ -353,7 +353,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("TryUpdateBaseURL", txtest.CtxWithDBMatcher(), appID, targetURL).Return(nil).Once()
+				svc.On("UpdateBaseURL", txtest.CtxWithDBMatcher(), appID, targetURL).Return(nil).Once()
 
 				return svc
 			},
@@ -392,7 +392,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("TryUpdateBaseURL", txtest.CtxWithDBMatcher(), appID, targetURL).Return(nil).Once()
+				svc.On("UpdateBaseURL", txtest.CtxWithDBMatcher(), appID, targetURL).Return(nil).Once()
 
 				return svc
 			},
@@ -431,7 +431,7 @@ func TestResolver_AddAPIToBundle(t *testing.T) {
 			},
 			AppServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
-				svc.On("TryUpdateBaseURL", txtest.CtxWithDBMatcher(), appID, targetURL).Return(nil).Once()
+				svc.On("UpdateBaseURL", txtest.CtxWithDBMatcher(), appID, targetURL).Return(nil).Once()
 
 				return svc
 			},
