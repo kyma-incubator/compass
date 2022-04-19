@@ -70,8 +70,6 @@ spec:
           env:
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.graphql.external.port }}"
-            - name: APP_HYDRATOR_ADDRESS
-              value: "0.0.0.0:{{ .Values.global.director.validator.port }}"
             - name: APP_INTERNAL_ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.operations.port }}"
             - name: APP_METRICS_ADDRESS

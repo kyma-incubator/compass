@@ -56,8 +56,6 @@ spec:
           env:
             - name: APP_EXTERNAL_ADDRESS
               value: "0.0.0.0:{{ .Values.global.connector.graphql.external.port }}"
-            - name: APP_HYDRATOR_ADDRESS
-              value: "0.0.0.0:{{ .Values.global.connector.validator.port }}"
             - name: APP_PLAYGROUND_API_ENDPOINT
               value: "{{ .Values.global.connector.prefix }}/graphql"
             - name: APP_LOG_FORMAT

@@ -14,8 +14,6 @@ type Config struct {
 
 	Log log.Config
 
-	HydratorAddress string `envconfig:"default=127.0.0.1:8080"`
-
 	ServerTimeout time.Duration `envconfig:"default=100s"`
 
 	CSRSubject struct {
@@ -52,7 +50,7 @@ type Config struct {
 }
 
 func (c *Config) String() string {
-	return fmt.Sprintf("ExternalAddress: %s, APIEndpoint: %s, HydratorAddress: %s, "+
+	return fmt.Sprintf("ExternalAddress: %s, APIEndpoint: %s, "+
 		"CSRSubjectCountry: %s, CSRSubjectOrganization: %s, CSRSubjectOrganizationalUnit: %s, "+
 		"CSRSubjectLocality: %s, CSRSubjectProvince: %s, "+
 		"CertificateValidityTime: %s, CASecretName: %s, CASecretCertificateKey: %s, CASecretKeyKey: %s, "+
@@ -62,7 +60,7 @@ func (c *Config) String() string {
 		"DirectorURL: %s "+
 		"KubernetesClientPollInteval: %s, KubernetesClientPollTimeout: %s"+
 		"OneTimeTokenURL: %s, HTTPClienttimeout: %s",
-		c.ExternalAddress, c.APIEndpoint, c.HydratorAddress,
+		c.ExternalAddress, c.APIEndpoint,
 		c.CSRSubject.Country, c.CSRSubject.Organization, c.CSRSubject.OrganizationalUnit,
 		c.CSRSubject.Locality, c.CSRSubject.Province,
 		c.CertificateValidityTime, c.CASecret.Name, c.CASecret.CertificateKey, c.CASecret.KeyKey,

@@ -608,7 +608,6 @@ func TestService_UpdateValue(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, sysAuth, item)
 	})
-
 }
 
 func contextThatHasTenant(expectedTenant string) interface{} {
