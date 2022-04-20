@@ -765,11 +765,6 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 		return nil, err
 	}
 
-	//destApp, err = s.Get(ctx, destID)
-	//if err != nil {
-	//	return nil, errors.Wrapf(err, "while getting updated destination application")
-	//}
-
 	return destApp, nil
 }
 
