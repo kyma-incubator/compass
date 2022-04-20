@@ -19,12 +19,13 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
-	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
@@ -129,48 +130,48 @@ func main() {
 
 	stopGlobalAccountsFeatureAJob := make(chan bool, 1)
 	globalAccountsFeatureAJobConfig := *tenantfetcher.NewTenantFetcherJobEnvironment("cis1", environmentVars).ReadJobConfig()
-	runTenantFetcherJob(ctx, globalAccountsFeatureAJobConfig, transact, stopGlobalAccountsFeatureAJob)
+	runTenantFetcherJob(ctx, globalAccountsFeatureAJobConfig, stopGlobalAccountsFeatureAJob)
 
 	stopGlobalAccountsFeatureBJob := make(chan bool, 1)
 	globalAccountsFeatureBJobConfig := *tenantfetcher.NewTenantFetcherJobEnvironment("cis2", environmentVars).ReadJobConfig()
-	runTenantFetcherJob(ctx, globalAccountsFeatureBJobConfig, transact, stopGlobalAccountsFeatureBJob)
+	runTenantFetcherJob(ctx, globalAccountsFeatureBJobConfig, stopGlobalAccountsFeatureBJob)
 
 	stopSubaccountsJob := make(chan bool, 1)
 	subaccountsJobConfig := *tenantfetcher.NewTenantFetcherJobEnvironment("cis2-subaccounts", environmentVars).ReadJobConfig()
-	runTenantFetcherJob(ctx, subaccountsJobConfig, transact, stopSubaccountsJob)
+	runTenantFetcherJob(ctx, subaccountsJobConfig, stopSubaccountsJob)
 
 	<-stopGlobalAccountsFeatureAJob
 	<-stopGlobalAccountsFeatureBJob
 	<-stopSubaccountsJob
 }
 
-func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig, transact persistence.Transactioner, stopJob chan bool) {
+func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig, stopJob chan bool) {
 	jobInterval := jobConfig.HandlerConfig.TenantFetcherJobIntervalMins
-	ticker := time.NewTicker(time.Duration(jobInterval) * time.Minute)
-	jobType := jobType(jobConfig)
+	ticker := time.NewTicker(jobInterval)
+	jobName := jobConfig.JobName
+
+	transact, closeFunc, err := persistence.Configure(ctx, jobConfig.HandlerConfig.Database)
+	exitOnError(err, "Error while establishing the connection to the database")
+
+	defer func() {
+		err := closeFunc()
+		exitOnError(err, "Error while closing the connection to the database")
+	}()
 
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
-				log.C(ctx).Infof("Scheduled %s tenant fetcher job will be executed, job interval is %d minutes", jobType, jobInterval)
+				log.C(ctx).Infof("Scheduled tenant fetcher job %s will be executed, job interval is %s", jobName, jobInterval)
 				syncTenants(ctx, jobConfig, transact)
 			case <-ctx.Done():
-				log.C(ctx).Errorf("Context is canceled and scheduled %s tenant fetcher job will be stopped", jobType)
-				stopTenantFetcherJobTicker(ctx, ticker, jobType)
+				log.C(ctx).Errorf("Context is canceled and scheduled tenant fetcher job %s will be stopped", jobName)
+				stopTenantFetcherJobTicker(ctx, ticker, jobName)
 				stopJob <- true
 				return
 			}
 		}
 	}()
-}
-
-func jobType(cfg tenantfetcher.JobConfig) string {
-	jobType := "global account"
-	if !cfg.HandlerConfig.ShouldSyncSubaccounts {
-		jobType = "subaccount"
-	}
-	return jobType
 }
 
 func syncTenants(ctx context.Context, jobConfig tenantfetcher.JobConfig, transact persistence.Transactioner) {
@@ -242,9 +243,9 @@ func createTenantsFetcherSvc(ctx context.Context, jobConfig tenantfetcher.JobCon
 	return tf.NewGlobalAccountService(eventsCfg.QueryConfig, transact, kubeClient, eventsCfg.TenantFieldMapping, handlerCfg.TenantProvider, eventsCfg.AccountsRegion, eventAPIClient, tenantStorageSvc, handlerCfg.FullResyncInterval, directorClient, handlerCfg.TenantInsertChunkSize, tenantStorageConv), nil
 }
 
-func stopTenantFetcherJobTicker(ctx context.Context, tenantFetcherJobTicker *time.Ticker, jobType string) {
+func stopTenantFetcherJobTicker(ctx context.Context, tenantFetcherJobTicker *time.Ticker, jobName string) {
 	tenantFetcherJobTicker.Stop()
-	log.C(ctx).Infof("Tenant fetcher job ticker for %ss is stopped", jobType)
+	log.C(ctx).Infof("Ticker for tenant fetcher job %s is stopped", jobName)
 }
 
 func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, transact persistence.Transactioner) http.Handler {

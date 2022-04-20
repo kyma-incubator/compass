@@ -1,14 +1,15 @@
 package tenantfetchersvc
 
 import (
-	"github.com/kyma-incubator/compass/components/director/internal/features"
-	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
-	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/features"
+	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
+	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 )
@@ -21,6 +22,7 @@ type job struct {
 }
 
 type JobConfig struct {
+	JobName       string
 	EventsConfig  EventsConfig
 	HandlerConfig HandlerConfig
 }
@@ -36,6 +38,7 @@ func NewTenantFetcherJobEnvironment(name string, environmentVars map[string]stri
 // ReadJobConfig reads job configuration from environment
 func (j *job) ReadJobConfig() *JobConfig {
 	return &JobConfig{
+		JobName:       j.name,
 		EventsConfig:  j.getEventsConfig(),
 		HandlerConfig: j.getHandlerConfig(),
 	}
