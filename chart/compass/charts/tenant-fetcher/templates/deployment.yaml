@@ -246,9 +246,9 @@ spec:
               {{ $configmapName := printf "%s-tenant-fetcher-%s-config" $.Chart.Name $tenantFetcherJobName }}
             - name: APP_{{ $tenantFetcherJobName }}_LAST_EXECUTION_TIME_CONFIG_MAP_NAME
               value: {{ $configmapName }}
-            - name: APP_CONFIGMAP_TIMESTAMP_FIELD
+            - name: APP_{{ $tenantFetcherJobName }}_CONFIGMAP_TIMESTAMP_FIELD
               value: "lastConsumedTenantTimestamp"
-            - name: APP_CONFIGMAP_RESYNC_TIMESTAMP_FIELD
+            - name: APP_{{ $tenantFetcherJobName }}_CONFIGMAP_RESYNC_TIMESTAMP_FIELD
               value: "lastFullResyncTimestamp"
             # Kubernetes client config
             - name: APP_{{ $tenantFetcherJobName }}_KUBERNETES_POLL_INTERVAL
