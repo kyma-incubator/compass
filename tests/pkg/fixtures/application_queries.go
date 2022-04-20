@@ -54,6 +54,11 @@ func RegisterApplication(t require.TestingT, ctx context.Context, gqlClient *gcl
 	return RegisterApplicationFromInput(t, ctx, gqlClient, tenant, in)
 }
 
+func RegisterApplicationWithBaseURL(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, baseURL, tenant string) (graphql.ApplicationExt, error) {
+	in := FixSampleApplicationRegisterInputWithBaseURL("first", baseURL)
+	return RegisterApplicationFromInput(t, ctx, gqlClient, tenant, in)
+}
+
 func RegisterApplicationFromInput(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID string, in graphql.ApplicationRegisterInput) (graphql.ApplicationExt, error) {
 	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
 	require.NoError(t, err)
