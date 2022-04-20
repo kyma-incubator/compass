@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
 	"sync"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
@@ -51,16 +50,7 @@ func (s *SystemFetcherHandler) HandleConfigure(rw http.ResponseWriter, req *http
 }
 
 func (s *SystemFetcherHandler) HandleFunc(rw http.ResponseWriter, req *http.Request) {
-	filter := req.URL.Query().Get("$filter")
 	rw.WriteHeader(http.StatusOK)
-
-	if !strings.Contains(filter, s.defaulTenant) {
-		_, err := rw.Write([]byte(`[]`))
-		if err != nil {
-			httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
-		}
-		return
-	}
 
 	resp := []byte("[]")
 	if len(s.mockedSystems) > 0 {

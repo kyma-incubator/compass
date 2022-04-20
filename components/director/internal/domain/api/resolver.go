@@ -53,6 +53,12 @@ type BundleService interface {
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 }
 
+// ApplicationService is responsible for the service-layer Application operations.
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
+type ApplicationService interface {
+	UpdateBaseURL(ctx context.Context, appID, targetURL string) error
+}
+
 // Resolver is an object responsible for resolver-layer APIDefinition operations
 type Resolver struct {
 	transact      persistence.Transactioner
@@ -64,10 +70,11 @@ type Resolver struct {
 	frConverter   FetchRequestConverter
 	specService   SpecService
 	specConverter SpecConverter
+	appSvc        ApplicationService
 }
 
 // NewResolver returns a new object responsible for resolver-layer APIDefinition operations.
-func NewResolver(transact persistence.Transactioner, svc APIService, rtmSvc RuntimeService, bndlSvc BundleService, bndlRefSvc BundleReferenceService, converter APIConverter, frConverter FetchRequestConverter, specService SpecService, specConverter SpecConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc APIService, rtmSvc RuntimeService, bndlSvc BundleService, bndlRefSvc BundleReferenceService, converter APIConverter, frConverter FetchRequestConverter, specService SpecService, specConverter SpecConverter, appSvc ApplicationService) *Resolver {
 	return &Resolver{
 		transact:      transact,
 		svc:           svc,
@@ -78,6 +85,7 @@ func NewResolver(transact persistence.Transactioner, svc APIService, rtmSvc Runt
 		frConverter:   frConverter,
 		specService:   specService,
 		specConverter: specConverter,
+		appSvc:        appSvc,
 	}
 }
 
@@ -114,6 +122,10 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 	api, err := r.svc.Get(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+
+	if err = r.appSvc.UpdateBaseURL(ctx, api.ApplicationID, in.TargetURL); err != nil {
+		return nil, errors.Wrapf(err, "while trying to update baseURL")
 	}
 
 	spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)

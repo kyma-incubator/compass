@@ -47,6 +47,8 @@ const (
 		"systemNumber": "%d",
 		"displayName": "name%d",
 		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
 		"type": "type1",
 		"baseUrl": "",
 		"infrastructureProvider": "",
@@ -69,20 +71,24 @@ func TestSystemFetcherSuccess(t *testing.T) {
 		"systemNumber": "1",
 		"displayName": "name1",
 		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
 		"type": "type1",
 		"prop": "val1",
 		"baseUrl": "",
 		"infrastructureProvider": "",
-		"additionalUrls": {},
+		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {}
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
 		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
 		"type": "type2",
 		"baseUrl": "",
 		"infrastructureProvider": "",
-		"additionalUrls": {},
+		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {}
 	}]`)
 
@@ -118,11 +124,13 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &resp)
 	require.NoError(t, err)
 	description := "description"
+	baseUrl := "http://mainurl.com"
 	expectedApps := []directorSchema.ApplicationExt{
 		{
 			Application: directorSchema.Application{
 				Name:                  "name1",
 				Description:           &description,
+				BaseURL:               &baseUrl,
 				ApplicationTemplateID: &template.ID,
 				SystemNumber:          str.Ptr("1"),
 			},
@@ -132,6 +140,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 			Application: directorSchema.Application{
 				Name:         "name2",
 				Description:  &description,
+				BaseURL:      &baseUrl,
 				SystemNumber: str.Ptr("2"),
 			},
 			Labels: applicationLabels("name2", false),
@@ -144,6 +153,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 			Application: directorSchema.Application{
 				Name:                  app.Application.Name,
 				Description:           app.Application.Description,
+				BaseURL:               app.Application.BaseURL,
 				ApplicationTemplateID: app.ApplicationTemplateID,
 				SystemNumber:          app.SystemNumber,
 			},
@@ -235,6 +245,8 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 		"systemNumber": "1",
 		"displayName": "name1",
 		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
 		"type": "type1",
 		"prop": "val1",
 		"baseUrl": "",
@@ -245,6 +257,8 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 		"systemNumber": "2",
 		"displayName": "name2",
 		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
 		"type": "type2",
 		"baseUrl": "",
 		"infrastructureProvider": "",
@@ -254,6 +268,8 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 		"systemNumber": "3",
 		"displayName": "name1",
 		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
 		"type": "type2",
 		"baseUrl": "",
 		"infrastructureProvider": "",
@@ -350,6 +366,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"systemNumber": "1",
 		"displayName": "name1",
 		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
 		"type": "type1",
 		"prop": "val1",
 		"baseUrl": "",
@@ -360,6 +378,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"systemNumber": "2",
 		"displayName": "name2",
 		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
 		"type": "type2",
 		"baseUrl": "",
 		"infrastructureProvider": "",
@@ -369,6 +389,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"systemNumber": "3",
 		"displayName": "name3",
 		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
 		"prop": "val2",
 		"baseUrl": "",
 		"infrastructureProvider": "",
@@ -451,6 +473,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"systemNumber": "1",
 		"displayName": "name1",
 		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
 		"type": "type1",
 		"prop": "val1",
 		"baseUrl": "",
@@ -463,6 +487,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"systemNumber": "2",
 		"displayName": "name2",
 		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
 		"type": "type2",
 		"baseUrl": "",
 		"infrastructureProvider": "",
@@ -472,6 +498,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"systemNumber": "3",
 		"displayName": "name3",
 		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
 		"prop": "val2",
 		"baseUrl": "",
 		"infrastructureProvider": "",
@@ -646,10 +674,12 @@ func cleanupMockSystems(t *testing.T) {
 
 func applicationLabels(name string, fromTemplate bool) directorSchema.Labels {
 	labels := directorSchema.Labels{
-		"scenarios":           []interface{}{"DEFAULT"},
-		"managed":             "true",
-		"name":                fmt.Sprintf("mp-%s", name),
-		"integrationSystemID": "",
+		"scenarios":            []interface{}{"DEFAULT"},
+		"managed":              "true",
+		"name":                 fmt.Sprintf("mp-%s", name),
+		"integrationSystemID":  "",
+		"ppmsProductVersionId": "12345",
+		"productId":            "XXX",
 	}
 
 	if fromTemplate {

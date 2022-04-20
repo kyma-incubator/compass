@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// RepoUpsertTestSuite represents a generic test suite for repository Upsert and UpsertGlobal methods of any entity that has externally managed tenants in m2m table/view.
+// RepoUpsertTestSuite represents a generic test suite for repository Upsert, TrustedUpsert and UpsertGlobal methods of any entity that has externally managed tenants in m2m table/view.
 // This test suite is not suitable for global entities or entities with embedded tenant in them.
 type RepoUpsertTestSuite struct {
 	Name                      string

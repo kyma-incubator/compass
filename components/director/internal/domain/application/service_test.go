@@ -1555,7 +1555,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 	})
 }
 
-func TestService_Upsert(t *testing.T) {
+func TestService_Upsert_TrustedUpsert(t *testing.T) {
 	// given
 	timestamp := time.Now()
 	testErr := errors.New("Test error")
@@ -1663,7 +1663,7 @@ func TestService_Upsert(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		AppNameNormalizer  normalizer.Normalizator
-		AppRepoFn          func() *automock.ApplicationRepository
+		AppRepoFn          func(string) *automock.ApplicationRepository
 		IntSysRepoFn       func() *automock.IntegrationSystemRepository
 		ScenariosServiceFn func() *automock.ScenariosService
 		LabelServiceFn     func() *automock.LabelUpsertService
@@ -1674,9 +1674,9 @@ func TestService_Upsert(t *testing.T) {
 		{
 			Name:              "Success",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
+			AppRepoFn: func(upsertMethodName string) *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return("foo", nil).Once()
+				repo.On(upsertMethodName, ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1712,9 +1712,9 @@ func TestService_Upsert(t *testing.T) {
 		{
 			Name:              "Success when no labels provided and default scenario assignment disabled",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
+			AppRepoFn: func(upsertMethodName string) *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
+				repo.On(upsertMethodName, ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1743,9 +1743,9 @@ func TestService_Upsert(t *testing.T) {
 		{
 			Name:              "Success when no labels provided",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
+			AppRepoFn: func(upsertMethodName string) *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
+				repo.On(upsertMethodName, ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1780,9 +1780,9 @@ func TestService_Upsert(t *testing.T) {
 		{
 			Name:              "Success when scenarios label provided",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
+			AppRepoFn: func(upsertMethodName string) *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
+				repo.On(upsertMethodName, ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1814,9 +1814,9 @@ func TestService_Upsert(t *testing.T) {
 		{
 			Name:              "Returns error when application creation failed",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
+			AppRepoFn: func(upsertMethodName string) *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return("", testErr).Once()
+				repo.On(upsertMethodName, ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return("", testErr).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1844,7 +1844,7 @@ func TestService_Upsert(t *testing.T) {
 		{
 			Name:              "Returns error when integration system doesn't exist",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
+			AppRepoFn: func(_ string) *automock.ApplicationRepository {
 				return &automock.ApplicationRepository{}
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1870,7 +1870,7 @@ func TestService_Upsert(t *testing.T) {
 		{
 			Name:              "Returns error when checking for integration system fails",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
+			AppRepoFn: func(_ string) *automock.ApplicationRepository {
 				return &automock.ApplicationRepository{}
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -1896,9 +1896,9 @@ func TestService_Upsert(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
+		t.Run(testCase.Name+"_Upsert", func(t *testing.T) {
 			appNameNormalizer := testCase.AppNameNormalizer
-			appRepo := testCase.AppRepoFn()
+			appRepo := testCase.AppRepoFn("Upsert")
 			scenariosSvc := testCase.ScenariosServiceFn()
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
@@ -1908,6 +1908,33 @@ func TestService_Upsert(t *testing.T) {
 
 			// when
 			err := svc.Upsert(ctx, testCase.Input)
+
+			// then
+			if testCase.ExpectedErr != nil {
+				require.NotNil(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				require.Nil(t, err)
+			}
+
+			appRepo.AssertExpectations(t)
+			intSysRepo.AssertExpectations(t)
+			scenariosSvc.AssertExpectations(t)
+			uidSvc.AssertExpectations(t)
+		})
+
+		t.Run(testCase.Name+"_TrustedUpsert", func(t *testing.T) {
+			appNameNormalizer := testCase.AppNameNormalizer
+			appRepo := testCase.AppRepoFn("TrustedUpsert")
+			scenariosSvc := testCase.ScenariosServiceFn()
+			labelSvc := testCase.LabelServiceFn()
+			uidSvc := testCase.UIDServiceFn()
+			intSysRepo := testCase.IntSysRepoFn()
+			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, labelSvc, scenariosSvc, nil, uidSvc)
+			svc.SetTimestampGen(func() time.Time { return timestamp })
+
+			// when
+			err := svc.TrustedUpsert(ctx, testCase.Input)
 
 			// then
 			if testCase.ExpectedErr != nil {
@@ -1932,7 +1959,7 @@ func TestService_Upsert(t *testing.T) {
 	})
 }
 
-func TestService_UpsertFromTemplate(t *testing.T) {
+func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 	// given
 	timestamp := time.Now()
 	testErr := errors.New("Test error")
@@ -2054,7 +2081,7 @@ func TestService_UpsertFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return("foo", nil).Once()
+				repo.On("TrustedUpsert", ctx, mock.Anything, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -2092,7 +2119,7 @@ func TestService_UpsertFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
+				repo.On("TrustedUpsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -2123,7 +2150,7 @@ func TestService_UpsertFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
+				repo.On("TrustedUpsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -2160,7 +2187,7 @@ func TestService_UpsertFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
+				repo.On("TrustedUpsert", ctx, mock.Anything, mock.MatchedBy(applicationMatcher("test", nil))).Return("foo", nil).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -2194,7 +2221,7 @@ func TestService_UpsertFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("Upsert", ctx, mock.Anything, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return("", testErr).Once()
+				repo.On("TrustedUpsert", ctx, mock.Anything, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return("", testErr).Once()
 				return repo
 			},
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
@@ -2285,7 +2312,7 @@ func TestService_UpsertFromTemplate(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
-			err := svc.UpsertFromTemplate(ctx, testCase.Input, &appTemplteID)
+			err := svc.TrustedUpsertFromTemplate(ctx, testCase.Input, &appTemplteID)
 
 			// then
 			if testCase.ExpectedErr != nil {
@@ -2338,12 +2365,12 @@ func TestService_Update(t *testing.T) {
 		updatedDescription := "updatedd"
 		updatedURL := "updatedu"
 		updateInput = fixModelApplicationUpdateInput(appName, updatedDescription, updatedURL, model.ApplicationStatusConditionConnected)
-		applicationModelBefore = fixModelApplicationWithAllUpdatableFields(id, tnt, appName, initialDescrription, initialURL, model.ApplicationStatusConditionConnected, conditionTimestamp)
-		applicationModelAfter = fixModelApplicationWithAllUpdatableFields(id, tnt, appName, updatedDescription, updatedURL, model.ApplicationStatusConditionConnected, conditionTimestamp)
+		applicationModelBefore = fixModelApplicationWithAllUpdatableFields(id, appName, initialDescrription, initialURL, nil, model.ApplicationStatusConditionConnected, conditionTimestamp)
+		applicationModelAfter = fixModelApplicationWithAllUpdatableFields(id, appName, updatedDescription, updatedURL, nil, model.ApplicationStatusConditionConnected, conditionTimestamp)
 		intSysLabel = fixLabelInput("integrationSystemID", intSysID, id, model.ApplicationLabelableObject)
 		nameLabel = fixLabelInput("name", "mp-"+appName, id, model.ApplicationLabelableObject)
 		updateInputStatusOnly = fixModelApplicationUpdateInputStatus(model.ApplicationStatusConditionConnected)
-		applicationModelAfterStatusUpdate = fixModelApplicationWithAllUpdatableFields(id, tnt, appName, initialDescrription, initialURL, model.ApplicationStatusConditionConnected, conditionTimestamp)
+		applicationModelAfterStatusUpdate = fixModelApplicationWithAllUpdatableFields(id, appName, initialDescrription, initialURL, nil, model.ApplicationStatusConditionConnected, conditionTimestamp)
 	}
 
 	resetModels()
@@ -2585,6 +2612,134 @@ func TestService_Update(t *testing.T) {
 			appRepo.AssertExpectations(t)
 			intSysRepo.AssertExpectations(t)
 			lblUpsrtSvc.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_UpdateBaseURL(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+	ctxErr := errors.New("while loading tenant from context: cannot read tenant from context")
+
+	id := "foo"
+	tnt := "tenant"
+	externalTnt := "external-tnt"
+	conditionTimestamp := time.Now()
+	targetURL := "http://compass.kyma.local/api/event?myEvent=true"
+
+	var applicationModelBefore *model.Application
+	var applicationModelAfter *model.Application
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	resetModels := func() {
+		appName := "initial"
+		description := "description"
+		updatedBaseURL := "http://compass.kyma.local"
+		url := "url.com"
+		applicationModelBefore = fixModelApplicationWithAllUpdatableFields(id, appName, description, url, nil, model.ApplicationStatusConditionConnected, conditionTimestamp)
+		applicationModelAfter = fixModelApplicationWithAllUpdatableFields(id, appName, description, url, &updatedBaseURL, model.ApplicationStatusConditionConnected, conditionTimestamp)
+	}
+
+	resetModels()
+
+	testCases := []struct {
+		Name               string
+		AppRepoFn          func() *automock.ApplicationRepository
+		Input              model.ApplicationUpdateInput
+		InputID            string
+		TargetURL          string
+		Context            context.Context
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(nil).Once()
+				return repo
+			},
+			InputID:            id,
+			TargetURL:          targetURL,
+			Context:            ctx,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when application update failed",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(testErr).Once()
+				return repo
+			},
+			InputID:            id,
+			TargetURL:          targetURL,
+			Context:            ctx,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when application retrieval failed",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(nil, testErr).Once()
+				repo.AssertNotCalled(t, "Update")
+				return repo
+			},
+			InputID:            id,
+			TargetURL:          targetURL,
+			Context:            ctx,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when tenant is not in the context",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.AssertNotCalled(t, "Update")
+				repo.AssertNotCalled(t, "GetByID")
+
+				return repo
+			},
+			InputID:            id,
+			TargetURL:          targetURL,
+			Context:            context.Background(),
+			ExpectedErrMessage: ctxErr.Error(),
+		},
+		{
+			Name: "Does not update Application when BaseURL is already set",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.AssertNotCalled(t, "Update")
+				repo.On("GetByID", ctx, tnt, id).Return(applicationModelAfter, nil).Once()
+
+				return repo
+			},
+			InputID:            id,
+			TargetURL:          targetURL,
+			Context:            ctx,
+			ExpectedErrMessage: "",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			resetModels()
+			appRepo := testCase.AppRepoFn()
+			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+
+			// WHEN
+			err := svc.UpdateBaseURL(testCase.Context, testCase.InputID, testCase.TargetURL)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			appRepo.AssertExpectations(t)
 		})
 	}
 }
