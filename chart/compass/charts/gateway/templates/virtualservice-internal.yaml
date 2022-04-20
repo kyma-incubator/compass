@@ -24,7 +24,18 @@ spec:
           remove:
             {{- range .Values.global.gateway.headers.request.remove }}
             - {{ . }}
-      {{- end }}
+            {{- end }}
+    - match:
+        - uri:
+            exact: {{ .Values.global.tenantFetcher.prefix }}
+      redirect:
+        uri: {{ .Values.global.tenantFetcher.prefix }}/
+      headers:
+        request:
+          remove:
+            {{- range .Values.global.gateway.headers.request.remove }}
+            - {{ . }}
+            {{- end }}
     - match:
         - uri:
             regex: /.*
@@ -33,7 +44,7 @@ spec:
           remove:
             {{- range .Values.global.gateway.headers.request.remove }}
             - {{ . }}
-      {{- end }}
+            {{- end }}
       route:
         - destination:
             host: {{ .Values.global.oathkeeper.host }}
