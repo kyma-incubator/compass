@@ -52,13 +52,12 @@ type HandlerConfig struct {
 	HTTPClientSkipSslValidation bool          `envconfig:"APP_HTTP_CLIENT_SKIP_SSL_VALIDATION,default=false"`
 
 	TenantProviderConfig
-	features.Config
+	Features features.Config
 
 	Database persistence.DatabaseConfig
 
 	Kubernetes          tenantfetcher.KubeConfig
 	MetricsPushEndpoint string `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
-	Features            features.Config
 
 	TenantFetcherJobIntervalMins int           `envconfig:"default=5,APP_TENANT_FETCH_JOB_INTERVAL_MINS"`
 	ShouldSyncSubaccounts        bool          `envconfig:"default=false,APP_SYNC_SUBACCOUNTS"`

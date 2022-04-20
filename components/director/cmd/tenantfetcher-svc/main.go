@@ -125,27 +125,36 @@ func main() {
 
 	runMainSrv()
 
+	environmentVars := tenantfetcher.ReadEnvironmentVars()
+
+	stopGlobalAccountsFeatureAJob := make(chan bool, 1)
+	globalAccountsFeatureAJobConfig := *tenantfetcher.NewTenantFetcherJob("cis1", environmentVars).NewJobConfig()
+	runTenantFetcherJob(ctx, globalAccountsFeatureAJobConfig, transact, stopGlobalAccountsFeatureAJob)
+
+	stopGlobalAccountsFeatureBJob := make(chan bool, 1)
+	globalAccountsFeatureBJobConfig := *tenantfetcher.NewTenantFetcherJob("cis2", environmentVars).NewJobConfig()
+	runTenantFetcherJob(ctx, globalAccountsFeatureBJobConfig, transact, stopGlobalAccountsFeatureBJob)
+
 	stopSubaccountsJob := make(chan bool, 1)
-	runTenantFetcherJob(ctx, cfg, transact, stopSubaccountsJob)
+	subaccountsJobConfig := *tenantfetcher.NewTenantFetcherJob("cis2-subaccounts", environmentVars).NewJobConfig()
+	runTenantFetcherJob(ctx, subaccountsJobConfig, transact, stopSubaccountsJob)
 
-	stopGlobalAccountsJob := make(chan bool, 1)
-	runTenantFetcherJob(ctx, cfg, transact, stopGlobalAccountsJob)
-
+	<-stopGlobalAccountsFeatureAJob
+	<-stopGlobalAccountsFeatureBJob
 	<-stopSubaccountsJob
-	<-stopGlobalAccountsJob
 }
 
-func runTenantFetcherJob(ctx context.Context, cfg config, transact persistence.Transactioner, stopJob chan bool) {
-	jobInterval := cfg.Handler.TenantFetcherJobIntervalMins
+func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig, transact persistence.Transactioner, stopJob chan bool) {
+	jobInterval := jobConfig.HandlerConfig.TenantFetcherJobIntervalMins
 	ticker := time.NewTicker(time.Duration(jobInterval) * time.Minute)
-	jobType := jobType(cfg)
+	jobType := jobType(jobConfig)
 
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
 				log.C(ctx).Infof("Scheduled %s tenant fetcher job will be executed, job interval is %d minutes", jobType, jobInterval)
-				syncTenants(ctx, cfg, transact)
+				syncTenants(ctx, jobConfig, transact)
 			case <-ctx.Done():
 				log.C(ctx).Errorf("Context is canceled and scheduled %s tenant fetcher job will be stopped", jobType)
 				stopTenantFetcherJobTicker(ctx, ticker, jobType)
@@ -156,24 +165,24 @@ func runTenantFetcherJob(ctx context.Context, cfg config, transact persistence.T
 	}()
 }
 
-func jobType(cfg config) string {
+func jobType(cfg tenantfetcher.JobConfig) string {
 	jobType := "global account"
-	if !cfg.Handler.ShouldSyncSubaccounts {
+	if !cfg.HandlerConfig.ShouldSyncSubaccounts {
 		jobType = "subaccount"
 	}
 	return jobType
 }
 
-func syncTenants(ctx context.Context, cfg config, transact persistence.Transactioner) {
-	tenantsFetcherSvc, err := createTenantsFetcherSvc(ctx, cfg, transact)
+func syncTenants(ctx context.Context, jobConfig tenantfetcher.JobConfig, transact persistence.Transactioner) {
+	tenantsFetcherSvc, err := createTenantsFetcherSvc(ctx, jobConfig, transact)
 	exitOnError(err, "failed to create tenants fetcher service")
 
 	tenantsFetcherSvc.SyncTenants()
 }
 
-func createTenantsFetcherSvc(ctx context.Context, cfg config, transact persistence.Transactioner) (tf.TenantSyncService, error) {
-	eventsCfg := cfg.EventsCfg
-	handlerCfg := cfg.Handler
+func createTenantsFetcherSvc(ctx context.Context, jobConfig tenantfetcher.JobConfig, transact persistence.Transactioner) (tf.TenantSyncService, error) {
+	eventsCfg := jobConfig.EventsConfig
+	handlerCfg := jobConfig.HandlerConfig
 
 	uidSvc := uid.NewService()
 
