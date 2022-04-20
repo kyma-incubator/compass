@@ -98,7 +98,7 @@ global:
       version: "PR-2297"
     director:
       dir:
-      version: "PR-2294"
+      version: "PR-2322"
     gateway:
       dir:
       version: "PR-2297"
