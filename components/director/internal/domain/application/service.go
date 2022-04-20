@@ -34,11 +34,12 @@ import (
 )
 
 const (
-	intSysKey     = "integrationSystemID"
-	nameKey       = "name"
-	sccLabelKey   = "scc"
-	subaccountKey = "Subaccount"
-	locationIDKey = "LocationID"
+	intSysKey            = "integrationSystemID"
+	nameKey              = "name"
+	sccLabelKey          = "scc"
+	subaccountKey        = "Subaccount"
+	locationIDKey        = "LocationID"
+	UrlSuffixToBeTrimmed = "/"
 )
 
 type repoCreatorFunc func(ctx context.Context, tenant string, application *model.Application) error
@@ -732,8 +733,8 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 		return nil, errors.Wrapf(err, "while getting source application")
 	}
 
-	srcBaseURL := str.PtrStrToStr(srcApp.BaseURL)
-	destBaseURL := str.PtrStrToStr(destApp.BaseURL)
+	srcBaseURL := strings.TrimSuffix(str.PtrStrToStr(srcApp.BaseURL), UrlSuffixToBeTrimmed)
+	destBaseURL := strings.TrimSuffix(str.PtrStrToStr(destApp.BaseURL), UrlSuffixToBeTrimmed)
 	if len(srcBaseURL) == 0 || len(destBaseURL) == 0 || srcBaseURL != destBaseURL {
 		return nil, errors.Errorf("BaseURL for applications %s and %s are not the same. Destination app BaseURL: %s. Source app BaseURL: %s", destID, srcID, destBaseURL, srcBaseURL)
 	}
