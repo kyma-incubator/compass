@@ -3221,9 +3221,6 @@ func TestService_Merge(t *testing.T) {
 	srcModelConnected := fixDetailedModelApplication(t, srcID, tnt, srcName, srcDescription)
 	srcModelConnected.Status.Condition = model.ApplicationStatusConditionConnected
 	srcModelConnected.ApplicationTemplateID = &templateID
-	//runtimeModel := &model.Runtime{
-	//	Name: "test-runtime",
-	//}
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)

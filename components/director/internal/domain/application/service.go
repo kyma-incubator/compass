@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/imdario/mergo"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -765,6 +764,11 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 	if err := s.appRepo.Update(ctx, appTenant, destApp); err != nil {
 		return nil, err
 	}
+
+	//destApp, err = s.Get(ctx, destID)
+	//if err != nil {
+	//	return nil, errors.Wrapf(err, "while getting updated destination application")
+	//}
 
 	return destApp, nil
 }
