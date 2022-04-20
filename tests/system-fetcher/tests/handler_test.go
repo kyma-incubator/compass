@@ -92,7 +92,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 		"additionalAttributes": {}
 	}]`)
 
-	setMockSystems(t, mockSystems)
+	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
 	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate("temp1"))
@@ -119,10 +119,6 @@ func TestSystemFetcherSuccess(t *testing.T) {
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
 
-	req := fixtures.FixGetApplicationsRequestWithPagination()
-	var resp directorSchema.ApplicationPageExt
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &resp)
-	require.NoError(t, err)
 	description := "description"
 	baseUrl := "http://mainurl.com"
 	expectedApps := []directorSchema.ApplicationExt{
@@ -147,32 +143,19 @@ func TestSystemFetcherSuccess(t *testing.T) {
 		},
 	}
 
-	actualApps := make([]directorSchema.ApplicationExt, 0, len(expectedApps))
-	for _, app := range resp.Data {
-		actualApps = append(actualApps, directorSchema.ApplicationExt{
-			Application: directorSchema.Application{
-				Name:                  app.Application.Name,
-				Description:           app.Application.Description,
-				BaseURL:               app.Application.BaseURL,
-				ApplicationTemplateID: app.ApplicationTemplateID,
-				SystemNumber:          app.SystemNumber,
-			},
-			Labels: app.Labels,
-		})
-	}
+	resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
 	defer func() {
 		for _, app := range resp.Data {
 			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
 		}
 	}()
-
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
 
 func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	ctx := context.TODO()
 
-	setMultipleMockSystemsResponses(t)
+	setMultipleMockSystemsResponses(t, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
 	appTemplateInput2 := fixApplicationTemplate("temp2")
@@ -238,6 +221,103 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
 
+func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
+	ctx := context.TODO()
+
+	mockSystems := []byte(`[{
+		"systemNumber": "1",
+		"displayName": "name1",
+		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
+		"type": "type1",
+		"prop": "val1",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {"mainUrl":"http://mainurl.com"},
+		"additionalAttributes": {}
+	},{
+		"systemNumber": "2",
+		"displayName": "name2",
+		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
+		"type": "type2",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {"mainUrl":"http://mainurl.com"},
+		"additionalAttributes": {}
+	}]`)
+
+	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
+	setMockSystems(t, mockSystems, tenant.TestTenants.GetSystemFetcherTenantID())
+	defer cleanupMockSystems(t)
+
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate("temp1"))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
+	require.NoError(t, err)
+	require.NotEmpty(t, template.ID)
+
+	appTemplateInput2 := fixApplicationTemplate("temp2")
+	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
+	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template2)
+	require.NoError(t, err)
+	require.NotEmpty(t, template2.ID)
+
+	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	require.NoError(t, err)
+	jobName := "system-fetcher-test"
+	namespace := "compass-system"
+	k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-system-fetcher", jobName, namespace)
+	defer func() {
+		k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, cfg.SystemFetcherContainerName, false)
+		k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
+	}()
+
+	k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
+
+	description := "description"
+	baseUrl := "http://mainurl.com"
+	expectedApps := []directorSchema.ApplicationExt{
+		{
+			Application: directorSchema.Application{
+				Name:                  "name1",
+				Description:           &description,
+				BaseURL:               &baseUrl,
+				ApplicationTemplateID: &template.ID,
+				SystemNumber:          str.Ptr("1"),
+			},
+			Labels: applicationLabels("name1", true),
+		},
+		{
+			Application: directorSchema.Application{
+				Name:         "name2",
+				Description:  &description,
+				BaseURL:      &baseUrl,
+				SystemNumber: str.Ptr("2"),
+			},
+			Labels: applicationLabels("name2", false),
+		},
+	}
+
+	resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
+	defer func() {
+		for _, app := range resp.Data {
+			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+		}
+	}()
+	require.ElementsMatch(t, expectedApps, actualApps)
+
+	resp, actualApps = retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetSystemFetcherTenantID())
+	defer func() {
+		for _, app := range resp.Data {
+			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetSystemFetcherTenantID(), app)
+		}
+	}()
+	require.ElementsMatch(t, expectedApps, actualApps)
+}
+
 func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	ctx := context.TODO()
 
@@ -277,7 +357,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 		"additionalAttributes": {}
 	}]`)
 
-	setMockSystems(t, mockSystems)
+	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
 	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate("temp1"))
@@ -398,7 +478,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"additionalAttributes": {}
 	}]`)
 
-	setMockSystems(t, mockSystems)
+	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 
 	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate("temp1"))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
@@ -509,7 +589,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		}
 	}]`)
 
-	setMockSystems(t, mockSystems)
+	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 
 	t.Log("Unlock the mock application webhook")
 	testPkg.UnlockWebhook(t, testPkg.BuildOperationFullPath(cfg.ExternalSvcMockURL+"/"))
@@ -599,9 +679,10 @@ func waitForDeleteOperation(ctx context.Context, t *testing.T, appID string) {
 	}, time.Minute*3, time.Second*5, "Waiting for delete operation timed out.")
 }
 
-func setMockSystems(t *testing.T, mockSystems []byte) {
+func setMockSystems(t *testing.T, mockSystems []byte, tenant string) {
 	reader := bytes.NewReader(mockSystems)
-	response, err := http.DefaultClient.Post(cfg.ExternalSvcMockURL+"/systemfetcher/configure", "application/json", reader)
+	url := cfg.ExternalSvcMockURL + fmt.Sprintf("/systemfetcher/configure?tenant=%s", tenant)
+	response, err := http.DefaultClient.Post(url, "application/json", reader)
 	require.NoError(t, err)
 	defer func() {
 		if err := response.Body.Close(); err != nil {
@@ -615,12 +696,35 @@ func setMockSystems(t *testing.T, mockSystems []byte) {
 	}
 }
 
-func setMultipleMockSystemsResponses(t *testing.T) {
+func setMultipleMockSystemsResponses(t *testing.T, tenant string) {
 	mockSystems := []byte(getFixMockSystemsJSON(cfg.SystemFetcherPageSize, 0))
-	setMockSystems(t, mockSystems)
+	setMockSystems(t, mockSystems, tenant)
 
 	mockSystems2 := []byte(getFixMockSystemsJSON(1, cfg.SystemFetcherPageSize))
-	setMockSystems(t, mockSystems2)
+	setMockSystems(t, mockSystems2, tenant)
+}
+
+func retrieveAppsForTenant(t *testing.T, ctx context.Context, tenant string) (directorSchema.ApplicationPageExt, []directorSchema.ApplicationExt) {
+	req := fixtures.FixGetApplicationsRequestWithPagination()
+
+	var resp directorSchema.ApplicationPageExt
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant, req, &resp)
+	require.NoError(t, err)
+
+	apps := make([]directorSchema.ApplicationExt, 0)
+	for _, app := range resp.Data {
+		apps = append(apps, directorSchema.ApplicationExt{
+			Application: directorSchema.Application{
+				Name:                  app.Application.Name,
+				Description:           app.Application.Description,
+				BaseURL:               app.Application.BaseURL,
+				ApplicationTemplateID: app.ApplicationTemplateID,
+				SystemNumber:          app.SystemNumber,
+			},
+			Labels: app.Labels,
+		})
+	}
+	return resp, apps
 }
 
 func getFixMockSystemsJSON(count, startingNumber int) string {
