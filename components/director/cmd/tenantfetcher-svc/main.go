@@ -178,11 +178,10 @@ func syncTenants(ctx context.Context, jobConfig tenantfetcher.JobConfig, transac
 	tenantsFetcherSvc, err := createTenantsFetcherSvc(ctx, jobConfig, transact)
 	exitOnError(err, "failed to create tenants fetcher service")
 
-	funcName(tenantsFetcherSvc)
-}
-
-func funcName(tenantsFetcherSvc tf.TenantSyncService) error {
-	return tenantsFetcherSvc.SyncTenants()
+	err = tenantsFetcherSvc.SyncTenants()
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Error while running tenant fetcher job %s: %v", jobConfig.JobName, err)
+	}
 }
 
 func createTenantsFetcherSvc(ctx context.Context, jobConfig tenantfetcher.JobConfig, transact persistence.Transactioner) (tf.TenantSyncService, error) {
