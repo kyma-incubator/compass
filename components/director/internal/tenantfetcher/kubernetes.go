@@ -61,6 +61,8 @@ type KubeConfig struct {
 	ConfigMapName                 string `envconfig:"default=tenant-fetcher-config,APP_LAST_EXECUTION_TIME_CONFIG_MAP_NAME"`
 	ConfigMapTimestampField       string `envconfig:"default=lastConsumedTenantTimestamp,APP_CONFIGMAP_TIMESTAMP_FIELD"`
 	ConfigMapResyncTimestampField string `envconfig:"default=lastFullResyncTimestamp,APP_CONFIGMAP_RESYNC_TIMESTAMP_FIELD"`
+
+	ClientConfig kube.Config
 }
 
 type kubernetesClient struct {
@@ -70,7 +72,7 @@ type kubernetesClient struct {
 }
 
 func newKubernetesClient(ctx context.Context, cfg KubeConfig) (KubeClient, error) {
-	kubeClientSetConfig := kube.Config{}
+	kubeClientSetConfig := cfg.ClientConfig
 	kubeClientSet, err := kube.NewKubernetesClientSet(ctx, kubeClientSetConfig.PollInterval, kubeClientSetConfig.PollTimeout, kubeClientSetConfig.Timeout)
 	if err != nil {
 		return nil, err

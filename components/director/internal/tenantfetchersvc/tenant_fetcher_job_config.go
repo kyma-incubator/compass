@@ -2,6 +2,7 @@ package tenantfetchersvc
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/features"
+	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"os"
@@ -12,17 +13,11 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 )
 
+const emptyValue = ""
+
 type job struct {
 	name            string
 	environmentVars map[string]string
-}
-
-// NewTenantFetcherJob creates new tenant fetcher job config
-func NewTenantFetcherJob(name string, environmentVars map[string]string) *job {
-	return &job{
-		name:            name,
-		environmentVars: environmentVars,
-	}
 }
 
 type JobConfig struct {
@@ -30,98 +25,82 @@ type JobConfig struct {
 	HandlerConfig HandlerConfig
 }
 
-func (j *job) NewJobConfig() *JobConfig {
+// NewTenantFetcherJobEnvironment used for job configuration read from environment
+func NewTenantFetcherJobEnvironment(name string, environmentVars map[string]string) *job {
+	return &job{
+		name:            name,
+		environmentVars: environmentVars,
+	}
+}
+
+// ReadJobConfig reads job configuration from environment
+func (j *job) ReadJobConfig() *JobConfig {
 	return &JobConfig{
 		EventsConfig:  j.getEventsConfig(),
 		HandlerConfig: j.getHandlerConfig(),
 	}
 }
 
-type Handler2Config struct {
-	DirectorGraphQLEndpoint     string        `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
-	ClientTimeout               time.Duration `envconfig:"default=60s"`
-	HTTPClientSkipSslValidation bool          `envconfig:"APP_HTTP_CLIENT_SKIP_SSL_VALIDATION,default=false"`
-
-	TenantProviderConfig
-	features.Config
-
-	Database persistence.DatabaseConfig
-
-	Kubernetes          tenantfetcher.KubeConfig
-	MetricsPushEndpoint string `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
-
-	TenantFetcherJobIntervalMins int           `envconfig:"default=5,APP_TENANT_FETCH_JOB_INTERVAL_MINS"`
-	ShouldSyncSubaccounts        bool          `envconfig:"default=false,APP_SYNC_SUBACCOUNTS"`
-	FullResyncInterval           time.Duration `envconfig:"default=12h"`
-	TenantInsertChunkSize        int           `envconfig:"default=500,APP_TENANT_INSERT_CHUNK_SIZE"`
-}
-
 func (j *job) getEventsConfig() EventsConfig {
 	return EventsConfig{
-		AccountsRegion:              j.getEnvValueForKey("central", "APP_"+j.name+"_ACCOUNT_REGION"),
-		SubaccountRegions:           strings.Split(j.getEnvValueForKey("central", "APP_"+j.name+"_SUBACCOUNT_REGIONS"), ","),
+		AccountsRegion:    j.getEnvValueForKey("central", "APP_"+j.name+"_ACCOUNT_REGION"),
+		SubaccountRegions: strings.Split(j.getEnvValueForKey("central", "APP_"+j.name+"_SUBACCOUNT_REGIONS"), ","),
+
+		AuthMode:    oauth.AuthMode(j.getEnvValueForKey("standard", "APP_"+j.name+"_OAUTH_AUTH_MODE")),
+		OAuthConfig: j.getOAuth2Config(),
+		APIConfig:   j.getAPIConfig(),
+		QueryConfig: j.getQueryConfig(),
+
+		TenantFieldMapping:          j.getTenantFieldMapping(),
 		MovedSubaccountFieldMapping: j.getMovedSubaccountsFieldMapping(),
 
-		OAuthConfig:        j.getOAuth2Config(),
-		APIConfig:          j.getAPIConfig(),
-		AuthMode:           oauth.AuthMode(j.getEnvValueForKey("standard", "APP_"+j.name+"_OAUTH_AUTH_MODE")),
-		QueryConfig:        j.getQueryConfig(),
-		TenantFieldMapping: j.getTenantFieldMapping(),
+		MetricsPushEndpoint: j.getEnvValueForKey(emptyValue, "APP_METRICS_PUSH_ENDPOINT"),
 	}
 }
 
 func (j *job) getHandlerConfig() HandlerConfig {
 	return HandlerConfig{
-		DirectorGraphQLEndpoint:     j.getEnvValueForKey("", "APP_DIRECTOR_GRAPHQL_ENDPOINT"),
-		ClientTimeout:               getDuration(j.getEnvValueForKey("60s", ""), time.Duration(60)*time.Second),
-		HTTPClientSkipSslValidation: getBoolVal(j.getEnvValueForKey("false", "APP_"+j.name+"_HTTP_CLIENT_SKIP_SSL_VALIDATION"), false),
+		Features: j.getFeaturesConfig(),
 
-		TenantProviderConfig: j.getTenantProviderConfig(),
-		Features:             j.getFeaturesConfig(),
+		TenantFetcherJobIntervalMins: getDuration(j.getEnvValueForKey("1m", "APP_"+j.name+"_TENANT_FETCHER_JOB_INTERVAL"), 1*time.Minute),
+		FullResyncInterval:           getDuration(j.getEnvValueForKey("12h", emptyValue), 12*time.Hour),
+		ShouldSyncSubaccounts:        getBoolVal(j.getEnvValueForKey("false", "APP_"+j.name+"_SYNC_SUBACCOUNTS"), false),
 
-		Database: j.getDatabaseConfig(),
+		Kubernetes: j.getKubeConfig(),
+		Database:   j.getDatabaseConfig(),
 
-		Kubernetes:          j.getKubeConfig(),
-		MetricsPushEndpoint: j.getEnvValueForKey("", "APP_METRICS_PUSH_ENDPOINT"),
+		DirectorGraphQLEndpoint:     j.getEnvValueForKey(emptyValue, "APP_DIRECTOR_GRAPHQL_ENDPOINT"),
+		ClientTimeout:               getDuration(j.getEnvValueForKey("60s", emptyValue), time.Duration(60)*time.Second),
+		HTTPClientSkipSslValidation: getBoolVal(j.getEnvValueForKey("false", "APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"), false),
 
-		TenantFetcherJobIntervalMins: getIntVal(j.getEnvValueForKey("5", "APP_"+j.name+"_TENANT_FETCH_JOB_INTERVAL_MINS"), 5),
-		ShouldSyncSubaccounts:        getBoolVal(j.getEnvValueForKey("false", "APP_SYNC_SUBACCOUNTS"), false),
-		FullResyncInterval:           getDuration(j.getEnvValueForKey("12h", ""), 12*time.Hour),
-		TenantInsertChunkSize:        getIntVal(j.getEnvValueForKey("500", "APP_TENANT_INSERT_CHUNK_SIZE"), 500),
-	}
-}
-
-func (j *job) getMovedSubaccountsFieldMapping() tenantfetcher.MovedSubaccountsFieldMapping {
-	return tenantfetcher.MovedSubaccountsFieldMapping{
-		LabelValue:   j.getEnvValueForKey("", "APP_"+j.name+"_MAPPING_FIELD_ID"),
-		SourceTenant: j.getEnvValueForKey("", "APP_"+j.name+"_MOVED_SUBACCOUNT_SOURCE_TENANT_FIELD"),
-		TargetTenant: j.getEnvValueForKey("", "APP_"+j.name+"_MOVED_SUBACCOUNT_TARGET_TENANT_FIELD"),
+		TenantInsertChunkSize: getIntVal(j.getEnvValueForKey("500", "APP_"+j.name+"_TENANT_INSERT_CHUNK_SIZE"), 500),
+		TenantProviderConfig:  j.getTenantProviderConfig(),
 	}
 }
 
 func (j *job) getOAuth2Config() tenantfetcher.OAuth2Config {
 	return tenantfetcher.OAuth2Config{
-		ClientID:           j.getEnvValueForKey("", "APP_"+j.name+"_CLIENT_ID"),
-		ClientSecret:       j.getEnvValueForKey("", "APP_"+j.name+"_CLIENT_SECRET"),
-		OAuthTokenEndpoint: j.getEnvValueForKey("", "APP_"+j.name+"_OAUTH_TOKEN_ENDPOINT"),
-		TokenPath:          j.getEnvValueForKey("", "APP_"+j.name+"_OAUTH_TOKEN_PATH"),
+		ClientID:           j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_CLIENT_ID"),
+		ClientSecret:       j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_CLIENT_SECRET"),
+		OAuthTokenEndpoint: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_OAUTH_TOKEN_ENDPOINT"),
+		TokenPath:          j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_OAUTH_TOKEN_PATH"),
 		SkipSSLValidation:  getBoolVal(j.getEnvValueForKey("false", "APP_"+j.name+"_OAUTH_SKIP_SSL_VALIDATION"), false),
 		X509Config: oauth.X509Config{
-			Cert: j.getEnvValueForKey("", "APP_"+j.name+"_OAUTH_X509_CERT"),
-			Key:  j.getEnvValueForKey("", "APP_"+j.name+"OAUTH_X509_KEY"),
+			Cert: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_OAUTH_X509_CERT"),
+			Key:  j.getEnvValueForKey(emptyValue, "APP_"+j.name+"OAUTH_X509_KEY"),
 		},
 	}
 }
 
 func (j *job) getAPIConfig() tenantfetcher.APIConfig {
 	return tenantfetcher.APIConfig{
-		EndpointTenantCreated:     j.getEnvValueForKey("", "APP_"+j.name+"_ENDPOINT_TENANT_CREATED"),
-		EndpointTenantDeleted:     j.getEnvValueForKey("", "APP_"+j.name+"_ENDPOINT_TENANT_DELETED"),
-		EndpointTenantUpdated:     j.getEnvValueForKey("", "APP_"+j.name+"_ENDPOINT_TENANT_UPDATED"),
-		EndpointSubaccountCreated: j.getEnvValueForKey("", "APP_"+j.name+"_ENDPOINT_SUBACCOUNT_CREATED"),
-		EndpointSubaccountDeleted: j.getEnvValueForKey("", "APP_"+j.name+"_ENDPOINT_SUBACCOUNT_DELETED"),
-		EndpointSubaccountUpdated: j.getEnvValueForKey("", "APP_"+j.name+"_ENDPOINT_SUBACCOUNT_UPDATED"),
-		EndpointSubaccountMoved:   j.getEnvValueForKey("", "APP_"+j.name+"_ENDPOINT_SUBACCOUNT_MOVED"),
+		EndpointTenantCreated:     j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_ENDPOINT_TENANT_CREATED"),
+		EndpointTenantDeleted:     j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_ENDPOINT_TENANT_DELETED"),
+		EndpointTenantUpdated:     j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_ENDPOINT_TENANT_UPDATED"),
+		EndpointSubaccountCreated: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_ENDPOINT_SUBACCOUNT_CREATED"),
+		EndpointSubaccountDeleted: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_ENDPOINT_SUBACCOUNT_DELETED"),
+		EndpointSubaccountUpdated: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_ENDPOINT_SUBACCOUNT_UPDATED"),
+		EndpointSubaccountMoved:   j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_ENDPOINT_SUBACCOUNT_MOVED"),
 	}
 }
 
@@ -139,22 +118,22 @@ func (j *job) getQueryConfig() tenantfetcher.QueryConfig {
 
 func (j *job) getTenantFieldMapping() tenantfetcher.TenantFieldMapping {
 	return tenantfetcher.TenantFieldMapping{
-		TotalPagesField:   j.getEnvValueForKey("", "APP_"+j.name+"_TENANT_TOTAL_PAGES_FIELD"),
-		TotalResultsField: j.getEnvValueForKey("", "APP_"+j.name+"_TENANT_TOTAL_RESULTS_FIELD"),
-		EventsField:       j.getEnvValueForKey("", "APP_"+j.name+"_TENANT_EVENTS_FIELD"),
+		TotalPagesField:   j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_TENANT_TOTAL_PAGES_FIELD"),
+		TotalResultsField: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_TENANT_TOTAL_RESULTS_FIELD"),
+		EventsField:       j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_TENANT_EVENTS_FIELD"),
 
 		NameField:              j.getEnvValueForKey("name", "APP_"+j.name+"_MAPPING_FIELD_NAME"),
 		IDField:                j.getEnvValueForKey("id", "APP_"+j.name+"_MAPPING_FIELD_ID"),
-		GlobalAccountGUIDField: j.getEnvValueForKey("globalAccountGUID", ""),
-		SubaccountIDField:      j.getEnvValueForKey("subaccountId", ""),
-		SubaccountGUIDField:    j.getEnvValueForKey("subaccountGuid", ""),
+		GlobalAccountGUIDField: j.getEnvValueForKey("globalAccountGUID", emptyValue),
+		SubaccountIDField:      j.getEnvValueForKey("subaccountId", emptyValue),
+		SubaccountGUIDField:    j.getEnvValueForKey("subaccountGuid", emptyValue),
 		CustomerIDField:        j.getEnvValueForKey("customerId", "APP_"+j.name+"_MAPPING_FIELD_CUSTOMER_ID"),
 		SubdomainField:         j.getEnvValueForKey("subdomain", "APP_"+j.name+"_MAPPING_FIELD_SUBDOMAIN"),
 		DetailsField:           j.getEnvValueForKey("details", "APP_"+j.name+"_MAPPING_FIELD_DETAILS"),
-		DiscriminatorField:     j.getEnvValueForKey("", "APP_"+j.name+"_MAPPING_FIELD_DISCRIMINATOR"),
-		DiscriminatorValue:     j.getEnvValueForKey("", "APP_"+j.name+"_MAPPING_VALUE_DISCRIMINATOR"),
+		DiscriminatorField:     j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_MAPPING_FIELD_DISCRIMINATOR"),
+		DiscriminatorValue:     j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_MAPPING_VALUE_DISCRIMINATOR"),
 
-		RegionField:     j.getEnvValueForKey("", "APP_"+j.name+"_MAPPING_FIELD_REGION"),
+		RegionField:     j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_MAPPING_FIELD_REGION"),
 		EntityIDField:   j.getEnvValueForKey("entityId", "APP_"+j.name+"_MAPPING_FIELD_ENTITY_ID"),
 		EntityTypeField: j.getEnvValueForKey("entityType", "APP_"+j.name+"_MAPPING_FIELD_ENTITY_TYPE"),
 
@@ -162,24 +141,36 @@ func (j *job) getTenantFieldMapping() tenantfetcher.TenantFieldMapping {
 	}
 }
 
-func (j *job) getTenantProviderConfig() TenantProviderConfig {
-	return TenantProviderConfig{
-		TenantIDProperty:               j.getEnvValueForKey("tenantId", "APP_TENANT_PROVIDER_TENANT_ID_PROPERTY"),
-		SubaccountTenantIDProperty:     j.getEnvValueForKey("subaccountTenantId", "APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY"),
-		CustomerIDProperty:             j.getEnvValueForKey("customerId", "APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY"),
-		SubdomainProperty:              j.getEnvValueForKey("subdomain", "APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"),
-		TenantProvider:                 j.getEnvValueForKey("external-provider", "APP_"+j.name+"_TENANT_PROVIDER"),
-		SubscriptionProviderIDProperty: j.getEnvValueForKey("subscriptionProviderId", "APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY"),
+func (j *job) getMovedSubaccountsFieldMapping() tenantfetcher.MovedSubaccountsFieldMapping {
+	return tenantfetcher.MovedSubaccountsFieldMapping{
+		LabelValue:   j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_MAPPING_FIELD_ID"),
+		SourceTenant: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_MOVED_SUBACCOUNT_SOURCE_TENANT_FIELD"),
+		TargetTenant: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_MOVED_SUBACCOUNT_TARGET_TENANT_FIELD"),
 	}
 }
 
 func (j *job) getFeaturesConfig() features.Config {
 	return features.Config{
 		DefaultScenarioEnabled:        getBoolVal(j.getEnvValueForKey("true", "APP_DEFAULT_SCENARIO_ENABLED"), true),
-		ProtectedLabelPattern:         j.getEnvValueForKey(".*_defaultEventing|^consumer_subaccount_ids$", ""),
+		ProtectedLabelPattern:         j.getEnvValueForKey(".*_defaultEventing|^consumer_subaccount_ids$", emptyValue),
 		ImmutableLabelPattern:         j.getEnvValueForKey("^xsappnameCMPClone$", "APP_SELF_REGISTER_LABEL_KEY_PATTERN"),
 		SubscriptionProviderLabelKey:  j.getEnvValueForKey("subscriptionProviderId", "APP_SUBSCRIPTION_PROVIDER_LABEL_KEY"),
 		ConsumerSubaccountIDsLabelKey: j.getEnvValueForKey("consumer_subaccount_ids", "APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY"),
+	}
+}
+
+func (j *job) getKubeConfig() tenantfetcher.KubeConfig {
+	return tenantfetcher.KubeConfig{
+		UseKubernetes:                 j.getEnvValueForKey("true", "APP_"+j.name+"_USE_KUBERNETES"),
+		ConfigMapNamespace:            j.getEnvValueForKey("compass-system", "APP_"+j.name+"_CONFIGMAP_NAMESPACE"),
+		ConfigMapName:                 j.getEnvValueForKey("tenant-fetcher-config", "APP_"+j.name+"_LAST_EXECUTION_TIME_CONFIG_MAP_NAME"),
+		ConfigMapTimestampField:       j.getEnvValueForKey("lastConsumedTenantTimestamp", "APP_"+j.name+"_CONFIGMAP_TIMESTAMP_FIELD"),
+		ConfigMapResyncTimestampField: j.getEnvValueForKey("lastFullResyncTimestamp", "APP_"+j.name+"_CONFIGMAP_RESYNC_TIMESTAMP_FIELD"),
+		ClientConfig: kube.Config{
+			PollInterval: getDuration(j.getEnvValueForKey("2s", "APP_"+j.name+"_KUBERNETES_POLL_INTERVAL"), 2*time.Second),
+			PollTimeout:  getDuration(j.getEnvValueForKey("1m", "APP_"+j.name+"_KUBERNETES_POLL_TIMEOUT"), 1*time.Minute),
+			Timeout:      getDuration(j.getEnvValueForKey("2m", "APP_"+j.name+"_KUBERNETES_TIMEOUT"), 2*time.Minute),
+		},
 	}
 }
 
@@ -197,13 +188,14 @@ func (j *job) getDatabaseConfig() persistence.DatabaseConfig {
 	}
 }
 
-func (j *job) getKubeConfig() tenantfetcher.KubeConfig {
-	return tenantfetcher.KubeConfig{
-		UseKubernetes:                 j.getEnvValueForKey("true", "APP_"+j.name+"_USE_KUBERNETES"),
-		ConfigMapNamespace:            j.getEnvValueForKey("compass-system", "APP_"+j.name+"_CONFIGMAP_NAMESPACE"),
-		ConfigMapName:                 j.getEnvValueForKey("tenant-fetcher-config", "APP_"+j.name+"_LAST_EXECUTION_TIME_CONFIG_MAP_NAME"),
-		ConfigMapTimestampField:       j.getEnvValueForKey("lastConsumedTenantTimestamp", "APP_"+j.name+"_CONFIGMAP_TIMESTAMP_FIELD"),
-		ConfigMapResyncTimestampField: j.getEnvValueForKey("lastFullResyncTimestamp", "APP_"+j.name+"_CONFIGMAP_RESYNC_TIMESTAMP_FIELD"),
+func (j *job) getTenantProviderConfig() TenantProviderConfig {
+	return TenantProviderConfig{
+		TenantIDProperty:               j.getEnvValueForKey("tenantId", "APP_TENANT_PROVIDER_TENANT_ID_PROPERTY"),
+		SubaccountTenantIDProperty:     j.getEnvValueForKey("subaccountTenantId", "APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY"),
+		CustomerIDProperty:             j.getEnvValueForKey("customerId", "APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY"),
+		SubdomainProperty:              j.getEnvValueForKey("subdomain", "APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"),
+		TenantProvider:                 j.getEnvValueForKey("external-provider", "APP_"+j.name+"_TENANT_PROVIDER"),
+		SubscriptionProviderIDProperty: j.getEnvValueForKey("subscriptionProviderId", "APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY"),
 	}
 }
 
@@ -238,6 +230,7 @@ func getDuration(val string, defaultVal time.Duration) time.Duration {
 	return v
 }
 
+// ReadEnvironmentVars read environment variables and returns a key-value map
 func ReadEnvironmentVars() map[string]string {
 	vars := make(map[string]string)
 	for _, env := range os.Environ() {

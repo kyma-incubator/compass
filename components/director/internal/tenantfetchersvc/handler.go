@@ -47,14 +47,24 @@ type HandlerConfig struct {
 	TenantPathParam               string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
 	RegionPathParam               string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
 
+	Features features.Config
+
+	TenantFetcherJobIntervalMins time.Duration `envconfig:"default=5m,APP_TENANT_FETCH_JOB_INTERVAL_MINS"`
+	FullResyncInterval           time.Duration `envconfig:"default=12h"`
+	ShouldSyncSubaccounts        bool          `envconfig:"default=false,APP_SYNC_SUBACCOUNTS"`
+
+	Kubernetes tenantfetcher.KubeConfig
+	Database   persistence.DatabaseConfig
+
 	DirectorGraphQLEndpoint     string        `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
 	ClientTimeout               time.Duration `envconfig:"default=60s"`
 	HTTPClientSkipSslValidation bool          `envconfig:"APP_HTTP_CLIENT_SKIP_SSL_VALIDATION,default=false"`
 
+	TenantInsertChunkSize int `envconfig:"default=500,APP_TENANT_INSERT_CHUNK_SIZE"`
 	TenantProviderConfig
-	features.Config
+}
 
-	Database persistence.DatabaseConfig
+type TenantFetchConfig struct {
 }
 
 // TenantProviderConfig includes the configuration for tenant providers - the tenant ID json property names, the subdomain property name, and the tenant provider name.
@@ -69,11 +79,18 @@ type TenantProviderConfig struct {
 
 // EventsConfig contains configuration for Events API requests
 type EventsConfig struct {
-	OAuthConfig        tenantfetcher.OAuth2Config
-	APIConfig          tenantfetcher.APIConfig
-	AuthMode           oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
-	QueryConfig        tenantfetcher.QueryConfig
-	TenantFieldMapping tenantfetcher.TenantFieldMapping
+	AccountsRegion    string   `envconfig:"default=central,APP_ACCOUNT_REGION"`
+	SubaccountRegions []string `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
+
+	AuthMode    oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
+	OAuthConfig tenantfetcher.OAuth2Config
+	APIConfig   tenantfetcher.APIConfig
+	QueryConfig tenantfetcher.QueryConfig
+
+	TenantFieldMapping          tenantfetcher.TenantFieldMapping
+	MovedSubaccountFieldMapping tenantfetcher.MovedSubaccountsFieldMapping
+
+	MetricsPushEndpoint string `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
 }
 
 type handler struct {

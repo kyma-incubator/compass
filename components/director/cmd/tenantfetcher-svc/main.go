@@ -19,6 +19,9 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"net/http"
 	"os"
 	"time"
@@ -121,6 +124,127 @@ func main() {
 	}()
 
 	runMainSrv()
+
+	environmentVars := tenantfetcher.ReadEnvironmentVars()
+
+	stopGlobalAccountsFeatureAJob := make(chan bool, 1)
+	globalAccountsFeatureAJobConfig := *tenantfetcher.NewTenantFetcherJobEnvironment("cis1", environmentVars).ReadJobConfig()
+	runTenantFetcherJob(ctx, globalAccountsFeatureAJobConfig, transact, stopGlobalAccountsFeatureAJob)
+
+	stopGlobalAccountsFeatureBJob := make(chan bool, 1)
+	globalAccountsFeatureBJobConfig := *tenantfetcher.NewTenantFetcherJobEnvironment("cis2", environmentVars).ReadJobConfig()
+	runTenantFetcherJob(ctx, globalAccountsFeatureBJobConfig, transact, stopGlobalAccountsFeatureBJob)
+
+	stopSubaccountsJob := make(chan bool, 1)
+	subaccountsJobConfig := *tenantfetcher.NewTenantFetcherJobEnvironment("cis2-subaccounts", environmentVars).ReadJobConfig()
+	runTenantFetcherJob(ctx, subaccountsJobConfig, transact, stopSubaccountsJob)
+
+	<-stopGlobalAccountsFeatureAJob
+	<-stopGlobalAccountsFeatureBJob
+	<-stopSubaccountsJob
+}
+
+func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig, transact persistence.Transactioner, stopJob chan bool) {
+	jobInterval := jobConfig.HandlerConfig.TenantFetcherJobIntervalMins
+	ticker := time.NewTicker(time.Duration(jobInterval) * time.Minute)
+	jobType := jobType(jobConfig)
+
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				log.C(ctx).Infof("Scheduled %s tenant fetcher job will be executed, job interval is %d minutes", jobType, jobInterval)
+				syncTenants(ctx, jobConfig, transact)
+			case <-ctx.Done():
+				log.C(ctx).Errorf("Context is canceled and scheduled %s tenant fetcher job will be stopped", jobType)
+				stopTenantFetcherJobTicker(ctx, ticker, jobType)
+				stopJob <- true
+				return
+			}
+		}
+	}()
+}
+
+func jobType(cfg tenantfetcher.JobConfig) string {
+	jobType := "global account"
+	if !cfg.HandlerConfig.ShouldSyncSubaccounts {
+		jobType = "subaccount"
+	}
+	return jobType
+}
+
+func syncTenants(ctx context.Context, jobConfig tenantfetcher.JobConfig, transact persistence.Transactioner) {
+	tenantsFetcherSvc, err := createTenantsFetcherSvc(ctx, jobConfig, transact)
+	exitOnError(err, "failed to create tenants fetcher service")
+
+	funcName(tenantsFetcherSvc)
+}
+
+func funcName(tenantsFetcherSvc tf.TenantSyncService) error {
+	return tenantsFetcherSvc.SyncTenants()
+}
+
+func createTenantsFetcherSvc(ctx context.Context, jobConfig tenantfetcher.JobConfig, transact persistence.Transactioner) (tf.TenantSyncService, error) {
+	eventsCfg := jobConfig.EventsConfig
+	handlerCfg := jobConfig.HandlerConfig
+
+	uidSvc := uid.NewService()
+
+	labelDefConverter := labeldef.NewConverter()
+	labelDefRepository := labeldef.NewRepository(labelDefConverter)
+
+	labelConverter := label.NewConverter()
+	labelRepository := label.NewRepository(labelConverter)
+	labelService := label.NewLabelService(labelRepository, labelDefRepository, uidSvc)
+
+	tenantStorageConv := tenant.NewConverter()
+	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
+	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepository, labelService)
+
+	runtimeConverter := runtime.NewConverter()
+	runtimeRepository := runtime.NewRepository(runtimeConverter)
+
+	scenarioAssignConv := scenarioassignment.NewConverter()
+	scenarioAssignRepo := scenarioassignment.NewRepository(scenarioAssignConv)
+	scenarioAssignEngine := scenarioassignment.NewEngine(labelService, labelRepository, scenarioAssignRepo, runtimeRepository)
+
+	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignConv)
+	labelDefService := labeldef.NewService(labelDefRepository, labelRepository, scenarioAssignmentRepo, tenantStorageRepo, uidSvc, handlerCfg.Features.DefaultScenarioEnabled)
+
+	runtimeService := runtime.NewService(runtimeRepository, labelRepository, labelDefService, labelService, uidSvc, scenarioAssignEngine, tenantStorageSvc, handlerCfg.Features.ProtectedLabelPattern, handlerCfg.Features.ImmutableLabelPattern)
+
+	kubeClient, err := tf.NewKubernetesClient(ctx, handlerCfg.Kubernetes)
+	exitOnError(err, "Failed to initialize Kubernetes client")
+
+	eventAPIClient, err := tf.NewClient(eventsCfg.OAuthConfig, eventsCfg.AuthMode, eventsCfg.APIConfig, handlerCfg.ClientTimeout)
+	if nil != err {
+		return nil, err
+	}
+
+	var metricsPusher *metrics.Pusher
+	if eventsCfg.MetricsPushEndpoint != "" {
+		metricsPusher = metrics.NewPusher(eventsCfg.MetricsPushEndpoint, handlerCfg.ClientTimeout)
+	}
+
+	if metricsPusher != nil {
+		eventAPIClient.SetMetricsPusher(metricsPusher)
+	}
+
+	gqlClient := newInternalGraphQLClient(handlerCfg.DirectorGraphQLEndpoint, handlerCfg.ClientTimeout, handlerCfg.HTTPClientSkipSslValidation)
+	gqlClient.Log = func(s string) {
+		log.D().Debug(s)
+	}
+	directorClient := graphqlclient.NewDirector(gqlClient)
+
+	if handlerCfg.ShouldSyncSubaccounts {
+		return tf.NewSubaccountService(eventsCfg.QueryConfig, transact, kubeClient, eventsCfg.TenantFieldMapping, eventsCfg.MovedSubaccountFieldMapping, handlerCfg.TenantProvider, eventsCfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelRepository, handlerCfg.FullResyncInterval, directorClient, handlerCfg.TenantInsertChunkSize, tenantStorageConv), nil
+	}
+	return tf.NewGlobalAccountService(eventsCfg.QueryConfig, transact, kubeClient, eventsCfg.TenantFieldMapping, handlerCfg.TenantProvider, eventsCfg.AccountsRegion, eventAPIClient, tenantStorageSvc, handlerCfg.FullResyncInterval, directorClient, handlerCfg.TenantInsertChunkSize, tenantStorageConv), nil
+}
+
+func stopTenantFetcherJobTicker(ctx context.Context, tenantFetcherJobTicker *time.Ticker, jobType string) {
+	tenantFetcherJobTicker.Stop()
+	log.C(ctx).Infof("Tenant fetcher job ticker for %ss is stopped", jobType)
 }
 
 func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, transact persistence.Transactioner) http.Handler {
