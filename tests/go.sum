@@ -317,6 +317,8 @@ github.com/kyma-incubator/compass/components/connector v0.0.0-20220225101454-1e1
 github.com/kyma-incubator/compass/components/connector v0.0.0-20220225101454-1e11cf2f8a9b/go.mod h1:wGzvH5XWBA34gt7cb+UVrovLHsIqjNddzP+DkPBZ3u0=
 github.com/kyma-incubator/compass/components/director v0.0.0-20220415074358-0f0ab57bef9c h1:lp216X5v8LjUNPwWcP6BYiE1bYU3DEPTZrPmRTtXRcs=
 github.com/kyma-incubator/compass/components/director v0.0.0-20220415074358-0f0ab57bef9c/go.mod h1:017nxy7CUKOD3VjYyxMIEzKMvUXTjvJfSjPBq7kiJlk=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220420124254-ee69592dca21 h1:9g6gtTTaUnumDGXb3aCzOusQUwccwBtUAPtDn6f23SU=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220420124254-ee69592dca21/go.mod h1:TKcQyHQo86FAY7VUkc7MJYtAokHKACGrTer8DDFvfcw=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20220225101454-1e11cf2f8a9b h1:4R8r0Us/Arb5LyJojWuLJFImHLolGNKSsJGubZqoapY=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20220225101454-1e11cf2f8a9b/go.mod h1:GW13QCwxZX0gyEBKypJ0OX1VRyOrKe1BFvL4q1RZODY=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20220225101454-1e11cf2f8a9b h1:oxx4DknU9x54foCUWRoFzaSK7Z1Xpj0eG6Fr1gPQkOI=
@@ -325,6 +327,7 @@ github.com/kyma-incubator/compass/components/operations-controller v0.0.0-202202
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220225101454-1e11cf2f8a9b/go.mod h1:ksyDeeLH7U6bfvwJ1IwEwBAQgRFBcOfKYcIyodnAsdU=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220208132958-a8193aa87b45 h1:LHR4oaUylvv4JBFDBgT3pkHujViXyHzvInHNXf0xaho=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220208132958-a8193aa87b45/go.mod h1:M30JDO6D3wgLgJ6leIFawaH1tv8k0m+GuroKv+0o38Y=
+github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459-11b81bddcce9/go.mod h1:M30JDO6D3wgLgJ6leIFawaH1tv8k0m+GuroKv+0o38Y=
 github.com/lib/pq v1.2.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
 github.com/lib/pq v1.10.4 h1:SO9z7FRPzA03QhHKJrH5BXA6HU1rS4V2nIVrrNC1iYk=
 github.com/lib/pq v1.10.4/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=

@@ -47,7 +47,7 @@ require (
 	sigs.k8s.io/controller-runtime v0.8.3 // DO NOT BUMP
 )
 
-require github.com/kyma-incubator/compass/components/hydrator v0.0.0-20220415134336-20653fe979b9
+require github.com/kyma-incubator/compass/components/hydrator v0.0.0-20220420124254-ee69592dca21
 
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
