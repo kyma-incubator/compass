@@ -11,9 +11,9 @@ import (
 
 // Config configures the behaviour of the metrics collector.
 type Config struct {
-	EnableClientIDInstrumentation       bool     `envconfig:"default=true,APP_METRICS_ENABLE_CLIENT_ID_INSTRUMENTATION"`
-	EnableGraphqlRequestInstrumentation bool     `envconfig:"default=false,APP_METRICS_ENABLE_GRAPHQL_REQUEST_INSTRUMENTATION"`
-	CensoredFlows                       []string `envconfig:"optional,APP_METRICS_CENSORED_FLOWS"`
+	EnableClientIDInstrumentation         bool     `envconfig:"default=true,APP_METRICS_ENABLE_CLIENT_ID_INSTRUMENTATION"`
+	EnableGraphqlOperationInstrumentation bool     `envconfig:"default=false,APP_METRICS_ENABLE_GRAPHQL_OPERATION_INSTRUMENTATION"`
+	CensoredFlows                         []string `envconfig:"optional,APP_METRICS_CENSORED_FLOWS"`
 }
 
 // Collector missing godoc
@@ -25,7 +25,7 @@ type Collector struct {
 	hydraRequestTotal      *prometheus.CounterVec
 	hydraRequestDuration   *prometheus.HistogramVec
 	clientTotal            *prometheus.CounterVec
-	mutationCount          *prometheus.CounterVec
+	graphQLOperationCount  *prometheus.CounterVec
 }
 
 // NewCollector missing godoc
@@ -63,12 +63,12 @@ func NewCollector(config Config) *Collector {
 			Name:      "total_requests_per_client",
 			Help:      "Total requests per client",
 		}, []string{"client_id", "auth_flow", "details"}),
-		mutationCount: prometheus.NewCounterVec(prometheus.CounterOpts{
+		graphQLOperationCount: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: Namespace,
 			Subsystem: DirectorSubsystem,
-			Name:      "graphql_requests_per_operation",
-			Help:      "Graphql Requests Per Operation",
-		}, []string{"query_operation", "query_type"}),
+			Name:      "graphql_operations_per_endpoint",
+			Help:      "Graphql Operations Per Operation",
+		}, []string{"operation_name", "operation_type"}),
 	}
 }
 
@@ -79,7 +79,7 @@ func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
 	c.hydraRequestTotal.Describe(ch)
 	c.hydraRequestDuration.Describe(ch)
 	c.clientTotal.Describe(ch)
-	c.mutationCount.Describe(ch)
+	c.graphQLOperationCount.Describe(ch)
 }
 
 // Collect missing godoc
@@ -89,7 +89,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	c.hydraRequestTotal.Collect(ch)
 	c.hydraRequestDuration.Collect(ch)
 	c.clientTotal.Collect(ch)
-	c.mutationCount.Collect(ch)
+	c.graphQLOperationCount.Collect(ch)
 }
 
 // GraphQLHandlerWithInstrumentation missing godoc
@@ -129,14 +129,14 @@ func (c *Collector) InstrumentClient(clientID, authFlow, details string) {
 	}).Inc()
 }
 
-// InstrumentGraphqlRequest instruments a graphql request given queryType and queryOperation
-func (c *Collector) InstrumentGraphqlRequest(queryType, queryOperation string) {
-	if !c.config.EnableGraphqlRequestInstrumentation {
+// InstrumentGraphqlRequest instruments a graphql request given operationName and operationType
+func (c *Collector) InstrumentGraphqlRequest(operationType, operationName string) {
+	if !c.config.EnableGraphqlOperationInstrumentation {
 		return
 	}
 
-	c.mutationCount.With(prometheus.Labels{
-		"query_operation": queryOperation,
-		"query_type":      queryType,
+	c.graphQLOperationCount.With(prometheus.Labels{
+		"operation_name": operationName,
+		"operation_type": operationType,
 	}).Inc()
 }

@@ -34,7 +34,6 @@ func (m *opsInterceptor) InterceptOperation(ctx context.Context, next graphql.Op
 		mdc.Set(logKeyOperationType, string(opsCtx.Operation.Operation))
 
 		selectionSet := ""
-
 		for _, selection := range opsCtx.Operation.SelectionSet {
 			if field, ok := selection.(*ast.Field); ok {
 				if len(selectionSet) != 0 {

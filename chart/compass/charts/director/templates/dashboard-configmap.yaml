@@ -2315,7 +2315,7 @@ data:
           },
           "id": 56,
           "panels": [],
-          "title": "GraphQL Requests per endpoint",
+          "title": "GraphQL Operations per endpoint",
           "type": "row"
         },
         {
@@ -2373,10 +2373,10 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum by (query_operation) (increase(compass_director_graphql_requests_per_operation[2m]) / 2)",
+              "expr": "sum by (operation_name) (increase(compass_director_graphql_operations_per_endpoint{operation_type=\"mutation\"}[2m]) / 2)",
               "interval": "",
               "intervalFactor": 1,
-              "legendFormat": "{{`{{ query_operation }}`}}",
+              "legendFormat": "{{`{{ operation_name }}`}}",
               "refId": "A"
             }
           ],
@@ -2384,7 +2384,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "Mutation requests per endpoint [req/min]",
+          "title": "Mutation operations per endpoint [req/min]",
           "tooltip": {
             "shared": true,
             "sort": 2,
@@ -2478,10 +2478,10 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum by (query_operation) (increase(compass_director_graphql_requests_per_operation{query_type=\"query\"}[2m]) / 2)",
+              "expr": "sum by (operation_name) (increase(compass_director_graphql_operations_per_endpoint{operation_type=\"query\"}[2m]) / 2)",
               "interval": "",
               "intervalFactor": 1,
-              "legendFormat": "{{`{{ query_operation }}`}}",
+              "legendFormat": "{{`{{ operation_name }}`}}",
               "refId": "A"
             }
           ],
@@ -2489,7 +2489,7 @@ data:
           "timeFrom": null,
           "timeRegions": [],
           "timeShift": null,
-          "title": "Query requests per endpoint [req/min]",
+          "title": "Query operations per endpoint [req/min]",
           "tooltip": {
             "shared": true,
             "sort": 2,
