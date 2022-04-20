@@ -194,110 +194,110 @@ spec:
             - name: APP_GLOBAL_ACCOUNT_KEY
               value: {{ default "gaID" .Values.global.tenantFetcher.fieldMapping.globalAccountID }}
             # Tenant fetchers job configurations
-            { { - range $tenantFetcherJobName, $config := .Values.global.tenantFetchers } }
+            {{- range $tenantFetcherJobName, $config := .Values.global.tenantFetchers }}
             # Database config
             - name: APP_{{ $tenantFetcherJobName }}_DB_MAX_OPEN_CONNECTIONS
-              value: { { $config.dbPool.maxOpenConnections | quote } }
+              value: {{ $config.dbPool.maxOpenConnections | quote }}
             - name: APP_{{ $tenantFetcherJobName }}_DB_MAX_IDLE_CONNECTIONS
-              value: { { $config.dbPool.maxIdleConnections | quote } }
+              value: {{ $config.dbPool.maxIdleConnections | quote }}
             # OAuth config
             - name: APP_{{ $tenantFetcherJobName }}_CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: { { $config.secret.name } }
-                  key: { { $config.secret.clientIdKey } }
-              { { if eq $config.secret.oauthMode "standard" } }
+                  name: {{ $config.secret.name }}
+                  key: {{ $config.secret.clientIdKey }}
+            {{ if eq $config.secret.oauthMode "standard" }}
             - name: APP_{{ $tenantFetcherJobName }}_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: { { $config.secret.name } }
-                  key: { { $config.secret.clientSecretKey } }
-              { { else if eq $config.secret.oauthMode "oauth-mtls" } }
+                  name: {{ $config.secret.name }}
+                  key: {{ $config.secret.clientSecretKey }}
+            {{ else if eq $config.secret.oauthMode "oauth-mtls" }}
             - name: APP_{{ $tenantFetcherJobName }}_OAUTH_X509_CERT
               valueFrom:
                 secretKeyRef:
-                  name: { { $config.secret.name } }
-                  key: { { $config.secret.clientCertKey } }
+                  name: {{ $config.secret.name }}
+                  key: {{ $config.secret.clientCertKey }}
             - name: APP_{{ $tenantFetcherJobName }}_OAUTH_X509_KEY
               valueFrom:
                 secretKeyRef:
-                  name: { { $config.secret.name } }
-                  key: { { $config.secret.clientKeyKey } }
+                  name: {{ $config.secret.name }}
+                  key: {{ $config.secret.clientKeyKey }}
             - name: APP_{{ $tenantFetcherJobName }}_OAUTH_SKIP_SSL_VALIDATION
               value: "{{ $config.secret.skipSSLValidation }}"
-              { { end } }
+            {{ end }}
             - name: APP_{{ $tenantFetcherJobName }}_OAUTH_AUTH_MODE
-              value: { { $config.secret.oauthMode } }
+              value: {{ $config.secret.oauthMode }}
             - name: APP_{{ $tenantFetcherJobName }}_OAUTH_TOKEN_ENDPOINT
               valueFrom:
                 secretKeyRef:
-                  name: { { $config.secret.name } }
-                  key: { { $config.secret.oauthUrlKey } }
+                  name: {{ $config.secret.name }}
+                  key: {{ $config.secret.oauthUrlKey }}
             - name: APP_{{ $tenantFetcherJobName }}_OAUTH_TOKEN_PATH
-              value: { { $config.oauth.tokenPath } }
+              value: {{ $config.oauth.tokenPath }}
             # Provider config
             - name: APP_{{ $tenantFetcherJobName }}_TENANT_PROVIDER
-              value: { { $config.providerName } }
+              value: {{ $config.providerName }}
             # Kubernetes config
             - name: APP_{{ $tenantFetcherJobName }}_USE_KUBERNETES
               value: "true"
             - name: APP_{{ $tenantFetcherJobName }}_CONFIGMAP_NAMESPACE
-              value: { { $config.kubernetes.configMapNamespace } }
-              { { $configmapName := printf "%s-tenant-fetcher-%s-config" $.Chart.Name $tenantFetcherJobName } }
+              value: {{ $config.kubernetes.configMapNamespace }}
+              {{ $configmapName := printf "%s-tenant-fetcher-%s-config" $.Chart.Name $tenantFetcherJobName }}
             - name: APP_{{ $tenantFetcherJobName }}_LAST_EXECUTION_TIME_CONFIG_MAP_NAME
-              value: { { $configmapName } }
+              value: {{ $configmapName }}
             - name: APP_CONFIGMAP_TIMESTAMP_FIELD
               value: "lastConsumedTenantTimestamp"
             - name: APP_CONFIGMAP_RESYNC_TIMESTAMP_FIELD
               value: "lastFullResyncTimestamp"
             # Kubernetes client config
             - name: APP_{{ $tenantFetcherJobName }}_KUBERNETES_POLL_INTERVAL
-              value: { { $config.kubernetes.pollInterval } }
+              value: {{ $config.kubernetes.pollInterval }}
             - name: APP_{{ $tenantFetcherJobName }}_KUBERNETES_POLL_TIMEOUT
-              value: { { $config.kubernetes.pollTimeout } }
+              value: {{ $config.kubernetes.pollTimeout }}
             - name: APP_{{ $tenantFetcherJobName }}_KUBERNETES_TIMEOUT
-              value: { { $config.kubernetes.timeout } }
+              value: {{ $config.kubernetes.timeout }}
             # Tenant field mapping
             - name: APP_{{ $tenantFetcherJobName }}_MAPPING_FIELD_ID
-              value: { { $config.fieldMapping.idField } }
+              value: {{ $config.fieldMapping.idField }}
             - name: APP_{{ $tenantFetcherJobName }}_MAPPING_FIELD_NAME
-              value: { { $config.fieldMapping.nameField } }
+              value: {{ $config.fieldMapping.nameField }}
             - name: APP_{{ $tenantFetcherJobName }}_MAPPING_FIELD_CUSTOMER_ID
-              value: { { $config.fieldMapping.customerIdField } }
+              value: {{ $config.fieldMapping.customerIdField }}
             - name: APP_{{ $tenantFetcherJobName }}_MAPPING_FIELD_SUBDOMAIN
-              value: { { $config.fieldMapping.subdomainField } }
+              value: {{ $config.fieldMapping.subdomainField }}
             - name: APP_{{ $tenantFetcherJobName }}_MAPPING_FIELD_REGION
-              value: { { default "region" $config.fieldMapping.regionField } }
+              value: {{ default "region" $config.fieldMapping.regionField }}
             - name: APP_{{ $tenantFetcherJobName }}_MAPPING_FIELD_ENTITY_TYPE
-              value: { { $config.fieldMapping.entityTypeField } }
+              value: {{ $config.fieldMapping.entityTypeField }}
             - name: APP_{{ $tenantFetcherJobName }}_MAPPING_FIELD_DISCRIMINATOR
-              value: { { $config.fieldMapping.discriminatorField } }
+              value: {{ $config.fieldMapping.discriminatorField }}
             - name: APP_{{ $tenantFetcherJobName }}_MAPPING_VALUE_DISCRIMINATOR
-              value: { { $config.fieldMapping.discriminatorValue } }
+              value: {{ $config.fieldMapping.discriminatorValue }}
             - name: APP_{{ $tenantFetcherJobName }}_MAPPING_FIELD_DETAILS
-              value: { { $config.fieldMapping.detailsField } }
+              value: {{ $config.fieldMapping.detailsField }}
             - name: APP_{{ $tenantFetcherJobName }}_GLOBAL_ACCOUNT_KEY
-              value: { { default "gaID" $config.fieldMapping.globalAccountID } }
+              value: {{ default "gaID" $config.fieldMapping.globalAccountID }}
             - name: APP_{{ $tenantFetcherJobName }}_TENANT_TOTAL_PAGES_FIELD
-              value: { { $config.fieldMapping.totalPagesField } }
+              value: {{ $config.fieldMapping.totalPagesField }}
             - name: APP_{{ $tenantFetcherJobName }}_TENANT_TOTAL_RESULTS_FIELD
-              value: { { $config.fieldMapping.totalResultsField } }
+              value: {{ $config.fieldMapping.totalResultsField }}
             - name: APP_{{ $tenantFetcherJobName }}_TENANT_EVENTS_FIELD
-              value: { { $config.fieldMapping.tenantEventsField } }
+              value: {{ $config.fieldMapping.tenantEventsField }}
             # Moved subaccount field mapping
             - name: APP_{{ $tenantFetcherJobName }}_MOVED_SUBACCOUNT_SOURCE_TENANT_FIELD
-              value: { { default "sourceGlobalAccountGUID" $config.fieldMapping.movedSubaccountSourceField } }
+              value: {{ default "sourceGlobalAccountGUID" $config.fieldMapping.movedSubaccountSourceField }}
             - name: APP_{{ $tenantFetcherJobName }}_MOVED_SUBACCOUNT_TARGET_TENANT_FIELD
-              value: { { default "targetGlobalAccountGUID" $config.fieldMapping.movedSubaccountTargetField } }
+              value: {{ default "targetGlobalAccountGUID" $config.fieldMapping.movedSubaccountTargetField }}
             # Query config
             - name: APP_{{ $tenantFetcherJobName }}_QUERY_PAGE_NUM_FIELD
-              value: { { $config.queryMapping.pageNumField } }
+              value: {{ $config.queryMapping.pageNumField }}
             - name: APP_{{ $tenantFetcherJobName }}_QUERY_PAGE_SIZE_FIELD
-              value: { { $config.queryMapping.pageSizeField } }
+              value: {{ $config.queryMapping.pageSizeField }}
             - name: APP_{{ $tenantFetcherJobName }}_QUERY_REGION_FIELD
-              value: { { default "region" $config.queryMapping.regionField } }
+              value: {{ default "region" $config.queryMapping.regionField }}
             - name: APP_{{ $tenantFetcherJobName }}_QUERY_TIMESTAMP_FIELD
-              value: { { $config.queryMapping.timestampField } }
+              value: {{ $config.queryMapping.timestampField }}
             - name: APP_{{ $tenantFetcherJobName }}_QUERY_PAGE_START
               value: "{{ $config.query.startPage}}"
             - name: APP_{{ $tenantFetcherJobName }}_QUERY_PAGE_SIZE
@@ -306,30 +306,30 @@ spec:
             - name: APP_{{ $tenantFetcherJobName }}_TENANT_FETCHER_JOB_INTERVAL
               value: "{{ default "1m" $config.job.interval}}"
             - name: APP_{{ $tenantFetcherJobName }}_SYNC_SUBACCOUNTS
-              value: { { $config.shouldSyncSubaccounts | quote } }
+              value: {{ $config.shouldSyncSubaccounts | quote }}
             - name: APP_{{ $tenantFetcherJobName }}_TENANT_INSERT_CHUNK_SIZE
-              value: { { default "500" $config.tenantInsertChunkSize | quote } }
+              value: {{ default "500" $config.tenantInsertChunkSize | quote }}
             # Regions config
             - name: APP_{{ $tenantFetcherJobName }}_ACCOUNT_REGION
-              value: { { default "central" $config.accountRegion } }
+              value: {{ default "central" $config.accountRegion }}
             - name: APP_{{ $tenantFetcherJobName }}_SUBACCOUNT_REGIONS
-              value: { { default "central" $config.subaccountRegions | quote } }
+              value: {{ default "central" $config.subaccountRegions | quote }}
             # API endpoints config
             - name: APP_{{ $tenantFetcherJobName }}_ENDPOINT_TENANT_CREATED
-              value: { { default "127.0.0.1/events?type=account-created" $config.endpoints.accountCreated } }
+              value: {{ default "127.0.0.1/events?type=account-created" $config.endpoints.accountCreated }}
             - name: APP_{{ $tenantFetcherJobName }}_ENDPOINT_TENANT_DELETED
-              value: { { default "127.0.0.1/events?type=account-deleted" $config.endpoints.accountDeleted } }
+              value: {{ default "127.0.0.1/events?type=account-deleted" $config.endpoints.accountDeleted }}
             - name: APP_{{ $tenantFetcherJobName }}_ENDPOINT_TENANT_UPDATED
-              value: { { default "127.0.0.1/events?type=account-updated" $config.endpoints.accountUpdated } }
+              value: {{ default "127.0.0.1/events?type=account-updated" $config.endpoints.accountUpdated }}
             - name: APP_{{ $tenantFetcherJobName }}_ENDPOINT_SUBACCOUNT_CREATED
-              value: { { default "127.0.0.1/events?type=subaccount-created" $config.endpoints.subaccountCreated } }
+              value: {{ default "127.0.0.1/events?type=subaccount-created" $config.endpoints.subaccountCreated }}
             - name: APP_{{ $tenantFetcherJobName }}_ENDPOINT_SUBACCOUNT_DELETED
-              value: { { default "127.0.0.1/events?type=subaccount-deleted" $config.endpoints.subaccountDeleted } }
+              value: {{ default "127.0.0.1/events?type=subaccount-deleted" $config.endpoints.subaccountDeleted }}
             - name: APP_{{ $tenantFetcherJobName }}_ENDPOINT_SUBACCOUNT_UPDATED
-              value: { { default "127.0.0.1/events?type=subaccount-updated" $config.endpoints.subaccountUpdated } }
+              value: {{ default "127.0.0.1/events?type=subaccount-updated" $config.endpoints.subaccountUpdated }}
             - name: APP_{{ $tenantFetcherJobName }}_ENDPOINT_SUBACCOUNT_MOVED
-              value: { { default "127.0.0.1/events?type=subaccount-moved" $config.endpoints.subaccountMoved } }
-            { { - end } }
+              value: {{ default "127.0.0.1/events?type=subaccount-moved" $config.endpoints.subaccountMoved }}
+            {{ - end }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
