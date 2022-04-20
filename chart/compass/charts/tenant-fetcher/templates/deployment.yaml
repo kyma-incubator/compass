@@ -329,7 +329,7 @@ spec:
               value: {{ default "127.0.0.1/events?type=subaccount-updated" $config.endpoints.subaccountUpdated }}
             - name: APP_{{ $tenantFetcherJobName }}_ENDPOINT_SUBACCOUNT_MOVED
               value: {{ default "127.0.0.1/events?type=subaccount-moved" $config.endpoints.subaccountMoved }}
-            {{ - end }}
+            {{- end }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
