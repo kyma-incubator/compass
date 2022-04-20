@@ -120,7 +120,6 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	labelKey := "scenarios"
-	defaultValue := conf.DefaultScenario
 	newFormation := "ADDITIONAL"
 	asaFormation := "ASA"
 	unusedFormationName := "UNUSED"
@@ -221,13 +220,8 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, unassignFormation.Name)
 
-	if conf.DefaultScenarioEnabled {
-		unassignDefaultReq := fixtures.FixUnassignFormationRequest(rtm.ID, "RUNTIME", defaultValue)
-		var unassignDefaultFormation graphql.Formation
-		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unassignDefaultReq, &unassignDefaultFormation)
-		require.NoError(t, err)
-		require.Equal(t, defaultValue, unassignDefaultFormation.Name)
-	}
+	t.Log("Check that the formation label value is unassigned")
+	checkRuntimeFormationLabels(t, ctx, rtm.ID, labelKey, []string{asaFormation})
 
 	t.Log("Should be able to delete formation after runtime is unassigned")
 	deleteRequest = fixtures.FixDeleteFormationRequest(newFormation)

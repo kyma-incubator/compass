@@ -168,7 +168,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
-		return s.modifyAssignedFormations(ctx, tnt, objectID, formation, model.ApplicationLabelableObject, deleteFormation)
+		return s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), deleteFormation)
 	case graphql.FormationObjectTypeRuntime:
 		if isFormationComingFromASA, err := s.isFormationComingFromASA(ctx, objectID, formation.Name); err != nil {
 			return nil, err
@@ -176,7 +176,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return &formation, nil
 		}
 
-		return s.modifyAssignedFormations(ctx, tnt, objectID, formation, model.RuntimeLabelableObject, deleteFormation)
+		return s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), deleteFormation)
 	case graphql.FormationObjectTypeTenant:
 		asa, err := s.asaService.GetForScenarioName(ctx, formation.Name)
 		if err != nil {

@@ -851,6 +851,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 	expected := &model.Formation{
 		Name: testFormation,
 	}
+	secondFormation := model.Formation{
+		Name: secondTestFormation,
+	}
 
 	objectID := "123"
 	applicationLblSingleFormation := &model.Label{
@@ -1037,10 +1040,16 @@ func TestServiceUnassignFormation(t *testing.T) {
 			UIDServiceFn: frmtest.UnusedUUIDService(),
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, tnt, runtimeLblInput).Return(runtimeLbl, nil)
-				labelService.On("UpdateLabel", ctx, tnt, runtimeLbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, tnt, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormation},
+					ObjectID:   objectID,
+					ObjectType: model.RuntimeLabelableObject,
+					Version:    0,
+				}).Return(runtimeLblSingleFormation, nil)
+				labelService.On("UpdateLabel", ctx, tnt, runtimeLbl.ID, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{testFormation},
 					ObjectID:   objectID,
 					ObjectType: model.RuntimeLabelableObject,
 					Version:    0,
@@ -1055,8 +1064,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeRuntime,
-			InputFormation:     in,
-			ExpectedFormation:  expected,
+			InputFormation:     secondFormation,
+			ExpectedFormation:  &secondFormation,
 			ExpectedErrMessage: "",
 		},
 		{
