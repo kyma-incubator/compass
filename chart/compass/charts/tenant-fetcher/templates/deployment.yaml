@@ -303,8 +303,6 @@ spec:
             - name: APP_{{ $tenantFetcherJobName }}_QUERY_PAGE_SIZE
               value: "{{ $config.query.pageSize}}"
             # Sync subaccounts config
-            #- name: APP_{{ $tenantFetcherJobName }}_TENANT_FETCHER_JOB_INTERVAL
-              #value: {{ default "1m" $config.job.interval}}
             - name: APP_{{ $tenantFetcherJobName }}_SYNC_SUBACCOUNTS
               value: {{ $config.shouldSyncSubaccounts | quote }}
             - name: APP_{{ $tenantFetcherJobName }}_TENANT_INSERT_CHUNK_SIZE
