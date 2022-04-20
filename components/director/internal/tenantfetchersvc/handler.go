@@ -52,17 +52,9 @@ type HandlerConfig struct {
 	HTTPClientSkipSslValidation bool          `envconfig:"APP_HTTP_CLIENT_SKIP_SSL_VALIDATION,default=false"`
 
 	TenantProviderConfig
-	Features features.Config
+	features.Config
 
 	Database persistence.DatabaseConfig
-
-	Kubernetes          tenantfetcher.KubeConfig
-	MetricsPushEndpoint string `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
-
-	TenantFetcherJobIntervalMins int           `envconfig:"default=5,APP_TENANT_FETCH_JOB_INTERVAL_MINS"`
-	ShouldSyncSubaccounts        bool          `envconfig:"default=false,APP_SYNC_SUBACCOUNTS"`
-	FullResyncInterval           time.Duration `envconfig:"default=12h"`
-	TenantInsertChunkSize        int           `envconfig:"default=500,APP_TENANT_INSERT_CHUNK_SIZE"`
 }
 
 // TenantProviderConfig includes the configuration for tenant providers - the tenant ID json property names, the subdomain property name, and the tenant provider name.
@@ -77,10 +69,6 @@ type TenantProviderConfig struct {
 
 // EventsConfig contains configuration for Events API requests
 type EventsConfig struct {
-	AccountsRegion              string   `envconfig:"default=central,APP_ACCOUNT_REGION"`
-	SubaccountRegions           []string `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
-	MovedSubaccountFieldMapping tenantfetcher.MovedSubaccountsFieldMapping
-
 	OAuthConfig        tenantfetcher.OAuth2Config
 	APIConfig          tenantfetcher.APIConfig
 	AuthMode           oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
