@@ -129,20 +129,24 @@ func main() {
 	environmentVars := tenantfetcher.ReadEnvironmentVars()
 
 	stopGlobalAccountsFeatureAJob := make(chan bool, 1)
-	globalAccountsFeatureAJobConfig := *tenantfetcher.NewTenantFetcherJobEnvironment("cis1", environmentVars).ReadJobConfig()
+	globalAccountsFeatureAJobConfig := readJobConfig("cis1", environmentVars)
 	runTenantFetcherJob(ctx, globalAccountsFeatureAJobConfig, stopGlobalAccountsFeatureAJob)
 
 	stopGlobalAccountsFeatureBJob := make(chan bool, 1)
-	globalAccountsFeatureBJobConfig := *tenantfetcher.NewTenantFetcherJobEnvironment("cis2", environmentVars).ReadJobConfig()
+	globalAccountsFeatureBJobConfig := readJobConfig("cis2", environmentVars)
 	runTenantFetcherJob(ctx, globalAccountsFeatureBJobConfig, stopGlobalAccountsFeatureBJob)
 
 	stopSubaccountsJob := make(chan bool, 1)
-	subaccountsJobConfig := *tenantfetcher.NewTenantFetcherJobEnvironment("cis2-subaccounts", environmentVars).ReadJobConfig()
+	subaccountsJobConfig := readJobConfig("cis2-subaccounts", environmentVars)
 	runTenantFetcherJob(ctx, subaccountsJobConfig, stopSubaccountsJob)
 
 	<-stopGlobalAccountsFeatureAJob
 	<-stopGlobalAccountsFeatureBJob
 	<-stopSubaccountsJob
+}
+
+func readJobConfig(jobName string, environmentVars map[string]string) tenantfetcher.JobConfig {
+	return tenantfetcher.NewTenantFetcherJobEnvironment(jobName, environmentVars).ReadJobConfig()
 }
 
 func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig, stopJob chan bool) {

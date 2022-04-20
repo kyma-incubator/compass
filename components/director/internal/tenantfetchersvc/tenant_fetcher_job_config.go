@@ -21,6 +21,7 @@ type job struct {
 	environmentVars map[string]string
 }
 
+// JobConfig contains tenant fetcher job configuration read from environment
 type JobConfig struct {
 	JobName       string
 	EventsConfig  EventsConfig
@@ -36,8 +37,8 @@ func NewTenantFetcherJobEnvironment(name string, environmentVars map[string]stri
 }
 
 // ReadJobConfig reads job configuration from environment
-func (j *job) ReadJobConfig() *JobConfig {
-	return &JobConfig{
+func (j *job) ReadJobConfig() JobConfig {
+	return JobConfig{
 		JobName:       j.name,
 		EventsConfig:  j.getEventsConfig(),
 		HandlerConfig: j.getHandlerConfig(),

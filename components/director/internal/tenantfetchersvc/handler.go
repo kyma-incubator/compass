@@ -64,9 +64,6 @@ type HandlerConfig struct {
 	TenantProviderConfig
 }
 
-type TenantFetchConfig struct {
-}
-
 // TenantProviderConfig includes the configuration for tenant providers - the tenant ID json property names, the subdomain property name, and the tenant provider name.
 type TenantProviderConfig struct {
 	TenantIDProperty               string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY,default=tenantId"`
