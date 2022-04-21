@@ -50,7 +50,7 @@ Director handles the process of managing Applications and Runtimes. It also requ
 
 ## Hydrator
 
-Hydrator componet is responsible for the authentication and authorization aspect of the project, leveraging the [ORY OathKeeper](https://github.com/ory/oathkeeper) functionality. In that component we have also custom data processing in form of Oathkeeper hydrator mutators used along with the other default mutators.
+Hydrator component is responsible for the authentication and authorization aspect of the project, leveraging the [ORY OathKeeper](https://github.com/ory/oathkeeper) functionality. Additionally, in the component it is also added custom data processing in the form of Oathkeeper hydrator mutators. These hydrator mutators are used along with the other default mutators.
 
 ## Integration System
 
