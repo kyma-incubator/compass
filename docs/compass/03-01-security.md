@@ -161,7 +161,7 @@ There are two ways of creating a `client_id` and `client_secret` pair in the Hyd
 
 1. ORY Oathkeeper authenticator calls Hydra for introspection of the token.
 1. If the token is valid, Oathkeeper sends the request to ORY mutator hydrator.
-3. Mutator hydrator calls Tenant Mapping Handler hosted by `Hydrator` component to get `tenant` based on a `client_id`. The `client_id` is the ID of `SystemAuth` entry related to the given Runtime/Application/IntegrationSystem.
+1. Mutator hydrator calls Tenant Mapping Handler hosted by the `Hydrator` component to get `tenant` based on a `client_id`. The `client_id` is the ID of `SystemAuth` entry related to the given Runtime/Application/IntegrationSystem.
 1. Tenant Mapping Handler calls the `Director` using GraphQL API.
 1. Hydrator component passes response to ID_Token mutator, which constructs a JWT token with scopes and `tenant` in the payload.
 1. Then, the request is forwarded to the desired component (such as `Director` or `Connector`) through the `Gateway` component.
@@ -186,7 +186,7 @@ User logs in to Compass UI
 
 1. ORY Oathkeeper authenticator validates the token using keys provided by the identity service. 
 2. If the token is valid, Oathkeeper sends the request to ORY mutator hydrator.
-3. Mutator hydrator calls Tenant Mapping Handler hosted by `Hydrator` component.
+3. Mutator hydrator calls Tenant Mapping Handler hosted by the `Hydrator` component.
 4. Tenant Mapping Handler calls `Director` using GraphQL API which, in production environment, returns **the same** authentication session (as the `tenant` is already in place) even for local development. For more information on how to configure OIDC Authentication Server, see [Installation](https://github.com/kyma-incubator/compass/blob/main/docs/compass/04-01-installation.md#local-minikube-installation).
 5. Hydrator component passes response to ID_Token mutator which constructs a JWT token with scopes and `tenant` in the payload.
 6. The request is then forwarded to the desired component (such as `Director` or `Connector`) through the `Gateway` component.
@@ -223,7 +223,7 @@ data:
 
 1. Runtime/Application makes a call to the Connector to the certificate-secured subdomain.
 1. Istio verifies the client certificate. If the certificate is invalid, Istio rejects the request.
-1. Oathkeeper mutator hydrator sends the request to the `Hydrator` component and the Certificate resolver where the certificate info (subject and certificate hash) is extracted from `Certificate-Data` header, populated by istio envoy filter. Then, `Client-Certificate-Hash` and `Client-Id-From-Certificate` headers are populated. If the certificate has been revoked, the two headers will be empty.
+1. Oathkeeper mutator hydrator sends the request to the Certificate resolver hosted by the `Hydrator` component, where the certificate info (subject and certificate hash) is extracted from `Certificate-Data` header, populated by istio envoy filter. Then, `Client-Certificate-Hash` and `Client-Id-From-Certificate` headers are populated. If the certificate has been revoked, the two headers will be empty.
 1. The request is forwarded to the Connector through the Compass `Gateway`.
 
 ![Auth](./assets/certificate-security-diagram-connector.svg)
@@ -232,7 +232,7 @@ data:
 
 1. Runtime/Application makes a call to the Director to the certificate-secured subdomain.
 1. Istio verifies the client certificate. If the certificate is invalid, Istio rejects the request.
-1. Oathkeeper mutator hydrator sends the request to the `Hydrator` component and the Certificate resolver where the certificate info (subject and certificate hash) is extracted from `Certificate-Data` header, populated by istio envoy filter. Then `Client-Certificate-Hash` and `Client-Id-From-Certificate` headers are populated. If the certificate has been revoked, the two headers will be empty.
+1. Oathkeeper mutator hydrator sends the request to the Certificate resolver hosted by the `Hydrator` component, where the certificate info (subject and certificate hash) is extracted from `Certificate-Data` header, populated by istio envoy filter. Then `Client-Certificate-Hash` and `Client-Id-From-Certificate` headers are populated. If the certificate has been revoked, the two headers will be empty.
 1. The call is proxied again to the `Hydrator` component and to the Tenant Mapping Handler where the `client_id` is mapped onto the `tenant` and returned to the Oathkeeper. If the Common Name is invalid, the `tenant` will be empty.
 1. Oathkeeper passes the response to ID_Token mutator, which constructs a JWT token with scopes and tenant in the payload.
 1. The Oathkeeper proxies the request further to the Compass `Gateway`.
@@ -276,7 +276,7 @@ The scopes are added to the authentication session in Tenant Mapping Handler. Th
 **Connector flow:**
 
 1. Runtime/Application makes a call to the Connector's internal API.
-1. Oathkeeper mutator hydrator sends the request to the `Hydrator` component and to the Token resolver. It extracts the Client ID from the one-time token's `Connector-Token` header or from the `token` query parameter, and writes it to the `Client-Id-From-Token` header. In the case of failure, the header is empty.
+1. Oathkeeper mutator hydrator sends the request to the Token resolver hosted by the `Hydrator` component. It extracts the Client ID from the one-time token's `Connector-Token` header or from the `token` query parameter, and writes it to the `Client-Id-From-Token` header. In the case of failure, the header is empty.
 1. The Oathkeeper proxies the request further to the Compass `Gateway`.
 1. The request is forwarded to the `Connector`.
 
@@ -285,7 +285,7 @@ The scopes are added to the authentication session in Tenant Mapping Handler. Th
 **Director Flow:**
 
 1. Runtime/Application makes a call to the Director.
-1. Oathkeeper mutator hydrator sends the request to the `Hydrator` component and to the Token resolver. The Client ID is extracted from the one-time token's `Connector-Token` header or from the `token` query parameter, and is then written to the `Client-Id-From-Token` header. In the case of failure, the header is empty.
+1. Oathkeeper mutator hydrator sends the request to the Token resolver hosted by the `Hydrator` component. The Client ID is extracted from the one-time token's `Connector-Token` header or from the `token` query parameter, and is then written to the `Client-Id-From-Token` header. In the case of failure, the header is empty.
 1. Then, the call is proxied again to the `Hydrator` component and to the Tenant Mapping Handler mutator, where the Client ID is mapped onto the `tenant` and returned to the Oathkeeper. 
 1. Oathkeeper passes the response to ID_Token mutator which constructs a JWT token with scopes and tenant in the payload.
 1. The OathKeeper proxies the request further to the Compass `Gateway`.
