@@ -23,6 +23,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+
 	graphqlclient "github.com/kyma-incubator/compass/components/director/pkg/graphql_client"
 	gcli "github.com/machinebox/graphql"
 
@@ -35,6 +40,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
+	tf "github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 	tenantfetcher "github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
 
 	"github.com/gorilla/mux"
@@ -55,9 +61,10 @@ type config struct {
 
 	Log log.Config
 
-	RootAPI string `envconfig:"APP_ROOT_API,default=/tenants"`
+	TenantsRootAPI string `envconfig:"APP_ROOT_API,default=/tenants"`
 
-	Handler tenantfetcher.HandlerConfig
+	Handler   tenantfetcher.HandlerConfig
+	EventsCfg tenantfetcher.EventsConfig
 
 	SecurityConfig securityConfig
 }
@@ -67,6 +74,7 @@ type securityConfig struct {
 	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
 	JwksEndpoint              string        `envconfig:"default=file://hack/default-jwks.json,APP_JWKS_ENDPOINT"`
 	SubscriptionCallbackScope string        `envconfig:"APP_SUBSCRIPTION_CALLBACK_SCOPE"`
+	FetchTenantOnDemandScope  string        `envconfig:"APP_FETCH_TENANT_ON_DEMAND_SCOPE"`
 }
 
 func main() {
@@ -88,6 +96,14 @@ func main() {
 		exitOnError(errors.New("missing tenant path parameter"), "Error while loading app handler config")
 	}
 
+	transact, closeFunc, err := persistence.Configure(ctx, cfg.Handler.Database)
+	exitOnError(err, "Error while establishing the connection to the database")
+
+	defer func() {
+		err := closeFunc()
+		exitOnError(err, "Error while closing the connection to the database")
+	}()
+
 	httpClient := &http.Client{
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
@@ -95,7 +111,7 @@ func main() {
 		},
 	}
 
-	handler := initAPIHandler(ctx, httpClient, cfg)
+	handler := initAPIHandler(ctx, httpClient, cfg, transact)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
 	go func() {
@@ -107,21 +123,22 @@ func main() {
 	runMainSrv()
 }
 
-func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config) http.Handler {
+func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, transact persistence.Transactioner) http.Handler {
 	logger := log.C(ctx)
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 
-	router := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
-	healthCheckRouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
+	tenantsAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
+	configureAuthMiddleware(ctx, httpClient, tenantsAPIRouter, cfg.SecurityConfig, cfg.SecurityConfig.SubscriptionCallbackScope)
+	registerTenantsHandler(ctx, tenantsAPIRouter, cfg.Handler)
 
-	configureAuthMiddleware(ctx, httpClient, router, cfg.SecurityConfig)
+	tenantsOnDemandAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
+	configureAuthMiddleware(ctx, httpClient, tenantsOnDemandAPIRouter, cfg.SecurityConfig, cfg.SecurityConfig.FetchTenantOnDemandScope)
+	registerTenantsOnDemandHandler(ctx, tenantsOnDemandAPIRouter, cfg.EventsCfg, cfg.Handler, transact)
 
-	registerHandler(ctx, router, cfg.Handler)
-
+	healthCheckRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
 	logger.Infof("Registering readiness endpoint...")
 	healthCheckRouter.HandleFunc("/readyz", newReadinessHandler())
-
 	logger.Infof("Registering liveness endpoint...")
 	healthCheckRouter.HandleFunc("/healthz", newReadinessHandler())
 
@@ -167,8 +184,8 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg securityConfig) {
-	scopeValidator := claims.NewScopesValidator([]string{cfg.SubscriptionCallbackScope})
+func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg securityConfig, requiredScopes ...string) {
+	scopeValidator := claims.NewScopesValidator(requiredScopes)
 	middleware := auth.New(httpClient, cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
 	router.Use(middleware.Handler())
 
@@ -181,11 +198,8 @@ func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, route
 	go periodicExecutor.Run(ctx)
 }
 
-func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.HandlerConfig) {
+func registerTenantsHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.HandlerConfig) {
 	gqlClient := newInternalGraphQLClient(cfg.DirectorGraphQLEndpoint, cfg.ClientTimeout, cfg.HTTPClientSkipSslValidation)
-	gqlClient.Log = func(s string) {
-		log.C(ctx).Debug(s)
-	}
 	directorClient := graphqlclient.NewDirector(gqlClient)
 
 	tenantConverter := tenant.NewConverter()
@@ -204,6 +218,42 @@ func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.
 	router.HandleFunc(cfg.DependenciesEndpoint, tenantHandler.Dependencies).Methods(http.MethodGet)
 }
 
+func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, eventsCfg tenantfetcher.EventsConfig, tenantHandlerCfg tenantfetcher.HandlerConfig, transact persistence.Transactioner) {
+	onDemandSvc, err := createTenantFetcherOnDemandSvc(eventsCfg, tenantHandlerCfg, transact)
+	exitOnError(err, "failed to create tenant fetcher on-demand service")
+
+	fetcher := tenantfetcher.NewTenantFetcher(*onDemandSvc)
+	tenantHandler := tenantfetcher.NewTenantFetcherHTTPHandler(fetcher, tenantHandlerCfg)
+
+	log.C(ctx).Infof("Registering fetch tenant on-demand endpoint on %s...", tenantHandlerCfg.TenantOnDemandHandlerEndpoint)
+	router.HandleFunc(tenantHandlerCfg.TenantOnDemandHandlerEndpoint, tenantHandler.FetchTenantOnDemand).Methods(http.MethodPost)
+}
+
+func createTenantFetcherOnDemandSvc(eventsCfg tenantfetcher.EventsConfig, handlerCfg tenantfetcher.HandlerConfig, transact persistence.Transactioner) (*tf.SubaccountOnDemandService, error) {
+	eventAPIClient, err := tf.NewClient(eventsCfg.OAuthConfig, eventsCfg.AuthMode, eventsCfg.APIConfig, handlerCfg.ClientTimeout)
+	if nil != err {
+		return nil, err
+	}
+
+	tenantStorageConv := tenant.NewConverter()
+	uidSvc := uid.NewService()
+
+	labelDefConverter := labeldef.NewConverter()
+	labelDefRepository := labeldef.NewRepository(labelDefConverter)
+
+	labelConverter := label.NewConverter()
+	labelRepository := label.NewRepository(labelConverter)
+	labelService := label.NewLabelService(labelRepository, labelDefRepository, uidSvc)
+
+	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
+	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepository, labelService)
+
+	gqlClient := newInternalGraphQLClient(handlerCfg.DirectorGraphQLEndpoint, handlerCfg.ClientTimeout, handlerCfg.HTTPClientSkipSslValidation)
+	directorClient := graphqlclient.NewDirector(gqlClient)
+
+	return tf.NewSubaccountOnDemandService(eventsCfg.QueryConfig, eventsCfg.TenantFieldMapping, eventAPIClient, transact, tenantStorageSvc, directorClient, handlerCfg.TenantProvider, tenantStorageConv), nil
+}
+
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
@@ -220,5 +270,12 @@ func newInternalGraphQLClient(url string, timeout time.Duration, skipSSLValidati
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(tr, "Authorization")),
 		Timeout:   timeout,
 	}
-	return gcli.NewClient(url, gcli.WithHTTPClient(client))
+
+	gqlClient := gcli.NewClient(url, gcli.WithHTTPClient(client))
+
+	gqlClient.Log = func(s string) {
+		log.D().Debug(s)
+	}
+
+	return gqlClient
 }
