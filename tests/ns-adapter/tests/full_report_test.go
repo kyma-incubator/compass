@@ -3,18 +3,15 @@ package tests
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"net/http"
-	"strings"
-	"testing"
-	"time"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
+	"net/http"
+	"strings"
+	"testing"
 )
 
 type SccKey struct {
@@ -588,60 +585,5 @@ func TestFullReport(stdT *testing.T) {
 		apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Empty(t, apps)
-	})
-
-	t.Run("Full report with large request body", func(t *testing.T) {
-		ctx := context.Background()
-		appsToCreate := 10_000
-
-		//WHEN
-		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
-		require.NoError(t, err)
-		require.Empty(t, apps)
-
-		report := baseReport
-		report.Value = append(report.Value,
-			SCC{
-				Subaccount:     testTenant,
-				LocationID:     "",
-				ExposedSystems: []System{},
-			})
-
-		for i := 0; i < appsToCreate; i++ {
-			report.Value[0].ExposedSystems = append(report.Value[0].ExposedSystems, System{
-				Protocol:     "http",
-				Host:         fmt.Sprintf("virtual-host-%d:3000", i),
-				SystemType:   "nonSAPsys",
-				Description:  "",
-				Status:       "reachable",
-				SystemNumber: "",
-			})
-		}
-
-		body, err := json.Marshal(report)
-		require.NoError(t, err)
-		log.C(ctx).Infof("Sending request with body length of %d bytes", len(body))
-
-		defer func() {
-			for {
-				apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
-				require.NoError(t, err, "failed to clean-up after test")
-
-				if len(apps) == 0 {
-					break
-				}
-
-				log.C(ctx).Infof("Cleaning up %d applications", len(apps))
-				for i := 0; i < len(apps); i++ {
-					fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, apps[i])
-				}
-			}
-
-			log.C(ctx).Infof("Successfully cleaned up after test")
-		}()
-
-		resp, err := sendRequestWithTimeout(body, "full", token, 5*time.Minute)
-		require.NoError(t, err, "failed to send request with a large request body")
-		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 	})
 }
