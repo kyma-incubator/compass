@@ -137,13 +137,13 @@ func main() {
 	globalAccountsFeatureBJobConfig := readJobConfig("subaccount-fetcher", environmentVars)
 	runTenantFetcherJob(ctx, globalAccountsFeatureBJobConfig, stopGlobalAccountsFeatureBJob)
 
-	//stopSubaccountsJob := make(chan bool, 1)
-	//subaccountsJobConfig := readJobConfig("cis2-subaccounts", environmentVars)
-	//runTenantFetcherJob(ctx, subaccountsJobConfig, stopSubaccountsJob)
+	// stopSubaccountsJob := make(chan bool, 1)
+	// subaccountsJobConfig := readJobConfig("cis2-subaccounts", environmentVars)
+	// runTenantFetcherJob(ctx, subaccountsJobConfig, stopSubaccountsJob)
 
 	<-stopGlobalAccountsFeatureAJob
 	<-stopGlobalAccountsFeatureBJob
-	//<-stopSubaccountsJob
+	// <-stopSubaccountsJob
 }
 
 func readJobConfig(jobName string, environmentVars map[string]string) tenantfetcher.JobConfig {
