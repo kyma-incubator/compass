@@ -217,6 +217,6 @@ spec:
           {{- toYaml .Values.deployment.resourcesCloudsqlProxy | nindent 12 }}
           {{- with .Values.deployment.securityContext }}
           securityContext:
-          {{ toYaml . | indent 12 }}
+{{ toYaml . | indent 12 }}
           {{- end }}
         {{end}}

@@ -210,9 +210,9 @@ func getTokenWithCertificate(certConfig *oauth.X509Config, clientID, URL string)
 		Timeout: testConfig.Timeout,
 	}
 
-	creds := &auth.OAuthCredentials{
+	creds := &auth.OAuthMtlsCredentials{
 		ClientID:          clientID,
-		ClientSecret:      "",
+		CertCache:         nil,
 		TokenURL:          URL,
 		Scopes:            "",
 		AdditionalHeaders: nil,
