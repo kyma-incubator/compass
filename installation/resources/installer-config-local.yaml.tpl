@@ -148,6 +148,17 @@ data:
   global.tenantFetchers.subaccount-fetcher.endpoints.subaccountUpdated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-update"
   global.tenantFetchers.subaccount-fetcher.endpoints.subaccountMoved: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-move"
 
+  global.tenantFetcher.fieldMapping.idField: "guid"
+  global.tenantFetcher.fieldMapping.nameField: "displayName"
+  global.tenantFetcher.fieldMapping.customerIdField: "customerId"
+  global.tenantFetcher.fieldMapping.discriminatorField: ""
+  global.tenantFetcher.fieldMapping.discriminatorValue: ""
+  global.tenantFetcher.fieldMapping.totalPagesField: "totalPages"
+  global.tenantFetcher.fieldMapping.totalResultsField: "totalResults"
+  global.tenantFetcher.fieldMapping.tenantEventsField: "events"
+  global.tenantFetcher.fieldMapping.detailsField: "eventData"
+  global.tenantFetcher.fieldMapping.entityTypeField: "type"
+  global.tenantFetcher.endpoints.subaccountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-create"
 ---
 apiVersion: v1
 kind: ConfigMap

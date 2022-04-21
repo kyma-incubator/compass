@@ -98,7 +98,7 @@ global:
       version: "PR-2297"
     director:
       dir:
-      version: "PR-2298"
+      version: "PR-2294"
     gateway:
       dir:
       version: "PR-2297"
@@ -124,10 +124,10 @@ global:
       version: "PR-2298"
     console:
       dir:
-      version: "PR-64"
+      version: "PR-65"
     e2e_tests:
       dir:
-      version: "PR-2298"
+      version: "PR-2319"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -380,7 +380,7 @@ global:
     timeout_ms: 120000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:write tenant_subscription:write","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:write tenant_subscription:write fetch_tenant","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
@@ -470,10 +470,12 @@ global:
       scopes: "openid profile email"
       path: "/oauth2/certs"
   tenantFetcher:
+    manageSecrets: true
     host: compass-tenant-fetcher.compass-system.svc.cluster.local
     prefix: /tenants
     port: 3000
     requiredAuthScope: Callback
+    fetchTenantAuthScope: fetch_tenant
     authentication:
       jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
     tenantProvider:
@@ -484,6 +486,7 @@ global:
       name: "provider"
       subscriptionProviderIdProperty: "subscriptionProviderIdProperty"
     server:
+      fetchTenantEndpoint: "/v1/fetch/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
       dependenciesEndpoint: "/v1/dependencies"
       tenantPathParam: "tenantId"
@@ -491,6 +494,35 @@ global:
       subscriptionProviderLabelKey: "subscriptionProviderId"
       consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
     containerName: "tenant-fetcher"
+    oauth:
+      client: "client_id"
+      secret: ""
+      tokenURL: '{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'
+      tokenPath: "/cert/token"
+    secret:
+      name: "compass-tenant-fetcher-secret"
+      clientIdKey: "client-id"
+      oauthMode: "oauth-mtls"
+      clientCertKey: "client-cert"
+      clientKeyKey: "client-key"
+      oauthUrlKey: "url"
+      skipSSLValidation: true
+    endpoints:
+      subaccountCreated: "127.0.0.1/events?type=subaccount-created"
+    fieldMapping:
+      totalPagesField: "totalPages"
+      totalResultsField: "totalResults"
+      tenantEventsField: "events"
+      idField: "id"
+      nameField: "name"
+      customerIdField: "customerId"
+      subdomainField: "subdomain"
+      discriminatorField: ""
+      discriminatorValue: ""
+      detailsField: "details"
+      entityTypeField: "entityType"
+      globalAccountID: "gaID"
+      regionField: "region"
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     issuerLocality: "local" # In local setup we have manually created connector CA certificate with 'local' Locality property
