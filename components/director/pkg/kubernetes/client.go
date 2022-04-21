@@ -17,9 +17,9 @@ import (
 
 // Config missing godoc
 type Config struct {
-	PollInterval time.Duration `envconfig:"default=2s,APP_KUBERNETES_POLL_INTERVAL"`
-	PollTimeout  time.Duration `envconfig:"default=1m,APP_KUBERNETES_POLL_TIMEOUT"`
-	Timeout      time.Duration `envconfig:"default=2m,APP_KUBERNETES_TIMEOUT"`
+	PollInterval time.Duration `envconfig:"optional,default=2s,APP_KUBERNETES_POLL_INTERVAL"`
+	PollTimeout  time.Duration `envconfig:"optional,default=1m,APP_KUBERNETES_POLL_TIMEOUT"`
+	Timeout      time.Duration `envconfig:"optional,default=2m,APP_KUBERNETES_TIMEOUT"`
 }
 
 // NewKubernetesClientSet missing godoc

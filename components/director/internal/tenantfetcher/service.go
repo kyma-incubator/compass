@@ -54,8 +54,8 @@ type TenantFieldMapping struct {
 // MovedSubaccountsFieldMapping missing godoc
 type MovedSubaccountsFieldMapping struct {
 	LabelValue   string `envconfig:"APP_MAPPING_FIELD_ID"`
-	SourceTenant string `envconfig:"APP_MOVED_SUBACCOUNT_SOURCE_TENANT_FIELD"`
-	TargetTenant string `envconfig:"APP_MOVED_SUBACCOUNT_TARGET_TENANT_FIELD"`
+	SourceTenant string `envconfig:"optional,APP_MOVED_SUBACCOUNT_SOURCE_TENANT_FIELD"`
+	TargetTenant string `envconfig:"optional,APP_MOVED_SUBACCOUNT_TARGET_TENANT_FIELD"`
 }
 
 // QueryConfig contains the name of query parameters fields and default/start values

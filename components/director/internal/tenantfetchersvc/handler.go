@@ -49,9 +49,9 @@ type HandlerConfig struct {
 
 	Features features.Config
 
-	TenantFetcherJobIntervalMins time.Duration `envconfig:"default=5m,APP_TENANT_FETCH_JOB_INTERVAL_MINS"`
+	TenantFetcherJobIntervalMins time.Duration `envconfig:"default=5m"`
 	FullResyncInterval           time.Duration `envconfig:"default=12h"`
-	ShouldSyncSubaccounts        bool          `envconfig:"default=false,APP_SYNC_SUBACCOUNTS"`
+	ShouldSyncSubaccounts        bool          `envconfig:"default=false"`
 
 	Kubernetes tenantfetcher.KubeConfig
 	Database   persistence.DatabaseConfig
@@ -60,7 +60,7 @@ type HandlerConfig struct {
 	ClientTimeout               time.Duration `envconfig:"default=60s"`
 	HTTPClientSkipSslValidation bool          `envconfig:"APP_HTTP_CLIENT_SKIP_SSL_VALIDATION,default=false"`
 
-	TenantInsertChunkSize int `envconfig:"default=500,APP_TENANT_INSERT_CHUNK_SIZE"`
+	TenantInsertChunkSize int `envconfig:"default=500"`
 	TenantProviderConfig
 }
 
@@ -76,8 +76,8 @@ type TenantProviderConfig struct {
 
 // EventsConfig contains configuration for Events API requests
 type EventsConfig struct {
-	AccountsRegion    string   `envconfig:"default=central,APP_ACCOUNT_REGION"`
-	SubaccountRegions []string `envconfig:"default=central,APP_SUBACCOUNT_REGIONS"`
+	AccountsRegion    string   `envconfig:"default=central"`
+	SubaccountRegions []string `envconfig:"default=central"`
 
 	AuthMode    oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
 	OAuthConfig tenantfetcher.OAuth2Config

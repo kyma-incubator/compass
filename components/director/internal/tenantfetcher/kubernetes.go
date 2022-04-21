@@ -55,12 +55,12 @@ func (k *noopKubernetesClient) UpdateTenantFetcherConfigMapData(_ context.Contex
 
 // KubeConfig missing godoc
 type KubeConfig struct {
-	UseKubernetes string `envconfig:"default=true,APP_USE_KUBERNETES"`
+	UseKubernetes string `envconfig:"optional,default=true,APP_USE_KUBERNETES"`
 
-	ConfigMapNamespace            string `envconfig:"default=compass-system,APP_CONFIGMAP_NAMESPACE"`
-	ConfigMapName                 string `envconfig:"default=tenant-fetcher-config,APP_LAST_EXECUTION_TIME_CONFIG_MAP_NAME"`
-	ConfigMapTimestampField       string `envconfig:"default=lastConsumedTenantTimestamp,APP_CONFIGMAP_TIMESTAMP_FIELD"`
-	ConfigMapResyncTimestampField string `envconfig:"default=lastFullResyncTimestamp,APP_CONFIGMAP_RESYNC_TIMESTAMP_FIELD"`
+	ConfigMapNamespace            string `envconfig:"optional,default=compass-system,APP_CONFIGMAP_NAMESPACE"`
+	ConfigMapName                 string `envconfig:"optional,default=tenant-fetcher-config,APP_LAST_EXECUTION_TIME_CONFIG_MAP_NAME"`
+	ConfigMapTimestampField       string `envconfig:"optional,default=lastConsumedTenantTimestamp,APP_CONFIGMAP_TIMESTAMP_FIELD"`
+	ConfigMapResyncTimestampField string `envconfig:"optional,default=lastFullResyncTimestamp,APP_CONFIGMAP_RESYNC_TIMESTAMP_FIELD"`
 
 	ClientConfig kube.Config
 }
