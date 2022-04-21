@@ -495,10 +495,10 @@ global:
       consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
     containerName: "tenant-fetcher"
     oauth:
-      client: """client_id"
+      client: "client_id"
       secret: ""
-      tokenURL: ""'{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'
-      tokenPath: """/cert/token"
+      tokenURL: '{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'
+      tokenPath: "/cert/token"
     secret:
       name: "compass-tenant-fetcher-secret"
       clientIdKey: "client-id"
