@@ -150,6 +150,9 @@ func readJobConfig(jobName string, environmentVars map[string]string) tenantfetc
 }
 
 func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig, stopJob chan bool) {
+	err := envconfig.InitWithPrefix(&jobConfig, envPrefix)
+	exitOnError(err, "Error while loading app config")
+
 	jobInterval := jobConfig.HandlerConfig.TenantFetcherJobIntervalMins
 	ticker := time.NewTicker(jobInterval)
 	jobName := jobConfig.JobName
