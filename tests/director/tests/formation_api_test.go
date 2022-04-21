@@ -135,6 +135,15 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, asaFormation, asaGqlFormation.Name)
 
+	defer func() {
+		t.Log("Should be able to delete ASA formation")
+		deleteASAFormationRequest := fixtures.FixDeleteFormationRequest(asaFormation)
+		var deleteASAFormation graphql.Formation
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, deleteASAFormationRequest, &deleteASAFormation)
+		assert.NoError(t, err)
+		assert.Equal(t, asaFormation, deleteASAFormation.Name)
+	}()
+
 	asaInput := fixtures.FixAutomaticScenarioAssigmentInput(asaFormation, selectorKey, subaccountID)
 	t.Log("Creating ASA")
 	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, certSecuredGraphQLClient, asaInput, tenantId)
