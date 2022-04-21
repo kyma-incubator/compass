@@ -286,7 +286,7 @@ The scopes are added to the authentication session in Tenant Mapping Handler. Th
 
 1. Runtime/Application makes a call to the Director.
 1. Oathkeeper mutator hydrator sends the request to the Token resolver hosted by the `Hydrator` component. The Client ID is extracted from the one-time token's `Connector-Token` header or from the `token` query parameter, and is then written to the `Client-Id-From-Token` header. In the case of failure, the header is empty.
-1. Then, the call is proxied again to the `Hydrator` component and to the Tenant Mapping Handler mutator, where the Client ID is mapped onto the `tenant` and returned to the Oathkeeper. 
+1. Then, the call is proxied again to the Tenant Mapping Handler mutator hosted by the `Hydrator` component, where the Client ID is mapped onto the `tenant` and returned to the Oathkeeper. 
 1. Oathkeeper passes the response to ID_Token mutator which constructs a JWT token with scopes and tenant in the payload.
 1. The OathKeeper proxies the request further to the Compass `Gateway`.
 1. The request is forwarded to the `Director`.
