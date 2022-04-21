@@ -36,13 +36,3 @@ data:
   global.cockpit.auth.idpHost: "https://container.googleapis.com/v1/projects/$CLOUDSDK_CORE_PROJECT/locations/$CLOUDSDK_COMPUTE_ZONE/clusters/$COMMON_NAME"
   global.cockpit.auth.path: "/jwks"
   global.tenantFetcher.endpoints.subaccountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-create"
-  global.tenantFetcher.secret.name: "compass-tenant-fetcher-secret"
-  global.tenantFetcher.secret.clientIdKey: "client-id"
-  global.tenantFetcher.secret.oauthMode: "oauth-mtls"
-  global.tenantFetcher.secret.clientCertKey: "client-cert"
-  global.tenantFetcher.secret.clientKeyKey: "client-key"
-  global.tenantFetcher.secret.oauthUrlKey: "url"
-  global.tenantFetcher.secret.skipSSLValidation: "true"
-  global.tenantFetcher.oauth.client: "client_id"
-  global.tenantFetcher.oauth.tokenURL: '{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'
-  global.tenantFetcher.oauth.tokenPath: "/cert/token"
