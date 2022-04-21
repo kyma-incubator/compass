@@ -127,22 +127,23 @@ func main() {
 	runMainSrv()
 
 	environmentVars := tenantfetcher.ReadEnvironmentVars()
+	log.C(ctx).Infof("Environment vars: %+v", environmentVars)
 
 	stopGlobalAccountsFeatureAJob := make(chan bool, 1)
-	globalAccountsFeatureAJobConfig := readJobConfig("cis1", environmentVars)
+	globalAccountsFeatureAJobConfig := readJobConfig("account-fetcher", environmentVars)
 	runTenantFetcherJob(ctx, globalAccountsFeatureAJobConfig, stopGlobalAccountsFeatureAJob)
 
 	stopGlobalAccountsFeatureBJob := make(chan bool, 1)
-	globalAccountsFeatureBJobConfig := readJobConfig("cis2", environmentVars)
+	globalAccountsFeatureBJobConfig := readJobConfig("subaccount-fetcher", environmentVars)
 	runTenantFetcherJob(ctx, globalAccountsFeatureBJobConfig, stopGlobalAccountsFeatureBJob)
 
-	stopSubaccountsJob := make(chan bool, 1)
-	subaccountsJobConfig := readJobConfig("cis2-subaccounts", environmentVars)
-	runTenantFetcherJob(ctx, subaccountsJobConfig, stopSubaccountsJob)
+	//stopSubaccountsJob := make(chan bool, 1)
+	//subaccountsJobConfig := readJobConfig("cis2-subaccounts", environmentVars)
+	//runTenantFetcherJob(ctx, subaccountsJobConfig, stopSubaccountsJob)
 
 	<-stopGlobalAccountsFeatureAJob
 	<-stopGlobalAccountsFeatureBJob
-	<-stopSubaccountsJob
+	//<-stopSubaccountsJob
 }
 
 func readJobConfig(jobName string, environmentVars map[string]string) tenantfetcher.JobConfig {
@@ -152,6 +153,8 @@ func readJobConfig(jobName string, environmentVars map[string]string) tenantfetc
 func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig, stopJob chan bool) {
 	err := envconfig.InitWithPrefix(&jobConfig, envPrefix)
 	exitOnError(err, "Error while loading app config")
+
+	log.C(ctx).Infof("Tenant fetcher job: %+v to be executed", jobConfig)
 
 	jobInterval := jobConfig.HandlerConfig.TenantFetcherJobIntervalMins
 	ticker := time.NewTicker(jobInterval)
