@@ -470,6 +470,7 @@ global:
       scopes: "openid profile email"
       path: "/oauth2/certs"
   tenantFetcher:
+    manageSecrets: true
     host: compass-tenant-fetcher.compass-system.svc.cluster.local
     prefix: /tenants
     port: 3000
