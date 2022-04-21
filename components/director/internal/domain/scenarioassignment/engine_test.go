@@ -635,15 +635,19 @@ func Test_engine_GetScenariosFromMatchingASAs(t *testing.T) {
 			ExpectedScenarios: nil,
 		},
 		{
-			Name:           "Returns error when can't list ASAs",
+			Name:           "Returns error when checking if asa matches runtime",
 			LabelServiceFn: unusedLabelService,
 			LabelRepoFn:    unusedLabelRepo,
 			ScenarioAssignmentRepoFn: func() *automock.Repository {
 				repo := &automock.Repository{}
-				repo.On("ListAll", ctx, tenantID).Return(nil, testErr)
+				repo.On("ListAll", ctx, tenantID).Return(testScenarios, nil)
 				return repo
 			},
-			RuntimeRepoFn:     unusedRuntimeRepo,
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("Exists", ctx, targetTenantID, runtimeID).Return(false, testErr)
+				return repo
+			},
 			RuntimeID:         runtimeID,
 			ExpectedError:     testErr,
 			ExpectedScenarios: nil,
