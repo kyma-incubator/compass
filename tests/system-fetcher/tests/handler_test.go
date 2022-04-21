@@ -301,21 +301,25 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 		},
 	}
 
-	resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
+	respDefaultTenant, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
 	defer func() {
-		for _, app := range resp.Data {
+		for _, app := range respDefaultTenant.Data {
 			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
 		}
 	}()
 	require.ElementsMatch(t, expectedApps, actualApps)
 
-	resp, actualApps = retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetSystemFetcherTenantID())
+	respSystemFetcherTenant, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetSystemFetcherTenantID())
 	defer func() {
-		for _, app := range resp.Data {
+		for _, app := range respSystemFetcherTenant.Data {
 			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetSystemFetcherTenantID(), app)
 		}
 	}()
 	require.ElementsMatch(t, expectedApps, actualApps)
+
+	defaultTenantAppIds := retrieveAppIdsFromResponse(respDefaultTenant)
+	systemFetcherTenantAppIds := retrieveAppIdsFromResponse(respSystemFetcherTenant)
+	require.ElementsMatch(t, defaultTenantAppIds, systemFetcherTenantAppIds)
 }
 
 func TestSystemFetcherDuplicateSystems(t *testing.T) {
@@ -815,4 +819,12 @@ func fixApplicationTemplate(name string) directorSchema.ApplicationTemplateInput
 	}
 
 	return appTemplateInput
+}
+
+func retrieveAppIdsFromResponse(resp directorSchema.ApplicationPageExt) []string {
+	ids := make([]string, 0, len(resp.Data))
+	for _, app := range resp.Data {
+		ids = append(ids, app.ID)
+	}
+	return ids
 }

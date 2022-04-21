@@ -201,7 +201,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
 	router.Methods(http.MethodDelete).PathPrefix("/systemfetcher/reset").HandlerFunc(systemFetcherHandler.HandleReset)
 	systemsRouter := router.PathPrefix("/systemfetcher/systems").Subrouter()
-	systemsRouter.Use(oauthMiddleware(&key.PublicKey, getClaimsValidator([]string{cfg.DefaultTenant, cfg.TrustedTenant}, cfg.ClientID, cfg.Scopes)))
+	systemsRouter.Use(oauthMiddleware(&key.PublicKey, getClaimsValidator([]string{cfg.DefaultTenant, cfg.TrustedTenant})))
 	systemsRouter.HandleFunc("", systemFetcherHandler.HandleFunc)
 
 	// Tenant fetcher handlers
@@ -484,7 +484,7 @@ func noopClaimsValidator(_ *oauth.Claims) bool {
 	return true
 }
 
-func getClaimsValidator(trustedTenants []string, expectedClient, expectedScopes string) func(*oauth.Claims) bool {
+func getClaimsValidator(trustedTenants []string) func(*oauth.Claims) bool {
 	return func(claims *oauth.Claims) bool {
 		for _, tenant := range trustedTenants {
 			if claims.Tenant == tenant {
