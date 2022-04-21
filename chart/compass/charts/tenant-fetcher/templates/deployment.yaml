@@ -195,6 +195,7 @@ spec:
               value: {{ default "gaID" .Values.global.tenantFetcher.fieldMapping.globalAccountID }}
             # Tenant fetchers job configurations
             {{- range $tenantFetcherJobName, $config := .Values.global.tenantFetchers }}
+            {{- if eq $config.enabled true }}
             # Database config
             - name: APP_{{ $tenantFetcherJobName }}_DB_MAX_OPEN_CONNECTIONS
               value: {{ $config.dbPool.maxOpenConnections | quote }}
@@ -327,6 +328,7 @@ spec:
               value: {{ default "127.0.0.1/events?type=subaccount-updated" $config.endpoints.subaccountUpdated }}
             - name: APP_{{ $tenantFetcherJobName }}_ENDPOINT_SUBACCOUNT_MOVED
               value: {{ default "127.0.0.1/events?type=subaccount-moved" $config.endpoints.subaccountMoved }}
+            {{- end }}
             {{- end }}
           livenessProbe:
             httpGet:
