@@ -19,12 +19,14 @@ var (
 		"foo": {"bar", "baz"},
 		"too": {"tar", "taz"},
 	}
-	authMapSerialized     = "{\"foo\":[\"bar\",\"baz\"],\"too\":[\"tar\",\"taz\"]}"
-	authHeaders           = graphql.HTTPHeaders(authMap)
-	authHeadersSerialized = graphql.HTTPHeadersSerialized(authMapSerialized)
-	authParams            = graphql.QueryParams(authMap)
-	authParamsSerialized  = graphql.QueryParamsSerialized(authMapSerialized)
-	accessStrategy        = "testAccessStrategy"
+	authMapSerialized            = "{\"foo\":[\"bar\",\"baz\"],\"too\":[\"tar\",\"taz\"]}"
+	authHeaders                  = graphql.HTTPHeaders(authMap)
+	authHeadersSerialized        = graphql.HTTPHeadersSerialized(authMapSerialized)
+	invalidAuthHeadersSerialized = graphql.HTTPHeadersSerialized("invalid")
+	authParams                   = graphql.QueryParams(authMap)
+	authParamsSerialized         = graphql.QueryParamsSerialized(authMapSerialized)
+	invalidAuthParamsSerialized  = graphql.QueryParamsSerialized("invalid")
+	accessStrategy               = "testAccessStrategy"
 )
 
 func fixDetailedAuth() *model.Auth {

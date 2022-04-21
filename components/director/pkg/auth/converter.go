@@ -54,47 +54,6 @@ func ToGraphQLInput(in *model.Auth) (*graphql.AuthInput, error) {
 	}, nil
 }
 
-func basicCredentialToInput(in *model.BasicCredentialData) *graphql.BasicCredentialDataInput {
-	if in == nil {
-		return nil
-	}
-
-	return &graphql.BasicCredentialDataInput{
-		Username: in.Username,
-		Password: in.Password,
-	}
-}
-
-func oauthCredentialToInput(in *model.OAuthCredentialData) *graphql.OAuthCredentialDataInput {
-	if in == nil {
-		return nil
-	}
-
-	return &graphql.OAuthCredentialDataInput{
-		ClientID:     in.ClientID,
-		ClientSecret: in.ClientSecret,
-		URL:          in.URL,
-	}
-}
-
-func credentialDataToInput(in model.CredentialData) *graphql.CredentialDataInput {
-	var basicCredentials *model.BasicCredentialData
-	var oauthCredentials *model.OAuthCredentialData
-
-	if in.Basic != nil {
-		basicCredentials = in.Basic
-	}
-
-	if in.Oauth != nil {
-		oauthCredentials = in.Oauth
-	}
-
-	return &graphql.CredentialDataInput{
-		Basic: basicCredentialToInput(basicCredentials),
-		Oauth: oauthCredentialToInput(oauthCredentials),
-	}
-}
-
 func requestAuthToInput(in *model.CredentialRequestAuth) (*graphql.CredentialRequestAuthInput, error) {
 	if in == nil || in.Csrf == nil {
 		return nil, nil
@@ -137,20 +96,51 @@ func requestAuthToInput(in *model.CredentialRequestAuth) (*graphql.CredentialReq
 		},
 	}
 
-	// TODO:: check why is commented and adapt/remove?
-	// if in.Csrf.Credential != nil {
-	// 	csrfCredentialDataInput, err := credentialDataToInput(in.Csrf.Credential)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	//
-	// 	requestAuth.Csrf.Credential = csrfCredentialDataInput
-	// }
-
 	return requestAuth, nil
 }
 
-// ToModel missing godoc
+func credentialDataToInput(in model.CredentialData) *graphql.CredentialDataInput {
+	var basicCredentials *model.BasicCredentialData
+	var oauthCredentials *model.OAuthCredentialData
+
+	if in.Basic != nil {
+		basicCredentials = in.Basic
+	}
+
+	if in.Oauth != nil {
+		oauthCredentials = in.Oauth
+	}
+
+	return &graphql.CredentialDataInput{
+		Basic: basicCredentialToInput(basicCredentials),
+		Oauth: oauthCredentialToInput(oauthCredentials),
+	}
+}
+
+func basicCredentialToInput(in *model.BasicCredentialData) *graphql.BasicCredentialDataInput {
+	if in == nil {
+		return nil
+	}
+
+	return &graphql.BasicCredentialDataInput{
+		Username: in.Username,
+		Password: in.Password,
+	}
+}
+
+func oauthCredentialToInput(in *model.OAuthCredentialData) *graphql.OAuthCredentialDataInput {
+	if in == nil {
+		return nil
+	}
+
+	return &graphql.OAuthCredentialDataInput{
+		ClientID:     in.ClientID,
+		ClientSecret: in.ClientSecret,
+		URL:          in.URL,
+	}
+}
+
+// ToModel converts graphql.Auth to model.Auth
 func ToModel(in *graphql.Auth) (*model.Auth, error) {
 	if in == nil {
 		return nil, nil
@@ -224,12 +214,12 @@ func credentialToModel(in graphql.CredentialData) model.CredentialData {
 	var oauth *model.OAuthCredentialData
 
 	switch cred := in.(type) {
-	case *graphql.BasicCredentialData:
+	case graphql.BasicCredentialData:
 		basic = &model.BasicCredentialData{
 			Username: cred.Username,
 			Password: cred.Password,
 		}
-	case *graphql.OAuthCredentialData:
+	case graphql.OAuthCredentialData:
 		oauth = &model.OAuthCredentialData{
 			ClientID:     cred.ClientID,
 			ClientSecret: cred.ClientSecret,

@@ -173,7 +173,6 @@ func (c *converter) ModelFromGraphQLInput(in graphql.AuthInput) (*model.Auth, er
 	}
 
 	reqAuth, err := c.requestAuthFromGraphQL(in.RequestAuth)
-
 	if err != nil {
 		return nil, err
 	}
