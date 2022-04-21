@@ -3,15 +3,16 @@ package tests
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strings"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
-	"net/http"
-	"strings"
-	"testing"
 )
 
 type SccKey struct {
