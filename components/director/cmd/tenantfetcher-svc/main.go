@@ -91,7 +91,6 @@ func main() {
 	signal.HandleInterrupts(ctx, cancel, term)
 
 	environmentVars := tenantfetcher.ReadEnvironmentVars()
-	//log.C(ctx).Infof("Environment vars: %+v", environmentVars)
 
 	stopGlobalAccountsFeatureAJob := make(chan bool, 1)
 	globalAccountsFeatureAJobConfig := readJobConfig(ctx, "account-fetcher", environmentVars)
