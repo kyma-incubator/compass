@@ -1,6 +1,8 @@
 package tenantfetchersvc
 
 import (
+	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"os"
 	"strconv"
 	"strings"
@@ -17,35 +19,51 @@ import (
 const emptyValue = ""
 
 type job struct {
+	ctx             context.Context
 	name            string
 	environmentVars map[string]string
+	jobConfig       *JobConfig
 }
 
 // JobConfig contains tenant fetcher job configuration read from environment
 type JobConfig struct {
 	JobName       string
-	EventsConfig  EventsConfig
-	HandlerConfig HandlerConfig
+	eventsConfig  EventsConfig
+	handlerConfig HandlerConfig
+}
+
+func (cfg *JobConfig) GetEventsCgf() EventsConfig {
+	return cfg.eventsConfig
+}
+
+func (cfg *JobConfig) GetHandlerCgf() HandlerConfig {
+	return cfg.handlerConfig
 }
 
 // NewTenantFetcherJobEnvironment used for job configuration read from environment
-func NewTenantFetcherJobEnvironment(name string, environmentVars map[string]string) *job {
+func NewTenantFetcherJobEnvironment(ctx context.Context, name string, environmentVars map[string]string) *job {
 	return &job{
+		ctx:             ctx,
 		name:            name,
 		environmentVars: environmentVars,
+		jobConfig:       nil,
 	}
 }
 
 // ReadJobConfig reads job configuration from environment
 func (j *job) ReadJobConfig() JobConfig {
-	return JobConfig{
-		JobName:       j.name,
-		EventsConfig:  j.getEventsConfig(),
-		HandlerConfig: j.getHandlerConfig(),
+	if j.jobConfig != nil {
+		return *j.jobConfig
 	}
+	j.jobConfig = &JobConfig{
+		JobName:       j.name,
+		eventsConfig:  j.readEventsConfig(),
+		handlerConfig: j.readHandlerConfig(),
+	}
+	return *j.jobConfig
 }
 
-func (j *job) getEventsConfig() EventsConfig {
+func (j *job) readEventsConfig() EventsConfig {
 	return EventsConfig{
 		AccountsRegion:    j.getEnvValueForKey("central", "APP_"+j.name+"_ACCOUNT_REGION"),
 		SubaccountRegions: strings.Split(j.getEnvValueForKey("central", "APP_"+j.name+"_SUBACCOUNT_REGIONS"), ","),
@@ -62,7 +80,7 @@ func (j *job) getEventsConfig() EventsConfig {
 	}
 }
 
-func (j *job) getHandlerConfig() HandlerConfig {
+func (j *job) readHandlerConfig() HandlerConfig {
 	return HandlerConfig{
 		Features: j.getFeaturesConfig(),
 
@@ -91,7 +109,7 @@ func (j *job) getOAuth2Config() tenantfetcher.OAuth2Config {
 		SkipSSLValidation:  getBoolVal(j.getEnvValueForKey("false", "APP_"+j.name+"_OAUTH_SKIP_SSL_VALIDATION"), false),
 		X509Config: oauth.X509Config{
 			Cert: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_OAUTH_X509_CERT"),
-			Key:  j.getEnvValueForKey(emptyValue, "APP_"+j.name+"OAUTH_X509_KEY"),
+			Key:  j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_OAUTH_X509_KEY"),
 		},
 	}
 }
@@ -205,8 +223,10 @@ func (j *job) getTenantProviderConfig() TenantProviderConfig {
 
 func (j *job) getEnvValueForKey(defaultVal string, key string) string {
 	if val, ok := j.environmentVars[key]; ok {
+		log.C(j.ctx).Infof("Env var %s value is: %s", key, val)
 		return val
 	}
+	log.C(j.ctx).Infof("Value for var %s is default: %s", key, defaultVal)
 	return defaultVal
 }
 

@@ -52,7 +52,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 	"github.com/pkg/errors"
-	"github.com/vrischmann/envconfig"
 )
 
 const envPrefix = "APP"
@@ -89,52 +88,15 @@ func main() {
 	term := make(chan os.Signal)
 	signal.HandleInterrupts(ctx, cancel, term)
 
-	cfg := config{}
-	err := envconfig.InitWithPrefix(&cfg, envPrefix)
-	exitOnError(err, "Error while loading app config")
-
-	ctx, err = log.Configure(ctx, &cfg.Log)
-	exitOnError(err, "Failed to configure Logger")
-
-	if cfg.Handler.TenantPathParam == "" {
-		exitOnError(errors.New("missing tenant path parameter"), "Error while loading app handler config")
-	}
-
-	transact, closeFunc, err := persistence.Configure(ctx, cfg.Handler.Database)
-	exitOnError(err, "Error while establishing the connection to the database")
-
-	defer func() {
-		err := closeFunc()
-		exitOnError(err, "Error while closing the connection to the database")
-	}()
-
-	httpClient := &http.Client{
-		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-
-	handler := initAPIHandler(ctx, httpClient, cfg, transact)
-	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
-
-	go func() {
-		<-ctx.Done()
-		// Interrupt signal received - shut down the servers
-		shutdownMainSrv()
-	}()
-
-	runMainSrv()
-
 	environmentVars := tenantfetcher.ReadEnvironmentVars()
-	log.C(ctx).Infof("Environment vars: %+v", environmentVars)
+	//log.C(ctx).Infof("Environment vars: %+v", environmentVars)
 
 	stopGlobalAccountsFeatureAJob := make(chan bool, 1)
-	globalAccountsFeatureAJobConfig := readJobConfig("account-fetcher", environmentVars)
+	globalAccountsFeatureAJobConfig := readJobConfig(ctx, "account-fetcher", environmentVars)
 	runTenantFetcherJob(ctx, globalAccountsFeatureAJobConfig, stopGlobalAccountsFeatureAJob)
 
 	stopGlobalAccountsFeatureBJob := make(chan bool, 1)
-	globalAccountsFeatureBJobConfig := readJobConfig("subaccount-fetcher", environmentVars)
+	globalAccountsFeatureBJobConfig := readJobConfig(ctx, "subaccount-fetcher", environmentVars)
 	runTenantFetcherJob(ctx, globalAccountsFeatureBJobConfig, stopGlobalAccountsFeatureBJob)
 
 	// stopSubaccountsJob := make(chan bool, 1)
@@ -144,23 +106,56 @@ func main() {
 	<-stopGlobalAccountsFeatureAJob
 	<-stopGlobalAccountsFeatureBJob
 	// <-stopSubaccountsJob
+
+	//cfg := config{}
+	//err := envconfig.InitWithPrefix(&cfg, envPrefix)
+	//exitOnError(err, "Error while loading app config")
+	//
+	//ctx, err = log.Configure(ctx, &cfg.Log)
+	//exitOnError(err, "Failed to configure Logger")
+	//
+	//if cfg.Handler.TenantPathParam == "" {
+	//	exitOnError(errors.New("missing tenant path parameter"), "Error while loading app handler config")
+	//}
+	//
+	//transact, closeFunc, err := persistence.Configure(ctx, cfg.Handler.Database)
+	//exitOnError(err, "Error while establishing the connection to the database")
+	//
+	//defer func() {
+	//	err := closeFunc()
+	//	exitOnError(err, "Error while closing the connection to the database")
+	//}()
+	//
+	//httpClient := &http.Client{
+	//	Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+	//	CheckRedirect: func(req *http.Request, via []*http.Request) error {
+	//		return http.ErrUseLastResponse
+	//	},
+	//}
+	//
+	//handler := initAPIHandler(ctx, httpClient, cfg, transact)
+	//runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
+	//
+	//go func() {
+	//	<-ctx.Done()
+	//	// Interrupt signal received - shut down the servers
+	//	shutdownMainSrv()
+	//}()
+	//
+	//runMainSrv()
 }
 
-func readJobConfig(jobName string, environmentVars map[string]string) tenantfetcher.JobConfig {
-	return tenantfetcher.NewTenantFetcherJobEnvironment(jobName, environmentVars).ReadJobConfig()
+func readJobConfig(ctx context.Context, jobName string, environmentVars map[string]string) tenantfetcher.JobConfig {
+	return tenantfetcher.NewTenantFetcherJobEnvironment(ctx, jobName, environmentVars).ReadJobConfig()
 }
 
 func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig, stopJob chan bool) {
-	err := envconfig.InitWithPrefix(&jobConfig, envPrefix)
-	exitOnError(err, "Error while loading app config")
-
-	log.C(ctx).Infof("Tenant fetcher job: %+v to be executed", jobConfig)
-
-	jobInterval := jobConfig.HandlerConfig.TenantFetcherJobIntervalMins
+	jobInterval := jobConfig.GetHandlerCgf().TenantFetcherJobIntervalMins
 	ticker := time.NewTicker(jobInterval)
 	jobName := jobConfig.JobName
 
-	transact, closeFunc, err := persistence.Configure(ctx, jobConfig.HandlerConfig.Database)
+	log.C(ctx).Infof("Job %s database config: %+v", jobConfig.JobName, jobConfig.GetHandlerCgf().Database)
+	transact, closeFunc, err := persistence.Configure(ctx, jobConfig.GetHandlerCgf().Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
 	defer func() {
@@ -195,8 +190,8 @@ func syncTenants(ctx context.Context, jobConfig tenantfetcher.JobConfig, transac
 }
 
 func createTenantsFetcherSvc(ctx context.Context, jobConfig tenantfetcher.JobConfig, transact persistence.Transactioner) (tf.TenantSyncService, error) {
-	eventsCfg := jobConfig.EventsConfig
-	handlerCfg := jobConfig.HandlerConfig
+	eventsCfg := jobConfig.GetEventsCgf()
+	handlerCfg := jobConfig.GetHandlerCgf()
 
 	uidSvc := uid.NewService()
 
