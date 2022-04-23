@@ -33,12 +33,12 @@ type JobConfig struct {
 	handlerConfig HandlerConfig
 }
 
-// GetEventsCgf
+// GetEventsCgf get configuration for reading events for tenants
 func (cfg *JobConfig) GetEventsCgf() EventsConfig {
 	return cfg.eventsConfig
 }
 
-// GetHandlerCgf
+// GetHandlerCgf get configuration for handling tenants synchronization
 func (cfg *JobConfig) GetHandlerCgf() HandlerConfig {
 	return cfg.handlerConfig
 }
