@@ -19,10 +19,11 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"github.com/vrischmann/envconfig"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/vrischmann/envconfig"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
