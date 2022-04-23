@@ -302,26 +302,24 @@ func NewSubaccountService(queryConfig QueryConfig,
 func (s SubaccountService) SyncTenants() error {
 	ctx := context.Background()
 	startTime := time.Now()
-	//
-	// lastConsumedTenantTimestamp, lastResyncTimestamp, err := s.kubeClient.GetTenantFetcherConfigMapData(ctx)
-	// if err != nil {
-	//	 return err
-	// }
-	//
-	// shouldFullResync, err := shouldFullResync(lastResyncTimestamp, s.fullResyncInterval)
-	// if err != nil {
-	// 	return err
-	// }
-	//
-	// newLastResyncTimestamp := lastResyncTimestamp
-	// if shouldFullResync {
-	//	log.C(ctx).Infof("Last full resync was %s ago. Will perform a full resync.", s.fullResyncInterval)
-	//	lastConsumedTenantTimestamp = "1"
-	//	newLastResyncTimestamp = convertTimeToUnixMilliSecondString(startTime)
-	// }
 
-	lastConsumedTenantTimestamp := ""
-	newLastResyncTimestamp := ""
+	lastConsumedTenantTimestamp, lastResyncTimestamp, err := s.kubeClient.GetTenantFetcherConfigMapData(ctx)
+	if err != nil {
+		return err
+	}
+
+	shouldFullResync, err := shouldFullResync(lastResyncTimestamp, s.fullResyncInterval)
+	if err != nil {
+		return err
+	}
+
+	newLastResyncTimestamp := lastResyncTimestamp
+	if shouldFullResync {
+		log.C(ctx).Infof("Last full resync was %s ago. Will perform a full resync.", s.fullResyncInterval)
+		lastConsumedTenantTimestamp = "1"
+		newLastResyncTimestamp = convertTimeToUnixMilliSecondString(startTime)
+	}
+
 	for _, region := range s.tenantsRegions {
 		tenantsToCreate, err := s.getSubaccountsToCreateForRegion(lastConsumedTenantTimestamp, region)
 		if err != nil {
@@ -389,7 +387,7 @@ func (s SubaccountService) SyncTenants() error {
 		}
 	}
 
-	if err := s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixMilliSecondString(startTime), newLastResyncTimestamp); err != nil {
+	if err = s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixMilliSecondString(startTime), newLastResyncTimestamp); err != nil {
 		return err
 	}
 
