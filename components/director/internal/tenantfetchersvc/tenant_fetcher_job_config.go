@@ -2,11 +2,12 @@ package tenantfetchersvc
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
@@ -32,10 +33,12 @@ type JobConfig struct {
 	handlerConfig HandlerConfig
 }
 
+// GetEventsCgf
 func (cfg *JobConfig) GetEventsCgf() EventsConfig {
 	return cfg.eventsConfig
 }
 
+// GetHandlerCgf
 func (cfg *JobConfig) GetHandlerCgf() HandlerConfig {
 	return cfg.handlerConfig
 }
