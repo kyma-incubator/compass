@@ -3,6 +3,7 @@ package tenantfetchersvc
 import (
 	"context"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -17,7 +18,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 )
 
-const emptyValue = ""
+const (
+	emptyValue     = ""
+	jobNamePattern = "^APP_(.*)_JOB_NAME$"
+)
 
 type job struct {
 	ctx             context.Context
@@ -267,4 +271,20 @@ func ReadEnvironmentVars() map[string]string {
 		vars[key] = value
 	}
 	return vars
+}
+
+// GetJobsNames retrieves the names of tenant fetchers jobs
+func GetJobsNames(envVars map[string]string) []string {
+	searchPattern := regexp.MustCompile(jobNamePattern)
+	var jobNames []string
+
+	for key := range envVars {
+		matches := searchPattern.FindStringSubmatch(key)
+		if len(matches) > 0 {
+			jobName := matches[1]
+			jobNames = append(jobNames, jobName)
+		}
+	}
+
+	return jobNames
 }

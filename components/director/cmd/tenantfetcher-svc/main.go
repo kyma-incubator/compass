@@ -91,13 +91,15 @@ func main() {
 	signal.HandleInterrupts(ctx, cancel, term)
 
 	environmentVars := tenantfetcher.ReadEnvironmentVars()
+	jobsNames := tenantfetcher.GetJobsNames(environmentVars)
+	log.C(ctx).Infof("Tenant fetcher jobs names are: %s", jobsNames)
 
 	stopGlobalAccountsFeatureAJob := make(chan bool, 1)
-	globalAccountsFeatureAJobConfig := readJobConfig(ctx, "account-fetcher", environmentVars)
+	globalAccountsFeatureAJobConfig := readJobConfig(ctx, jobsNames[0], environmentVars)
 	runTenantFetcherJob(ctx, globalAccountsFeatureAJobConfig, stopGlobalAccountsFeatureAJob)
 
 	stopGlobalAccountsFeatureBJob := make(chan bool, 1)
-	globalAccountsFeatureBJobConfig := readJobConfig(ctx, "subaccount-fetcher", environmentVars)
+	globalAccountsFeatureBJobConfig := readJobConfig(ctx, jobsNames[1], environmentVars)
 	runTenantFetcherJob(ctx, globalAccountsFeatureBJobConfig, stopGlobalAccountsFeatureBJob)
 
 	// stopSubaccountsJob := make(chan bool, 1)
