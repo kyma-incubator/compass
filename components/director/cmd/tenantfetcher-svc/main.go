@@ -90,25 +90,23 @@ func main() {
 	term := make(chan os.Signal)
 	signal.HandleInterrupts(ctx, cancel, term)
 
-	environmentVars := tenantfetcher.ReadEnvironmentVars()
-	jobsNames := tenantfetcher.GetJobsNames(environmentVars)
-	log.C(ctx).Infof("Tenant fetcher jobs names are: %s", jobsNames)
+	envVars := tenantfetcher.ReadEnvironmentVars()
+	jobsNames := tenantfetcher.GetJobsNames(envVars)
+	log.C(ctx).Infof("Tenant fetcher jobs are: %s", jobsNames)
 
-	stopGlobalAccountsFeatureAJob := make(chan bool, 1)
-	globalAccountsFeatureAJobConfig := readJobConfig(ctx, jobsNames[0], environmentVars)
-	runTenantFetcherJob(ctx, globalAccountsFeatureAJobConfig, stopGlobalAccountsFeatureAJob)
+	var stopJobChannels []chan bool
 
-	stopGlobalAccountsFeatureBJob := make(chan bool, 1)
-	globalAccountsFeatureBJobConfig := readJobConfig(ctx, jobsNames[1], environmentVars)
-	runTenantFetcherJob(ctx, globalAccountsFeatureBJobConfig, stopGlobalAccountsFeatureBJob)
+	for _, job := range jobsNames {
+		stopJob := make(chan bool, 1)
+		stopJobChannels = append(stopJobChannels, stopJob)
 
-	// stopSubaccountsJob := make(chan bool, 1)
-	// subaccountsJobConfig := readJobConfig("cis2-subaccounts", environmentVars)
-	// runTenantFetcherJob(ctx, subaccountsJobConfig, stopSubaccountsJob)
+		jobConfig := readJobConfig(ctx, job, envVars)
+		runTenantFetcherJob(ctx, jobConfig, stopJob)
+	}
 
-	<-stopGlobalAccountsFeatureAJob
-	<-stopGlobalAccountsFeatureBJob
-	// <-stopSubaccountsJob
+	for _, stopJob := range stopJobChannels {
+		<-stopJob
+	}
 
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, envPrefix)
