@@ -1,0 +1,64 @@
+# This file provides an overview of code owners in the `compass` repository.
+
+# Each line is a file pattern followed by one or more owners.
+# The last matching pattern has the most precedence.
+# For more details, read the following article on GitHub: https://help.github.com/articles/about-codeowners/.
+
+# These are the default owners for the whole content of the `compass` repository. The default owners are automatically added as reviewers when you open a pull request, unless different owners are specified in the file.
+
+* @team-dragon @team-falcon @team-raptor
+/chart/compass/charts/connectivity-adapter @team-falcon
+/chart/compass/charts/connector @team-raptor
+/chart/compass/charts/gateway @team-raptor
+/chart/compass/charts/ns-adapter @team-falcon
+/chart/compass/charts/operations-controller @team-falcon
+/chart/compass/charts/ord-service @team-raptor
+/chart/compass/charts/pairing-adapter @team-falcon
+/chart/compass/charts/tenant-fetcher @team-dragon
+/chart/compass/templates/filters @team-raptor
+/components/connectivity-adapter @team-falcon
+/components/connector @team-raptor
+/components/director/cmd/director @team-falcon @team-raptor @team-dragon
+/components/director/cmd/ns-adapter @team-falcon
+/components/director/cmd/ordaggregator @team-falcon
+/components/director/cmd/scopessynchronizer @team-raptor
+/components/director/cmd/systemfetcher @team-falcon
+/components/director/cmd/tenantfetcher-job @team-dragon
+/components/director/cmd/tenantfetcher-svc @team-dragon
+/components/director/cmd/tenantloader @team-raptor @team-dragon @team-falcon
+/components/director/internal/authnmappinghandler @team-raptor
+/components/director/internal/info @team-raptor
+/components/director/internal/nsadapter @team-falcon
+/components/director/internal/oathkeeper @team-raptor
+/components/director/internal/open_resource_discovery @team-falcon
+/components/director/internal/runtimemapping @team-raptor
+/components/director/internal/scopes_sync @team-raptor
+/components/director/internal/systemfetcher @team-falcon
+/components/director/internal/tenantfetcher @team-dragon
+/components/director/internal/tenantfetchersvc @team-dragon
+/components/director/internal/tenantmapping @team-raptor
+/components/director/pkg/accessstrategy @team-falcon
+/components/director/pkg/authenticator @team-raptor
+/components/director/pkg/operation @team-falcon
+/components/director/pkg/scenario @team-raptor
+/components/external-services-mock @team-dragon @team-falcon @team-raptor
+/components/gateway @team-raptor
+/components/operations-controller @team-falcon
+/components/pairing-adapter @team-falcon
+/components/schema-migrator @team-falcon @team-raptor @team-dragon
+/installation/cmd @team-raptor
+/installation/scripts @team-raptor
+/tests/connectivity-adapter @team-falcon
+/tests/connector @team-raptor
+/tests/gateway @team-raptor
+/tests/istio @team-raptor
+/tests/ns-adapter @team-falcon
+/tests/ord-aggregator @team-falcon
+/tests/ord-service @team-raptor
+/tests/pairing-adapter @team-falcon
+/tests/system-fetcher @team-falcon
+/tests/tenant-fetcher @team-dragon
+/tests/tenant-fetcher-job @team-dragon
+
+# All .md files
+*.md @Peteva @ekaterina-mitova @nkanchev
