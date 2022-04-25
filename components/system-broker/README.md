@@ -56,7 +56,7 @@ URLs pointing to the specifications API are included in the OSB plan metadata as
 Specifications API returns a single JSON, XML, or YAML document containing the specification of the API, or event definition defined by the specified query parameters.
 
 Example link to a specifications file:
- `https://compass-gateway.kyma.local/broker/specifications?app_id=53acc071-42ec-4561-962d-bf3dbc286cb7&package_id=b2bb4664-930b-491f-a922-8ac586ec84f9&definition_id=0c17b77e-530b-47d8-a23f-ad462ed4ee0a`
+ `https://compass-gateway.kyma.local/broker/specifications?app_id=53acc071-42ec-4561-962d-bf3dbc286cb7&bundle_id=b2bb4664-930b-491f-a922-8ac586ec84f9&definition_id=0c17b77e-530b-47d8-a23f-ad462ed4ee0a`
 
 Example catalog containing specifications metadata:
 ```json
@@ -156,4 +156,4 @@ Example OSB bind response:
 }
 ```
 
-For the example above, the package instance auth credentials were set with the following mutation: [set-package-instance-auth.graphql](https://github.com/kyma-incubator/compass/blob/1c4490318bfd39cbab5e6b2b1c9a78f3ec0ce10d/components/director/examples/set-package-instance-auth/set-package-instance-auth.graphql).
+For the example above, the bundle instance auth credentials were set with the following mutation: [set-bundle-instance-auth.graphql](https://github.com/kyma-incubator/compass/blob/v1.27.0/components/director/examples/set-bundle-instance-auth/set-bundle-instance-auth.graphql).
