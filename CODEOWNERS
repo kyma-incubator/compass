@@ -6,59 +6,59 @@
 
 # These are the default owners for the whole content of the `compass` repository. The default owners are automatically added as reviewers when you open a pull request, unless different owners are specified in the file.
 
-* @team-dragon @team-falcon @team-raptor
-/chart/compass/charts/connectivity-adapter @team-falcon
-/chart/compass/charts/connector @team-raptor
-/chart/compass/charts/gateway @team-raptor
-/chart/compass/charts/ns-adapter @team-falcon
-/chart/compass/charts/operations-controller @team-falcon
-/chart/compass/charts/ord-service @team-raptor
-/chart/compass/charts/pairing-adapter @team-falcon
-/chart/compass/charts/tenant-fetcher @team-dragon
-/chart/compass/templates/filters @team-raptor
-/components/connectivity-adapter @team-falcon
-/components/connector @team-raptor
-/components/director/cmd/director @team-falcon @team-raptor @team-dragon
-/components/director/cmd/ns-adapter @team-falcon
-/components/director/cmd/ordaggregator @team-falcon
-/components/director/cmd/scopessynchronizer @team-raptor
-/components/director/cmd/systemfetcher @team-falcon
-/components/director/cmd/tenantfetcher-job @team-dragon
-/components/director/cmd/tenantfetcher-svc @team-dragon
-/components/director/cmd/tenantloader @team-raptor @team-dragon @team-falcon
-/components/director/internal/authnmappinghandler @team-raptor
-/components/director/internal/info @team-raptor
-/components/director/internal/nsadapter @team-falcon
-/components/director/internal/oathkeeper @team-raptor
-/components/director/internal/open_resource_discovery @team-falcon
-/components/director/internal/runtimemapping @team-raptor
-/components/director/internal/scopes_sync @team-raptor
-/components/director/internal/systemfetcher @team-falcon
-/components/director/internal/tenantfetcher @team-dragon
-/components/director/internal/tenantfetchersvc @team-dragon
-/components/director/internal/tenantmapping @team-raptor
-/components/director/pkg/accessstrategy @team-falcon
-/components/director/pkg/authenticator @team-raptor
-/components/director/pkg/operation @team-falcon
-/components/director/pkg/scenario @team-raptor
-/components/external-services-mock @team-dragon @team-falcon @team-raptor
-/components/gateway @team-raptor
-/components/operations-controller @team-falcon
-/components/pairing-adapter @team-falcon
-/components/schema-migrator @team-falcon @team-raptor @team-dragon
-/installation/cmd @team-raptor
-/installation/scripts @team-raptor
-/tests/connectivity-adapter @team-falcon
-/tests/connector @team-raptor
-/tests/gateway @team-raptor
-/tests/istio @team-raptor
-/tests/ns-adapter @team-falcon
-/tests/ord-aggregator @team-falcon
-/tests/ord-service @team-raptor
-/tests/pairing-adapter @team-falcon
-/tests/system-fetcher @team-falcon
-/tests/tenant-fetcher @team-dragon
-/tests/tenant-fetcher-job @team-dragon
+* @dimitarpetrov @nyordanoff @petartodorovv @alextargov @svetlinzarev-sap @kaloyanspiridonov @ivantenevvasilev @desislavaa @krasish @kirilkabakchiev @stanislavstefanov @nickymateev @la4ezar @stefancholakov @dzahariev
+/chart/compass/charts/connectivity-adapter @nickymateev @svetlinzarev-sap @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev
+/chart/compass/charts/connector @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar
+/chart/compass/charts/gateway @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff
+/chart/compass/charts/ns-adapter @kirilkabakchiev @nickymateev @svetlinzarev-sap @alextargov @dzahariev @kaloyanspiridonov
+/chart/compass/charts/operations-controller @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap @alextargov @dzahariev
+/chart/compass/charts/ord-service @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar
+/chart/compass/charts/pairing-adapter @svetlinzarev-sap @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev
+/chart/compass/charts/tenant-fetcher @desislavaa @kirilkabakchiev @krasish @stefancholakov
+/chart/compass/templates/filters @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev
+/components/connectivity-adapter @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap
+/components/connector @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov
+/components/director/cmd/director @petartodorovv @stanislavstefanov @krasish @kaloyanspiridonov @nickymateev @svetlinzarev-sap @ivantenevvasilev @kirilkabakchiev @alextargov @dimitarpetrov @la4ezar @dzahariev @nyordanoff @desislavaa @stefancholakov
+/components/director/cmd/ns-adapter @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap
+/components/director/cmd/ordaggregator @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap
+/components/director/cmd/scopessynchronizer @la4ezar @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev
+/components/director/cmd/systemfetcher @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap
+/components/director/cmd/tenantfetcher-job @stefancholakov @desislavaa @kirilkabakchiev @krasish
+/components/director/cmd/tenantfetcher-svc @desislavaa @kirilkabakchiev @krasish @stefancholakov
+/components/director/cmd/tenantloader @alextargov @ivantenevvasilev @la4ezar @nyordanoff @desislavaa @dzahariev @kaloyanspiridonov @svetlinzarev-sap @stefancholakov @dimitarpetrov @stanislavstefanov @kirilkabakchiev @krasish @nickymateev @petartodorovv
+/components/director/internal/authnmappinghandler @la4ezar @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev
+/components/director/internal/info @la4ezar @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev
+/components/director/internal/nsadapter @kirilkabakchiev @nickymateev @svetlinzarev-sap @alextargov @dzahariev @kaloyanspiridonov
+/components/director/internal/oathkeeper @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv
+/components/director/internal/open_resource_discovery @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap @alextargov
+/components/director/internal/runtimemapping @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv @stanislavstefanov
+/components/director/internal/scopes_sync @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov
+/components/director/internal/systemfetcher @nickymateev @svetlinzarev-sap @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev
+/components/director/internal/tenantfetcher @krasish @stefancholakov @desislavaa @kirilkabakchiev
+/components/director/internal/tenantfetchersvc @desislavaa @kirilkabakchiev @krasish @stefancholakov
+/components/director/internal/tenantmapping @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff
+/components/director/pkg/accessstrategy @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap
+/components/director/pkg/authenticator @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff
+/components/director/pkg/operation @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap
+/components/director/pkg/scenario @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar
+/components/external-services-mock @krasish @stefancholakov @dimitarpetrov @kirilkabakchiev @alextargov @dzahariev @kaloyanspiridonov @ivantenevvasilev @petartodorovv @desislavaa @nickymateev @svetlinzarev-sap @la4ezar @nyordanoff @stanislavstefanov
+/components/gateway @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv @stanislavstefanov
+/components/operations-controller @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap
+/components/pairing-adapter @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap @alextargov
+/components/schema-migrator @dimitarpetrov @kirilkabakchiev @dzahariev @nickymateev @krasish @alextargov @kaloyanspiridonov @ivantenevvasilev @la4ezar @desislavaa @stefancholakov @svetlinzarev-sap @nyordanoff @petartodorovv @stanislavstefanov
+/installation/cmd @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv
+/installation/scripts @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv
+/tests/connectivity-adapter @nickymateev @svetlinzarev-sap @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev
+/tests/connector @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev
+/tests/gateway @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev
+/tests/istio @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv @stanislavstefanov
+/tests/ns-adapter @kirilkabakchiev @nickymateev @svetlinzarev-sap @alextargov @dzahariev @kaloyanspiridonov
+/tests/ord-aggregator @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap @alextargov
+/tests/ord-service @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov
+/tests/pairing-adapter @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap
+/tests/system-fetcher @kirilkabakchiev @nickymateev @svetlinzarev-sap @alextargov @dzahariev @kaloyanspiridonov
+/tests/tenant-fetcher @desislavaa @kirilkabakchiev @krasish @stefancholakov
+/tests/tenant-fetcher-job @desislavaa @kirilkabakchiev @krasish @stefancholakov
 
 # All .md files
 *.md @Peteva @ekaterina-mitova @nkanchev
