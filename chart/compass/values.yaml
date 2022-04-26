@@ -482,6 +482,7 @@ global:
       scopes: "openid profile email"
       path: "/oauth2/certs"
   tenantFetcher:
+    manageSecrets: true
     host: compass-tenant-fetcher.compass-system.svc.cluster.local
     prefix: /tenants
     port: 3000
@@ -506,17 +507,17 @@ global:
       consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
     containerName: "tenant-fetcher"
     oauth:
-      client: ""
+      client: "client_id"
       secret: ""
-      tokenURL: ""
-      tokenPath: ""
+      tokenURL: '{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'
+      tokenPath: "/cert/token"
     secret:
       name: "compass-tenant-fetcher-secret"
-      clientIdKey: client-id
-      oauthMode: oauth-mtls
-      clientCertKey: client-cert
-      clientKeyKey: client-key
-      oauthUrlKey: url
+      clientIdKey: "client-id"
+      oauthMode: "oauth-mtls"
+      clientCertKey: "client-cert"
+      clientKeyKey: "client-key"
+      oauthUrlKey: "url"
       skipSSLValidation: true
     endpoints:
       subaccountCreated: "127.0.0.1/events?type=subaccount-created"
