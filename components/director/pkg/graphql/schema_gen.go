@@ -4010,6 +4010,7 @@ enum FetchRequestStatusCondition {
 enum FormationObjectType {
 	APPLICATION
 	TENANT
+	RUNTIME
 }
 
 enum HealthCheckStatusCondition {
