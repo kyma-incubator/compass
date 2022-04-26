@@ -56,8 +56,6 @@ spec:
           env:
             - name: APP_EXTERNAL_ADDRESS
               value: "0.0.0.0:{{ .Values.global.connector.graphql.external.port }}"
-            - name: APP_HYDRATOR_ADDRESS
-              value: "0.0.0.0:{{ .Values.global.connector.validator.port }}"
             - name: APP_PLAYGROUND_API_ENDPOINT
               value: "{{ .Values.global.connector.prefix }}/graphql"
             - name: APP_LOG_FORMAT
@@ -76,8 +74,6 @@ spec:
             - name: APP_ROOT_CA_SECRET_CERTIFICATE_KEY
               value: {{ .Values.global.connector.secrets.rootCA.certificateKey | quote }}
             {{ end }}
-            - name: APP_CERTIFICATE_DATA_HEADER
-              value: {{ .Values.global.connector.certificateDataHeader | quote }}
             - name: APP_REVOCATION_CONFIG_MAP_NAME
               value: "{{ tpl .Values.global.connector.revocation.configmap.namespace . }}/{{ .Values.global.connector.revocation.configmap.name }}"
             - name: APP_CSR_SUBJECT_COUNTRY
@@ -90,12 +86,6 @@ spec:
               value: {{ .Values.deployment.args.csrSubject.locality | quote }}
             - name: APP_CSR_SUBJECT_PROVINCE
               value: {{ .Values.deployment.args.csrSubject.province | quote }}
-            - name: APP_EXTERNAL_ISSUER_SUBJECT_COUNTRY
-              value: {{ .Values.deployment.args.externalIssuerSubject.country | quote }}
-            - name: APP_EXTERNAL_ISSUER_SUBJECT_ORGANIZATION
-              value: {{ .Values.deployment.args.externalIssuerSubject.organization | quote }}
-            - name: APP_EXTERNAL_ISSUER_SUBJECT_ORGANIZATIONAL_UNIT_PATTERN
-              value: {{ .Values.deployment.args.externalIssuerSubject.organizationalUnitPattern | quote }}
             - name: APP_DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_CERTIFICATE_SECURED_CONNECTOR_URL
@@ -108,8 +98,6 @@ spec:
               value: "https://{{ .Values.global.director.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}/graphql"
             - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
               value: "{{ .Values.http.client.skipSSLValidation }}"
-            - name: APP_SUBJECT_CONSUMER_MAPPING_CONFIG
-              value: {{ .Values.global.connector.subjectConsumerMappingConfig | quote }}
           {{- with .Values.deployment.securityContext }}
           securityContext:
 {{ toYaml . | indent 12 }}

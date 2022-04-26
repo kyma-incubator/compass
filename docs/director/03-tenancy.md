@@ -33,13 +33,14 @@ You can create a tenant in Director manually by using the [SQL statement](https:
 
 ## Authentication flow
 Information about tenants is used during the authentication and authorization phase in Compass.
-Every incoming request is routed to the component called Tenant Mapping Handler.
+Every incoming request is routed to the component called Hydrator that has an Oathkeeper hydrator mutator called Tenant Mapping Handler. The request is processed by it and then rerouted to the Director component through the auditlog Gateway.
 
-The tenant mapping flow looks as follows:
-1. Tenant Mapping Handler looks for an external tenant identifier in request headers and request body under the **headers** and **extra** keys.
-2. Tenant Mapping Handler maps an external tenant to the internal tenant using `business_tenant_mapping` and `system_auth` tables from the Director database.
-3. Tenant Mapping Handler passes additional data, such as the internal tenant identifier and caller identity, to Oauthkeeper. Oauthkeeper mutators put the data into JWT which is send to Director.
-4. Director validates the token and extracts the internal tenant identifier.
+The tenant mapping flow is as follows:
+1. The incoming request is intercepted by Istio and Oauthkeeper and then sent to the Hydrator component and Tenant Mapping Handler.
+2. Tenant Mapping Handler looks for an external tenant identifier in request headers and request body under the **headers** and **extra** keys.
+3. Tenant Mapping Handler maps an external tenant to the internal tenant using `business_tenant_mapping` and `system_auth` tables from the Director database.
+4. Tenant Mapping Handler passes additional data (such as, the internal tenant identifier and caller identity) back to Oauthkeeper. Oauthkeeper mutators put the data into JWT, which is sent to Director through auditlog Gateway component.
+5. Director validates the token and extracts the internal tenant identifier.
 
 ![](./assets/tenant-mapping.svg)
 

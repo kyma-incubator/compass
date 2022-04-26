@@ -6,6 +6,8 @@ import (
 	"errors"
 	"testing"
 
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
@@ -31,7 +33,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		svc := &automock.TokenService{}
-		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, model.ApplicationReference).Return(tokenModel, nil)
+		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, pkgmodel.ApplicationReference).Return(tokenModel, nil)
 		conv := &automock.TokenConverter{}
 		conv.On("ToGraphQLForApplication", *tokenModel).Return(expectedToken, nil)
 		persist, transact := txGen.ThatSucceeds()
@@ -69,7 +71,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 	t.Run("Error - transaction commit failed", func(t *testing.T) {
 		// GIVEN
 		svc := &automock.TokenService{}
-		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, model.ApplicationReference).Return(tokenModel, nil)
+		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, pkgmodel.ApplicationReference).Return(tokenModel, nil)
 		persist, transact := txGen.ThatFailsOnCommit()
 		conv := &automock.TokenConverter{}
 		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
@@ -85,7 +87,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 	t.Run("Error - service return error", func(t *testing.T) {
 		// GIVEN
 		svc := &automock.TokenService{}
-		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, model.ApplicationReference).Return(tokenModel, testErr)
+		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, pkgmodel.ApplicationReference).Return(tokenModel, testErr)
 		persist, transact := txGen.ThatDoesntExpectCommit()
 		conv := &automock.TokenConverter{}
 		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
@@ -116,7 +118,7 @@ func TestResolver_GenerateOneTimeTokenForApp(t *testing.T) {
 	t.Run("Error - converter returns error", func(t *testing.T) {
 		// GIVEN
 		svc := &automock.TokenService{}
-		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, model.ApplicationReference).Return(tokenModel, nil)
+		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), appID, pkgmodel.ApplicationReference).Return(tokenModel, nil)
 		conv := &automock.TokenConverter{}
 		conv.On("ToGraphQLForApplication", *tokenModel).Return(graphql.OneTimeTokenForApplication{}, errors.New("some-error"))
 		persist, transact := txGen.ThatSucceeds()
@@ -141,7 +143,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		svc := &automock.TokenService{}
-		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, model.RuntimeReference).Return(tokenModel, nil)
+		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, pkgmodel.RuntimeReference).Return(tokenModel, nil)
 		persist, transact := txGen.ThatSucceeds()
 		conv := &automock.TokenConverter{}
 		conv.On("ToGraphQLForRuntime", *tokenModel).Return(expectedToken)
@@ -163,7 +165,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 	t.Run("Error - transaction commit failed", func(t *testing.T) {
 		// GIVEN
 		svc := &automock.TokenService{}
-		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, model.RuntimeReference).Return(tokenModel, nil)
+		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, pkgmodel.RuntimeReference).Return(tokenModel, nil)
 		persist, transact := txGen.ThatFailsOnCommit()
 		conv := &automock.TokenConverter{}
 		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
@@ -182,7 +184,7 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 	t.Run("Error - service return error", func(t *testing.T) {
 		// GIVEN
 		svc := &automock.TokenService{}
-		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, model.RuntimeReference).Return(tokenModel, testErr)
+		svc.On("GenerateOneTimeToken", txtest.CtxWithDBMatcher(), runtimeID, pkgmodel.RuntimeReference).Return(tokenModel, testErr)
 		persist, transact := txGen.ThatDoesntExpectCommit()
 		conv := &automock.TokenConverter{}
 		r := onetimetoken.NewTokenResolver(transact, svc, conv, suggestTokenHeaderKey)
@@ -219,9 +221,9 @@ func TestResolver_GenerateOneTimeTokenForRuntime(t *testing.T) {
 
 func TestResolver_RawEncoded(t *testing.T) {
 	ctx := context.TODO()
-	tokenGraphql := graphql.OneTimeTokenForApplication{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL", Used: false}, LegacyConnectorURL: "legacyConnectorURL"}
+	tokenGraphql := graphql.OneTimeTokenForApplication{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL", Used: false, Type: graphql.OneTimeTokenTypeApplication}, LegacyConnectorURL: "legacyConnectorURL"}
 	expectedRawToken := "{\"token\":\"Token\"," +
-		"\"connectorURL\":\"connectorURL\",\"used\":false,\"expiresAt\":null}"
+		"\"connectorURL\":\"connectorURL\",\"used\":false,\"expiresAt\":null,\"createdAt\":null,\"usedAt\":null,\"type\":\"Application\"}"
 	expectedBaseToken := base64.StdEncoding.EncodeToString([]byte(expectedRawToken))
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
@@ -249,9 +251,9 @@ func TestResolver_RawEncoded(t *testing.T) {
 
 func TestResolver_Raw(t *testing.T) {
 	ctx := context.TODO()
-	tokenGraphql := graphql.OneTimeTokenForApplication{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL"}, LegacyConnectorURL: "legacyConnectorURL"}
+	tokenGraphql := graphql.OneTimeTokenForApplication{TokenWithURL: graphql.TokenWithURL{Token: "Token", ConnectorURL: "connectorURL", Type: graphql.OneTimeTokenTypeApplication}, LegacyConnectorURL: "legacyConnectorURL"}
 	expectedRawToken := "{\"token\":\"Token\"," +
-		"\"connectorURL\":\"connectorURL\",\"used\":false,\"expiresAt\":null}"
+		"\"connectorURL\":\"connectorURL\",\"used\":false,\"expiresAt\":null,\"createdAt\":null,\"usedAt\":null,\"type\":\"Application\"}"
 
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN

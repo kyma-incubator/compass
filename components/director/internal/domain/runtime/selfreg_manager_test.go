@@ -8,13 +8,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/rtmtest"
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/require"
 )
@@ -28,7 +30,7 @@ const (
 	regionLabelKey                  = "region"
 )
 
-var testConfig = runtime.SelfRegConfig{
+var testConfig = config.SelfRegConfig{
 	SelfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
 	SelfRegisterLabelKey:            "test-label-key",
 	SelfRegisterLabelValuePrefix:    "test-prefix",
@@ -44,7 +46,7 @@ var testConfig = runtime.SelfRegConfig{
 	InstanceTokenURLPath:            "tokenUrl",
 	InstanceCertPath:                "clientCert",
 	InstanceKeyPath:                 "clientKey",
-	RegionToInstanceConfig: map[string]runtime.InstanceConfig{
+	RegionToInstanceConfig: map[string]config.InstanceConfig{
 		"test-region": {
 			ClientID:     "client_id",
 			ClientSecret: "client_secret",
@@ -91,8 +93,8 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 
 	testCases := []struct {
 		Name           string
-		Config         runtime.SelfRegConfig
-		CallerProvider func(*testing.T, runtime.SelfRegConfig, string) *automock.ExternalSvcCallerProvider
+		Config         config.SelfRegConfig
+		CallerProvider func(*testing.T, config.SelfRegConfig, string) *automock.ExternalSvcCallerProvider
 		Region         string
 		Input          model.RuntimeInput
 		Context        context.Context
@@ -228,8 +230,8 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 
 	testCases := []struct {
 		Name                                string
-		Config                              runtime.SelfRegConfig
-		CallerProvider                      func(*testing.T, runtime.SelfRegConfig, string) *automock.ExternalSvcCallerProvider
+		Config                              config.SelfRegConfig
+		CallerProvider                      func(*testing.T, config.SelfRegConfig, string) *automock.ExternalSvcCallerProvider
 		Region                              string
 		SelfRegisteredDistinguishLabelValue string
 		Context                             context.Context
@@ -319,8 +321,8 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 
 func TestNewSelfRegisterManager(t *testing.T) {
 	t.Run("Error when creating self register manager fails", func(t *testing.T) {
-		config := runtime.SelfRegConfig{}
-		manager, err := runtime.NewSelfRegisterManager(config, nil)
+		cfg := config.SelfRegConfig{}
+		manager, err := runtime.NewSelfRegisterManager(cfg, nil)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "self registration secret path cannot be empty")
 		require.Nil(t, manager)

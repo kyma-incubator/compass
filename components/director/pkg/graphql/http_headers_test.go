@@ -17,7 +17,7 @@ func TestHTTPHeaders_UnmarshalGQL(t *testing.T) {
 	}{
 		//given
 		"correct input": {
-			input:    map[string]interface{}{"header1": []interface{}{"val1", "val2"}},
+			input:    map[string][]string{"header1": {"val1", "val2"}},
 			err:      false,
 			expected: HTTPHeaders{"header1": []string{"val1", "val2"}},
 		},
@@ -25,11 +25,6 @@ func TestHTTPHeaders_UnmarshalGQL(t *testing.T) {
 			input:  nil,
 			err:    true,
 			errmsg: "Invalid data [reason=input should not be nil]",
-		},
-		"error: invalid input map type": {
-			input:  map[string]interface{}{"header": "invalid type"},
-			err:    true,
-			errmsg: "given value `string` must be a string array",
 		},
 		"error: invalid input": {
 			input:  "invalid headers",
