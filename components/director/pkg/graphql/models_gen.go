@@ -1058,16 +1058,18 @@ type FormationObjectType string
 const (
 	FormationObjectTypeApplication FormationObjectType = "APPLICATION"
 	FormationObjectTypeTenant      FormationObjectType = "TENANT"
+	FormationObjectTypeRuntime     FormationObjectType = "RUNTIME"
 )
 
 var AllFormationObjectType = []FormationObjectType{
 	FormationObjectTypeApplication,
 	FormationObjectTypeTenant,
+	FormationObjectTypeRuntime,
 }
 
 func (e FormationObjectType) IsValid() bool {
 	switch e {
-	case FormationObjectTypeApplication, FormationObjectTypeTenant:
+	case FormationObjectTypeApplication, FormationObjectTypeTenant, FormationObjectTypeRuntime:
 		return true
 	}
 	return false
