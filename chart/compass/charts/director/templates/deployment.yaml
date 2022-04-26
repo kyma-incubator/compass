@@ -219,7 +219,7 @@ spec:
             - name: APP_EXTERNAL_CLIENT_KEY_KEY
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: APP_FETCH_TENANT_URL
-              value: {{ .Values.global.director.fetchTenantEndpoint | quote }}
+              value: {{ tpl .Values.global.director.fetchTenantEndpoint $ | quote }}
             - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
               value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
           livenessProbe:
