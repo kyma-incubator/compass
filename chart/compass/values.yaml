@@ -102,7 +102,7 @@ global:
       version: "PR-2297"
     director:
       dir:
-      version: "PR-2268"
+      version: "PR-2307"
     hydrator:
       dir:
       version: "PR-2268"
@@ -128,7 +128,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2320"
+      version: "PR-2307"
     console:
       dir:
       version: "PR-65"
@@ -224,6 +224,7 @@ global:
       requestBodyPattern: '{"key": "%s"}'
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
+    fetchTenantEndpoint: '{{ printf "https://%s.%s/%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host  .Values.global.ingress.domainName  Values.global.tenantFetcher.prefix }}'
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
     mtlsTokenPath: "/cert/token"
