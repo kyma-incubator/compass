@@ -84,6 +84,10 @@ global:
       id: 7e8ab2e3-3bb4-42e3-92b2-4e0bf48559d3
       type: account
       parent: 2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0
+    - name: TestSystemFetcherAccount
+      id: c395681d-11dd-4cde-bbcf-570b4a153e79
+      type: account
+      parent: 2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
@@ -121,13 +125,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2298"
+      version: "PR-2320"
     console:
       dir:
       version: "PR-65"
     e2e_tests:
       dir:
-      version: "PR-2309"
+      version: "PR-2320"
   isLocalEnv: false
   isForTesting: false
   oauth2:

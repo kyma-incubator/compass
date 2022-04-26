@@ -27,6 +27,7 @@ const (
 	Subaccount TenantType = "subaccount"
 
 	TestDefaultCustomerTenant                                  = "Test_DefaultCustomer"
+	TestSystemFetcherTenant                                    = "TestSystemFetcherAccount"
 	TenantSeparationTenantName                                 = "TestTenantSeparation"
 	TenantsQueryNotInitializedTenantName                       = "TestTenantsQueryTenantNotInitialized"
 	TenantsQueryInitializedTenantName                          = "TestTenantsQueryTenantInitialized"
@@ -67,6 +68,14 @@ func (mgr *TestTenantsManager) Init() {
 		testDefaultTenant: {
 			Name:           testDefaultTenant,
 			ExternalTenant: "5577cf46-4f78-45fa-b55f-a42a3bdba868",
+			ProviderName:   testProvider,
+			Type:           Account,
+			Parent:         TestDefaultCustomerTenant,
+			Status:         Active,
+		},
+		TestSystemFetcherTenant: {
+			Name:           TestSystemFetcherTenant,
+			ExternalTenant: "c395681d-11dd-4cde-bbcf-570b4a153e79",
 			ProviderName:   testProvider,
 			Type:           Account,
 			Parent:         TestDefaultCustomerTenant,
@@ -225,6 +234,10 @@ func (mgr TestTenantsManager) GetIDByName(t require.TestingT, name string) strin
 
 func (mgr TestTenantsManager) GetDefaultTenantID() string {
 	return mgr.tenantsByName[testDefaultTenant].ExternalTenant
+}
+
+func (mgr TestTenantsManager) GetSystemFetcherTenantID() string {
+	return mgr.tenantsByName[TestSystemFetcherTenant].ExternalTenant
 }
 
 func (mgr TestTenantsManager) EmptyTenant() string {
