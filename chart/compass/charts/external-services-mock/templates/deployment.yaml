@@ -72,6 +72,8 @@ spec:
                     key: password
               - name: APP_DEFAULT_TENANT
                 value: "{{ (index .Values.global.tenants 9).id }}"
+              - name: APP_TRUSTED_TENANT
+                value: "{{ (index .Values.global.tenants 25).id }}"
               - name: APP_CA_CERT
                 valueFrom:
                   secretKeyRef:
