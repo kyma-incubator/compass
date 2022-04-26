@@ -34,7 +34,7 @@ func (s *fetchOnDemandService) FetchOnDemand(tenant string) error {
 	}
 	resp, err := s.client.Do(req)
 	if err != nil {
-		return errors.Errorf("while calling tenant-on-demand API %v", err)
+		return errors.Wrapf(err, "while calling tenant-on-demand API")
 	}
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("received status code %d when trying to fetch tenant with ID %s", resp.StatusCode, tenant)
