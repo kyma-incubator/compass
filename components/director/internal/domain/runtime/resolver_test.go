@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	"github.com/google/uuid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -471,7 +473,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -525,7 +527,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -582,7 +584,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -687,7 +689,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: UnusedOauth20Service(),
@@ -762,7 +764,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -793,7 +795,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ConverterFn:          UnusedRuntimeConverter(),
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(nil, testErr)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(nil, testErr)
 				return svc
 			},
 			OAuth20ServiceFn: UnusedOauth20Service(),
@@ -901,7 +903,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -933,7 +935,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ConverterFn:          UnusedRuntimeConverter(),
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: UnusedOauth20Service(),
@@ -967,7 +969,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -1007,7 +1009,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ConverterFn: UnusedRuntimeConverter(),
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: UnusedOauth20Service(),
@@ -1046,7 +1048,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -1086,7 +1088,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ConverterFn: UnusedRuntimeConverter(),
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: UnusedOauth20Service(),
@@ -1127,7 +1129,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -1182,7 +1184,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -1240,7 +1242,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -1290,7 +1292,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -1340,7 +1342,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", contextParam, model.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
+				svc.On("ListForObject", contextParam, pkgmodel.RuntimeReference, modelRuntime.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -1589,6 +1591,111 @@ func TestResolver_Runtimes(t *testing.T) {
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
+			assert.Equal(t, testCase.ExpectedErr, err)
+
+			mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx)
+		})
+	}
+}
+
+func TestResolver_RuntimeByTokenIssuer(t *testing.T) {
+	// GIVEN
+	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Bar")
+	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Bar")
+	testErr := errors.New("Test error")
+
+	testCases := []struct {
+		Name             string
+		PersistenceFn    func() *persistenceautomock.PersistenceTx
+		TransactionerFn  func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn        func() *automock.RuntimeService
+		ConverterFn      func() *automock.RuntimeConverter
+		SelfRegManagerFn func() *automock.SelfRegisterManager
+		InputID          string
+		ExpectedRuntime  *graphql.Runtime
+		ExpectedErr      error
+	}{
+		{
+			Name: "Success",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				return persistTx
+			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("GetByTokenIssuer", contextParam, "foo").Return(modelRuntime, nil).Once()
+
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
+				return conv
+			},
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputID:          "foo",
+			ExpectedRuntime:  gqlRuntime,
+			ExpectedErr:      nil,
+		},
+		{
+			Name: "Success when runtime not found returns nil",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				return persistTx
+			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("GetByTokenIssuer", contextParam, "foo").Return(modelRuntime, apperrors.NewNotFoundError(resource.Runtime, "foo")).Once()
+
+				return svc
+			},
+			ConverterFn:      UnusedRuntimeConverter(),
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputID:          "foo",
+			ExpectedRuntime:  nil,
+			ExpectedErr:      nil,
+		},
+		{
+			Name: "Returns error when runtime retrieval failed",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				return persistTx
+			},
+			TransactionerFn: txtest.TransactionerThatDoesARollback,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("GetByTokenIssuer", contextParam, "foo").Return(nil, testErr).Once()
+
+				return svc
+			},
+			ConverterFn:      UnusedRuntimeConverter(),
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			InputID:          "foo",
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persistTx := testCase.PersistenceFn()
+			transact := testCase.TransactionerFn(persistTx)
+			svc := testCase.ServiceFn()
+			converter := testCase.ConverterFn()
+			selfRegManager := testCase.SelfRegManagerFn()
+			uuidSvc := &automock.UidService{}
+
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil)
+
+			// WHEN
+			result, err := resolver.RuntimeByTokenIssuer(context.TODO(), testCase.InputID)
+
+			// then
+			assert.Equal(t, testCase.ExpectedRuntime, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
 			mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx)
@@ -2088,7 +2195,7 @@ func TestResolver_Auths(t *testing.T) {
 
 	parentRuntime := fixGQLRuntime(t, "foo", "bar", "baz")
 
-	modelSysAuths := []model.SystemAuth{
+	modelSysAuths := []pkgmodel.SystemAuth{
 		fixModelSystemAuth("bar", tnt, parentRuntime.ID, fixModelAuth()),
 		fixModelSystemAuth("baz", tnt, parentRuntime.ID, fixModelAuth()),
 		fixModelSystemAuth("faz", tnt, parentRuntime.ID, fixModelAuth()),
@@ -2117,7 +2224,7 @@ func TestResolver_Auths(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			SysAuthSvcFn: func() *automock.SystemAuthService {
 				sysAuthSvc := &automock.SystemAuthService{}
-				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), model.RuntimeReference, parentRuntime.ID).Return(modelSysAuths, nil).Once()
+				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), pkgmodel.RuntimeReference, parentRuntime.ID).Return(modelSysAuths, nil).Once()
 				return sysAuthSvc
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
@@ -2136,7 +2243,7 @@ func TestResolver_Auths(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			SysAuthSvcFn: func() *automock.SystemAuthService {
 				sysAuthSvc := &automock.SystemAuthService{}
-				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), model.RuntimeReference, parentRuntime.ID).Return(nil, testErr).Once()
+				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), pkgmodel.RuntimeReference, parentRuntime.ID).Return(nil, testErr).Once()
 				return sysAuthSvc
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
@@ -2167,7 +2274,7 @@ func TestResolver_Auths(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			SysAuthSvcFn: func() *automock.SystemAuthService {
 				sysAuthSvc := &automock.SystemAuthService{}
-				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), model.RuntimeReference, parentRuntime.ID).Return(modelSysAuths, nil).Once()
+				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), pkgmodel.RuntimeReference, parentRuntime.ID).Return(modelSysAuths, nil).Once()
 				return sysAuthSvc
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
@@ -2515,8 +2622,8 @@ func TestResolver_UnsubscribeTenant(t *testing.T) {
 	}
 }
 
-func fixOAuths() []model.SystemAuth {
-	return []model.SystemAuth{
+func fixOAuths() []pkgmodel.SystemAuth {
+	return []pkgmodel.SystemAuth{
 		{
 			ID:       "foo",
 			TenantID: str.Ptr("foo"),

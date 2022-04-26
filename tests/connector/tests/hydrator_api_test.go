@@ -77,7 +77,7 @@ func TestHydrators(t *testing.T) {
 			}
 
 			//when
-			authSession := directorHydratorClient.ResolveToken(t, headers)
+			authSession := hydratorClient.ResolveToken(t, headers)
 
 			hasAuth := false
 			for _, auth := range appSystemAuths {
@@ -122,7 +122,7 @@ func TestHydrators(t *testing.T) {
 			}
 
 			//when
-			authSession := connectorHydratorClient.ResolveCertificateData(t, headers)
+			authSession := hydratorClient.ResolveCertificateData(t, headers)
 
 			var appSystemAuths []*graphql.AppSystemAuth
 			var runtimeSystemAuths []*graphql.RuntimeSystemAuth
@@ -159,7 +159,7 @@ func TestHydrators(t *testing.T) {
 			require.NotEmpty(t, token.Token)
 
 			//when
-			authSession := directorHydratorClient.ResolveToken(t, nil)
+			authSession := hydratorClient.ResolveToken(t, nil)
 
 			//then
 			assert.Empty(t, authSession)

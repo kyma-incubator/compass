@@ -6,10 +6,11 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	"github.com/kyma-incubator/compass/components/director/internal/subscription"
 
 	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -40,10 +41,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -85,14 +86,14 @@ type RootResolver struct {
 func NewRootResolver(
 	appNameNormalizer normalizer.Normalizator,
 	transact persistence.Transactioner,
-	cfgProvider *configprovider.Provider,
+	cfgProvider *config.Provider,
 	oneTimeTokenCfg onetimetoken.Config,
 	oAuth20Cfg oauth20.Config,
 	pairingAdaptersMapping map[string]string,
 	featuresConfig features.Config,
 	metricsCollector *metrics.Collector,
 	httpClient, internalHTTPClient *http.Client,
-	selfRegConfig runtime.SelfRegConfig,
+	selfRegConfig config.SelfRegConfig,
 	tokenLength int,
 	hydraURL *url.URL,
 	accessStrategyExecutorProvider *accessstrategy.Provider,
@@ -204,7 +205,7 @@ func NewRootResolver(
 		webhook:            webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, webhookConverter),
 		labelDef:           labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
 		token:              onetimetoken.NewTokenResolver(transact, tokenSvc, tokenConverter, oneTimeTokenCfg.SuggestTokenHeaderKey),
-		systemAuth:         systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, systemAuthConverter),
+		systemAuth:         systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, tokenSvc, systemAuthConverter, authConverter),
 		oAuth20:            oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
 		intSys:             integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
 		viewer:             viewer.NewViewerResolver(),
@@ -401,6 +402,11 @@ func (r *queryResolver) Runtime(ctx context.Context, id string) (*graphql.Runtim
 	return r.runtime.Runtime(ctx, id)
 }
 
+// RuntimeByTokenIssuer missing godoc
+func (r *queryResolver) RuntimeByTokenIssuer(ctx context.Context, issuer string) (*graphql.Runtime, error) {
+	return r.runtime.RuntimeByTokenIssuer(ctx, issuer)
+}
+
 // RuntimeContexts missing godoc
 func (r *queryResolver) RuntimeContexts(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimeContextPage, error) {
 	return r.runtimeContext.RuntimeContexts(ctx, filter, first, after)
@@ -464,6 +470,16 @@ func (r *queryResolver) AutomaticScenarioAssignmentsForSelector(ctx context.Cont
 // AutomaticScenarioAssignments missing godoc
 func (r *queryResolver) AutomaticScenarioAssignments(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.AutomaticScenarioAssignmentPage, error) {
 	return r.scenarioAssignment.AutomaticScenarioAssignments(ctx, first, after)
+}
+
+// SystemAuth missing godoc
+func (r *queryResolver) SystemAuth(ctx context.Context, id string) (graphql.SystemAuth, error) {
+	return r.systemAuth.SystemAuth(ctx, id)
+}
+
+// SystemAuthByToken missing godoc
+func (r *queryResolver) SystemAuthByToken(ctx context.Context, id string) (graphql.SystemAuth, error) {
+	return r.systemAuth.SystemAuthByToken(ctx, id)
 }
 
 type mutationResolver struct {
@@ -682,6 +698,16 @@ func (r *mutationResolver) DeleteSystemAuthForApplication(ctx context.Context, a
 func (r *mutationResolver) DeleteSystemAuthForIntegrationSystem(ctx context.Context, authID string) (graphql.SystemAuth, error) {
 	fn := r.systemAuth.GenericDeleteSystemAuth(model.IntegrationSystemReference)
 	return fn(ctx, authID)
+}
+
+// UpdateSystemAuth missing godoc
+func (r *mutationResolver) UpdateSystemAuth(ctx context.Context, authID string, in graphql.AuthInput) (graphql.SystemAuth, error) {
+	return r.systemAuth.UpdateSystemAuth(ctx, authID, in)
+}
+
+// InvalidateSystemAuthOneTimeToken missing godoc
+func (r *mutationResolver) InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (graphql.SystemAuth, error) {
+	return r.systemAuth.InvalidateSystemAuthOneTimeToken(ctx, authID)
 }
 
 // RegisterIntegrationSystem missing godoc
@@ -973,7 +999,17 @@ func (r *tenantResolver) Labels(ctx context.Context, obj *graphql.Tenant, key *s
 	return r.tenant.Labels(ctx, obj, key)
 }
 
-// TenantByExternalID missing godoc
+// TenantByExternalID returns a tenant by external ID
 func (r *queryResolver) TenantByExternalID(ctx context.Context, id string) (*graphql.Tenant, error) {
 	return r.tenant.Tenant(ctx, id)
+}
+
+// TenantByInternalID returns а tenant by an internal ID
+func (r *queryResolver) TenantByInternalID(ctx context.Context, id string) (*graphql.Tenant, error) {
+	return r.tenant.TenantByID(ctx, id)
+}
+
+// TenantByLowestOwnerForResource returns the lowest tenant in the hierarchy that is owner of a given resource.
+func (r *queryResolver) TenantByLowestOwnerForResource(ctx context.Context, resource, objectID string) (string, error) {
+	return r.tenant.TenantByLowestOwnerForResource(ctx, resource, objectID)
 }
