@@ -112,9 +112,7 @@ func TestServiceCreateFormation(t *testing.T) {
 				labelDefRepo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(nil, testErr)
 				return labelDefRepo
 			},
-			LabelDefServiceFn: func() *automock.LabelDefService {
-				return &automock.LabelDefService{}
-			},
+			LabelDefServiceFn:  formation.UnusedLabelDefService,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
@@ -124,9 +122,7 @@ func TestServiceCreateFormation(t *testing.T) {
 				labelDefRepo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&emptySchemaLblDef, nil)
 				return labelDefRepo
 			},
-			LabelDefServiceFn: func() *automock.LabelDefService {
-				return &automock.LabelDefService{}
-			},
+			LabelDefServiceFn:  formation.UnusedLabelDefService,
 			ExpectedErrMessage: "missing schema",
 		},
 		{
@@ -182,7 +178,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			lblDefRepo := testCase.LabelDefRepositoryFn()
 			lblDefService := testCase.LabelDefServiceFn()
 
-			svc := formation.NewService(lblDefRepo, nil, nil, nil, lblDefService, nil, nil)
+			svc := formation.NewService(lblDefRepo, nil, nil, nil, lblDefService, nil, nil, nil)
 
 			// WHEN
 			actual, err := svc.CreateFormation(ctx, tnt, in)
@@ -258,9 +254,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 				labelDefRepo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(nil, testErr)
 				return labelDefRepo
 			},
-			LabelDefServiceFn: func() *automock.LabelDefService {
-				return &automock.LabelDefService{}
-			},
+			LabelDefServiceFn:  formation.UnusedLabelDefService,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
@@ -270,9 +264,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 				labelDefRepo.On("GetByKey", ctx, tnt, model.ScenariosKey).Return(&emptySchemaLblDef, nil)
 				return labelDefRepo
 			},
-			LabelDefServiceFn: func() *automock.LabelDefService {
-				return &automock.LabelDefService{}
-			},
+			LabelDefServiceFn:  formation.UnusedLabelDefService,
 			ExpectedErrMessage: "missing schema",
 		},
 		{
@@ -328,7 +320,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			lblDefRepo := testCase.LabelDefRepositoryFn()
 			lblDefService := testCase.LabelDefServiceFn()
 
-			svc := formation.NewService(lblDefRepo, nil, nil, nil, lblDefService, nil, nil)
+			svc := formation.NewService(lblDefRepo, nil, nil, nil, lblDefService, nil, nil, nil)
 
 			// WHEN
 			actual, err := svc.DeleteFormation(ctx, tnt, in)
@@ -369,7 +361,7 @@ func TestServiceAssignFormation(t *testing.T) {
 	}
 
 	objectID := "123"
-	lbl := &model.Label{
+	applicationLbl := &model.Label{
 		ID:         "123",
 		Tenant:     str.Ptr(tnt),
 		Key:        model.ScenariosKey,
@@ -378,11 +370,28 @@ func TestServiceAssignFormation(t *testing.T) {
 		ObjectType: model.ApplicationLabelableObject,
 		Version:    0,
 	}
-	lblInput := model.LabelInput{
+	applicationLblInput := model.LabelInput{
 		Key:        model.ScenariosKey,
 		Value:      []string{testFormation},
 		ObjectID:   objectID,
 		ObjectType: model.ApplicationLabelableObject,
+		Version:    0,
+	}
+
+	runtimeLbl := &model.Label{
+		ID:         "123",
+		Tenant:     str.Ptr(tnt),
+		Key:        model.ScenariosKey,
+		Value:      []interface{}{testFormation},
+		ObjectID:   objectID,
+		ObjectType: model.RuntimeLabelableObject,
+		Version:    0,
+	}
+	runtimeLblInput := model.LabelInput{
+		Key:        model.ScenariosKey,
+		Value:      []string{testFormation},
+		ObjectID:   objectID,
+		ObjectType: model.RuntimeLabelableObject,
 		Version:    0,
 	}
 
@@ -421,13 +430,11 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, tnt, &lblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
-				labelService.On("CreateLabel", ctx, tnt, fixUUID(), &lblInput).Return(nil)
+				labelService.On("GetLabel", ctx, tnt, &applicationLblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, tnt, fixUUID(), &applicationLblInput).Return(nil)
 				return labelService
 			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				return &automock.AutomaticFormationAssignmentService{}
-			},
+			AsaServiceFN:       formation.UnusedASAService,
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     inputFormation,
 			ExpectedFormation:  expectedFormation,
@@ -438,13 +445,11 @@ func TestServiceAssignFormation(t *testing.T) {
 			UIDServiceFn: frmtest.UnusedUUIDService(),
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, tnt, &lblInput).Return(lbl, nil)
-				labelService.On("UpdateLabel", ctx, tnt, lbl.ID, &lblInput).Return(nil)
+				labelService.On("GetLabel", ctx, tnt, &applicationLblInput).Return(applicationLbl, nil)
+				labelService.On("UpdateLabel", ctx, tnt, applicationLbl.ID, &applicationLblInput).Return(nil)
 				return labelService
 			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				return &automock.AutomaticFormationAssignmentService{}
-			},
+			AsaServiceFN:       formation.UnusedASAService,
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     inputFormation,
 			ExpectedFormation:  expectedFormation,
@@ -461,8 +466,8 @@ func TestServiceAssignFormation(t *testing.T) {
 					ObjectID:   objectID,
 					ObjectType: model.ApplicationLabelableObject,
 					Version:    0,
-				}).Return(lbl, nil)
-				labelService.On("UpdateLabel", ctx, tnt, lbl.ID, &model.LabelInput{
+				}).Return(applicationLbl, nil)
+				labelService.On("UpdateLabel", ctx, tnt, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{testFormation, "test-formation-2"},
 					ObjectID:   objectID,
@@ -471,10 +476,69 @@ func TestServiceAssignFormation(t *testing.T) {
 				}).Return(nil)
 				return labelService
 			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				return &automock.AutomaticFormationAssignmentService{}
-			},
+			AsaServiceFN:       formation.UnusedASAService,
 			ObjectType:         graphql.FormationObjectTypeApplication,
+			InputFormation:     inputSecondFormation,
+			ExpectedFormation:  expectedSecondFormation,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "success for runtime if label does not exist",
+			UIDServiceFn: func() *automock.UidService {
+				uidService := &automock.UidService{}
+				uidService.On("Generate").Return(fixUUID())
+				return uidService
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, &runtimeLblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, tnt, fixUUID(), &runtimeLblInput).Return(nil)
+				return labelService
+			},
+			AsaServiceFN:       formation.UnusedASAService,
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     inputFormation,
+			ExpectedFormation:  expectedFormation,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:         "success for runtime if formation is already added",
+			UIDServiceFn: frmtest.UnusedUUIDService(),
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, &runtimeLblInput).Return(runtimeLbl, nil)
+				labelService.On("UpdateLabel", ctx, tnt, runtimeLbl.ID, &runtimeLblInput).Return(nil)
+				return labelService
+			},
+			AsaServiceFN:       formation.UnusedASAService,
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     inputFormation,
+			ExpectedFormation:  expectedFormation,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:         "success for runtime with new formation",
+			UIDServiceFn: frmtest.UnusedUUIDService(),
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{"test-formation-2"},
+					ObjectID:   objectID,
+					ObjectType: model.RuntimeLabelableObject,
+					Version:    0,
+				}).Return(runtimeLbl, nil)
+				labelService.On("UpdateLabel", ctx, tnt, runtimeLbl.ID, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{testFormation, "test-formation-2"},
+					ObjectID:   objectID,
+					ObjectType: model.RuntimeLabelableObject,
+					Version:    0,
+				}).Return(nil)
+				return labelService
+			},
+			AsaServiceFN:       formation.UnusedASAService,
+			ObjectType:         graphql.FormationObjectTypeRuntime,
 			InputFormation:     inputSecondFormation,
 			ExpectedFormation:  expectedSecondFormation,
 			ExpectedErrMessage: "",
@@ -488,9 +552,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				svc.On("GetInternalTenant", ctx, objectID).Return(targetTenant, nil)
 				return svc
 			},
-			LabelServiceFn: func() *automock.LabelService {
-				return &automock.LabelService{}
-			},
+			LabelServiceFn: formation.UnusedLabelService,
 			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
 				asaService := &automock.AutomaticFormationAssignmentService{}
 				asaService.On("Create", ctx, asa).Return(asa, nil)
@@ -510,13 +572,11 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, tnt, &lblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
-				labelService.On("CreateLabel", ctx, tnt, fixUUID(), &lblInput).Return(testErr)
+				labelService.On("GetLabel", ctx, tnt, &applicationLblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, tnt, fixUUID(), &applicationLblInput).Return(testErr)
 				return labelService
 			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				return &automock.AutomaticFormationAssignmentService{}
-			},
+			AsaServiceFN:       formation.UnusedASAService,
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     inputFormation,
 			ExpectedErrMessage: testErr.Error(),
@@ -526,12 +586,10 @@ func TestServiceAssignFormation(t *testing.T) {
 			UIDServiceFn: frmtest.UnusedUUIDService(),
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, tnt, &lblInput).Return(nil, testErr)
+				labelService.On("GetLabel", ctx, tnt, &applicationLblInput).Return(nil, testErr)
 				return labelService
 			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				return &automock.AutomaticFormationAssignmentService{}
-			},
+			AsaServiceFN:       formation.UnusedASAService,
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     inputFormation,
 			ExpectedErrMessage: testErr.Error(),
@@ -558,9 +616,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				}, nil)
 				return labelService
 			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				return &automock.AutomaticFormationAssignmentService{}
-			},
+			AsaServiceFN:       formation.UnusedASAService,
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     inputFormation,
 			ExpectedErrMessage: "cannot convert label value to slice of strings",
@@ -570,7 +626,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			UIDServiceFn: frmtest.UnusedUUIDService(),
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, tnt, &lblInput).Return(&model.Label{
+				labelService.On("GetLabel", ctx, tnt, &applicationLblInput).Return(&model.Label{
 					ID:         "123",
 					Tenant:     str.Ptr(tnt),
 					Key:        model.ScenariosKey,
@@ -581,9 +637,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				}, nil)
 				return labelService
 			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				return &automock.AutomaticFormationAssignmentService{}
-			},
+			AsaServiceFN:       formation.UnusedASAService,
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     inputFormation,
 			ExpectedErrMessage: "cannot cast label value as a string",
@@ -593,14 +647,105 @@ func TestServiceAssignFormation(t *testing.T) {
 			UIDServiceFn: frmtest.UnusedUUIDService(),
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, tnt, &lblInput).Return(lbl, nil)
-				labelService.On("UpdateLabel", ctx, tnt, lbl.ID, &lblInput).Return(testErr)
+				labelService.On("GetLabel", ctx, tnt, &applicationLblInput).Return(applicationLbl, nil)
+				labelService.On("UpdateLabel", ctx, tnt, applicationLbl.ID, &applicationLblInput).Return(testErr)
 				return labelService
 			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				return &automock.AutomaticFormationAssignmentService{}
-			},
+			AsaServiceFN:       formation.UnusedASAService,
 			ObjectType:         graphql.FormationObjectTypeApplication,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error for runtime when label does not exist and can't create it",
+			UIDServiceFn: func() *automock.UidService {
+				uidService := &automock.UidService{}
+				uidService.On("Generate").Return(fixUUID())
+				return uidService
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, &runtimeLblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, tnt, fixUUID(), &runtimeLblInput).Return(testErr)
+				return labelService
+			},
+			AsaServiceFN:       formation.UnusedASAService,
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name:         "error for runtime while getting label",
+			UIDServiceFn: frmtest.UnusedUUIDService(),
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, &runtimeLblInput).Return(nil, testErr)
+				return labelService
+			},
+			AsaServiceFN:       formation.UnusedASAService,
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name:         "error for runtime while converting label values to string slice",
+			UIDServiceFn: frmtest.UnusedUUIDService(),
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{testFormation},
+					ObjectID:   objectID,
+					ObjectType: model.RuntimeLabelableObject,
+					Version:    0,
+				}).Return(&model.Label{
+					ID:         "123",
+					Tenant:     str.Ptr(tnt),
+					Key:        model.ScenariosKey,
+					Value:      []string{testFormation},
+					ObjectID:   objectID,
+					ObjectType: model.RuntimeLabelableObject,
+					Version:    0,
+				}, nil)
+				return labelService
+			},
+			AsaServiceFN:       formation.UnusedASAService,
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: "cannot convert label value to slice of strings",
+		},
+		{
+			Name:         "error for runtime while converting label value to string",
+			UIDServiceFn: frmtest.UnusedUUIDService(),
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, &runtimeLblInput).Return(&model.Label{
+					ID:         "123",
+					Tenant:     str.Ptr(tnt),
+					Key:        model.ScenariosKey,
+					Value:      []interface{}{5},
+					ObjectID:   objectID,
+					ObjectType: model.RuntimeLabelableObject,
+					Version:    0,
+				}, nil)
+				return labelService
+			},
+			AsaServiceFN:       formation.UnusedASAService,
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: "cannot cast label value as a string",
+		},
+		{
+			Name:         "error for runtime when updating label fails",
+			UIDServiceFn: frmtest.UnusedUUIDService(),
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, &runtimeLblInput).Return(runtimeLbl, nil)
+				labelService.On("UpdateLabel", ctx, tnt, runtimeLbl.ID, &runtimeLblInput).Return(testErr)
+				return labelService
+			},
+			AsaServiceFN:       formation.UnusedASAService,
+			ObjectType:         graphql.FormationObjectTypeRuntime,
 			InputFormation:     inputFormation,
 			ExpectedErrMessage: testErr.Error(),
 		},
@@ -612,13 +757,8 @@ func TestServiceAssignFormation(t *testing.T) {
 				svc.On("CreateManyIfNotExists", ctx, subaccountInput()).Return(testErr).Once()
 				return svc
 			},
-			LabelServiceFn: func() *automock.LabelService {
-				return &automock.LabelService{}
-			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				asaService := &automock.AutomaticFormationAssignmentService{}
-				return asaService
-			},
+			LabelServiceFn:     formation.UnusedLabelService,
+			AsaServiceFN:       formation.UnusedASAService,
 			ObjectType:         graphql.FormationObjectTypeTenant,
 			InputFormation:     inputFormation,
 			ExpectedErrMessage: testErr.Error(),
@@ -632,13 +772,8 @@ func TestServiceAssignFormation(t *testing.T) {
 				svc.On("GetInternalTenant", ctx, objectID).Return("", testErr)
 				return svc
 			},
-			LabelServiceFn: func() *automock.LabelService {
-				return &automock.LabelService{}
-			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				asaService := &automock.AutomaticFormationAssignmentService{}
-				return asaService
-			},
+			LabelServiceFn:     formation.UnusedLabelService,
+			AsaServiceFN:       formation.UnusedASAService,
 			ObjectType:         graphql.FormationObjectTypeTenant,
 			InputFormation:     inputFormation,
 			ExpectedErrMessage: testErr.Error(),
@@ -652,9 +787,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				svc.On("GetInternalTenant", ctx, objectID).Return(targetTenant, nil)
 				return svc
 			},
-			LabelServiceFn: func() *automock.LabelService {
-				return &automock.LabelService{}
-			},
+			LabelServiceFn: formation.UnusedLabelService,
 			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
 				asaService := &automock.AutomaticFormationAssignmentService{}
 				asaService.On("Create", ctx, asa).Return(asa, testErr)
@@ -665,14 +798,10 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name:         "error when object type is unknown",
-			UIDServiceFn: frmtest.UnusedUUIDService(),
-			LabelServiceFn: func() *automock.LabelService {
-				return &automock.LabelService{}
-			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				return &automock.AutomaticFormationAssignmentService{}
-			},
+			Name:               "error when object type is unknown",
+			UIDServiceFn:       frmtest.UnusedUUIDService(),
+			LabelServiceFn:     formation.UnusedLabelService,
+			AsaServiceFN:       formation.UnusedASAService,
 			ObjectType:         "UNKNOWN",
 			InputFormation:     inputFormation,
 			ExpectedErrMessage: "unknown formation type",
@@ -690,7 +819,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				tenantSvc = testCase.TenantServiceFn()
 			}
 
-			svc := formation.NewService(nil, nil, labelService, uidService, nil, asaService, tenantSvc)
+			svc := formation.NewService(nil, nil, labelService, uidService, nil, asaService, tenantSvc, nil)
 
 			// WHEN
 			actual, err := svc.AssignFormation(ctx, tnt, objectID, testCase.ObjectType, testCase.InputFormation)
@@ -722,9 +851,12 @@ func TestServiceUnassignFormation(t *testing.T) {
 	expected := &model.Formation{
 		Name: testFormation,
 	}
+	secondFormation := model.Formation{
+		Name: secondTestFormation,
+	}
 
 	objectID := "123"
-	lblSingleFormation := &model.Label{
+	applicationLblSingleFormation := &model.Label{
 		ID:         "123",
 		Tenant:     str.Ptr(tnt),
 		Key:        model.ScenariosKey,
@@ -733,7 +865,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 		ObjectType: model.ApplicationLabelableObject,
 		Version:    0,
 	}
-	lbl := &model.Label{
+	applicationLbl := &model.Label{
 		ID:         "123",
 		Tenant:     str.Ptr(tnt),
 		Key:        model.ScenariosKey,
@@ -742,11 +874,37 @@ func TestServiceUnassignFormation(t *testing.T) {
 		ObjectType: model.ApplicationLabelableObject,
 		Version:    0,
 	}
-	lblInput := &model.LabelInput{
+	applicationLblInput := &model.LabelInput{
 		Key:        model.ScenariosKey,
 		Value:      []string{testFormation},
 		ObjectID:   objectID,
 		ObjectType: model.ApplicationLabelableObject,
+		Version:    0,
+	}
+
+	runtimeLblSingleFormation := &model.Label{
+		ID:         "123",
+		Tenant:     str.Ptr(tnt),
+		Key:        model.ScenariosKey,
+		Value:      []interface{}{testFormation},
+		ObjectID:   objectID,
+		ObjectType: model.RuntimeLabelableObject,
+		Version:    0,
+	}
+	runtimeLbl := &model.Label{
+		ID:         "123",
+		Tenant:     str.Ptr(tnt),
+		Key:        model.ScenariosKey,
+		Value:      []interface{}{testFormation, secondTestFormation},
+		ObjectID:   objectID,
+		ObjectType: model.RuntimeLabelableObject,
+		Version:    0,
+	}
+	runtimeLblInput := &model.LabelInput{
+		Key:        model.ScenariosKey,
+		Value:      []string{testFormation},
+		ObjectID:   objectID,
+		ObjectType: model.RuntimeLabelableObject,
 		Version:    0,
 	}
 
@@ -762,6 +920,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 		LabelServiceFn     func() *automock.LabelService
 		LabelRepoFn        func() *automock.LabelRepository
 		AsaServiceFN       func() *automock.AutomaticFormationAssignmentService
+		EngineFn           func() *automock.ScenarioAssignmentEngine
 		ObjectType         graphql.FormationObjectType
 		InputFormation     model.Formation
 		ExpectedFormation  *model.Formation
@@ -772,8 +931,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 			UIDServiceFn: frmtest.UnusedUUIDService(),
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, tnt, lblInput).Return(lbl, nil)
-				labelService.On("UpdateLabel", ctx, tnt, lbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, tnt, applicationLblInput).Return(applicationLbl, nil)
+				labelService.On("UpdateLabel", ctx, tnt, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormation},
 					ObjectID:   objectID,
@@ -782,12 +941,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 				}).Return(nil)
 				return labelService
 			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				return &automock.LabelRepository{}
-			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				return &automock.AutomaticFormationAssignmentService{}
-			},
+			LabelRepoFn:        formation.UnusedLabelRepo,
+			AsaServiceFN:       formation.UnusedASAService,
+			EngineFn:           formation.UnusedEngine,
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     in,
 			ExpectedFormation:  expected,
@@ -798,8 +954,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 			UIDServiceFn: frmtest.UnusedUUIDService(),
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, tnt, lblInput).Return(lbl, nil)
-				labelService.On("UpdateLabel", ctx, tnt, lbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, tnt, applicationLblInput).Return(applicationLbl, nil)
+				labelService.On("UpdateLabel", ctx, tnt, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormation},
 					ObjectID:   objectID,
@@ -808,12 +964,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 				}).Return(nil)
 				return labelService
 			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				return &automock.LabelRepository{}
-			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				return &automock.AutomaticFormationAssignmentService{}
-			},
+			LabelRepoFn:        formation.UnusedLabelRepo,
+			AsaServiceFN:       formation.UnusedASAService,
+			EngineFn:           formation.UnusedEngine,
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     in,
 			ExpectedFormation:  expected,
@@ -824,7 +977,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			UIDServiceFn: frmtest.UnusedUUIDService(),
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, tnt, lblInput).Return(lblSingleFormation, nil)
+				labelService.On("GetLabel", ctx, tnt, applicationLblInput).Return(applicationLblSingleFormation, nil)
 				return labelService
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -832,29 +985,125 @@ func TestServiceUnassignFormation(t *testing.T) {
 				labelRepo.On("Delete", ctx, tnt, model.ApplicationLabelableObject, objectID, model.ScenariosKey).Return(nil)
 				return labelRepo
 			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				return &automock.AutomaticFormationAssignmentService{}
-			},
+			AsaServiceFN:       formation.UnusedASAService,
+			EngineFn:           formation.UnusedEngine,
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     in,
 			ExpectedFormation:  expected,
 			ExpectedErrMessage: "",
 		},
 		{
-			Name:         "success for tenant",
+			Name:         "success for runtime",
 			UIDServiceFn: frmtest.UnusedUUIDService(),
 			LabelServiceFn: func() *automock.LabelService {
-				return &automock.LabelService{}
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, runtimeLblInput).Return(runtimeLbl, nil)
+				labelService.On("UpdateLabel", ctx, tnt, runtimeLbl.ID, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{secondTestFormation},
+					ObjectID:   objectID,
+					ObjectType: model.RuntimeLabelableObject,
+					Version:    0,
+				}).Return(nil)
+				return labelService
+			},
+			LabelRepoFn:  formation.UnusedLabelRepo,
+			AsaServiceFN: formation.UnusedASAService,
+			EngineFn: func() *automock.ScenarioAssignmentEngine {
+				engine := &automock.ScenarioAssignmentEngine{}
+				engine.On("GetScenariosFromMatchingASAs", ctx, objectID).Return(nil, nil)
+				return engine
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     in,
+			ExpectedFormation:  expected,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:           "success for runtime when formation is coming from ASA",
+			UIDServiceFn:   frmtest.UnusedUUIDService(),
+			LabelServiceFn: formation.UnusedLabelService,
+			LabelRepoFn:    formation.UnusedLabelRepo,
+			AsaServiceFN:   formation.UnusedASAService,
+			EngineFn: func() *automock.ScenarioAssignmentEngine {
+				engine := &automock.ScenarioAssignmentEngine{}
+				engine.On("GetScenariosFromMatchingASAs", ctx, objectID).Return([]string{testFormation}, nil)
+				return engine
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     in,
+			ExpectedFormation:  expected,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:         "success for runtime if formation do not exist",
+			UIDServiceFn: frmtest.UnusedUUIDService(),
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{secondTestFormation},
+					ObjectID:   objectID,
+					ObjectType: model.RuntimeLabelableObject,
+					Version:    0,
+				}).Return(runtimeLblSingleFormation, nil)
+				labelService.On("UpdateLabel", ctx, tnt, runtimeLbl.ID, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{testFormation},
+					ObjectID:   objectID,
+					ObjectType: model.RuntimeLabelableObject,
+					Version:    0,
+				}).Return(nil)
+				return labelService
+			},
+			LabelRepoFn:  formation.UnusedLabelRepo,
+			AsaServiceFN: formation.UnusedASAService,
+			EngineFn: func() *automock.ScenarioAssignmentEngine {
+				engine := &automock.ScenarioAssignmentEngine{}
+				engine.On("GetScenariosFromMatchingASAs", ctx, objectID).Return(nil, nil)
+				return engine
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     secondFormation,
+			ExpectedFormation:  &secondFormation,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:         "success for runtime when formation is last",
+			UIDServiceFn: frmtest.UnusedUUIDService(),
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, runtimeLblInput).Return(runtimeLblSingleFormation, nil)
+				return labelService
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
-				return &automock.LabelRepository{}
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, objectID, model.ScenariosKey).Return(nil)
+				return labelRepo
 			},
+			AsaServiceFN: formation.UnusedASAService,
+			EngineFn: func() *automock.ScenarioAssignmentEngine {
+				engine := &automock.ScenarioAssignmentEngine{}
+				engine.On("GetScenariosFromMatchingASAs", ctx, objectID).Return(nil, nil)
+				return engine
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     in,
+			ExpectedFormation:  expected,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:           "success for tenant",
+			UIDServiceFn:   frmtest.UnusedUUIDService(),
+			LabelServiceFn: formation.UnusedLabelService,
+			LabelRepoFn:    formation.UnusedLabelRepo,
 			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
 				asaService := &automock.AutomaticFormationAssignmentService{}
 				asaService.On("GetForScenarioName", ctx, testFormation).Return(asa, nil)
 				asaService.On("Delete", ctx, asa).Return(nil)
 				return asaService
 			},
+			EngineFn:           formation.UnusedEngine,
 			ObjectType:         graphql.FormationObjectTypeTenant,
 			InputFormation:     in,
 			ExpectedFormation:  expected,
@@ -865,15 +1114,12 @@ func TestServiceUnassignFormation(t *testing.T) {
 			UIDServiceFn: frmtest.UnusedUUIDService(),
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, tnt, lblInput).Return(nil, testErr)
+				labelService.On("GetLabel", ctx, tnt, applicationLblInput).Return(nil, testErr)
 				return labelService
 			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				return &automock.LabelRepository{}
-			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				return &automock.AutomaticFormationAssignmentService{}
-			},
+			LabelRepoFn:        formation.UnusedLabelRepo,
+			AsaServiceFN:       formation.UnusedASAService,
+			EngineFn:           formation.UnusedEngine,
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     in,
 			ExpectedErrMessage: testErr.Error(),
@@ -900,12 +1146,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 				}, nil)
 				return labelService
 			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				return &automock.LabelRepository{}
-			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				return &automock.AutomaticFormationAssignmentService{}
-			},
+			LabelRepoFn:        formation.UnusedLabelRepo,
+			AsaServiceFN:       formation.UnusedASAService,
+			EngineFn:           formation.UnusedEngine,
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     in,
 			ExpectedErrMessage: "cannot convert label value to slice of strings",
@@ -915,7 +1158,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			UIDServiceFn: frmtest.UnusedUUIDService(),
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, tnt, lblInput).Return(&model.Label{
+				labelService.On("GetLabel", ctx, tnt, applicationLblInput).Return(&model.Label{
 					ID:         "123",
 					Tenant:     str.Ptr(tnt),
 					Key:        model.ScenariosKey,
@@ -926,12 +1169,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 				}, nil)
 				return labelService
 			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				return &automock.LabelRepository{}
-			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				return &automock.AutomaticFormationAssignmentService{}
-			},
+			LabelRepoFn:        formation.UnusedLabelRepo,
+			AsaServiceFN:       formation.UnusedASAService,
+			EngineFn:           formation.UnusedEngine,
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     in,
 			ExpectedErrMessage: "cannot cast label value as a string",
@@ -941,7 +1181,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			UIDServiceFn: frmtest.UnusedUUIDService(),
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, tnt, lblInput).Return(lblSingleFormation, nil)
+				labelService.On("GetLabel", ctx, tnt, applicationLblInput).Return(applicationLblSingleFormation, nil)
 				return labelService
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -949,9 +1189,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				labelRepo.On("Delete", ctx, tnt, model.ApplicationLabelableObject, objectID, model.ScenariosKey).Return(testErr)
 				return labelRepo
 			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				return &automock.AutomaticFormationAssignmentService{}
-			},
+			AsaServiceFN:       formation.UnusedASAService,
+			EngineFn:           formation.UnusedEngine,
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     in,
 			ExpectedErrMessage: testErr.Error(),
@@ -961,8 +1200,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 			UIDServiceFn: frmtest.UnusedUUIDService(),
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, tnt, lblInput).Return(lbl, nil)
-				labelService.On("UpdateLabel", ctx, tnt, lbl.ID, &model.LabelInput{
+				labelService.On("GetLabel", ctx, tnt, applicationLblInput).Return(applicationLbl, nil)
+				labelService.On("UpdateLabel", ctx, tnt, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
 					Value:      []string{secondTestFormation},
 					ObjectID:   objectID,
@@ -971,65 +1210,195 @@ func TestServiceUnassignFormation(t *testing.T) {
 				}).Return(testErr)
 				return labelService
 			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				return &automock.LabelRepository{}
-			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				return &automock.AutomaticFormationAssignmentService{}
-			},
+			LabelRepoFn:        formation.UnusedLabelRepo,
+			AsaServiceFN:       formation.UnusedASAService,
+			EngineFn:           formation.UnusedEngine,
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     in,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name:         "error for tenant when delete fails",
+			Name:           "error for runtime when can't get formations that are coming from ASAs",
+			UIDServiceFn:   frmtest.UnusedUUIDService(),
+			LabelServiceFn: formation.UnusedLabelService,
+			LabelRepoFn:    formation.UnusedLabelRepo,
+			AsaServiceFN:   formation.UnusedASAService,
+			EngineFn: func() *automock.ScenarioAssignmentEngine {
+				engine := &automock.ScenarioAssignmentEngine{}
+				engine.On("GetScenariosFromMatchingASAs", ctx, objectID).Return(nil, testErr)
+				return engine
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     in,
+			ExpectedFormation:  expected,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name:         "error for runtime while getting label",
 			UIDServiceFn: frmtest.UnusedUUIDService(),
 			LabelServiceFn: func() *automock.LabelService {
-				return &automock.LabelService{}
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, runtimeLblInput).Return(nil, testErr)
+				return labelService
+			},
+			LabelRepoFn:  formation.UnusedLabelRepo,
+			AsaServiceFN: formation.UnusedASAService,
+			EngineFn: func() *automock.ScenarioAssignmentEngine {
+				engine := &automock.ScenarioAssignmentEngine{}
+				engine.On("GetScenariosFromMatchingASAs", ctx, objectID).Return(nil, nil)
+				return engine
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     in,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name:         "error for runtime while converting label values to string slice",
+			UIDServiceFn: frmtest.UnusedUUIDService(),
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{testFormation},
+					ObjectID:   objectID,
+					ObjectType: model.RuntimeLabelableObject,
+					Version:    0,
+				}).Return(&model.Label{
+					ID:         "123",
+					Tenant:     str.Ptr(tnt),
+					Key:        model.ScenariosKey,
+					Value:      []string{testFormation},
+					ObjectID:   objectID,
+					ObjectType: model.RuntimeLabelableObject,
+					Version:    0,
+				}, nil)
+				return labelService
+			},
+			LabelRepoFn:  formation.UnusedLabelRepo,
+			AsaServiceFN: formation.UnusedASAService,
+			EngineFn: func() *automock.ScenarioAssignmentEngine {
+				engine := &automock.ScenarioAssignmentEngine{}
+				engine.On("GetScenariosFromMatchingASAs", ctx, objectID).Return(nil, nil)
+				return engine
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     in,
+			ExpectedErrMessage: "cannot convert label value to slice of strings",
+		},
+		{
+			Name:         "error for runtime while converting label value to string",
+			UIDServiceFn: frmtest.UnusedUUIDService(),
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, runtimeLblInput).Return(&model.Label{
+					ID:         "123",
+					Tenant:     str.Ptr(tnt),
+					Key:        model.ScenariosKey,
+					Value:      []interface{}{5},
+					ObjectID:   objectID,
+					ObjectType: model.RuntimeLabelableObject,
+					Version:    0,
+				}, nil)
+				return labelService
+			},
+			LabelRepoFn:  formation.UnusedLabelRepo,
+			AsaServiceFN: formation.UnusedASAService,
+			EngineFn: func() *automock.ScenarioAssignmentEngine {
+				engine := &automock.ScenarioAssignmentEngine{}
+				engine.On("GetScenariosFromMatchingASAs", ctx, objectID).Return(nil, nil)
+				return engine
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     in,
+			ExpectedErrMessage: "cannot cast label value as a string",
+		},
+		{
+			Name:         "error for runtime when formation is last and delete fails",
+			UIDServiceFn: frmtest.UnusedUUIDService(),
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, runtimeLblInput).Return(runtimeLblSingleFormation, nil)
+				return labelService
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
-				return &automock.LabelRepository{}
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, objectID, model.ScenariosKey).Return(testErr)
+				return labelRepo
 			},
+			AsaServiceFN: formation.UnusedASAService,
+			EngineFn: func() *automock.ScenarioAssignmentEngine {
+				engine := &automock.ScenarioAssignmentEngine{}
+				engine.On("GetScenariosFromMatchingASAs", ctx, objectID).Return(nil, nil)
+				return engine
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     in,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name:         "error for runtime when updating label fails",
+			UIDServiceFn: frmtest.UnusedUUIDService(),
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, tnt, runtimeLblInput).Return(runtimeLbl, nil)
+				labelService.On("UpdateLabel", ctx, tnt, runtimeLbl.ID, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{secondTestFormation},
+					ObjectID:   objectID,
+					ObjectType: model.RuntimeLabelableObject,
+					Version:    0,
+				}).Return(testErr)
+				return labelService
+			},
+			LabelRepoFn:  formation.UnusedLabelRepo,
+			AsaServiceFN: formation.UnusedASAService,
+			EngineFn: func() *automock.ScenarioAssignmentEngine {
+				engine := &automock.ScenarioAssignmentEngine{}
+				engine.On("GetScenariosFromMatchingASAs", ctx, objectID).Return(nil, nil)
+				return engine
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     in,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name:           "error for tenant when delete fails",
+			UIDServiceFn:   frmtest.UnusedUUIDService(),
+			LabelServiceFn: formation.UnusedLabelService,
+			LabelRepoFn:    formation.UnusedLabelRepo,
 			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
 				asaService := &automock.AutomaticFormationAssignmentService{}
 				asaService.On("GetForScenarioName", ctx, testFormation).Return(asa, nil)
 				asaService.On("Delete", ctx, asa).Return(testErr)
 				return asaService
 			},
+			EngineFn:           formation.UnusedEngine,
 			ObjectType:         graphql.FormationObjectTypeTenant,
 			InputFormation:     in,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name:         "error for tenant when delete fails",
-			UIDServiceFn: frmtest.UnusedUUIDService(),
-			LabelServiceFn: func() *automock.LabelService {
-				return &automock.LabelService{}
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				return &automock.LabelRepository{}
-			},
+			Name:           "error for tenant when delete fails",
+			UIDServiceFn:   frmtest.UnusedUUIDService(),
+			LabelServiceFn: formation.UnusedLabelService,
+			LabelRepoFn:    formation.UnusedLabelRepo,
 			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
 				asaService := &automock.AutomaticFormationAssignmentService{}
 				asaService.On("GetForScenarioName", ctx, testFormation).Return(model.AutomaticScenarioAssignment{}, testErr)
 				return asaService
 			},
+			EngineFn:           formation.UnusedEngine,
 			ObjectType:         graphql.FormationObjectTypeTenant,
 			InputFormation:     in,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name:         "error when object type is unknown",
-			UIDServiceFn: frmtest.UnusedUUIDService(),
-			LabelServiceFn: func() *automock.LabelService {
-				return &automock.LabelService{}
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				return &automock.LabelRepository{}
-			},
-			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
-				return &automock.AutomaticFormationAssignmentService{}
-			},
+			Name:               "error when object type is unknown",
+			UIDServiceFn:       frmtest.UnusedUUIDService(),
+			LabelServiceFn:     formation.UnusedLabelService,
+			LabelRepoFn:        formation.UnusedLabelRepo,
+			AsaServiceFN:       formation.UnusedASAService,
+			EngineFn:           formation.UnusedEngine,
 			ObjectType:         "UNKNOWN",
 			InputFormation:     in,
 			ExpectedErrMessage: "unknown formation type",
@@ -1043,8 +1412,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 			labelService := testCase.LabelServiceFn()
 			labelRepo := testCase.LabelRepoFn()
 			asaService := testCase.AsaServiceFN()
+			engine := testCase.EngineFn()
 
-			svc := formation.NewService(nil, labelRepo, labelService, uidService, nil, asaService, nil)
+			svc := formation.NewService(nil, labelRepo, labelService, uidService, nil, asaService, nil, engine)
 
 			// WHEN
 			actual, err := svc.UnassignFormation(ctx, tnt, objectID, testCase.ObjectType, testCase.InputFormation)
