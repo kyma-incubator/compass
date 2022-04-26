@@ -47,7 +47,7 @@ func NewResolver(transact persistence.Transactioner, runtimeContextService Runti
 	}
 }
 
-// RegisterRuntimeContext missing godoc
+// RegisterRuntimeContext registers RuntimeContext from `in` and associates it with Runtime with ID `runtimeID`
 func (r *Resolver) RegisterRuntimeContext(ctx context.Context, runtimeID string, in graphql.RuntimeContextInput) (*graphql.RuntimeContext, error) {
 	convertedIn := r.converter.InputFromGraphQLWithRuntimeID(in, runtimeID)
 
@@ -78,7 +78,7 @@ func (r *Resolver) RegisterRuntimeContext(ctx context.Context, runtimeID string,
 	return gqlRuntimeContext, nil
 }
 
-// UpdateRuntimeContext missing godoc
+// UpdateRuntimeContext updates RuntimeContext with ID `id` using `in`
 func (r *Resolver) UpdateRuntimeContext(ctx context.Context, id string, in graphql.RuntimeContextInput) (*graphql.RuntimeContext, error) {
 	convertedIn := r.converter.InputFromGraphQL(in)
 
@@ -108,7 +108,7 @@ func (r *Resolver) UpdateRuntimeContext(ctx context.Context, id string, in graph
 	return gqlRuntimeContext, nil
 }
 
-// DeleteRuntimeContext missing godoc
+// DeleteRuntimeContext deletes RuntimeContext with ID `id`
 func (r *Resolver) DeleteRuntimeContext(ctx context.Context, id string) (*graphql.RuntimeContext, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -136,7 +136,7 @@ func (r *Resolver) DeleteRuntimeContext(ctx context.Context, id string) (*graphq
 	return deletedRuntimeContext, nil
 }
 
-// Labels missing godoc
+// Labels lists Labels with key `key`for RuntimeContext `obj`
 func (r *Resolver) Labels(ctx context.Context, obj *graphql.RuntimeContext, key *string) (graphql.Labels, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Runtime Context cannot be empty")

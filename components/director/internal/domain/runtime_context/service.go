@@ -69,7 +69,7 @@ func NewService(repo RuntimeContextRepository,
 	}
 }
 
-// Exist missing godoc
+// Exist checks if RuntimeContext with ID `id` exists
 func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -84,7 +84,7 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
-// Create missing godoc
+// Create creates RuntimeContext using `in`
 func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (string, error) {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -100,7 +100,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (str
 	return id, nil
 }
 
-// Update missing godoc
+// Update updates RuntimeContext with ID `id` using `in`
 func (s *service) Update(ctx context.Context, id string, in model.RuntimeContextInput) error {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -120,7 +120,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeContext
 	return nil
 }
 
-// Delete missing godoc
+// Delete deletes RuntimeContext with ID `id`
 func (s *service) Delete(ctx context.Context, id string) error {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -137,7 +137,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-// GetByID missing godoc
+// GetByID retrieves the RuntimeContext with the provided `id`
 func (s *service) GetByID(ctx context.Context, id string) (*model.RuntimeContext, error) {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -152,7 +152,7 @@ func (s *service) GetByID(ctx context.Context, id string) (*model.RuntimeContext
 	return runtimeCtx, nil
 }
 
-// GetForRuntime missing godoc
+// GetForRuntime retrieves the RuntimeContext with the provided `id` associated with Runtime with id `runtimeID`
 func (s *service) GetForRuntime(ctx context.Context, id, runtimeID string) (*model.RuntimeContext, error) {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -167,7 +167,7 @@ func (s *service) GetForRuntime(ctx context.Context, id, runtimeID string) (*mod
 	return runtimeCtx, nil
 }
 
-// ListByFilter missing godoc
+// ListByFilter retrieves a page of RuntimeContext objects associated to Runtime with id `runtimeID` that are matching the provided filters
 func (s *service) ListByFilter(ctx context.Context, runtimeID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error) {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -181,7 +181,7 @@ func (s *service) ListByFilter(ctx context.Context, runtimeID string, filter []*
 	return s.repo.List(ctx, runtimeID, rtmCtxTenant, filter, pageSize, cursor)
 }
 
-// ListByRuntimeIDs missing godoc
+// ListByRuntimeIDs retrieves a page of RuntimeContext objects for each runtimeID
 func (s *service) ListByRuntimeIDs(ctx context.Context, runtimeIDs []string, pageSize int, cursor string) ([]*model.RuntimeContextPage, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -195,7 +195,7 @@ func (s *service) ListByRuntimeIDs(ctx context.Context, runtimeIDs []string, pag
 	return s.repo.ListByRuntimeIDs(ctx, tnt, runtimeIDs, pageSize, cursor)
 }
 
-// ListLabels missing godoc
+// ListLabels lists Labels for RuntimeContext with ID `runtimeCtxID`
 func (s *service) ListLabels(ctx context.Context, runtimeCtxID string) (map[string]*model.Label, error) {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {

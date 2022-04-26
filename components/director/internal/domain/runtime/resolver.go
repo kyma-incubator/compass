@@ -549,13 +549,13 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string
 	return gqlLabels, nil
 }
 
-// RuntimeContexts missing godoc
+// RuntimeContexts retrieves a page of RuntimeContexts for the specified Runtime
 func (r *Resolver) RuntimeContexts(ctx context.Context, obj *graphql.Runtime, first *int, after *graphql.PageCursor) (*graphql.RuntimeContextPage, error) {
 	param := dataloader.ParamRuntimeContext{ID: obj.ID, Ctx: ctx, First: first, After: after}
 	return dataloader.RuntimeContextFor(ctx).RuntimeContextByID.Load(param)
 }
 
-// RuntimeContextsDataLoader missing godoc
+// RuntimeContextsDataLoader retrieves a page of RuntimeContexts for each Runtime ID in the keys argument
 func (r *Resolver) RuntimeContextsDataLoader(keys []dataloader.ParamRuntimeContext) ([]*graphql.RuntimeContextPage, []error) {
 	if len(keys) == 0 {
 		return nil, []error{apperrors.NewInternalError("No Runtimes found")}
