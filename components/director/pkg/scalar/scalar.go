@@ -31,7 +31,12 @@ func ConvertToString(in interface{}) (string, error) {
 
 	value, ok := in.(string)
 	if !ok {
-		return "", errors.Errorf("unexpected input type: %T, should be string", in)
+		ptr, ok := in.(*string)
+		if !ok {
+			return "", errors.Errorf("unexpected input type: %T, should be string", in)
+		}
+
+		value = *ptr
 	}
 
 	return value, nil
