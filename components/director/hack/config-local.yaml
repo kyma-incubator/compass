@@ -21,6 +21,7 @@ graphql:
     automaticScenarioAssignments: ["automatic_scenario_assignment:read"]
     automaticScenarioAssignmentForScenario: ["automatic_scenario_assignment:read"]
     automaticScenarioAssignmentsForSelector: ["automatic_scenario_assignment:read"]
+    systemAuth: ["runtime.auths:read", "application.auths:read", "integration_system.auths:read"]
 
   mutation:
     registerApplication: ["application:write"]
@@ -120,6 +121,7 @@ clientCredentialsRegistrationScopes:
     - "runtime:read"
     - "runtime:write"
     - "application:read"
+    - "application:write"
     - "runtime.auths:read"
     - "bundle.instance_auths:read"
   application:
