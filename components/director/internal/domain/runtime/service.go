@@ -7,10 +7,7 @@ import (
 	"strings"
 	"time"
 
-	tnt2 "github.com/kyma-incubator/compass/components/director/pkg/tenant"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -222,14 +219,6 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 
 // CreateWithMandatoryLabels creates a runtime in a given tenant and also adds mandatory labels to it.
 func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeInput, id string, mandatoryLabels map[string]interface{}) error {
-	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok { // TODO: <backwards-compatibility>: Should be deleted once the provisioner start creating runtimes in a subaccount
-		tnt, err := s.extractTenantFromSubaccountLabel(ctx, saVal)
-		if err != nil {
-			return err
-		}
-		ctx = tenant.SaveToContext(ctx, tnt.ID, tnt.ExternalTenant)
-	}
-
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
@@ -567,40 +556,6 @@ func (s *service) getCurrentLabelsForRuntime(ctx context.Context, tenantID, runt
 		currentLabels[v.Key] = v.Value
 	}
 	return currentLabels, nil
-}
-
-func (s *service) extractTenantFromSubaccountLabel(ctx context.Context, value interface{}) (*model.BusinessTenantMapping, error) {
-	callingTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	sa, err := convertLabelValue(value)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while converting %s label", scenarioassignment.SubaccountIDKey)
-	}
-
-	log.C(ctx).Infof("Runtime registered by tenant %s with %s label with value %s. Will proceed with the subaccount as tenant...", callingTenant, scenarioassignment.SubaccountIDKey, sa)
-
-	if err := s.tenantSvc.CreateManyIfNotExists(ctx, model.BusinessTenantMappingInput{
-		ExternalTenant: sa,
-		Parent:         callingTenant,
-		Type:           string(tnt2.Subaccount),
-		Provider:       "lazilyWhileRuntimeCreation",
-	}); err != nil {
-		return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", sa)
-	}
-
-	tnt, err := s.tenantSvc.GetTenantByExternalID(ctx, sa)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting tenant %s", sa)
-	}
-
-	if callingTenant != tnt.ID && callingTenant != tnt.Parent {
-		log.C(ctx).Errorf("Caller tenant %s is not parent of the subaccount %s in the %s label", callingTenant, sa, scenarioassignment.SubaccountIDKey)
-		return nil, apperrors.NewInvalidOperationError(fmt.Sprintf("Tenant provided in %s label should be child of the caller tenant", scenarioassignment.SubaccountIDKey))
-	}
-	return tnt, nil
 }
 
 func extractUnProtectedLabels(labels map[string]*model.Label, protectedLabelsKeyPattern string) (map[string]*model.Label, error) {

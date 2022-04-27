@@ -3,6 +3,8 @@ package formation
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -26,19 +28,34 @@ type Converter interface {
 	ToGraphQL(i *model.Formation) *graphql.Formation
 }
 
+//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
+type TenantService interface {
+	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+}
+
+//go:generate mockery --name=TenantFetcherService --output=automock --outpkg=automock --case=underscore
+type TenantFetcherService interface {
+	FetchOnDemand(tenant string) error
+}
+
 // Resolver is the formation resolver
 type Resolver struct {
-	transact persistence.Transactioner
-	service  Service
-	conv     Converter
+	transact      persistence.Transactioner
+	service       Service
+	conv          Converter
+	tenantSvc     TenantService
+	tenantFetcher TenantFetcherService
 }
 
 // NewResolver creates formation resolver
-func NewResolver(transact persistence.Transactioner, service Service, conv Converter) *Resolver {
+func NewResolver(transact persistence.Transactioner, service Service, conv Converter, tenantSvc TenantService, fetcher TenantFetcherService) *Resolver {
 	return &Resolver{
-		transact: transact,
-		service:  service,
-		conv:     conv,
+		transact:      transact,
+		service:       service,
+		conv:          conv,
+		tenantSvc:     tenantSvc,
+		tenantFetcher: fetcher,
 	}
 }
 
@@ -111,9 +128,17 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	newFormation, err := r.service.AssignFormation(ctx, tnt, objectID, objectType, r.conv.FromGraphQL(formation))
-	if err != nil {
-		return nil, err
+	var newFormation *model.Formation
+	if objectType == graphql.FormationObjectTypeTenant {
+		newFormation, err = r.assignFormationForTenant(ctx, tx, tnt, objectID, formation)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		newFormation, err = r.service.AssignFormation(ctx, tnt, objectID, objectType, r.conv.FromGraphQL(formation))
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -148,4 +173,34 @@ func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objec
 	}
 
 	return r.conv.ToGraphQL(newFormation), nil
+}
+
+func (r *Resolver) assignFormationForTenant(ctx context.Context, tx persistence.PersistenceTx, tenantFromContext string, objectID string, formationInput graphql.FormationInput) (*model.Formation, error) {
+	tenantFromDB, err := r.tenantSvc.GetTenantByExternalID(ctx, objectID)
+	if err != nil && !apperrors.IsNotFoundError(err) {
+		return nil, errors.Wrapf(err, "while getting tenant %s", objectID)
+	} else if err != nil {
+		if err = tx.Commit(); err != nil { //close the current transaction before the HTTP call
+			return nil, errors.Wrap(err, "while committing transaction")
+		}
+		if err := r.tenantFetcher.FetchOnDemand(objectID); err != nil {
+			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", objectID)
+		}
+	}
+	tx, err = r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	tenantFromDB, err = r.tenantSvc.GetTenantByExternalID(ctx, objectID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting tenant %s", objectID)
+	}
+	newFormation, err := r.service.AssignFormation(ctx, tenantFromContext, tenantFromDB.ID, graphql.FormationObjectTypeTenant, r.conv.FromGraphQL(formationInput))
+	if err != nil {
+		return nil, err
+	}
+	if err = tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "while committing transaction")
+	}
+	return newFormation, nil
 }
