@@ -70,18 +70,10 @@ spec:
           env:
             - name: APP_ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.graphql.external.port }}"
-            - name: APP_HYDRATOR_ADDRESS
-              value: "0.0.0.0:{{ .Values.global.director.validator.port }}"
             - name: APP_INTERNAL_ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.operations.port }}"
             - name: APP_METRICS_ADDRESS
               value: "0.0.0.0:{{ .Values.global.director.metrics.port }}"
-            - name: APP_METRICS_ENABLE_CLIENT_ID_INSTRUMENTATION
-              value: "{{ .Values.global.director.metrics.enableClientInstrumentation }}"
-            - name: APP_METRICS_ENABLE_GRAPHQL_OPERATION_INSTRUMENTATION
-              value: "{{ .Values.global.director.metrics.enableGraphqlOperationInstrumentation }}"
-            - name: APP_METRICS_CENSORED_FLOWS
-              value: "{{ .Values.global.director.metrics.censoredFlows }}"
             - name: APP_PLAYGROUND_API_ENDPOINT
               value: "{{ .Values.global.director.prefix }}/graphql"
             - name: APP_JWKS_ENDPOINT
@@ -167,16 +159,6 @@ spec:
             {{- end }}
             - name: APP_DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
-            {{- range $authenMappingServiceName, $config := .Values.global.oathkeeper.mutators.authenticationMappingServices }}
-            {{- if eq $config.authenticator.enabled true }}
-            - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_TRUSTED_ISSUERS
-              value: {{ $config.authenticator.trusted_issuers | quote }}
-            - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_ATTRIBUTES
-              value: {{ $config.authenticator.attributes | quote }}
-            - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_CHECK_CLIENT_ID_SUFFIX
-              value: {{ $config.authenticator.checkSuffix | quote }}
-            {{- end }}
-            {{- end }}
             - name: APP_HEALTH_CONFIG_INDICATORS
               value: {{ .Values.health.indicators | quote }}
             - name: APP_SCHEMA_MIGRATION_VERSION
@@ -236,6 +218,10 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
             - name: APP_EXTERNAL_CLIENT_KEY_KEY
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+            - name: APP_FETCH_TENANT_URL
+              value: {{ tpl .Values.global.director.fetchTenantEndpoint $ | quote }}
+            - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
+              value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}

@@ -30,7 +30,9 @@ Each Compass component has its own test directory. It contains a local Makefile 
 - `e2e-test-clean` - In case of early termination of the `e2e-test`, the command cleans up the `cluster-test-suite` and `test-definition` created by the `e2e-test` after the test is carried out.
 - `sandbox-test` - Creates a copy of the component's test-definition with changed command and installs go into the pod which is created by Octopus.
 - `run` - Runs the specified test. For example: `make testName=TestFullConnectorFlow run`.
+- `bench-run` - Runs the specified benchmark test. For example: `make bench-run testName=BenchmarkSystemBundles`.
 - `sandbox-deploy-test` - Creates new binary for the components tests and pushes it into the cluster.
+- `sandbox-deploy-bench-test` - Creates new binary for the benchmark tests and pushes it into the cluster.
 - `sandbox-test-clean` - Deletes the cluster-test-suite and test-definition created by `sandbox-test`.
 
 ### Execution steps for sandbox tests

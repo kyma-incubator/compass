@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -22,7 +23,6 @@ import (
 	"github.com/gorilla/mux"
 	mp_authenticator "github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
-	"github.com/kyma-incubator/compass/components/director/internal/authnmappinghandler"
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/domain"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
@@ -30,7 +30,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/bundlereferences"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
@@ -43,7 +42,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/schema"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
@@ -52,14 +50,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/healthz"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
 	"github.com/kyma-incubator/compass/components/director/internal/packagetobundles"
 	panichandler "github.com/kyma-incubator/compass/components/director/internal/panic_handler"
-	"github.com/kyma-incubator/compass/components/director/internal/runtimemapping"
 	"github.com/kyma-incubator/compass/components/director/internal/statusupdate"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
@@ -78,7 +72,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/scenario"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
-	directorTime "github.com/kyma-incubator/compass/components/director/pkg/time"
 	"github.com/kyma-incubator/compass/components/operations-controller/client"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -90,8 +83,7 @@ import (
 const envPrefix = "APP"
 
 type config struct {
-	Address         string `envconfig:"default=127.0.0.1:3000"`
-	HydratorAddress string `envconfig:"default=127.0.0.1:8080"`
+	Address string `envconfig:"default=127.0.0.1:3000"`
 
 	InternalAddress string `envconfig:"default=127.0.0.1:3002"`
 	AppURL          string `envconfig:"APP_URL"`
@@ -99,16 +91,13 @@ type config struct {
 	ClientTimeout time.Duration `envconfig:"default=105s"`
 	ServerTimeout time.Duration `envconfig:"default=110s"`
 
-	Database                      persistence.DatabaseConfig
-	APIEndpoint                   string `envconfig:"default=/graphql"`
-	TenantMappingEndpoint         string `envconfig:"default=/tenant-mapping"`
-	RuntimeMappingEndpoint        string `envconfig:"default=/runtime-mapping"`
-	AuthenticationMappingEndpoint string `envconfig:"default=/authn-mapping/{authenticator}"`
-	OperationPath                 string `envconfig:"default=/operation"`
-	LastOperationPath             string `envconfig:"default=/last_operation"`
-	PlaygroundAPIEndpoint         string `envconfig:"default=/graphql"`
-	ConfigurationFile             string
-	ConfigurationFileReload       time.Duration `envconfig:"default=1m"`
+	Database                persistence.DatabaseConfig
+	APIEndpoint             string `envconfig:"default=/graphql"`
+	OperationPath           string `envconfig:"default=/operation"`
+	LastOperationPath       string `envconfig:"default=/last_operation"`
+	PlaygroundAPIEndpoint   string `envconfig:"default=/graphql"`
+	ConfigurationFile       string
+	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
 
 	Log log.Config
 
@@ -122,7 +111,6 @@ type config struct {
 
 	RuntimeJWKSCachePeriod time.Duration `envconfig:"default=5m"`
 
-	StaticGroupsSrc   string `envconfig:"default=/data/static-groups.yaml"`
 	PairingAdapterSrc string `envconfig:"optional"`
 
 	OneTimeToken onetimetoken.Config
@@ -130,7 +118,7 @@ type config struct {
 
 	Features features.Config
 
-	SelfRegConfig runtime.SelfRegConfig
+	SelfRegConfig configprovider.SelfRegConfig
 
 	OperationsNamespace string `envconfig:"default=compass-system"`
 
@@ -148,6 +136,10 @@ type config struct {
 	CertLoaderConfig certloader.Config
 
 	SubscriptionConfig subscription.Config
+
+	TenantOnDemandURL string `envconfig:"optional,APP_FETCH_TENANT_URL"`
+
+	SkipSSLValidation bool `envconfig:"default=false,APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"`
 }
 
 func main() {
@@ -161,9 +153,6 @@ func main() {
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, envPrefix)
 	exitOnError(err, "Error while loading app config")
-
-	authenticators, err := authenticator.InitFromEnv(envPrefix)
-	exitOnError(err, "Failed to retrieve authenticators config")
 
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Failed to configure Logger")
@@ -196,9 +185,14 @@ func main() {
 	}
 	cfg.SelfRegConfig.ClientTimeout = cfg.ClientTimeout
 
+	internalClientTransport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: cfg.SkipSSLValidation,
+		},
+	}
 	internalHTTPClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
-		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(internalClientTransport, "Authorization")),
 	}
 
 	appRepo := applicationRepo()
@@ -227,6 +221,7 @@ func main() {
 		adminURL,
 		accessStrategyExecutorProvider,
 		cfg.SubscriptionConfig,
+		cfg.TenantOnDemandURL,
 	)
 	exitOnError(err, "Failed to initialize root resolver")
 
@@ -292,22 +287,6 @@ func main() {
 
 	gqlAPIRouter.HandleFunc("", metricsCollector.GraphQLHandlerWithInstrumentation(gqlServ))
 
-	logger.Infof("Registering Tenant Mapping endpoint on %s...", cfg.TenantMappingEndpoint)
-	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(transact, authenticators, cfg.StaticGroupsSrc, cfgProvider, metricsCollector)
-	exitOnError(err, "Error while configuring tenant mapping handler")
-
-	mainRouter.HandleFunc(cfg.TenantMappingEndpoint, tenantMappingHandlerFunc)
-
-	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc := getRuntimeMappingHandlerFunc(ctx, transact, cfg.JWKSSyncPeriod, cfg.Features.DefaultScenarioEnabled, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
-
-	mainRouter.HandleFunc(cfg.RuntimeMappingEndpoint, runtimeMappingHandlerFunc)
-
-	logger.Infof("Registering Authentication Mapping endpoint on %s...", cfg.AuthenticationMappingEndpoint)
-	authnMappingHandlerFunc := authnmappinghandler.NewHandler(oathkeeper.NewReqDataParser(), httpClient, authnmappinghandler.DefaultTokenVerifierProvider, authenticators)
-
-	mainRouter.HandleFunc(cfg.AuthenticationMappingEndpoint, authnMappingHandlerFunc.ServeHTTP)
-
 	operationHandler := operation.NewHandler(transact, func(ctx context.Context, tenantID, resourceID string) (model.Entity, error) {
 		return appRepo.GetByID(ctx, tenantID, resourceID)
 	}, tenant.LoadFromContext)
@@ -328,10 +307,6 @@ func main() {
 	internalRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext())
 	internalOperationsAPIRouter := internalRouter.PathPrefix(cfg.OperationPath).Subrouter()
 	internalOperationsAPIRouter.HandleFunc("", operationUpdaterHandler.ServeHTTP)
-
-	oneTimeTokenService := tokenService(cfg, cfgProvider, httpClient, internalHTTPClient, pairingAdapters, accessStrategyExecutorProvider)
-	hydratorHandler, err := PrepareHydratorHandler(cfg, systemAuthSvc(), transact, oneTimeTokenService, correlation.AttachCorrelationIDToContext(), log.RequestLogger())
-	exitOnError(err, "Failed configuring hydrator handler")
 
 	logger.Infof("Registering readiness endpoint...")
 	schemaRepo := schema.NewRepository()
@@ -358,7 +333,6 @@ func main() {
 
 	runMetricsSrv, shutdownMetricsSrv := createServer(ctx, cfg.MetricsAddress, metricsHandler, "metrics", cfg.ServerTimeout)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg.Address, mainRouter, "main", cfg.ServerTimeout)
-	runHydratorSrv, shutdownHydratorSrv := createServer(ctx, cfg.HydratorAddress, hydratorHandler, "hydrator", cfg.ServerTimeout)
 	runInternalSrv, shutdownInternalSrv := createServer(ctx, cfg.InternalAddress, internalRouter, "internal", cfg.ServerTimeout)
 
 	go func() {
@@ -367,11 +341,9 @@ func main() {
 		shutdownMetricsSrv()
 		shutdownInternalSrv()
 		shutdownMainSrv()
-		shutdownHydratorSrv()
 	}()
 
 	go runMetricsSrv()
-	go runHydratorSrv()
 	go runInternalSrv()
 	runMainSrv()
 }
@@ -423,72 +395,6 @@ func exitOnError(err error, context string) {
 		wrappedError := errors.Wrap(err, context)
 		log.D().Fatal(wrappedError)
 	}
-}
-
-func getTenantMappingHandlerFunc(transact persistence.Transactioner, authenticators []authenticator.Config, staticGroupsSrc string, cfgProvider *configprovider.Provider, metricsCollector *metrics.Collector) (func(writer http.ResponseWriter, request *http.Request), error) {
-	uidSvc := uid.NewService()
-	authConverter := auth.NewConverter()
-	systemAuthConverter := systemauth.NewConverter(authConverter)
-	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
-	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
-
-	staticGroupsRepo, err := tenantmapping.NewStaticGroupRepository(staticGroupsSrc)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating StaticGroup repository instance")
-	}
-
-	tenantConverter := tenant.NewConverter()
-	tenantRepo := tenant.NewRepository(tenantConverter)
-
-	objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-		tenantmapping.UserObjectContextProvider:          tenantmapping.NewUserContextProvider(staticGroupsRepo, tenantRepo),
-		tenantmapping.SystemAuthObjectContextProvider:    tenantmapping.NewSystemAuthContextProvider(systemAuthSvc, cfgProvider, tenantRepo),
-		tenantmapping.AuthenticatorObjectContextProvider: tenantmapping.NewAuthenticatorContextProvider(tenantRepo, authenticators),
-		tenantmapping.CertServiceObjectContextProvider:   tenantmapping.NewCertServiceContextProvider(tenantRepo, cfgProvider),
-		tenantmapping.TenantHeaderObjectContextProvider:  tenantmapping.NewAccessLevelContextProvider(tenantRepo),
-	}
-	reqDataParser := oathkeeper.NewReqDataParser()
-
-	return tenantmapping.NewHandler(reqDataParser, transact, objectContextProviders, metricsCollector).ServeHTTP, nil
-}
-
-func getRuntimeMappingHandlerFunc(ctx context.Context, transact persistence.Transactioner, cachePeriod time.Duration, defaultScenarioEnabled bool, protectedLabelPattern string, immutableLabelPattern string) func(writer http.ResponseWriter, request *http.Request) {
-	uidSvc := uid.NewService()
-
-	assignmentConv := scenarioassignment.NewConverter()
-	labelConv := label.NewConverter()
-	labelRepo := label.NewRepository(labelConv)
-	labelDefConverter := labeldef.NewConverter()
-	labelDefRepo := labeldef.NewRepository(labelDefConverter)
-	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
-	tenantRepo := tenant.NewRepository(tenant.NewConverter())
-	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, defaultScenarioEnabled)
-	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
-	runtimeConv := runtime.NewConverter()
-	runtimeRepo := runtime.NewRepository(runtimeConv)
-
-	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo, runtimeRepo)
-
-	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelSvc, uidSvc, scenarioAssignmentEngine, tenantSvc, protectedLabelPattern, immutableLabelPattern)
-
-	reqDataParser := oathkeeper.NewReqDataParser()
-
-	jwksFetch := runtimemapping.NewJWKsFetch()
-	jwksCache := runtimemapping.NewJWKsCache(jwksFetch, cachePeriod)
-	tokenVerifier := runtimemapping.NewTokenVerifier(jwksCache)
-
-	executor.NewPeriodic(1*time.Minute, func(ctx context.Context) {
-		jwksCache.Cleanup(ctx)
-	}).Run(ctx)
-
-	return runtimemapping.NewHandler(
-		reqDataParser,
-		transact,
-		tokenVerifier,
-		runtimeSvc,
-		tenantSvc).ServeHTTP
 }
 
 func createServer(ctx context.Context, address string, handler http.Handler, name string, timeout time.Duration) (func(), func()) {
@@ -563,89 +469,6 @@ func webhookService() webhook.WebhookService {
 	webhookRepo := webhook.NewRepository(webhookConverter)
 
 	return webhook.NewService(webhookRepo, applicationRepo(), uidSvc)
-}
-
-func tokenService(cfg config, cfgProvider *configprovider.Provider, httpClient, internalHTTPClient *http.Client, pairingAdapters map[string]string, accessStrategyExecutorProvider *accessstrategy.Provider) oathkeeper.OneTimeTokenService {
-	uidSvc := uid.NewService()
-	assignmentConv := scenarioassignment.NewConverter()
-	authConverter := auth.NewConverter()
-	systemAuthConverter := systemauth.NewConverter(authConverter)
-	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
-	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
-	labelConverter := label.NewConverter()
-	frConverter := fetchrequest.NewConverter(authConverter)
-	versionConverter := version.NewConverter()
-	specConverter := spec.NewConverter(frConverter)
-	bundleReferenceConv := bundlereferences.NewConverter()
-
-	intSysConverter := integrationsystem.NewConverter()
-	intSysRepo := integrationsystem.NewRepository(intSysConverter)
-	tenantConverter := tenant.NewConverter()
-	tenantRepo := tenant.NewRepository(tenantConverter)
-	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
-	webhookConverter := webhook.NewConverter(authConverter)
-	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
-	apiConverter := api.NewConverter(versionConverter, specConverter)
-	docConverter := document.NewConverter(frConverter)
-	packageConverter := bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
-	appConverter := application.NewConverter(webhookConverter, packageConverter)
-	applicationRepo := application.NewRepository(appConverter)
-	webhookRepo := webhook.NewRepository(webhookConverter)
-	runtimeConverter := runtime.NewConverter()
-	runtimeRepo := runtime.NewRepository(runtimeConverter)
-	labelRepo := label.NewRepository(labelConverter)
-	labelDefConverter := labeldef.NewConverter()
-	labelDefRepo := labeldef.NewRepository(labelDefConverter)
-	labelUpsertSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
-	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
-	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
-	bundleRepo := bundle.NewRepository(packageConverter)
-	apiRepo := api.NewRepository(apiConverter)
-	docRepo := document.NewRepository(docConverter)
-	fetchRequestRepo := fetchrequest.NewRepository(frConverter)
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessStrategyExecutorProvider)
-	eventAPIRepo := eventdef.NewRepository(eventAPIConverter)
-	specRepo := spec.NewRepository(specConverter)
-	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
-	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
-	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
-	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
-	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
-	documentSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
-	bundleSvc := bundle.NewService(bundleRepo, apiSvc, eventAPISvc, documentSvc, uidSvc)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelUpsertSvc, scenariosSvc, bundleSvc, uidSvc)
-	timeService := directorTime.NewService()
-	return onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalHTTPClient, onetimetoken.NewTokenGenerator(cfg.OneTimeToken.Length), cfg.OneTimeToken, pairingAdapters, timeService)
-}
-
-func systemAuthSvc() oathkeeper.SystemAuthService {
-	uidSvc := uid.NewService()
-	authConverter := auth.NewConverter()
-	systemAuthConverter := systemauth.NewConverter(authConverter)
-	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
-	return systemauth.NewService(systemAuthRepo, uidSvc)
-}
-
-// PrepareHydratorHandler missing godoc
-func PrepareHydratorHandler(cfg config, tokenService oathkeeper.SystemAuthService, transact persistence.Transactioner, oneTimeTokenService oathkeeper.OneTimeTokenService, middlewares ...mux.MiddlewareFunc) (http.Handler, error) {
-	validationHydrator := oathkeeper.NewValidationHydrator(tokenService, transact, oneTimeTokenService)
-
-	router := mux.NewRouter()
-	router.Path("/health").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-
-	v1Router := router.PathPrefix("/v1").Subrouter()
-	v1Router.HandleFunc("/tokens/resolve", validationHydrator.ResolveConnectorTokenHeader)
-
-	router.Use(middlewares...)
-
-	handlerWithTimeout, err := timeouthandler.WithTimeout(router, cfg.ServerTimeout)
-	if err != nil {
-		return nil, err
-	}
-
-	return handlerWithTimeout, nil
 }
 
 func getAsyncDirective(ctx context.Context, cfg config, transact persistence.Transactioner, appRepo application.ApplicationRepository) func(context.Context, interface{}, gqlgen.Resolver, graphql.OperationType, *graphql.WebhookType, *string) (res interface{}, err error) {

@@ -185,6 +185,9 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.HandleFunc("/v1/dependencies/configure", providerHandler.DependenciesConfigure).Methods(http.MethodPost)
 	router.HandleFunc("/v1/dependencies", providerHandler.Dependencies).Methods(http.MethodGet)
 
+	// Fetch tenant on demand handler. It handles the calls from director for fetching tenant information and storing it into the database.
+	router.HandleFunc("/tenants/v1/fetch/{tenantId}", providerHandler.FetchTenantOnDemand).Methods(http.MethodPost)
+
 	// CA server handlers
 	certHandler := cert.NewHandler(cfg.CACert, cfg.CAKey)
 	router.HandleFunc("/cert", certHandler.Generate).Methods(http.MethodPost)
