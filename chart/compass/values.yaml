@@ -189,7 +189,6 @@ global:
     metrics:
       port: 3003
       enableGraphqlOperationInstrumentation: true
-      censoredFlows: "JWT"
     operations:
       port: 3002
       path: "/operation"
