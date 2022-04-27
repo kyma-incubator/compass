@@ -84,12 +84,16 @@ global:
       id: 7e8ab2e3-3bb4-42e3-92b2-4e0bf48559d3
       type: account
       parent: 2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0
+    - name: TestSystemFetcherAccount
+      id: c395681d-11dd-4cde-bbcf-570b4a153e79
+      type: account
+      parent: 2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2297"
+      version: "PR-2268"
     connectivity_adapter:
       dir:
       version: "PR-2297"
@@ -98,7 +102,10 @@ global:
       version: "PR-2297"
     director:
       dir:
-      version: "PR-2294"
+      version: "PR-2307"
+    hydrator:
+      dir:
+      version: "PR-2268"
     gateway:
       dir:
       version: "PR-2297"
@@ -121,13 +128,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2298"
+      version: "PR-2307"
     console:
       dir:
-      version: "PR-64"
+      version: "PR-65"
     e2e_tests:
       dir:
-      version: "PR-2308"
+      version: "PR-2268"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -181,8 +188,6 @@ global:
       port: 8080
     metrics:
       port: 3003
-      enableClientInstrumentation: true
-      censoredFlows: "JWT"
     operations:
       port: 3002
       path: "/operation"
@@ -219,6 +224,7 @@ global:
       requestBodyPattern: '{"key": "%s"}'
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
+    fetchTenantEndpoint: '{{ printf "https://%s.%s%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host .Values.global.ingress.domainName .Values.global.tenantFetcher.prefix }}'
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
     mtlsTokenPath: "/cert/token"
@@ -260,7 +266,6 @@ global:
         # This is the reason for the confusing name of our root certificate. https://preliminary.istio.io/v1.6/docs/tasks/traffic-management/ingress/secure-ingress/#configure-a-mutual-tls-ingress-gateway
         cacert: compass-gateway-mtls-certs-cacert # For cert-rotation the cacert should be in different secret
         certificateKey: cacert
-    certificateDataHeader: "Certificate-Data"
     revocation:
       configmap:
         name: revocations-config
@@ -268,7 +273,6 @@ global:
     # If key and certificate are not provided they will be generated
     caKey: ""
     caCertificate: ""
-    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"},{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}]'
   system_broker:
     enabled: true
     port: 5001
@@ -307,6 +311,19 @@ global:
           - "Client-Id-From-Certificate"
           - "Client-Certificate-Hash"
           - "Certificate-Data"
+  hydrator:
+    host: compass-hydrator.compass-system.svc.cluster.local
+    port: 3000
+    prefix: /hydrators
+    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"},{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}]'
+    certificateDataHeader: "Certificate-Data"
+    http:
+      client:
+        skipSSLValidation: false
+    metrics:
+      port: 3003
+      enableClientInstrumentation: true
+      censoredFlows: "JWT"
   operations_controller:
     enabled: true
   connectivity_adapter:
@@ -380,12 +397,12 @@ global:
     timeout_ms: 120000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:write tenant_subscription:write fetch_tenant","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
           api:
-            url: http://compass-director.compass-system.svc.cluster.local:3000/runtime-mapping
+            url: http://compass-hydrator.compass-system.svc.cluster.local:3000/hydrators/runtime-mapping
             retry:
               give_up_after: 6s
               max_delay: 2000ms
@@ -394,7 +411,7 @@ global:
           cfg:
             config:
               api:
-                url: http://compass-director.compass-system.svc.cluster.local:3000/authn-mapping/nsadapter
+                url: http://compass-hydrator.compass-system.svc.cluster.local:3000/hydrators/authn-mapping/nsadapter
                 retry:
                   give_up_after: 6s
                   max_delay: 2000ms
@@ -411,7 +428,7 @@ global:
           cfg:
             config:
               api:
-                url: http://compass-director.compass-system.svc.cluster.local:3000/authn-mapping/tenant-fetcher
+                url: http://compass-hydrator.compass-system.svc.cluster.local:3000/hydrators/authn-mapping/tenant-fetcher
                 retry:
                   give_up_after: 6s
                   max_delay: 2000ms
@@ -428,7 +445,7 @@ global:
           cfg:
             config:
               api:
-                url: http://compass-director.compass-system.svc.cluster.local:3000/authn-mapping/subscriber
+                url: http://compass-hydrator.compass-system.svc.cluster.local:3000/hydrators/authn-mapping/subscriber
                 retry:
                   give_up_after: 6s
                   max_delay: 2000ms
@@ -443,21 +460,21 @@ global:
       tenantMappingService:
         config:
           api:
-            url: http://compass-director.compass-system.svc.cluster.local:3000/tenant-mapping
+            url: http://compass-hydrator.compass-system.svc.cluster.local:3000/hydrators/tenant-mapping
             retry:
               give_up_after: 6s
               max_delay: 2000ms
       certificateResolverService:
         config:
           api:
-            url: http://compass-connector.compass-system.svc.cluster.local:8080/v1/certificate/data/resolve
+            url: http://compass-hydrator.compass-system.svc.cluster.local:3000/hydrators/v1/certificate/data/resolve
             retry:
               give_up_after: 6s
               max_delay: 2000ms
       tokenResolverService:
         config:
           api:
-            url: http://compass-director.compass-system.svc.cluster.local:8080/v1/tokens/resolve
+            url: http://compass-hydrator.compass-system.svc.cluster.local:3000/hydrators/v1/tokens/resolve
             retry:
               give_up_after: 6s
               max_delay: 2000ms
@@ -470,6 +487,7 @@ global:
       scopes: "openid profile email"
       path: "/oauth2/certs"
   tenantFetcher:
+    manageSecrets: true
     host: compass-tenant-fetcher.compass-system.svc.cluster.local
     prefix: /tenants
     port: 3000
@@ -494,17 +512,17 @@ global:
       consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
     containerName: "tenant-fetcher"
     oauth:
-      client: ""
+      client: "client_id"
       secret: ""
-      tokenURL: ""
-      tokenPath: ""
+      tokenURL: '{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'
+      tokenPath: "/cert/token"
     secret:
       name: "compass-tenant-fetcher-secret"
-      clientIdKey: client-id
-      oauthMode: oauth-mtls
-      clientCertKey: client-cert
-      clientKeyKey: client-key
-      oauthUrlKey: url
+      clientIdKey: "client-id"
+      oauthMode: "oauth-mtls"
+      clientCertKey: "client-cert"
+      clientKeyKey: "client-key"
+      oauthUrlKey: "url"
       skipSSLValidation: true
     endpoints:
       subaccountCreated: "127.0.0.1/events?type=subaccount-created"
@@ -753,12 +771,11 @@ global:
       skipPattern: ""
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
-    directorFQDN: http://compass-director.compass-system.svc.cluster.local
-    connectorFQDN: http://compass-connector.compass-system.svc.cluster.local
     externalServicesMockFQDN: http://compass-external-services-mock.compass-system.svc.cluster.local
     ordServiceFQDN: http://compass-ord-service.compass-system.svc.cluster.local
     systemBrokerFQDN: http://compass-system-broker.compass-system.svc.cluster.local
     tenantFetcherFQDN: http://compass-tenant-fetcher.compass-system.svc.cluster.local
+    hydratorFQDN: http://compass-hydrator.compass-system.svc.cluster.local
     basicCredentials:
       manage: false
       secretName: "test-basic-credentials-secret"
@@ -788,3 +805,72 @@ global:
       appID: "123-test-456"
       clientUser: "test-user"
       tenant: "test-tenant"
+  # Scopes assigned for every new Client Credentials by given object type (Runtime / Application / Integration System)
+  # and scopes mapped to a consumer with the given type, then that consumer is using a client certificate
+  scopes:
+    scopesPerConsumerType:
+      runtime:
+        - "runtime:read"
+        - "runtime:write"
+        - "application:read"
+        - "runtime.auths:read"
+        - "bundle.instance_auths:read"
+      application:
+        - "application:read"
+        - "application:write"
+        - "application.auths:read"
+        - "application.webhooks:read"
+        - "bundle.instance_auths:read"
+        - "document.fetch_request:read"
+        - "event_spec.fetch_request:read"
+        - "api_spec.fetch_request:read"
+        - "fetch-request.auth:read"
+      integration_system:
+        - "application:read"
+        - "application:write"
+        - "application_template:read"
+        - "application_template:write"
+        - "runtime:read"
+        - "runtime:write"
+        - "integration_system:read"
+        - "label_definition:read"
+        - "label_definition:write"
+        - "automatic_scenario_assignment:read"
+        - "automatic_scenario_assignment:write"
+        - "integration_system.auths:read"
+        - "application_template.webhooks:read"
+        - "formation:write"
+        - "internal_visibility:read"
+        - "application.auths:read"
+      super_admin:
+        - "application:read"
+        - "application:write"
+        - "application_template:read"
+        - "application_template:write"
+        - "integration_system:read"
+        - "integration_system:write"
+        - "runtime:read"
+        - "runtime:write"
+        - "label_definition:read"
+        - "label_definition:write"
+        - "eventing:manage"
+        - "tenant:read"
+        - "automatic_scenario_assignment:read"
+        - "automatic_scenario_assignment:write"
+        - "application.auths:read"
+        - "application.webhooks:read"
+        - "application_template.webhooks:read"
+        - "bundle.instance_auths:read"
+        - "document.fetch_request:read"
+        - "event_spec.fetch_request:read"
+        - "api_spec.fetch_request:read"
+        - "integration_system.auths:read"
+        - "runtime.auths:read"
+        - "fetch-request.auth:read"
+        - "webhooks.auth:read"
+        - "formation:write"
+        - "internal_visibility:read"
+      default:
+        - "runtime:read"
+        - "runtime:write"
+        - "tenant:read"

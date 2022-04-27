@@ -24,6 +24,9 @@ func (c converter) ToGraphQLForRuntime(model model.OneTimeToken) graphql.OneTime
 			ConnectorURL: model.ConnectorURL,
 			Used:         model.Used,
 			ExpiresAt:    timeToTimestampPtr(model.ExpiresAt),
+			CreatedAt:    timeToTimestampPtr(model.CreatedAt),
+			UsedAt:       timeToTimestampPtr(model.UsedAt),
+			Type:         graphql.OneTimeTokenType(model.Type),
 		},
 	}
 }
@@ -41,6 +44,9 @@ func (c converter) ToGraphQLForApplication(model model.OneTimeToken) (graphql.On
 			ConnectorURL: model.ConnectorURL,
 			Used:         model.Used,
 			ExpiresAt:    timeToTimestampPtr(model.ExpiresAt),
+			CreatedAt:    timeToTimestampPtr(model.CreatedAt),
+			UsedAt:       timeToTimestampPtr(model.UsedAt),
+			Type:         graphql.OneTimeTokenType(model.Type),
 		},
 		LegacyConnectorURL: urlWithToken,
 	}, nil

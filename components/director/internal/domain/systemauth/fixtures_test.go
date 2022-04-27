@@ -3,10 +3,13 @@ package systemauth_test
 import (
 	"database/sql/driver"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
@@ -22,41 +25,53 @@ var (
 
 var testTableColumns = []string{"id", "tenant_id", "app_id", "runtime_id", "integration_system_id", "value"}
 
-func fixGQLAppSystemAuth(id string, auth *graphql.Auth) graphql.SystemAuth {
+func fixGQLAppSystemAuth(id string, auth *graphql.Auth, refObjID string) graphql.SystemAuth {
+	authType := graphql.SystemAuthReferenceTypeApplication
 	return &graphql.AppSystemAuth{
-		ID:   id,
-		Auth: auth,
+		ID:                id,
+		Auth:              auth,
+		Type:              &authType,
+		TenantID:          &testTenant,
+		ReferenceObjectID: &refObjID,
 	}
 }
 
-func fixGQLIntSysSystemAuth(id string, auth *graphql.Auth) graphql.SystemAuth {
+func fixGQLIntSysSystemAuth(id string, auth *graphql.Auth, refObjID string) graphql.SystemAuth {
+	authType := graphql.SystemAuthReferenceTypeIntegrationSystem
 	return &graphql.IntSysSystemAuth{
-		ID:   id,
-		Auth: auth,
+		ID:                id,
+		Auth:              auth,
+		Type:              &authType,
+		TenantID:          nil,
+		ReferenceObjectID: &refObjID,
 	}
 }
 
-func fixGQLRuntimeSystemAuth(id string, auth *graphql.Auth) graphql.SystemAuth {
+func fixGQLRuntimeSystemAuth(id string, auth *graphql.Auth, refObjID string) graphql.SystemAuth {
+	authType := graphql.SystemAuthReferenceTypeRuntime
 	return &graphql.RuntimeSystemAuth{
-		ID:   id,
-		Auth: auth,
+		ID:                id,
+		Auth:              auth,
+		Type:              &authType,
+		TenantID:          &testTenant,
+		ReferenceObjectID: &refObjID,
 	}
 }
 
-func fixModelSystemAuth(id string, objectType model.SystemAuthReferenceObjectType, objectID string, auth *model.Auth) *model.SystemAuth {
-	systemAuth := model.SystemAuth{
+func fixModelSystemAuth(id string, objectType pkgmodel.SystemAuthReferenceObjectType, objectID string, auth *model.Auth) *pkgmodel.SystemAuth {
+	systemAuth := pkgmodel.SystemAuth{
 		ID:    id,
 		Value: auth,
 	}
 
 	switch objectType {
-	case model.ApplicationReference:
+	case pkgmodel.ApplicationReference:
 		systemAuth.AppID = &objectID
 		systemAuth.TenantID = &testTenant
-	case model.RuntimeReference:
+	case pkgmodel.RuntimeReference:
 		systemAuth.RuntimeID = &objectID
 		systemAuth.TenantID = &testTenant
-	case model.IntegrationSystemReference:
+	case pkgmodel.IntegrationSystemReference:
 		systemAuth.IntegrationSystemID = &objectID
 		systemAuth.TenantID = nil
 	}
@@ -139,19 +154,46 @@ func fixModelAuth() *model.Auth {
 	}
 }
 
-func fixEntity(id string, objectType model.SystemAuthReferenceObjectType, objectID string, withAuth bool) systemauth.Entity {
+func fixGQLAuthInput() *graphql.AuthInput {
+	return &graphql.AuthInput{
+		Credential: &graphql.CredentialDataInput{
+			Basic: &graphql.BasicCredentialDataInput{
+				Username: "foo",
+				Password: "bar",
+			},
+		},
+		AdditionalHeaders:     map[string][]string{"test": {"foo", "bar"}},
+		AdditionalQueryParams: map[string][]string{"test": {"foo", "bar"}},
+		RequestAuth: &graphql.CredentialRequestAuthInput{
+			Csrf: &graphql.CSRFTokenCredentialRequestAuthInput{
+				TokenEndpointURL: "foo.url",
+				Credential: &graphql.CredentialDataInput{
+					Basic: &graphql.BasicCredentialDataInput{
+						Username: "foo",
+						Password: "bar",
+					},
+				},
+				AdditionalHeaders:     map[string][]string{"test": {"foo", "bar"}},
+				AdditionalQueryParams: map[string][]string{"test": {"foo", "bar"}},
+			},
+		},
+		CertCommonName: nil,
+	}
+}
+
+func fixEntity(id string, objectType pkgmodel.SystemAuthReferenceObjectType, objectID string, withAuth bool) systemauth.Entity {
 	out := systemauth.Entity{
 		ID: id,
 	}
 
 	switch objectType {
-	case model.ApplicationReference:
+	case pkgmodel.ApplicationReference:
 		out.AppID = repo.NewNullableString(&objectID)
 		out.TenantID = repo.NewNullableString(&testTenant)
-	case model.RuntimeReference:
+	case pkgmodel.RuntimeReference:
 		out.RuntimeID = repo.NewNullableString(&objectID)
 		out.TenantID = repo.NewNullableString(&testTenant)
-	case model.IntegrationSystemReference:
+	case pkgmodel.IntegrationSystemReference:
 		out.IntegrationSystemID = repo.NewNullableString(&objectID)
 		out.TenantID = repo.NewNullableString(nil)
 	}

@@ -9,8 +9,7 @@ type ConnectorTestConfig struct {
 	DirectorExternalCertSecuredURL string
 	SkipSSLValidation              bool `envconfig:"default=false"`
 	DirectorMtlsURL                string
-	ConnectorHydratorURL           string `envconfig:"default=http://compass-connector:8080"`
-	DirectorHydratorURL            string `envconfig:"default=http://compass-director:8080"`
+	HydratorURL                    string `envconfig:"default=http://compass-hydrator:3000"`
 
 	CertificateDataHeader        string `envconfig:"default=Certificate-Data"`
 	RevocationConfigMapName      string `envconfig:"default=revocations-config"`

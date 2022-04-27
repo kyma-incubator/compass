@@ -21,7 +21,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/lestrrat-go/jwx/jwk"
 
@@ -33,7 +33,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
-	auths "github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/stretchr/testify/require"
 )
 
@@ -85,18 +84,18 @@ func TestAuthenticator_Handler(t *testing.T) {
 	// GIVEN
 	scopes := "scope-a scope-b"
 
-	privateJWKS, err := auths.FetchJWK(context.TODO(), PrivateJWKSURL)
+	privateJWKS, err := authenticator.FetchJWK(context.TODO(), PrivateJWKSURL)
 	require.NoError(t, err)
 
-	privateJWKS2, err := auths.FetchJWK(context.TODO(), PrivateJWKS2URL)
+	privateJWKS2, err := authenticator.FetchJWK(context.TODO(), PrivateJWKS2URL)
 	require.NoError(t, err)
 
-	privateJWKS3, err := auths.FetchJWK(context.TODO(), PrivateJWKS3URL)
+	privateJWKS3, err := authenticator.FetchJWK(context.TODO(), PrivateJWKS3URL)
 	require.NoError(t, err)
 
 	t.Run("http client configured without redirects", func(t *testing.T) {
 		// WHEN
-		jwks, err := auths.FetchJWK(context.TODO(), "https://redirect.com/test", jwk.WithHTTPClient(httpClientWithoutRedirects))
+		jwks, err := authenticator.FetchJWK(context.TODO(), "https://redirect.com/test", jwk.WithHTTPClient(httpClientWithoutRedirects))
 
 		// THEN
 		require.Nil(t, jwks)
@@ -502,13 +501,13 @@ func TestAuthenticator_NSAdapterHandler(t *testing.T) {
 	// GIVEN
 	scopes := "scope-a scope-b"
 
-	privateJWKS, err := auths.FetchJWK(context.TODO(), PrivateJWKSURL)
+	privateJWKS, err := authenticator.FetchJWK(context.TODO(), PrivateJWKSURL)
 	require.NoError(t, err)
 
-	privateJWKS2, err := auths.FetchJWK(context.TODO(), PrivateJWKS2URL)
+	privateJWKS2, err := authenticator.FetchJWK(context.TODO(), PrivateJWKS2URL)
 	require.NoError(t, err)
 
-	privateJWKS3, err := auths.FetchJWK(context.TODO(), PrivateJWKS3URL)
+	privateJWKS3, err := authenticator.FetchJWK(context.TODO(), PrivateJWKS3URL)
 	require.NoError(t, err)
 
 	t.Run("Success - token with signing method", func(t *testing.T) {
