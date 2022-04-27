@@ -134,6 +134,7 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 		if err != nil {
 			return nil, err
 		}
+		return r.conv.ToGraphQL(newFormation), nil
 	} else {
 		newFormation, err = r.service.AssignFormation(ctx, tnt, objectID, objectType, r.conv.FromGraphQL(formation))
 		if err != nil {
@@ -186,10 +187,10 @@ func (r *Resolver) assignFormationForTenant(ctx context.Context, tx persistence.
 		if err := r.tenantFetcher.FetchOnDemand(objectID); err != nil {
 			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", objectID)
 		}
-	}
-	tx, err = r.transact.Begin()
-	if err != nil {
-		return nil, err
+		tx, err = r.transact.Begin()
+		if err != nil {
+			return nil, err
+		}
 	}
 	tenantFromDB, err = r.tenantSvc.GetTenantByExternalID(ctx, objectID)
 	if err != nil {
