@@ -9,7 +9,7 @@ import (
 
 // Config configures the behaviour of the metrics collector.
 type Config struct {
-	EnableGraphqlOperationInstrumentation bool     `envconfig:"default=false,APP_METRICS_ENABLE_GRAPHQL_OPERATION_INSTRUMENTATION"`
+	EnableGraphqlOperationInstrumentation bool `envconfig:"default=false,APP_METRICS_ENABLE_GRAPHQL_OPERATION_INSTRUMENTATION"`
 }
 
 // Collector missing godoc
