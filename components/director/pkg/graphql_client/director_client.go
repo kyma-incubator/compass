@@ -83,10 +83,10 @@ func (d *Director) UpdateTenant(ctx context.Context, id string, tenant graphql.B
 }
 
 // SubscribeTenantToRuntime makes graphql query tenant-runtime subscription
-func (d *Director) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountID string, region string) error {
+func (d *Director) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) error {
 	var res map[string]interface{}
 
-	subscriptionMutation := fmt.Sprintf(`mutation { subscribeTenantToRuntime(providerID: "%s", subaccountID: "%s", region: "%s")}`, providerID, subaccountID, region)
+	subscriptionMutation := fmt.Sprintf(`mutation { subscribeTenantToRuntime(providerID: "%s", subaccountID: "%s", providerSubaccountID "%s", region: "%s")}`, providerID, subaccountID, providerSubaccountID, region)
 	gRequest := gcli.NewRequest(subscriptionMutation)
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql mutation")
@@ -95,10 +95,10 @@ func (d *Director) SubscribeTenantToRuntime(ctx context.Context, providerID stri
 }
 
 // UnsubscribeTenantFromRuntime makes graphql query tenant-runtime unsubscription
-func (d *Director) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountID string, region string) error {
+func (d *Director) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) error {
 	var res map[string]interface{}
 
-	unsubscriptionMutation := fmt.Sprintf(`mutation { unsubscribeTenantFromRuntime(providerID: "%s", subaccountID: "%s", region: "%s")}`, providerID, subaccountID, region)
+	unsubscriptionMutation := fmt.Sprintf(`mutation { unsubscribeTenantFromRuntime(providerID: "%s", subaccountID: "%s", providerSubaccountID "%s", region: "%s")}`, providerID, subaccountID, providerSubaccountID, region)
 	gRequest := gcli.NewRequest(unsubscriptionMutation)
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql mutation")

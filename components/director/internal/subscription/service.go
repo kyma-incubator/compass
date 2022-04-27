@@ -24,7 +24,7 @@ type Config struct {
 // RuntimeService missing godoc
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
-	ListByFiltersGlobal(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
+	ListAll(context.Context, string, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
 // TenantService provides functionality for retrieving, and creating tenants.
@@ -73,13 +73,13 @@ func NewService(runtimeSvc RuntimeService, tenantSvc TenantService, labelSvc Lab
 	}
 }
 
-func (s *service) SubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error) {
+func (s *service) SubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
 	filters := []*labelfilter.LabelFilter{
 		labelfilter.NewForKeyWithQuery(s.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", providerID)),
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
 	}
 
-	runtimes, err := s.runtimeSvc.ListByFiltersGlobal(ctx, filters)
+	runtimes, err := s.runtimeSvc.ListAll(ctx, providerSubaccountID, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return false, nil
@@ -122,13 +122,13 @@ func (s *service) SubscribeTenant(ctx context.Context, providerID string, subacc
 	return true, nil
 }
 
-func (s *service) UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error) {
+func (s *service) UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
 	filters := []*labelfilter.LabelFilter{
 		labelfilter.NewForKeyWithQuery(s.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", providerID)),
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
 	}
 
-	runtimes, err := s.runtimeSvc.ListByFiltersGlobal(ctx, filters)
+	runtimes, err := s.runtimeSvc.ListAll(ctx, providerSubaccountID, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return false, nil

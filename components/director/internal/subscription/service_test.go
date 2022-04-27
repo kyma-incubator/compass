@@ -371,7 +371,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			service := NewService(runtimeSvc, tenantSvc, labelSvc, uuidSvc, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
 
 			// WHEN
-			isSubscribeSuccessful, err := service.SubscribeTenant(context.TODO(), subscriptionProviderID, subaccountTenantExtID, testCase.Region)
+			isSubscribeSuccessful, err := service.SubscribeTenant(context.TODO(), subscriptionProviderID, subaccountTenantExtID, "", testCase.Region)
 
 			// THEN
 			if len(testCase.ExpectedErrorOutput) > 0 {
@@ -623,7 +623,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			service := NewService(runtimeSvc, tenantSvc, labelSvc, uidSvc, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
 
 			// WHEN
-			isUnsubscribeSuccessful, err := service.UnsubscribeTenant(context.TODO(), subscriptionProviderID, subaccountTenantExtID, testCase.Region)
+			isUnsubscribeSuccessful, err := service.UnsubscribeTenant(context.TODO(), subscriptionProviderID, subaccountTenantExtID, "", testCase.Region)
 
 			// THEN
 			if len(testCase.ExpectedErrorOutput) > 0 {

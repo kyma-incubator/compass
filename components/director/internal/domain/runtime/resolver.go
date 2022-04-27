@@ -93,8 +93,8 @@ type SelfRegisterManager interface {
 // SubscriptionService missing godoc
 //go:generate mockery --name=SubscriptionService --output=automock --outpkg=automock --case=underscore
 type SubscriptionService interface {
-	SubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error)
-	UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error)
+	SubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error)
+	UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error)
 }
 
 // Resolver missing godoc
@@ -625,7 +625,7 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Runti
 }
 
 // SubscribeTenant subscribes tenant to runtime labeled with `providerID` and `region`
-func (r *Resolver) SubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error) {
+func (r *Resolver) SubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return false, err
@@ -634,7 +634,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID string, subac
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	success, err := r.subscriptionSvc.SubscribeTenant(ctx, providerID, subaccountTenantID, region)
+	success, err := r.subscriptionSvc.SubscribeTenant(ctx, providerID, subaccountTenantID, "", region)
 	if err != nil {
 		return false, err
 	}
@@ -647,7 +647,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID string, subac
 }
 
 // UnsubscribeTenant unsubscribes tenant to runtime labeled with `providerID` and `region`
-func (r *Resolver) UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error) {
+func (r *Resolver) UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return false, err
@@ -656,7 +656,7 @@ func (r *Resolver) UnsubscribeTenant(ctx context.Context, providerID string, sub
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	success, err := r.subscriptionSvc.UnsubscribeTenant(ctx, providerID, subaccountTenantID, region)
+	success, err := r.subscriptionSvc.UnsubscribeTenant(ctx, providerID, subaccountTenantID, "", region)
 	if err != nil {
 		return false, err
 	}

@@ -2523,7 +2523,7 @@ func TestResolver_SubscribeTenant(t *testing.T) {
 			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, subscriptionSvc)
 
 			// WHEN
-			result, err := resolver.SubscribeTenant(ctx, providerID, subaccountID, region)
+			result, err := resolver.SubscribeTenant(ctx, providerID, subaccountID, "", region)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -2608,7 +2608,7 @@ func TestResolver_UnsubscribeTenant(t *testing.T) {
 			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, subscriptionSvc)
 
 			// WHEN
-			result, err := resolver.UnsubscribeTenant(ctx, providerID, subaccountID, region)
+			result, err := resolver.UnsubscribeTenant(ctx, providerID, subaccountID, "", region)
 
 			// THEN
 			if testCase.ExpectedError != nil {
