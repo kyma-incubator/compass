@@ -24,13 +24,14 @@ type Config struct {
 // RuntimeService missing godoc
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
-	ListAll(context.Context, string, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
+	ListByFilters(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
 // TenantService provides functionality for retrieving, and creating tenants.
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore --unroll-variadic=False
 type TenantService interface {
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
+	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
 // LabelService is responsible updating already existing labels, and their label definitions.
@@ -79,7 +80,13 @@ func (s *service) SubscribeTenant(ctx context.Context, providerID string, subacc
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
 	}
 
-	runtimes, err := s.runtimeSvc.ListAll(ctx, providerSubaccountID, filters)
+	providerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, providerSubaccountID)
+	if err != nil {
+		return false, errors.Wrap(err, "while getting provider subaccount internal ID")
+	}
+	ctx = tenant.SaveToContext(ctx, providerInternalTenant, providerSubaccountID)
+
+	runtimes, err := s.runtimeSvc.ListByFilters(ctx, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return false, nil
@@ -128,7 +135,13 @@ func (s *service) UnsubscribeTenant(ctx context.Context, providerID string, suba
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
 	}
 
-	runtimes, err := s.runtimeSvc.ListAll(ctx, providerSubaccountID, filters)
+	providerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, providerSubaccountID)
+	if err != nil {
+		return false, errors.Wrap(err, "while getting provider subaccount internal ID")
+	}
+	ctx = tenant.SaveToContext(ctx, providerInternalTenant, providerSubaccountID)
+
+	runtimes, err := s.runtimeSvc.ListByFilters(ctx, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return false, nil
