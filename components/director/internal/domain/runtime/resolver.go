@@ -97,11 +97,6 @@ type SubscriptionService interface {
 	UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error)
 }
 
-//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
-type TenantService interface {
-	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
-}
-
 // Resolver missing godoc
 type Resolver struct {
 	transact                  persistence.Transactioner
@@ -116,7 +111,6 @@ type Resolver struct {
 	selfRegManager            SelfRegisterManager
 	uidService                uidService
 	subscriptionSvc           SubscriptionService
-	tntService                TenantService
 }
 
 // NewResolver missing godoc

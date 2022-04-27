@@ -36,7 +36,7 @@ func (s *subscriber) Subscribe(ctx context.Context, tenantSubscriptionRequest *T
 
 // Unsubscribe unsubscribes tenant from runtime.
 func (s *subscriber) Unsubscribe(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest) error {
-	return s.applyRuntimesSubscriptionChange(ctx, tenantSubscriptionRequest.SubscriptionProviderID, "", tenantSubscriptionRequest.SubaccountTenantID, tenantSubscriptionRequest.Region, false)
+	return s.applyRuntimesSubscriptionChange(ctx, tenantSubscriptionRequest.SubscriptionProviderID, tenantSubscriptionRequest.ProviderSubaccountID, tenantSubscriptionRequest.SubaccountTenantID, tenantSubscriptionRequest.Region, false)
 }
 
 func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscriptionProviderID, providerSubaccountID, subaccountTenantID, region string, subscribe bool) error {
