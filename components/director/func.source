@@ -17,6 +17,12 @@ export DEFAULT_DB_PORT="5432"
 export DEFAULT_DB_HOST="127.0.0.1"
 export DEFAULT_DEBUG=false
 export DEFAULT_SKIP_DB_CLEANUP=false
+export DEFAULT_REUSE_DB=false
+export DEFAULT_DUMP_DB=false
+export DEFAULT_COMPONENT='director'
+export DEFAULT_DEBUG=false
+export DEFAULT_DEBUG_PORT=40000
+export DEFAULT_DISABLE_ASYNC_MODE=true
 
 function log_info() {
   echo -e "${GREEN}${1}${NC}";
@@ -131,12 +137,8 @@ function create_db(){
     local ROOT_PATH=${1}
     die_on_noval "${1}" "Root path is mandatory"
 
-    local REUSE_DB=${2}
-    die_on_noval "${2}" "Reuse DB is mandatory"
-
-    local DUMP_DB=${3}
-    die_on_noval "${3}" "Dump DB is mandatory"
-
+    local REUSE_DB=${2:-$DEFAULT_REUSE_DB}
+    local DUMP_DB=${3:-$DEFAULT_DUMP_DB}
     local POSTGRES_CONTAINER=${4:-$DEFAULT_POSTGRES_CONTAINER}
     local DB_HOST=${5:-$DEFAULT_DB_HOST}
     local DB_USER=${6:-$DEFAULT_DB_USER}
@@ -225,18 +227,10 @@ function start_app(){
     local ROOT_PATH=${1}
     die_on_noval "${1}" "Root path is mandatory"
 
-    local DISABLE_ASYNC_MODE=${2}
-    die_on_noval "${2}" "Disable async mode is mandatory"
-    
-    local DEBUG=${3}
-    die_on_noval "${3}" "Debug is mandatory"
-
-    local DEBUG_PORT=${4}
-    die_on_noval "${4}" "Debug port is mandatory"
-    
-    local COMPONENT=${5}
-    die_on_noval "${5}" "Component is mandatory"
-
+    local DISABLE_ASYNC_MODE=${2:-$DEFAULT_DISABLE_ASYNC_MODE}
+    local DEBUG=${3:-$DEFAULT_DEBUG}
+    local DEBUG_PORT=${4:-$DEFAULT_DEBUG_PORT}
+    local COMPONENT=${5:-$DEFAULT_COMPONENT}
     local DB_USER=${6:-$DEFAULT_DB_USER}
     local DB_PWD=${7:-$DEFAULT_DB_PWD}
     local DB_NAME=${8:-$DEFAULT_DB_NAME}

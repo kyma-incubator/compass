@@ -11,6 +11,7 @@ ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 log_info ${ROOT_PATH}
 
 SKIP_DB_CLEANUP=false
+SKIP_APP_START=false
 REUSE_DB=false
 DUMP_DB=false
 DISABLE_ASYNC_MODE=true
@@ -74,7 +75,7 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-trap "cleanup ${DEBUG} ${SKIP_DB_CLEANUP} ${POSTGRES_CONTAINER}" EXIT
+trap "cleanup ${DEBUG} ${SKIP_DB_CLEANUP}" EXIT
 
 log_info "Creating k3d cluster..."
 install_k3d
@@ -86,12 +87,15 @@ create_db ${ROOT_PATH} ${REUSE_DB} ${DUMP_DB}
 read -r CURRENT_MIGRATION_VERSION <<< $(get_applied_migration_version)
 log_info "Migration version: ${CURRENT_MIGRATION_VERSION}"
 
+log_info "Internal tenant ID:"
+get_internal_tenant_id
+
 log_info "Token:"
 log_info "------- start -------"
 get_token
 log_info "------- end -------"
 
-if [[  ${SKIP_APP_START} ]]; then
+if [[ ${SKIP_APP_START} = true ]]; then
     log_info "Skipping starting application"
     while true
     do
