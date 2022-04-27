@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
+
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
+
 	"github.com/pkg/errors"
 
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
-
 	"github.com/form3tech-oss/jwt-go"
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/scope"
 )

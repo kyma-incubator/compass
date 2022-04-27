@@ -10,9 +10,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/pkg/errors"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/stretchr/testify/require"
 )

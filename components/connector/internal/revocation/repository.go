@@ -5,7 +5,6 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/util/retry"
 )
 
@@ -13,26 +12,22 @@ import (
 type Manager interface {
 	Get(ctx context.Context, name string, options metav1.GetOptions) (*v1.ConfigMap, error)
 	Update(ctx context.Context, configMap *v1.ConfigMap, opts metav1.UpdateOptions) (*v1.ConfigMap, error)
-	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 }
 
 //go:generate mockery --name=RevokedCertificatesRepository
 type RevokedCertificatesRepository interface {
 	Insert(ctx context.Context, hash string) error
-	Contains(hash string) bool
 }
 
 type revokedCertifiatesRepository struct {
-	configMapManager  Manager
-	configMapName     string
-	revokedCertsCache Cache
+	configMapManager Manager
+	configMapName    string
 }
 
-func NewRepository(configMapManager Manager, configMapName string, revokedCertsCache Cache) RevokedCertificatesRepository {
+func NewRepository(configMapManager Manager, configMapName string) RevokedCertificatesRepository {
 	return &revokedCertifiatesRepository{
-		configMapManager:  configMapManager,
-		configMapName:     configMapName,
-		revokedCertsCache: revokedCertsCache,
+		configMapManager: configMapManager,
+		configMapName:    configMapName,
 	}
 }
 
@@ -57,15 +52,4 @@ func (r *revokedCertifiatesRepository) Insert(ctx context.Context, hash string) 
 	})
 
 	return err
-}
-
-func (r *revokedCertifiatesRepository) Contains(hash string) bool {
-	configMap := r.revokedCertsCache.Get()
-
-	found := false
-	if configMap != nil {
-		_, found = configMap[hash]
-	}
-
-	return found
 }

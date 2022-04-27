@@ -31,7 +31,12 @@ func ConvertToString(in interface{}) (string, error) {
 
 	value, ok := in.(string)
 	if !ok {
-		return "", errors.Errorf("unexpected input type: %T, should be string", in)
+		ptr, ok := in.(*string)
+		if !ok {
+			return "", errors.Errorf("unexpected input type: %T, should be string", in)
+		}
+
+		value = *ptr
 	}
 
 	return value, nil
@@ -45,20 +50,15 @@ func ConvertToMapStringStringArray(in interface{}) (map[string][]string, error) 
 
 	result := make(map[string][]string)
 
-	value, ok := in.(map[string]interface{})
+	value, ok := in.(map[string][]string)
 	if !ok {
 		return nil, errors.Errorf("unexpected input type: %T, should be map[string][]string", in)
 	}
 
 	for k, v := range value {
-		val, ok := v.([]interface{})
-		if !ok {
-			return nil, errors.Errorf("given value `%T` must be a string array", v)
-		}
-
 		var strValues []string
-		for _, item := range val {
-			str, ok := item.(string)
+		for _, item := range v {
+			str, ok := interface{}(item).(string)
 			if !ok {
 				return nil, errors.Errorf("value `%+v` must be a string, not %T", item, item)
 			}

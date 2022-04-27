@@ -1,24 +1,32 @@
 package auth_test
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/tokens"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 var (
-	authUsername = "user"
-	authPassword = "password"
-	authEndpoint = "url"
-	authMap      = map[string][]string{
+	authUsername   = "user"
+	authPassword   = "password"
+	authEndpoint   = "url"
+	connectorURL   = "connectorURL"
+	modelTokenType = tokens.ApplicationToken
+	gqlTokenType   = graphql.OneTimeTokenTypeApplication
+	authMap        = map[string][]string{
 		"foo": {"bar", "baz"},
 		"too": {"tar", "taz"},
 	}
-	authMapSerialized     = "{\"foo\":[\"bar\",\"baz\"],\"too\":[\"tar\",\"taz\"]}"
-	authHeaders           = graphql.HTTPHeaders(authMap)
-	authHeadersSerialized = graphql.HTTPHeadersSerialized(authMapSerialized)
-	authParams            = graphql.QueryParams(authMap)
-	authParamsSerialized  = graphql.QueryParamsSerialized(authMapSerialized)
-	accessStrategy        = "testAccessStrategy"
+	authMapSerialized            = "{\"foo\":[\"bar\",\"baz\"],\"too\":[\"tar\",\"taz\"]}"
+	authHeaders                  = graphql.HTTPHeaders(authMap)
+	authHeadersSerialized        = graphql.HTTPHeadersSerialized(authMapSerialized)
+	invalidAuthHeadersSerialized = graphql.HTTPHeadersSerialized("invalid")
+	authParams                   = graphql.QueryParams(authMap)
+	authParamsSerialized         = graphql.QueryParamsSerialized(authMapSerialized)
+	invalidAuthParamsSerialized  = graphql.QueryParamsSerialized("invalid")
+	accessStrategy               = "testAccessStrategy"
 )
 
 func fixDetailedAuth() *model.Auth {
@@ -161,5 +169,29 @@ func fixDetailedGQLAuthInputDeprecated() *graphql.AuthInput {
 				AdditionalQueryParams: authParams,
 			},
 		},
+	}
+}
+
+func fixOneTimeTokenInput() *model.OneTimeToken {
+	return &model.OneTimeToken{
+		Token:        "token",
+		ConnectorURL: connectorURL,
+		Used:         false,
+		Type:         modelTokenType,
+		CreatedAt:    time.Time{},
+		ExpiresAt:    time.Time{},
+		UsedAt:       time.Time{},
+	}
+}
+
+func fixOneTimeTokenGQLInput() *graphql.OneTimeTokenInput {
+	return &graphql.OneTimeTokenInput{
+		Token:        "token",
+		ConnectorURL: &connectorURL,
+		Used:         false,
+		Type:         &gqlTokenType,
+		CreatedAt:    graphql.Timestamp{},
+		ExpiresAt:    graphql.Timestamp{},
+		UsedAt:       graphql.Timestamp{},
 	}
 }

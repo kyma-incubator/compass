@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment/automock"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -22,12 +24,15 @@ import (
 
 const (
 	tenantID               = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	tenantID2              = "cccccccc-cccc-cccc-cccc-cccccccccccc"
 	externalTargetTenantID = "extTargetTenantID"
 	targetTenantID         = "targetTenantID"
+	targetTenantID2        = "targetTenantID2"
 	externalTenantID       = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 	scenarioName           = "scenario-A"
 	scenarioName2          = "scenario-B"
 	errMsg                 = "some error"
+	runtimeID              = "rt-id"
 )
 
 func fixModel() model.AutomaticScenarioAssignment {
@@ -176,4 +181,16 @@ func matchExpectedScenarios(t *testing.T, expected map[string][]string) func(lab
 		require.ElementsMatch(t, expectedArray, actualArray)
 		return true
 	}
+}
+
+func unusedLabelService() *automock.LabelUpsertService {
+	return &automock.LabelUpsertService{}
+}
+
+func unusedLabelRepo() *automock.LabelRepository {
+	return &automock.LabelRepository{}
+}
+
+func unusedRuntimeRepo() *automock.RuntimeRepository {
+	return &automock.RuntimeRepository{}
 }
