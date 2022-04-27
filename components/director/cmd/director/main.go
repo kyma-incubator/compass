@@ -102,6 +102,7 @@ type config struct {
 	Log log.Config
 
 	MetricsAddress string `envconfig:"default=127.0.0.1:3003"`
+	MetricsConfig  metrics.Config
 
 	JWKSEndpoint          string        `envconfig:"default=file://hack/default-jwks.json"`
 	JWKSSyncPeriod        time.Duration `envconfig:"default=5m"`
@@ -168,7 +169,7 @@ func main() {
 	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 
 	logger.Infof("Registering metrics collectors...")
-	metricsCollector := metrics.NewCollector()
+	metricsCollector := metrics.NewCollector(cfg.MetricsConfig)
 	dbStatsCollector := sqlstats.NewStatsCollector("director", transact)
 	prometheus.MustRegister(metricsCollector, dbStatsCollector)
 
@@ -278,6 +279,8 @@ func main() {
 
 	gqlServ := handler.NewDefaultServer(executableSchema)
 	gqlServ.Use(log.NewGqlLoggingInterceptor())
+	gqlServ.Use(metrics.NewInstrumentGraphqlRequestInterceptor(metricsCollector))
+
 	gqlServ.Use(operationMiddleware)
 	gqlServ.SetErrorPresenter(presenter.Do)
 	gqlServ.SetRecoverFunc(panichandler.RecoverFn)
