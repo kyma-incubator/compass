@@ -6,11 +6,34 @@
 
 set -o errexit
 
+function is_ready(){
+    local URL=${1}
+    local HTTP_CODE=$(curl -s -o /dev/null -I -w "%{http_code}" ${URL})
+    if [200 != "${HTTP_CODE}" ] ; then
+        echo "Response from  ${url} is still: ${HTTP_CODE}"
+        return 1
+    fi 
+    return 0
+}
+
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 INSTALLATION_DIR=${CURRENT_DIR}/../../
+BASE_DIR=$(pwd)
+JAVA_HOME="${BASE_DIR}/openjdk-11"
+M2_HOME="${BASE_DIR}/maven"
+COMPASS_DIR="${BASE_DIR}/compass"
+ORD_SVC_DIR="${BASE_DIR}/ord-service"
+
+mkdir -p "$JAVA_HOME"
+export JAVA_HOME
+export PATH="$JAVA_HOME/bin:$PATH"
+
+mkdir -p "$M2_HOME"
+export M2_HOME
+export PATH="$M2_HOME/bin:$PATH"
 
 export ARTIFACTS="/var/log/prow_artifacts"
-sudo mkdir -p "${ARTIFACTS}"
+mkdir -p "${ARTIFACTS}"
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -31,26 +54,71 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 
-#sudo ${INSTALLATION_DIR}/cmd/run.sh
 echo "Install java"
-export JAVA_HOME="$(pwd)/openjdk-11"
-mkdir -p "$JAVA_HOME"
-export PATH="$JAVA_HOME/bin:$PATH"
 curl -fLSs -o adoptopenjdk11.tgz "https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.9.1%2B1/OpenJDK11U-jdk_x64_linux_hotspot_11.0.9.1_1.tar.gz"
-
-
 tar --extract --file adoptopenjdk11.tgz --directory "$JAVA_HOME" --strip-components 1 --no-same-owner
 rm adoptopenjdk11.tgz* 
+
+echo "Install maven"
+curl -fLSs -o apache-maven-3.8.5.tgz "https://dlcdn.apache.org/maven/maven-3/3.8.5/binaries/apache-maven-3.8.5-bin.tar.gz"
+tar --extract --file apache-maven-3.8.5.tgz --directory "$M2_HOME" --strip-components 1 --no-same-owner
+rm apache-maven-3.8.5.tgz* 
+
+echo "-----------------------------------"
+echo "Eenvironment"
+echo "-----------------------------------"
+echo "JAVA_HOME: ${JAVA_HOME}"
+echo "M2_HOME: ${M2_HOME}"
+echo "GOPATH: ${GOPATH}"
+echo "Base folder: ${BASE_DIR}"
+echo "Compass folder: ${COMPASS_DIR}"
+echo "ORD-service folder: ${ORD_SVC_DIR}"
+echo "Artifacts folder: ${ARTIFACTS}"
+echo "-----------------------------------"
+echo "Java version:"
 echo "-----------------------------------"
 java -version
 echo "-----------------------------------"
-echo "pwd:"
-pwd
+echo "Go version:"
 echo "-----------------------------------"
-echo "ls -la"
-ls -la
+go version
 echo "-----------------------------------"
-echo "CURRENT_DIR=${CURRENT_DIR}"
-echo "INSTALLATION_DIR=${INSTALLATION_DIR}"
-echo "ARTIFACTS=${ARTIFACTS}"
+
+
+echo "Starting compass"
+cd ${COMPASS_DIR}/components/director
+./run.sh &
+sleep 30
+
+COMPASS_URL="http://localhost:3000"
+
+until is_ready "${COMPASS_URL}/healthz" ; do
+    echo "Wait 1s ..."
+    sleep 1
+done
+
+. ${COMPASS_DIR}/components/director/func.source
+
+read -r DIRECTOR_TOKEN <<< $(get_token)
+read -r INTERNAL_TENANT_ID <<< $(get_internal_tenant_id)
+echo "Compass is ready"
+
+echo "Starting ord-service"
+cd ${ORD_SVC_DIR}/components/ord-service
+export SERVER_PORT=8081
+./run.sh --migrations-path ${COMPASS_DIR}/components/schema-migrator/migrations/director &
+sleep 30
+
+ORD_URL="http://localhost:${SERVER_PORT}"
+
+until is_ready "${ORD_URL}/actuator/health" ; do
+    echo "Wait 1s ..."
+    sleep 1
+done
+
+echo "ORD-service is ready"
+
+echo "Internal tenant ID: ${INTERNAL_TENANT_ID}"
+echo "Token: ${DIRECTOR_TOKEN}"
+
 echo "ord-test end reached!"
