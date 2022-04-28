@@ -86,7 +86,7 @@ func (d *Director) UpdateTenant(ctx context.Context, id string, tenant graphql.B
 func (d *Director) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) error {
 	var res map[string]interface{}
 
-	subscriptionMutation := fmt.Sprintf(`mutation { subscribeTenantToRuntime(providerID: "%s", subaccountID: "%s", providerSubaccountID "%s", region: "%s")}`, providerID, subaccountID, providerSubaccountID, region)
+	subscriptionMutation := fmt.Sprintf(`mutation { subscribeTenantToRuntime(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", region: "%s")}`, providerID, subaccountID, providerSubaccountID, region)
 	gRequest := gcli.NewRequest(subscriptionMutation)
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql mutation")
