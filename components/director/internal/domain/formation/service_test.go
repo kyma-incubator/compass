@@ -401,15 +401,6 @@ func TestServiceAssignFormation(t *testing.T) {
 		TargetTenantID: targetTenant,
 	}
 
-	subaccountInput := func() model.BusinessTenantMappingInput {
-		return model.BusinessTenantMappingInput{
-			ExternalTenant: objectID,
-			Parent:         tnt,
-			Type:           "subaccount",
-			Provider:       "lazilyWhileFormationCreation",
-		}
-	}
-
 	testCases := []struct {
 		Name               string
 		UIDServiceFn       func() *automock.UidService
@@ -547,15 +538,14 @@ func TestServiceAssignFormation(t *testing.T) {
 			Name:         "success for tenant",
 			UIDServiceFn: frmtest.UnusedUUIDService(),
 			TenantServiceFn: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				svc.On("CreateManyIfNotExists", ctx, subaccountInput()).Return(nil).Once()
-				svc.On("GetInternalTenant", ctx, objectID).Return(targetTenant, nil)
-				return svc
+				return &automock.TenantService{}
 			},
 			LabelServiceFn: formation.UnusedLabelService,
 			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
 				asaService := &automock.AutomaticFormationAssignmentService{}
-				asaService.On("Create", ctx, asa).Return(asa, nil)
+				expectedInput := asa
+				expectedInput.TargetTenantID = objectID
+				asaService.On("Create", ctx, expectedInput).Return(asa, nil)
 				return asaService
 			},
 			ObjectType:         graphql.FormationObjectTypeTenant,
@@ -750,47 +740,18 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name:         "error for tenant when tenant creation fails",
-			UIDServiceFn: frmtest.UnusedUUIDService(),
-			TenantServiceFn: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				svc.On("CreateManyIfNotExists", ctx, subaccountInput()).Return(testErr).Once()
-				return svc
-			},
-			LabelServiceFn:     formation.UnusedLabelService,
-			AsaServiceFN:       formation.UnusedASAService,
-			ObjectType:         graphql.FormationObjectTypeTenant,
-			InputFormation:     inputFormation,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name:         "error for tenant when tenant conversion fails",
-			UIDServiceFn: frmtest.UnusedUUIDService(),
-			TenantServiceFn: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				svc.On("CreateManyIfNotExists", ctx, subaccountInput()).Return(nil).Once()
-				svc.On("GetInternalTenant", ctx, objectID).Return("", testErr)
-				return svc
-			},
-			LabelServiceFn:     formation.UnusedLabelService,
-			AsaServiceFN:       formation.UnusedASAService,
-			ObjectType:         graphql.FormationObjectTypeTenant,
-			InputFormation:     inputFormation,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
 			Name:         "error for tenant when create fails",
 			UIDServiceFn: frmtest.UnusedUUIDService(),
 			TenantServiceFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				svc.On("CreateManyIfNotExists", ctx, subaccountInput()).Return(nil).Once()
-				svc.On("GetInternalTenant", ctx, objectID).Return(targetTenant, nil)
 				return svc
 			},
 			LabelServiceFn: formation.UnusedLabelService,
 			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
 				asaService := &automock.AutomaticFormationAssignmentService{}
-				asaService.On("Create", ctx, asa).Return(asa, testErr)
+				expectedInput := asa
+				expectedInput.TargetTenantID = objectID
+				asaService.On("Create", ctx, expectedInput).Return(asa, testErr)
 				return asaService
 			},
 			ObjectType:         graphql.FormationObjectTypeTenant,

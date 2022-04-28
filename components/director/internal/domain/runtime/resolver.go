@@ -275,7 +275,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok { // TODO: <backwards-compatibility>: Should be deleted once the provisioner start creating runtimes in a subaccount
-		tnt, err := r.extractTenantFromSubaccountLabel(ctx, saVal)
+		tnt, err := r.extractTenantFromSubaccountLabel(ctx, &tx, saVal)
 		if err != nil {
 			return nil, err
 		}
@@ -729,13 +729,7 @@ func (r *Resolver) cleanupAndLogOnError(ctx context.Context, runtimeID, region s
 	}
 }
 
-func (r *Resolver) extractTenantFromSubaccountLabel(ctx context.Context, value interface{}) (*model.BusinessTenantMapping, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
+func (r *Resolver) extractTenantFromSubaccountLabel(ctx context.Context, tx *persistence.PersistenceTx, value interface{}) (*model.BusinessTenantMapping, error) {
 	callingTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
@@ -752,25 +746,22 @@ func (r *Resolver) extractTenantFromSubaccountLabel(ctx context.Context, value i
 	if err != nil && !apperrors.IsNotFoundError(err) {
 		return nil, errors.Wrapf(err, "while getting tenant %s", sa)
 	} else if err != nil {
-		if err = tx.Commit(); err != nil {
+		if err = (*tx).Commit(); err != nil {
 			return nil, err
 		}
 		if err := r.fetcher.FetchOnDemand(sa); err != nil {
 			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", sa)
 		}
-		tx, err = r.transact.Begin()
+		persistenceTx, err := r.transact.Begin()
 		if err != nil {
 			return nil, err
 		}
-		defer r.transact.RollbackUnlessCommitted(ctx, tx)
+		tx = &persistenceTx
+		ctx = persistence.SaveToContext(ctx, *tx)
 		tnt, err = r.tenantSvc.GetTenantByExternalID(ctx, sa)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting tenant %s", sa)
 		}
-	}
-
-	if err = tx.Commit(); err != nil {
-		return nil, err
 	}
 
 	if callingTenant != tnt.ID && callingTenant != tnt.Parent {

@@ -28,12 +28,7 @@ type Converter interface {
 	ToGraphQL(i *model.Formation) *graphql.Formation
 }
 
-//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore
-type TenantService interface {
-	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
-	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
-}
-
+// TenantFetcherService calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
 //go:generate mockery --name=TenantFetcherService --output=automock --outpkg=automock --case=underscore
 type TenantFetcherService interface {
 	FetchOnDemand(tenant string) error
@@ -44,12 +39,12 @@ type Resolver struct {
 	transact      persistence.Transactioner
 	service       Service
 	conv          Converter
-	tenantSvc     TenantService
+	tenantSvc     tenantService
 	tenantFetcher TenantFetcherService
 }
 
 // NewResolver creates formation resolver
-func NewResolver(transact persistence.Transactioner, service Service, conv Converter, tenantSvc TenantService, fetcher TenantFetcherService) *Resolver {
+func NewResolver(transact persistence.Transactioner, service Service, conv Converter, tenantSvc tenantService, fetcher TenantFetcherService) *Resolver {
 	return &Resolver{
 		transact:      transact,
 		service:       service,
@@ -130,11 +125,10 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 
 	var newFormation *model.Formation
 	if objectType == graphql.FormationObjectTypeTenant {
-		newFormation, err = r.assignFormationForTenant(ctx, tx, tnt, objectID, formation)
+		newFormation, err = r.assignFormationForTenant(ctx, &tx, tnt, objectID, formation)
 		if err != nil {
 			return nil, err
 		}
-		return r.conv.ToGraphQL(newFormation), nil
 	} else {
 		newFormation, err = r.service.AssignFormation(ctx, tnt, objectID, objectType, r.conv.FromGraphQL(formation))
 		if err != nil {
@@ -176,32 +170,31 @@ func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objec
 	return r.conv.ToGraphQL(newFormation), nil
 }
 
-func (r *Resolver) assignFormationForTenant(ctx context.Context, tx persistence.PersistenceTx, tenantFromContext string, objectID string, formationInput graphql.FormationInput) (*model.Formation, error) {
+func (r *Resolver) assignFormationForTenant(ctx context.Context, tx *persistence.PersistenceTx, tenantFromContext string, objectID string, formationInput graphql.FormationInput) (*model.Formation, error) {
 	tenantFromDB, err := r.tenantSvc.GetTenantByExternalID(ctx, objectID)
 	if err != nil && !apperrors.IsNotFoundError(err) {
 		return nil, errors.Wrapf(err, "while getting tenant %s", objectID)
 	} else if err != nil {
-		if err = tx.Commit(); err != nil { //close the current transaction before the HTTP call
+		if err = (*tx).Commit(); err != nil { // close the current transaction before the HTTP call
 			return nil, errors.Wrap(err, "while committing transaction")
 		}
 		if err := r.tenantFetcher.FetchOnDemand(objectID); err != nil {
 			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", objectID)
 		}
-		tx, err = r.transact.Begin()
+		persistenceTx, err := r.transact.Begin()
 		if err != nil {
 			return nil, err
 		}
-	}
-	tenantFromDB, err = r.tenantSvc.GetTenantByExternalID(ctx, objectID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting tenant %s", objectID)
+		tx = &persistenceTx
+		ctx = persistence.SaveToContext(ctx, *tx)
+		tenantFromDB, err = r.tenantSvc.GetTenantByExternalID(ctx, objectID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting tenant %s", objectID)
+		}
 	}
 	newFormation, err := r.service.AssignFormation(ctx, tenantFromContext, tenantFromDB.ID, graphql.FormationObjectTypeTenant, r.conv.FromGraphQL(formationInput))
 	if err != nil {
 		return nil, err
-	}
-	if err = tx.Commit(); err != nil {
-		return nil, errors.Wrap(err, "while committing transaction")
 	}
 	return newFormation, nil
 }
