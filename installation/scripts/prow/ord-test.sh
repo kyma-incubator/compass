@@ -24,16 +24,16 @@ M2_HOME="${BASE_DIR}/maven"
 COMPASS_DIR="${BASE_DIR}/compass"
 ORD_SVC_DIR="${BASE_DIR}/ord-service"
 
-mkdir -p "$JAVA_HOME"
+mkdir -p "${JAVA_HOME}"
 export JAVA_HOME
-export PATH="$JAVA_HOME/bin:$PATH"
+export PATH="${JAVA_HOME}/bin:${PATH}"
 
-mkdir -p "$M2_HOME"
+mkdir -p "${M2_HOME}"
 export M2_HOME
-export PATH="$M2_HOME/bin:$PATH"
+export PATH="${M2_HOME}/bin:${PATH}"
 
 export ARTIFACTS="/var/log/prow_artifacts"
-sudo mkdir -p "${ARTIFACTS}"
+mkdir -p "${ARTIFACTS}"
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
