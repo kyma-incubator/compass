@@ -64,12 +64,6 @@ curl -fLSs -o apache-maven-3.8.5.tgz "https://dlcdn.apache.org/maven/maven-3/3.8
 tar --extract --file apache-maven-3.8.5.tgz --directory "$M2_HOME" --strip-components 1 --no-same-owner
 rm apache-maven-3.8.5.tgz* 
 
-echo "Adjuts Go runtime"
-GOPATH=${BASE_DIR}/go
-export GOPATH 
-export PATH=${GOPATH}/bin:/usr/local/go/bin:${PATH}
-
-
 echo "-----------------------------------"
 echo "Eenvironment"
 echo "-----------------------------------"
