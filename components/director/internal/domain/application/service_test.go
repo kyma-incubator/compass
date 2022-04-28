@@ -2363,10 +2363,11 @@ func TestService_Update(t *testing.T) {
 		initialDescrription := "initald"
 		initialURL := "initialu"
 		updatedDescription := "updatedd"
-		updatedURL := "updatedu"
-		updateInput = fixModelApplicationUpdateInput(appName, updatedDescription, updatedURL, model.ApplicationStatusConditionConnected)
+		updatedHealthCheckURL := "updatedhcu"
+		updatedBseURL := "updatedbu"
+		updateInput = fixModelApplicationUpdateInput(appName, updatedDescription, updatedHealthCheckURL, updatedBseURL, model.ApplicationStatusConditionConnected)
 		applicationModelBefore = fixModelApplicationWithAllUpdatableFields(id, appName, initialDescrription, initialURL, nil, model.ApplicationStatusConditionConnected, conditionTimestamp)
-		applicationModelAfter = fixModelApplicationWithAllUpdatableFields(id, appName, updatedDescription, updatedURL, nil, model.ApplicationStatusConditionConnected, conditionTimestamp)
+		applicationModelAfter = fixModelApplicationWithAllUpdatableFields(id, appName, updatedDescription, updatedHealthCheckURL, &updatedBseURL, model.ApplicationStatusConditionConnected, conditionTimestamp)
 		intSysLabel = fixLabelInput("integrationSystemID", intSysID, id, model.ApplicationLabelableObject)
 		nameLabel = fixLabelInput("name", "mp-"+appName, id, model.ApplicationLabelableObject)
 		updateInputStatusOnly = fixModelApplicationUpdateInputStatus(model.ApplicationStatusConditionConnected)
