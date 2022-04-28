@@ -130,7 +130,7 @@ func main() {
 
 	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc)
 
 	tntSvc := tenant.NewService(tenantRepo, uidSvc)
 
@@ -284,9 +284,14 @@ func calculateTemplateMappings(ctx context.Context, cfg adapter.Configuration, t
 	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConv)
 	webhookRepo := webhook.NewRepository(webhookConverter)
+	labelDefConverter := labeldef.NewConverter()
+	labelConverter := label.NewConverter()
+	labelRepo := label.NewRepository(labelConverter)
+	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 
 	uidSvc := uid.NewService()
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
+	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc)
 
 	tx, err := transact.Begin()
 	if err != nil {

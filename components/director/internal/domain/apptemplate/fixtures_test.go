@@ -108,6 +108,7 @@ func fixModelAppTemplateInput(name string, appInputString string) *model.Applica
 		Description:          &desc,
 		ApplicationInputJSON: appInputString,
 		Placeholders:         fixModelPlaceholders(),
+		Labels:               map[string]interface{}{"test": "test"},
 		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
 	}
 }
@@ -135,6 +136,7 @@ func fixGQLAppTemplateInput(name string) *graphql.ApplicationTemplateInput {
 			Description: &desc,
 		},
 		Placeholders: fixGQLPlaceholderDefinitionInput(),
+		Labels:       map[string]interface{}{"test": "test"},
 		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
 	}
 }

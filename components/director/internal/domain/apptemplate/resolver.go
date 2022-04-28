@@ -186,6 +186,10 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, err
 	}
 
+	if convertedIn.Labels == nil {
+		convertedIn.Labels = make(map[string]interface{})
+	}
+
 	log.C(ctx).Infof("Creating an Application Template with name %s", convertedIn.Name)
 	id, err := r.appTemplateSvc.Create(ctx, convertedIn)
 	if err != nil {

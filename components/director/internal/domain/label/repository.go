@@ -2,7 +2,6 @@ package label
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -19,7 +18,7 @@ const (
 )
 
 var (
-	tableColumns       = []string{"id", tenantColumn, "app_id", "runtime_id", "runtime_context_id", "key", "value", "version"}
+	tableColumns       = []string{"id", tenantColumn, "app_id", "runtime_id", "runtime_context_id", "app_template_id", "key", "value", "version"}
 	updatableColumns   = []string{"value"}
 	idColumns          = []string{"id"}
 	versionedIDColumns = append(idColumns, "version")
@@ -33,10 +32,12 @@ type Converter interface {
 }
 
 type repository struct {
-	lister       repo.Lister
-	listerGlobal repo.ListerGlobal
-	deleter      repo.Deleter
-	getter       repo.SingleGetter
+	lister        repo.Lister
+	listerGlobal  repo.ListerGlobal
+	deleter       repo.Deleter
+	deleterGlobal repo.DeleterGlobal
+	getter        repo.SingleGetter
+	getterGlobal  repo.SingleGetterGlobal
 
 	embeddedTenantLister  repo.Lister
 	embeddedTenantDeleter repo.Deleter
@@ -46,6 +47,7 @@ type repository struct {
 	globalCreator                  repo.CreatorGlobal
 	updater                        repo.Updater
 	versionedUpdater               repo.Updater
+	updaterGlobal                  repo.UpdaterGlobal
 	embeddedTenantUpdater          repo.UpdaterGlobal
 	versionedEmbeddedTenantUpdater repo.UpdaterGlobal
 	conv                           Converter
@@ -54,10 +56,12 @@ type repository struct {
 // NewRepository missing godoc
 func NewRepository(conv Converter) *repository {
 	return &repository{
-		lister:       repo.NewLister(tableName, tableColumns),
-		listerGlobal: repo.NewListerGlobal(resource.Label, tableName, tableColumns),
-		deleter:      repo.NewDeleter(tableName),
-		getter:       repo.NewSingleGetter(tableName, tableColumns),
+		lister:        repo.NewLister(tableName, tableColumns),
+		listerGlobal:  repo.NewListerGlobal(resource.Label, tableName, tableColumns),
+		deleter:       repo.NewDeleter(tableName),
+		deleterGlobal: repo.NewDeleterGlobal(resource.Label, tableName),
+		getter:        repo.NewSingleGetter(tableName, tableColumns),
+		getterGlobal:  repo.NewSingleGetterGlobal(resource.Label, tableName, tableColumns),
 
 		embeddedTenantLister:  repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		embeddedTenantDeleter: repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
@@ -67,6 +71,7 @@ func NewRepository(conv Converter) *repository {
 		globalCreator:                  repo.NewCreatorGlobal(resource.Label, tableName, tableColumns),
 		updater:                        repo.NewUpdater(tableName, updatableColumns, idColumns),
 		versionedUpdater:               repo.NewUpdater(tableName, updatableColumns, versionedIDColumns),
+		updaterGlobal:                  repo.NewUpdaterGlobal(resource.Label, tableName, updatableColumns, idColumns),
 		embeddedTenantUpdater:          repo.NewUpdaterWithEmbeddedTenant(resource.Label, tableName, updatableColumns, tenantColumn, idColumns),
 		versionedEmbeddedTenantUpdater: repo.NewUpdaterWithEmbeddedTenant(resource.Label, tableName, updatableColumns, tenantColumn, versionedIDColumns),
 		conv:                           conv,
@@ -95,6 +100,10 @@ func (r *repository) Upsert(ctx context.Context, tenant string, label *model.Lab
 	if label.ObjectType == model.TenantLabelableObject {
 		return r.embeddedTenantUpdater.UpdateSingleWithVersionGlobal(ctx, labelEntity)
 	}
+	if label.ObjectType == model.AppTemplateLabelableObject {
+		return r.updaterGlobal.UpdateSingleWithVersionGlobal(ctx, labelEntity)
+	}
+
 	return r.updater.UpdateSingleWithVersion(ctx, label.ObjectType.GetResourceType(), tenant, labelEntity)
 }
 
@@ -124,7 +133,7 @@ func (r *repository) Create(ctx context.Context, tenant string, label *model.Lab
 		return errors.Wrap(err, "while creating label entity from model")
 	}
 
-	if label.ObjectType == model.TenantLabelableObject {
+	if label.ObjectType == model.TenantLabelableObject || label.ObjectType == model.AppTemplateLabelableObject { // ????????
 		return r.globalCreator.Create(ctx, labelEntity)
 	}
 
@@ -144,8 +153,15 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, objectType mod
 	}
 
 	var entity Entity
-	if err := getter.Get(ctx, objectType.GetResourceType(), tenant, conds, repo.NoOrderBy, &entity); err != nil {
-		return nil, err
+
+	if objectType == model.AppTemplateLabelableObject {
+		if err := r.getterGlobal.GetGlobal(ctx, conds, repo.NoOrderBy, &entity); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := getter.Get(ctx, objectType.GetResourceType(), tenant, conds, repo.NoOrderBy, &entity); err != nil {
+			return nil, err
+		}
 	}
 
 	labelModel, err := r.conv.FromEntity(&entity)
@@ -168,6 +184,7 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.ApplicationLabelableObject)))
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeContextLabelableObject)))
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeLabelableObject)))
+		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.AppTemplateLabelableObject)))
 	} else {
 		conditions = append(conditions, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
 	}
@@ -228,6 +245,9 @@ func (r *repository) Delete(ctx context.Context, tenant string, objectType model
 	} else {
 		conds = append(conds, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
 	}
+	if objectType == model.AppTemplateLabelableObject {
+		return r.deleterGlobal.DeleteManyGlobal(ctx, conds)
+	}
 	return deleter.DeleteMany(ctx, objectType.GetResourceType(), tenant, conds)
 }
 
@@ -239,6 +259,9 @@ func (r *repository) DeleteAll(ctx context.Context, tenant string, objectType mo
 		deleter = r.embeddedTenantDeleter
 	} else {
 		conds = append(conds, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
+	}
+	if objectType == model.AppTemplateLabelableObject {
+		return r.deleterGlobal.DeleteManyGlobal(ctx, conds)
 	}
 	return deleter.DeleteMany(ctx, objectType.GetResourceType(), tenant, conds)
 }
@@ -252,7 +275,9 @@ func (r *repository) DeleteByKeyNegationPattern(ctx context.Context, tenant stri
 	} else {
 		conds = append(conds, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
 	}
-
+	if objectType == model.AppTemplateLabelableObject {
+		return r.deleterGlobal.DeleteManyGlobal(ctx, conds)
+	}
 	return deleter.DeleteMany(ctx, objectType.GetResourceType(), tenant, conds)
 }
 
@@ -314,6 +339,8 @@ func labelableObjectField(objectType model.LabelableObject) string {
 		return "runtime_context_id"
 	case model.TenantLabelableObject:
 		return "tenant_id"
+	case model.AppTemplateLabelableObject:
+		return "app_template_id"
 	}
 
 	return ""

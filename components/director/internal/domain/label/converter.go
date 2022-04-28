@@ -32,6 +32,7 @@ func (c *converter) ToEntity(in *model.Label) (*Entity, error) {
 	var appID sql.NullString
 	var rtmID sql.NullString
 	var rtmCtxID sql.NullString
+	var appTmplID sql.NullString
 	switch in.ObjectType {
 	case model.ApplicationLabelableObject:
 		appID = sql.NullString{
@@ -48,6 +49,11 @@ func (c *converter) ToEntity(in *model.Label) (*Entity, error) {
 			Valid:  true,
 			String: in.ObjectID,
 		}
+	case model.AppTemplateLabelableObject:
+		appTmplID = sql.NullString{
+			Valid:  true,
+			String: in.ObjectID,
+		}
 	}
 
 	return &Entity{
@@ -56,6 +62,7 @@ func (c *converter) ToEntity(in *model.Label) (*Entity, error) {
 		AppID:            appID,
 		RuntimeID:        rtmID,
 		RuntimeContextID: rtmCtxID,
+		AppTemplateID:    appTmplID,
 		Key:              in.Key,
 		Value:            string(valueMarshalled),
 		Version:          in.Version,

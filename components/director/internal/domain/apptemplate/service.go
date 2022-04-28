@@ -3,6 +3,7 @@ package apptemplate
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -38,29 +39,39 @@ type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
 }
 
+// LabelUpsertService missing godoc
+//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
+type LabelUpsertService interface {
+	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
+}
+
 type service struct {
-	appTemplateRepo ApplicationTemplateRepository
-	webhookRepo     WebhookRepository
-	uidService      UIDService
+	appTemplateRepo    ApplicationTemplateRepository
+	webhookRepo        WebhookRepository
+	uidService         UIDService
+	labelUpsertService LabelUpsertService
 }
 
 // NewService missing godoc
-func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo WebhookRepository, uidService UIDService) *service {
+func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo WebhookRepository, uidService UIDService, labelUpsertService LabelUpsertService) *service {
 	return &service{
-		appTemplateRepo: appTemplateRepo,
-		webhookRepo:     webhookRepo,
-		uidService:      uidService,
+		appTemplateRepo:    appTemplateRepo,
+		webhookRepo:        webhookRepo,
+		uidService:         uidService,
+		labelUpsertService: labelUpsertService,
 	}
 }
 
 // Create missing godoc
 func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+
 	appTemplateID := s.uidService.Generate()
 	log.C(ctx).Debugf("ID %s generated for Application Template with name %s", appTemplateID, in.Name)
 
 	appTemplate := in.ToApplicationTemplate(appTemplateID)
 
-	err := s.appTemplateRepo.Create(ctx, appTemplate)
+	err = s.appTemplateRepo.Create(ctx, appTemplate)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating Application Template with name %s", in.Name)
 	}
@@ -71,6 +82,15 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 	}
 	if err = s.webhookRepo.CreateMany(ctx, "", webhooks); err != nil {
 		return "", errors.Wrapf(err, "while creating Webhooks for applicationTemplate")
+	}
+
+	if in.Labels == nil {
+		in.Labels = map[string]interface{}{}
+	}
+
+	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.AppTemplateLabelableObject, appTemplateID, in.Labels)
+	if err != nil {
+		return appTemplateID, errors.Wrapf(err, "while creating multiple labels for Application Template with id %s", appTemplateID)
 	}
 
 	return appTemplateID, nil

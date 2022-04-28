@@ -101,6 +101,7 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationTemplateInput) (model
 		ApplicationInputJSON: appCreateInput,
 		Placeholders:         c.placeholdersFromGraphql(in.Placeholders),
 		AccessLevel:          model.ApplicationTemplateAccessLevel(in.AccessLevel),
+		Labels:               in.Labels,
 		Webhooks:             webhooks,
 	}, nil
 }

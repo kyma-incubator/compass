@@ -159,6 +159,7 @@ func fixLabelEntity(id string, value []byte, version int) *label.Entity {
 			String: "321",
 			Valid:  true,
 		},
+		TenantID: sql.NullString{},
 		Key:     "test",
 		Value:   string(value),
 		Version: version,
