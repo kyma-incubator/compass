@@ -79,6 +79,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		SubscriptionProviderID: subscriptionProviderID,
 		ProviderSubaccountID:   providerSubaccountID,
 	})
+	assert.NoError(t, err)
 
 	bodyWithMissingProviderSubaccountID, err := json.Marshal(regionalTenantCreationRequest{
 		TenantID:               tenantExtID,
