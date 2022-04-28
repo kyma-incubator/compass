@@ -17,11 +17,11 @@ function is_ready(){
 }
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-INSTALLATION_DIR=${CURRENT_DIR}/../../
-BASE_DIR=$(pwd)
+INSTALLATION_DIR="${CURRENT_DIR}/../.."
+BASE_DIR="${KYMA_INCUBATOR_DIR}/../../../.."
 JAVA_HOME="${BASE_DIR}/openjdk-11"
 M2_HOME="${BASE_DIR}/maven"
-COMPASS_DIR="${BASE_DIR}/compass"
+COMPASS_DIR="${INSTALLATION_DIR}/.."
 ORD_SVC_DIR="${BASE_DIR}/ord-service"
 
 mkdir -p "${JAVA_HOME}"
