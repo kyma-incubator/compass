@@ -1,3 +1,4 @@
+{{ if .Values.global.isForTesting }}
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
@@ -42,3 +43,4 @@ spec:
 {{ end }}
 {{- end -}}
       restartPolicy: Never
+{{ end }}
