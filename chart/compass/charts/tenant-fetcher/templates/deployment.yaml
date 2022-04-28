@@ -77,6 +77,8 @@ spec:
               value: {{ .Values.global.tenantFetcher.tenantProvider.name }}
             - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
+            - name: APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY #The property which states the provider subaccount used in the tenant provider
+              value: {{.Values.global.tenantFetcher.tenantProvider.providerSubaccountIdProperty }}
             - name: APP_DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: APP_LOG_FORMAT

@@ -31,15 +31,15 @@ func (s *subscriber) Subscribe(ctx context.Context, tenantSubscriptionRequest *T
 		return err
 	}
 
-	return s.applyRuntimesSubscriptionChange(ctx, tenantSubscriptionRequest.SubscriptionProviderID, tenantSubscriptionRequest.ProviderSubaccountID, tenantSubscriptionRequest.SubaccountTenantID, tenantSubscriptionRequest.Region, true)
+	return s.applyRuntimesSubscriptionChange(ctx, tenantSubscriptionRequest.SubscriptionProviderID, tenantSubscriptionRequest.SubaccountTenantID, tenantSubscriptionRequest.ProviderSubaccountID, tenantSubscriptionRequest.Region, true)
 }
 
 // Unsubscribe unsubscribes tenant from runtime.
 func (s *subscriber) Unsubscribe(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest) error {
-	return s.applyRuntimesSubscriptionChange(ctx, tenantSubscriptionRequest.SubscriptionProviderID, tenantSubscriptionRequest.ProviderSubaccountID, tenantSubscriptionRequest.SubaccountTenantID, tenantSubscriptionRequest.Region, false)
+	return s.applyRuntimesSubscriptionChange(ctx, tenantSubscriptionRequest.SubscriptionProviderID, tenantSubscriptionRequest.SubaccountTenantID, tenantSubscriptionRequest.ProviderSubaccountID, tenantSubscriptionRequest.Region, false)
 }
 
-func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscriptionProviderID, providerSubaccountID, subaccountTenantID, region string, subscribe bool) error {
+func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscriptionProviderID, subaccountTenantID, providerSubaccountID, region string, subscribe bool) error {
 	var err error
 
 	if subscribe {
