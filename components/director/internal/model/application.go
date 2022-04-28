@@ -30,7 +30,7 @@ type Application struct {
 	*BaseEntity
 }
 
-// GetType missing godoc
+// GetType returns Type application
 func (*Application) GetType() resource.Type {
 	return resource.Application
 }
