@@ -47,11 +47,8 @@ echo "-----------------------------------"
 echo "pwd:"
 pwd
 echo "-----------------------------------"
-echo "tree ."
-tree .
-echo "-----------------------------------"
-echo "tree /"
-tree /
+echo "ls -la"
+ls -la
 echo "-----------------------------------"
 echo "CURRENT_DIR=${CURRENT_DIR}"
 echo "INSTALLATION_DIR=${INSTALLATION_DIR}"
