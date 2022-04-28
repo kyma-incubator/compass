@@ -253,7 +253,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 			return nil, errors.Wrapf(err, "while converting %s label", scenarioassignment.SubaccountIDKey)
 		}
 		if err := r.fetcher.FetchOnDemand(sa); err != nil {
-			return nil, errors.Wrap(err, "while calling API")
+			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", sa)
 		}
 	}
 

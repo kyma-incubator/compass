@@ -113,7 +113,7 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 
 	if objectType == graphql.FormationObjectTypeTenant {
 		if err := r.fetcher.FetchOnDemand(objectID); err != nil {
-			return nil, errors.Wrap(err, "while calling API")
+			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", objectID)
 		}
 	}
 
