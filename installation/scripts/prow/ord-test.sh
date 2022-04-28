@@ -33,7 +33,7 @@ export M2_HOME
 export PATH="$M2_HOME/bin:$PATH"
 
 export ARTIFACTS="/var/log/prow_artifacts"
-mkdir -p "${ARTIFACTS}"
+sudo mkdir -p "${ARTIFACTS}"
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
