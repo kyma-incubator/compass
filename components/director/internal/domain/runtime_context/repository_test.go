@@ -232,11 +232,6 @@ func TestPgRepository_ListByRuntimeIDs(t *testing.T) {
 		Name: "ListByRuntimeIDs Runtime Contexts",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-
-				//"SELECT runtime_id AS id, COUNT(*) AS total_count FROM public.runtime_contexts WHERE (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $1)) GROUP BY runtime_id ORDER BY runtime_id ASC\" with expected regexp \
-				//"SELECT runtime_id AS id, COUNT(*) AS total_count FROM public.runtimeContexts WHERE (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $1)) GROUP BY runtime_id ORDER BY runtime_id ASC\"" component="persistence/sql_error_mapper.go:35:persistence.MapSQLError" error="Query: could not match actual sql: \"SELECT runtime_id AS id, COUNT(*) AS total_count FROM public.runtime_contexts WHERE (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $1)) GROUP BY runtime_id ORDER BY runtime_id ASC\" with expected regexp \"SELECT runtime_id AS id, COUNT(*) AS total_count FROM public.runtimeContexts WHERE (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $1)) GROUP BY runtime_id ORDER BY runtime_id ASC\"" error_source="check component log field" x-request-id=bootstrap
-				//eneric_repo_list_pageable_tests.go:74:
-				//	Error Trace:	generic_repo_list_pageable_tests.go:74
 				Query: regexp.QuoteMeta(`(SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $1)) AND runtime_id = $2 ORDER BY runtime_id ASC, id ASC LIMIT $3 OFFSET $4)
 												UNION
 												(SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $5)) AND runtime_id = $6 ORDER BY runtime_id ASC, id ASC LIMIT $7 OFFSET $8)

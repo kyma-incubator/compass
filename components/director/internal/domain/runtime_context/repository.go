@@ -194,10 +194,10 @@ func (r *pgRepository) ListByRuntimeIDs(ctx context.Context, tenantID string, ru
 		return nil, err
 	}
 
-	runtmieContextByID := map[string][]*model.RuntimeContext{}
+	runtimeContextByID := map[string][]*model.RuntimeContext{}
 	for _, runtimeContextEntity := range runtimeCtxsCollection {
 		rc := r.conv.FromEntity(&runtimeContextEntity)
-		runtmieContextByID[runtimeContextEntity.RuntimeID] = append(runtmieContextByID[runtimeContextEntity.RuntimeID], rc)
+		runtimeContextByID[runtimeContextEntity.RuntimeID] = append(runtimeContextByID[runtimeContextEntity.RuntimeID], rc)
 	}
 
 	offset, err := pagination.DecodeOffsetCursor(cursor)
@@ -210,7 +210,7 @@ func (r *pgRepository) ListByRuntimeIDs(ctx context.Context, tenantID string, ru
 		totalCount := counts[runtimeID]
 		hasNextPage := false
 		endCursor := ""
-		if totalCount > offset+len(runtmieContextByID[runtimeID]) {
+		if totalCount > offset+len(runtimeContextByID[runtimeID]) {
 			hasNextPage = true
 			endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
 		}
@@ -221,7 +221,7 @@ func (r *pgRepository) ListByRuntimeIDs(ctx context.Context, tenantID string, ru
 			HasNextPage: hasNextPage,
 		}
 
-		runtimeContextPages = append(runtimeContextPages, &model.RuntimeContextPage{Data: runtmieContextByID[runtimeID], TotalCount: totalCount, PageInfo: page})
+		runtimeContextPages = append(runtimeContextPages, &model.RuntimeContextPage{Data: runtimeContextByID[runtimeID], TotalCount: totalCount, PageInfo: page})
 	}
 
 	return runtimeContextPages, nil

@@ -4715,7 +4715,7 @@ type Runtime {
 	auths: [RuntimeSystemAuth!]
 	eventingConfiguration: RuntimeEventingConfiguration
 	runtimeContext(id: ID!): RuntimeContext
-	runtimeContexts(first: Int = 200, after: PageCursor): RuntimeContextPage!
+	runtimeContexts(first: Int = 200, after: PageCursor): RuntimeContextPage
 }
 
 type RuntimeContext {
@@ -20330,14 +20330,11 @@ func (ec *executionContext) _Runtime_runtimeContexts(ctx context.Context, field 
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*RuntimeContextPage)
 	fc.Result = res
-	return ec.marshalNRuntimeContextPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContextPage(ctx, field.Selections, res)
+	return ec.marshalORuntimeContextPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContextPage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RuntimeContext_id(ctx context.Context, field graphql.CollectedField, obj *RuntimeContext) (ret graphql.Marshaler) {
@@ -27017,9 +27014,6 @@ func (ec *executionContext) _Runtime(ctx context.Context, sel ast.SelectionSet, 
 					}
 				}()
 				res = ec._Runtime_runtimeContexts(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		default:
@@ -28992,20 +28986,6 @@ func (ec *executionContext) unmarshalNRuntimeContextInput2githubᚗcomᚋkymaᚑ
 	return ec.unmarshalInputRuntimeContextInput(ctx, v)
 }
 
-func (ec *executionContext) marshalNRuntimeContextPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContextPage(ctx context.Context, sel ast.SelectionSet, v RuntimeContextPage) graphql.Marshaler {
-	return ec._RuntimeContextPage(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNRuntimeContextPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContextPage(ctx context.Context, sel ast.SelectionSet, v *RuntimeContextPage) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._RuntimeContextPage(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeInput(ctx context.Context, v interface{}) (RuntimeInput, error) {
 	return ec.unmarshalInputRuntimeInput(ctx, v)
 }
@@ -30542,6 +30522,17 @@ func (ec *executionContext) marshalORuntimeContext2ᚖgithubᚗcomᚋkymaᚑincu
 		return graphql.Null
 	}
 	return ec._RuntimeContext(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORuntimeContextPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContextPage(ctx context.Context, sel ast.SelectionSet, v RuntimeContextPage) graphql.Marshaler {
+	return ec._RuntimeContextPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalORuntimeContextPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContextPage(ctx context.Context, sel ast.SelectionSet, v *RuntimeContextPage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RuntimeContextPage(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalORuntimeEventingConfiguration2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeEventingConfiguration(ctx context.Context, sel ast.SelectionSet, v RuntimeEventingConfiguration) graphql.Marshaler {

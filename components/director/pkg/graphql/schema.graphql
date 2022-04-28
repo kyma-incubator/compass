@@ -1036,7 +1036,7 @@ type Runtime {
 	auths: [RuntimeSystemAuth!]
 	eventingConfiguration: RuntimeEventingConfiguration
 	runtimeContext(id: ID!): RuntimeContext
-	runtimeContexts(first: Int = 200, after: PageCursor): RuntimeContextPage!
+	runtimeContexts(first: Int = 200, after: PageCursor): RuntimeContextPage
 }
 
 type RuntimeContext {

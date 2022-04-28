@@ -280,7 +280,7 @@ func TestService_Update(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Returns error when runtime context retrieval failed",
+			Name: "Returns error when loading tenant from context failed",
 			RepositoryFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
 				return repo
@@ -363,7 +363,7 @@ func TestService_Delete(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Returns error when runtime context deletion failed",
+			Name: "Returns error when loading tenant from context failed",
 			RepositoryFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
 				return repo
@@ -660,7 +660,7 @@ func TestService_ListByFilter(t *testing.T) {
 			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
-			Name: "Returns error when pageSize is bigger than 100",
+			Name: "Returns error when pageSize is bigger than 200",
 			RepositoryFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
 				return repo
@@ -799,7 +799,7 @@ func TestService_ListByRuntimeIDs(t *testing.T) {
 			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
-			Name: "Returns error when pageSize is bigger than 100",
+			Name: "Returns error when pageSize is bigger than 200",
 			RepositoryFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
 				return repo

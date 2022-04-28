@@ -81,12 +81,12 @@ const (
 var tenantAccessTable = map[Type]string{
 	// Tables
 
-	Application: "tenant_applications",
-	Runtime:     "tenant_runtimes",
+	Application:    "tenant_applications",
+	Runtime:        "tenant_runtimes",
+	RuntimeContext: "tenant_runtime_contexts",
 
 	// Views
 
-	RuntimeContext:        "tenant_runtime_contexts",
 	Label:                 "labels_tenants",
 	ApplicationLabel:      "application_labels_tenants",
 	RuntimeLabel:          "runtime_labels_tenants",
