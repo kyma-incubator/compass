@@ -56,8 +56,6 @@ type automaticFormationAssignmentService interface {
 type tenantService interface {
 	CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
-	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
-	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 //go:generate mockery --exported --name=scenarioAssignmentEngine --output=automock --outpkg=automock --case=underscore
@@ -134,10 +132,15 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		}
 		return f, nil
 	case graphql.FormationObjectTypeTenant:
-		if _, err := s.asaService.Create(ctx, newAutomaticScenarioAssignmentModel(formation.Name, tnt, objectID)); err != nil {
+		tenantID, err := s.tenantSvc.GetInternalTenant(ctx, objectID)
+		if err != nil {
 			return nil, err
 		}
-		return &formation, nil
+
+		if _, err = s.asaService.Create(ctx, newAutomaticScenarioAssignmentModel(formation.Name, tnt, tenantID)); err != nil {
+			return nil, err
+		}
+		return &formation, err
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}

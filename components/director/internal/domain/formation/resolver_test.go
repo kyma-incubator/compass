@@ -32,15 +32,13 @@ func TestCreateFormation(t *testing.T) {
 
 		mockService := &automock.Service{}
 		mockConverter := &automock.Converter{}
-		mockTenantSvc := &automock.TenantService{}
-		mockFetcherSvc := &automock.TenantFetcherService{}
 		mockService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testFormation}).Return(&model.Formation{Name: testFormation}, nil)
 
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 		mockConverter.On("ToGraphQL", &model.Formation{Name: testFormation}).Return(&graphql.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, mockTenantSvc, mockFetcherSvc)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil)
 
 		// WHEN
 		actual, err := sut.CreateFormation(ctx, formationInput)
@@ -54,7 +52,7 @@ func TestCreateFormation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
-		sut := formation.NewResolver(nil, nil, nil, nil, nil)
+		sut := formation.NewResolver(nil, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.CreateFormation(ctx, formationInput)
@@ -68,7 +66,7 @@ func TestCreateFormation(t *testing.T) {
 		persist, transact := txGen.ThatFailsOnBegin()
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, nil, nil, nil, nil)
+		sut := formation.NewResolver(transact, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.CreateFormation(ctx, formationInput)
@@ -89,7 +87,7 @@ func TestCreateFormation(t *testing.T) {
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil)
 
 		// WHEN
 		_, err := sut.CreateFormation(ctx, formationInput)
@@ -110,7 +108,7 @@ func TestCreateFormation(t *testing.T) {
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil)
 
 		// WHEN
 		actual, err := sut.CreateFormation(ctx, formationInput)
@@ -145,7 +143,7 @@ func TestDeleteFormation(t *testing.T) {
 		mockConverter.On("ToGraphQL", &model.Formation{Name: testFormation}).Return(&graphql.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil)
 
 		// WHEN
 		actual, err := sut.DeleteFormation(ctx, formationInput)
@@ -159,7 +157,7 @@ func TestDeleteFormation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
-		sut := formation.NewResolver(nil, nil, nil, nil, nil)
+		sut := formation.NewResolver(nil, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.DeleteFormation(ctx, formationInput)
@@ -172,7 +170,7 @@ func TestDeleteFormation(t *testing.T) {
 		persist, transact := txGen.ThatFailsOnBegin()
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, nil, nil, nil, nil)
+		sut := formation.NewResolver(transact, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.DeleteFormation(ctx, formationInput)
@@ -193,7 +191,7 @@ func TestDeleteFormation(t *testing.T) {
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil)
 
 		// WHEN
 		_, err := sut.DeleteFormation(ctx, formationInput)
@@ -214,7 +212,7 @@ func TestDeleteFormation(t *testing.T) {
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil)
 
 		// WHEN
 		actual, err := sut.DeleteFormation(ctx, formationInput)
@@ -249,7 +247,7 @@ func TestAssignFormation(t *testing.T) {
 		mockConverter.On("ToGraphQL", &model.Formation{Name: testFormation}).Return(&graphql.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil)
 
 		// WHEN
 		actual, err := sut.AssignFormation(ctx, "", testObjectType, formationInput)
@@ -263,7 +261,7 @@ func TestAssignFormation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
-		sut := formation.NewResolver(nil, nil, nil, nil, nil)
+		sut := formation.NewResolver(nil, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.AssignFormation(ctx, "", testObjectType, formationInput)
@@ -277,7 +275,7 @@ func TestAssignFormation(t *testing.T) {
 		persist, transact := txGen.ThatFailsOnBegin()
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, nil, nil, nil, nil)
+		sut := formation.NewResolver(transact, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.AssignFormation(ctx, "", testObjectType, formationInput)
@@ -298,7 +296,7 @@ func TestAssignFormation(t *testing.T) {
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil)
 
 		// WHEN
 		_, err := sut.AssignFormation(ctx, "", testObjectType, formationInput)
@@ -319,7 +317,7 @@ func TestAssignFormation(t *testing.T) {
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil)
 
 		// WHEN
 		actual, err := sut.AssignFormation(ctx, "", testObjectType, formationInput)
@@ -354,7 +352,7 @@ func TestUnassignFormation(t *testing.T) {
 		mockConverter.On("ToGraphQL", &model.Formation{Name: testFormation}).Return(&graphql.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil)
 
 		// WHEN
 		actual, err := sut.UnassignFormation(ctx, "", testObjectType, formationInput)
@@ -368,7 +366,7 @@ func TestUnassignFormation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
-		sut := formation.NewResolver(nil, nil, nil, nil, nil)
+		sut := formation.NewResolver(nil, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.UnassignFormation(ctx, "", testObjectType, formationInput)
@@ -382,7 +380,7 @@ func TestUnassignFormation(t *testing.T) {
 		persist, transact := txGen.ThatFailsOnBegin()
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, nil, nil, nil, nil)
+		sut := formation.NewResolver(transact, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.UnassignFormation(ctx, "", testObjectType, formationInput)
@@ -403,7 +401,7 @@ func TestUnassignFormation(t *testing.T) {
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil)
 
 		// WHEN
 		_, err := sut.UnassignFormation(ctx, "", testObjectType, formationInput)
@@ -424,7 +422,7 @@ func TestUnassignFormation(t *testing.T) {
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil)
 
 		// WHEN
 		actual, err := sut.UnassignFormation(ctx, "", testObjectType, formationInput)

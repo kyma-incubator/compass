@@ -2,11 +2,9 @@ package runtime
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
@@ -101,8 +99,9 @@ type SubscriptionService interface {
 	UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error)
 }
 
-//go:generate mockery --exported --name=tenantFetcher --output=automock --outpkg=automock --case=underscore
-type tenantFetcher interface {
+// TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
+//go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore
+type TenantFetcher interface {
 	FetchOnDemand(tenant string) error
 }
 
@@ -120,15 +119,14 @@ type Resolver struct {
 	selfRegManager            SelfRegisterManager
 	uidService                uidService
 	subscriptionSvc           SubscriptionService
-	tenantSvc                 tenantService
-	fetcher                   tenantFetcher
+	fetcher                   TenantFetcher
 }
 
 // NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService,
 	sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService, selfRegManager SelfRegisterManager,
-	uidService uidService, subscriptionSvc SubscriptionService, tenantSvc tenantService, tenantOnDemandSvc tenantFetcher) *Resolver {
+	uidService uidService, subscriptionSvc SubscriptionService, fetcher TenantFetcher) *Resolver {
 	return &Resolver{
 		transact:                  transact,
 		runtimeService:            runtimeService,
@@ -142,8 +140,7 @@ func NewResolver(transact persistence.Transactioner, runtimeService RuntimeServi
 		selfRegManager:            selfRegManager,
 		uidService:                uidService,
 		subscriptionSvc:           subscriptionSvc,
-		tenantSvc:                 tenantSvc,
-		fetcher:                   tenantOnDemandSvc,
+		fetcher:                   fetcher,
 	}
 }
 
@@ -173,8 +170,7 @@ func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, 
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -209,8 +205,7 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -252,6 +247,16 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 		return nil, err
 	}
 
+	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok { // TODO: <backwards-compatibility>: Should be deleted once the provisioner start creating runtimes in a subaccount
+		sa, err := convertLabelValue(saVal)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while converting %s label", scenarioassignment.SubaccountIDKey)
+		}
+		if err := r.fetcher.FetchOnDemand(sa); err != nil {
+			return nil, errors.Wrap(err, "while calling API")
+		}
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -273,14 +278,6 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 	}()
 
 	ctx = persistence.SaveToContext(ctx, tx)
-
-	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok { // TODO: <backwards-compatibility>: Should be deleted once the provisioner start creating runtimes in a subaccount
-		tnt, err := r.extractTenantFromSubaccountLabel(ctx, &tx, saVal)
-		if err != nil {
-			return nil, err
-		}
-		ctx = tenant.SaveToContext(ctx, tnt.ID, tnt.ExternalTenant)
-	}
 
 	if err = r.runtimeService.CreateWithMandatoryLabels(ctx, convertedIn, id, labels); err != nil {
 		return nil, err
@@ -320,14 +317,11 @@ func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.Runt
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
-	gqlRuntime := r.converter.ToGraphQL(runtime)
-
-	return gqlRuntime, nil
+	return r.converter.ToGraphQL(runtime), nil
 }
 
 // DeleteRuntime missing godoc
@@ -451,8 +445,7 @@ func (r *Resolver) GetLabel(ctx context.Context, runtimeID string, key string) (
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -494,8 +487,7 @@ func (r *Resolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key st
 		return nil, errors.Wrapf(err, "while getting label with key: [%s]", key)
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -520,13 +512,11 @@ func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key
 		return nil, err
 	}
 
-	err = r.runtimeService.DeleteLabel(ctx, runtimeID, key)
-	if err != nil {
+	if err = r.runtimeService.DeleteLabel(ctx, runtimeID, key); err != nil {
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -727,46 +717,4 @@ func (r *Resolver) cleanupAndLogOnError(ctx context.Context, runtimeID, region s
 	if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, runtimeID, region); err != nil {
 		log.C(ctx).Errorf("An error occurred during cleanup of self-registered runtime: %v", err)
 	}
-}
-
-func (r *Resolver) extractTenantFromSubaccountLabel(ctx context.Context, tx *persistence.PersistenceTx, value interface{}) (*model.BusinessTenantMapping, error) {
-	callingTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	sa, err := convertLabelValue(value)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while converting %s label", scenarioassignment.SubaccountIDKey)
-	}
-
-	log.C(ctx).Infof("Runtime registered by tenant %s with %s label with value %s. Will proceed with the subaccount as tenant...", callingTenant, scenarioassignment.SubaccountIDKey, sa)
-
-	tnt, err := r.tenantSvc.GetTenantByExternalID(ctx, sa)
-	if err != nil && !apperrors.IsNotFoundError(err) {
-		return nil, errors.Wrapf(err, "while getting tenant %s", sa)
-	} else if err != nil {
-		if err = (*tx).Commit(); err != nil {
-			return nil, err
-		}
-		if err := r.fetcher.FetchOnDemand(sa); err != nil {
-			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", sa)
-		}
-		persistenceTx, err := r.transact.Begin()
-		if err != nil {
-			return nil, err
-		}
-		tx = &persistenceTx
-		ctx = persistence.SaveToContext(ctx, *tx)
-		tnt, err = r.tenantSvc.GetTenantByExternalID(ctx, sa)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while getting tenant %s", sa)
-		}
-	}
-
-	if callingTenant != tnt.ID && callingTenant != tnt.Parent {
-		log.C(ctx).Errorf("Caller tenant %s is not parent of the subaccount %s in the %s label", callingTenant, sa, scenarioassignment.SubaccountIDKey)
-		return nil, apperrors.NewInvalidOperationError(fmt.Sprintf("Tenant provided in %s label should be child of the caller tenant", scenarioassignment.SubaccountIDKey))
-	}
-	return tnt, nil
 }
