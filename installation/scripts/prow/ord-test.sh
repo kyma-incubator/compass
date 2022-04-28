@@ -32,8 +32,27 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 
 #sudo ${INSTALLATION_DIR}/cmd/run.sh
+echo "Install java"
+export JAVA_HOME /usr/local/openjdk-11
+mkdir -p "$JAVA_HOME"
+export PATH $JAVA_HOME/bin:$PATH
+curl -fLSs -o adoptopenjdk11.tgz "https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.9.1%2B1/OpenJDK11U-jdk_x64_linux_hotspot_11.0.9.1_1.tar.gz"
+
+
+tar --extract --file adoptopenjdk11.tgz --directory "$JAVA_HOME" --strip-components 1 --no-same-owner
+rm adoptopenjdk11.tgz* 
+echo "-----------------------------------"
+java -version
+echo "-----------------------------------"
 echo "pwd:"
 pwd
+echo "-----------------------------------"
+echo "tree ."
+tree .
+echo "-----------------------------------"
+echo "tree /"
+tree /
+echo "-----------------------------------"
 echo "CURRENT_DIR=${CURRENT_DIR}"
 echo "INSTALLATION_DIR=${INSTALLATION_DIR}"
 echo "ARTIFACTS=${ARTIFACTS}"
