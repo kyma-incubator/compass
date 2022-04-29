@@ -157,6 +157,7 @@ echo "Token: ${DIRECTOR_TOKEN}"
 echo "Internal Tenant ID: ${INTERNAL_TENANT_ID}"
 
 echo "Killing all processes"
+ps
 echo "Compass run.sh script PID: ${COMPASS_RUN_PID}"
 ps -o pgid= ${COMPASS_RUN_PID}
 
