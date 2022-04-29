@@ -15,8 +15,9 @@ function get_token(){
 }
 
 read -r INTERNAL_TENANT_ID <<< $(get_internal_tenant)
-echo -e "${GREEN}Internal Tenant ID for default tenant from dump: $INTERNAL_TENANT_ID${NC}"
+echo "${GREEN}Internal Tenant ID for default tenant from dump:${NC}"
+echo -E ${INTERNAL_TENANT_ID}
 
 read -r JWT_TOKEN <<< $(get_token)
-echo -e "${GREEN}Use the following JWT token when requesting Director as default tenant:${NC}"
-echo $JWT_TOKEN
+echo "${GREEN}Use the following JWT token when requesting Director as default tenant:${NC}"
+echo -E ${JWT_TOKEN}
