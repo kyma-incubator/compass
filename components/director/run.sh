@@ -113,6 +113,17 @@ echo -e "${GREEN}Creating k3d cluster..."
 curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v5.2.0 bash
 k3d cluster create k3d-cluster --api-port 6550 --servers 1 --port 443:443@loadbalancer --image rancher/k3s:v1.22.4-k3s1 --kubeconfig-update-default --wait
 
+echo "-----------------------------------"
+echo "DEBUG START"
+echo "-----------------------------------"
+ls -la /root
+echo "-----------------------------------"
+kubectl cluster-info
+echo "-----------------------------------"
+echo "DEBUG END"
+echo "-----------------------------------"
+
+
 if [[ ${REUSE_DB} = true ]]; then
     echo -e "${GREEN}Will reuse existing Postgres container${NC}"
 else
