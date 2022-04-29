@@ -71,7 +71,7 @@ rm apache-maven-3.8.5.tgz*
 
 echo "Install migrate"
 curl -fLSs -o migrate.tgz "https://github.com/golang-migrate/migrate/releases/download/v4.15.2/migrate.linux-amd64.tar.gz"
-tar --extract --file migrate.tgz --directory "${MIGRATE_HOME}" --strip-components 1 --no-same-owner
+tar --extract --file migrate.tgz --directory "${MIGRATE_HOME}" --no-same-owner
 rm migrate.tgz* 
 
 echo "-----------------------------------"
