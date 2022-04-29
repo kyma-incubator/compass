@@ -102,7 +102,7 @@ global:
       version: "PR-2297"
     director:
       dir:
-      version: "PR-2309"
+      version: "PR-2334"
     gateway:
       dir:
       version: "PR-2297"
@@ -131,7 +131,7 @@ global:
       version: "PR-65"
     e2e_tests:
       dir:
-      version: "PR-2320"
+      version: "PR-2334"
   isLocalEnv: false
   isForTesting: false
   oauth2:
