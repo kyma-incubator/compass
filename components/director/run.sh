@@ -107,7 +107,7 @@ function cleanup() {
     k3d cluster delete k3d-cluster 
 }
 
-trap cleanup SIGINT
+trap cleanup EXIT
 
 echo -e "${GREEN}Creating k3d cluster..."
 curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v5.2.0 bash
