@@ -160,9 +160,9 @@ func fixLabelEntity(id string, value []byte, version int) *label.Entity {
 			Valid:  true,
 		},
 		TenantID: sql.NullString{},
-		Key:     "test",
-		Value:   string(value),
-		Version: version,
+		Key:      "test",
+		Value:    string(value),
+		Version:  version,
 	}
 }
 func fixLabelModel(id string, value interface{}, version int) *model.Label {
