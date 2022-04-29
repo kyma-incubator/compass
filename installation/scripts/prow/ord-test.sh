@@ -158,8 +158,8 @@ echo "Internal Tenant ID: ${INTERNAL_TENANT_ID}"
 
 echo "Killing all processes"
 echo "Compass run.sh script PID: ${COMPASS_RUN_PID}"
-pkill -P ${COMPASS_RUN_PID}
+kill -- -${COMPASS_RUN_PID}
 echo "ORD service run.sh script PID: ${ORD_SERVICE_RUN_PID}"
-pkill -P ${ORD_SERVICE_RUN_PID}
+kill -- -${ORD_SERVICE_RUN_PID}
 
 echo "ord-test end reached!"
