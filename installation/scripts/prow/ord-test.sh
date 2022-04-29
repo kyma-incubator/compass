@@ -9,11 +9,11 @@ set -o errexit
 function is_ready(){
     local URL=${1}
     local HTTP_CODE=$(curl -s -o /dev/null -I -w "%{http_code}" ${URL})
-    if [200 != "${HTTP_CODE}" ] ; then
-        echo "Response from  ${url} is still: ${HTTP_CODE}"
-        return 1
+    if [[ "${HTTP_CODE}" == "200" ]]; then
+        return 0
     fi 
-    return 0
+    echo "Response from  ${url} is still: ${HTTP_CODE}"
+    return 1
 }
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -88,7 +88,9 @@ echo "-----------------------------------"
 echo "Starting compass"
 cd ${COMPASS_DIR}/components/director
 ./run.sh &
-sleep 30
+
+echo "Wait compass to start for 60 seconds ..."
+sleep 60
 
 COMPASS_URL="http://localhost:3000"
 
@@ -107,7 +109,9 @@ echo "Starting ord-service"
 cd ${ORD_SVC_DIR}/components/ord-service
 export SERVER_PORT=8081
 ./run.sh --migrations-path ${COMPASS_DIR}/components/schema-migrator/migrations/director &
-sleep 30
+
+echo "Wait ord-service to start for 60 seconds ..."
+sleep 60
 
 ORD_URL="http://localhost:${SERVER_PORT}"
 
