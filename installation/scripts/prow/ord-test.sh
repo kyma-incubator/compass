@@ -105,8 +105,8 @@ echo "Starting compass"
 cd ${COMPASS_DIR}/components/director
 ./run.sh &
 
-echo "Wait compass to start for 60 seconds ..."
-sleep 60
+echo "Wait compass to start for 120 seconds ..."
+sleep 120
 
 COMPASS_URL="http://localhost:3000"
 
@@ -114,8 +114,8 @@ STARTE_TIME=$(date +%s)
 until is_ready "${COMPASS_URL}/healthz" ; do
     CURRENT_TME=$(date +%s)
     SECONDS=$((CURRENT_TME-STARTE_TIME))
-    if (( SECONDS > 300 )); then
-        echo "Timeout of 5 min for starting compass reached. Exiting."
+    if (( SECONDS > 120 )); then
+        echo "Timeout of 2 min for starting compass reached. Exiting."
         exit 1
     fi
     echo "Wait 5s ..."
@@ -133,8 +133,8 @@ cd ${ORD_SVC_DIR}/components/ord-service
 export SERVER_PORT=8081
 ./run.sh --migrations-path ${COMPASS_DIR}/components/schema-migrator/migrations/director &
 
-echo "Wait ord-service to start for 60 seconds ..."
-sleep 60
+echo "Wait ord-service to start for 120 seconds ..."
+sleep 120
 
 ORD_URL="http://localhost:${SERVER_PORT}"
 
@@ -142,8 +142,8 @@ STARTE_TIME=$(date +%s)
 until is_ready "${ORD_URL}/actuator/health" ; do
     CURRENT_TME=$(date +%s)
     SECONDS=$((CURRENT_TME-STARTE_TIME))
-    if (( SECONDS > 300 )); then
-        echo "Timeout of 5 min for starting ord-service reached. Exiting."
+    if (( SECONDS > 120 )); then
+        echo "Timeout of 2 min for starting ord-service reached. Exiting."
         exit 1
     fi
     echo "Wait 5s ..."
