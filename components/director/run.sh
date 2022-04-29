@@ -93,21 +93,21 @@ CLIENT_CERT_SECRET_NAME="external-client-certificate"
 function cleanup() {
     if [[ ${DEBUG} ]]; then
        echo -e "${GREEN}Cleanup Director binary${NC}"
-       rm  $GOPATH/src/github.com/kyma-incubator/compass/components/director/director
+       rm  $GOPATH/src/github.com/kyma-incubator/compass/components/director/director 
     fi
 
     if [[ ${SKIP_DB_CLEANUP} = false ]]; then
         echo -e "${GREEN}Cleanup Postgres container${NC}"
-        docker rm --force ${POSTGRES_CONTAINER}
+        docker rm --force ${POSTGRES_CONTAINER} 
     else
         echo -e "${GREEN}Skipping Postgres container cleanup${NC}"
     fi
 
     echo -e "${GREEN}Destroying k3d cluster..."
-    k3d cluster delete k3d-cluster
+    k3d cluster delete k3d-cluster 
 }
 
-trap cleanup EXIT
+trap cleanup SIGINT
 
 echo -e "${GREEN}Creating k3d cluster..."
 curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v5.2.0 bash

@@ -154,10 +154,10 @@ echo "Killing all processes"
 ps x -o  "%p %r %c"
 
 echo "Compass run.sh script PID: ${COMPASS_RUN_PID}"
-kill -INT  "${COMPASS_RUN_PID}"
+kill -SIGINT  "${COMPASS_RUN_PID}"
 
 echo "ORD service run.sh script PID: ${ORD_SERVICE_RUN_PID}"
-kill -INT  "${ORD_SERVICE_RUN_PID}"
+kill -SIGINT  "${ORD_SERVICE_RUN_PID}"
 
 echo "Wait 10s ..."
 sleep 10
