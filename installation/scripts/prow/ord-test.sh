@@ -155,6 +155,6 @@ echo "Token: ${DIRECTOR_TOKEN}"
 echo "Internal Tenant ID: ${INTERNAL_TENANT_ID}"
 
 echo "Killing all processes"
-pkill -P $$
+kill $(ps -s $$ -o pid=)
 
 echo "ord-test end reached!"
