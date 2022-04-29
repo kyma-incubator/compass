@@ -158,11 +158,15 @@ echo "Internal Tenant ID: ${INTERNAL_TENANT_ID}"
 
 echo "Killing all processes"
 echo "Compass run.sh script PID: ${COMPASS_RUN_PID}"
-COMPASS_RUN_PGID=$(ps -o pgid= ${COMPASS_RUN_PID} | grep -o [0-9]*)
-kill -INT  -"${COMPASS_RUN_PGID}"
+ps -o pgid= ${COMPASS_RUN_PID}
+
+# COMPASS_RUN_PGID=$(ps -o pgid= ${COMPASS_RUN_PID} | grep -o [0-9]*)
+# kill -INT  -"${COMPASS_RUN_PGID}"
 
 echo "ORD service run.sh script PID: ${ORD_SERVICE_RUN_PID}"
-ORD_SERVICE_RUN_PGID=$(ps -o pgid= ${ORD_SERVICE_RUN_PID} | grep -o [0-9]*)
-kill -INT  -"${ORD_SERVICE_RUN_PGID}"
+ps -o pgid= ${ORD_SERVICE_RUN_PID}
+# ORD_SERVICE_RUN_PGID=$(ps -o pgid= ${ORD_SERVICE_RUN_PID} | grep -o [0-9]*)
+# kill -INT  -"${ORD_SERVICE_RUN_PGID}"
 
 echo "ord-test end reached!"
+exit 0
