@@ -111,12 +111,12 @@ STARTE_TIME=$(date +%s)
 until is_ready "${COMPASS_URL}/healthz" ; do
     CURRENT_TME=$(date +%s)
     SECONDS=$((CURRENT_TME-STARTE_TIME))
-    if (( SECONDS > 120 )); then
-        echo "Timeout of 2 min for starting compass reached. Exiting."
+    if (( SECONDS > 300 )); then
+        echo "Timeout of 5 min for starting compass reached. Exiting."
         exit 1
     fi
-    echo "Wait 5s ..."
-    sleep 5
+    echo "Wait 10s ..."
+    sleep 10
 done
 
 . ${COMPASS_DIR}/components/director/hack/jwt_generator.sh
@@ -137,12 +137,12 @@ STARTE_TIME=$(date +%s)
 until is_ready "${ORD_URL}/actuator/health" ; do
     CURRENT_TME=$(date +%s)
     SECONDS=$((CURRENT_TME-STARTE_TIME))
-    if (( SECONDS > 120 )); then
-        echo "Timeout of 2 min for starting ord-service reached. Exiting."
+    if (( SECONDS > 300 )); then
+        echo "Timeout of 5 min for starting ord-service reached. Exiting."
         exit 1
     fi
-    echo "Wait 5s ..."
-    sleep 5
+    echo "Wait 10s ..."
+    sleep 10
 done
 
 echo "ORD-service is ready"
@@ -158,5 +158,11 @@ kill -INT  "${COMPASS_RUN_PID}"
 
 echo "ORD service run.sh script PID: ${ORD_SERVICE_RUN_PID}"
 kill -INT  "${ORD_SERVICE_RUN_PID}"
+
+echo "Wait 10s ..."
+sleep 10
+
+echo "Get allprocesses"
+ps x -o  "%p %r %c"
 
 echo "ord-test end reached!"
