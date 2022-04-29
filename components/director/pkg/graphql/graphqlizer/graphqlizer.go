@@ -68,7 +68,7 @@ func (g *Graphqlizer) ApplicationUpdateInputToGQL(in graphql.ApplicationUpdateIn
 		healthCheckURL: "{{ .HealthCheckURL }}",
 		{{- end }}
 		{{- if .BaseURL }}
-		BaseURL: "{{ .BaseURL }}",
+		baseUrl: "{{ .BaseURL }}",
 		{{- end }}
 		{{- if .IntegrationSystemID }}
 		integrationSystemID: "{{ .IntegrationSystemID }}",
