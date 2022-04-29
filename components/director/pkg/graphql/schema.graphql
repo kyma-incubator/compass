@@ -301,6 +301,10 @@ input ApplicationTemplateInput {
 	"""
 	webhooks: [WebhookInput!]
 	description: String
+	"""
+	**Validation:** label key is alphanumeric with underscore
+	"""
+	labels: Labels
 	applicationInput: ApplicationRegisterInput!
 	placeholders: [PlaceholderDefinitionInput!]
 	accessLevel: ApplicationTemplateAccessLevel!
@@ -796,6 +800,7 @@ type ApplicationTemplate {
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.application_template.webhooks")
 	applicationInput: String!
 	placeholders: [PlaceholderDefinition!]!
+	labels(key: String): Labels
 	accessLevel: ApplicationTemplateAccessLevel!
 }
 
