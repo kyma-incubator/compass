@@ -11,6 +11,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func RegisterRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, name, tenant string) (graphql.RuntimeExt, error) {
+	in := FixRuntimeInput(name)
+	return RegisterRuntimeFromInputWithinTenant(t, ctx, gqlClient, tenant, &in)
+}
+
 func RegisterRuntimeFromInputWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, input *graphql.RuntimeInput) (graphql.RuntimeExt, error) {
 	inputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(*input)
 	require.NoError(t, err)

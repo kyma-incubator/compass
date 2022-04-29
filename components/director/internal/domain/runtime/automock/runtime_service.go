@@ -18,27 +18,6 @@ type RuntimeService struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, in
-func (_m *RuntimeService) Create(ctx context.Context, in model.RuntimeInput) (string, error) {
-	ret := _m.Called(ctx, in)
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, model.RuntimeInput) string); ok {
-		r0 = rf(ctx, in)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, model.RuntimeInput) error); ok {
-		r1 = rf(ctx, in)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // CreateWithMandatoryLabels provides a mock function with given fields: ctx, in, id, mandatoryLabels
 func (_m *RuntimeService) CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeInput, id string, mandatoryLabels map[string]interface{}) error {
 	ret := _m.Called(ctx, in, id, mandatoryLabels)
