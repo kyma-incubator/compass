@@ -74,6 +74,9 @@ func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo Webho
 // Create missing godoc
 func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
 
 	appTemplateID := s.uidService.Generate()
 	log.C(ctx).Debugf("ID %s generated for Application Template with name %s", appTemplateID, in.Name)
