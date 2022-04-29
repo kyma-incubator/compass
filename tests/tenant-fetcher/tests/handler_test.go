@@ -228,6 +228,27 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
 		})
+
+		t.Run("Should fail when providerSubaccountID is not provided", func(t *testing.T) {
+			// GIVEN
+			providedTenantIDs := tenantfetcher.Tenant{
+				TenantID:               uuid.New().String(),
+				SubaccountID:           uuid.New().String(),
+				Subdomain:              tenantfetcher.DefaultSubaccountSubdomain,
+				CustomerID:             uuid.New().String(),
+				SubscriptionProviderID: uuid.New().String(),
+			}
+			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
+			require.NoError(t, err)
+
+			// WHEN
+			addRegionalTenantExpectStatusCode(t, providedTenantIDs, http.StatusBadRequest)
+
+			// THEN
+			tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
+			require.NoError(t, err)
+			assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
+		})
 	})
 }
 
