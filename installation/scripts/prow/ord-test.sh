@@ -104,8 +104,8 @@ echo "Starting compass"
 cd ${COMPASS_DIR}/components/director
 ./run.sh &
 
-echo "Wait compass to start for 120 seconds ..."
-sleep 120
+echo "Wait compass to start for 90 seconds ..."
+sleep 90
 
 COMPASS_URL="http://localhost:3000"
 
@@ -132,8 +132,8 @@ cd ${ORD_SVC_DIR}/components/ord-service
 export SERVER_PORT=8081
 ./run.sh --migrations-path ${COMPASS_DIR}/components/schema-migrator/migrations/director &
 
-echo "Wait ord-service to start for 120 seconds ..."
-sleep 120
+echo "Wait ord-service to start for 90 seconds ..."
+sleep 90
 
 ORD_URL="http://localhost:${SERVER_PORT}"
 
@@ -154,5 +154,7 @@ echo "ORD-service is ready"
 echo "Token: ${DIRECTOR_TOKEN}"
 echo "Internal Tenant ID: ${INTERNAL_TENANT_ID}"
 
+echo "Killing all processes"
+pkill -P $$
+
 echo "ord-test end reached!"
-exit 0
