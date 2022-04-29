@@ -126,6 +126,7 @@ func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
 		applicationInput
 		placeholders {%s}
 		webhooks {%s}
+		labels
 		accessLevel
 	`, fp.ForPlaceholders(), fp.ForWebhooks())
 }
