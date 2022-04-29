@@ -12,7 +12,7 @@ function is_ready(){
     if [[ "${HTTP_CODE}" == "200" ]]; then
         return 0
     fi 
-    echo "Response from  ${url} is still: ${HTTP_CODE}"
+    echo "Response from ${URL} is still: ${HTTP_CODE}"
     return 1
 }
 
@@ -61,17 +61,17 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 echo "Install java"
 curl -fLSs -o adoptopenjdk11.tgz "https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.9.1%2B1/OpenJDK11U-jdk_x64_linux_hotspot_11.0.9.1_1.tar.gz"
-tar --extract --file adoptopenjdk11.tgz --directory "$JAVA_HOME" --strip-components 1 --no-same-owner
+tar --extract --file adoptopenjdk11.tgz --directory "${JAVA_HOME}" --strip-components 1 --no-same-owner
 rm adoptopenjdk11.tgz* 
 
 echo "Install maven"
 curl -fLSs -o apache-maven-3.8.5.tgz "https://dlcdn.apache.org/maven/maven-3/3.8.5/binaries/apache-maven-3.8.5-bin.tar.gz"
-tar --extract --file apache-maven-3.8.5.tgz --directory "$M2_HOME" --strip-components 1 --no-same-owner
+tar --extract --file apache-maven-3.8.5.tgz --directory "${M2_HOME}" --strip-components 1 --no-same-owner
 rm apache-maven-3.8.5.tgz* 
 
 echo "Install migrate"
 curl -fLSs -o migrate.tgz "https://github.com/golang-migrate/migrate/releases/download/v4.15.2/migrate.linux-amd64.tar.gz"
-tar --extract --file migrate.tgz --directory "$MIGRATE_HOME" --strip-components 1 --no-same-owner
+tar --extract --file migrate.tgz --directory "${MIGRATE_HOME}" --strip-components 1 --no-same-owner
 rm migrate.tgz* 
 
 echo "-----------------------------------"
@@ -85,10 +85,15 @@ echo "Base folder: ${BASE_DIR}"
 echo "Compass folder: ${COMPASS_DIR}"
 echo "ORD-service folder: ${ORD_SVC_DIR}"
 echo "Artifacts folder: ${ARTIFACTS}"
+echo "Path: ${PATH}"
 echo "-----------------------------------"
 echo "Java version:"
 echo "-----------------------------------"
 java -version
+echo "-----------------------------------"
+echo "Migrate version:"
+echo "-----------------------------------"
+migrate --version
 echo "-----------------------------------"
 echo "Go version:"
 echo "-----------------------------------"
@@ -105,15 +110,22 @@ sleep 60
 
 COMPASS_URL="http://localhost:3000"
 
+STARTE_TIME=$(date +%s)
 until is_ready "${COMPASS_URL}/healthz" ; do
-    echo "Wait 1s ..."
-    sleep 1
+    CURRENT_TME=$(date +%s)
+    SECONDS=$((CURRENT_TME-STARTE_TIME))
+    if (( SECONDS > 300 )); then
+        echo "Timeout of 5 min for starting compass reached. Exiting."
+        exit 1
+    fi
+    echo "Wait 5s ..."
+    sleep 5
 done
 
-. ${COMPASS_DIR}/components/director/func.source
+. ${COMPASS_DIR}/components/director/hack/jwt_generator.sh
 
 read -r DIRECTOR_TOKEN <<< $(get_token)
-read -r INTERNAL_TENANT_ID <<< $(get_internal_tenant_id)
+read -r INTERNAL_TENANT_ID <<< $(get_internal_tenant)
 echo "Compass is ready"
 
 echo "Starting ord-service"
@@ -126,14 +138,21 @@ sleep 60
 
 ORD_URL="http://localhost:${SERVER_PORT}"
 
+STARTE_TIME=$(date +%s)
 until is_ready "${ORD_URL}/actuator/health" ; do
-    echo "Wait 1s ..."
-    sleep 1
+    CURRENT_TME=$(date +%s)
+    SECONDS=$((CURRENT_TME-STARTE_TIME))
+    if (( SECONDS > 300 )); then
+        echo "Timeout of 5 min for starting ord-service reached. Exiting."
+        exit 1
+    fi
+    echo "Wait 5s ..."
+    sleep 5
 done
 
 echo "ORD-service is ready"
 
-echo "Internal tenant ID: ${INTERNAL_TENANT_ID}"
 echo "Token: ${DIRECTOR_TOKEN}"
+echo "Internal Tenant ID: ${INTERNAL_TENANT_ID}"
 
 echo "ord-test end reached!"
