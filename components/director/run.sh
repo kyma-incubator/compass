@@ -116,7 +116,11 @@ k3d cluster create k3d-cluster --api-port 6550 --servers 1 --port 443:443@loadba
 echo "-----------------------------------"
 echo "DEBUG START"
 echo "-----------------------------------"
-ls -la /root
+ls -la /root/.kube
+echo "-----------------------------------"
+cat /root/.kube/config
+echo "-----------------------------------"
+cat /root/.kube/Config
 echo "-----------------------------------"
 kubectl cluster-info
 echo "-----------------------------------"
