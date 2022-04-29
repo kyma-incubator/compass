@@ -86,7 +86,6 @@ echo "Compass folder: ${COMPASS_DIR}"
 echo "ORD-service folder: ${ORD_SVC_DIR}"
 echo "Artifacts folder: ${ARTIFACTS}"
 echo "Path: ${PATH}"
-echo "Current user: ${USER}"
 echo "-----------------------------------"
 echo "Java version:"
 echo "-----------------------------------"
@@ -101,6 +100,20 @@ echo "-----------------------------------"
 go version
 echo "-----------------------------------"
 
+echo "-----------------------------------"
+echo "DEBUG START"
+echo "-----------------------------------"
+echo "cd to ~"
+cd ~
+ls -la
+echo "cd to root"
+cd /root
+ls -la
+echo "Current user 1: $(whoami)"
+echo "Current user 2: $(id -u -n)"
+echo "-----------------------------------"
+echo "DEBUG END"
+echo "-----------------------------------"
 
 echo "Starting compass"
 cd ${COMPASS_DIR}/components/director
