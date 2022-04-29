@@ -73,6 +73,7 @@ func TestQueryRuntimeContexts(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, rtmCtxsRequest, &runtimeGql)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(runtimeGql.RuntimeContexts.Data))
+	require.ElementsMatch(t, []*graphql.RuntimeContextExt{&rtmCtx1, &rtmCtx2}, runtimeGql.RuntimeContexts.Data)
 
 	saveExample(t, rtmCtxsRequest.Query(), "query runtime contexts")
 }
