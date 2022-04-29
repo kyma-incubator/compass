@@ -36,6 +36,9 @@ func FixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 				Description: &placeholderDesc,
 			},
 		},
+		Labels: graphql.Labels{
+			"test": []string{"test"},
+		},
 		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
 	}
 	return appTemplateInput
