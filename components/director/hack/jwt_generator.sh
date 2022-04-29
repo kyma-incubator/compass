@@ -14,6 +14,14 @@ function get_token(){
     echo "$HEADER.$PAYLOAD."
 }
 
+[[ -v POSTGRES_CONTAINER ]] || POSTGRES_CONTAINER="test-postgres"
+[[ -v POSTGRES_VERSION ]] || POSTGRES_VERSION="11"
+[[ -v DB_USER ]] || DB_USER="postgres"
+[[ -v DB_PWD ]] || DB_PWD="pgsql@12345"
+[[ -v DB_NAME ]] || DB_NAME="compass"
+[[ -v DB_PORT ]] || DB_PORT="5432"
+[[ -v DB_HOST ]] || DB_HOST="127.0.0.1"
+
 read -r INTERNAL_TENANT_ID <<< $(get_internal_tenant)
 echo "Internal Tenant ID for default tenant from dump:"
 echo -E ${INTERNAL_TENANT_ID}

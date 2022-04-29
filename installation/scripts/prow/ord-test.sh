@@ -155,3 +155,4 @@ echo "Token: ${DIRECTOR_TOKEN}"
 echo "Internal Tenant ID: ${INTERNAL_TENANT_ID}"
 
 echo "ord-test end reached!"
+exit 0
