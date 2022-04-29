@@ -503,7 +503,7 @@ global:
       subdomainProperty: "subdomain"
       name: "provider"
       subscriptionProviderIdProperty: "subscriptionProviderIdProperty"
-      providerSubaccountIdProperty: "providerSubaccountId"
+      providerSubaccountIdProperty: "providerSubaccountIdProperty"
     server:
       fetchTenantEndpoint: "/v1/fetch/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"

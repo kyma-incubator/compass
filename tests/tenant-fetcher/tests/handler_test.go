@@ -24,7 +24,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 
 	"github.com/google/uuid"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -43,6 +43,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				TenantID:               uuid.New().String(),
 				Subdomain:              tenantfetcher.DefaultSubdomain,
 				SubscriptionProviderID: uuid.New().String(),
+				ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
 			}
 
 			// WHEN
@@ -63,12 +64,14 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				TenantID:               uuid.New().String(),
 				Subdomain:              tenantfetcher.DefaultSubdomain,
 				SubscriptionProviderID: uuid.New().String(),
+				ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
 			}
 			childTenant := tenantfetcher.Tenant{
 				SubaccountID:           uuid.New().String(),
 				TenantID:               parentTenant.TenantID,
 				Subdomain:              tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID: uuid.New().String(),
+				ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
 			}
 
 			addRegionalTenantExpectStatusCode(t, parentTenant, http.StatusOK)
@@ -101,6 +104,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				SubaccountID:           uuid.New().String(),
 				Subdomain:              tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID: uuid.New().String(),
+				ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
 			}
 
 			// THEN
@@ -130,12 +134,14 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				TenantID:               parentTenantId,
 				Subdomain:              tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID: uuid.New().String(),
+				ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
 			}
 			childTenant := tenantfetcher.Tenant{
 				TenantID:               parentTenantId,
 				SubaccountID:           uuid.New().String(),
 				Subdomain:              tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID: uuid.New().String(),
+				ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
 			}
 			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 			require.NoError(t, err)
@@ -168,6 +174,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				SubaccountID:           uuid.New().String(),
 				Subdomain:              tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID: uuid.New().String(),
+				ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
 			}
 			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 			require.NoError(t, err)
@@ -188,6 +195,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				SubaccountID:           uuid.New().String(),
 				CustomerID:             uuid.New().String(),
 				SubscriptionProviderID: uuid.New().String(),
+				ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
 			}
 			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 			require.NoError(t, err)
@@ -204,9 +212,10 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 		t.Run("Should fail when SubscriptionProviderID is not provided", func(t *testing.T) {
 			// GIVEN
 			providedTenantIDs := tenantfetcher.Tenant{
-				TenantID:     uuid.New().String(),
-				SubaccountID: uuid.New().String(),
-				CustomerID:   uuid.New().String(),
+				TenantID:             uuid.New().String(),
+				SubaccountID:         uuid.New().String(),
+				CustomerID:           uuid.New().String(),
+				ProviderSubaccountID: tenant.TestTenants.GetDefaultTenantID(),
 			}
 			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 			require.NoError(t, err)
@@ -258,6 +267,7 @@ func makeTenantRequestExpectStatusCode(t *testing.T, providedTenantIDs tenantfet
 		CustomerIDProperty:             config.CustomerIDProperty,
 		SubdomainProperty:              config.SubdomainProperty,
 		SubscriptionProviderIDProperty: config.SubscriptionProviderIDProperty,
+		ProviderSubaccountIdProperty:   config.ProviderSubaccountIDProperty,
 	}
 
 	request := tenantfetcher.CreateTenantRequest(t, providedTenantIDs, tenantProperties, httpMethod, url, config.ExternalServicesMockURL, config.ClientID, config.ClientSecret)
@@ -266,22 +276,6 @@ func makeTenantRequestExpectStatusCode(t *testing.T, providedTenantIDs tenantfet
 	response, err := httpClient.Do(request)
 	require.NoError(t, err)
 	require.Equal(t, expectedStatusCode, response.StatusCode)
-}
-
-func assertTenantExists(ctx context.Context, t *testing.T, tenantID string) {
-	getTenantsRequest := fixtures.FixTenantsSearchRequest(tenantID)
-	tenantsPage := directorSchema.TenantPage{}
-
-	t.Logf("List tenants with tenantID %s", tenantID)
-
-	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenantsRequest, &tenantsPage)
-	require.NoError(t, err)
-
-	if tenantsPage.TotalCount > 0 {
-		return
-	}
-
-	require.Fail(t, fmt.Sprintf("Tenant with ID %q not found", tenantID))
 }
 
 func assertTenant(t *testing.T, tenant *directorSchema.Tenant, tenantID, subdomain string) {
