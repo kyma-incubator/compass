@@ -91,6 +91,9 @@ func (c *converter) FromEntity(in *Entity) (*model.Label, error) {
 	} else if in.RuntimeContextID.Valid {
 		objectID = in.RuntimeContextID.String
 		objectType = model.RuntimeContextLabelableObject
+	} else if in.AppTemplateID.Valid {
+		objectID = in.AppTemplateID.String
+		objectType = model.AppTemplateLabelableObject
 	}
 
 	return &model.Label{

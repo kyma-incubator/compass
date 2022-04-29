@@ -45,20 +45,28 @@ type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
 }
 
+// LabelRepository missing godoc
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
+type LabelRepository interface {
+	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
+}
+
 type service struct {
 	appTemplateRepo    ApplicationTemplateRepository
 	webhookRepo        WebhookRepository
 	uidService         UIDService
 	labelUpsertService LabelUpsertService
+	labelRepo          LabelRepository
 }
 
 // NewService missing godoc
-func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo WebhookRepository, uidService UIDService, labelUpsertService LabelUpsertService) *service {
+func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo WebhookRepository, uidService UIDService, labelUpsertService LabelUpsertService, labelRepo LabelRepository) *service {
 	return &service{
 		appTemplateRepo:    appTemplateRepo,
 		webhookRepo:        webhookRepo,
 		uidService:         uidService,
 		labelUpsertService: labelUpsertService,
+		labelRepo:          labelRepo,
 	}
 }
 
@@ -114,6 +122,30 @@ func (s *service) GetByName(ctx context.Context, name string) (*model.Applicatio
 	}
 
 	return appTemplate, nil
+}
+
+// ListLabels missing godoc
+func (s *service) ListLabels(ctx context.Context, appTemplateID string) (map[string]*model.Label, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	appExists, err := s.appTemplateRepo.Exists(ctx, appTemplateID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while checking Application Template existence")
+	}
+
+	if !appExists {
+		return nil, fmt.Errorf("application template with ID %s doesn't exist", appTemplateID)
+	}
+
+	labels, err := s.labelRepo.ListForObject(ctx, appTenant, model.AppTemplateLabelableObject, appTemplateID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting label for Application Template")
+	}
+
+	return labels, nil
 }
 
 // Exists missing godoc

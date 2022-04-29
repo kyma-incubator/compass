@@ -3,6 +3,7 @@ package apptemplate
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
@@ -26,6 +27,7 @@ type ApplicationTemplateService interface {
 	Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error
 	Delete(ctx context.Context, id string) error
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
+	ListLabels(ctx context.Context, appTemplateID string) (map[string]*model.Label, error)
 }
 
 // ApplicationTemplateConverter missing godoc
@@ -213,6 +215,44 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	}
 
 	return gqlAppTemplate, nil
+}
+
+func (r *Resolver) Labels(ctx context.Context, obj *graphql.ApplicationTemplate, key *string) (graphql.Labels, error) {
+	if obj == nil {
+		return nil, apperrors.NewInternalError("Application Template cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	itemMap, err := r.appTemplateSvc.ListLabels(ctx, obj.ID)
+	if err != nil {
+		if strings.Contains(err.Error(), "doesn't exist") {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	resultLabels := make(map[string]interface{})
+
+	for _, label := range itemMap {
+		if key == nil || label.Key == *key {
+			resultLabels[label.Key] = label.Value
+		}
+	}
+
+	var gqlLabels graphql.Labels = resultLabels
+	return gqlLabels, nil
 }
 
 // RegisterApplicationFromTemplate missing godoc

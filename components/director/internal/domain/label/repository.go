@@ -189,8 +189,14 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 		conditions = append(conditions, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
 	}
 
-	if err := lister.List(ctx, objectType.GetResourceType(), tenant, &entities, conditions...); err != nil {
-		return nil, err
+	if objectType == model.AppTemplateLabelableObject{
+		if err := r.listerGlobal.ListGlobal(ctx, &entities, conditions...); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := lister.List(ctx, objectType.GetResourceType(), tenant, &entities, conditions...); err != nil {
+			return nil, err
+		}
 	}
 
 	labelsMap := make(map[string]*model.Label)
