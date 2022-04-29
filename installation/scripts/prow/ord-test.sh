@@ -21,6 +21,7 @@ INSTALLATION_DIR="$( cd "$( dirname "${CURRENT_DIR}/../../.." )" && pwd )"
 BASE_DIR="$( cd "$( dirname "${INSTALLATION_DIR}/../../../../../../.." )" && pwd )"
 JAVA_HOME="${BASE_DIR}/openjdk-11"
 M2_HOME="${BASE_DIR}/maven"
+MIGRATE_HOME="${BASE_DIR}/migrate"
 COMPASS_DIR="$( cd "$( dirname "${INSTALLATION_DIR}/../.." )" && pwd )"  
 ORD_SVC_DIR="${BASE_DIR}/ord-service"
 
@@ -31,6 +32,10 @@ export PATH="${JAVA_HOME}/bin:${PATH}"
 mkdir -p "${M2_HOME}"
 export M2_HOME
 export PATH="${M2_HOME}/bin:${PATH}"
+
+mkdir -p "${MIGRATE_HOME}"
+export MIGRATE_HOME
+export PATH="${MIGRATE_HOME}:${PATH}"
 
 export ARTIFACTS="/var/log/prow_artifacts"
 mkdir -p "${ARTIFACTS}"
@@ -64,11 +69,17 @@ curl -fLSs -o apache-maven-3.8.5.tgz "https://dlcdn.apache.org/maven/maven-3/3.8
 tar --extract --file apache-maven-3.8.5.tgz --directory "$M2_HOME" --strip-components 1 --no-same-owner
 rm apache-maven-3.8.5.tgz* 
 
+echo "Install migrate"
+curl -fLSs -o migrate.tgz "https://github.com/golang-migrate/migrate/releases/download/v4.15.2/migrate.linux-amd64.tar.gz"
+tar --extract --file migrate.tgz --directory "$MIGRATE_HOME" --strip-components 1 --no-same-owner
+rm migrate.tgz* 
+
 echo "-----------------------------------"
 echo "Eenvironment"
 echo "-----------------------------------"
 echo "JAVA_HOME: ${JAVA_HOME}"
 echo "M2_HOME: ${M2_HOME}"
+echo "MIGRATE_HOME: ${MIGRATE_HOME}"
 echo "GOPATH: ${GOPATH}"
 echo "Base folder: ${BASE_DIR}"
 echo "Compass folder: ${COMPASS_DIR}"
