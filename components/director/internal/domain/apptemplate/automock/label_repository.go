@@ -16,13 +16,13 @@ type LabelRepository struct {
 	mock.Mock
 }
 
-// ListForObject provides a mock function with given fields: ctx, _a1, objectType, objectID
-func (_m *LabelRepository) ListForObject(ctx context.Context, _a1 string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
-	ret := _m.Called(ctx, _a1, objectType, objectID)
+// ListForObject provides a mock function with given fields: ctx, tenant, objectType, objectID
+func (_m *LabelRepository) ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
+	ret := _m.Called(ctx, tenant, objectType, objectID)
 
 	var r0 map[string]*model.Label
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string) map[string]*model.Label); ok {
-		r0 = rf(ctx, _a1, objectType, objectID)
+		r0 = rf(ctx, tenant, objectType, objectID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[string]*model.Label)
@@ -31,7 +31,7 @@ func (_m *LabelRepository) ListForObject(ctx context.Context, _a1 string, object
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.LabelableObject, string) error); ok {
-		r1 = rf(ctx, _a1, objectType, objectID)
+		r1 = rf(ctx, tenant, objectType, objectID)
 	} else {
 		r1 = ret.Error(1)
 	}
