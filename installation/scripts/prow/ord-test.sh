@@ -103,6 +103,7 @@ echo "-----------------------------------"
 echo "Starting compass"
 cd ${COMPASS_DIR}/components/director
 ./run.sh &
+COMPASS_RUN_PID=$!
 
 echo "Wait compass to start for 90 seconds ..."
 sleep 90
@@ -131,6 +132,7 @@ echo "Starting ord-service"
 cd ${ORD_SVC_DIR}/components/ord-service
 export SERVER_PORT=8081
 ./run.sh --migrations-path ${COMPASS_DIR}/components/schema-migrator/migrations/director &
+ORD_SERVICE_RUN_PID=$!
 
 echo "Wait ord-service to start for 90 seconds ..."
 sleep 90
@@ -155,6 +157,9 @@ echo "Token: ${DIRECTOR_TOKEN}"
 echo "Internal Tenant ID: ${INTERNAL_TENANT_ID}"
 
 echo "Killing all processes"
-kill $(ps -s $$ -o pid=)
+echo "Compass run.sh script PID: ${COMPASS_RUN_PID}"
+kill -KILL ${COMPASS_RUN_PID}
+echo "ORD service run.sh script PID: ${ORD_SERVICE_RUN_PID}"
+kill -KILL ${ORD_SERVICE_RUN_PID}
 
 echo "ord-test end reached!"
