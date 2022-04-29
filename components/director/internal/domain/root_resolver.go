@@ -412,16 +412,6 @@ func (r *queryResolver) RuntimeByTokenIssuer(ctx context.Context, issuer string)
 	return r.runtime.RuntimeByTokenIssuer(ctx, issuer)
 }
 
-// RuntimeContexts missing godoc
-func (r *queryResolver) RuntimeContexts(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimeContextPage, error) {
-	return r.runtimeContext.RuntimeContexts(ctx, filter, first, after)
-}
-
-// RuntimeContext missing godoc
-func (r *queryResolver) RuntimeContext(ctx context.Context, id string) (*graphql.RuntimeContext, error) {
-	return r.runtimeContext.RuntimeContext(ctx, id)
-}
-
 // LabelDefinitions missing godoc
 func (r *queryResolver) LabelDefinitions(ctx context.Context) ([]*graphql.LabelDefinition, error) {
 	return r.labelDef.LabelDefinitions(ctx)

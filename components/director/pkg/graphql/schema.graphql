@@ -1232,7 +1232,6 @@ type Query {
 	"""
 	runtime(id: ID!): Runtime @hasScopes(path: "graphql.query.runtime")
 	runtimeByTokenIssuer(issuer: String!): Runtime
-	runtimeContext(id: ID!): RuntimeContext @hasScopes(path: "graphql.query.runtimeContext")
 	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
 	"""
 	**Examples**

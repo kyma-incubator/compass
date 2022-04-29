@@ -477,7 +477,6 @@ type ComplexityRoot struct {
 		LabelDefinitions                        func(childComplexity int) int
 		Runtime                                 func(childComplexity int, id string) int
 		RuntimeByTokenIssuer                    func(childComplexity int, issuer string) int
-		RuntimeContext                          func(childComplexity int, id string) int
 		Runtimes                                func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
 		SystemAuth                              func(childComplexity int, id string) int
 		SystemAuthByToken                       func(childComplexity int, token string) int
@@ -713,7 +712,6 @@ type QueryResolver interface {
 	Runtimes(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*RuntimePage, error)
 	Runtime(ctx context.Context, id string) (*Runtime, error)
 	RuntimeByTokenIssuer(ctx context.Context, issuer string) (*Runtime, error)
-	RuntimeContext(ctx context.Context, id string) (*RuntimeContext, error)
 	LabelDefinitions(ctx context.Context) ([]*LabelDefinition, error)
 	LabelDefinition(ctx context.Context, key string) (*LabelDefinition, error)
 	BundleByInstanceAuth(ctx context.Context, authID string) (*Bundle, error)
@@ -3283,18 +3281,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.RuntimeByTokenIssuer(childComplexity, args["issuer"].(string)), true
 
-	case "Query.runtimeContext":
-		if e.complexity.Query.RuntimeContext == nil {
-			break
-		}
-
-		args, err := ec.field_Query_runtimeContext_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.RuntimeContext(childComplexity, args["id"].(string)), true
-
 	case "Query.runtimes":
 		if e.complexity.Query.Runtimes == nil {
 			break
@@ -5143,7 +5129,6 @@ type Query {
 	"""
 	runtime(id: ID!): Runtime @hasScopes(path: "graphql.query.runtime")
 	runtimeByTokenIssuer(issuer: String!): Runtime
-	runtimeContext(id: ID!): RuntimeContext @hasScopes(path: "graphql.query.runtimeContext")
 	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
 	"""
 	**Examples**
@@ -7708,20 +7693,6 @@ func (ec *executionContext) field_Query_runtimeByTokenIssuer_args(ctx context.Co
 		}
 	}
 	args["issuer"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_runtimeContext_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNID2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
 	return args, nil
 }
 
@@ -20074,68 +20045,6 @@ func (ec *executionContext) _Query_runtimeByTokenIssuer(ctx context.Context, fie
 	return ec.marshalORuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_runtimeContext(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_runtimeContext_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().RuntimeContext(rctx, args["id"].(string))
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.query.runtimeContext")
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.HasScopes == nil {
-				return nil, errors.New("directive hasScopes is not implemented")
-			}
-			return ec.directives.HasScopes(ctx, nil, directive0, path)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*RuntimeContext); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.RuntimeContext`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*RuntimeContext)
-	fc.Result = res
-	return ec.marshalORuntimeContext2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeContext(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Query_labelDefinitions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -28256,17 +28165,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_runtimeByTokenIssuer(ctx, field)
-				return res
-			})
-		case "runtimeContext":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_runtimeContext(ctx, field)
 				return res
 			})
 		case "labelDefinitions":

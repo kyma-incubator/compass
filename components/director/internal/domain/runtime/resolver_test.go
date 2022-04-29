@@ -1690,7 +1690,7 @@ func TestResolver_RuntimeByTokenIssuer(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.RuntimeByTokenIssuer(context.TODO(), testCase.InputID)
