@@ -113,6 +113,7 @@ enum FetchRequestStatusCondition {
 enum FormationObjectType {
 	APPLICATION
 	TENANT
+	RUNTIME
 }
 
 enum HealthCheckStatusCondition {
@@ -122,6 +123,11 @@ enum HealthCheckStatusCondition {
 
 enum HealthCheckType {
 	MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
+}
+
+enum OneTimeTokenType {
+	Runtime
+	Application
 }
 
 enum OperationMode {
@@ -146,6 +152,12 @@ enum SpecFormat {
 	YAML
 	JSON
 	XML
+}
+
+enum SystemAuthReferenceType {
+	APPLICATION
+	RUNTIME
+	INTEGRATION_SYSTEM
 }
 
 enum ViewerType {
@@ -173,8 +185,11 @@ interface OneTimeToken {
 	connectorURL: String!
 	used: Boolean!
 	expiresAt: Timestamp!
+	createdAt: Timestamp
+	usedAt: Timestamp
 	raw: String
 	rawEncoded: String
+	type: OneTimeTokenType
 }
 
 """
@@ -191,6 +206,9 @@ interface Pageable {
 interface SystemAuth {
 	id: ID!
 	auth: Auth
+	type: SystemAuthReferenceType
+	tenantId: String
+	referenceObjectId: ID
 }
 
 union CredentialData = BasicCredentialData | OAuthCredentialData
@@ -333,6 +351,8 @@ input AuthInput {
 	additionalQueryParams: QueryParams @deprecated(reason: "Use `additionalHeadersSerialized`.")
 	additionalQueryParamsSerialized: QueryParamsSerialized
 	requestAuth: CredentialRequestAuthInput
+	certCommonName: String
+	oneTimeToken: OneTimeTokenInput
 }
 
 input AutomaticScenarioAssignmentSetInput {
@@ -594,6 +614,18 @@ input OAuthCredentialDataInput {
 	url: String!
 }
 
+input OneTimeTokenInput {
+	token: String!
+	connectorURL: String
+	used: Boolean!
+	expiresAt: Timestamp!
+	createdAt: Timestamp!
+	usedAt: Timestamp!
+	raw: String
+	rawEncoded: String
+	type: OneTimeTokenType
+}
+
 input PlaceholderDefinitionInput {
 	"""
 	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
@@ -627,6 +659,10 @@ input RuntimeInput {
 	"""
 	labels: Labels
 	statusCondition: RuntimeStatusCondition
+}
+
+input SystemAuthUpdateInput {
+	auth: AuthInput
 }
 
 input TemplateValueInput {
@@ -705,6 +741,9 @@ type APISpec {
 type AppSystemAuth implements SystemAuth {
 	id: ID!
 	auth: Auth @sanitize(path: "graphql.field.application.auths")
+	type: SystemAuthReferenceType
+	tenantId: String
+	referenceObjectId: ID
 }
 
 type Application {
@@ -959,6 +998,9 @@ type HealthCheckPage implements Pageable {
 type IntSysSystemAuth implements SystemAuth {
 	id: ID!
 	auth: Auth @sanitize(path: "graphql.field.integration_system.auths")
+	type: SystemAuthReferenceType
+	tenantId: String
+	referenceObjectId: ID
 }
 
 type IntegrationSystem {
@@ -999,8 +1041,11 @@ type OneTimeTokenForApplication implements OneTimeToken {
 	legacyConnectorURL: String!
 	used: Boolean!
 	expiresAt: Timestamp!
+	createdAt: Timestamp
+	usedAt: Timestamp
 	raw: String
 	rawEncoded: String
+	type: OneTimeTokenType
 }
 
 type OneTimeTokenForRuntime implements OneTimeToken {
@@ -1008,8 +1053,11 @@ type OneTimeTokenForRuntime implements OneTimeToken {
 	connectorURL: String!
 	used: Boolean!
 	expiresAt: Timestamp!
+	createdAt: Timestamp
+	usedAt: Timestamp
 	raw: String
 	rawEncoded: String
+	type: OneTimeTokenType
 }
 
 type PageInfo {
@@ -1074,6 +1122,9 @@ type RuntimeStatus {
 type RuntimeSystemAuth implements SystemAuth {
 	id: ID!
 	auth: Auth @sanitize(path: "graphql.field.runtime.auths")
+	type: SystemAuthReferenceType
+	tenantId: String
+	referenceObjectId: ID
 }
 
 type Tenant {
@@ -1180,6 +1231,8 @@ type Query {
 	- [query runtime](examples/query-runtime/query-runtime.graphql)
 	"""
 	runtime(id: ID!): Runtime @hasScopes(path: "graphql.query.runtime")
+	runtimeByTokenIssuer(issuer: String!): Runtime
+	runtimeContext(id: ID!): RuntimeContext @hasScopes(path: "graphql.query.runtimeContext")
 	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
 	"""
 	**Examples**
@@ -1208,6 +1261,8 @@ type Query {
 	"""
 	tenants(first: Int = 500, after: PageCursor, searchTerm: String): TenantPage! @hasScopes(path: "graphql.query.tenants")
 	tenantByExternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenants")
+	tenantByInternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenantByInternalID")
+	tenantByLowestOwnerForResource(id: ID!, resource: String!): String! @hasScopes(path: "graphql.query.tenantByLowestOwnerForResource")
 	"""
 	**Examples**
 	- [query automatic scenario assignment for scenario](examples/query-automatic-scenario-assignment-for-scenario/query-automatic-scenario-assignment-for-scenario.graphql)
@@ -1223,6 +1278,8 @@ type Query {
 	- [query automatic scenario assignments](examples/query-automatic-scenario-assignments/query-automatic-scenario-assignments.graphql)
 	"""
 	automaticScenarioAssignments(first: Int = 200, after: PageCursor): AutomaticScenarioAssignmentPage @hasScopes(path: "graphql.query.automaticScenarioAssignments")
+	systemAuth(id: ID!): SystemAuth @hasScopes(path: "graphql.query.systemAuth")
+	systemAuthByToken(token: String!): SystemAuth @hasScopes(path: "graphql.query.systemAuthByToken")
 }
 
 type Mutation {
@@ -1346,6 +1403,8 @@ type Mutation {
 	deleteSystemAuthForRuntime(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForRuntime")
 	deleteSystemAuthForApplication(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForApplication")
 	deleteSystemAuthForIntegrationSystem(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForIntegrationSystem")
+	updateSystemAuth(authID: ID!, in: AuthInput!): SystemAuth! @hasScopes(path: "graphql.mutation.updateSystemAuth")
+	invalidateSystemAuthOneTimeToken(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.invalidateSystemAuthOneTimeToken")
 	"""
 	**Examples**
 	- [add event definition to bundle](examples/add-event-definition-to-bundle/add-event-definition-to-bundle.graphql)

@@ -1,3 +1,4 @@
+{{ if .Values.global.isForTesting }}
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
@@ -34,12 +35,10 @@ spec:
             value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
           - name: APP_DIRECTOR_MTLS_URL
             value: 'https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql'
-          - name: APP_CONNECTOR_HYDRATOR_URL
-            value: '{{ .Values.global.tests.connectorFQDN }}:{{ .Values.global.connector.validator.port }}'
-          - name: APP_DIRECTOR_HYDRATOR_URL
-            value: '{{ .Values.global.tests.directorFQDN }}:{{ .Values.global.director.validator.port }}'
+          - name: APP_HYDRATOR_URL
+            value: '{{ .Values.global.tests.hydratorFQDN }}:{{ .Values.global.hydrator.port }}{{ .Values.global.hydrator.prefix}}'
           - name: APP_CERTIFICATE_DATA_HEADER
-            value: {{ .Values.global.connector.certificateDataHeader }}
+            value: {{ .Values.global.hydrator.certificateDataHeader }}
           - name: APP_REVOCATION_CONFIG_MAP_NAMESPACE
             value: {{ tpl .Values.global.connector.revocation.configmap.namespace . }}
           - name: APP_REVOCATION_CONFIG_MAP_NAME
@@ -135,3 +134,4 @@ roleRef:
   kind: Role
   name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
   apiGroup: rbac.authorization.k8s.io
+{{ end }}

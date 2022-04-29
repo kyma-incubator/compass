@@ -7,6 +7,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -42,12 +43,12 @@ func TestCallerProvider_GetCaller(t *testing.T) {
 	firstExpectedCaller, err := securehttp.NewCaller(firstExpectedCallerCfg)
 	require.NoError(t, err)
 
-	cfg := runtime.SelfRegConfig{
+	cfg := config.SelfRegConfig{
 		OAuthMode:         oauth.Mtls,
 		OauthTokenPath:    tokenPath,
 		SkipSSLValidation: false,
 		ClientTimeout:     timeout,
-		RegionToInstanceConfig: map[string]runtime.InstanceConfig{
+		RegionToInstanceConfig: map[string]config.InstanceConfig{
 			firstRegion: {
 				ClientID:     firstClientID,
 				ClientSecret: firstClientSecret,
@@ -68,7 +69,7 @@ func TestCallerProvider_GetCaller(t *testing.T) {
 
 	testCases := []struct {
 		Name                      string
-		Config                    runtime.SelfRegConfig
+		Config                    config.SelfRegConfig
 		Region                    string
 		ExpectedExternalSvcCaller runtime.ExternalSvcCaller
 		ExpectedErr               error

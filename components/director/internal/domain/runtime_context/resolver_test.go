@@ -2,19 +2,20 @@ package runtimectx_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context/automock"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/stretchr/testify/mock"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"

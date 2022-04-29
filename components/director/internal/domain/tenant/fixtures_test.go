@@ -17,6 +17,7 @@ import (
 
 const (
 	testExternal                  = "external"
+	testInternal                  = "internalID"
 	testID                        = "foo"
 	testName                      = "bar"
 	testParentID                  = "parent"

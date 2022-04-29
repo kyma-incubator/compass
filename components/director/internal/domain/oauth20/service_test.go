@@ -5,9 +5,12 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/ory/hydra-client-go/client/admin"
 	"github.com/ory/hydra-client-go/models"
 	"github.com/stretchr/testify/assert"
@@ -19,7 +22,7 @@ const (
 	publicEndpoint = "accessTokenURL"
 	clientID       = "clientid"
 	clientSecret   = "secret"
-	objType        = model.IntegrationSystemReference
+	objType        = pkgmodel.IntegrationSystemReference
 )
 
 var (
@@ -43,7 +46,7 @@ func TestService_CreateClient(t *testing.T) {
 		ClientDetailsCfgProviderFn func() *automock.ClientDetailsConfigProvider
 		UIDServiceFn               func() *automock.UIDService
 		HydraClient                func() *automock.OryHydraService
-		ObjectType                 model.SystemAuthReferenceObjectType
+		ObjectType                 pkgmodel.SystemAuthReferenceObjectType
 	}{
 		{
 			Name:           "Success",
@@ -102,7 +105,7 @@ func TestService_CreateClient(t *testing.T) {
 			HydraClient: func() *automock.OryHydraService {
 				return &automock.OryHydraService{}
 			},
-			ObjectType: model.ApplicationReference,
+			ObjectType: pkgmodel.ApplicationReference,
 		},
 		{
 			Name:          "Error when cannot get client grant types",
@@ -119,7 +122,7 @@ func TestService_CreateClient(t *testing.T) {
 			HydraClient: func() *automock.OryHydraService {
 				return &automock.OryHydraService{}
 			},
-			ObjectType: model.ApplicationReference,
+			ObjectType: pkgmodel.ApplicationReference,
 		},
 	}
 
@@ -158,7 +161,7 @@ func TestService_UpdateClient(t *testing.T) {
 		ExpectedError              error
 		ClientDetailsCfgProviderFn func() *automock.ClientDetailsConfigProvider
 		HydraClient                func() *automock.OryHydraService
-		ObjectType                 model.SystemAuthReferenceObjectType
+		ObjectType                 pkgmodel.SystemAuthReferenceObjectType
 	}{
 		{
 			Name:          "Success",
@@ -203,7 +206,7 @@ func TestService_UpdateClient(t *testing.T) {
 			HydraClient: func() *automock.OryHydraService {
 				return &automock.OryHydraService{}
 			},
-			ObjectType: model.ApplicationReference,
+			ObjectType: pkgmodel.ApplicationReference,
 		},
 		{
 			Name:          "Error when cannot get client grant types",
@@ -217,7 +220,7 @@ func TestService_UpdateClient(t *testing.T) {
 			HydraClient: func() *automock.OryHydraService {
 				return &automock.OryHydraService{}
 			},
-			ObjectType: model.ApplicationReference,
+			ObjectType: pkgmodel.ApplicationReference,
 		},
 	}
 
@@ -305,7 +308,7 @@ func TestService_DeleteMultipleClientCredentials(t *testing.T) {
 		Name          string
 		ExpectedError error
 		HydraClient   func() *automock.OryHydraService
-		Auths         []model.SystemAuth
+		Auths         []pkgmodel.SystemAuth
 	}{
 		{
 			Name:          "Success",
@@ -315,7 +318,7 @@ func TestService_DeleteMultipleClientCredentials(t *testing.T) {
 				hydra.On("DeleteOAuth2Client", mock.Anything).Return(nil, nil)
 				return hydra
 			},
-			Auths: []model.SystemAuth{
+			Auths: []pkgmodel.SystemAuth{
 				{
 					Value: &model.Auth{
 						Credential: model.CredentialData{
@@ -333,7 +336,7 @@ func TestService_DeleteMultipleClientCredentials(t *testing.T) {
 			HydraClient: func() *automock.OryHydraService {
 				return &automock.OryHydraService{}
 			},
-			Auths: []model.SystemAuth{
+			Auths: []pkgmodel.SystemAuth{
 				{
 					Value: nil,
 				},
@@ -345,7 +348,7 @@ func TestService_DeleteMultipleClientCredentials(t *testing.T) {
 			HydraClient: func() *automock.OryHydraService {
 				return &automock.OryHydraService{}
 			},
-			Auths: []model.SystemAuth{
+			Auths: []pkgmodel.SystemAuth{
 				{
 					Value: &model.Auth{
 						Credential: model.CredentialData{
@@ -363,7 +366,7 @@ func TestService_DeleteMultipleClientCredentials(t *testing.T) {
 				hydra.On("DeleteOAuth2Client", admin.NewDeleteOAuth2ClientParams().WithID(clientID)).Return(nil, testErr)
 				return hydra
 			},
-			Auths: []model.SystemAuth{
+			Auths: []pkgmodel.SystemAuth{
 				{
 					Value: &model.Auth{
 						Credential: model.CredentialData{
