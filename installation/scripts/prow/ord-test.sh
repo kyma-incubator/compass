@@ -154,15 +154,9 @@ echo "Killing all processes"
 ps x -o  "%p %r %c"
 
 echo "Compass run.sh script PID: ${COMPASS_RUN_PID}"
-ps -o pgid= ${COMPASS_RUN_PID}
-
-# COMPASS_RUN_PGID=$(ps -o pgid= ${COMPASS_RUN_PID} | grep -o [0-9]*)
-# kill -INT  -"${COMPASS_RUN_PGID}"
+kill -INT  -"${COMPASS_RUN_PID}"
 
 echo "ORD service run.sh script PID: ${ORD_SERVICE_RUN_PID}"
-ps -o pgid= ${ORD_SERVICE_RUN_PID}
-# ORD_SERVICE_RUN_PGID=$(ps -o pgid= ${ORD_SERVICE_RUN_PID} | grep -o [0-9]*)
-# kill -INT  -"${ORD_SERVICE_RUN_PGID}"
+kill -INT  -"${ORD_SERVICE_RUN_PID}"
 
 echo "ord-test end reached!"
-exit 0
