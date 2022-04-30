@@ -270,6 +270,11 @@ func AssertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels gr
 	}
 }
 
+func AssertRuntimeContext(t *testing.T, in *graphql.RuntimeContextInput, actual *graphql.RuntimeContextExt) {
+	assert.Equal(t, in.Key, actual.Key)
+	assert.Equal(t, in.Value, actual.Value)
+}
+
 func AssertLabel(t *testing.T, actualLabels graphql.Labels, key string, values interface{}) {
 	labelValues, ok := actualLabels[key]
 	assert.True(t, ok)

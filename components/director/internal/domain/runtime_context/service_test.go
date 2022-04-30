@@ -18,539 +18,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestService_Create(t *testing.T) {
-	// GIVEN
-	testErr := errors.New("Test error")
-
-	id := "foo"
-	runtimeID := "runtime_id"
-	key := "key"
-	val := "val"
-	labels := map[string]interface{}{
-		model.ScenariosKey: "DEFAULT",
-	}
-	modelInput := model.RuntimeContextInput{
-		Key:       key,
-		Value:     val,
-		RuntimeID: runtimeID,
-		Labels:    labels,
-	}
-
-	modelInputWithoutLabels := model.RuntimeContextInput{
-		Key:       key,
-		Value:     val,
-		RuntimeID: runtimeID,
-	}
-
-	var nilLabels map[string]interface{}
-
-	runtimeCtxModel := mock.MatchedBy(func(rtmCtx *model.RuntimeContext) bool {
-		return rtmCtx.Key == modelInput.Key && rtmCtx.Value == modelInput.Value && rtmCtx.RuntimeID == modelInput.RuntimeID
-	})
-
-	tnt := "tenant"
-	externalTnt := "external-tnt"
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-	testCases := []struct {
-		Name                       string
-		RuntimeContextRepositoryFn func() *automock.RuntimeContextRepository
-		LabelUpsertServiceFn       func() *automock.LabelUpsertService
-		UIDServiceFn               func() *automock.UIDService
-		Input                      model.RuntimeContextInput
-		ExpectedErr                error
-	}{
-		{
-			Name: "Success",
-			RuntimeContextRepositoryFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("Create", ctx, tnt, runtimeCtxModel).Return(nil).Once()
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				repo := &automock.LabelUpsertService{}
-				repo.On("UpsertMultipleLabels", ctx, tnt, model.RuntimeContextLabelableObject, id, modelInput.Labels).Return(nil).Once()
-				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id)
-				return svc
-			},
-			Input:       modelInput,
-			ExpectedErr: nil,
-		},
-		{
-			Name: "Success when labels are empty",
-			RuntimeContextRepositoryFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("Create", ctx, tnt, runtimeCtxModel).Return(nil).Once()
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				repo := &automock.LabelUpsertService{}
-				repo.On("UpsertMultipleLabels", ctx, tnt, model.RuntimeContextLabelableObject, id, nilLabels).Return(nil).Once()
-				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id)
-				return svc
-			},
-			Input:       modelInputWithoutLabels,
-			ExpectedErr: nil,
-		},
-		{
-			Name: "Returns error when runtime context creation failed",
-			RuntimeContextRepositoryFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("Create", ctx, tnt, runtimeCtxModel).Return(testErr).Once()
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				repo := &automock.LabelUpsertService{}
-				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return("").Once()
-				return svc
-			},
-			Input:       modelInput,
-			ExpectedErr: testErr,
-		},
-		{
-			Name: "Returns error when label upserting failed",
-			RuntimeContextRepositoryFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("Create", ctx, tnt, runtimeCtxModel).Return(nil).Once()
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				repo := &automock.LabelUpsertService{}
-				repo.On("UpsertMultipleLabels", ctx, "tenant", model.RuntimeContextLabelableObject, id, modelInput.Labels).Return(testErr).Once()
-				return repo
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id)
-				return svc
-			},
-			Input:       modelInput,
-			ExpectedErr: testErr,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			repo := testCase.RuntimeContextRepositoryFn()
-			idSvc := testCase.UIDServiceFn()
-			labelSvc := testCase.LabelUpsertServiceFn()
-			svc := runtimectx.NewService(repo, nil, labelSvc, idSvc)
-
-			// WHEN
-			result, err := svc.Create(ctx, testCase.Input)
-
-			// THEN
-			assert.IsType(t, "string", result)
-			if err == nil {
-				require.Nil(t, testCase.ExpectedErr)
-			} else {
-				require.NotNil(t, testCase.ExpectedErr)
-				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
-			}
-
-			repo.AssertExpectations(t)
-			idSvc.AssertExpectations(t)
-			labelSvc.AssertExpectations(t)
-		})
-	}
-
-	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		// GIVEN
-		svc := runtimectx.NewService(nil, nil, nil, nil)
-		// WHEN
-		_, err := svc.Create(context.TODO(), model.RuntimeContextInput{})
-		// THEN
-		require.Error(t, err)
-		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
-	})
-}
-
-func TestService_Update(t *testing.T) {
-	// GIVEN
-	testErr := errors.New("Test error")
-
-	id := "foo"
-	key := "key"
-	val := "value"
-	runtimeID := "runtime_id"
-
-	labels := map[string]interface{}{
-		"label1": "val1",
-	}
-	modelInput := model.RuntimeContextInput{
-		Key:       key,
-		Value:     val,
-		RuntimeID: runtimeID,
-		Labels:    labels,
-	}
-
-	inputRuntimeContextModel := mock.MatchedBy(func(rtmCtx *model.RuntimeContext) bool {
-		return rtmCtx.Key == modelInput.Key && rtmCtx.Value == modelInput.Value && rtmCtx.RuntimeID == modelInput.RuntimeID
-	})
-
-	runtimeCtxModel := &model.RuntimeContext{
-		ID:        id,
-		Key:       key,
-		Value:     val,
-		RuntimeID: runtimeID,
-	}
-
-	tnt := "tenant"
-	externalTnt := "external-tnt"
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-	testCases := []struct {
-		Name                 string
-		RepositoryFn         func() *automock.RuntimeContextRepository
-		LabelRepositoryFn    func() *automock.LabelRepository
-		LabelUpsertServiceFn func() *automock.LabelUpsertService
-		Input                model.RuntimeContextInput
-		InputID              string
-		ExpectedErrMessage   string
-	}{
-		{
-			Name: "Success",
-			RepositoryFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeCtxModel, nil).Once()
-				repo.On("Update", ctx, tnt, inputRuntimeContextModel).Return(nil).Once()
-				return repo
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("DeleteAll", ctx, tnt, model.RuntimeContextLabelableObject, runtimeCtxModel.ID).Return(nil).Once()
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				repo := &automock.LabelUpsertService{}
-				repo.On("UpsertMultipleLabels", ctx, tnt, model.RuntimeContextLabelableObject, runtimeCtxModel.ID, modelInput.Labels).Return(nil).Once()
-				return repo
-			},
-			InputID:            id,
-			Input:              modelInput,
-			ExpectedErrMessage: "",
-		},
-		{
-			Name: "Success when labels are nil",
-			RepositoryFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeCtxModel, nil).Once()
-				repo.On("Update", ctx, tnt, inputRuntimeContextModel).Return(nil).Once()
-				return repo
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("DeleteAll", ctx, tnt, model.RuntimeContextLabelableObject, runtimeCtxModel.ID).Return(nil).Once()
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				repo := &automock.LabelUpsertService{}
-				return repo
-			},
-			InputID: "foo",
-			Input: model.RuntimeContextInput{
-				Key:       key,
-				Value:     val,
-				RuntimeID: runtimeID,
-			},
-			ExpectedErrMessage: "",
-		},
-		{
-			Name: "Returns error when runtime context update failed",
-			RepositoryFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeCtxModel, nil).Once()
-				repo.On("Update", ctx, tnt, inputRuntimeContextModel).Return(testErr).Once()
-				return repo
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				repo := &automock.LabelUpsertService{}
-				return repo
-			},
-			InputID:            id,
-			Input:              modelInput,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "Returns error when runtime context retrieval failed",
-			RepositoryFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("GetByID", ctx, tnt, "foo").Return(nil, testErr).Once()
-				return repo
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				repo := &automock.LabelUpsertService{}
-				return repo
-			},
-			InputID:            id,
-			Input:              modelInput,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "Returns error when label deletion failed",
-			RepositoryFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeCtxModel, nil).Once()
-				repo.On("Update", ctx, tnt, inputRuntimeContextModel).Return(nil).Once()
-				return repo
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("DeleteAll", ctx, tnt, model.RuntimeContextLabelableObject, runtimeCtxModel.ID).Return(testErr).Once()
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				repo := &automock.LabelUpsertService{}
-				return repo
-			},
-			InputID:            id,
-			Input:              modelInput,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "Returns error when upserting labels failed",
-			RepositoryFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("GetByID", ctx, tnt, "foo").Return(runtimeCtxModel, nil).Once()
-				repo.On("Update", ctx, tnt, inputRuntimeContextModel).Return(nil).Once()
-				return repo
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("DeleteAll", ctx, tnt, model.RuntimeContextLabelableObject, runtimeCtxModel.ID).Return(nil).Once()
-				return repo
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				repo := &automock.LabelUpsertService{}
-				repo.On("UpsertMultipleLabels", ctx, tnt, model.RuntimeContextLabelableObject, runtimeCtxModel.ID, modelInput.Labels).Return(testErr).Once()
-				return repo
-			},
-			InputID:            id,
-			Input:              modelInput,
-			ExpectedErrMessage: testErr.Error(),
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			repo := testCase.RepositoryFn()
-			labelRepo := testCase.LabelRepositoryFn()
-			labelSvc := testCase.LabelUpsertServiceFn()
-			svc := runtimectx.NewService(repo, labelRepo, labelSvc, nil)
-
-			// WHEN
-			err := svc.Update(ctx, testCase.InputID, testCase.Input)
-
-			// THEN
-			if testCase.ExpectedErrMessage == "" {
-				require.NoError(t, err)
-			} else {
-				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-			}
-
-			repo.AssertExpectations(t)
-			labelRepo.AssertExpectations(t)
-			labelSvc.AssertExpectations(t)
-		})
-	}
-
-	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		// GIVEN
-		svc := runtimectx.NewService(nil, nil, nil, nil)
-		// WHEN
-		err := svc.Update(context.TODO(), "id", model.RuntimeContextInput{})
-		// THEN
-		require.Error(t, err)
-		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
-	})
-}
-
-func TestService_Delete(t *testing.T) {
-	// GIVEN
-	testErr := errors.New("Test error")
-	id := "foo"
-	key := "key"
-	val := "value"
-	runtimeID := "runtime_id"
-
-	runtimeCtxModel := &model.RuntimeContext{
-		ID:        id,
-		Key:       key,
-		Value:     val,
-		RuntimeID: runtimeID,
-	}
-
-	tnt := "tenant"
-	externalTnt := "external-tnt"
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-	testCases := []struct {
-		Name               string
-		RepositoryFn       func() *automock.RuntimeContextRepository
-		Input              model.RuntimeContextInput
-		InputID            string
-		ExpectedErrMessage string
-	}{
-		{
-			Name: "Success",
-			RepositoryFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("Delete", ctx, tnt, runtimeCtxModel.ID).Return(nil).Once()
-				return repo
-			},
-			InputID:            id,
-			ExpectedErrMessage: "",
-		},
-		{
-			Name: "Returns error when runtime context deletion failed",
-			RepositoryFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("Delete", ctx, tnt, runtimeCtxModel.ID).Return(testErr).Once()
-				return repo
-			},
-			InputID:            id,
-			ExpectedErrMessage: testErr.Error(),
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			repo := testCase.RepositoryFn()
-			svc := runtimectx.NewService(repo, nil, nil, nil)
-
-			// WHEN
-			err := svc.Delete(ctx, testCase.InputID)
-
-			// THEN
-			if testCase.ExpectedErrMessage == "" {
-				require.NoError(t, err)
-			} else {
-				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-			}
-
-			repo.AssertExpectations(t)
-		})
-	}
-
-	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		// GIVEN
-		svc := runtimectx.NewService(nil, nil, nil, nil)
-		// WHEN
-		err := svc.Delete(context.TODO(), "id")
-		// THEN
-		require.Error(t, err)
-		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
-	})
-}
-
-func TestService_Get(t *testing.T) {
-	// GIVEN
-	testErr := errors.New("Test error")
-
-	id := "foo"
-	key := "key"
-	val := "value"
-	runtimeID := "runtime_id"
-	tnt := "tenant"
-	externalTnt := "external-tnt"
-
-	runtimeCtxModel := &model.RuntimeContext{
-		ID:        id,
-		Key:       key,
-		Value:     val,
-		RuntimeID: runtimeID,
-	}
-
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-	testCases := []struct {
-		Name                   string
-		RepositoryFn           func() *automock.RuntimeContextRepository
-		Input                  model.RuntimeContextInput
-		InputID                string
-		ExpectedRuntimeContext *model.RuntimeContext
-		ExpectedErrMessage     string
-	}{
-		{
-			Name: "Success",
-			RepositoryFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("GetByID", ctx, tnt, id).Return(runtimeCtxModel, nil).Once()
-				return repo
-			},
-			InputID:                id,
-			ExpectedRuntimeContext: runtimeCtxModel,
-			ExpectedErrMessage:     "",
-		},
-		{
-			Name: "Returns error when runtime context retrieval failed",
-			RepositoryFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("GetByID", ctx, tnt, id).Return(nil, testErr).Once()
-				return repo
-			},
-			InputID:                id,
-			ExpectedRuntimeContext: runtimeCtxModel,
-			ExpectedErrMessage:     testErr.Error(),
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			repo := testCase.RepositoryFn()
-
-			svc := runtimectx.NewService(repo, nil, nil, nil)
-
-			// WHEN
-			rtmCtx, err := svc.Get(ctx, testCase.InputID)
-
-			// THEN
-			if testCase.ExpectedErrMessage == "" {
-				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedRuntimeContext, rtmCtx)
-			} else {
-				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-			}
-
-			repo.AssertExpectations(t)
-		})
-	}
-
-	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		// GIVEN
-		svc := runtimectx.NewService(nil, nil, nil, nil)
-		// WHEN
-		_, err := svc.Get(context.TODO(), "id")
-		// THEN
-		require.Error(t, err)
-		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
-	})
-}
-
 func TestService_Exist(t *testing.T) {
 	tnt := "tenant"
 	externalTnt := "external-tnt"
@@ -634,7 +101,470 @@ func TestService_Exist(t *testing.T) {
 	})
 }
 
-func TestService_List(t *testing.T) {
+func TestService_Create(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	id := "foo"
+	runtimeID := "runtime_id"
+	key := "key"
+	val := "val"
+	modelInput := model.RuntimeContextInput{
+		Key:       key,
+		Value:     val,
+		RuntimeID: runtimeID,
+	}
+
+	runtimeCtxModel := mock.MatchedBy(func(rtmCtx *model.RuntimeContext) bool {
+		return rtmCtx.Key == modelInput.Key && rtmCtx.Value == modelInput.Value && rtmCtx.RuntimeID == modelInput.RuntimeID
+	})
+
+	tnt := "tenant"
+	externalTnt := "external-tnt"
+	ctxWithoutTenant := context.TODO()
+	ctxWithTenant := tenant.SaveToContext(ctxWithoutTenant, tnt, externalTnt)
+
+	testCases := []struct {
+		Name                       string
+		RuntimeContextRepositoryFn func() *automock.RuntimeContextRepository
+		UIDServiceFn               func() *automock.UIDService
+		Input                      model.RuntimeContextInput
+		Context                    context.Context
+		ExpectedErrMessage         string
+	}{
+		{
+			Name: "Success",
+			RuntimeContextRepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("Create", ctxWithTenant, tnt, runtimeCtxModel).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			Input:              modelInput,
+			Context:            ctxWithTenant,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when runtime context creation failed",
+			RuntimeContextRepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("Create", ctxWithTenant, tnt, runtimeCtxModel).Return(testErr).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return("").Once()
+				return svc
+			},
+			Input:              modelInput,
+			Context:            ctxWithTenant,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error on loading tenant",
+			RuntimeContextRepositoryFn: func() *automock.RuntimeContextRepository {
+				return &automock.RuntimeContextRepository{}
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				return &automock.UIDService{}
+			},
+			Input:              model.RuntimeContextInput{},
+			Context:            ctxWithoutTenant,
+			ExpectedErrMessage: "while loading tenant from context: cannot read tenant from context",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RuntimeContextRepositoryFn()
+			idSvc := testCase.UIDServiceFn()
+			svc := runtimectx.NewService(repo, nil, nil, idSvc)
+
+			// WHEN
+			result, err := svc.Create(testCase.Context, testCase.Input)
+
+			// THEN
+
+			if testCase.ExpectedErrMessage == "" {
+				require.Nil(t, err)
+				assert.IsType(t, "string", result)
+			} else {
+				require.NotNil(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo, idSvc)
+		})
+	}
+}
+
+func TestService_Update(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	id := "foo"
+	key := "key"
+	val := "value"
+	runtimeID := "runtime_id"
+
+	modelInput := model.RuntimeContextInput{
+		Key:       key,
+		Value:     val,
+		RuntimeID: runtimeID,
+	}
+
+	inputRuntimeContextModel := mock.MatchedBy(func(rtmCtx *model.RuntimeContext) bool {
+		return rtmCtx.Key == modelInput.Key && rtmCtx.Value == modelInput.Value && rtmCtx.RuntimeID == modelInput.RuntimeID
+	})
+
+	runtimeCtxModel := &model.RuntimeContext{
+		ID:        id,
+		Key:       key,
+		Value:     val,
+		RuntimeID: runtimeID,
+	}
+
+	tnt := "tenant"
+	externalTnt := "external-tnt"
+	ctxWithoutTenant := context.TODO()
+	ctxWithTenant := tenant.SaveToContext(ctxWithoutTenant, tnt, externalTnt)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.RuntimeContextRepository
+		Input              model.RuntimeContextInput
+		InputID            string
+		Context            context.Context
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("GetByID", ctxWithTenant, tnt, "foo").Return(runtimeCtxModel, nil).Once()
+				repo.On("Update", ctxWithTenant, tnt, inputRuntimeContextModel).Return(nil).Once()
+				return repo
+			},
+			InputID:            id,
+			Input:              modelInput,
+			Context:            ctxWithTenant,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when runtime context update failed",
+			RepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("GetByID", ctxWithTenant, tnt, "foo").Return(runtimeCtxModel, nil).Once()
+				repo.On("Update", ctxWithTenant, tnt, inputRuntimeContextModel).Return(testErr).Once()
+				return repo
+			},
+			InputID:            id,
+			Input:              modelInput,
+			Context:            ctxWithTenant,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when runtime context retrieval failed",
+			RepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("GetByID", ctxWithTenant, tnt, "foo").Return(nil, testErr).Once()
+				return repo
+			},
+			InputID:            id,
+			Input:              modelInput,
+			Context:            ctxWithTenant,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when loading tenant from context failed",
+			RepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				return repo
+			},
+			InputID:            id,
+			Input:              model.RuntimeContextInput{},
+			Context:            ctxWithoutTenant,
+			ExpectedErrMessage: "while loading tenant from context: cannot read tenant from context",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			svc := runtimectx.NewService(repo, nil, nil, nil)
+
+			// WHEN
+			err := svc.Update(testCase.Context, testCase.InputID, testCase.Input)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_Delete(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+	id := "foo"
+	key := "key"
+	val := "value"
+	runtimeID := "runtime_id"
+
+	runtimeCtxModel := &model.RuntimeContext{
+		ID:        id,
+		Key:       key,
+		Value:     val,
+		RuntimeID: runtimeID,
+	}
+
+	tnt := "tenant"
+	externalTnt := "external-tnt"
+	ctxWithoutTenant := context.TODO()
+	ctxWithTenant := tenant.SaveToContext(ctxWithoutTenant, tnt, externalTnt)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.RuntimeContextRepository
+		Input              model.RuntimeContextInput
+		InputID            string
+		Context            context.Context
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("Delete", ctxWithTenant, tnt, runtimeCtxModel.ID).Return(nil).Once()
+				return repo
+			},
+			InputID:            id,
+			Context:            ctxWithTenant,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when runtime context deletion failed",
+			RepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("Delete", ctxWithTenant, tnt, runtimeCtxModel.ID).Return(testErr).Once()
+				return repo
+			},
+			InputID:            id,
+			Context:            ctxWithTenant,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when loading tenant from context failed",
+			RepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				return repo
+			},
+			InputID:            id,
+			Context:            ctxWithoutTenant,
+			ExpectedErrMessage: "while loading tenant from context: cannot read tenant from context",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			svc := runtimectx.NewService(repo, nil, nil, nil)
+
+			// WHEN
+			err := svc.Delete(testCase.Context, testCase.InputID)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_GetByID(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	id := "foo"
+	key := "key"
+	val := "value"
+	runtimeID := "runtime_id"
+	tnt := "tenant"
+	externalTnt := "external-tnt"
+
+	runtimeCtxModel := &model.RuntimeContext{
+		ID:        id,
+		Key:       key,
+		Value:     val,
+		RuntimeID: runtimeID,
+	}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testCases := []struct {
+		Name                   string
+		RepositoryFn           func() *automock.RuntimeContextRepository
+		Input                  model.RuntimeContextInput
+		InputID                string
+		ExpectedRuntimeContext *model.RuntimeContext
+		ExpectedErrMessage     string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(runtimeCtxModel, nil).Once()
+				return repo
+			},
+			InputID:                id,
+			ExpectedRuntimeContext: runtimeCtxModel,
+			ExpectedErrMessage:     "",
+		},
+		{
+			Name: "Returns error when runtime context retrieval failed",
+			RepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(nil, testErr).Once()
+				return repo
+			},
+			InputID:                id,
+			ExpectedRuntimeContext: runtimeCtxModel,
+			ExpectedErrMessage:     testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := runtimectx.NewService(repo, nil, nil, nil)
+
+			// WHEN
+			rtmCtx, err := svc.GetByID(ctx, testCase.InputID)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedRuntimeContext, rtmCtx)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+
+	t.Run("Returns error on loading tenant", func(t *testing.T) {
+		// GIVEN
+		svc := runtimectx.NewService(nil, nil, nil, nil)
+		// WHEN
+		_, err := svc.GetByID(context.TODO(), "id")
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
+	})
+}
+
+func TestService_GetForRuntime(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	id := "foo"
+	key := "key"
+	val := "value"
+	runtimeID := "runtime_id"
+	tnt := "tenant"
+	externalTnt := "external-tnt"
+
+	runtimeCtxModel := &model.RuntimeContext{
+		ID:        id,
+		Key:       key,
+		Value:     val,
+		RuntimeID: runtimeID,
+	}
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testCases := []struct {
+		Name                   string
+		RepositoryFn           func() *automock.RuntimeContextRepository
+		Input                  model.RuntimeContextInput
+		InputID                string
+		ExpectedRuntimeContext *model.RuntimeContext
+		ExpectedErrMessage     string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("GetForRuntime", ctx, tnt, id, runtimeID).Return(runtimeCtxModel, nil).Once()
+				return repo
+			},
+			InputID:                id,
+			ExpectedRuntimeContext: runtimeCtxModel,
+			ExpectedErrMessage:     "",
+		},
+		{
+			Name: "Returns error when runtime context retrieval failed",
+			RepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("GetForRuntime", ctx, tnt, id, runtimeID).Return(nil, testErr).Once()
+				return repo
+			},
+			InputID:                id,
+			ExpectedRuntimeContext: runtimeCtxModel,
+			ExpectedErrMessage:     testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := runtimectx.NewService(repo, nil, nil, nil)
+
+			// WHEN
+			rtmCtx, err := svc.GetForRuntime(ctx, testCase.InputID, runtimeID)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedRuntimeContext, rtmCtx)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+
+	t.Run("Returns error on loading tenant", func(t *testing.T) {
+		// GIVEN
+		svc := runtimectx.NewService(nil, nil, nil, nil)
+		// WHEN
+		_, err := svc.GetForRuntime(context.TODO(), "id", runtimeID)
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
+	})
+}
+
+func TestService_ListByFilter(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
@@ -730,7 +660,7 @@ func TestService_List(t *testing.T) {
 			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
-			Name: "Returns error when pageSize is bigger than 100",
+			Name: "Returns error when pageSize is bigger than 200",
 			RepositoryFn: func() *automock.RuntimeContextRepository {
 				repo := &automock.RuntimeContextRepository{}
 				return repo
@@ -750,7 +680,7 @@ func TestService_List(t *testing.T) {
 			svc := runtimectx.NewService(repo, nil, nil, nil)
 
 			// WHEN
-			rtmCtx, err := svc.List(ctx, runtimeID, testCase.InputLabelFilters, testCase.InputPageSize, testCase.InputCursor)
+			rtmCtx, err := svc.ListByFilter(ctx, runtimeID, testCase.InputLabelFilters, testCase.InputPageSize, testCase.InputCursor)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
@@ -768,7 +698,145 @@ func TestService_List(t *testing.T) {
 		// GIVEN
 		svc := runtimectx.NewService(nil, nil, nil, nil)
 		// WHEN
-		_, err := svc.List(context.TODO(), "", nil, 1, "")
+		_, err := svc.ListByFilter(context.TODO(), "", nil, 1, "")
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
+	})
+}
+
+func TestService_ListByRuntimeIDs(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	runtimeID := "runtime_id"
+	runtime2ID := "runtime2_id"
+
+	runtimeIDs := []string{runtimeID, runtime2ID}
+
+	id := "foo"
+	key := "key"
+	val := "value"
+
+	id2 := "bar"
+	key2 := "key2"
+	val2 := "value2"
+
+	modelRuntimeContexts := []*model.RuntimeContext{
+		{
+			ID:        id,
+			Key:       key,
+			Value:     val,
+			RuntimeID: runtimeID,
+		},
+		{
+			ID:        id2,
+			Key:       key2,
+			Value:     val2,
+			RuntimeID: runtime2ID,
+		},
+	}
+	runtimePage := &model.RuntimeContextPage{
+		Data:       modelRuntimeContexts,
+		TotalCount: len(modelRuntimeContexts),
+		PageInfo: &pagination.Page{
+			HasNextPage: false,
+			EndCursor:   "end",
+			StartCursor: "start",
+		},
+	}
+
+	first := 2
+	after := "test"
+
+	tnt := "tenant"
+	externalTnt := "external-tnt"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.RuntimeContextRepository
+		InputPageSize      int
+		InputCursor        string
+		ExpectedResult     []*model.RuntimeContextPage
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("ListByRuntimeIDs", ctx, tnt, runtimeIDs, first, after).Return([]*model.RuntimeContextPage{runtimePage}, nil).Once()
+				return repo
+			},
+			InputPageSize:      first,
+			InputCursor:        after,
+			ExpectedResult:     []*model.RuntimeContextPage{runtimePage},
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when runtime context listing failed",
+			RepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("ListByRuntimeIDs", ctx, tnt, runtimeIDs, first, after).Return(nil, testErr).Once()
+				return repo
+			},
+			InputPageSize:      first,
+			InputCursor:        after,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when pageSize is less than 1",
+			RepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				return repo
+			},
+			InputPageSize:      0,
+			InputCursor:        after,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: "page size must be between 1 and 200",
+		},
+		{
+			Name: "Returns error when pageSize is bigger than 200",
+			RepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				return repo
+			},
+			InputPageSize:      201,
+			InputCursor:        after,
+			ExpectedResult:     nil,
+			ExpectedErrMessage: "page size must be between 1 and 200",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := runtimectx.NewService(repo, nil, nil, nil)
+
+			// WHEN
+			rtmCtx, err := svc.ListByRuntimeIDs(ctx, runtimeIDs, testCase.InputPageSize, testCase.InputCursor)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, rtmCtx)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+
+	t.Run("Returns error on loading tenant", func(t *testing.T) {
+		// GIVEN
+		svc := runtimectx.NewService(nil, nil, nil, nil)
+		// WHEN
+		_, err := svc.ListByRuntimeIDs(context.TODO(), runtimeIDs, 1, "")
 		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
