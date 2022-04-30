@@ -265,7 +265,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 		return nil, err
 	}
 
-	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok { // TODO: <backwards-compatibility>: Should be deleted once the provisioner start creating runtimes in a subaccount
+	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok {
 		sa, err := convertLabelValue(saVal)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while converting %s label", scenarioassignment.SubaccountIDKey)

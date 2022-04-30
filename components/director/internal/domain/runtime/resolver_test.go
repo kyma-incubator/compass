@@ -153,7 +153,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			TenantFetcherFn: func() *automock.TenantFetcher {
 				svc := &automock.TenantFetcher{}
-				svc.On("FetchOnDemand", mock.Anything).Return(nil).Once()
+				svc.On("FetchOnDemand", extSubaccountID).Return(nil).Once()
 				return svc
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
