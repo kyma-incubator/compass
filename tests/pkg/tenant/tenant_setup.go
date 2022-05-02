@@ -201,7 +201,7 @@ func (mgr *TestTenantsManager) Init() {
 			ProviderName:   testProvider,
 			Type:           Subaccount,
 			Status:         Active,
-			Parent:         testDefaultTenant,
+			Parent:         ApplicationsForRuntimeTenantName,
 		},
 		TestIntegrationSystemManagedSubaccount: {
 			Name:           TestIntegrationSystemManagedSubaccount,
