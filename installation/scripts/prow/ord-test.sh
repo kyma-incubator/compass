@@ -157,7 +157,7 @@ echo "Compass run.sh script PID: ${COMPASS_RUN_PID}"
 kill -SIGINT  "${COMPASS_RUN_PID}"
 
 echo "ORD service run.sh script PID: ${ORD_SERVICE_RUN_PID}"
-kill -SIGKILL  "${ORD_SERVICE_RUN_PID}"
+kill -SIGINT  "${ORD_SERVICE_RUN_PID}"
 
 echo "Wait 10s ..."
 sleep 10

@@ -91,6 +91,13 @@ CLIENT_CERT_SECRET_NAMESPACE="default"
 CLIENT_CERT_SECRET_NAME="external-client-certificate"
 
 function cleanup() {
+    if [[ ${MAIN_PROCESS_GUID} ]]; then
+        echo -e "${GREEN}Kill main process..."
+        kill -SIGINT "${MAIN_PROCESS_GUID}"
+        echo -e "${GREEN}Delete build result..."
+        rm ${ROOT_PATH}/main || true
+    fi
+
     if [[ ${DEBUG} ]]; then
        echo -e "${GREEN}Cleanup Director binary${NC}"
        rm  $GOPATH/src/github.com/kyma-incubator/compass/components/director/director 
@@ -259,5 +266,10 @@ if [[  ${DEBUG} ]]; then
     CGO_ENABLED=0 go build -gcflags="all=-N -l" ./cmd/${COMPONENT}
     dlv --listen=:$DEBUG_PORT --headless=true --api-version=2 exec ./${COMPONENT}
 else
-    go run ${ROOT_PATH}/cmd/${COMPONENT}/main.go
+    cd ${ROOT_PATH}
+    go build ${ROOT_PATH}/cmd/${COMPONENT}/main.go 
+    ${ROOT_PATH}/main &
+    MAIN_PROCESS_GUID="$!"
+    wait
+    # go run ${ROOT_PATH}/cmd/${COMPONENT}/main.go
 fi
