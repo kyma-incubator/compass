@@ -423,10 +423,6 @@ func TestUpdateApplication(t *testing.T) {
 	expectedApp.Description = ptr.String("after")
 	expectedApp.HealthCheckURL = ptr.String(conf.WebhookUrl)
 	expectedApp.BaseURL = ptr.String("after")
-
-	fmt.Println(">>>>>>>>>>>>>>>")
-	fmt.Println(*expectedApp.BaseURL)
-
 	expectedApp.Status.Condition = updateStatusCond
 	expectedApp.Labels["name"] = "before"
 
@@ -448,10 +444,6 @@ func TestUpdateApplication(t *testing.T) {
 	assert.Equal(t, expectedApp.Description, updatedApp.Description)
 	assert.Equal(t, expectedApp.HealthCheckURL, updatedApp.HealthCheckURL)
 	assert.Equal(t, expectedApp.BaseURL, updatedApp.BaseURL)
-
-	fmt.Println(">>>>>>>>>>>>>>>")
-	fmt.Println(*updatedApp.BaseURL)
-
 	assert.Equal(t, expectedApp.Status.Condition, updatedApp.Status.Condition)
 
 	saveExample(t, request.Query(), "update application")
