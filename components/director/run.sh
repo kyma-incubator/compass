@@ -91,9 +91,9 @@ CLIENT_CERT_SECRET_NAMESPACE="default"
 CLIENT_CERT_SECRET_NAME="external-client-certificate"
 
 function cleanup() {
-    if [[ ${MAIN_PROCESS_GUID} ]]; then
+    if [[ ${MAIN_PROCESS_PID} ]]; then
         echo -e "${GREEN}Kill main process..."
-        kill -SIGINT "${MAIN_PROCESS_GUID}"
+        kill -SIGINT "${MAIN_PROCESS_PID}"
         echo -e "${GREEN}Delete build result..."
         rm ${ROOT_PATH}/main || true
     fi
@@ -269,7 +269,7 @@ else
     cd ${ROOT_PATH}
     go build ${ROOT_PATH}/cmd/${COMPONENT}/main.go 
     ${ROOT_PATH}/main &
-    MAIN_PROCESS_GUID="$!"
+    export MAIN_PROCESS_PID="$!"
     wait
     # go run ${ROOT_PATH}/cmd/${COMPONENT}/main.go
 fi

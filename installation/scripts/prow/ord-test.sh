@@ -102,8 +102,8 @@ echo "-----------------------------------"
 
 echo "Starting compass"
 cd ${COMPASS_DIR}/components/director
-./run.sh &
-COMPASS_RUN_PID=$!
+source run.sh 
+COMPASS_RUN_PID=${MAIN_PROCESS_PID}
 
 COMPASS_URL="http://localhost:3000"
 
@@ -166,3 +166,4 @@ echo "Get allprocesses"
 ps x -o  "%p %r %c"
 
 echo "ord-test end reached!"
+pkill -P $$
