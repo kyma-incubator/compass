@@ -134,7 +134,7 @@ func (r *repository) Create(ctx context.Context, tenant string, label *model.Lab
 		return errors.Wrap(err, "while creating label entity from model")
 	}
 
-	if label.ObjectType == model.TenantLabelableObject || label.ObjectType == model.AppTemplateLabelableObject { // ????????
+	if label.ObjectType == model.TenantLabelableObject || label.ObjectType == model.AppTemplateLabelableObject {
 		return r.globalCreator.Create(ctx, labelEntity)
 	}
 

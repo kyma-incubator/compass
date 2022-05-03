@@ -299,7 +299,7 @@ func AssertApplicationTemplate(t *testing.T, in graphql.ApplicationTemplateInput
 	assert.Equal(t, gqlAppInput, actualApplicationTemplate.ApplicationInput)
 	AssertApplicationTemplatePlaceholder(t, in.Placeholders, actualApplicationTemplate.Placeholders)
 	assert.Equal(t, in.AccessLevel, actualApplicationTemplate.AccessLevel)
-
+	assert.Equal(t, in.Labels, actualApplicationTemplate.Labels)
 	AssertWebhooks(t, in.Webhooks, actualApplicationTemplate.Webhooks)
 }
 

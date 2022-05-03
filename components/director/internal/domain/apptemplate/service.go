@@ -128,19 +128,19 @@ func (s *service) GetByName(ctx context.Context, name string) (*model.Applicatio
 	return appTemplate, nil
 }
 
-// ListLabels missing godoc
+// ListLabels retrieves all labels for application template
 func (s *service) ListLabels(ctx context.Context, appTemplateID string) (map[string]*model.Label, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	appExists, err := s.appTemplateRepo.Exists(ctx, appTemplateID)
+	appTemplateExists, err := s.appTemplateRepo.Exists(ctx, appTemplateID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while checking Application Template existence")
 	}
 
-	if !appExists {
+	if !appTemplateExists {
 		return nil, fmt.Errorf("application template with ID %s doesn't exist", appTemplateID)
 	}
 

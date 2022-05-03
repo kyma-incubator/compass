@@ -217,7 +217,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	return gqlAppTemplate, nil
 }
 
-// Labels missing godoc
+// Labels retrieve all labels for application template
 func (r *Resolver) Labels(ctx context.Context, obj *graphql.ApplicationTemplate, key *string) (graphql.Labels, error) {
 	if obj == nil {
 		return nil, apperrors.NewInternalError("Application Template cannot be empty")
