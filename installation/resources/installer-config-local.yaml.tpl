@@ -65,7 +65,7 @@ data:
   global.hydrator.http.client.skipSSLValidation: "true"
 
   global.tenantFetchers.account-fetcher.enabled: "true"
-  global.tenantFetchers.account-fetcher.cron.job.enabled: "false"
+  global.tenantFetchers.account-fetcher.cron.enabled: "false"
   global.tenantFetchers.account-fetcher.dbPool.maxOpenConnections: "1"
   global.tenantFetchers.account-fetcher.dbPool.maxIdleConnections: "1"
   global.tenantFetchers.account-fetcher.job.interval: "1m"
@@ -107,7 +107,7 @@ data:
   global.tenantFetchers.account-fetcher.endpoints.accountUpdated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/global-account-update"
 
   global.tenantFetchers.subaccount-fetcher.enabled: "true"
-  global.tenantFetchers.subaccount-fetcher.cron.job.enabled: "false"
+  global.tenantFetchers.subaccount-fetcher.cron.enabled: "false"
   global.tenantFetchers.subaccount-fetcher.dbPool.maxOpenConnections: "1"
   global.tenantFetchers.subaccount-fetcher.dbPool.maxIdleConnections: "1"
   global.tenantFetchers.subaccount-fetcher.job.interval: "1m"
