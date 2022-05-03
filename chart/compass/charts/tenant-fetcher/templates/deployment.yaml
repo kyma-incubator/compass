@@ -246,7 +246,7 @@ spec:
               value: "true"
             - name: APP_{{ $tenantFetcherJobName }}_CONFIGMAP_NAMESPACE
               value: {{ $config.kubernetes.configMapNamespace }}
-              {{ $configmapName := printf "tenant-fetcher-%s-config" $tenantFetcherJobName }}
+              {{ $configmapName := printf "%s-tenant-fetcher-%s-config" $.Chart.Name $tenantFetcherJobName }}
             - name: APP_{{ $tenantFetcherJobName }}_LAST_EXECUTION_TIME_CONFIG_MAP_NAME
               value: {{ $configmapName }}
             - name: APP_{{ $tenantFetcherJobName }}_CONFIGMAP_TIMESTAMP_FIELD
@@ -361,3 +361,88 @@ spec:
 {{ toYaml . | indent 12 }}
           {{- end }}
         {{end}}
+---
+{{ $outerScope := . }}
+{{- range $tenantFetcherName, $config := .Values.global.tenantFetchers -}}
+{{ if eq $config.enabled true }}
+{{ $configmapName := printf "%s-tenant-fetcher-%s-config" $.Chart.Name $tenantFetcherName }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $configmapName }}
+  namespace: "{{ $config.kubernetes.configMapNamespace }}"
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" $outerScope }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+{{ $configmap := (lookup "v1" "ConfigMap" $config.kubernetes.configMapNamespace $configmapName) }}
+{{ if empty $configmap }}
+data:
+  lastConsumedTenantTimestamp: "1"
+  lastFullResyncTimestamp: "1"
+{{ else }}
+data:
+{{ toYaml $configmap.data | indent 2}}
+{{ end }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
+  namespace: {{ $.Release.Namespace }}
+  {{- if eq $.Values.global.database.embedded.enabled false }}
+  annotations:
+    iam.gke.io/gcp-service-account: {{ $.Values.global.database.sqlProxyServiceAccount | quote }}
+  {{- end }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" $outerScope }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $configmapName }}
+  namespace: {{ $config.kubernetes.configMapNamespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" $outerScope }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+rules:
+  - apiGroups: ["*"]
+    resources: ["configmaps"]
+    resourceNames: [{{ $configmapName }}]
+    verbs: ["get", "update"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ $.Chart.Name }}-tenant-fetcher-{{ $tenantFetcherName }}-config
+  namespace: {{ $config.kubernetes.configMapNamespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" $outerScope }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ $configmapName }}
+  apiGroup: rbac.authorization.k8s.io
+{{ end }}
+{{- end -}}

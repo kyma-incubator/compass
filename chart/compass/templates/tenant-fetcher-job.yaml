@@ -1,6 +1,6 @@
 {{ $outerScope := . }}
 {{- range $tenantFetcherName, $config := .Values.global.tenantFetchers -}}
-{{ if eq $config.enabled true }}
+{{ if eq $config.cron.job.enabled true }}
 {{ $configmapName := printf "%s-tenant-fetcher-%s-config" $.Chart.Name $tenantFetcherName }}
 ---
 apiVersion: batch/v1beta1
