@@ -45,7 +45,7 @@ metadata:
     app.kubernetes.io/instance: {{ $.Release.Name }}
 subjects:
   - kind: ServiceAccount
-    name: {{ $.Chart.Name }}-tenant-fetcher
+    name: {{ template "fullname" . }}
     namespace: {{ $.Release.Namespace }}
 roleRef:
   kind: Role
