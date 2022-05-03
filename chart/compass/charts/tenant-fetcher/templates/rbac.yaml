@@ -11,7 +11,7 @@ metadata:
 {{ $outerScope := . }}
 {{- range $tenantFetcherName, $config := .Values.global.tenantFetchers -}}
 {{ if eq $config.enabled true }}
-{{ $configmapName := printf "%s-tenant-fetcher-%s-config" $.Chart.Name $tenantFetcherName }}
+{{ $configmapName := printf "%s-%s-config" $.Chart.Name $tenantFetcherName }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -34,7 +34,7 @@ rules:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ $.Chart.Name }}-tenant-fetcher-{{ $tenantFetcherName }}-config
+  name: {{ $.Chart.Name }}-{{ $tenantFetcherName }}-config
   namespace: {{ $config.kubernetes.configMapNamespace }}
   labels:
     app: {{ $.Chart.Name }}
@@ -45,7 +45,7 @@ metadata:
     app.kubernetes.io/instance: {{ $.Release.Name }}
 subjects:
   - kind: ServiceAccount
-    name: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
+    name: {{ template "fullname" . }}
     namespace: {{ $.Release.Namespace }}
 roleRef:
   kind: Role

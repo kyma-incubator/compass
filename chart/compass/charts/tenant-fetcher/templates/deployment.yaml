@@ -246,7 +246,7 @@ spec:
               value: "true"
             - name: APP_{{ $tenantFetcherJobName }}_CONFIGMAP_NAMESPACE
               value: {{ $config.kubernetes.configMapNamespace }}
-              {{ $configmapName := printf "%s-tenant-fetcher-%s-config" $.Chart.Name $tenantFetcherJobName }}
+              {{ $configmapName := printf "%s-%s-config" $.Chart.Name $tenantFetcherJobName }}
             - name: APP_{{ $tenantFetcherJobName }}_LAST_EXECUTION_TIME_CONFIG_MAP_NAME
               value: {{ $configmapName }}
             - name: APP_{{ $tenantFetcherJobName }}_CONFIGMAP_TIMESTAMP_FIELD
@@ -365,7 +365,7 @@ spec:
 {{ $outerScope := . }}
 {{- range $tenantFetcherName, $config := .Values.global.tenantFetchers -}}
 {{ if eq $config.enabled true }}
-{{ $configmapName := printf "%s-tenant-fetcher-%s-config" $.Chart.Name $tenantFetcherName }}
+{{ $configmapName := printf "%s-%s-config" $.Chart.Name $tenantFetcherName }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -388,22 +388,5 @@ data:
 data:
 {{ toYaml $configmap.data | indent 2}}
 {{ end }}
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
-  namespace: {{ $.Release.Namespace }}
-  {{- if eq $.Values.global.database.embedded.enabled false }}
-  annotations:
-    iam.gke.io/gcp-service-account: {{ $.Values.global.database.sqlProxyServiceAccount | quote }}
-  {{- end }}
-  labels:
-    app: {{ $.Chart.Name }}
-    release: {{ $.Release.Name }}
-    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
-    app.kubernetes.io/name: {{ template "name" $outerScope }}
-    app.kubernetes.io/managed-by: {{ $.Release.Service }}
-    app.kubernetes.io/instance: {{ $.Release.Name }}
 {{ end }}
 {{- end -}}
