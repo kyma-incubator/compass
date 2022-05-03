@@ -192,7 +192,7 @@ func main() {
 	}
 	internalHTTPClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
-		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(internalClientTransport, "Authorization")),
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(internalClientTransport, httputil.InternalAuthorizationHeader)),
 	}
 
 	appRepo := applicationRepo()
