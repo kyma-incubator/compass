@@ -102,8 +102,7 @@ echo "-----------------------------------"
 
 echo "Starting compass"
 cd ${COMPASS_DIR}/components/director
-source run.sh 
-COMPASS_RUN_PID=${MAIN_PROCESS_PID}
+source run.sh & 
 
 COMPASS_URL="http://localhost:3000"
 
@@ -118,6 +117,8 @@ until is_ready "${COMPASS_URL}/healthz" ; do
     echo "Wait 10s ..."
     sleep 10
 done
+
+COMPASS_RUN_PID=${MAIN_PROCESS_PID}
 
 . ${COMPASS_DIR}/components/director/hack/jwt_generator.sh
 
@@ -154,7 +155,8 @@ echo "Killing all processes"
 ps x -o  "%p %r %c"
 
 echo "Compass run.sh script PID: ${COMPASS_RUN_PID}"
-kill -SIGINT  "${COMPASS_RUN_PID}"
+cleanup
+kill -SIGINT  "${COMPASS_RUN_PID}" 
 
 echo "ORD service run.sh script PID: ${ORD_SERVICE_RUN_PID}"
 kill -SIGINT  "${ORD_SERVICE_RUN_PID}"
