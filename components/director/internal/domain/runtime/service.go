@@ -220,7 +220,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, er
 
 // CreateWithMandatoryLabels creates a runtime in a given tenant and also adds mandatory labels to it.
 func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeInput, id string, mandatoryLabels map[string]interface{}) error {
-	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok {
+	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok { // TODO: <backwards-compatibility>: Should be deleted once the provisioner start creating runtimes in a subaccount
 		tnt, err := s.extractTenantFromSubaccountLabel(ctx, saVal)
 		if err != nil {
 			return err
