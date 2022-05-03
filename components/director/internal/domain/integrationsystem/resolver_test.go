@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -539,7 +541,7 @@ func TestResolver_UnregisterIntegrationSystem(t *testing.T) {
 			},
 			SysAuthSvcFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(testAuths, nil)
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), pkgmodel.IntegrationSystemReference, modelIntSys.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20SvcFn: func() *automock.OAuth20Service {
@@ -587,7 +589,7 @@ func TestResolver_UnregisterIntegrationSystem(t *testing.T) {
 			},
 			SysAuthSvcFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(testAuths, nil)
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), pkgmodel.IntegrationSystemReference, modelIntSys.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20SvcFn: func() *automock.OAuth20Service {
@@ -632,7 +634,7 @@ func TestResolver_UnregisterIntegrationSystem(t *testing.T) {
 			},
 			SysAuthSvcFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(testAuths, nil)
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), pkgmodel.IntegrationSystemReference, modelIntSys.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20SvcFn: func() *automock.OAuth20Service {
@@ -656,7 +658,7 @@ func TestResolver_UnregisterIntegrationSystem(t *testing.T) {
 			},
 			SysAuthSvcFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(nil, testError)
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), pkgmodel.IntegrationSystemReference, modelIntSys.ID).Return(nil, testError)
 				return svc
 			},
 			OAuth20SvcFn: func() *automock.OAuth20Service {
@@ -681,7 +683,7 @@ func TestResolver_UnregisterIntegrationSystem(t *testing.T) {
 			},
 			SysAuthSvcFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, modelIntSys.ID).Return(testAuths, nil)
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), pkgmodel.IntegrationSystemReference, modelIntSys.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20SvcFn: func() *automock.OAuth20Service {
@@ -731,7 +733,7 @@ func TestResolver_Auths(t *testing.T) {
 
 	parentIntegrationSystem := fixGQLIntegrationSystem(testID, testName)
 
-	modelSysAuths := []model.SystemAuth{
+	modelSysAuths := []pkgmodel.SystemAuth{
 		fixModelSystemAuth("bar", parentIntegrationSystem.ID, fixModelAuth()),
 		fixModelSystemAuth("baz", parentIntegrationSystem.ID, fixModelAuth()),
 		fixModelSystemAuth("faz", parentIntegrationSystem.ID, fixModelAuth()),
@@ -758,7 +760,7 @@ func TestResolver_Auths(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			SysAuthSvcFn: func() *automock.SystemAuthService {
 				sysAuthSvc := &automock.SystemAuthService{}
-				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, parentIntegrationSystem.ID).Return(modelSysAuths, nil).Once()
+				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), pkgmodel.IntegrationSystemReference, parentIntegrationSystem.ID).Return(modelSysAuths, nil).Once()
 				return sysAuthSvc
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
@@ -775,7 +777,7 @@ func TestResolver_Auths(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			SysAuthSvcFn: func() *automock.SystemAuthService {
 				sysAuthSvc := &automock.SystemAuthService{}
-				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, parentIntegrationSystem.ID).Return(nil, testError).Once()
+				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), pkgmodel.IntegrationSystemReference, parentIntegrationSystem.ID).Return(nil, testError).Once()
 				return sysAuthSvc
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
@@ -802,7 +804,7 @@ func TestResolver_Auths(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			SysAuthSvcFn: func() *automock.SystemAuthService {
 				sysAuthSvc := &automock.SystemAuthService{}
-				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), model.IntegrationSystemReference, parentIntegrationSystem.ID).Return(modelSysAuths, nil).Once()
+				sysAuthSvc.On("ListForObject", txtest.CtxWithDBMatcher(), pkgmodel.IntegrationSystemReference, parentIntegrationSystem.ID).Return(modelSysAuths, nil).Once()
 				return sysAuthSvc
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
@@ -853,8 +855,8 @@ func TestResolver_Auths(t *testing.T) {
 	})
 }
 
-func fixOAuths() []model.SystemAuth {
-	return []model.SystemAuth{
+func fixOAuths() []pkgmodel.SystemAuth {
+	return []pkgmodel.SystemAuth{
 		{
 			ID:       "foo",
 			TenantID: nil,

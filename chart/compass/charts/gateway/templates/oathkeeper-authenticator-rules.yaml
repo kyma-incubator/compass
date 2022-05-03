@@ -20,7 +20,7 @@ spec:
   - handler: hydrator
     config:
       api:
-        url: "http://{{ $.Values.global.director.host }}:{{ $.Values.global.director.graphql.external.port }}/authn-mapping/{{ $authenMappingServiceName }}"
+        url: "http://{{ $.Values.global.hydrator.host }}:{{ $.Values.global.hydrator.port }}{{ $.Values.global.hydrator.prefix}}/authn-mapping/{{ $authenMappingServiceName }}"
         retry:
           give_up_after: {{ default "6s" ((((($value).cfg).config).api).retry).give_up_after }}
           max_delay: {{ default "2000ms" ((((($value).cfg).config).api).retry).max_delay }}

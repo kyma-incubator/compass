@@ -55,6 +55,7 @@ type config struct {
 	ORDServers    ORDServers
 	SelfRegConfig selfreg.Config
 	DefaultTenant string `envconfig:"APP_DEFAULT_TENANT"`
+	TrustedTenant string `envconfig:"APP_TRUSTED_TENANT"`
 
 	TenantConfig         subscription.Config
 	TenantProviderConfig subscription.ProviderConfig
@@ -184,6 +185,9 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.HandleFunc("/v1/dependencies/configure", providerHandler.DependenciesConfigure).Methods(http.MethodPost)
 	router.HandleFunc("/v1/dependencies", providerHandler.Dependencies).Methods(http.MethodGet)
 
+	// Fetch tenant on demand handler. It handles the calls from director for fetching tenant information and storing it into the database.
+	router.HandleFunc("/tenants/v1/fetch/{tenantId}", providerHandler.FetchTenantOnDemand).Methods(http.MethodPost)
+
 	// CA server handlers
 	certHandler := cert.NewHandler(cfg.CACert, cfg.CAKey)
 	router.HandleFunc("/cert", certHandler.Generate).Methods(http.MethodPost)
@@ -200,7 +204,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
 	router.Methods(http.MethodDelete).PathPrefix("/systemfetcher/reset").HandlerFunc(systemFetcherHandler.HandleReset)
 	systemsRouter := router.PathPrefix("/systemfetcher/systems").Subrouter()
-	systemsRouter.Use(oauthMiddleware(&key.PublicKey, getClaimsValidator(cfg.DefaultTenant, cfg.ClientID, cfg.Scopes)))
+	systemsRouter.Use(oauthMiddleware(&key.PublicKey, getClaimsValidator([]string{cfg.DefaultTenant, cfg.TrustedTenant})))
 	systemsRouter.HandleFunc("", systemFetcherHandler.HandleFunc)
 
 	// Tenant fetcher handlers
@@ -416,6 +420,7 @@ func oauthMiddleware(key *rsa.PublicKey, validateClaims func(claims *oauth.Claim
 				httphelpers.WriteError(w, errors.New("Could not validate claims"), http.StatusUnauthorized)
 				return
 			}
+			r.Header.Set("tenant", parsed.Tenant)
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -481,8 +486,14 @@ func stopServer(server *http.Server) {
 func noopClaimsValidator(_ *oauth.Claims) bool {
 	return true
 }
-func getClaimsValidator(expectedTenant, expectedClient, expectedScopes string) func(*oauth.Claims) bool {
+
+func getClaimsValidator(trustedTenants []string) func(*oauth.Claims) bool {
 	return func(claims *oauth.Claims) bool {
-		return claims.Tenant == expectedTenant
+		for _, tenant := range trustedTenants {
+			if claims.Tenant == tenant {
+				return true
+			}
+		}
+		return false
 	}
 }

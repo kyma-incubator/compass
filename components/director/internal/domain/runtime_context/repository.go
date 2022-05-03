@@ -3,6 +3,8 @@ package runtimectx
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -20,6 +22,8 @@ const runtimeContextsTable string = `public.runtime_contexts`
 
 var (
 	runtimeContextColumns = []string{"id", "runtime_id", "key", "value"}
+	updatableColumns      = []string{"key", "value"}
+	orderByColumns        = repo.OrderByParams{repo.NewAscOrderBy("runtime_id"), repo.NewAscOrderBy("id")}
 )
 
 type pgRepository struct {
@@ -28,6 +32,7 @@ type pgRepository struct {
 	singleGetterGlobal repo.SingleGetterGlobal
 	deleter            repo.Deleter
 	pageableQuerier    repo.PageableQuerier
+	unionLister        repo.UnionLister
 	creator            repo.Creator
 	updater            repo.Updater
 	conv               entityConverter
@@ -47,23 +52,24 @@ func NewRepository(conv entityConverter) *pgRepository {
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.RuntimeContext, runtimeContextsTable, runtimeContextColumns),
 		deleter:            repo.NewDeleter(runtimeContextsTable),
 		pageableQuerier:    repo.NewPageableQuerier(runtimeContextsTable, runtimeContextColumns),
+		unionLister:        repo.NewUnionLister(runtimeContextsTable, runtimeContextColumns),
 		creator:            repo.NewCreator(runtimeContextsTable, runtimeContextColumns),
-		updater:            repo.NewUpdater(runtimeContextsTable, []string{"key", "value"}, []string{"id"}),
+		updater:            repo.NewUpdater(runtimeContextsTable, updatableColumns, []string{"id"}),
 		conv:               conv,
 	}
 }
 
-// Exists missing godoc
+// Exists returns true if a RuntimeContext with the provided `id` exists in the database and is visible for `tenant`
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
 	return r.existQuerier.Exists(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-// Delete missing godoc
+// Delete deletes the RuntimeContext with the provided `id` from the database if `tenant` has the appropriate access to it
 func (r *pgRepository) Delete(ctx context.Context, tenant string, id string) error {
 	return r.deleter.DeleteOne(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-// GetByID missing godoc
+// GetByID retrieves the RuntimeContext with the provided `id` from the database if it exists and is visible for `tenant`
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error) {
 	var runtimeCtxEnt RuntimeContext
 	if err := r.singleGetter.Get(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &runtimeCtxEnt); err != nil {
@@ -73,7 +79,23 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.R
 	return r.conv.FromEntity(&runtimeCtxEnt), nil
 }
 
-// GetByFiltersAndID missing godoc
+// GetForRuntime retrieves RuntimeContext with the provided `id` associated to Runtime with id `runtimeID` from the database if it exists and is visible for `tenant`
+func (r *pgRepository) GetForRuntime(ctx context.Context, tenant, id, runtimeID string) (*model.RuntimeContext, error) {
+	var runtimeCtxEnt RuntimeContext
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition("id", id),
+		repo.NewEqualCondition("runtime_id", runtimeID),
+	}
+
+	if err := r.singleGetter.Get(ctx, resource.RuntimeContext, tenant, conditions, repo.NoOrderBy, &runtimeCtxEnt); err != nil {
+		return nil, err
+	}
+
+	return r.conv.FromEntity(&runtimeCtxEnt), nil
+}
+
+// GetByFiltersAndID retrieves RuntimeContext with the provided `id` matching the provided filters from the database if it exists and is visible for `tenant`
 func (r *pgRepository) GetByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (*model.RuntimeContext, error) {
 	tenantID, err := uuid.Parse(tenant)
 	if err != nil {
@@ -98,7 +120,7 @@ func (r *pgRepository) GetByFiltersAndID(ctx context.Context, tenant, id string,
 	return r.conv.FromEntity(&runtimeCtxEnt), nil
 }
 
-// GetByFiltersGlobal missing godoc
+// GetByFiltersGlobal retrieves RuntimeContext matching the provided filters from the database if it exists
 func (r *pgRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.RuntimeContext, error) {
 	filterSubquery, args, err := label.FilterQueryGlobal(model.RuntimeContextLabelableObject, label.IntersectSet, filter)
 	if err != nil {
@@ -118,15 +140,15 @@ func (r *pgRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfi
 	return r.conv.FromEntity(&runtimeCtxEnt), nil
 }
 
-// RuntimeContextCollection missing godoc
+// RuntimeContextCollection represents collection of RuntimeContext
 type RuntimeContextCollection []RuntimeContext
 
-// Len missing godoc
+// Len returns the count of RuntimeContexts in the collection
 func (r RuntimeContextCollection) Len() int {
 	return len(r)
 }
 
-// List missing godoc
+// List retrieves a page of RuntimeContext objects associated to Runtime with id `runtimeID` that are matching the provided filters from the database that are visible for `tenant`
 func (r *pgRepository) List(ctx context.Context, runtimeID string, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error) {
 	var runtimeCtxsCollection RuntimeContextCollection
 	tenantID, err := uuid.Parse(tenant)
@@ -163,7 +185,49 @@ func (r *pgRepository) List(ctx context.Context, runtimeID string, tenant string
 	}, nil
 }
 
-// Create missing godoc
+// ListByRuntimeIDs retrieves a page of RuntimeContext objects for each runtimeID from the database that are visible for `tenantID`
+func (r *pgRepository) ListByRuntimeIDs(ctx context.Context, tenantID string, runtimeIDs []string, pageSize int, cursor string) ([]*model.RuntimeContextPage, error) {
+	var runtimeCtxsCollection RuntimeContextCollection
+
+	counts, err := r.unionLister.List(ctx, resource.RuntimeContext, tenantID, runtimeIDs, "runtime_id", pageSize, cursor, orderByColumns, &runtimeCtxsCollection)
+	if err != nil {
+		return nil, err
+	}
+
+	runtimeContextByID := map[string][]*model.RuntimeContext{}
+	for _, runtimeContextEntity := range runtimeCtxsCollection {
+		rc := r.conv.FromEntity(&runtimeContextEntity)
+		runtimeContextByID[runtimeContextEntity.RuntimeID] = append(runtimeContextByID[runtimeContextEntity.RuntimeID], rc)
+	}
+
+	offset, err := pagination.DecodeOffsetCursor(cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "while decoding page cursor")
+	}
+
+	runtimeContextPages := make([]*model.RuntimeContextPage, 0, len(runtimeIDs))
+	for _, runtimeID := range runtimeIDs {
+		totalCount := counts[runtimeID]
+		hasNextPage := false
+		endCursor := ""
+		if totalCount > offset+len(runtimeContextByID[runtimeID]) {
+			hasNextPage = true
+			endCursor = pagination.EncodeNextOffsetCursor(offset, pageSize)
+		}
+
+		page := &pagination.Page{
+			StartCursor: cursor,
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
+		}
+
+		runtimeContextPages = append(runtimeContextPages, &model.RuntimeContextPage{Data: runtimeContextByID[runtimeID], TotalCount: totalCount, PageInfo: page})
+	}
+
+	return runtimeContextPages, nil
+}
+
+// Create stores RuntimeContext entity in the database using the values from `item`
 func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.RuntimeContext) error {
 	if item == nil {
 		return apperrors.NewInternalError("item can not be empty")
@@ -171,7 +235,7 @@ func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.Ru
 	return r.creator.Create(ctx, resource.RuntimeContext, tenant, r.conv.ToEntity(item))
 }
 
-// Update missing godoc
+// Update updates the existing RuntimeContext entity in the database with the values from `item`
 func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.RuntimeContext) error {
 	if item == nil {
 		return apperrors.NewInternalError("item can not be empty")

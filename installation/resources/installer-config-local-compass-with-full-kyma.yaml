@@ -14,3 +14,4 @@ data:
 
   # Connect runtime agent installed by Kyma intaller to compass (setup job is ran as part of compass installer)
   global.agentPreconfiguration: "true"
+  global.hydrator.http.client.skipSSLValidation: "true"

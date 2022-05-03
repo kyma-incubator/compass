@@ -9,9 +9,11 @@ import (
 	"path"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/config"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
@@ -31,19 +33,19 @@ type ExternalSvcCaller interface {
 // ExternalSvcCallerProvider provides ExternalSvcCaller based on the provided SelfRegConfig and region
 //go:generate mockery --name=ExternalSvcCallerProvider --output=automock --outpkg=automock --case=underscore
 type ExternalSvcCallerProvider interface {
-	GetCaller(SelfRegConfig, string) (ExternalSvcCaller, error)
+	GetCaller(config.SelfRegConfig, string) (ExternalSvcCaller, error)
 }
 
 const regionLabel = "region"
 
 type selfRegisterManager struct {
-	cfg            SelfRegConfig
+	cfg            config.SelfRegConfig
 	callerProvider ExternalSvcCallerProvider
 }
 
 // NewSelfRegisterManager creates a new SelfRegisterManager which is responsible for doing preparation/clean-up during
 // self-registration of runtimes configured with values from cfg.
-func NewSelfRegisterManager(cfg SelfRegConfig, provider ExternalSvcCallerProvider) (*selfRegisterManager, error) {
+func NewSelfRegisterManager(cfg config.SelfRegConfig, provider ExternalSvcCallerProvider) (*selfRegisterManager, error) {
 	if err := cfg.MapInstanceConfigs(); err != nil {
 		return nil, errors.Wrap(err, "while creating self register manager")
 	}
