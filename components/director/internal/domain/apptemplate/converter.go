@@ -95,8 +95,9 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationTemplateInput) (model
 		return model.ApplicationTemplateInput{}, errors.Wrapf(err, "error occurred while converting webhooks og GraphQL input to Application Template model with name %s", in.Name)
 	}
 
-	if in.Labels == nil {
-		in.Labels = make(map[string]interface{})
+	var labels map[string]interface{}
+	if in.Labels != nil {
+		labels = in.Labels
 	}
 
 	return model.ApplicationTemplateInput{
@@ -105,7 +106,7 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationTemplateInput) (model
 		ApplicationInputJSON: appCreateInput,
 		Placeholders:         c.placeholdersFromGraphql(in.Placeholders),
 		AccessLevel:          model.ApplicationTemplateAccessLevel(in.AccessLevel),
-		Labels:               in.Labels,
+		Labels:               labels,
 		Webhooks:             webhooks,
 	}, nil
 }
