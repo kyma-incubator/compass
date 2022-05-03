@@ -6,10 +6,13 @@ import (
 )
 
 const (
-	id        = "id"
-	runtimeID = "runtimeID"
-	key       = "key"
-	val       = "val"
+	id                     = "id"
+	runtimeID              = "runtimeID"
+	emptyPageRuntimeID     = "emtyPageRuntimeID"
+	onePageRuntimeID       = "onePageRuntimeID"
+	multiplePagesRuntimeID = "multiplePagesRuntimeID"
+	key                    = "key"
+	val                    = "val"
 
 	tenantID     = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 	runtimeCtxID = "runtimeCtxID"
@@ -30,6 +33,12 @@ func fixModelRuntimeCtxWithID(id string) *model.RuntimeContext {
 	}
 }
 
+func fixModelRuntimeCtxWithIDAndRuntimeID(id, rtmID string) *model.RuntimeContext {
+	rtmCtx := fixModelRuntimeCtxWithID(id)
+	rtmCtx.RuntimeID = rtmID
+	return rtmCtx
+}
+
 func fixEntityRuntimeCtx() *runtimectx.RuntimeContext {
 	return fixEntityRuntimeCtxWithID(runtimeCtxID)
 }
@@ -41,4 +50,10 @@ func fixEntityRuntimeCtxWithID(id string) *runtimectx.RuntimeContext {
 		Key:       key,
 		Value:     val,
 	}
+}
+
+func fixEntityRuntimeCtxWithIDAndRuntimeID(id, rtmID string) *runtimectx.RuntimeContext {
+	rtmCtx := fixEntityRuntimeCtxWithID(id)
+	rtmCtx.RuntimeID = rtmID
+	return rtmCtx
 }

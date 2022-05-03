@@ -553,8 +553,6 @@ type RuntimeContextInput struct {
 	// **Validation:** required max=512, alphanumeric chartacters and underscore
 	Key   string `json:"key"`
 	Value string `json:"value"`
-	// **Validation:** key: required, alphanumeric with underscore
-	Labels Labels `json:"labels"`
 }
 
 type RuntimeContextPage struct {

@@ -14,29 +14,17 @@ type RuntimeContextConverter struct {
 	mock.Mock
 }
 
-// InputFromGraphQL provides a mock function with given fields: in
-func (_m *RuntimeContextConverter) InputFromGraphQL(in graphql.RuntimeContextInput) model.RuntimeContextInput {
+// MultipleToGraphQL provides a mock function with given fields: in
+func (_m *RuntimeContextConverter) MultipleToGraphQL(in []*model.RuntimeContext) []*graphql.RuntimeContext {
 	ret := _m.Called(in)
 
-	var r0 model.RuntimeContextInput
-	if rf, ok := ret.Get(0).(func(graphql.RuntimeContextInput) model.RuntimeContextInput); ok {
+	var r0 []*graphql.RuntimeContext
+	if rf, ok := ret.Get(0).(func([]*model.RuntimeContext) []*graphql.RuntimeContext); ok {
 		r0 = rf(in)
 	} else {
-		r0 = ret.Get(0).(model.RuntimeContextInput)
-	}
-
-	return r0
-}
-
-// InputFromGraphQLWithRuntimeID provides a mock function with given fields: in, runtimeID
-func (_m *RuntimeContextConverter) InputFromGraphQLWithRuntimeID(in graphql.RuntimeContextInput, runtimeID string) model.RuntimeContextInput {
-	ret := _m.Called(in, runtimeID)
-
-	var r0 model.RuntimeContextInput
-	if rf, ok := ret.Get(0).(func(graphql.RuntimeContextInput, string) model.RuntimeContextInput); ok {
-		r0 = rf(in, runtimeID)
-	} else {
-		r0 = ret.Get(0).(model.RuntimeContextInput)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*graphql.RuntimeContext)
+		}
 	}
 
 	return r0
