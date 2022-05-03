@@ -173,7 +173,7 @@ func NewRootResolver(
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo, runtimeRepo)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc, scenarioAssignmentEngine)
-	runtimeCtxSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, uidSvc)
+	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, uidSvc)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
@@ -199,8 +199,8 @@ func NewRootResolver(
 		eventing:           eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:                document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
 		formation:          formation.NewResolver(transact, formationSvc, formationConv),
-		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc, subscriptionSvc),
-		runtimeContext:     runtimectx.NewResolver(transact, runtimeCtxSvc, runtimeContextConverter),
+		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc, subscriptionSvc, runtimeContextSvc, runtimeContextConverter),
+		runtimeContext:     runtimectx.NewResolver(transact, runtimeContextSvc, runtimeContextConverter),
 		healthCheck:        healthcheck.NewResolver(healthCheckSvc),
 		webhook:            webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, webhookConverter),
 		labelDef:           labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
@@ -249,6 +249,11 @@ func (r *RootResolver) FetchRequestEventDefDataloader(ids []dataloader.ParamFetc
 // FetchRequestDocumentDataloader missing godoc
 func (r *RootResolver) FetchRequestDocumentDataloader(ids []dataloader.ParamFetchRequestDocument) ([]*graphql.FetchRequest, []error) {
 	return r.doc.FetchRequestDocumentDataLoader(ids)
+}
+
+// RuntimeContextsDataloader missing godoc
+func (r *RootResolver) RuntimeContextsDataloader(ids []dataloader.ParamRuntimeContext) ([]*graphql.RuntimeContextPage, []error) {
+	return r.runtime.RuntimeContextsDataLoader(ids)
 }
 
 // Mutation missing godoc
@@ -405,16 +410,6 @@ func (r *queryResolver) Runtime(ctx context.Context, id string) (*graphql.Runtim
 // RuntimeByTokenIssuer missing godoc
 func (r *queryResolver) RuntimeByTokenIssuer(ctx context.Context, issuer string) (*graphql.Runtime, error) {
 	return r.runtime.RuntimeByTokenIssuer(ctx, issuer)
-}
-
-// RuntimeContexts missing godoc
-func (r *queryResolver) RuntimeContexts(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimeContextPage, error) {
-	return r.runtimeContext.RuntimeContexts(ctx, filter, first, after)
-}
-
-// RuntimeContext missing godoc
-func (r *queryResolver) RuntimeContext(ctx context.Context, id string) (*graphql.RuntimeContext, error) {
-	return r.runtimeContext.RuntimeContext(ctx, id)
 }
 
 // LabelDefinitions missing godoc
@@ -603,8 +598,8 @@ func (r *mutationResolver) UnregisterRuntime(ctx context.Context, id string) (*g
 }
 
 // RegisterRuntimeContext missing godoc
-func (r *mutationResolver) RegisterRuntimeContext(ctx context.Context, in graphql.RuntimeContextInput) (*graphql.RuntimeContext, error) {
-	return r.runtimeContext.RegisterRuntimeContext(ctx, in)
+func (r *mutationResolver) RegisterRuntimeContext(ctx context.Context, runtimeID string, in graphql.RuntimeContextInput) (*graphql.RuntimeContext, error) {
+	return r.runtimeContext.RegisterRuntimeContext(ctx, runtimeID, in)
 }
 
 // UpdateRuntimeContext missing godoc
@@ -884,6 +879,16 @@ func (r *runtimeResolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*g
 // EventingConfiguration missing godoc
 func (r *runtimeResolver) EventingConfiguration(ctx context.Context, obj *graphql.Runtime) (*graphql.RuntimeEventingConfiguration, error) {
 	return r.runtime.EventingConfiguration(ctx, obj)
+}
+
+// RuntimeContexts missing godoc
+func (r *runtimeResolver) RuntimeContexts(ctx context.Context, obj *graphql.Runtime, first *int, after *graphql.PageCursor) (*graphql.RuntimeContextPage, error) {
+	return r.runtime.RuntimeContexts(ctx, obj, first, after)
+}
+
+// RuntimeContext missing godoc
+func (r *runtimeResolver) RuntimeContext(ctx context.Context, obj *graphql.Runtime, id string) (*graphql.RuntimeContext, error) {
+	return r.runtime.RuntimeContext(ctx, obj, id)
 }
 
 type apiSpecResolver struct{ *RootResolver }
