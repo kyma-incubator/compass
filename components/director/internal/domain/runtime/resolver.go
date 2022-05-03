@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
@@ -98,6 +99,12 @@ type SubscriptionService interface {
 	UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error)
 }
 
+// TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
+//go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore
+type TenantFetcher interface {
+	FetchOnDemand(tenant string) error
+}
+
 // RuntimeContextService missing godoc
 //go:generate mockery --name=RuntimeContextService --output=automock --outpkg=automock --case=underscore
 type RuntimeContextService interface {
@@ -126,6 +133,7 @@ type Resolver struct {
 	selfRegManager            SelfRegisterManager
 	uidService                uidService
 	subscriptionSvc           SubscriptionService
+	fetcher                   TenantFetcher
 	runtimeContextService     RuntimeContextService
 	runtimeContextConverter   RuntimeContextConverter
 }
@@ -134,7 +142,7 @@ type Resolver struct {
 func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService,
 	sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService, selfRegManager SelfRegisterManager,
-	uidService uidService, subscriptionSvc SubscriptionService, runtimeContextService RuntimeContextService, runtimeContextConverter RuntimeContextConverter) *Resolver {
+	uidService uidService, subscriptionSvc SubscriptionService, runtimeContextService RuntimeContextService, runtimeContextConverter RuntimeContextConverter, fetcher TenantFetcher) *Resolver {
 	return &Resolver{
 		transact:                  transact,
 		runtimeService:            runtimeService,
@@ -148,6 +156,7 @@ func NewResolver(transact persistence.Transactioner, runtimeService RuntimeServi
 		selfRegManager:            selfRegManager,
 		uidService:                uidService,
 		subscriptionSvc:           subscriptionSvc,
+		fetcher:                   fetcher,
 		runtimeContextService:     runtimeContextService,
 		runtimeContextConverter:   runtimeContextConverter,
 	}
@@ -179,8 +188,7 @@ func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, 
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -215,8 +223,7 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -258,6 +265,16 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 		return nil, err
 	}
 
+	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok {
+		sa, err := convertLabelValue(saVal)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while converting %s label", scenarioassignment.SubaccountIDKey)
+		}
+		if err := r.fetcher.FetchOnDemand(sa); err != nil {
+			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", sa)
+		}
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -289,14 +306,11 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
-	gqlRuntime := r.converter.ToGraphQL(runtime)
-
-	return gqlRuntime, nil
+	return r.converter.ToGraphQL(runtime), nil
 }
 
 // UpdateRuntime missing godoc
@@ -321,14 +335,11 @@ func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.Runt
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
-	gqlRuntime := r.converter.ToGraphQL(runtime)
-
-	return gqlRuntime, nil
+	return r.converter.ToGraphQL(runtime), nil
 }
 
 // DeleteRuntime missing godoc
@@ -452,8 +463,7 @@ func (r *Resolver) GetLabel(ctx context.Context, runtimeID string, key string) (
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -495,8 +505,7 @@ func (r *Resolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key st
 		return nil, errors.Wrapf(err, "while getting label with key: [%s]", key)
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -521,13 +530,11 @@ func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key
 		return nil, err
 	}
 
-	err = r.runtimeService.DeleteLabel(ctx, runtimeID, key)
-	if err != nil {
+	if err = r.runtimeService.DeleteLabel(ctx, runtimeID, key); err != nil {
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
