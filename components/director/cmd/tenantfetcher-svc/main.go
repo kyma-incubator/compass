@@ -101,13 +101,13 @@ func main() {
 		exitOnError(errors.New("missing tenant path parameter"), "Error while loading app handler config")
 	}
 
-	//transact, closeFunc, err := persistence.Configure(ctx, cfg.Handler.Database)
-	//exitOnError(err, "Error while establishing the connection to the database")
-	//
-	//defer func() {
-	//	err := closeFunc()
-	//	exitOnError(err, "Error while closing the connection to the database")
-	//}()
+	transact, closeFunc, err := persistence.Configure(ctx, cfg.Handler.Database)
+	exitOnError(err, "Error while establishing the connection to the database")
+
+	defer func() {
+		err := closeFunc()
+		exitOnError(err, "Error while closing the connection to the database")
+	}()
 
 	envVars := tenantfetcher.ReadEnvironmentVars()
 	jobsNames := tenantfetcher.GetJobsNames(envVars)
@@ -127,23 +127,23 @@ func main() {
 		<-stopJob
 	}
 
-	//httpClient := &http.Client{
-	//	Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
-	//	CheckRedirect: func(req *http.Request, via []*http.Request) error {
-	//		return http.ErrUseLastResponse
-	//	},
-	//}
-	//
-	//handler := initAPIHandler(ctx, httpClient, cfg, transact)
-	//runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
-	//
-	//go func() {
-	//	<-ctx.Done()
-	//	// Interrupt signal received - shut down the servers
-	//	shutdownMainSrv()
-	//}()
-	//
-	//runMainSrv()
+	httpClient := &http.Client{
+		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	handler := initAPIHandler(ctx, httpClient, cfg, transact)
+	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
+
+	go func() {
+		<-ctx.Done()
+		// Interrupt signal received - shut down the servers
+		shutdownMainSrv()
+	}()
+
+	runMainSrv()
 }
 
 func readJobConfig(ctx context.Context, jobName string, environmentVars map[string]string) tenantfetcher.JobConfig {
