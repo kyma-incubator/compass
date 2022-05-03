@@ -401,15 +401,6 @@ func TestServiceAssignFormation(t *testing.T) {
 		TargetTenantID: targetTenant,
 	}
 
-	subaccountInput := func() model.BusinessTenantMappingInput {
-		return model.BusinessTenantMappingInput{
-			ExternalTenant: objectID,
-			Parent:         tnt,
-			Type:           "subaccount",
-			Provider:       "lazilyWhileFormationCreation",
-		}
-	}
-
 	testCases := []struct {
 		Name               string
 		UIDServiceFn       func() *automock.UidService
@@ -548,7 +539,6 @@ func TestServiceAssignFormation(t *testing.T) {
 			UIDServiceFn: frmtest.UnusedUUIDService(),
 			TenantServiceFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				svc.On("CreateManyIfNotExists", ctx, subaccountInput()).Return(nil).Once()
 				svc.On("GetInternalTenant", ctx, objectID).Return(targetTenant, nil)
 				return svc
 			},
@@ -750,25 +740,10 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name:         "error for tenant when tenant creation fails",
-			UIDServiceFn: frmtest.UnusedUUIDService(),
-			TenantServiceFn: func() *automock.TenantService {
-				svc := &automock.TenantService{}
-				svc.On("CreateManyIfNotExists", ctx, subaccountInput()).Return(testErr).Once()
-				return svc
-			},
-			LabelServiceFn:     formation.UnusedLabelService,
-			AsaServiceFN:       formation.UnusedASAService,
-			ObjectType:         graphql.FormationObjectTypeTenant,
-			InputFormation:     inputFormation,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
 			Name:         "error for tenant when tenant conversion fails",
 			UIDServiceFn: frmtest.UnusedUUIDService(),
 			TenantServiceFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				svc.On("CreateManyIfNotExists", ctx, subaccountInput()).Return(nil).Once()
 				svc.On("GetInternalTenant", ctx, objectID).Return("", testErr)
 				return svc
 			},
@@ -783,7 +758,6 @@ func TestServiceAssignFormation(t *testing.T) {
 			UIDServiceFn: frmtest.UnusedUUIDService(),
 			TenantServiceFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				svc.On("CreateManyIfNotExists", ctx, subaccountInput()).Return(nil).Once()
 				svc.On("GetInternalTenant", ctx, objectID).Return(targetTenant, nil)
 				return svc
 			},

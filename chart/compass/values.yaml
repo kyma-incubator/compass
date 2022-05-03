@@ -1,7 +1,7 @@
 global:
   disableLegacyConnectivity: true
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
-  tenants:
+  tenants: # tenant order matters, so new tenants should be added to the end of the list
     - name: default
       id: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
       type: account
@@ -88,6 +88,10 @@ global:
       id: c395681d-11dd-4cde-bbcf-570b4a153e79
       type: account
       parent: 2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0
+    - name: TestConsumerSubaccount
+      id: 1f538f34-30bf-4d3d-aeaa-02e69eef84ae
+      type: subaccount
+      parent: 5984a414-1eed-4972-af2c-b2b6a415c7d7
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
