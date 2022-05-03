@@ -43,9 +43,9 @@ func UpdateRuntimeWithinTenant(t require.TestingT, ctx context.Context, gqlClien
 	inputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(in)
 	require.NoError(t, err)
 
-	createRequest := FixUpdateRuntimeRequest(id, inputGQL)
+	updateRequest := FixUpdateRuntimeRequest(id, inputGQL)
 	runtime := graphql.RuntimeExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, createRequest, &runtime)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, updateRequest, &runtime)
 	return runtime, err
 }
 
