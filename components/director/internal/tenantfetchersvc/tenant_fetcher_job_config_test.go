@@ -167,11 +167,11 @@ func TestFetcherJobConfig_ReadEventsConfig(t *testing.T) {
 
 			// THEN
 			if testCase.EnvVars == nil || testCase.ReadFailure {
-				assert.Equal(t, defaultAccountRegion, eventsCfg.AccountsRegion)
-				assert.Equal(t, defaultTenantCreatedEndpoint, eventsCfg.APIConfig.EndpointTenantCreated)
+				assert.Equal(t, defaultAccountRegion, eventsCfg.AccountsRegion, fmt.Sprintf("Default account region should be %s", defaultAccountRegion))
+				assert.Equal(t, defaultTenantCreatedEndpoint, eventsCfg.APIConfig.EndpointTenantCreated, fmt.Sprintf("Default tenant created endpint should be %s", defaultTenantCreatedEndpoint))
 			} else {
-				assert.Equal(t, accountRegion, eventsCfg.AccountsRegion)
-				assert.Equal(t, tenantCreatedEndpoint, eventsCfg.APIConfig.EndpointTenantCreated)
+				assert.Equal(t, accountRegion, eventsCfg.AccountsRegion, fmt.Sprintf("Account region should be %s", accountRegion))
+				assert.Equal(t, tenantCreatedEndpoint, eventsCfg.APIConfig.EndpointTenantCreated, fmt.Sprintf(" Tenant created endpint should be %s", tenantCreatedEndpoint))
 			}
 		})
 	}
@@ -234,11 +234,11 @@ func TestFetcherJobConfig_ReadHandlerConfig(t *testing.T) {
 
 			// THEN
 			if testCase.EnvVars == nil || testCase.ReadFailure {
-				assert.Equal(t, defaultJobIntervalMins, handlerCfg.TenantFetcherJobIntervalMins)
-				assert.Equal(t, defaultTenantProvider, handlerCfg.TenantProviderConfig.TenantProvider)
+				assert.Equal(t, defaultJobIntervalMins, handlerCfg.TenantFetcherJobIntervalMins, fmt.Sprintf("Default job interval should be %s", defaultJobIntervalMins))
+				assert.Equal(t, defaultTenantProvider, handlerCfg.TenantProviderConfig.TenantProvider, fmt.Sprintf("Default tenant provider should be %s", defaultTenantProvider))
 			} else {
-				assert.Equal(t, jobIntervalMins, handlerCfg.TenantFetcherJobIntervalMins)
-				assert.Equal(t, tenantProvider, handlerCfg.TenantProviderConfig.TenantProvider)
+				assert.Equal(t, jobIntervalMins, handlerCfg.TenantFetcherJobIntervalMins, fmt.Sprintf("Job interval should be %s", jobIntervalMins))
+				assert.Equal(t, tenantProvider, handlerCfg.TenantProviderConfig.TenantProvider, fmt.Sprintf("Tenant provider should be %s", tenantProvider))
 			}
 		})
 	}
