@@ -2,7 +2,7 @@
 
 ## Overview
 
-External Services Mock is a component that mocks external APIs for test purposes. To learn more about tests that use the External Services Mock, read [this](https://github.com/kfurgol/compass/blob/master/tests/director/external-services-mock-integration/README.md) document.
+External Services Mock is a component that mocks external APIs for test purposes. To learn more about tests that use the External Services Mock, read [this](https://github.com/kyma-incubator/compass/blob/main/tests/external-services-mock/tests/README.md) document.
 
 External Services Mock contains the following mocks:
 * Audit log service

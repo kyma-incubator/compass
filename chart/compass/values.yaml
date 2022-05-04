@@ -98,7 +98,7 @@ global:
       version: "PR-2297"
     director:
       dir:
-      version: "PR-2303"
+      version: "PR-2308"
     gateway:
       dir:
       version: "PR-2302"
@@ -121,13 +121,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2297"
+      version: "PR-2298"
     console:
       dir:
       version: "PR-64"
     e2e_tests:
       dir:
-      version: "PR-2293"
+      version: "PR-2308"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -564,12 +564,10 @@ global:
     systemsAPIEndpoint: ""
     # systemsAPIFilterCriteria - criteria for fetching systems
     systemsAPIFilterCriteria: ""
-    # systemsAPIFilterTenantCriteriaPattern - criateria for fetching systems with tenant filter
-    systemsAPIFilterTenantCriteriaPattern: ""
     # systemToTemplateMappings - how to map system properties to an existing application template
     systemToTemplateMappings: '{}'
-    templatePlaceholderToSystemKeyMappings: '[{"placeholder_name": "name","system_key": "displayName"},{"placeholder_name": "display-name","system_key": "displayName"},{"placeholder_name": "systemNumber","system_key": "systemNumber"},{"placeholder_name": "description","system_key": "productDescription", "optional": true},{"placeholder_name": "baseUrl","system_key": "baseUrl", "optional":true},{"placeholder_name": "providerName","system_key": "infrastructureProvider", "optional": true}]'
-    templateOverrideApplicationInput: '{"name": "{{name}}","description": "{{description}}","providerName": "{{providerName}}","statusCondition": "INITIAL","systemNumber": "{{systemNumber}}","labels": {"managed": "true"},"baseUrl": "{{baseUrl}}"}'
+    templatePlaceholderToSystemKeyMappings: '[{"placeholder_name": "name","system_key": "displayName"},{"placeholder_name": "display-name","system_key": "displayName"},{"placeholder_name": "systemNumber","system_key": "systemNumber"},{"placeholder_name": "productId","system_key": "productId"},{"placeholder_name": "ppmsProductVersionId","system_key": "ppmsProductVersionId"},{"placeholder_name": "description","system_key": "productDescription", "optional": true},{"placeholder_name": "baseUrl","system_key": "additionalUrls.mainUrl", "optional":true},{"placeholder_name": "providerName","system_key": "infrastructureProvider", "optional": true}]'
+    templateOverrideApplicationInput: '{"name": "{{name}}","description": "{{description}}","providerName": "{{providerName}}","statusCondition": "INITIAL","systemNumber": "{{systemNumber}}","labels": {"managed": "true","productId": "{{productId}}","ppmsProductVersionId": "{{ppmsProductVersionId}}"},"baseUrl": "{{baseUrl}}"}'
     http:
       client:
         skipSSLValidation: false

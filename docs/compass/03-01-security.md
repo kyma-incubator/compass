@@ -1,12 +1,18 @@
 # Security
 
-Compass is secured with ORY [Hydra](https://www.ory.sh/hydra/) and [OathKeeper](https://github.com/ory/oathkeeper). There are the following ways of authentication: 
+There are multiple ways you can access Compass from security perspective. The Compass component supports the following ways of authentication: 
  - OAuth 2.0
  - Client certificates (mTLS)
- - JWT token issued by identity service
+    - Issued by the Compass Connector
+    - Issued by external certificate authority
+ - JSON Web Token (JWT) issued by identity service
  - One-time token
+ 
+Additionally, there are **two consumer-provider** flows, in which an external multi-tenant system wants to manage resources (for example, bundle instance auths) on behalf of a tenant in Compass. These are the following:
+ - SaaS applications, which are modeled like runtimes, can access Compass resources with an externally-issued certificate, and a JWT where the provider tenant is present.
+ - Integration systems, which are configured with externally-issued certificate, can once again consume resources from tenants which are provided as a `Tenant` header.
 
- To achieve that, first, we need to integrate Hydra and OathKeeper into Compass. We also need to implement additional supporting components to make our scenarios valid.
+Compass is integrated with [ORY Hydra](https://www.ory.sh/hydra/) and [ORY OathKeeper](https://github.com/ory/oathkeeper).
 
 ## Architecture
 
@@ -16,30 +22,46 @@ The following diagram represents the architecture of the security in Compass:
 
 ### Tenant Mapping Handler
 
-It is an OathKeeper [hydrator](https://github.com/ory/docs/blob/525608c65694539384b785355d293bc0ad00da27/docs/oathkeeper/pipeline/mutator.md#hydrator) handler responsible for mapping authentication session data to the tenant. It is built into the Director itself, as it uses the same database. It is implemented as a separate endpoint, such as `/tenant-mapping`.
+The Tenant Mapping Handler is an OathKeeper [hydrator](https://github.com/ory/docs/blob/525608c65694539384b785355d293bc0ad00da27/docs/oathkeeper/pipeline/mutator.md#hydrator) handler that is responsible for mapping authentication session data to the tenant. It is built in the Director itself, as it uses the same database. It is implemented as a separate endpoint, such as, `/tenant-mapping`.
 
-To unify the approach for mapping, we introduce `authorization_id`, widely used by multiple authentication flows.
-The `authorization_id` is equal to:
-- `client_id` in the OAuth 2.0 authentication flow
-- `username` in the Basic authentication flow
-- Common Name (CN) in the certificates authentication flow
-- Client ID in the one-time token authentication flow
+To unify the mapping approach, it is introduced an Authorization ID `auth_id`, which is used across the multiple authentication flows. Each authentication flow has its own context provider, which takes care of extracting information about the tenant and the granted scopes.
 
-While generating the one-time token, the `client_id`/`client_secret` pair, or basic authentication details for Runtime/Application/Integration System (using proper GraphQL mutation on the Director), an entry in the `system_auths` table in the Director database is created. The `system_auths` table is used for tenant mapping.
+Depending on the use case, the `auth_id` equals to:
+- Parameter `client_id` in the OAuth 2.0 authentication flow.
+- Client ID in the one-time token authentication flow.
+- Common Name (CN) in the Connector-issued certificates authentication flow.
+- External Tenant ID of type `Subaccount` for externally-issued certificates flow, extracted from the certificate's organizational unit (OU) by default.
 
-In the certificates authentication flow, Tenant Mapping Handler puts fixed `scopes` into an authentication session. The `scopes` are fixed in code, and they depend on the type of the object (Application/Runtime/Integration System). In the future we may introduce another database table for storing generic Application/Runtime/Integration System scopes.
+The `system_auths` table is used for tenant mapping. An entry in the `system_auths` table in the Director database is created while generating one of the following:
+- An one-time token;
+- A `client_id`-`client_secret` pair;
+- A client certificate, issued by Connector for Runtime/Application/Integration System by using a proper GraphQL mutation in the Director.
 
-In JWT token from identity service flow, for local development, user `tenant` and `scopes` are loaded from ConfigMap for given user (email), where static `user: tenant and scopes` mapping is done.
+In the certificate's authentication flows (Connector-issued and externally-issued certificates), the Tenant Mapping Handler puts fixed `scopes` into an authentication session. The `scopes` are fixed in the code and they depend on the type of the calling object (Application/Runtime/Integration System). They are listed in the [config.yaml](https://github.com/kyma-incubator/compass/blob/1105695797f74eba8d8a86ee3d4d65809ef6abb7/chart/compass/charts/director/config.yaml#L120) file.
+
+In the identity service flow, where JWT is used, the `scopes` are loaded from a ConfigMap, where a static `user_group: scopes` mapping is set. The user group is present in the JWT.
 
 #### `system_auths` table
 
 The table is used by the Director and Tenant Mapping Handler. It contains the following fields:
-- `id`, which is the `authorization_id`
-- `tenant` (optional field - used for Application and Runtime, not used for Integration System)
-- `app_id` foreign key of type UUID
-- `runtime_id` foreign key of type UUID
-- `integration_system_id` foreign key of type UUID
-- `value` of type JSON, with authentication details, such as `client_id/client_secret` in the OAuth 2.0 authentication flow, or `username/password` in the Basic authentication flow. In the case of the certificates flow it is empty.
+- `id` - This is the `authorization_id`.
+- `tenant` - An optional field, used for Application and Runtime, and not used for Integration System.
+- `app_id` - A foreign key of type UUID
+- `runtime_id` - A foreign key of type UUID
+- `integration_system_id` - A foreign key of type UUID
+- `value` - A field of type JSON, with authentication details, such as, a `client_id`-`client_secret` in the OAuth 2.0 authentication flow, a Common Name in case of the certificates flow, or a token in the one-time-token flow.
+
+#### Custom Authenticator
+You can configure a custom JWT-based authentication for Compass with trusted issuers and locations for a tenant and scopes in the token. The flow is as follows:
+1. The authentication-mapping handler hydrator first checks for trusted issuer, next enriches, and then, provides the tenant-mapping handler with locations for tenant, scopes, and clientID.
+1. The tenant-mapping handler extracts them from the token's claims and verifies that the tenant exists.
+
+#### Consumer-Provider Flows
+As mentioned above, there are use cases where you can manage Compass resources from a different multi-tenant system, which shares the same tenancy model and knows the external tenant IDs, which are also used by Compass. In this case, Compass trusts those systems and allows them to manage resources on behalf of the user. The following options are valid for this flow:
+- The multi-tenant system is represented as an Integration System. In this case, the consumer tenant is specified in the `Tenant` header. The scopes which are granted to the request, are the ones assigned to integration systems, by default. They are granted by the context provider, mentioned above.
+- The multi-tenant system is represented as a Runtime. In this case, the second context provider that matches is a custom authenticator, where the consumer tenant is part of a JWT, along with the scopes that are granted. The scopes are taken from the context provider in this case.
+
+Both cases feature two context providers, which are used in a pair. One of context providers must be an externally-issued certificate context provider. It extracts the provider tenant ID from the certificate. Later on, Compass checks if the provider tenant has access to the consumer tenant. For more information, see the [Authentication Flows](03-01-security.md#authentication-flows) section in this document.
 
 ### GraphQL security
 
@@ -163,7 +185,7 @@ User logs in to Compass UI
 
 1. Authenticator validates the token using keys provided by the identity service. 
 1. If the token is valid, OathKeeper sends the request to Hydrator.
-1. Hydrator calls Tenant Mapping Handler hosted by `Director`, which, in production environment, returns **the same** authentication session (as the `tenant` is already in place). For local development, user `tenant` and `scopes` are loaded from ConfigMap, where static `user - tenant and scopes` mapping is done.
+1. Hydrator calls the Tenant Mapping Handler hosted by `Director`, which, in production environment, returns **the same** authentication session (as the `tenant` is already in place) even for local development. For more information on how to configure OIDC Authentication Server, see [Installation](https://github.com/kyma-incubator/compass/blob/main/docs/compass/04-01-installation.md#local-minikube-installation).
 1. Hydrator passes response to ID_Token mutator which constructs a JWT token with scopes and `tenant` in the payload.
 1. The request is then forwarded to the desired component (such as `Director` or `Connector`) through the `Gateway` component.
 
@@ -171,21 +193,24 @@ User logs in to Compass UI
 
 **Scopes**
 
-For local development, user scopes are loaded from ConfigMap, where static `user - tenant and scopes` mapping is done.
+The scopes are loaded from a ConfigMap, where static `user group` - `scopes` mapping is set.
 
-**Example ConfigMap for local development**
+**Example ConfigMap**
 
 ```yaml
-admin@kyma.cx:
-    tenant: edf2e0c0-58b1-45c6-b345-fabc9774600c
-    scopes:
-        - application:admin
-        - runtime:admin
-foo@bar.com:
-    tenant: c862d791-2735-4ffb-ae2d-3ace408d6cff
-    scopes:
-        - application:view
-        - runtime:view
+kind: ConfigMap
+apiVersion: v1
+metadata:
+   name: compass-director-static-groups
+   namespace: compass-system
+data:
+   static-groups.yaml: |
+      - groupname: "application-superadmin"
+        scopes:
+          - "application:read"
+          - "application:write"
+          - "application.auths:read"
+          - "application.webhooks:read"
 ```
 
 ### Client certificates
@@ -217,7 +242,32 @@ foo@bar.com:
 
 **Scopes**
 
-Scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only `tenant`, but also `scopes`, which are defined per object type (Application / Runtime). 
+The scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only `tenant`, but also `scopes`, which are defined per object type (Application / Runtime). 
+
+### Externally-issued client certificates
+
+**Used by:** Runtime/Integration System
+
+**Compass Director Flow:**
+
+1. Runtime/Application makes a call to the Director via an externally-issued client certificate on a certificate-secured endpoint of Compass. Compass is configured to trust externally-issued client certificates on that endpoint. 
+1. Istio verifies the client certificate. If the certificate is invalid, Istio rejects the request.
+1. The certificate info (subject and certificate hash) is added to the `Certificate-Data` header.
+1. The OathKeeper uses the Certificate Resolver as a mutator, which turns the `Certificate-Data` header into the `Client-Certificate-Hash` header and the `Client-Id-From-Certificate` header. If the certificate has expired, the two headers are set empty. Additionally, if the subject matches one of the subjects in a predefined configuration, then, an `extra` field is added to the *Auth Session*. The `extra` field contains a consumer type (integration system), access levels (contains a set of tenant types, which the provider tenant can access, for example, `account` only), and an optional internal consumer ID, which can be the GUID of an existing integration system.
+1. The Certificate Resolver also sets the Authentication ID (`auth_id`) to one of the OUs in the subject. If there are many OUs, Connector can be configured to skip some of them. The auth ID represents the external ID of a tenant of type `subaccount`.
+1. Then, the call is proxied to the Tenant Mapping Handler, where:
+   1. In case of a static match to an externally-issued certificate, the `Tenant` header is mapped to a `tenant`.
+   2. Otherwise, the `auth_id` is mapped to the `tenant`.
+   3. If the tenant does not exist, an empty tenant info is returned.
+1. Hydrator passes the response to ID_Token mutator, which constructs a JWT token with scopes and tenant in the payload.
+1. The OathKeeper proxies the request further to the Compass Gateway.
+1. The request is forwarded to the Director.
+
+The diagram for the client certificate above outlines this case, too.
+
+**Scopes**
+
+The scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only the `tenant`, but also `scopes`, which are defined per object type (Application or Runtime). The default type is *Runtime*.
 
 ### One-time token
 
@@ -245,4 +295,56 @@ Scopes are added to the authentication session in Tenant Mapping Handler. The ha
 
 **Scopes**
 
-Scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only `tenant`, but also `scopes`, which are defined per object type (Application/Runtime).
+The scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only the `tenant`, but also `scopes`, which are defined per object type (Application or Runtime).
+
+### Consumer-provider flow
+
+**Used by:** Runtime/Integration System
+
+##### Integration Systems
+An integration system is any multi-tenant application, which has access to all tenants available in Compass.
+The Integration Systems either can use OAuth credentials for authentication (created via the `requestClientCredentialsForIntegrationSystem` mutation), or a client certificate, issued by an external issuer, which is trusted by Compass.
+
+The latter authentication mechanism is plugged into Compass Connector. It can be configured to trust a specific certificate subject and based on that subject, to set the Consumer type to _Integration System_, and grant it access to a set of tenant types. This mechanism is more restrictive than the one that uses OAuth client.
+The consumer tenant is specified in the `Tenant` header.
+
+**Compass Director Flow:**
+
+The flow is the same as the flow for externally issued certificate that was outlined before. The only difference is that the Tenant Mapping handler matches two object context providers. Hence, the tenants in this request are 4 in total: internal and external provider tenants, and internal and external consumer tenants.
+If the provider tenant has access to the type of tenant the consumer belongs to, then the request is authorized successfully.
+
+**Scopes**
+Since there are two context providers, there are also two pairs of scope sets. One from the matched external certificate context provider and one from the access level context provider.
+In this case, the scopes from the external certificate context provider (for consumer type Integration System) is taken into account.
+
+##### Runtimes
+Usually, Integration Systems access grants too many permissions and for this reason it must be provided carefully. Therefore, to achieve the required scenario results it was introduced more flexible and secured means for access provisioning. First, the multi-tenant applications are registered as a *special* runtime in Compass, having a special label, which Compass uses for distinguishing multi-tenant and ordinary runtimes.
+
+When the multi-tenant system is represented as a Runtime, its tenant access is managed from an outside service. The service communicates with the Tenant Fetcher deployment and grants the provider tenant access to resources in the consumer tenant. The provider tenant is the tenant where the multi-tenant runtime is registered. The consumer tenant is of type `subaccount`. When the trust between the tenants is established, the external multi-tenant system can access resources in the consumer tenant.
+
+**Compass Director Flow:**
+
+_Not productive yet_
+
+**Compass ORD Service Flow:**
+
+_Used in production_
+
+This flow is similar to the externally-issued certificate flow, too. Again, two context providers are matched. One with externally-issued certificate and one with a custom authentication with JWT. Compass validates that the provider tenant has access to the consumer tenant.
+
+**Scopes**
+The first context provider returns Runtime scopes and the second provider returns the scopes that are present in the JWT. The scopes that are returned by the context provider that uses JWT must be used.
+
+## Internal Authentication
+
+Compass has a separate security layer to take care of internal component communication, for example, from ORY Oathkeeper to Director. 
+
+It is based on Istio `RequestAuthentications` and `AuthorizationPolicies` that require service account token from the caller as an additional X-Authorization header. The service account is bound to the source workload. The `RequestAuthentication` verifies that the token is correctly signed by the Kubernetes JWKS. 
+The `AuthorizationPolicy` ensures that the routes, such as, `/healthz` are accessible without any authentication and all other routes require properly signed tokens.
+
+Workloads that previously required some sort of authentication, for example, ORY Oathkeeper tokens for Director or one-time tokens for Connector, still require them as a separate header.
+
+![](./assets/internal-auth.svg)
+
+* Flows going through ORY Oathkeeper pass through an Envoy filter (matching outbound requests) that auto-injects the service account token in the request. This is secure because going through ORY successfully means that the request already has a valid authentication or authorization.
+* Internal calls to Director require an ORY Oathkeeper token on top of the service account token. To simplify Director clients (such as Operations Controller), it has been introduced a new ORY Oathkeeper gateway (`gateway-int`) and a respective rule that accepts a service account token as Authorization header and produces an ORY Token with all the required scopes. Additionally, the Oathkeeper Envoy filter injects again the service account token as `X-Authorization` header when the call passes through Oathkeeper, so that the Istio Policy passes successfully.

@@ -29,6 +29,7 @@ The query returns a list of all tenants with their external identifier, internal
 You can create a tenant in Director manually by using the [SQL statement](https://github.com/kyma-incubator/compass/blob/main/components/schema-migrator/seeds/director/add_tenants.sql) or use one of the following importing mechanisms:
 * [Tenant Loader](https://github.com/kyma-incubator/compass/tree/main/components/director/cmd/tenantloader) - a one-time job for importing tenants from files during the first Compass installation
 * [Tenant Fetcher](https://github.com/kyma-incubator/compass/tree/main/components/director/cmd/tenantfetcher) - a periodic job that synchronizes tenants from an external system
+* [Tenant Fetcher Deployment](https://github.com/kyma-incubator/compass/tree/main/components/director/cmd/tenantfetcher-svc) - a deployment which can be notified when a tenant is created, or when one tenant gained access to resources in another tenant without a parent-child relationship between them (also called as consumer-provider flow, you can read more about it in the [Compass security documentation](../compass/03-01-security.md))
 
 ## Authentication flow
 Information about tenants is used during the authentication and authorization phase in Compass.

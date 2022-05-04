@@ -2,45 +2,133 @@
 
 ## Overview
 
-This application fetches events containing information about created, updated, and deleted tenants. It also stores events in the database or removes them from it.
+This application fetches events containing information about created, moved, and deleted tenants. Then, based on the event type, it performs the corresponding create, update, or delete operation on the tenant event in the Director database.
 
-## Prerequisites
+## Details
 
-Tenant Fetcher requires access to:
-1. Configured PostgreSQL database with the imported Director's database schema.
-2. API that can be called to fetch tenant events. For details about implementing the Tenant Events API that the Tenant Fetcher can consume, see [this](https://github.com/kyma-incubator/compass/blob/main/components/director/internal/tenantfetcher/README.md) document. 
+This section describes the API schema that a server must implement to integrate with the Tenant Fetcher.
+
+### Authorization
+
+Tenant Events API uses the OAuth 2.0 client credentials authorization flow or mTLS, and comprises preconfigured trust for the externally issued client certificate of Compass.
+
+### Endpoints
+
+There are three types of supported endpoints that receive different types of events:
+- Tenant creation endpoint
+- Tenant deletion endpoint
+- Tenant update endpoint
+
+Every endpoint returns a specific payload and accepts the following query parameters:
+- **global.tenantFetchers.*<job_name>*.queryMapping.timestampField** - Specifies a timestamp in Unix time format. That is, the date, from which events are fetched.
+- **global.tenantFetchers.*<job_name>*.queryMapping.pageNumField** - Specifies the number of the page to be fetched. To specify a starting page of the query, you can use the parameter **global.tenantFetchers.*<job_name>*.query.startPage** to preconfigure a starting page number.
+- **global.tenantFetchers.*<job_name>*.queryMapping.pageSizeField** - Specifies the number of results on a single page of the response.
+
+#### Response
+
+Most of the top-level data that is expected by the tenant fetcher is configurable. Consider the following example response for the tenant creation endpoint:
+
+```json
+{
+  "events": [
+    {
+      "eventData": "{\"$id\":\"837d023b-782d-4a97-9d38-fecab47c296a\",\"$name\":\"Tenant 1\",\"$discriminator\":\"default\"}"
+    }
+  ],
+  "totalResults": 27,
+  "totalPages": 1
+}
+```
+
+- The top-level `events` array is configured with: **global.tenantFetchers.*<job_name>*.fieldMapping.tenantEventsField**
+- The top-level `totalResults` is configured with: **global.tenantFetchers.*<job_nam>e*.fieldMapping.totalResultsField**
+- The top-level `totalPages` is configured with: **global.tenantFetchers.*<job_name>*.fieldMapping.totalPagesField**
+- The inner field `eventData` contains the details of an event and it is configured by: **global.tenantFetchers.*<job_name>*.fieldMapping.detailsField**. The details field is expected to be either a JSON object or a string containing JSON. For example:
+
+```json
+{
+  "details": {
+    "key": "value"
+  }
+}
+
+or
+
+{
+  "details": "{\"key\": \"value\"}"
+}
+```
+
+##### Tenant creation endpoint
+
+When successful, the endpoint returns the following JSON payload:
+```json
+{
+  "events": [
+    {
+      "eventData": "{\"$id\":\"837d023b-782d-4a97-9d38-fecab47c296a\",\"$name\":\"Tenant 1\",\"$discriminator\":\"default\"}"
+    }
+  ],
+  "totalResults": 27,
+  "totalPages": 1
+}
+```
+
+The **eventData** field contains an escaped JSON string with the following fields that you can configure by using values overrides:
+- `$id` - Specifies a unique tenant ID.
+- `$parent_id` - Specifies a unique tenant ID belonging to the parent tenant. If the created tenant is a `subaccount`, the parent tenant must be of type `account`. If the created tenant is of type `account`, the parent tenant must be of type `customer`. 
+- `$name` - Specifies the tenant name.
+- `$discriminator` - Specifies an optional field that can be used to distinguish different types of tenants.
+
+##### Tenant deletion endpoint
+
+When successful, the endpoint returns the following JSON payload:
+```json
+{
+  "events": [
+    {
+      "eventData": "{\"$id\":\"837d023b-782d-4a97-9d38-fecab47c296a\",\"$name\":\"Tenant 1\"}"
+    }
+  ],
+  "totalResults": 27,
+  "totalPages": 1
+}
+```
+
+The **eventData** field contains an escaped JSON string with the following fields that you can configure by using values overrides:
+- `$id` - Specifies a unique tenant ID.
+- `$name` - Specifies the tenant name.
+
+##### Tenant update endpoint
+
+When successful, the endpoint returns the following JSON payload:
+```json
+{
+  "events": [
+    {
+      "eventData": "{\"$id\":\"837d023b-782d-4a97-9d38-fecab47c296a\",\"$name\":\"Tenant 1\"}"
+    }
+  ],
+  "totalResults": 27,
+  "totalPages": 1
+}
+```
+
+The **eventData** field contains an escaped JSON string with the following fields that you can configure by using values overrides:
+- `$id` - Specifies a unique tenant ID.
+- `$name` - Specifies the tenant name.
 
 ## Configuration
 
-The Tenant Fetcher binary allows you to override some configuration parameters. You can specify the following environment variables:
+The Tenant Fetcher binary allows you to override some configuration parameters. To get a list of the configurable parameters, see [main.go](https://github.com/kyma-incubator/compass/blob/75aff5226d4a105f4f04608416c8fa9a722d3534/components/director/cmd/tenantfetcher-job/main.go#L34)
 
-| Environment variable                | Default       | Description                                                                                                                                                                                                     |
-|-------------------------------------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **APP_DB_USER**                     | `postgres`    | Database username                                                                                                                                                                                               |
-| **APP_DB_PASSWORD**                 | `pgsql@12345` | Database password                                                                                                                                                                                               |
-| **APP_DB_HOST**                     | `localhost`   | Database host                                                                                                                                                                                                   |
-| **APP_DB_PORT**                     | `5432`        | Database port                                                                                                                                                                                                   |
-| **APP_DB_NAME**                     | `postgres`    | Database name                                                                                                                                                                                                   |
-| **APP_DB_SSL**                      | `disable`     | Database SSL mode (`disable` or `enable`)                                                                                                                                                                       |
-| **APP_CLIENT_ID**                   |               | OAuth 2.0 client ID                                                                                                                                                                                             |
-| **APP_CLIENT_SECRET**               |               | OAuth 2.0 client secret                                                                                                                                                                                         |
-| **APP_OAUTH_TOKEN_ENDPOINT**        |               | Endpoint for fetching the OAuth 2.0 access token                                                                                                                                                                |
-| **APP_ENDPOINT_TENANT_CREATED**     |               | Tenant Events API endpoint for fetching created tenants                                                                                                                                                         |
-| **APP_ENDPOINT_TENANT_DELETED**     |               | Tenant Events API endpoint for fetching deleted tenants                                                                                                                                                         |
-| **APP_ENDPOINT_TENANT_UPDATED**     |               | Tenant Events API endpoint for fetching updated tenants                                                                                                                                                         |
-| **APP_MAPPING_FIELD_NAME**          | `name`        | Name of the field in the event data payload containing the tenant name                                                                                                                                          |
-| **APP_MAPPING_FIELD_ID**            | `id`          | Name of the field in the event data payload containing the tenant ID                                                                                                                                            |
-| **APP_MAPPING_FIELD_CUSTOMER_ID**   | `customerId`  | Name of the field in the event data payload containing the customer ID                                                                                                                                            |
-| **APP_MAPPING_FIELD_DETAILS**       | `details`     | Name of the field in the event data payload containing the details of the event                                                                                                                                 |
-| **APP_TENANT_TOTAL_PAGES_FIELD**    |               | Name of the field in the service response containing the total pages count                                                                                                                                        |
-| **APP_TENANT_TOTAL_RESULTS_FIELD**  |               | Name of the field in the service response containing the total count of events                                                                                                                                    |
-| **APP_TENANT_EVENTS_FIELD**         |               | Name of the field in the service response containing the array of events                                                                                                                                       |
-| **APP_QUERY_PAGE_SIZE_FIELD**       |               | Name of the query parameter specifying page size of the response                                                                                                                                                   |
-| **APP_QUERY_PAGE_NUM_FIELD**        |               | Name of the query parameter specifying the current page number                                                                                                                                                         |
-| **APP_QUERY_TIMESTAMP_FIELD**       |               | Name of the query parameter specifying the timestamp                                                                                                                                                                   |
-| **APP_QUERY_PAGE_START**            |               | Value for specifying the first page of the response                                                                                                                                                                        |
-| **APP_QUERY_PAGE_SIZE**             |               | Value for specifying  the page size of the response                                                                                                                                                                         |
-| **APP_MAPPING_FIELD_DISCRIMINATOR** |               | Optional name of the field in the event data payload used to filter created tenants. If provided, only events containing this field with a value specified in **APP_MAPPING_VALUE_DISCRIMINATOR** will be used. |
-| **APP_MAPPING_VALUE_DISCRIMINATOR** |               | Optional value of the discriminator field for filtering created tenants. It is used only if **APP_MAPPING_FIELD_DISCRIMINATOR** is provided.                                                                    |
-| **APP_TENANT_PROVIDER**             |               | Tenant provider name                                                                                                                                                                                            |
-| **APP_METRICS_PUSH_ENDPOINT**       |               | Optional Prometheus Pushgateway endpoint for pushing Tenant Fetcher metrics                                                                                                                                     |
+## Local Development
+
+### Prerequisites
+
+The Tenant Fetcher requires access to:
+1. A Configured PostgreSQL database with the imported Director's database schema.
+1. An API that can be called to fetch tenant events. For details about implementing the Tenant Events API that the Tenant Fetcher can consume, see the [Endpoints](#endpoints) section of this document. 
+
+### Run
+As the Tenant Fetcher job is a short-lived process, it is useful to start and debug it directly from your IDE. Make sure that you provide all required configuration properties as environment variables.

@@ -1,39 +1,37 @@
 #  External Services Mock integration tests
 
-External Services Mock tests check a contract between Compass and external services. 
+External Services Mock tests check the contract between Compass and external services. 
 
 The tests cover the following scenarios:
-- Audit log scenario
-- API specification scenario
+- Audit logging
+- API specification fetching
+- Asynchronous deletion of applications
+- Asynchronous unpair of applications
 
 ## Audit log test scenario
 
 The audit log test performs the following operations:
 1. Register an application through the Compass Gateway.
-2. Get an audit log from the mock service based on the application's name
-3. Compare the audit log with the request for registering the application.
+1. Get an audit log from the mock service based on the application's name.
+1. Compare the audit log with the request for registering the application.
 
-## API specification scenario
+## Asynchronous application operations
+### Unpair
+The Async Unpair test uses the endpoint that returns "In Progress" until dynamically configured by the test itself to start returning "Completed" - that endpoint simulates the application deleting its internal resources related to the Compass connection. Steps run by the test:
 
-The API specification test uses the endpoint that returns a random API specification on every call. It performs the following operations:
-1. Register an API Definition with a fetch request.
-2. Fetch the API specification.
-3. Refetch the API specification and check if it is different from the previous one.
-4. Get the API Definition and check if the API specification is equal to the new one.
+1. Register an Application with webhook of type `UNPAIR_APPLICATION`.
+1. Verify that the application exists.
+1. Trigger asynchronous deletion of the application (call `unpairApplication` mutation with `mode: async`).
+1. Check that `Operation` resource exists for that application and it's status is `In Progress`.
+1. Configure the `External Services Mock` server to return successful deletion of the external resources.
+1. Verify that the application still exists.
 
-## Development
+### Delete
+The Async Delete test uses the endpoint that returns "In Progress" until dynamically configured by the test itself to start returning "Completed" - that endpoint simulates the application deleting its internal resources related to the Compass connection. Steps run by the test:
 
-To run the test locally, set these environment variables:
-
-| Environment variable                | Description                                               |                 Default value                 |
-|-------------------------------------|-----------------------------------------------------------|:---------------------------------------------:|
-| **DIRECTOR_URL**                    | URL to the Director                                       | `https://compass-gateway.kyma.local/director` |
-| **DEFAULT_TENANT**                  | Default tenant value                                      |    `3e64ebae-38b5-46a0-b1ed-9ccee153a0ae`     |
-| **DOMAIN**                          | Kyma domain name                                          |                 `kyma.local`                  |
-| **EXTERNAL_SERVICES_MOCK_BASE_URL** | URL to External Services Mock                             |                     None                      |
-| **APP_CLIENT_SECRET**               | The expected audit log client Secret used to obtain a JWT |                `client_secret`                |
-| **APP_CLIENT_ID**                   | The expected audit log client ID used to obtain a JWT     |                  `client_id`                  |
-| **BASIC_USERNAME**                  | The expected username from basic credentials              |                    `admin`                    |
-| **BASIC_PASSWORD**                  | The expected password from basic credentials              |                    `admin`                    |
-
-After specyfing the environment variables, run `go test ./... -count=1 -v` inside the `./tests/director/external-services-mock-integration` directory.
+1. Register an Application with webhook of type `UNREGISTER_APPLICATION`.
+1. Verify that the application exists.
+1. Trigger asynchronous deletion of the application (call `unregisterApplication` mutation with `mode: async`).
+1. Check that `Operation` resource exists for that application and it's status is `In Progress`.
+1. Configure the `External Services Mock` server to return successful deletion of the external resources.
+1. Verify that the application no longer exists.

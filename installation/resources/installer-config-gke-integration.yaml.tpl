@@ -17,7 +17,6 @@ data:
   global.systemFetcher.enabled: "true"
   global.systemFetcher.systemsAPIEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/systemfetcher/systems"
   global.systemFetcher.systemsAPIFilterCriteria: "no"
-  global.systemFetcher.systemsAPIFilterTenantCriteriaPattern: "tenant=%s"
   global.systemFetcher.systemToTemplateMappings: '[{"Name": "temp1", "SourceKey": ["prop"], "SourceValue": ["val1"] },{"Name": "temp2", "SourceKey": ["prop"], "SourceValue": ["val2"] }]'
   global.migratorJob.nodeSelectorEnabled: "true"
   global.kubernetes.serviceAccountTokenIssuer: "https://container.googleapis.com/v1/projects/$CLOUDSDK_CORE_PROJECT/locations/$CLOUDSDK_COMPUTE_ZONE/clusters/$COMMON_NAME"
