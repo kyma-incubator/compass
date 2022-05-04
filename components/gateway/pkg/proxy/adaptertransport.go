@@ -120,19 +120,7 @@ func doPreAuditLog(ctx context.Context, auditLogCtx *auditLogContext, requestBod
 	log.C(ctx).Infof("Length of received request body: %d", len(requestBody))
 
 	transactionId := auditLogCtx.logId.String()
-
-	// Compute how many pre-audit logs we have to send
-	shards := len(requestBody) / auditLogCtx.cfg.MsgBodySizeLimit
-	if shards%auditLogCtx.cfg.MsgBodySizeLimit != 0 {
-		shards += 1
-	}
-
-	// Compute the maximum size of each auditlog message
-	shardLength := min(auditLogCtx.cfg.MsgBodySizeLimit, len(requestBody))
-	if shards > 1 {
-		shardLength = multipleOfFour(len(requestBody) / shards)
-	}
-	log.C(ctx).Infof("The request body for %s will be split to %d shards of approximately %d bytes", transactionId, shards, shardLength)
+	shardLength := calculateShardLength(ctx, auditLogCtx, requestBody, transactionId)
 
 	log.C(ctx).Infof("Writing pre-change auditlog for %s...", transactionId)
 	for len(requestBody) > 0 {
@@ -159,19 +147,7 @@ func doPostAuditLog(ctx context.Context, auditLogCtx *auditLogContext, responseB
 	log.C(ctx).Infof("Length of received response body: %d", len(responseBody))
 
 	transactionId := auditLogCtx.logId.String()
-
-	// Compute how many pre-audit logs we have to send
-	shards := len(responseBody) / auditLogCtx.cfg.MsgBodySizeLimit
-	if shards%auditLogCtx.cfg.MsgBodySizeLimit != 0 {
-		shards += 1
-	}
-
-	// Compute the maximum size of each auditlog message
-	shardLength := min(auditLogCtx.cfg.MsgBodySizeLimit, len(responseBody))
-	if shards > 1 {
-		shardLength = multipleOfFour(len(responseBody) / shards)
-	}
-	log.C(ctx).Infof("The response body for %s will be split to %d shards of approximately %d bytes", transactionId, shards, shardLength)
+	shardLength := calculateShardLength(ctx, auditLogCtx, responseBody, transactionId)
 
 	log.C(ctx).Infof("Writing post-change auditlog for %s...", transactionId)
 	for len(responseBody) > 0 {
@@ -192,6 +168,21 @@ func doPostAuditLog(ctx context.Context, auditLogCtx *auditLogContext, responseB
 	}
 
 	return nil
+}
+
+func calculateShardLength(ctx context.Context, auditLogCtx *auditLogContext, bodyBytes []byte, transactionId string) int {
+	shards := len(bodyBytes) / auditLogCtx.cfg.MsgBodySizeLimit
+	if shards%auditLogCtx.cfg.MsgBodySizeLimit != 0 {
+		shards += 1
+	}
+
+	// Compute the maximum size of each auditlog message
+	shardLength := min(auditLogCtx.cfg.MsgBodySizeLimit, len(bodyBytes))
+	if shards > 1 {
+		shardLength = multipleOfFour(len(bodyBytes) / shards)
+	}
+	log.C(ctx).Infof("The data for %s will be split to %d shards of approximately %d bytes", transactionId, shards, shardLength)
+	return shardLength
 }
 
 type AdapterTokenClaims struct {
