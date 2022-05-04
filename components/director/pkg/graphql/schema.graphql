@@ -333,6 +333,7 @@ input ApplicationUpdateInput {
 	**Validation:** valid URL, max=256
 	"""
 	healthCheckURL: String
+	baseUrl: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
 }
