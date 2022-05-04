@@ -28,7 +28,6 @@ func TestFetcherJobConfig_ReadEnvVars(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-
 			var environ []string
 			for k, v := range testCase.EnvValues {
 				environ = append(environ, k+"="+v)
@@ -71,7 +70,6 @@ func TestFetcherJobConfig_GetJobsNames(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-
 			var environ []string
 			for _, name := range testCase.JobNames {
 				varName := fmt.Sprintf(testCase.JobNamePattern, name)
@@ -130,7 +128,6 @@ func TestFetcherJobConfig_ReadEventsConfig(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-
 			var environ []string
 			for k, v := range testCase.EnvVars {
 				varName := fmt.Sprintf(k, testCase.JobName)
@@ -188,7 +185,6 @@ func TestFetcherJobConfig_ReadHandlerConfig(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-
 			var environ []string
 			for k, v := range testCase.EnvVars {
 				varName := fmt.Sprintf(k, testCase.JobName)
