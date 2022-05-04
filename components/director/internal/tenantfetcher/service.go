@@ -303,9 +303,6 @@ func (s SubaccountService) SyncTenants() error {
 	ctx := context.Background()
 	startTime := time.Now()
 
-	// lastConsumedTenantTimestamp := "1"
-	// lastResyncTimestamp := "1"
-
 	lastConsumedTenantTimestamp, lastResyncTimestamp, err := s.kubeClient.GetTenantFetcherConfigMapData(ctx)
 	if err != nil {
 		return err
