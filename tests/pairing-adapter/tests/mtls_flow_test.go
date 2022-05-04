@@ -1,50 +1,50 @@
 package tests
 
 import (
-	"encoding/json"
-	"net/http"
-	"strings"
+	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/pairing"
-
-	director_http "github.com/kyma-incubator/compass/components/director/pkg/http"
+	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestGettingTokenWithMTLSWorks(t *testing.T) {
-	reqData := pairing.RequestData{
-		Application: graphql.Application{
-			Name: conf.TestApplicationName,
-			BaseEntity: &graphql.BaseEntity{
-				ID: conf.TestApplicationID,
+	ctx := context.Background()
+	defaultTestTenant := tenant.TestTenants.GetDefaultTenantID()
+
+	expectedProductType := "SAP SuccessFactors"
+	namePlaceholderKey := "name"
+	displayNamePlaceholderKey := "display-name"
+	appTmplInput := directorSchema.ApplicationFromTemplateInput{
+		TemplateName: expectedProductType, Values: []*directorSchema.TemplateValueInput{
+			{
+				Placeholder: namePlaceholderKey,
+				Value:       "E2E test SuccessFactors app",
+			},
+			{
+				Placeholder: displayNamePlaceholderKey,
+				Value:       "E2E test SuccessFactors app Display Name",
 			},
 		},
-		Tenant:     conf.TestTenant,
-		ClientUser: conf.TestClientUser,
-	}
-	jsonReqData, err := json.Marshal(reqData)
-	require.NoError(t, err)
-
-	req, err := http.NewRequest(http.MethodPost, conf.MTLSPairingAdapterURL, strings.NewReader(string(jsonReqData)))
-	require.NoError(t, err)
-
-	client := http.Client{
-		Transport: director_http.NewServiceAccountTokenTransport(http.DefaultTransport),
 	}
 
-	resp, err := client.Do(req)
+	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appTmplInput)
 	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode)
 
-	respParsed := struct {
-		Token string
-	}{}
-
-	err = json.NewDecoder(resp.Body).Decode(&respParsed)
+	createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
+	outputApp := directorSchema.ApplicationExt{}
+	//WHEN
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, defaultTestTenant, createAppFromTmplRequest, &outputApp)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, defaultTestTenant, &outputApp)
 	require.NoError(t, err)
-	require.NotEmpty(t, respParsed.Token)
+	require.NotEmpty(t, outputApp.ID)
+
+	token := fixtures.RequestOneTimeTokenForApplication(t, ctx, certSecuredGraphQLClient, outputApp.ID)
+	require.NotEmpty(t, token.Token)
+	require.NotEmpty(t, token.ConnectorURL)
+	require.NotEmpty(t, token.LegacyConnectorURL)
 }
