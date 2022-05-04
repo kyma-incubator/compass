@@ -240,6 +240,14 @@ func AssertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.
 	AssertRuntimeLabels(t, &in.Labels, actualRuntime.Labels, defaultScenarioEnabled, isSubaccountTenant)
 }
 
+func AssertRuntimePageContainOnlyIDs(t *testing.T, page graphql.RuntimePageExt, ids ...string) {
+	require.Equal(t, len(ids), len(page.Data))
+
+	for _, runtime := range page.Data {
+		require.Contains(t, ids, runtime.ID)
+	}
+}
+
 func AssertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels graphql.Labels, defaultScenarioEnabled, isSubaccountTenant bool) {
 	const (
 		scenariosKey    = "scenarios"
