@@ -112,7 +112,7 @@ func main() {
 	envVars := tenantfetcher.ReadEnvironmentVars()
 	jobsNames := tenantfetcher.GetJobsNames(envVars)
 	log.C(ctx).Infof("Tenant fetcher jobs are: %s", jobsNames)
-	
+
 	stopJobChannels := make([]chan bool, 0, len(jobsNames))
 
 	go func() {
