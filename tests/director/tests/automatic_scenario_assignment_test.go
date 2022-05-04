@@ -28,6 +28,15 @@ func Test_AutomaticScenarioAssignmentQueries(t *testing.T) {
 		Key:   "global_subaccount_id",
 		Value: subaccount,
 	}
+
+	formation1 := graphql.FormationInput{
+		Name: testScenarioA,
+	}
+
+	formation2 := graphql.FormationInput{
+		Name: testScenarioB,
+	}
+
 	testSelectorAGQL, err := testctx.Tc.Graphqlizer.LabelSelectorInputToGQL(testSelectorA)
 	require.NoError(t, err)
 
@@ -35,19 +44,10 @@ func Test_AutomaticScenarioAssignmentQueries(t *testing.T) {
 	fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{"DEFAULT", testScenarioA, testScenarioB})
 	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{"DEFAULT"})
 
-	// create automatic scenario assignments
-	inputAssignment1 := graphql.AutomaticScenarioAssignmentSetInput{
-		ScenarioName: testScenarioA,
-		Selector:     &testSelectorA,
-	}
-	inputAssignment2 := graphql.AutomaticScenarioAssignmentSetInput{
-		ScenarioName: testScenarioB,
-		Selector:     &testSelectorA,
-	}
-	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, certSecuredGraphQLClient, inputAssignment1, tenantID)
-	defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenarioA)
-	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, certSecuredGraphQLClient, inputAssignment2, tenantID)
-	defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenarioB)
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation1, subaccount, tenantID)
+	defer fixtures.UnassignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation1, subaccount, tenantID)
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation2, subaccount, tenantID)
+	defer fixtures.UnassignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation2, subaccount, tenantID)
 
 	// prepare queries
 	getAssignmentForScenarioRequest := fixtures.FixAutomaticScenarioAssignmentForScenarioRequest(testScenarioA)
@@ -70,6 +70,8 @@ func Test_AutomaticScenarioAssignmentQueries(t *testing.T) {
 	saveExample(t, listAssignmentsRequest.Query(), "query automatic scenario assignments")
 	saveExample(t, getAssignmentForScenarioRequest.Query(), "query automatic scenario assignment for scenario")
 	saveExample(t, listAssignmentsForSelectorRequest.Query(), "query automatic scenario assignments for selector")
+	inputAssignment1 := graphql.AutomaticScenarioAssignmentSetInput{ScenarioName: testScenarioA, Selector: &testSelectorA}
+	inputAssignment2 := graphql.AutomaticScenarioAssignmentSetInput{ScenarioName: testScenarioB, Selector: &testSelectorA}
 
 	assertions.AssertAutomaticScenarioAssignments(t,
 		[]graphql.AutomaticScenarioAssignmentSetInput{inputAssignment1, inputAssignment2},
@@ -114,9 +116,6 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 
-	selectorKey := "global_subaccount_id"
-	selectorValue := subaccount
-
 	t.Run("Check automatic scenario assigment", func(t *testing.T) {
 		//GIVEN
 		expectedScenarios := map[string][]interface{}{
@@ -129,9 +128,9 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 		}
 
 		//WHEN
-		asaInput := fixtures.FixAutomaticScenarioAssigmentInput(prodScenario, selectorKey, selectorValue)
-		fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, certSecuredGraphQLClient, asaInput, tenantID)
-		defer fixtures.DeleteAutomaticScenarioAssigmentForSelector(t, ctx, certSecuredGraphQLClient, tenantID, *asaInput.Selector)
+		formationInput := graphql.FormationInput{Name: prodScenario}
+		fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccount, tenantID)
+		defer fixtures.CleanupUnassignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccount, tenantID)
 
 		//THEN
 		runtimes := fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, tenantID)
@@ -151,8 +150,8 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 		}
 
 		//WHEN
-		asaInput := fixtures.FixAutomaticScenarioAssigmentInput(prodScenario, selectorKey, selectorValue)
-		fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, certSecuredGraphQLClient, asaInput, tenantID)
+		formationInput := graphql.FormationInput{Name: prodScenario}
+		fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccount, tenantID)
 		runtimes := fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, tenantID)
 		assertions.AssertRuntimeScenarios(t, runtimes, scenarios)
 
@@ -166,7 +165,7 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 		}
 
 		//WHEN
-		fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, prodScenario)
+		fixtures.UnassignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccount, tenantID)
 
 		//THEN
 		runtimes = fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, tenantID)
@@ -186,10 +185,12 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 		}
 
 		//WHEN
-		asaInput := fixtures.FixAutomaticScenarioAssigmentInput(prodScenario, selectorKey, selectorValue)
-		fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, certSecuredGraphQLClient, asaInput, tenantID)
-		asaInput.ScenarioName = devScenario
-		fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, certSecuredGraphQLClient, asaInput, tenantID)
+		formationInputProd := graphql.FormationInput{Name: prodScenario}
+		formationInputDev := graphql.FormationInput{Name: devScenario}
+
+		fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInputProd, subaccount, tenantID)
+		fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInputDev, subaccount, tenantID)
+
 		runtimes := fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, tenantID)
 		assertions.AssertRuntimeScenarios(t, runtimes, scenarios)
 
@@ -205,7 +206,8 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 		//WHEN
 		fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantID, rtms[0].ID, "scenarios", []interface{}{prodScenario, devScenario, manualScenario})
 		fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantID, rtms[1].ID, "scenarios", []interface{}{prodScenario, devScenario, manualScenario})
-		fixtures.DeleteAutomaticScenarioAssigmentForSelector(t, ctx, certSecuredGraphQLClient, tenantID, graphql.LabelSelectorInput{Key: selectorKey, Value: selectorValue})
+		fixtures.UnassignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInputProd, subaccount, tenantID)
+		fixtures.UnassignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInputDev, subaccount, tenantID)
 
 		//THEN
 		runtimes = fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, tenantID)
@@ -232,7 +234,7 @@ func Test_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 	scenarios := []string{defaultValue, scenario1, scenario2}
 
 	fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios)
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{"DEFAULT"})
+	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{defaultValue})
 
 	assignment1 := graphql.AutomaticScenarioAssignmentSetInput{
 		ScenarioName: scenario1,
@@ -243,26 +245,31 @@ func Test_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 		Selector:     selector,
 	}
 
-	var output graphql.AutomaticScenarioAssignment
+	formation1 := graphql.FormationInput{Name: scenario1}
+	formation2 := graphql.FormationInput{Name: scenario2}
 
-	assignment1Gql, err := testctx.Tc.Graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(assignment1)
-	require.NoError(t, err)
+	var output graphql.Formation
 
-	req := fixtures.FixCreateAutomaticScenarioAssignmentRequest(assignment1Gql)
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, req, nil)
+	req := fixtures.FixAssignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), formation1.Name)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, req, nil)
 	require.NoError(t, err)
 	saveExample(t, req.Query(), "create automatic scenario assignment")
 
-	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, certSecuredGraphQLClient, assignment2, tenantID)
-	defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenario2)
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation2, subaccountID, tenantID)
+	defer fixtures.UnassignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation2, subaccountID, tenantID)
 
 	//WHEN
-	req = fixtures.FixDeleteAutomaticScenarioAssignmentForScenarioRequest(scenario1)
+	req = fixtures.FixUnassignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), formation1.Name)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, req, &output)
 	require.NoError(t, err)
 
 	//THEN
-	assertions.AssertAutomaticScenarioAssignment(t, assignment1, output)
+
+	resultAssignment := graphql.AutomaticScenarioAssignment{ScenarioName: output.Name, Selector: &graphql.Label{
+		Key:   selector.Key,
+		Value: selector.Value,
+	}}
+	assertions.AssertAutomaticScenarioAssignment(t, assignment1, resultAssignment)
 
 	allAssignments := fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID)
 	require.Len(t, allAssignments.Data, 1)
@@ -286,7 +293,7 @@ func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 	scenarios := []string{defaultValue, scenario1, scenario2}
 
 	fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios)
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{"DEFAULT"})
+	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{defaultValue})
 
 	selector := &graphql.LabelSelectorInput{
 		Value: subaccountID,
@@ -297,22 +304,31 @@ func Test_DeleteAutomaticScenarioAssignmentForSelector(t *testing.T) {
 		{ScenarioName: scenario1, Selector: selector},
 		{ScenarioName: scenario2, Selector: selector},
 	}
+	formations := []graphql.FormationInput{
+		{Name: scenario1},
+		{Name: scenario2},
+	}
 
-	var output []*graphql.AutomaticScenarioAssignment
+	output := graphql.Formation{}
+	var outputAssignments []*graphql.AutomaticScenarioAssignment
+	labelForSelector := &graphql.Label{Key: selector.Key, Value: selector.Value}
 
-	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, certSecuredGraphQLClient, assignments[0], tenantID)
-	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, certSecuredGraphQLClient, assignments[1], tenantID)
-
-	selectorGql, err := testctx.Tc.Graphqlizer.LabelSelectorInputToGQL(*selector)
-	require.NoError(t, err)
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formations[0], subaccountID, tenantID)
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formations[1], subaccountID, tenantID)
 
 	//WHEN
-	req := fixtures.FixDeleteAutomaticScenarioAssignmentsForSelectorRequest(selectorGql)
+	req := fixtures.FixUnassignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), formations[0].Name)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, req, &output)
+	require.NoError(t, err)
+	outputAssignments = append(outputAssignments, &graphql.AutomaticScenarioAssignment{ScenarioName: output.Name, Selector: labelForSelector})
+
+	req = fixtures.FixUnassignFormationRequest(subaccountID, string(graphql.FormationObjectTypeTenant), formations[1].Name)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, req, &output)
 	require.NoError(t, err)
+	outputAssignments = append(outputAssignments, &graphql.AutomaticScenarioAssignment{ScenarioName: output.Name, Selector: labelForSelector})
 
 	//THEN
-	assertions.AssertAutomaticScenarioAssignments(t, assignments, output)
+	assertions.AssertAutomaticScenarioAssignments(t, assignments, outputAssignments)
 
 	actualAssignments := fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID)
 	assert.Len(t, actualAssignments.Data, 0)
@@ -335,11 +351,10 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 	fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{scenario, "DEFAULT"})
 	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{"DEFAULT"})
 
-	selector := graphql.LabelSelectorInput{Key: "global_subaccount_id", Value: subaccountID}
-	assignment := graphql.AutomaticScenarioAssignmentSetInput{ScenarioName: scenario, Selector: &selector}
+	formation := graphql.FormationInput{Name: scenario}
 
-	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, certSecuredGraphQLClient, assignment, tenantID)
-	defer fixtures.CleanUpAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenario)
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation, subaccountID, tenantID)
+	defer fixtures.CleanupUnassignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation, subaccountID, tenantID)
 
 	rtmInput := graphql.RuntimeInput{
 		Name: "test-name",
@@ -356,7 +371,7 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 	})
 
 	t.Run("Scenario is unset when automatic scenario assignment is deleted", func(t *testing.T) {
-		fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenario)
+		fixtures.UnassignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: scenario}, subaccountID, tenantID)
 		rtmWithoutScenarios := fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, tenantID, rtm.ID)
 		assertions.AssertScenarios(t, rtmWithoutScenarios.Labels, []interface{}{})
 	})

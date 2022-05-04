@@ -11,16 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func FixAutomaticScenarioAssigmentInput(automaticScenario, selectorKey, selectorValue string) graphql.AutomaticScenarioAssignmentSetInput {
-	return graphql.AutomaticScenarioAssignmentSetInput{
-		ScenarioName: automaticScenario,
-		Selector: &graphql.LabelSelectorInput{
-			Key:   selectorKey,
-			Value: selectorValue,
-		},
-	}
-}
-
 func FixCreateAutomaticScenarioAssignmentRequest(automaticScenarioAssignmentInput string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
@@ -29,26 +19,6 @@ func FixCreateAutomaticScenarioAssignmentRequest(automaticScenarioAssignmentInpu
 					}
 				}`,
 			automaticScenarioAssignmentInput, testctx.Tc.GQLFieldsProvider.ForAutomaticScenarioAssignment()))
-}
-
-func FixDeleteAutomaticScenarioAssignmentForScenarioRequest(scenario string) *gcli.Request {
-	return gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-            result: deleteAutomaticScenarioAssignmentForScenario(scenarioName: "%s") {
-                  %s
-               }
-            }`,
-			scenario, testctx.Tc.GQLFieldsProvider.ForAutomaticScenarioAssignment()))
-}
-
-func FixDeleteAutomaticScenarioAssignmentsForSelectorRequest(labelSelectorInput string) *gcli.Request {
-	return gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-            result: deleteAutomaticScenarioAssignmentsForSelector(selector: %s) {
-                  %s
-               }
-            }`,
-			labelSelectorInput, testctx.Tc.GQLFieldsProvider.ForAutomaticScenarioAssignment()))
 }
 
 func FixAutomaticScenarioAssignmentsRequest() *gcli.Request {

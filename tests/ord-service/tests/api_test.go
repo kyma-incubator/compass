@@ -267,9 +267,9 @@ func TestORDService(t *testing.T) {
 	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, []string{"DEFAULT"})
 
 	// create automatic scenario assigment for subTenant
-	asaInput := fixtures.FixAutomaticScenarioAssigmentInput(scenarioName, selectorKey, subTenantID)
-	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, certSecuredGraphQLClient, asaInput, tenantFilteringTenant)
-	defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, scenarioName)
+	formationInput := directorSchema.FormationInput{Name: scenarioName}
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subTenantID, tenantFilteringTenant)
+	defer fixtures.UnassignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subTenantID, tenantFilteringTenant)
 
 	// assert no system instances are visible without formation
 	respBody := makeRequestWithHeaders(t, intSystemHttpClient, testConfig.ORDServiceURL+"/systemInstances?$format=json", map[string][]string{tenantHeader: {subTenantID}})
