@@ -116,6 +116,7 @@ func FixSampleApplicationUpdateInput(placeholder string) graphql.ApplicationUpda
 		Description:    &placeholder,
 		HealthCheckURL: ptr.String(webhookURL),
 		ProviderName:   &placeholder,
+		BaseURL:        &placeholder,
 	}
 }
 
