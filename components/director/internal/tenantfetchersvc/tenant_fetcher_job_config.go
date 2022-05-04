@@ -2,7 +2,6 @@ package tenantfetchersvc
 
 import (
 	"context"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -261,10 +260,10 @@ func getDuration(val string, defaultVal time.Duration) time.Duration {
 	return v
 }
 
-// ReadEnvironmentVars read environment variables and returns a key-value map
-func ReadEnvironmentVars() map[string]string {
+// ReadFromEnvironment returns a key-value map of environment variables
+func ReadFromEnvironment(environ []string) map[string]string {
 	vars := make(map[string]string)
-	for _, env := range os.Environ() {
+	for _, env := range environ {
 		pair := strings.SplitN(env, "=", 2)
 		key := pair[0]
 		value := pair[1]

@@ -109,7 +109,7 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	envVars := tenantfetcher.ReadEnvironmentVars()
+	envVars := tenantfetcher.ReadFromEnvironment(os.Environ())
 	jobsNames := tenantfetcher.GetJobsNames(envVars)
 	log.C(ctx).Infof("Tenant fetcher jobs are: %s", jobsNames)
 

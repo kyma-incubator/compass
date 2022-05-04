@@ -3,7 +3,6 @@ package tenantfetchersvc
 import (
 	"context"
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
@@ -30,18 +29,13 @@ func TestFetcherJobConfig_ReadEnvVars(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 
+			var environ []string
 			for k, v := range testCase.EnvValues {
-				os.Setenv(k, v)
+				environ = append(environ, k+"="+v)
 			}
 
-			defer func() {
-				for k, _ := range testCase.EnvValues {
-					os.Unsetenv(k)
-				}
-			}()
-
 			// WHEN
-			envVars := ReadEnvironmentVars()
+			envVars := ReadFromEnvironment(environ)
 
 			// THEN
 			for k, v := range testCase.EnvValues {
@@ -54,7 +48,7 @@ func TestFetcherJobConfig_ReadEnvVars(t *testing.T) {
 
 func TestFetcherJobConfig_GetJobsNames(t *testing.T) {
 	// GIVEN
-	jobNames := []string{"cis1", "cis2", "cis2-subaccounts"}
+	jobNames := []string{"job1", "job2", "job3"}
 
 	testCases := []struct {
 		Name           string
@@ -78,23 +72,14 @@ func TestFetcherJobConfig_GetJobsNames(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 
-			var jobNamesEnvVars []string
-
+			var environ []string
 			for _, name := range testCase.JobNames {
 				varName := fmt.Sprintf(testCase.JobNamePattern, name)
-				jobNamesEnvVars = append(jobNamesEnvVars, varName)
-
-				os.Setenv(varName, name)
+				environ = append(environ, varName+"="+name)
 			}
 
-			defer func() {
-				for _, name := range jobNamesEnvVars {
-					os.Unsetenv(name)
-				}
-			}()
-
 			// WHEN
-			jobNamesFromEnv := GetJobsNames(ReadEnvironmentVars())
+			jobNamesFromEnv := GetJobsNames(ReadFromEnvironment(environ))
 
 			// THEN
 			if testCase.ReadSuccess == true {
@@ -146,23 +131,14 @@ func TestFetcherJobConfig_ReadEventsConfig(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 
-			envVars := map[string]string{}
-
+			var environ []string
 			for k, v := range testCase.EnvVars {
 				varName := fmt.Sprintf(k, testCase.JobName)
-				envVars[varName] = v
-
-				os.Setenv(varName, v)
+				environ = append(environ, varName+"="+v)
 			}
 
-			defer func() {
-				for k, _ := range envVars {
-					os.Unsetenv(k)
-				}
-			}()
-
 			// WHEN
-			jobConfig := NewTenantFetcherJobEnvironment(context.TODO(), testCase.JobName, envVars).ReadJobConfig()
+			jobConfig := NewTenantFetcherJobEnvironment(context.TODO(), testCase.JobName, ReadFromEnvironment(environ)).ReadJobConfig()
 			eventsCfg := jobConfig.GetEventsCgf()
 
 			// THEN
@@ -213,23 +189,14 @@ func TestFetcherJobConfig_ReadHandlerConfig(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 
-			envVars := map[string]string{}
-
+			var environ []string
 			for k, v := range testCase.EnvVars {
 				varName := fmt.Sprintf(k, testCase.JobName)
-				envVars[varName] = v
-
-				os.Setenv(varName, v)
+				environ = append(environ, varName+"="+v)
 			}
 
-			defer func() {
-				for k, _ := range envVars {
-					os.Unsetenv(k)
-				}
-			}()
-
 			// WHEN
-			jobConfig := NewTenantFetcherJobEnvironment(context.TODO(), testCase.JobName, envVars).ReadJobConfig()
+			jobConfig := NewTenantFetcherJobEnvironment(context.TODO(), testCase.JobName, ReadFromEnvironment(environ)).ReadJobConfig()
 			handlerCfg := jobConfig.GetHandlerCgf()
 
 			// THEN
