@@ -648,6 +648,7 @@ global:
       cron:
         enabled: false
       enabled: false
+      interval: "1m"
       configMapNamespace: "compass-system"
       manageSecrets: true
       providerName: "compass"
