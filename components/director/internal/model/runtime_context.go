@@ -17,7 +17,6 @@ type RuntimeContextInput struct {
 	Key       string
 	Value     string
 	RuntimeID string
-	Labels    map[string]interface{}
 }
 
 // ToRuntimeContext missing godoc

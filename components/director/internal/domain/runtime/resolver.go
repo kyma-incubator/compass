@@ -4,6 +4,9 @@ import (
 	"context"
 	"strings"
 
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	labelPkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -35,7 +38,6 @@ type OAuth20Service interface {
 // RuntimeService missing godoc
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
-	Create(ctx context.Context, in model.RuntimeInput) (string, error)
 	CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeInput, id string, mandatoryLabels map[string]interface{}) error
 	Update(ctx context.Context, id string, in model.RuntimeInput) error
 	Get(ctx context.Context, id string) (*model.Runtime, error)
@@ -97,6 +99,26 @@ type SubscriptionService interface {
 	UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error)
 }
 
+// TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
+//go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore
+type TenantFetcher interface {
+	FetchOnDemand(tenant string) error
+}
+
+// RuntimeContextService missing godoc
+//go:generate mockery --name=RuntimeContextService --output=automock --outpkg=automock --case=underscore
+type RuntimeContextService interface {
+	GetForRuntime(ctx context.Context, id, runtimeID string) (*model.RuntimeContext, error)
+	ListByRuntimeIDs(ctx context.Context, runtimeIDs []string, pageSize int, cursor string) ([]*model.RuntimeContextPage, error)
+}
+
+// RuntimeContextConverter missing godoc
+//go:generate mockery --name=RuntimeContextConverter --output=automock --outpkg=automock --case=underscore
+type RuntimeContextConverter interface {
+	ToGraphQL(in *model.RuntimeContext) *graphql.RuntimeContext
+	MultipleToGraphQL(in []*model.RuntimeContext) []*graphql.RuntimeContext
+}
+
 // Resolver missing godoc
 type Resolver struct {
 	transact                  persistence.Transactioner
@@ -111,13 +133,16 @@ type Resolver struct {
 	selfRegManager            SelfRegisterManager
 	uidService                uidService
 	subscriptionSvc           SubscriptionService
+	fetcher                   TenantFetcher
+	runtimeContextService     RuntimeContextService
+	runtimeContextConverter   RuntimeContextConverter
 }
 
 // NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService,
 	sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService, selfRegManager SelfRegisterManager,
-	uidService uidService, subscriptionSvc SubscriptionService) *Resolver {
+	uidService uidService, subscriptionSvc SubscriptionService, runtimeContextService RuntimeContextService, runtimeContextConverter RuntimeContextConverter, fetcher TenantFetcher) *Resolver {
 	return &Resolver{
 		transact:                  transact,
 		runtimeService:            runtimeService,
@@ -131,6 +156,9 @@ func NewResolver(transact persistence.Transactioner, runtimeService RuntimeServi
 		selfRegManager:            selfRegManager,
 		uidService:                uidService,
 		subscriptionSvc:           subscriptionSvc,
+		fetcher:                   fetcher,
+		runtimeContextService:     runtimeContextService,
+		runtimeContextConverter:   runtimeContextConverter,
 	}
 }
 
@@ -160,8 +188,7 @@ func (r *Resolver) Runtimes(ctx context.Context, filter []*graphql.LabelFilter, 
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -196,8 +223,7 @@ func (r *Resolver) Runtime(ctx context.Context, id string) (*graphql.Runtime, er
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -239,6 +265,16 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 		return nil, err
 	}
 
+	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok {
+		sa, err := convertLabelValue(saVal)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while converting %s label", scenarioassignment.SubaccountIDKey)
+		}
+		if err := r.fetcher.FetchOnDemand(sa); err != nil {
+			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", sa)
+		}
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -270,14 +306,11 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
-	gqlRuntime := r.converter.ToGraphQL(runtime)
-
-	return gqlRuntime, nil
+	return r.converter.ToGraphQL(runtime), nil
 }
 
 // UpdateRuntime missing godoc
@@ -302,14 +335,11 @@ func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.Runt
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
-	gqlRuntime := r.converter.ToGraphQL(runtime)
-
-	return gqlRuntime, nil
+	return r.converter.ToGraphQL(runtime), nil
 }
 
 // DeleteRuntime missing godoc
@@ -433,8 +463,7 @@ func (r *Resolver) GetLabel(ctx context.Context, runtimeID string, key string) (
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -476,8 +505,7 @@ func (r *Resolver) SetRuntimeLabel(ctx context.Context, runtimeID string, key st
 		return nil, errors.Wrapf(err, "while getting label with key: [%s]", key)
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -502,13 +530,11 @@ func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key
 		return nil, err
 	}
 
-	err = r.runtimeService.DeleteLabel(ctx, runtimeID, key)
-	if err != nil {
+	if err = r.runtimeService.DeleteLabel(ctx, runtimeID, key); err != nil {
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
@@ -555,6 +581,95 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Runtime, key *string
 
 	var gqlLabels graphql.Labels = resultLabels
 	return gqlLabels, nil
+}
+
+// RuntimeContexts retrieves a page of RuntimeContexts for the specified Runtime
+func (r *Resolver) RuntimeContexts(ctx context.Context, obj *graphql.Runtime, first *int, after *graphql.PageCursor) (*graphql.RuntimeContextPage, error) {
+	param := dataloader.ParamRuntimeContext{ID: obj.ID, Ctx: ctx, First: first, After: after}
+	return dataloader.RuntimeContextFor(ctx).RuntimeContextByID.Load(param)
+}
+
+// RuntimeContextsDataLoader retrieves a page of RuntimeContexts for each Runtime ID in the keys argument
+func (r *Resolver) RuntimeContextsDataLoader(keys []dataloader.ParamRuntimeContext) ([]*graphql.RuntimeContextPage, []error) {
+	if len(keys) == 0 {
+		return nil, []error{apperrors.NewInternalError("No Runtimes found")}
+	}
+
+	ctx := keys[0].Ctx
+	runtimeIDs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		runtimeIDs = append(runtimeIDs, key.ID)
+	}
+
+	var cursor string
+	if keys[0].After != nil {
+		cursor = string(*keys[0].After)
+	}
+
+	if keys[0].First == nil {
+		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, []error{err}
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	runtimeContextPages, err := r.runtimeContextService.ListByRuntimeIDs(ctx, runtimeIDs, *keys[0].First, cursor)
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	gqlRtmCtxs := make([]*graphql.RuntimeContextPage, 0, len(runtimeContextPages))
+	for _, page := range runtimeContextPages {
+		rtmCtxs := r.runtimeContextConverter.MultipleToGraphQL(page.Data)
+
+		gqlRtmCtxs = append(gqlRtmCtxs, &graphql.RuntimeContextPage{Data: rtmCtxs, TotalCount: page.TotalCount, PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(page.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(page.PageInfo.EndCursor),
+			HasNextPage: page.PageInfo.HasNextPage,
+		}})
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, []error{err}
+	}
+
+	return gqlRtmCtxs, nil
+}
+
+// RuntimeContext missing godoc
+func (r *Resolver) RuntimeContext(ctx context.Context, obj *graphql.Runtime, id string) (*graphql.RuntimeContext, error) {
+	if obj == nil {
+		return nil, apperrors.NewInternalError("Runtime cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	runtimeContext, err := r.runtimeContextService.GetForRuntime(ctx, id, obj.ID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.runtimeContextConverter.ToGraphQL(runtimeContext), nil
 }
 
 // Auths missing godoc

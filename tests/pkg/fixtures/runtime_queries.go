@@ -11,6 +11,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func RegisterRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, name, tenant string) (graphql.RuntimeExt, error) {
+	in := FixRuntimeInput(name)
+	return RegisterRuntimeFromInputWithinTenant(t, ctx, gqlClient, tenant, &in)
+}
+
 func RegisterRuntimeFromInputWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, input *graphql.RuntimeInput) (graphql.RuntimeExt, error) {
 	inputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(*input)
 	require.NoError(t, err)
@@ -32,6 +37,16 @@ func RegisterRuntimeFromInputWithoutTenant(t require.TestingT, ctx context.Conte
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, registerRuntimeRequest, &runtime)
 	require.NoError(t, err)
 	return runtime
+}
+
+func UpdateRuntimeWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string, in graphql.RuntimeInput) (graphql.RuntimeExt, error) {
+	inputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(in)
+	require.NoError(t, err)
+
+	updateRequest := FixUpdateRuntimeRequest(id, inputGQL)
+	runtime := graphql.RuntimeExt{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, updateRequest, &runtime)
+	return runtime, err
 }
 
 func RequestClientCredentialsForRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.RuntimeSystemAuth {
