@@ -43,9 +43,9 @@ func UpdateApplicationWithinTenant(t require.TestingT, ctx context.Context, gqlC
 	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationUpdateInputToGQL(in)
 	require.NoError(t, err)
 
-	createRequest := FixUpdateApplicationRequest(id, appInputGQL)
+	updateRequest := FixUpdateApplicationRequest(id, appInputGQL)
 	app := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, createRequest, &app)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, updateRequest, &app)
 	return app, err
 }
 

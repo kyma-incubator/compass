@@ -249,6 +249,7 @@ mutation {
     description
     baseUrl
     systemNumber
+    systemStatus
     integrationSystemID
     applicationTemplateID
     labels
