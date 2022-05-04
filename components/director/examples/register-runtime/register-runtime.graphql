@@ -62,6 +62,20 @@ mutation {
         }
       }
     }
+    runtimeContexts {
+      data {
+        id
+        key
+        value
+        labels
+      }
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+      }
+      totalCount
+    }
     eventingConfiguration {
       defaultURL
     }
