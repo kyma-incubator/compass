@@ -16,8 +16,7 @@ deployment:
         type: "mtls"
         secret: ""
       envs:
-        #mappingTemplateExternalURL: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}/cert/token"
-        mappingTemplateExternalURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/cert/token"
+        mappingTemplateExternalURL: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}/cert/token"
         mappingTemplateHeaders: '{"Content-Type":["application/x-www-form-urlencoded"]}'
         mappingTemplateJSONBody: "client_id=client_id&grant_type=client_credentials"
         mappingTemplateTokenFromResponse: "{{.access_token}}"
