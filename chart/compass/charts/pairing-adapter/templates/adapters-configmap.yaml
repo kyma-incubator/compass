@@ -1,0 +1,11 @@
+{{ if .Values.global.pairingAdapter.configMap.manage }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    component: compass
+  name: {{ .Values.global.pairingAdapter.configMap.name }}
+  namespace: {{ .Values.global.pairingAdapter.configMap.namespace }}
+data:
+  {{ .Values.global.pairingAdapter.configMap.key }}: '{"d3e9b9f5-25dc-4adb-a0a0-ed69ef371fb6":"{{ .Values.global.pairingAdapter.configMap.localAdapterFQDN }}"}'
+{{ end }}
