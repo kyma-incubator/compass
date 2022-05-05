@@ -63,6 +63,7 @@ data:
   global.tests.basicCredentials.manage: "true"
   global.tests.ordService.subscriptionOauthSecret.manage: "true"
   global.hydrator.http.client.skipSSLValidation: "true"
+  global.pairingAdapter.configMap.manage: "true"
 
   global.tenantFetchers.account-fetcher.enabled: "true"
   global.tenantFetchers.account-fetcher.dbPool.maxOpenConnections: "1"

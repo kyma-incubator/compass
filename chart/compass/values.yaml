@@ -805,6 +805,14 @@ global:
     client:
       skipSSLValidation: false
   pairingAdapter:
+    templateName: "pairing-adapter-app"
+    configMap:
+      manage: false
+      key: "config.json"
+      name: "pairing-adapter-config"
+      namespace: "compass-system"
+      integrationSystemID: "d3e9b9f5-25dc-4adb-a0a0-ed69ef371fb6" # randomly chosen
+      localAdapterFQDN: "http://compass-pairing-adapter.compass-system.svc.cluster.local/adapter-local-mtls"
     e2e:
       appName: "test-app"
       appID: "123-test-456"

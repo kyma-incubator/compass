@@ -6,7 +6,14 @@ type PairingAdapterConfig struct {
 	DirectorExternalCertSecuredURL string
 	CertLoaderConfig               certloader.Config
 	SkipSSLValidation              bool `envconfig:"default=true"`
-	MTLSPairingAdapterURL          string
+	IsLocalEnv                     bool
+	IntegrationSystemID            string
+	TemplateName                   string
+	LocalAdapterFQDN               string
+	ConfigMapKey                   string
+	ConfigMapName                  string
+	ConfigMapNamespace             string
+	FQDNPairingAdapterURL          string
 	TestTenant                     string
 	TestClientUser                 string
 	TestApplicationID              string
