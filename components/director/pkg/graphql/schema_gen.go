@@ -5238,7 +5238,15 @@ type Mutation {
 	- [unregister runtime](examples/unregister-runtime/unregister-runtime.graphql)
 	"""
 	unregisterRuntime(id: ID!): Runtime! @hasScopes(path: "graphql.mutation.unregisterRuntime")
+	"""
+	**Examples**
+	- [register runtime context](examples/register-runtime-context/register-runtime-context.graphql)
+	"""
 	registerRuntimeContext(runtimeID: ID!, in: RuntimeContextInput! @validate): RuntimeContext! @hasScopes(path: "graphql.mutation.registerRuntimeContext")
+	"""
+	**Examples**
+	- [update runtime context](examples/update-runtime-context/update-runtime-context.graphql)
+	"""
 	updateRuntimeContext(id: ID!, in: RuntimeContextInput! @validate): RuntimeContext! @hasScopes(path: "graphql.mutation.updateRuntimeContext")
 	unregisterRuntimeContext(id: ID!): RuntimeContext! @hasScopes(path: "graphql.mutation.unregisterRuntimeContext")
 	"""

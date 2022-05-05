@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	tnt2 "github.com/kyma-incubator/compass/components/director/pkg/tenant"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -134,15 +132,6 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		}
 		return f, nil
 	case graphql.FormationObjectTypeTenant:
-		if err := s.tenantSvc.CreateManyIfNotExists(ctx, model.BusinessTenantMappingInput{
-			ExternalTenant: objectID,
-			Parent:         tnt,
-			Type:           string(tnt2.Subaccount),
-			Provider:       "lazilyWhileFormationCreation",
-		}); err != nil {
-			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", objectID)
-		}
-
 		tenantID, err := s.tenantSvc.GetInternalTenant(ctx, objectID)
 		if err != nil {
 			return nil, err

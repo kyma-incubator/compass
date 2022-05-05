@@ -73,5 +73,11 @@ query {
     eventingConfiguration {
       defaultURL
     }
+    runtimeContext(id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") {
+      id
+      key
+      value
+      labels
+    }
   }
 }

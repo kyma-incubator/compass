@@ -227,7 +227,6 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("CreateManyIfNotExists", ctx, subaccountInput()).Return(nil).Once()
 				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
@@ -267,7 +266,6 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc := &automock.TenantService{}
 				subaccountInput := subaccountInput()
 				subaccountInput.Parent = subaccountID
-				tenantSvc.On("CreateManyIfNotExists", ctxWithSubaccount, subaccountInput).Return(nil).Once()
 				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccount, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
@@ -304,7 +302,6 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("CreateManyIfNotExists", ctx, subaccountInput()).Return(nil).Once()
 				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
@@ -385,36 +382,6 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			ExpectedErr: errors.New("while converting global_subaccount_id label"),
 		},
 		{
-			Name: "Returns error when subaccount creation fail",
-			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				return repo
-			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				return &automock.ScenariosService{}
-			},
-			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
-				repo := &automock.LabelUpsertService{}
-				return repo
-			},
-			TenantSvcFn: func() *automock.TenantService {
-				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("CreateManyIfNotExists", ctx, subaccountInput()).Return(testErr).Once()
-				return tenantSvc
-			},
-			UIDServiceFn: rtmtest.UnusedUUIDService(),
-			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
-				svc := &automock.ScenarioAssignmentEngine{}
-				return svc
-			},
-			Input: modelInputWithSubaccountLabel(),
-			MandatoryLabels: func() map[string]interface{} {
-				return nilLabels
-			},
-			Context:     ctx,
-			ExpectedErr: testErr,
-		},
-		{
 			Name: "Returns error when subaccount get from DB fail",
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
@@ -429,7 +396,6 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("CreateManyIfNotExists", ctx, subaccountInput()).Return(nil).Once()
 				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(nil, testErr).Once()
 				return tenantSvc
 			},
@@ -490,7 +456,6 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("CreateManyIfNotExists", ctx, subaccountInput()).Return(nil).Once()
 				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: "anotherParent"}, nil).Once()
 				return tenantSvc
 			},
@@ -525,7 +490,6 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("CreateManyIfNotExists", ctx, subaccountInput()).Return(nil).Once()
 				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(nil, testErr).Once()
 				return tenantSvc
@@ -561,7 +525,6 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("CreateManyIfNotExists", ctx, subaccountInput()).Return(nil).Once()
 				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
@@ -631,7 +594,6 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("CreateManyIfNotExists", ctx, subaccountInput()).Return(nil).Once()
 				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: tnt}, nil).Once()
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
