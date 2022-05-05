@@ -72,7 +72,7 @@ func TestGettingTokenWithMTLSWorks(t *testing.T) {
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, defaultTestTenant, &outputApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, outputApp.ID)
-	t.Logf("Successfully registere application from application template with name: %s", templateName)
+	t.Logf("Successfully registered application from application template with name: %s", templateName)
 
 	t.Logf("Getting one time token for application with name: %s and id: %s...", outputApp.Name, outputApp.ID)
 	token := fixtures.RequestOneTimeTokenForApplication(t, ctx, certSecuredGraphQLClient, outputApp.ID)
@@ -134,7 +134,7 @@ func createIntSystem(t *testing.T, ctx context.Context, defaultTestTenant string
 }
 
 func updateAdaptersConfigmap(t *testing.T, ctx context.Context, newIntSysID string, adapterConfig *config.PairingAdapterConfig) {
-	t.Logf("Updating adapters config map with newly created integartion system ID: %s...", newIntSysID)
+	t.Logf("Updating adapters config map with newly created integration system ID: %s...", newIntSysID)
 	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
 
