@@ -102,7 +102,8 @@ echo "-----------------------------------"
 
 echo "Starting compass"
 cd ${COMPASS_DIR}/components/director
-./run.sh --auto-terminate > ${ARTIFACTS}/compass_run.log & 
+# source run.sh --auto-terminate > ${ARTIFACTS}/compass_run.log & 
+source run.sh --auto-terminate & 
 
 COMPASS_URL="http://localhost:3000"
 
@@ -118,8 +119,6 @@ until is_ready "${COMPASS_URL}/healthz" ; do
     sleep 10
 done
 
-COMPASS_RUN_PID=${MAIN_PROCESS_PID}
-
 . ${COMPASS_DIR}/components/director/hack/jwt_generator.sh
 
 read -r DIRECTOR_TOKEN <<< $(get_token)
@@ -129,8 +128,8 @@ echo "Compass is ready"
 echo "Starting ord-service"
 cd ${ORD_SVC_DIR}/components/ord-service
 export SERVER_PORT=8081
-./run.sh --migrations-path ${COMPASS_DIR}/components/schema-migrator/migrations/director --auto-terminate  > ${ARTIFACTS}/ord_service_run.log &
-ORD_SERVICE_RUN_PID=$!
+# ./run.sh --migrations-path ${COMPASS_DIR}/components/schema-migrator/migrations/director --auto-terminate  > ${ARTIFACTS}/ord_service_run.log &
+./run.sh --migrations-path ${COMPASS_DIR}/components/schema-migrator/migrations/director --auto-terminate &
 
 ORD_URL="http://localhost:${SERVER_PORT}"
 
