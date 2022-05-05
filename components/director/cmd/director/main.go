@@ -190,9 +190,15 @@ func main() {
 			InsecureSkipVerify: cfg.SkipSSLValidation,
 		},
 	}
-	internalHTTPClient := &http.Client{
+
+	internalFQDNHTTPClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
-		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(internalClientTransport, "Authorization")),
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
+	}
+
+	internalGatewayHTTPClient := &http.Client{
+		Timeout:   cfg.ClientTimeout,
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(internalClientTransport, mp_authenticator.AuthorizationHeaderKey)),
 	}
 
 	appRepo := applicationRepo()
@@ -215,7 +221,8 @@ func main() {
 		cfg.Features,
 		metricsCollector,
 		httpClient,
-		internalHTTPClient,
+		internalFQDNHTTPClient,
+		internalGatewayHTTPClient,
 		cfg.SelfRegConfig,
 		cfg.OneTimeToken.Length,
 		adminURL,
