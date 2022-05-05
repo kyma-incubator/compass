@@ -222,14 +222,14 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 	}
 }
 
-func fixModelApplicationUpdateInput(name, description, healthCheckURL, baseUrl string, statusCondition model.ApplicationStatusCondition) model.ApplicationUpdateInput {
+func fixModelApplicationUpdateInput(name, description, healthCheckURL, baseURL string, statusCondition model.ApplicationStatusCondition) model.ApplicationUpdateInput {
 	return model.ApplicationUpdateInput{
 		Description:         &description,
 		HealthCheckURL:      &healthCheckURL,
 		IntegrationSystemID: &intSysID,
 		ProviderName:        &providerName,
 		StatusCondition:     &statusCondition,
-		BaseURL:             &baseUrl,
+		BaseURL:             &baseURL,
 	}
 }
 
@@ -276,14 +276,14 @@ func fixGQLApplicationRegisterInput(name, description string) graphql.Applicatio
 	}
 }
 
-func fixGQLApplicationUpdateInput(name, description, healthCheckURL, baseUrl string, statusCondition graphql.ApplicationStatusCondition) graphql.ApplicationUpdateInput {
+func fixGQLApplicationUpdateInput(name, description, healthCheckURL, baseURL string, statusCondition graphql.ApplicationStatusCondition) graphql.ApplicationUpdateInput {
 	return graphql.ApplicationUpdateInput{
 		Description:         &description,
 		HealthCheckURL:      &healthCheckURL,
 		IntegrationSystemID: &intSysID,
 		ProviderName:        &providerName,
 		StatusCondition:     &statusCondition,
-		BaseURL:             &baseUrl,
+		BaseURL:             &baseURL,
 	}
 }
 
