@@ -135,10 +135,10 @@ global:
       version: "PR-2307"
     console:
       dir:
-      version: "PR-65"
+      version: "PR-66"
     e2e_tests:
       dir:
-      version: "PR-2330"
+      version: "PR-2342"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -808,6 +808,13 @@ global:
     client:
       skipSSLValidation: false
   pairingAdapter:
+    templateName: "pairing-adapter-app"
+    configMap:
+      manage: false
+      key: "config.json"
+      name: "pairing-adapter-config"
+      namespace: "compass-system"
+      localAdapterFQDN: "http://compass-pairing-adapter.compass-system.svc.cluster.local/adapter-local-mtls"
     e2e:
       appName: "test-app"
       appID: "123-test-456"

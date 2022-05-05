@@ -92,7 +92,7 @@ func NewRootResolver(
 	pairingAdaptersMapping map[string]string,
 	featuresConfig features.Config,
 	metricsCollector *metrics.Collector,
-	httpClient, internalHTTPClient *http.Client,
+	httpClient, internalFQDNHTTPClient, internalGatewayHTTPClient *http.Client,
 	selfRegConfig config.SelfRegConfig,
 	tokenLength int,
 	hydraURL *url.URL,
@@ -184,11 +184,11 @@ func NewRootResolver(
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, labelDefSvc, bundleSvc, uidSvc)
 	timeService := time.NewService()
-	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdaptersMapping, timeService)
+	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalFQDNHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdaptersMapping, timeService)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
 	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentSvc, tenantSvc, scenarioAssignmentEngine)
 	subscriptionSvc := subscription.NewService(runtimeSvc, tenantSvc, labelSvc, uidSvc, subscriptionConfig.ProviderLabelKey, subscriptionConfig.ConsumerSubaccountIDsLabelKey)
-	tenantOnDemandSvc := tenant.NewFetchOnDemandService(internalHTTPClient, tenantOnDemandURL)
+	tenantOnDemandSvc := tenant.NewFetchOnDemandService(internalGatewayHTTPClient, tenantOnDemandURL)
 
 	return &RootResolver{
 		appNameNormalizer:  appNameNormalizer,

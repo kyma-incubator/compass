@@ -144,10 +144,10 @@ func TestRuntimeFormationFlow(t *testing.T) {
 		assert.Equal(t, asaFormation, deleteASAFormation.Name)
 	}()
 
-	asaInput := fixtures.FixAutomaticScenarioAssigmentInput(asaFormation, selectorKey, subaccountID)
+	formationInput := graphql.FormationInput{Name: asaFormation}
 	t.Log("Creating ASA")
-	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, certSecuredGraphQLClient, asaInput, tenantId)
-	defer fixtures.DeleteAutomaticScenarioAssigmentForSelector(t, ctx, certSecuredGraphQLClient, tenantId, *asaInput.Selector)
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountID, tenantId)
+	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountID, tenantId)
 
 	rtmName := "rt"
 	rtmDesc := "rt-description"
