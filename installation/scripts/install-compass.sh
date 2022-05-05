@@ -20,7 +20,7 @@ do
     case ${key} in
         --overrides-file)
             checkInputParameterValue "${2}"
-            yq eval-all --inplace '. as $item ireduce ({}; . * $item )' mergedOverrides.yaml ${2}
+            yq merge --inplace --overwrite mergedOverrides.yaml ${2}
             shift # past argument
             shift
         ;;
