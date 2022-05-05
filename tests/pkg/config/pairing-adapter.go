@@ -7,7 +7,6 @@ type PairingAdapterConfig struct {
 	CertLoaderConfig               certloader.Config
 	SkipSSLValidation              bool `envconfig:"default=true"`
 	IsLocalEnv                     bool
-	IntegrationSystemID            string
 	TemplateName                   string
 	LocalAdapterFQDN               string
 	ConfigMapKey                   string
