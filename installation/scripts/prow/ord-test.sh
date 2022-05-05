@@ -102,14 +102,14 @@ echo "-----------------------------------"
 
 echo "Starting compass"
 cd ${COMPASS_DIR}/components/director
-source run.sh & 
+source run.sh --auto-terminate > ${ARTIFACTS}/compass_run.log & 
 
 COMPASS_URL="http://localhost:3000"
 
-STARTE_TIME=$(date +%s)
+START_TIME=$(date +%s)
 until is_ready "${COMPASS_URL}/healthz" ; do
-    CURRENT_TME=$(date +%s)
-    SECONDS=$((CURRENT_TME-STARTE_TIME))
+    CURRENT_TIME=$(date +%s)
+    SECONDS=$((CURRENT_TIME-START_TIME))
     if (( SECONDS > 300 )); then
         echo "Timeout of 5 min for starting compass reached. Exiting."
         exit 1
@@ -129,15 +129,15 @@ echo "Compass is ready"
 echo "Starting ord-service"
 cd ${ORD_SVC_DIR}/components/ord-service
 export SERVER_PORT=8081
-./run.sh --migrations-path ${COMPASS_DIR}/components/schema-migrator/migrations/director &
+./run.sh --migrations-path ${COMPASS_DIR}/components/schema-migrator/migrations/director  > ${ARTIFACTS}/ord_service_run.log &
 ORD_SERVICE_RUN_PID=$!
 
 ORD_URL="http://localhost:${SERVER_PORT}"
 
-STARTE_TIME=$(date +%s)
+START_TIME=$(date +%s)
 until is_ready "${ORD_URL}/actuator/health" ; do
-    CURRENT_TME=$(date +%s)
-    SECONDS=$((CURRENT_TME-STARTE_TIME))
+    CURRENT_TIME=$(date +%s)
+    SECONDS=$((CURRENT_TIME-START_TIME))
     if (( SECONDS > 300 )); then
         echo "Timeout of 5 min for starting ord-service reached. Exiting."
         exit 1
@@ -151,21 +151,13 @@ echo "ORD-service is ready"
 echo "Token: ${DIRECTOR_TOKEN}"
 echo "Internal Tenant ID: ${INTERNAL_TENANT_ID}"
 
-echo "Killing all processes"
-ps x -o  "%p %r %c"
-
-echo "Compass run.sh script PID: ${COMPASS_RUN_PID}"
-cleanup
-kill -SIGINT  "${COMPASS_RUN_PID}" 
-
 echo "ORD service run.sh script PID: ${ORD_SERVICE_RUN_PID}"
 kill -SIGINT  "${ORD_SERVICE_RUN_PID}"
 
-echo "Wait 10s ..."
-sleep 10
+echo "Wait 300s ..."
+sleep 300
 
 echo "Get allprocesses"
 ps x -o  "%p %r %c"
 
 echo "ord-test end reached!"
-pkill -P $$

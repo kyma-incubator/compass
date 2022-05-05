@@ -16,6 +16,7 @@ echo $ROOT_PATH
 SKIP_DB_CLEANUP=false
 REUSE_DB=false
 DUMP_DB=false
+AUTO_TERMINATE=false
 DISABLE_ASYNC_MODE=true
 COMPONENT='director'
 
@@ -70,6 +71,10 @@ do
             shift
             shift
         ;;
+        --auto-terminate)
+            AUTO_TERMINATE=true
+            shift
+        ;;
         --*)
             echo "Unknown flag ${1}"
             exit 1
@@ -91,14 +96,8 @@ CLIENT_CERT_SECRET_NAMESPACE="default"
 CLIENT_CERT_SECRET_NAME="external-client-certificate"
 
 function cleanup() {
-    if [[ ${MAIN_PROCESS_PID} ]]; then
-        echo -e "${GREEN}Kill main process..."
-        kill -SIGINT "${MAIN_PROCESS_PID}"
-        echo -e "${GREEN}Delete build result..."
-        rm ${ROOT_PATH}/main || true
-    fi
 
-    if [[ ${DEBUG} ]]; then
+    if [[ ${DEBUG} == true ]]; then
        echo -e "${GREEN}Cleanup Director binary${NC}"
        rm  $GOPATH/src/github.com/kyma-incubator/compass/components/director/director 
     fi
@@ -260,16 +259,43 @@ EOF
 
 kubectl create secret generic "$CLIENT_CERT_SECRET_NAME" --from-literal="$APP_EXTERNAL_CLIENT_CERT_KEY"="$APP_EXTERNAL_CLIENT_CERT_VALUE" --from-literal="$APP_EXTERNAL_CLIENT_KEY_KEY"="$APP_EXTERNAL_CLIENT_KEY_VALUE" --save-config --dry-run -o yaml | kubectl apply -f -
 
-if [[  ${DEBUG} ]]; then
+if [[  ${DEBUG} == true ]]; then
     echo -e "${GREEN}Debug mode activated on port $DEBUG_PORT${NC}"
     cd $GOPATH/src/github.com/kyma-incubator/compass/components/director
     CGO_ENABLED=0 go build -gcflags="all=-N -l" ./cmd/${COMPONENT}
     dlv --listen=:$DEBUG_PORT --headless=true --api-version=2 exec ./${COMPONENT}
 else
-    cd ${ROOT_PATH}
-    go build ${ROOT_PATH}/cmd/${COMPONENT}/main.go 
-    ${ROOT_PATH}/main &
-    export MAIN_PROCESS_PID="$!"
-    wait
-    # go run ${ROOT_PATH}/cmd/${COMPONENT}/main.go
+    echo "AUTO_TERMINATE=${AUTO_TERMINATE}"
+    if [[  ${AUTO_TERMINATE} == true ]]; then
+        cd ${ROOT_PATH}
+        go build ${ROOT_PATH}/cmd/${COMPONENT}/main.go 
+
+        MAIN_APP_LOGFILE=${ROOT_PATH}/main.log
+        if [[ ${ARTIFACTS} ]]; then
+           MAIN_APP_LOGFILE=${ARTIFACTS}/main.log
+        fi
+
+        ${ROOT_PATH}/main > ${MAIN_APP_LOGFILE} &
+        MAIN_PROCESS_PID="$!"
+        echo "MAIN_PROCESS_PID=$MAIN_PROCESS_PID"
+
+        START_TIME=$(date +%s)
+        SECONDS=0
+        while (( SECONDS < 300 )) ; do
+            CURRENT_TIME=$(date +%s)
+            SECONDS=$((CURRENT_TIME-START_TIME))
+            echo "Wait 10s ..."
+            sleep 10
+        done
+        
+        echo "Timeout of 5 min for starting compass reached. Killing the process."
+        echo -e "${GREEN}Kill main process..."
+        kill -SIGINT "${MAIN_PROCESS_PID}"
+        echo -e "${GREEN}Delete build result and log..."
+        rm ${ROOT_PATH}/main || true
+        rm ${ROOT_PATH}/main.log || true
+        wait
+    else
+        go run ${ROOT_PATH}/cmd/${COMPONENT}/main.go
+    fi
 fi
