@@ -8,10 +8,10 @@ type PairingAdapterConfig struct {
 	SkipSSLValidation              bool `envconfig:"default=true"`
 	IsLocalEnv                     bool
 	TemplateName                   string
-	LocalAdapterFQDN               string
-	ConfigMapKey                   string
-	ConfigMapName                  string
-	ConfigMapNamespace             string
+	LocalAdapterFQDN               string `envconfig:"optional"`
+	ConfigMapKey                   string `envconfig:"optional"`
+	ConfigMapName                  string `envconfig:"optional"`
+	ConfigMapNamespace             string `envconfig:"optional"`
 	FQDNPairingAdapterURL          string
 	TestTenant                     string
 	TestClientUser                 string
