@@ -60,7 +60,7 @@ spec:
               value: {{ $.Values.global.isLocalEnv }}
             - name: APP_TEMPLATE_NAME
               value: {{ $.Values.global.pairingAdapter.templateName }}
-            {{ if .Values.global.isLocalEnv }}
+            {{ if $.Values.global.isLocalEnv }}
             - name: APP_INTEGRATION_SYSTEM_ID
               value: "{{ $.Values.global.pairingAdapter.configMap.integrationSystemID }}"
             - name: APP_CONFIG_MAP_NAME
