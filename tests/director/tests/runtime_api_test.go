@@ -132,6 +132,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	subaccount := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
+	tenantID := tenant.TestTenants.GetDefaultTenantID()
 
 	givenInput := graphql.RuntimeInput{
 		Name:        "runtime-with-scenario-assignments",
@@ -145,7 +146,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	// WHEN
 	registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, registerReq, &actualRuntime)
-	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualRuntime)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &actualRuntime)
 
 	//THEN
 	require.NoError(t, err)
@@ -156,7 +157,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	_ = fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), []string{testScenario, "DEFAULT"})
 	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), []string{"DEFAULT"})
 
-	// register automatic sccenario assignment
+	// register automatic scenario assignment
 	givenScenarioAssignment := graphql.AutomaticScenarioAssignmentSetInput{
 		ScenarioName: testScenario,
 		Selector: &graphql.LabelSelectorInput{
@@ -165,19 +166,15 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 		},
 	}
 
-	scenarioAssignmentInGQL, err := testctx.Tc.Graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(givenScenarioAssignment)
-	require.NoError(t, err)
-	actualScenarioAssignment := graphql.AutomaticScenarioAssignment{}
+	actualScenarioAssignment := graphql.Formation{}
 
 	// WHEN
-	createAutomaticScenarioAssignmentReq := fixtures.FixCreateAutomaticScenarioAssignmentRequest(scenarioAssignmentInGQL)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAutomaticScenarioAssignmentReq, &actualScenarioAssignment)
+	assignFormationReq := fixtures.FixAssignFormationRequest(subaccount, string(graphql.FormationObjectTypeTenant), givenScenarioAssignment.ScenarioName)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, assignFormationReq, &actualScenarioAssignment)
 
 	// THEN
 	require.NoError(t, err)
-	assert.Equal(t, givenScenarioAssignment.ScenarioName, actualScenarioAssignment.ScenarioName)
-	assert.Equal(t, givenScenarioAssignment.Selector.Key, actualScenarioAssignment.Selector.Key)
-	assert.Equal(t, givenScenarioAssignment.Selector.Value, actualScenarioAssignment.Selector.Value)
+	assert.Equal(t, givenScenarioAssignment.ScenarioName, actualScenarioAssignment.Name)
 
 	// get runtime - verify it is in scenario
 	getRuntimeReq := fixtures.FixGetRuntimeRequest(actualRuntime.ID)

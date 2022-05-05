@@ -147,7 +147,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	formationInput := graphql.FormationInput{Name: asaFormation}
 	t.Log("Creating ASA")
 	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountID, tenantId)
-	defer fixtures.UnassignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountID, tenantId)
+	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountID, tenantId)
 
 	rtmName := "rt"
 	rtmDesc := "rt-description"

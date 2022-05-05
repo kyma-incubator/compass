@@ -11,16 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func FixCreateAutomaticScenarioAssignmentRequest(automaticScenarioAssignmentInput string) *gcli.Request {
-	return gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-				result: createAutomaticScenarioAssignment(in: %s) {
-						%s
-					}
-				}`,
-			automaticScenarioAssignmentInput, testctx.Tc.GQLFieldsProvider.ForAutomaticScenarioAssignment()))
-}
-
 func FixAutomaticScenarioAssignmentsRequest() *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
