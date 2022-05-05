@@ -31,9 +31,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
-	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -41,6 +39,9 @@ import (
 )
 
 const (
+	timeout       = time.Minute * 3
+	checkInterval = time.Second * 5
+
 	globalAccountCreateSubPath = "global-account-create"
 	globalAccountDeleteSubPath = "global-account-delete"
 	subaccountMoveSubPath      = "subaccount-move"
@@ -104,24 +105,17 @@ func TestGlobalAccounts(t *testing.T) {
 	setMockTenantEvents(t, []byte(genMockPage(deleteEvent1, 1)), globalAccountDeleteSubPath)
 	defer cleanupMockEvents(t, globalAccountDeleteSubPath)
 
-	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
-	require.NoError(t, err)
+	require.Eventually(t, func() bool {
+		tenant1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, externalTenantIDs[0])
+		assert.Error(t, err)
+		assert.Nil(t, tenant1)
 
-	k8s.CreateJobByCronJob(t, ctx, k8sClient, globalAccountsCronJobName, globalAccountsJobName, namespace)
-	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, globalAccountsJobName, namespace, cfg.TenantFetcherContainerName, false)
-		k8s.DeleteJob(t, ctx, k8sClient, globalAccountsJobName, namespace)
-	}()
+		tenant2, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, externalTenantIDs[1])
+		assert.NoError(t, err)
+		assert.Equal(t, names[1], *tenant2.Name)
 
-	k8s.WaitForJobToSucceed(t, ctx, k8sClient, globalAccountsJobName, namespace)
-
-	tenant1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, externalTenantIDs[0])
-	assert.Error(t, err)
-	assert.Nil(t, tenant1)
-
-	tenant2, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, externalTenantIDs[1])
-	assert.NoError(t, err)
-	assert.Equal(t, names[1], *tenant2.Name)
+		return true
+	}, timeout, checkInterval, "Waiting for tenants retrieval.")
 }
 
 func TestMoveSubaccounts(t *testing.T) {
@@ -198,33 +192,26 @@ func TestMoveSubaccounts(t *testing.T) {
 	setMockTenantEvents(t, []byte(genMockPage(strings.Join([]string{event1, event2}, ","), 2)), subaccountMoveSubPath)
 	defer cleanupMockEvents(t, subaccountMoveSubPath)
 
-	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
-	assert.NoError(t, err)
+	require.Eventually(t, func() bool {
+		tenant2, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, gaExternalTenantIDs[1])
+		assert.NoError(t, err)
 
-	k8s.CreateJobByCronJob(t, ctx, k8sClient, subaccountsCronJobName, subaccountsJobName, namespace)
-	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, subaccountsJobName, namespace, cfg.TenantFetcherContainerName, false)
-		k8s.DeleteJob(t, ctx, k8sClient, subaccountsJobName, namespace)
-	}()
+		subaccount1, err = fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[0])
+		assert.NoError(t, err)
+		assert.Equal(t, tenant2.InternalID, subaccount1.ParentID)
 
-	k8s.WaitForJobToSucceed(t, ctx, k8sClient, subaccountsJobName, namespace)
+		subaccount2, err = fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[1])
+		assert.NoError(t, err)
+		assert.Equal(t, tenant2.InternalID, subaccount2.ParentID)
 
-	tenant2, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, gaExternalTenantIDs[1])
-	assert.NoError(t, err)
+		rtm1 := fixtures.GetRuntime(t, ctx, directorInternalGQLClient, tenant2.InternalID, runtime1.ID)
+		assert.Equal(t, runtime1.Name, rtm1.Name)
 
-	subaccount1, err = fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[0])
-	assert.NoError(t, err)
-	assert.Equal(t, tenant2.InternalID, subaccount1.ParentID)
+		rtm2 := fixtures.GetRuntime(t, ctx, directorInternalGQLClient, tenant2.InternalID, runtime2.ID)
+		assert.Equal(t, runtime2.Name, rtm2.Name)
 
-	subaccount2, err = fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[1])
-	assert.NoError(t, err)
-	assert.Equal(t, tenant2.InternalID, subaccount2.ParentID)
-
-	rtm1 := fixtures.GetRuntime(t, ctx, directorInternalGQLClient, tenant2.InternalID, runtime1.ID)
-	assert.Equal(t, runtime1.Name, rtm1.Name)
-
-	rtm2 := fixtures.GetRuntime(t, ctx, directorInternalGQLClient, tenant2.InternalID, runtime2.ID)
-	assert.Equal(t, runtime2.Name, rtm2.Name)
+		return true
+	}, timeout, checkInterval, "Waiting for tenants retrieval.")
 }
 
 func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) {
@@ -293,27 +280,20 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, directoryParentGUID, defaultTenantID, defaultTenantID, gaExternalTenantIDs[0], subaccountRegion)
 	setMockTenantEvents(t, []byte(genMockPage(strings.Join([]string{event1}, ","), 1)), subaccountMoveSubPath)
 	defer cleanupMockEvents(t, subaccountMoveSubPath)
+	
+	require.Eventually(t, func() bool {
+		tenant1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, defaultTenantID)
+		assert.NoError(t, err)
 
-	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
-	assert.NoError(t, err)
+		subaccount1, err = fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[0])
+		assert.NoError(t, err)
+		assert.Equal(t, tenant1.InternalID, subaccount1.ParentID)
 
-	k8s.CreateJobByCronJob(t, ctx, k8sClient, subaccountsCronJobName, subaccountsJobName, namespace)
-	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, subaccountsJobName, namespace, cfg.TenantFetcherContainerName, true)
-		k8s.DeleteJob(t, ctx, k8sClient, subaccountsJobName, namespace)
-	}()
+		rtm1 := fixtures.GetRuntime(t, ctx, directorInternalGQLClient, tenant1.InternalID, runtime1.ID)
+		assert.Equal(t, runtime1.Name, rtm1.Name)
 
-	k8s.WaitForJobToFail(t, ctx, k8sClient, subaccountsJobName, namespace)
-
-	tenant1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, defaultTenantID)
-	assert.NoError(t, err)
-
-	subaccount1, err = fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[0])
-	assert.NoError(t, err)
-	assert.Equal(t, tenant1.InternalID, subaccount1.ParentID)
-
-	rtm1 := fixtures.GetRuntime(t, ctx, directorInternalGQLClient, tenant1.InternalID, runtime1.ID)
-	assert.Equal(t, runtime1.Name, rtm1.Name)
+		return true
+	}, timeout, checkInterval, "Waiting for tenants retrieval.")
 }
 
 func TestCreateDeleteSubaccounts(t *testing.T) {
@@ -366,27 +346,20 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 	setMockTenantEvents(t, []byte(genMockPage(createEvent, 1)), subaccountCreateSubPath)
 	defer cleanupMockEvents(t, subaccountCreateSubPath)
 
-	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
-	assert.NoError(t, err)
+	require.Eventually(t, func() bool {
+		subaccount1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[0])
+		assert.Error(t, err)
+		assert.Nil(t, subaccount1)
 
-	k8s.CreateJobByCronJob(t, ctx, k8sClient, subaccountsCronJobName, subaccountsJobName, namespace)
-	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, subaccountsJobName, namespace, cfg.TenantFetcherContainerName, false)
-		k8s.DeleteJob(t, ctx, k8sClient, subaccountsJobName, namespace)
-	}()
+		subaccount2, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[1])
+		assert.NoError(t, err)
+		assert.Equal(t, subaccountNames[1], *subaccount2.Name)
+		parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountParent)
+		assert.NoError(t, err)
+		assert.Equal(t, parent.InternalID, subaccount2.ParentID)
 
-	k8s.WaitForJobToSucceed(t, ctx, k8sClient, subaccountsJobName, namespace)
-
-	subaccount1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[0])
-	assert.Error(t, err)
-	assert.Nil(t, subaccount1)
-
-	subaccount2, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[1])
-	assert.NoError(t, err)
-	assert.Equal(t, subaccountNames[1], *subaccount2.Name)
-	parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountParent)
-	assert.NoError(t, err)
-	assert.Equal(t, parent.InternalID, subaccount2.ParentID)
+		return true
+	}, timeout, checkInterval, "Waiting for tenants retrieval.")
 }
 
 func TestMoveMissingSubaccounts(t *testing.T) {
@@ -407,26 +380,19 @@ func TestMoveMissingSubaccounts(t *testing.T) {
 	setMockTenantEvents(t, []byte(genMockPage(event, 1)), subaccountMoveSubPath)
 	defer cleanupMockEvents(t, subaccountMoveSubPath)
 
-	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
-	assert.NoError(t, err)
+	require.Eventually(t, func() bool {
+		parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, gaExternalTenantIDs[1])
+		assert.NoError(t, err)
+		assert.Equal(t, *parent.Name, gaExternalTenantIDs[1])
+		assert.Equal(t, parent.ID, gaExternalTenantIDs[1])
 
-	k8s.CreateJobByCronJob(t, ctx, k8sClient, subaccountsCronJobName, subaccountsJobName, namespace)
-	defer func() {
-		k8s.PrintJobLogs(t, ctx, k8sClient, subaccountsJobName, namespace, cfg.TenantFetcherContainerName, false)
-		k8s.DeleteJob(t, ctx, k8sClient, subaccountsJobName, namespace)
-	}()
+		subaccount, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenant)
+		assert.NoError(t, err)
+		assert.Equal(t, subaccount.ID, subaccountExternalTenant)
+		assert.Equal(t, subaccount.ParentID, parent.InternalID)
 
-	k8s.WaitForJobToSucceed(t, ctx, k8sClient, subaccountsJobName, namespace)
-
-	parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, gaExternalTenantIDs[1])
-	assert.NoError(t, err)
-	assert.Equal(t, *parent.Name, gaExternalTenantIDs[1])
-	assert.Equal(t, parent.ID, gaExternalTenantIDs[1])
-
-	subaccount, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenant)
-	assert.NoError(t, err)
-	assert.Equal(t, subaccount.ID, subaccountExternalTenant)
-	assert.Equal(t, subaccount.ParentID, parent.InternalID)
+		return true
+	}, timeout, checkInterval, "Waiting for tenants retrieval.")
 }
 
 func genMockGlobalAccountEvent(guid, displayName, customerID, subdomain string) string {
