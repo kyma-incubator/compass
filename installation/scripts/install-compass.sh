@@ -10,7 +10,8 @@ TIMEOUT=30m0s
 
 COMPASS_CHARTS="${CURRENT_DIR}/../../chart/compass"
 
-cp "${COMPASS_CHARTS}"/values.yaml mergedOverrides.yaml # target file where all overrides .yaml files will be merged into. This is needed because if several override files with the same key/s are passed to helm, it applies the value/s from the last file for that key overriding everything else.
+touch mergedOverrides.yaml # target file where all overrides .yaml files will be merged into. This is needed because if several override files with the same key/s are passed to helm, it applies the value/s from the last file for that key overriding everything else.
+yq merge --inplace --overwrite mergedOverrides.yaml "${COMPASS_CHARTS}"/values.yaml
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
