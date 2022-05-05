@@ -427,6 +427,7 @@ func TestUpdateApplication(t *testing.T) {
 	expectedApp.Labels["name"] = "before"
 
 	updateInput := fixtures.FixSampleApplicationUpdateInput("after")
+	updateInput.BaseURL = ptr.String("after")
 	updateInput.StatusCondition = &updateStatusCond
 	updateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationUpdateInputToGQL(updateInput)
 	require.NoError(t, err)
