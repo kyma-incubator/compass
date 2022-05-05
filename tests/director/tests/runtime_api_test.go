@@ -127,7 +127,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 
 func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	const (
-		testScenario = "test-scenario"
+		testFormation = "test-scenario"
 	)
 	// GIVEN
 	ctx := context.Background()
@@ -154,27 +154,21 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	assertions.AssertRuntime(t, givenInput, actualRuntime, conf.DefaultScenarioEnabled, true)
 
 	// update label definition
-	_ = fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), []string{testScenario, "DEFAULT"})
+	_ = fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), []string{testFormation, "DEFAULT"})
 	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), []string{"DEFAULT"})
 
-	// register automatic scenario assignment
-	givenScenarioAssignment := graphql.AutomaticScenarioAssignmentSetInput{
-		ScenarioName: testScenario,
-		Selector: &graphql.LabelSelectorInput{
-			Key:   "global_subaccount_id",
-			Value: subaccount,
-		},
-	}
+	// assign to formation
+	givenFormation := graphql.FormationInput{Name: testFormation}
 
-	actualScenarioAssignment := graphql.Formation{}
+	actualFormation := graphql.Formation{}
 
 	// WHEN
-	assignFormationReq := fixtures.FixAssignFormationRequest(subaccount, string(graphql.FormationObjectTypeTenant), givenScenarioAssignment.ScenarioName)
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, assignFormationReq, &actualScenarioAssignment)
+	assignFormationReq := fixtures.FixAssignFormationRequest(subaccount, string(graphql.FormationObjectTypeTenant), givenFormation.Name)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, assignFormationReq, &actualFormation)
 
 	// THEN
 	require.NoError(t, err)
-	assert.Equal(t, givenScenarioAssignment.ScenarioName, actualScenarioAssignment.Name)
+	assert.Equal(t, givenFormation.Name, actualFormation.Name)
 
 	// get runtime - verify it is in scenario
 	getRuntimeReq := fixtures.FixGetRuntimeRequest(actualRuntime.ID)
@@ -184,7 +178,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	scenarios, hasScenarios := actualRuntime.Labels["scenarios"]
 	assert.True(t, hasScenarios)
 	assert.Len(t, scenarios, 1)
-	assert.Contains(t, scenarios, testScenario)
+	assert.Contains(t, scenarios, testFormation)
 
 	// delete runtime
 
