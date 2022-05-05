@@ -102,7 +102,7 @@ echo "-----------------------------------"
 
 echo "Starting compass"
 cd ${COMPASS_DIR}/components/director
-source run.sh --auto-terminate > ${ARTIFACTS}/compass_run.log & 
+./run.sh --auto-terminate > ${ARTIFACTS}/compass_run.log & 
 
 COMPASS_URL="http://localhost:3000"
 
@@ -114,7 +114,7 @@ until is_ready "${COMPASS_URL}/healthz" ; do
         echo "Timeout of 5 min for starting compass reached. Exiting."
         exit 1
     fi
-    echo "Wait 10s ..."
+    echo "Wait 10s before check Director health again ..."
     sleep 10
 done
 
@@ -129,7 +129,7 @@ echo "Compass is ready"
 echo "Starting ord-service"
 cd ${ORD_SVC_DIR}/components/ord-service
 export SERVER_PORT=8081
-./run.sh --migrations-path ${COMPASS_DIR}/components/schema-migrator/migrations/director  > ${ARTIFACTS}/ord_service_run.log &
+./run.sh --migrations-path ${COMPASS_DIR}/components/schema-migrator/migrations/director --auto-terminate  > ${ARTIFACTS}/ord_service_run.log &
 ORD_SERVICE_RUN_PID=$!
 
 ORD_URL="http://localhost:${SERVER_PORT}"
@@ -142,7 +142,7 @@ until is_ready "${ORD_URL}/actuator/health" ; do
         echo "Timeout of 5 min for starting ord-service reached. Exiting."
         exit 1
     fi
-    echo "Wait 10s ..."
+    echo "Wait 10s before check Ord Service health again ..."
     sleep 10
 done
 
@@ -151,11 +151,11 @@ echo "ORD-service is ready"
 echo "Token: ${DIRECTOR_TOKEN}"
 echo "Internal Tenant ID: ${INTERNAL_TENANT_ID}"
 
-echo "ORD service run.sh script PID: ${ORD_SERVICE_RUN_PID}"
-kill -SIGINT  "${ORD_SERVICE_RUN_PID}"
+echo "Get allprocesses"
+ps x -o  "%p %r %c"
 
-echo "Wait 300s ..."
-sleep 300
+echo "Wait 310s ..."
+sleep 310
 
 echo "Get allprocesses"
 ps x -o  "%p %r %c"

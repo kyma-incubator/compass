@@ -284,7 +284,7 @@ else
         while (( SECONDS < 300 )) ; do
             CURRENT_TIME=$(date +%s)
             SECONDS=$((CURRENT_TIME-START_TIME))
-            echo "Wait 10s ..."
+            echo "[Director] Wait 10s ..."
             sleep 10
         done
         
