@@ -95,7 +95,6 @@ func TestGettingTokenWithMTLSThroughFQN(t *testing.T) {
 	}
 	jsonReqData, err := json.Marshal(reqData)
 	require.NoError(t, err)
-	// comment
 
 	req, err := http.NewRequest(http.MethodPost, conf.FQDNPairingAdapterURL, strings.NewReader(string(jsonReqData)))
 	require.NoError(t, err)
