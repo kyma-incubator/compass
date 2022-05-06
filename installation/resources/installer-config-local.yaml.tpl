@@ -67,9 +67,9 @@ data:
 
   global.tenantFetchers.account-fetcher.cron.enabled: "false"
   global.tenantFetchers.account-fetcher.enabled: "true"
+  global.tenantFetchers.account-fetcher.job.interval: "10s"
   global.tenantFetchers.account-fetcher.dbPool.maxOpenConnections: "1"
   global.tenantFetchers.account-fetcher.dbPool.maxIdleConnections: "1"
-  global.tenantFetchers.account-fetcher.job.interval: "10s"
   global.tenantFetchers.account-fetcher.manageSecrets: "true"
   global.tenantFetchers.account-fetcher.secret.name: "compass-account-fetcher-secret"
   global.tenantFetchers.account-fetcher.secret.clientIdKey: "client-id"
@@ -109,9 +109,9 @@ data:
 
   global.tenantFetchers.subaccount-fetcher.cron.enabled: "false"
   global.tenantFetchers.subaccount-fetcher.enabled: "true"
+  global.tenantFetchers.subaccount-fetcher.job.interval: "10s"
   global.tenantFetchers.subaccount-fetcher.dbPool.maxOpenConnections: "1"
   global.tenantFetchers.subaccount-fetcher.dbPool.maxIdleConnections: "1"
-  global.tenantFetchers.subaccount-fetcher.job.interval: "10s"
   global.tenantFetchers.subaccount-fetcher.manageSecrets: "true"
   global.tenantFetchers.subaccount-fetcher.secret.name: "compass-subaccount-fetcher-secret"
   global.tenantFetchers.subaccount-fetcher.secret.clientIdKey: "client-id"

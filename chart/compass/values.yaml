@@ -138,7 +138,7 @@ global:
       version: "PR-66"
     e2e_tests:
       dir:
-      version: "PR-2342"
+      version: "PR-2322"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -648,7 +648,8 @@ global:
       cron:
         enabled: false
       enabled: false
-      interval: "1m"
+      job:
+        interval: "5m"
       configMapNamespace: "compass-system"
       manageSecrets: true
       providerName: "compass"
