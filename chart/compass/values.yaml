@@ -759,6 +759,7 @@ global:
       providerSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd" # TestProviderSubaccount from our testing tenants
       consumerSubaccountID: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae" # randomly chosen
       consumerTenantID: "ba49f1aa-ddc1-43ff-943c-fe949857a34a" # randomly chosen
+      propagatedProviderSubaccountHeader: "X-Provider-Subaccount"
       externalClientCertTestSecretName: "external-client-certificate-test-secret"
       externalClientCertTestSecretNamespace: "compass-system"
       externalCertTestJobName: "external-certificate-rotation-test-job"
