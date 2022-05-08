@@ -81,12 +81,12 @@ const (
 var tenantAccessTable = map[Type]string{
 	// Tables
 
-	Application: "tenant_applications",
-	Runtime:     "tenant_runtimes",
+	Application:    "tenant_applications",
+	Runtime:        "tenant_runtimes",
+	RuntimeContext: "tenant_runtime_contexts",
 
 	// Views
 
-	RuntimeContext:        "runtime_contexts_tenants",
 	Label:                 "labels_tenants",
 	ApplicationLabel:      "application_labels_tenants",
 	RuntimeLabel:          "runtime_labels_tenants",
@@ -118,18 +118,15 @@ func (t Type) TenantAccessTable() (string, bool) {
 
 // TopLevelEntities is a map of entities that has a many-to-many relationship with the tenants along with their table names.
 var TopLevelEntities = map[Type]string{
-	Application: "public.applications",
-	Runtime:     "public.runtimes",
+	Application:    "public.applications",
+	Runtime:        "public.runtimes",
+	RuntimeContext: "public.runtime_contexts",
 }
 
 // IsTopLevel returns true only if the entity has a many-to-many relationship with the tenants.
 func (t Type) IsTopLevel() bool {
-	for topLevelType := range TopLevelEntities {
-		if t == topLevelType {
-			return true
-		}
-	}
-	return false
+	_, exists := TopLevelEntities[t]
+	return exists
 }
 
 // SQLOperation represents an SQL operation

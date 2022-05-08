@@ -435,6 +435,14 @@ func (g *Graphqlizer) RuntimeInputToGQL(in graphql.RuntimeInput) (string, error)
 	}`)
 }
 
+// RuntimeContextInputToGQL missing godoc
+func (g *Graphqlizer) RuntimeContextInputToGQL(in graphql.RuntimeContextInput) (string, error) {
+	return g.genericToGQL(in, `{
+		key: "{{.Key}}",
+		value: "{{.Value}}",
+	}`)
+}
+
 // LabelDefinitionInputToGQL missing godoc
 func (g *Graphqlizer) LabelDefinitionInputToGQL(in graphql.LabelDefinitionInput) (string, error) {
 	return g.genericToGQL(in, `{

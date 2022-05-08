@@ -19,6 +19,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jmoiron/sqlx v1.3.4
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20220420124254-ee69592dca21
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220104122431-99ed924ea212
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459-11b81bddcce9
 	github.com/lestrrat-go/iter v1.0.1
@@ -46,8 +47,6 @@ require (
 	k8s.io/client-go v0.20.2 // DO NOT BUMP
 	sigs.k8s.io/controller-runtime v0.8.3 // DO NOT BUMP
 )
-
-require github.com/kyma-incubator/compass/components/hydrator v0.0.0-20220420124254-ee69592dca21
 
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
