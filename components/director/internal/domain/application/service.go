@@ -4,10 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/imdario/mergo"
 	"net/url"
 	"strings"
-
-	"github.com/imdario/mergo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -37,6 +36,7 @@ const (
 	intSysKey            = "integrationSystemID"
 	nameKey              = "name"
 	sccLabelKey          = "scc"
+	managedKey           = "managed"
 	subaccountKey        = "Subaccount"
 	locationIDKey        = "LocationID"
 	urlSuffixToBeTrimmed = "/"
@@ -77,6 +77,7 @@ type LabelRepository interface {
 	ListGlobalByKeyAndObjects(ctx context.Context, objectType model.LabelableObject, objectIDs []string, key string) ([]*model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
+	Upsert(ctx context.Context, tenant string, label *model.Label) error
 }
 
 // WebhookRepository missing godoc
@@ -715,7 +716,7 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	return nil
 }
 
-// Merge Merges properties from Source Application into Destination Application, provided that the Destination's
+// Merge merges properties from Source Application into Destination Application, provided that the Destination's
 // Application does not have a value set for a given property. Then the Source Application is being deleted.
 func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Application, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
@@ -731,6 +732,16 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 	srcApp, err := s.Get(ctx, srcID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting source application")
+	}
+
+	destAppLabels, err := s.labelRepo.ListForObject(ctx, appTenant, model.ApplicationLabelableObject, destID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting labels for Application with id %s", destID)
+	}
+
+	srcAppLabels, err := s.labelRepo.ListForObject(ctx, appTenant, model.ApplicationLabelableObject, srcID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting labels for Application with id %s", srcID)
 	}
 
 	srcBaseURL := strings.TrimSuffix(str.PtrStrToStr(srcApp.BaseURL), urlSuffixToBeTrimmed)
@@ -749,12 +760,19 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 		return nil, errors.Errorf("Could not determine status of source application with id %s", srcID)
 	}
 
-	if srcApp.Status.Condition == model.ApplicationStatusConditionConnected {
+	if srcApp.Status.Condition != model.ApplicationStatusConditionInitial {
 		return nil, errors.Errorf("Cannot merge application with id %s, because it is in a %s status", srcID, model.ApplicationStatusConditionConnected)
 	}
 
+	log.C(ctx).Infof("Merging applications with ids %s and %s", destID, srcID)
 	if err := mergo.Merge(destApp, *srcApp); err != nil {
 		return nil, errors.Wrapf(err, "while trying to merge applications with ids %s and %s", destID, srcID)
+	}
+
+	log.C(ctx).Infof("Merging labels for applications with ids %s and %s", destID, srcID)
+	destAppLabelsMerged, err := s.handleMergeLabels(srcAppLabels, destAppLabels)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while trying to merge labels for applications with ids %s and %s", destID, srcID)
 	}
 
 	log.C(ctx).Infof("Deleting source application with id %s", srcID)
@@ -762,11 +780,78 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 		return nil, err
 	}
 
+	log.C(ctx).Infof("Deleting source labels for application with id %s", srcID)
+	if err := s.labelRepo.DeleteAll(ctx, appTenant, model.ApplicationLabelableObject, srcID); err != nil {
+		return nil, err
+	}
+
+	log.C(ctx).Infof("Updating destination app with id %s", srcID)
 	if err := s.appRepo.Update(ctx, appTenant, destApp); err != nil {
 		return nil, err
 	}
 
+	for _, destAppLabel := range destAppLabelsMerged {
+		log.C(ctx).Infof("Upserting destination label with id %s", destAppLabel.ID)
+		if err := s.labelRepo.Upsert(ctx, appTenant, destAppLabel); err != nil {
+			return nil, err
+		}
+	}
+
 	return destApp, nil
+}
+
+// handleMergeLabels merges source labels into destination labels
+func (s *service) handleMergeLabels(srcAppLabels, destAppLabels map[string]*model.Label) (map[string]*model.Label, error) {
+	destIntSysID := fmt.Sprintf("%v", destAppLabels[intSysKey].Value)
+	srcIntSysID := fmt.Sprintf("%v", srcAppLabels[intSysKey].Value)
+	if len(destIntSysID) == 0 && len(srcIntSysID) > 0 {
+		destAppLabels[intSysKey].Value = srcIntSysID
+	}
+
+	srcScenarios, ok := srcAppLabels[model.ScenariosKey].Value.([]interface{})
+	if !ok {
+		return nil, errors.Errorf("error while converting source scenario with ID %s to slice", srcAppLabels[model.ScenariosKey].ID)
+	}
+
+	destScenarios, ok := destAppLabels[model.ScenariosKey].Value.([]interface{})
+	if !ok {
+		return nil, errors.Errorf("error while converting destination scenario with ID %s to slice", destAppLabels[model.ScenariosKey].ID)
+	}
+
+	srcScenariosStrSlice := make([]string, len(srcScenarios))
+	for _, srcScenario := range srcScenarios {
+		srcScenarioStr, ok := srcScenario.(string)
+		if !ok {
+			return nil, errors.Errorf("error while converting source scenario to string")
+		}
+
+		srcScenariosStrSlice = append(srcScenariosStrSlice, srcScenarioStr)
+	}
+
+	destScenariosStrSlice := make([]string, 0, len(destScenarios))
+	for _, destScenario := range destScenarios {
+		destScenarioStr, ok := destScenario.(string)
+		if !ok {
+			return nil, errors.Errorf("error while converting destination scenario to string")
+		}
+
+		destScenariosStrSlice = append(destScenariosStrSlice, destScenarioStr)
+	}
+
+	for _, srcScenario := range srcScenariosStrSlice {
+		if len(srcScenario) > 0 && !containsStr(destScenariosStrSlice, srcScenario) {
+			destScenariosStrSlice = append(destScenariosStrSlice, srcScenario)
+		}
+	}
+
+	if err := mergo.Merge(&destAppLabels, srcAppLabels); err != nil {
+		return nil, errors.Wrapf(err, "while trying to merge labels")
+	}
+
+	destAppLabels[model.ScenariosKey].Value = destScenariosStrSlice
+	destAppLabels[managedKey].Value = srcAppLabels[managedKey].Value
+
+	return destAppLabels, nil
 }
 
 // ensureApplicationNotPartOfScenarioWithRuntime Checks if an application has scenarios associated with it. if a runtime is part of any scenario, then the application is considered being used by that runtime.
@@ -1056,4 +1141,13 @@ func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.
 	}
 
 	return nil
+}
+
+func containsStr(s []string, str string) bool {
+	for _, val := range s {
+		if val == str {
+			return true
+		}
+	}
+	return false
 }
