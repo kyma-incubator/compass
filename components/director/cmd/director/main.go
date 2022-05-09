@@ -394,6 +394,7 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 		}
 		log.C(ctx).Infof("Successfully reloaded configuration file.")
 	}).Run(ctx)
+	// test comment
 
 	return provider
 }
