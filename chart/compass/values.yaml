@@ -809,7 +809,7 @@ global:
     configMap:
       manage: false
       key: "config.json"
-      name: "pairing-adapter-config"
+      name: "pairing-adapter-config-local"
       namespace: "compass-system"
       localAdapterFQDN: "http://compass-pairing-adapter.compass-system.svc.cluster.local/adapter-local-mtls"
     e2e:
