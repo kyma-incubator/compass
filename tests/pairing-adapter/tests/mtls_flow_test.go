@@ -152,9 +152,6 @@ func updateAdaptersConfigmap(t *testing.T, ctx context.Context, newIntSysID stri
 	require.NoError(t, err)
 
 	localAdapterFQDN := adapterConfig.LocalAdapterFQDN
-	fmt.Printf("\nadapterConfig.IntegrationSystemID --> %v <--\n", adapterConfig.IntegrationSystemID)
-	fmt.Printf("\nadaptersMap --> %v <--\n", adaptersMap)
-	fmt.Printf("\nnewIntSysIDnewIntSysID --> %v <--\n", newIntSysID)
 	adapterURL, found := adaptersMap[adapterConfig.IntegrationSystemID]
 	require.True(t, found)
 	require.Equal(t, localAdapterFQDN, adapterURL)
