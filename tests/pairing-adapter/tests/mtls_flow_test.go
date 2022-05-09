@@ -76,7 +76,7 @@ func TestGettingTokenWithMTLSWorks(t *testing.T) {
 
 	t.Logf("Getting one time token for application with name: %q and id: %q...", outputApp.Name, outputApp.ID)
 	tokenRequest := fixtures.FixRequestOneTimeTokenForApplication(outputApp.ID)
-	tokenRequest.Header.Add("client_user", "i507827") // needed for the productive test execution
+	tokenRequest.Header.Add(conf.ClientIDHeader, "i507827") // needed for the productive test execution
 	token := directorSchema.OneTimeTokenForApplicationExt{}
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, tokenRequest, &token)
 	require.NoError(t, err)

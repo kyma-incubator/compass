@@ -8,6 +8,7 @@ type PairingAdapterConfig struct {
 	TestClientUser                 string
 	TestApplicationID              string
 	TestApplicationName            string
+	ClientIDHeader             string `envconfig:"APP_CLIENT_ID_HTTP_HEADER"`
 	DirectorExternalCertSecuredURL string
 	CertLoaderConfig               certloader.Config
 	SkipSSLValidation              bool `envconfig:"default=true"`
