@@ -156,8 +156,14 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.gateway.mtls.external.certSecret }}-cacert
                   key: cacert
-            - name: APP_PAIRING_ADAPTER_SRC
-              value: /pairing-adapters/config.json
+            - name: APP_PAIRING_ADAPTER_CM_NAME
+              value: {{ .Values.global.pairingAdapter.configMap.name }}
+            - name: APP_PAIRING_ADAPTER_CM_NAMESPACE
+              value: {{ .Values.global.pairingAdapter.configMap.namespace }}
+            - name: APP_PAIRING_ADAPTER_CM_KEY
+              value: {{ .Values.global.pairingAdapter.configMap.key }}
+            - name: APP_PAIRING_ADAPTER_WATCHER_ID
+              value: {{ .Values.global.pairingAdapter.watcherCorrelationID }}
             - name: APP_DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: APP_HEALTH_CONFIG_INDICATORS
@@ -246,8 +252,6 @@ spec:
             - mountPath: /data/static-groups.yaml
               name: static-groups
               subPath: static-groups.yaml
-            - name: pairing-adapters-config
-              mountPath: /pairing-adapters
 
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
@@ -272,6 +276,3 @@ spec:
         - name: static-groups
           configMap:
             name: {{ template "fullname" . }}-static-groups
-        - name: pairing-adapters-config
-          configMap:
-            name: {{ .Values.global.pairingAdapter.configMap.name }}

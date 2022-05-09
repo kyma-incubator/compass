@@ -66,20 +66,29 @@ func TestGettingTokenWithMTLSWorks(t *testing.T) {
 	createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
 	outputApp := directorSchema.ApplicationExt{}
 
-	t.Logf("Registering application from application template with name: %s...", templateName)
+	t.Logf("Registering application from application template with name: %q...", templateName)
 
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, defaultTestTenant, createAppFromTmplRequest, &outputApp)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, defaultTestTenant, &outputApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, outputApp.ID)
-	t.Logf("Successfully registere application from application template with name: %s", templateName)
+	t.Logf("Successfully registere application from application template with name: %q", templateName)
 
-	t.Logf("Getting one time token for application with name: %s and id: %s...", outputApp.Name, outputApp.ID)
-	token := fixtures.RequestOneTimeTokenForApplication(t, ctx, certSecuredGraphQLClient, outputApp.ID)
+	t.Logf("Getting one time token for application with name: %q and id: %q...", outputApp.Name, outputApp.ID)
+	tokenRequest := fixtures.FixRequestOneTimeTokenForApplication(outputApp.ID)
+	tokenRequest.Header.Add(conf.ClientIDHeader, "i507827") // needed for the productive test execution
+	token := directorSchema.OneTimeTokenForApplicationExt{}
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, tokenRequest, &token)
+	require.NoError(t, err)
 	require.NotEmpty(t, token.Token)
-	require.NotEmpty(t, token.ConnectorURL)
+	require.Empty(t, token.ConnectorURL)
 	require.NotEmpty(t, token.LegacyConnectorURL)
-	t.Logf("Successfully got one time token for application with name: %s and id: %s", outputApp.Name, outputApp.ID)
+	t.Logf("Successfully got one time token for application with name: %q and id: %q", outputApp.Name, outputApp.ID)
+
+	// only for local setup we need to revert the changes made by the test with the initial/default values so the next execution to be successful
+	if conf.IsLocalEnv {
+		updateAdaptersConfigmapWithDefaultValues(t, ctx, conf)
+	}
 }
 
 func TestGettingTokenWithMTLSThroughFQN(t *testing.T) {
@@ -121,7 +130,7 @@ func createIntSystem(t *testing.T, ctx context.Context, defaultTestTenant string
 	name := "pairing-adapter-int-system"
 
 	// WHEN
-	t.Logf("Registering integration system with name %s...", name)
+	t.Logf("Registering integration system with name %q...", name)
 	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, name)
 
 	// THEN
@@ -129,12 +138,12 @@ func createIntSystem(t *testing.T, ctx context.Context, defaultTestTenant string
 	require.NotEmpty(t, intSys.ID)
 	require.NotEmpty(t, intSys.Name)
 
-	t.Logf("Successfully registered integration system with name %s", name)
+	t.Logf("Successfully registered integration system with name %q", name)
 	return intSys
 }
 
 func updateAdaptersConfigmap(t *testing.T, ctx context.Context, newIntSysID string, adapterConfig *config.PairingAdapterConfig) {
-	t.Logf("Updating adapters config map with newly created integartion system ID: %s...", newIntSysID)
+	t.Logf("Updating adapters configmap with newly created integartion system ID: %q...", newIntSysID)
 	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
 	require.NoError(t, err)
 
@@ -147,13 +156,9 @@ func updateAdaptersConfigmap(t *testing.T, ctx context.Context, newIntSysID stri
 	require.NoError(t, err)
 
 	localAdapterFQDN := adapterConfig.LocalAdapterFQDN
-	found := false
-	for _, v := range adaptersMap {
-		if v == localAdapterFQDN {
-			found = true
-		}
-	}
+	adapterURL, found := adaptersMap[adapterConfig.IntegrationSystemID]
 	require.True(t, found)
+	require.Equal(t, localAdapterFQDN, adapterURL)
 
 	require.NotEmpty(t, newIntSysID)
 	cmJsonDataUpdated := fmt.Sprintf("{\"%s\":\"%s\"}", newIntSysID, localAdapterFQDN)
@@ -162,7 +167,25 @@ func updateAdaptersConfigmap(t *testing.T, ctx context.Context, newIntSysID stri
 	cm.Data = updatedMap
 	cm, err = cmManager.Update(ctx, cm, metav1.UpdateOptions{})
 	require.NoError(t, err)
-	t.Log("Successfully updated adapters config map")
+	t.Log("Successfully updated adapters configmap")
+}
+
+func updateAdaptersConfigmapWithDefaultValues(t *testing.T, ctx context.Context, adapterConfig *config.PairingAdapterConfig) {
+	t.Log("Updating adapters configmap with with default values")
+	k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+	require.NoError(t, err)
+
+	cmManager := k8sClient.CoreV1().ConfigMaps(adapterConfig.ConfigMapNamespace)
+	cm, err := cmManager.Get(ctx, adapterConfig.ConfigMapName, metav1.GetOptions{})
+	require.NoError(t, err)
+
+	cmJsonDataUpdated := fmt.Sprintf("{\"%s\":\"%s\"}", conf.IntegrationSystemID, adapterConfig.LocalAdapterFQDN)
+	updatedMap := make(map[string]string)
+	updatedMap[adapterConfig.ConfigMapKey] = cmJsonDataUpdated
+	cm.Data = updatedMap
+	cm, err = cmManager.Update(ctx, cm, metav1.UpdateOptions{})
+	require.NoError(t, err)
+	t.Log("Successfully updated adapters configmap with default values")
 }
 
 func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, newIntSysID, templateName, namePlaceholderKey, displayNamePlaceholderKey string) *directorSchema.ApplicationTemplate {
@@ -194,7 +217,7 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
 	}
 
-	t.Logf("Registering application template with name %s...", templateName)
+	t.Logf("Registering application template with name %q...", templateName)
 	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTemplateInput)
 	require.NoError(t, err)
 	require.NotEmpty(t, appTmpl.ID)
@@ -210,7 +233,7 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 	require.NotEmpty(t, appTemplateOutput)
 	assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
 
-	t.Logf("Successfully registered application template with name %s", templateName)
+	t.Logf("Successfully registered application template with name %q", templateName)
 
 	return &appTmpl
 }

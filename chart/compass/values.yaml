@@ -106,7 +106,7 @@ global:
       version: "PR-2297"
     director:
       dir:
-      version: "PR-2337"
+      version: "PR-2347"
     hydrator:
       dir:
       version: "PR-2268"
@@ -138,7 +138,7 @@ global:
       version: "PR-66"
     e2e_tests:
       dir:
-      version: "PR-2342"
+      version: "PR-2347"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -805,13 +805,15 @@ global:
     client:
       skipSSLValidation: false
   pairingAdapter:
-    templateName: "pairing-adapter-app"
+    templateName: "pairing-adapter-app-template"
+    watcherCorrelationID: "pairing-adapter-watcher-id"
     configMap:
       manage: false
       key: "config.json"
-      name: "pairing-adapter-config"
+      name: "pairing-adapter-config-local"
       namespace: "compass-system"
       localAdapterFQDN: "http://compass-pairing-adapter.compass-system.svc.cluster.local/adapter-local-mtls"
+      integrationSystemID: "d3e9b9f5-25dc-4adb-a0a0-ed69ef371fb6"
     e2e:
       appName: "test-app"
       appID: "123-test-456"
