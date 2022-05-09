@@ -61,7 +61,7 @@ spec:
             - name: APP_TEMPLATE_NAME
               value: "{{ $.Values.global.pairingAdapter.templateName }}"
             - name: APP_CLIENT_ID_HTTP_HEADER
-              value: {{ .Values.global.director.clientIDHeaderKey }}
+              value: {{ $.Values.global.director.clientIDHeaderKey }}
             {{ if $.Values.global.isLocalEnv }}
             - name: APP_CONFIG_MAP_NAME
               value: "{{ $.Values.global.pairingAdapter.configMap.name }}"
