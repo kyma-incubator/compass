@@ -5,8 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/gorilla/mux"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"github.com/pkg/errors"
@@ -102,24 +100,4 @@ func (h *handler) Dependencies(writer http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.C(ctx).Info("Successfully handled dependency request")
-}
-
-// FetchTenantOnDemand is invoked as part of automatic scenario assignment creation
-func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.Request) {
-	ctx := request.Context()
-	vars := mux.Vars(request)
-	tenantId, ok := vars["tenantId"]
-	if !ok {
-		log.C(ctx).Error("Tenant path parameter is missing from request")
-		http.Error(writer, "Region path parameter is missing from request", http.StatusBadRequest)
-		return
-	}
-	log.C(ctx).Infof("Fetching tenant details for tenant with id %s", tenantId)
-
-	writer.WriteHeader(http.StatusOK)
-	writer.Header().Set("Content-Type", "application/json")
-	if _, err := writer.Write([]byte("{}")); err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to write response body for fetch tenant request")
-		return
-	}
 }
