@@ -9,12 +9,15 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
+// Watcher is a K8S watcher that listen for resources changes and receive events based on that
+//go:generate mockery --name=Watcher --output=automock --outpkg=automock --case=underscore
 type Watcher interface {
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 }
 
 type processWatchEventsFunc func(ctx context.Context, events <-chan watch.Event)
 
+// K8SWatcher is a structure containing dependencies for the watch mechanism
 type K8SWatcher struct {
 	ctx                    context.Context
 	k8sWatcher             Watcher
@@ -24,6 +27,7 @@ type K8SWatcher struct {
 	correlationID          string
 }
 
+// NewWatcher return initialized K8SWatcher structure
 func NewWatcher(ctx context.Context, k8sWatcher Watcher, processWatchEventsFunc processWatchEventsFunc, reconnectInterval time.Duration, resourceName, correlationID string) *K8SWatcher {
 	return &K8SWatcher{
 		ctx:                    ctx,
@@ -35,7 +39,7 @@ func NewWatcher(ctx context.Context, k8sWatcher Watcher, processWatchEventsFunc 
 	}
 }
 
-// Run uses kubernetes watch mechanism to listen for resource changes
+// Run starts goroutine that uses kubernetes watch mechanism to listen for resource changes
 func (w *K8SWatcher) Run(ctx context.Context) {
 	entry := log.C(ctx)
 	entry = entry.WithField(log.FieldRequestID, w.correlationID)
