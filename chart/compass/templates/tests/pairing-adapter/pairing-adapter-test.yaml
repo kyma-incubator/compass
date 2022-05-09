@@ -67,6 +67,8 @@ spec:
               value: "{{ $.Values.global.pairingAdapter.configMap.namespace }}"
             - name: APP_CONFIG_MAP_KEY
               value: "{{ $.Values.global.pairingAdapter.configMap.key }}"
+            - name: APP_INTEGRATION_SYSTEM_ID
+              value: "{{ $.Values.global.pairingAdapter.configMap.integrationSystemID }}"
             - name: APP_LOCAL_ADAPTER_FQDN
               value: "{{ $.Values.global.pairingAdapter.configMap.localAdapterFQDN }}"
             {{ end }}
