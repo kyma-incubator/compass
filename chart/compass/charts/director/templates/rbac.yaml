@@ -59,3 +59,35 @@ roleRef:
   kind: Role
   name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
   apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ template "fullname" . }}-pairing-adapter-configmap
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups: ["*"]
+    resources: ["configmaps"]
+    resourceNames: ["{{ .Values.global.pairingAdapter.configMap.name }}"]
+    verbs: ["get", "update", "watch"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "fullname" . }}-pairing-adapter-configmap
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "fullname" . }}
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ template "fullname" . }}-pairing-adapter-configmap
+  apiGroup: rbac.authorization.k8s.io
