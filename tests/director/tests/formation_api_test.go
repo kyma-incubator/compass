@@ -14,6 +14,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const assignFormationCategory = "assign formation"
+const unassignFormationCategory = "unassign formation"
+
 func TestApplicationFormationFlow(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -44,6 +47,8 @@ func TestApplicationFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, formation.Name)
 
+	saveExample(t, createReq.Query(), "create formation")
+
 	nonExistingFormation := "nonExistingFormation"
 	t.Logf("Shoud not assign application to formation %s, as it is not in the label definition", nonExistingFormation)
 	failAssignReq := fixtures.FixAssignFormationRequest(app.ID, "APPLICATION", nonExistingFormation)
@@ -58,6 +63,8 @@ func TestApplicationFormationFlow(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
 	require.NoError(t, err)
 	require.Equal(t, newFormation, assignFormation.Name)
+
+	saveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign application to formation")
 
 	t.Log("Check if new scenario label value was set correctly")
 	appRequest := fixtures.FixGetApplicationRequest(app.ID)
@@ -93,6 +100,8 @@ func TestApplicationFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, unassignFormation.Name)
 
+	saveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign application from formation")
+
 	if conf.DefaultScenarioEnabled {
 		unassignDefaultReq := fixtures.FixUnassignFormationRequest(app.ID, "APPLICATION", defaultValue)
 		var unassignDefaultFormation graphql.Formation
@@ -107,6 +116,8 @@ func TestApplicationFormationFlow(t *testing.T) {
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, deleteRequest, &deleteFormation)
 	assert.NoError(t, err)
 	assert.Equal(t, newFormation, deleteFormation.Name)
+
+	saveExample(t, deleteRequest.Query(), "delete formation")
 
 	t.Log("Should be able to delete formation")
 	deleteUnusedRequest := fixtures.FixDeleteFormationRequest(unusedFormationName)
@@ -144,10 +155,10 @@ func TestRuntimeFormationFlow(t *testing.T) {
 		assert.Equal(t, asaFormation, deleteASAFormation.Name)
 	}()
 
-	asaInput := fixtures.FixAutomaticScenarioAssigmentInput(asaFormation, selectorKey, subaccountID)
+	formationInput := graphql.FormationInput{Name: asaFormation}
 	t.Log("Creating ASA")
-	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, certSecuredGraphQLClient, asaInput, tenantId)
-	defer fixtures.DeleteAutomaticScenarioAssigmentForSelector(t, ctx, certSecuredGraphQLClient, tenantId, *asaInput.Selector)
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountID, tenantId)
+	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountID, tenantId)
 
 	rtmName := "rt"
 	rtmDesc := "rt-description"
@@ -194,6 +205,8 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, assignFormation.Name)
 
+	saveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign runtime to formation")
+
 	t.Log("Check if new scenario label value was set correctly")
 	checkRuntimeFormationLabels(t, ctx, rtm.ID, labelKey, []string{asaFormation, newFormation})
 
@@ -228,6 +241,8 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unassignReq, &unassignFormation)
 	require.NoError(t, err)
 	require.Equal(t, newFormation, unassignFormation.Name)
+
+	saveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign runtime from formation")
 
 	t.Log("Check that the formation label value is unassigned")
 	checkRuntimeFormationLabels(t, ctx, rtm.ID, labelKey, []string{asaFormation})
@@ -293,6 +308,8 @@ func TestTenantFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, firstFormation, assignFormation.Name)
 
+	saveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign tenant to formation")
+
 	t.Log("Should match expected ASA")
 	asaPage := fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId)
 	require.Equal(t, 1, len(asaPage.Data))
@@ -304,6 +321,8 @@ func TestTenantFormationFlow(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unassignReq, &unassignFormation)
 	require.NoError(t, err)
 	require.Equal(t, firstFormation, unassignFormation.Name)
+
+	saveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign tenant from formation")
 
 	t.Log("Should match expected ASA")
 	asaPage = fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId)

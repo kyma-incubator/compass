@@ -63,6 +63,7 @@ data:
   global.tests.basicCredentials.manage: "true"
   global.tests.ordService.subscriptionOauthSecret.manage: "true"
   global.hydrator.http.client.skipSSLValidation: "true"
+  global.pairingAdapter.configMap.manage: "true"
 
   global.tenantFetchers.account-fetcher.enabled: "true"
   global.tenantFetchers.account-fetcher.dbPool.maxOpenConnections: "1"
@@ -148,7 +149,6 @@ data:
   global.tenantFetchers.subaccount-fetcher.endpoints.subaccountDeleted: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-delete"
   global.tenantFetchers.subaccount-fetcher.endpoints.subaccountUpdated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-update"
   global.tenantFetchers.subaccount-fetcher.endpoints.subaccountMoved: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-move"
-  global.director.fetchTenantEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenants/v1/fetch"
   global.tenantFetcher.fieldMapping.idField: "guid"
   global.tenantFetcher.fieldMapping.nameField: "displayName"
   global.tenantFetcher.fieldMapping.customerIdField: "customerId"
