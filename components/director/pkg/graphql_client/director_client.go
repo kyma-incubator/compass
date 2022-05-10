@@ -98,7 +98,7 @@ func (d *Director) SubscribeTenantToRuntime(ctx context.Context, providerID stri
 func (d *Director) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) error {
 	var res map[string]interface{}
 
-	unsubscriptionMutation := fmt.Sprintf(`mutation { unsubscribeTenantFromRuntime(providerID: "%s", subaccountID: "%s", providerSubaccountID "%s", region: "%s")}`, providerID, subaccountID, providerSubaccountID, region)
+	unsubscriptionMutation := fmt.Sprintf(`mutation { unsubscribeTenantFromRuntime(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", region: "%s")}`, providerID, subaccountID, providerSubaccountID, region)
 	gRequest := gcli.NewRequest(unsubscriptionMutation)
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql mutation")
