@@ -243,6 +243,12 @@ export APP_SELF_REGISTER_INSTANCE_TOKEN_URL_PATH="tokenUrl"
 export APP_SELF_REGISTER_INSTANCE_X509_CERT_PATH="clientCert"
 export APP_SELF_REGISTER_INSTANCE_X509_KEY_PATH="clientKey"
 
+# Pairing Adapters Properties
+export APP_PAIRING_ADAPTER_CM_NAME="pairing-adapter-config-local"
+export APP_PAIRING_ADAPTER_CM_NAMESPACE="default"
+export APP_PAIRING_ADAPTER_CM_KEY="config.json"
+export APP_PAIRING_ADAPTER_WATCHER_ID="pairing-adapter-watcher-id"
+
 # This file contains necessary configuration for self registration flow
 cat <<EOF > /tmp/keyConfig
 {
@@ -258,6 +264,9 @@ cat <<EOF > /tmp/keyConfig
 EOF
 
 kubectl create secret generic "$CLIENT_CERT_SECRET_NAME" --from-literal="$APP_EXTERNAL_CLIENT_CERT_KEY"="$APP_EXTERNAL_CLIENT_CERT_VALUE" --from-literal="$APP_EXTERNAL_CLIENT_KEY_KEY"="$APP_EXTERNAL_CLIENT_KEY_VALUE" --save-config --dry-run -o yaml | kubectl apply -f -
+
+# pairing adapters configmap needed for the watcher started in the director
+kubectl create configmap "$APP_PAIRING_ADAPTER_CM_NAME" --from-literal="$APP_PAIRING_ADAPTER_CM_KEY"='{"d3e9b9f5-25dc-4adb-a0a0-ed69ef371fb6":"http://compass-pairing-adapter.compass-system.svc.cluster.local/adapter-local-mtls"}'
 
 if [[  ${DEBUG} == true ]]; then
     echo -e "${GREEN}Debug mode activated on port $DEBUG_PORT${NC}"

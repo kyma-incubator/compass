@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	pkgadapters "github.com/kyma-incubator/compass/components/director/pkg/adapters"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/subscription"
@@ -89,7 +91,7 @@ func NewRootResolver(
 	cfgProvider *config.Provider,
 	oneTimeTokenCfg onetimetoken.Config,
 	oAuth20Cfg oauth20.Config,
-	pairingAdaptersMapping map[string]string,
+	pairingAdapters *pkgadapters.Adapters,
 	featuresConfig features.Config,
 	metricsCollector *metrics.Collector,
 	httpClient, internalFQDNHTTPClient, internalGatewayHTTPClient *http.Client,
@@ -184,7 +186,7 @@ func NewRootResolver(
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, labelDefSvc, bundleSvc, uidSvc)
 	timeService := time.NewService()
-	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalFQDNHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdaptersMapping, timeService)
+	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalFQDNHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdapters, timeService)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
 	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentSvc, tenantSvc, scenarioAssignmentEngine)
 	subscriptionSvc := subscription.NewService(runtimeSvc, tenantSvc, labelSvc, uidSvc, subscriptionConfig.ProviderLabelKey, subscriptionConfig.ConsumerSubaccountIDsLabelKey)
