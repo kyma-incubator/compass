@@ -216,7 +216,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, testConfig.SubscriptionConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, "tenantFetcherClaims")
 		subscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 		subscribeReq.Header.Add(contentTypeHeader, contentTypeApplicationJson)
-		subscribeReq.Header.Add(testConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID)
+		subscribeReq.Header.Add(testConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
 
 		// unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
 		// In case there isn't subscription it will fail-safe without error
