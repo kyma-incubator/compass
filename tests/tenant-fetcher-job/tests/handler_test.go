@@ -39,8 +39,8 @@ import (
 )
 
 const (
-	timeout       = time.Minute * 3
-	checkInterval = time.Second * 5
+	timeout       = time.Minute * 5
+	checkInterval = time.Second * 60
 
 	globalAccountCreateSubPath = "global-account-create"
 	globalAccountDeleteSubPath = "global-account-delete"
@@ -107,13 +107,22 @@ func TestGlobalAccounts(t *testing.T) {
 
 	require.Eventually(t, func() bool {
 		tenant1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, externalTenantIDs[0])
+		if tenant1 != nil {
+			t.Logf("Waiting for tenant %s to be deleted", externalTenantIDs[0])
+			return false
+		}
 		assert.Error(t, err)
 		assert.Nil(t, tenant1)
 
 		tenant2, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, externalTenantIDs[1])
+		if tenant2 == nil {
+			t.Logf("Waiting for tenant %s to be read", externalTenantIDs[1])
+			return false
+		}
 		assert.NoError(t, err)
 		assert.Equal(t, names[1], *tenant2.Name)
 
+		t.Log("TestGlobalAccounts checks are successful")
 		return true
 	}, timeout, checkInterval, "Waiting for tenants retrieval.")
 }
@@ -194,22 +203,43 @@ func TestMoveSubaccounts(t *testing.T) {
 
 	require.Eventually(t, func() bool {
 		tenant2, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, gaExternalTenantIDs[1])
+		if tenant2 == nil {
+			t.Logf("Waiting for global account %s to be read", gaExternalTenantIDs[1])
+			return false
+		}
 		assert.NoError(t, err)
 
 		subaccount1, err = fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[0])
+		if subaccount1 == nil {
+			t.Logf("Waiting for subaccount %s to be read", subaccountExternalTenants[0])
+			return false
+		}
 		assert.NoError(t, err)
 		assert.Equal(t, tenant2.InternalID, subaccount1.ParentID)
 
 		subaccount2, err = fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[1])
+		if subaccount2 == nil {
+			t.Logf("Waiting for subaccount %s to be read", subaccountExternalTenants[1])
+			return false
+		}
 		assert.NoError(t, err)
 		assert.Equal(t, tenant2.InternalID, subaccount2.ParentID)
 
 		rtm1 := fixtures.GetRuntime(t, ctx, directorInternalGQLClient, tenant2.InternalID, runtime1.ID)
+		if len(rtm1.Name) == 0 {
+			t.Logf("Waiting for runtime %s to be read", runtime1.Name)
+			return false
+		}
 		assert.Equal(t, runtime1.Name, rtm1.Name)
 
 		rtm2 := fixtures.GetRuntime(t, ctx, directorInternalGQLClient, tenant2.InternalID, runtime2.ID)
+		if len(rtm2.Name) == 0 {
+			t.Logf("Waiting for runtime %s to be read", runtime2.Name)
+			return false
+		}
 		assert.Equal(t, runtime2.Name, rtm2.Name)
 
+		t.Log("TestMoveSubaccounts checks are successful")
 		return true
 	}, timeout, checkInterval, "Waiting for tenants retrieval.")
 }
@@ -283,15 +313,28 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 
 	require.Eventually(t, func() bool {
 		tenant1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, defaultTenantID)
+		if tenant1 == nil {
+			t.Logf("Waiting for tenant %s to be read", defaultTenantID)
+			return false
+		}
 		assert.NoError(t, err)
 
 		subaccount1, err = fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[0])
+		if subaccount1 == nil {
+			t.Logf("Waiting for subaccount %s to be read", subaccountExternalTenants[0])
+			return false
+		}
 		assert.NoError(t, err)
 		assert.Equal(t, tenant1.InternalID, subaccount1.ParentID)
 
 		rtm1 := fixtures.GetRuntime(t, ctx, directorInternalGQLClient, tenant1.InternalID, runtime1.ID)
+		if len(rtm1.Name) == 0 {
+			t.Logf("Waiting for runtime %s to be read", runtime1.Name)
+			return false
+		}
 		assert.Equal(t, runtime1.Name, rtm1.Name)
 
+		t.Log("TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA checks are successful")
 		return true
 	}, timeout, checkInterval, "Waiting for tenants retrieval.")
 }
@@ -348,16 +391,29 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 
 	require.Eventually(t, func() bool {
 		subaccount1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[0])
+		if subaccount1 != nil {
+			t.Logf("Waiting for subaccount %s to be deleted", subaccountExternalTenants[0])
+			return false
+		}
 		assert.Error(t, err)
 		assert.Nil(t, subaccount1)
 
 		subaccount2, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[1])
+		if subaccount2 == nil {
+			t.Logf("Waiting for subaccount %s to be deleted", subaccountExternalTenants[1])
+			return false
+		}
 		assert.NoError(t, err)
 		assert.Equal(t, subaccountNames[1], *subaccount2.Name)
+
 		parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountParent)
+		if parent == nil {
+			return false
+		}
 		assert.NoError(t, err)
 		assert.Equal(t, parent.InternalID, subaccount2.ParentID)
 
+		t.Log("TestCreateDeleteSubaccounts checks are successful")
 		return true
 	}, timeout, checkInterval, "Waiting for tenants retrieval.")
 }
@@ -382,15 +438,24 @@ func TestMoveMissingSubaccounts(t *testing.T) {
 
 	require.Eventually(t, func() bool {
 		parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, gaExternalTenantIDs[1])
+		if parent == nil {
+			t.Logf("Waiting for global account %s to be read", gaExternalTenantIDs[1])
+			return false
+		}
 		assert.NoError(t, err)
 		assert.Equal(t, *parent.Name, gaExternalTenantIDs[1])
 		assert.Equal(t, parent.ID, gaExternalTenantIDs[1])
 
 		subaccount, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenant)
+		if subaccount == nil {
+			t.Logf("Waiting for subaccount %s to be read", subaccountExternalTenant)
+			return false
+		}
 		assert.NoError(t, err)
 		assert.Equal(t, subaccount.ID, subaccountExternalTenant)
 		assert.Equal(t, subaccount.ParentID, parent.InternalID)
 
+		t.Log("TestMoveMissingSubaccounts checks are successful")
 		return true
 	}, timeout, checkInterval, "Waiting for tenants retrieval.")
 }
