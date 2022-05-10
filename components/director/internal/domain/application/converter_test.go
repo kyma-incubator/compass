@@ -221,8 +221,8 @@ func TestConverter_UpdateInputFromGraphQL_StatusCondition(t *testing.T) {
 }
 
 func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
-	allPropsInput := fixGQLApplicationUpdateInput("foo", "Lorem ipsum", testURL, graphql.ApplicationStatusConditionConnected)
-	allPropsExpected := fixModelApplicationUpdateInput("foo", "Lorem ipsum", testURL, model.ApplicationStatusConditionConnected)
+	allPropsInput := fixGQLApplicationUpdateInput("foo", "Lorem ipsum", testURL, "baseUrl", graphql.ApplicationStatusConditionConnected)
+	allPropsExpected := fixModelApplicationUpdateInput("foo", "Lorem ipsum", testURL, "baseUrl", model.ApplicationStatusConditionConnected)
 
 	// GIVEN
 	testCases := []struct {
