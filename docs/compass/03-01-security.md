@@ -203,7 +203,7 @@ The scopes are loaded from a ConfigMap, where static `user group` - `scopes` map
 kind: ConfigMap
 apiVersion: v1
 metadata:
-   name: compass-director-static-groups
+   name: compass-hydrator-static-groups
    namespace: compass-system
 data:
    static-groups.yaml: |

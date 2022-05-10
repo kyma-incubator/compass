@@ -28,8 +28,6 @@ deployment:
     wait: 10ms
   strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
   nodeSelector: {}
-adminGroupNames: "mps-superadmin, runtimeAdmin, runtimeNamespaceAdmin"
-operatorGroupNames: "runtimeOperator"
 configFile:
   name: "config.yaml"
 applicationHideSelectors: |-
