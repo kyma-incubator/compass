@@ -270,6 +270,7 @@ func buildAndExecuteUnsubscribeRequest(t *testing.T, runtime graphql.RuntimeExt,
 	unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte{}))
 	require.NoError(t, err)
 	unsubscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
+	unsubscribeReq.Header.Add(testConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
 
 	t.Logf("Removing subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 	unsubscribeResp, err := httpClient.Do(unsubscribeReq)

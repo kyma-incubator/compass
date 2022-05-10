@@ -186,11 +186,9 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 		}
 	}
 
-	if len(providerSubaccID) > 0 { //Not present in unsubscription requests
-		body, err = sjson.Set(body, h.providerConfig.ProviderSubaccountIDProperty, providerSubaccID)
-		if err != nil {
-			return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
-		}
+	body, err = sjson.Set(body, h.providerConfig.ProviderSubaccountIDProperty, providerSubaccID)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 	}
 
 	request, err := http.NewRequest(httpMethod, tenantFetcherUrl, bytes.NewBuffer([]byte(body)))
