@@ -11,7 +11,6 @@ NC='\033[0m' # No Color
 set -e
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-echo $ROOT_PATH
 
 SKIP_DB_CLEANUP=false
 REUSE_DB=false
@@ -19,6 +18,7 @@ DUMP_DB=false
 AUTO_TERMINATE=false
 DISABLE_ASYNC_MODE=true
 COMPONENT='director'
+TERMINAION_TIMEOUT_IN_SECONDS=300
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -72,9 +72,11 @@ do
             shift
         ;;
         --auto-terminate)
-            AUTO_TERMINATE=true
-            shift
-        ;;
+             AUTO_TERMINATE=true
+             TERMINAION_TIMEOUT_IN_SECONDS=$2
+             shift
+             shift
+         ;;
         --*)
             echo "Unknown flag ${1}"
             exit 1
@@ -109,13 +111,13 @@ function cleanup() {
         echo -e "${GREEN}Skipping Postgres container cleanup${NC}"
     fi
 
-    echo -e "${GREEN}Destroying k3d cluster..."
+    echo -e "${GREEN}Destroying k3d cluster...${NC}"
     k3d cluster delete k3d-cluster 
 }
 
 trap cleanup EXIT
 
-echo -e "${GREEN}Creating k3d cluster..."
+echo -e "${GREEN}Creating k3d cluster...${NC}"
 curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v5.2.0 bash
 k3d cluster create k3d-cluster --api-port 6550 --servers 1 --port 443:443@loadbalancer --image rancher/k3s:v1.22.4-k3s1 --kubeconfig-update-default --wait
 
@@ -274,35 +276,29 @@ if [[  ${DEBUG} == true ]]; then
     CGO_ENABLED=0 go build -gcflags="all=-N -l" ./cmd/${COMPONENT}
     dlv --listen=:$DEBUG_PORT --headless=true --api-version=2 exec ./${COMPONENT}
 else
-    echo "AUTO_TERMINATE=${AUTO_TERMINATE}"
     if [[  ${AUTO_TERMINATE} == true ]]; then
         cd ${ROOT_PATH}
         go build ${ROOT_PATH}/cmd/${COMPONENT}/main.go 
-
         MAIN_APP_LOGFILE=${ROOT_PATH}/main.log
-        if [[ ${ARTIFACTS} ]]; then
-           MAIN_APP_LOGFILE=${ARTIFACTS}/main.log
-        fi
 
         ${ROOT_PATH}/main > ${MAIN_APP_LOGFILE} &
         MAIN_PROCESS_PID="$!"
-        echo "MAIN_PROCESS_PID=$MAIN_PROCESS_PID"
 
         START_TIME=$(date +%s)
         SECONDS=0
-        while (( SECONDS < 300 )) ; do
+        while (( SECONDS < ${TERMINAION_TIMEOUT_IN_SECONDS} )) ; do
             CURRENT_TIME=$(date +%s)
             SECONDS=$((CURRENT_TIME-START_TIME))
-            echo "[Director] Wait 10s ..."
+            SECONDS_LEFT=$((TERMINAION_TIMEOUT_IN_SECONDS-SECONDS))
+            echo "[Director] left ${SECONDS_LEFT} seconds. Wait ..."
             sleep 10
         done
         
-        echo "Timeout of 5 min for starting compass reached. Killing the process."
-        echo -e "${GREEN}Kill main process..."
+        echo "Timeout of ${TERMINAION_TIMEOUT_IN_SECONDS} seconds for starting director reached. Killing the process."
+        echo -e "${GREEN}Kill main process..${NC}"
         kill -SIGINT "${MAIN_PROCESS_PID}"
-        echo -e "${GREEN}Delete build result and log..."
+        echo -e "${GREEN}Delete build result ...${NC}"
         rm ${ROOT_PATH}/main || true
-        rm ${ROOT_PATH}/main.log || true
         wait
     else
         go run ${ROOT_PATH}/cmd/${COMPONENT}/main.go
