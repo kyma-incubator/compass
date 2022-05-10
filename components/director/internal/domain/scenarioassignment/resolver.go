@@ -3,9 +3,6 @@ package scenarioassignment
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	tnt2 "github.com/kyma-incubator/compass/components/director/pkg/tenant"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -38,13 +35,19 @@ type tenantService interface {
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
+//go:generate mockery --exported --name=tenantFetcher --output=automock --outpkg=automock --case=underscore
+type tenantFetcher interface {
+	FetchOnDemand(tenant string) error
+}
+
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, svc asaService, converter gqlConverter, tenantService tenantService) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc asaService, converter gqlConverter, tenantService tenantService, fetcher tenantFetcher) *Resolver {
 	return &Resolver{
 		transact:      transact,
 		svc:           svc,
 		converter:     converter,
 		tenantService: tenantService,
+		fetcher:       fetcher,
 	}
 }
 
@@ -54,30 +57,21 @@ type Resolver struct {
 	converter     gqlConverter
 	svc           asaService
 	tenantService tenantService
+	fetcher       tenantFetcher
 }
 
 // CreateAutomaticScenarioAssignment missing godoc
 func (r *Resolver) CreateAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {
+	if err := r.fetcher.FetchOnDemand(in.Selector.Value); err != nil {
+		return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", in.Selector.Value)
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "while beginning transaction")
 	}
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
-
-	callingTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	if err := r.tenantService.CreateManyIfNotExists(ctx, model.BusinessTenantMappingInput{
-		ExternalTenant: in.Selector.Value,
-		Parent:         callingTenant,
-		Type:           string(tnt2.Subaccount),
-		Provider:       "lazilyWhileASACreation",
-	}); err != nil {
-		return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", in.Selector.Value)
-	}
 
 	targetTenant, err := r.tenantService.GetInternalTenant(ctx, in.Selector.Value)
 	if err != nil {

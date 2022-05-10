@@ -1,3 +1,4 @@
+{{ if .Values.global.isForTesting }}
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
@@ -296,3 +297,4 @@ roleRef:
   kind: Role
   name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
   apiGroup: rbac.authorization.k8s.io
+{{ end }}

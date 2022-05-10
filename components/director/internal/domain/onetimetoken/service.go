@@ -8,6 +8,10 @@ import (
 	"net/http"
 	"time"
 
+	pkgadapters "github.com/kyma-incubator/compass/components/director/pkg/adapters"
+
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/avast/retry-go"
@@ -24,10 +28,10 @@ import (
 // SystemAuthService missing godoc
 //go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
 type SystemAuthService interface {
-	Create(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
-	GetByToken(ctx context.Context, token string) (*model.SystemAuth, error)
-	GetGlobal(ctx context.Context, authID string) (*model.SystemAuth, error)
-	Update(ctx context.Context, item *model.SystemAuth) error
+	Create(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
+	GetByToken(ctx context.Context, token string) (*pkgmodel.SystemAuth, error)
+	GetGlobal(ctx context.Context, authID string) (*pkgmodel.SystemAuth, error)
+	Update(ctx context.Context, item *pkgmodel.SystemAuth) error
 }
 
 // ApplicationConverter missing godoc
@@ -56,44 +60,44 @@ type HTTPDoer interface {
 }
 
 type service struct {
-	connectorURL              string
-	legacyConnectorURL        string
-	suggestTokenHeaderKey     string
-	csrTokenExpiration        time.Duration
-	appTokenExpiration        time.Duration
-	runtimeTokenExpiration    time.Duration
-	sysAuthSvc                SystemAuthService
-	intSystemToAdapterMapping map[string]string
-	appSvc                    ApplicationService
-	appConverter              ApplicationConverter
-	extTenantsSvc             ExternalTenantsService
-	doer                      HTTPDoer
-	tokenGenerator            TokenGenerator
-	timeService               directorTime.Service
+	connectorURL           string
+	legacyConnectorURL     string
+	suggestTokenHeaderKey  string
+	csrTokenExpiration     time.Duration
+	appTokenExpiration     time.Duration
+	runtimeTokenExpiration time.Duration
+	sysAuthSvc             SystemAuthService
+	pairingAdapters        *pkgadapters.Adapters
+	appSvc                 ApplicationService
+	appConverter           ApplicationConverter
+	extTenantsSvc          ExternalTenantsService
+	doer                   HTTPDoer
+	tokenGenerator         TokenGenerator
+	timeService            directorTime.Service
 }
 
 // NewTokenService missing godoc
-func NewTokenService(sysAuthSvc SystemAuthService, appSvc ApplicationService, appConverter ApplicationConverter, extTenantsSvc ExternalTenantsService, doer HTTPDoer, tokenGenerator TokenGenerator, config Config, intSystemToAdapterMapping map[string]string, timeService directorTime.Service) *service {
+func NewTokenService(sysAuthSvc SystemAuthService, appSvc ApplicationService, appConverter ApplicationConverter, extTenantsSvc ExternalTenantsService, doer HTTPDoer, tokenGenerator TokenGenerator, config Config, pairingAdapters *pkgadapters.Adapters, timeService directorTime.Service) *service {
 	return &service{
-		connectorURL:              config.ConnectorURL,
-		legacyConnectorURL:        config.LegacyConnectorURL,
-		suggestTokenHeaderKey:     config.SuggestTokenHeaderKey,
-		csrTokenExpiration:        config.CSRExpiration,
-		appTokenExpiration:        config.ApplicationExpiration,
-		runtimeTokenExpiration:    config.RuntimeExpiration,
-		sysAuthSvc:                sysAuthSvc,
-		intSystemToAdapterMapping: intSystemToAdapterMapping,
-		appSvc:                    appSvc,
-		appConverter:              appConverter,
-		extTenantsSvc:             extTenantsSvc,
-		doer:                      doer,
-		tokenGenerator:            tokenGenerator,
-		timeService:               timeService,
+		connectorURL:           config.ConnectorURL,
+		legacyConnectorURL:     config.LegacyConnectorURL,
+		suggestTokenHeaderKey:  config.SuggestTokenHeaderKey,
+		csrTokenExpiration:     config.CSRExpiration,
+		appTokenExpiration:     config.ApplicationExpiration,
+		runtimeTokenExpiration: config.RuntimeExpiration,
+		sysAuthSvc:             sysAuthSvc,
+		pairingAdapters:        pairingAdapters,
+		appSvc:                 appSvc,
+		appConverter:           appConverter,
+		extTenantsSvc:          extTenantsSvc,
+		doer:                   doer,
+		tokenGenerator:         tokenGenerator,
+		timeService:            timeService,
 	}
 }
 
 // GenerateOneTimeToken missing godoc
-func (s *service) GenerateOneTimeToken(ctx context.Context, objectID string, tokenType model.SystemAuthReferenceObjectType) (*model.OneTimeToken, error) {
+func (s *service) GenerateOneTimeToken(ctx context.Context, objectID string, tokenType pkgmodel.SystemAuthReferenceObjectType) (*model.OneTimeToken, error) {
 	token, suggestedToken, err := s.getToken(ctx, objectID, tokenType)
 	if err != nil {
 		return nil, err
@@ -138,28 +142,32 @@ func (s *service) RegenerateOneTimeToken(ctx context.Context, sysAuthID string) 
 	return oneTimeToken, nil
 }
 
-func (s *service) getToken(ctx context.Context, objectID string, tokenType model.SystemAuthReferenceObjectType) (*model.OneTimeToken, string, error) {
-	if tokenType == model.ApplicationReference {
+func (s *service) getToken(ctx context.Context, objectID string, tokenType pkgmodel.SystemAuthReferenceObjectType) (*model.OneTimeToken, string, error) {
+	if tokenType == pkgmodel.ApplicationReference {
+		log.C(ctx).Infof("Getting one time token for %s with ID: %s...", tokenType, objectID)
 		return s.getAppToken(ctx, objectID)
 	} else {
-		token, err := s.createToken(tokenType, nil)
+		token, err := s.createToken(ctx, tokenType, objectID, nil)
 		return token, "", err
 	}
 }
 
-func (s *service) createToken(tokenType model.SystemAuthReferenceObjectType, oneTimeToken *model.OneTimeToken) (*model.OneTimeToken, error) {
+func (s *service) createToken(ctx context.Context, tokenType pkgmodel.SystemAuthReferenceObjectType, objectID string, oneTimeToken *model.OneTimeToken) (*model.OneTimeToken, error) {
 	var err error
 	if oneTimeToken == nil {
+		log.C(ctx).Infof("Creating one time token for %s with ID: %s...", tokenType, objectID)
 		oneTimeToken, err = s.getNewToken()
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating onetime token for %s", tokenType)
 		}
 	}
 
+	log.C(ctx).Infof("Updating one time token with metadata for %s with ID: %s...", tokenType, objectID)
+
 	switch tokenType {
-	case model.ApplicationReference:
+	case pkgmodel.ApplicationReference:
 		oneTimeToken.Type = tokens.ApplicationToken
-	case model.RuntimeReference:
+	case pkgmodel.RuntimeReference:
 		oneTimeToken.Type = tokens.RuntimeToken
 	}
 	oneTimeToken.CreatedAt = s.timeService.Now()
@@ -174,7 +182,7 @@ func (s *service) createToken(tokenType model.SystemAuthReferenceObjectType, one
 	return oneTimeToken, nil
 }
 
-func (s *service) saveToken(ctx context.Context, objectID string, tokenType model.SystemAuthReferenceObjectType, oneTimeToken *model.OneTimeToken) error {
+func (s *service) saveToken(ctx context.Context, objectID string, tokenType pkgmodel.SystemAuthReferenceObjectType, oneTimeToken *model.OneTimeToken) error {
 	if _, err := s.sysAuthSvc.Create(ctx, tokenType, objectID, &model.AuthInput{OneTimeToken: oneTimeToken}); err != nil {
 		return errors.Wrap(err, "while creating System Auth")
 	}
@@ -193,15 +201,26 @@ func (s *service) getAppToken(ctx context.Context, id string) (*model.OneTimeTok
 	}
 
 	if app.IntegrationSystemID != nil {
-		if adapterURL, ok := s.intSystemToAdapterMapping[*app.IntegrationSystemID]; ok {
+		intSystemToAdapterMapping := map[string]string{}
+		if s.pairingAdapters != nil {
+			intSystemToAdapterMapping = s.pairingAdapters.Get()
+			if intSystemToAdapterMapping == nil {
+				log.C(ctx).Error("pairing adapter configuration mapping cannot be nil")
+				return nil, "", errors.Errorf("pairing adapter configuration mapping cannot be nil")
+			}
+		}
+
+		if adapterURL, ok := intSystemToAdapterMapping[*app.IntegrationSystemID]; ok {
+			log.C(ctx).Infof("Getting one time token for application with name: %s and ID: %s from pairing adapter...", app.Name, app.ID)
 			oneTimeToken, err = s.getTokenFromAdapter(ctx, adapterURL, *app)
 			if err != nil {
 				return nil, "", errors.Wrapf(err, "while getting one time token for application from adapter with URL %s", adapterURL)
 			}
 		}
+		log.C(ctx).Warnf("Could not find any adapter for the given integration system ID: %s", *app.IntegrationSystemID)
 	}
 
-	oneTimeToken, err = s.createToken(model.ApplicationReference, oneTimeToken)
+	oneTimeToken, err = s.createToken(ctx, pkgmodel.ApplicationReference, id, oneTimeToken)
 	if err != nil {
 		return nil, "", err
 	}
@@ -241,6 +260,7 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 		return nil, errors.Wrap(err, "while marshaling data for adapter")
 	}
 
+	log.C(ctx).Infof("Getting one time token from pairing adapter with URL: %s", adapterURL)
 	var externalToken string
 	err = retry.Do(func() error {
 		buf := bytes.NewBuffer(asJSON)
@@ -329,7 +349,10 @@ func (s *service) getSuggestedTokenForApp(ctx context.Context, app *model.Applic
 		Token:        oneTimeToken.Token,
 		ConnectorURL: oneTimeToken.ConnectorURL,
 		Used:         oneTimeToken.Used,
+		Type:         graphql.OneTimeTokenTypeApplication,
 		ExpiresAt:    (*graphql.Timestamp)(&oneTimeToken.ExpiresAt),
+		CreatedAt:    (*graphql.Timestamp)(&oneTimeToken.CreatedAt),
+		UsedAt:       (*graphql.Timestamp)(&oneTimeToken.UsedAt),
 	})
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to generade raw encoded one time token for application, will continue with actual token: %v", err)
@@ -350,7 +373,7 @@ func (s *service) getExpirationDurationForToken(tokenType tokens.TokenType) (tim
 	}
 }
 
-func (s *service) IsTokenValid(systemAuth *model.SystemAuth) (bool, error) {
+func (s *service) IsTokenValid(systemAuth *pkgmodel.SystemAuth) (bool, error) {
 	if systemAuth.Value == nil {
 		return false, errors.Errorf("System Auth value for auth id %s is missing", systemAuth.ID)
 	}

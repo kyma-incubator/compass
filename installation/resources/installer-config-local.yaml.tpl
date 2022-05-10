@@ -62,6 +62,8 @@ data:
   global.externalServicesMock.regionInstancesCredentials.manage: "true"
   global.tests.basicCredentials.manage: "true"
   global.tests.ordService.subscriptionOauthSecret.manage: "true"
+  global.hydrator.http.client.skipSSLValidation: "true"
+  global.pairingAdapter.configMap.manage: "true"
 
   global.tenantFetchers.account-fetcher.enabled: "true"
   global.tenantFetchers.account-fetcher.dbPool.maxOpenConnections: "1"
@@ -147,7 +149,6 @@ data:
   global.tenantFetchers.subaccount-fetcher.endpoints.subaccountDeleted: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-delete"
   global.tenantFetchers.subaccount-fetcher.endpoints.subaccountUpdated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-update"
   global.tenantFetchers.subaccount-fetcher.endpoints.subaccountMoved: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-move"
-
   global.tenantFetcher.fieldMapping.idField: "guid"
   global.tenantFetcher.fieldMapping.nameField: "displayName"
   global.tenantFetcher.fieldMapping.customerIdField: "customerId"
@@ -159,16 +160,6 @@ data:
   global.tenantFetcher.fieldMapping.detailsField: "eventData"
   global.tenantFetcher.fieldMapping.entityTypeField: "type"
   global.tenantFetcher.endpoints.subaccountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-create"
-  global.tenantFetcher.secret.name: "compass-tenant-fetcher-secret"
-  global.tenantFetcher.secret.clientIdKey: "client-id"
-  global.tenantFetcher.secret.oauthMode: "oauth-mtls"
-  global.tenantFetcher.secret.clientCertKey: "client-cert"
-  global.tenantFetcher.secret.clientKeyKey: "client-key"
-  global.tenantFetcher.secret.oauthUrlKey: "url"
-  global.tenantFetcher.secret.skipSSLValidation: "true"
-  global.tenantFetcher.oauth.client: "client_id"
-  global.tenantFetcher.oauth.tokenURL: '{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'
-  global.tenantFetcher.oauth.tokenPath: "/cert/token"
 ---
 apiVersion: v1
 kind: ConfigMap

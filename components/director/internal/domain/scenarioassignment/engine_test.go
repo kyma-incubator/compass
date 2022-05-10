@@ -574,3 +574,101 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfScenar
 
 	mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo)
 }
+
+func Test_engine_GetScenariosFromMatchingASAs(t *testing.T) {
+	ctx := fixCtxWithTenant()
+	testErr := errors.New(errMsg)
+	testScenarios := []*model.AutomaticScenarioAssignment{
+		{
+			ScenarioName:   scenarioName,
+			Tenant:         tenantID,
+			TargetTenantID: targetTenantID,
+		},
+		{
+			ScenarioName:   scenarioName2,
+			Tenant:         tenantID2,
+			TargetTenantID: targetTenantID2,
+		},
+	}
+
+	testCases := []struct {
+		Name                     string
+		LabelServiceFn           func() *automock.LabelUpsertService
+		LabelRepoFn              func() *automock.LabelRepository
+		ScenarioAssignmentRepoFn func() *automock.Repository
+		RuntimeRepoFn            func() *automock.RuntimeRepository
+		RuntimeID                string
+		ExpectedError            error
+		ExpectedScenarios        []string
+	}{
+		{
+			Name:           "Success",
+			LabelServiceFn: unusedLabelService,
+			LabelRepoFn:    unusedLabelRepo,
+			ScenarioAssignmentRepoFn: func() *automock.Repository {
+				repo := &automock.Repository{}
+				repo.On("ListAll", ctx, tenantID).Return(testScenarios, nil)
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("Exists", ctx, targetTenantID, runtimeID).Return(true, nil)
+				repo.On("Exists", ctx, targetTenantID2, runtimeID).Return(false, nil)
+				return repo
+			},
+			RuntimeID:         runtimeID,
+			ExpectedError:     nil,
+			ExpectedScenarios: []string{scenarioName},
+		},
+		{
+			Name:           "Returns error when can't list ASAs",
+			LabelServiceFn: unusedLabelService,
+			LabelRepoFn:    unusedLabelRepo,
+			ScenarioAssignmentRepoFn: func() *automock.Repository {
+				repo := &automock.Repository{}
+				repo.On("ListAll", ctx, tenantID).Return(nil, testErr)
+				return repo
+			},
+			RuntimeRepoFn:     unusedRuntimeRepo,
+			RuntimeID:         runtimeID,
+			ExpectedError:     testErr,
+			ExpectedScenarios: nil,
+		},
+		{
+			Name:           "Returns error when checking if asa matches runtime",
+			LabelServiceFn: unusedLabelService,
+			LabelRepoFn:    unusedLabelRepo,
+			ScenarioAssignmentRepoFn: func() *automock.Repository {
+				repo := &automock.Repository{}
+				repo.On("ListAll", ctx, tenantID).Return(testScenarios, nil)
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("Exists", ctx, targetTenantID, runtimeID).Return(false, testErr)
+				return repo
+			},
+			RuntimeID:         runtimeID,
+			ExpectedError:     testErr,
+			ExpectedScenarios: nil,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			engine := scenarioassignment.NewEngine(testCase.LabelServiceFn(), testCase.LabelRepoFn(), testCase.ScenarioAssignmentRepoFn(), testCase.RuntimeRepoFn())
+
+			// WHEN
+			scenarios, err := engine.GetScenariosFromMatchingASAs(ctx, testCase.RuntimeID)
+
+			// THEN
+			if testCase.ExpectedError == nil {
+				require.ElementsMatch(t, scenarios, testCase.ExpectedScenarios)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedError.Error())
+				require.Nil(t, testCase.ExpectedScenarios)
+			}
+		})
+	}
+}

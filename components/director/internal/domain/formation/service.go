@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	tnt2 "github.com/kyma-incubator/compass/components/director/pkg/tenant"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -60,6 +58,11 @@ type tenantService interface {
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
+//go:generate mockery --exported --name=scenarioAssignmentEngine --output=automock --outpkg=automock --case=underscore
+type scenarioAssignmentEngine interface {
+	GetScenariosFromMatchingASAs(ctx context.Context, runtimeID string) ([]string, error)
+}
+
 type service struct {
 	labelDefRepository labelDefRepository
 	labelRepository    labelRepository
@@ -68,10 +71,11 @@ type service struct {
 	asaService         automaticFormationAssignmentService
 	uuidService        uidService
 	tenantSvc          tenantService
+	engine             scenarioAssignmentEngine
 }
 
 // NewService creates formation service
-func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, labelService labelService, uuidService uidService, labelDefService labelDefService, asaService automaticFormationAssignmentService, tenantSvc tenantService) *service {
+func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, labelService labelService, uuidService uidService, labelDefService labelDefService, asaService automaticFormationAssignmentService, tenantSvc tenantService, engine scenarioAssignmentEngine) *service {
 	return &service{
 		labelDefRepository: labelDefRepository,
 		labelRepository:    labelRepository,
@@ -80,6 +84,7 @@ func NewService(labelDefRepository labelDefRepository, labelRepository labelRepo
 		asaService:         asaService,
 		uuidService:        uuidService,
 		tenantSvc:          tenantSvc,
+		engine:             engine,
 	}
 }
 
@@ -104,17 +109,20 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 	return s.modifyFormations(ctx, tnt, formation.Name, deleteFormation)
 }
 
-// AssignFormation assigns object base on graphql.FormationObjectType.
+// AssignFormation assigns object based on graphql.FormationObjectType.
 // If the graphql.FormationObjectType is graphql.FormationObjectTypeApplication it adds the provided formation to the
-// scenario label of the application. If the graphql.FormationObjectType is graphql.FormationObjectTypeTenant it will
+// scenario label of the application.
+// If the graphql.FormationObjectType is graphql.FormationObjectTypeRuntime it adds the provided formation to the
+// scenario label of the runtime.
+// If the graphql.FormationObjectType is graphql.FormationObjectTypeTenant it will
 // create automatic scenario assignment with the caller and target tenant.
 func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
 	switch objectType {
-	case graphql.FormationObjectTypeApplication:
-		f, err := s.modifyAssignedFormationsForApplication(ctx, tnt, objectID, formation, addFormation)
+	case graphql.FormationObjectTypeApplication, graphql.FormationObjectTypeRuntime:
+		f, err := s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), addFormation)
 		if err != nil {
 			if apperrors.IsNotFoundError(err) {
-				labelInput := newLabelInput(formation.Name, objectID, model.ApplicationLabelableObject)
+				labelInput := newLabelInput(formation.Name, objectID, objectTypeToLabelableObject(objectType))
 				if err = s.labelService.CreateLabel(ctx, tnt, s.uuidService.Generate(), labelInput); err != nil {
 					return nil, err
 				}
@@ -124,15 +132,6 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		}
 		return f, nil
 	case graphql.FormationObjectTypeTenant:
-		if err := s.tenantSvc.CreateManyIfNotExists(ctx, model.BusinessTenantMappingInput{
-			ExternalTenant: objectID,
-			Parent:         tnt,
-			Type:           string(tnt2.Subaccount),
-			Provider:       "lazilyWhileFormationCreation",
-		}); err != nil {
-			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", objectID)
-		}
-
 		tenantID, err := s.tenantSvc.GetInternalTenant(ctx, objectID)
 		if err != nil {
 			return nil, err
@@ -149,12 +148,24 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 
 // UnassignFormation unassigns object base on graphql.FormationObjectType.
 // If the graphql.FormationObjectType is graphql.FormationObjectTypeApplication it removes the provided formation from the
-// scenario label of the application. If the graphql.FormationObjectType is graphql.FormationObjectTypeTenant it will
+// scenario label of the application.
+// If the graphql.FormationObjectType is graphql.FormationObjectTypeRuntime and the provided formation is not coming from ASA,
+// it removes the formation from the scenario label of the runtime,
+// but if the provided formation is assigned from ASA it does nothing.
+// If the graphql.FormationObjectType is graphql.FormationObjectTypeTenant it will
 // delete the automatic scenario assignment with the caller and target tenant.
 func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
-		return s.modifyAssignedFormationsForApplication(ctx, tnt, objectID, formation, deleteFormation)
+		return s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), deleteFormation)
+	case graphql.FormationObjectTypeRuntime:
+		if isFormationComingFromASA, err := s.isFormationComingFromASA(ctx, objectID, formation.Name); err != nil {
+			return nil, err
+		} else if isFormationComingFromASA {
+			return &formation, nil
+		}
+
+		return s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), deleteFormation)
 	case graphql.FormationObjectTypeTenant:
 		asa, err := s.asaService.GetForScenarioName(ctx, formation.Name)
 		if err != nil {
@@ -167,6 +178,21 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
+}
+
+func (s *service) isFormationComingFromASA(ctx context.Context, runtimeID, formation string) (bool, error) {
+	formationsFromASA, err := s.engine.GetScenariosFromMatchingASAs(ctx, runtimeID)
+	if err != nil {
+		return false, errors.Wrapf(err, "while getting formations from ASAs for runtime with id: %q", runtimeID)
+	}
+
+	for _, formationFromASA := range formationsFromASA {
+		if formation == formationFromASA {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func (s *service) modifyFormations(ctx context.Context, tnt, formationName string, modificationFunc modificationFunc) (*model.Formation, error) {
@@ -209,8 +235,8 @@ func (s *service) modifyFormations(ctx context.Context, tnt, formationName strin
 	return &model.Formation{Name: formationName}, nil
 }
 
-func (s *service) modifyAssignedFormationsForApplication(ctx context.Context, tnt, objectID string, formation model.Formation, modificationFunc modificationFunc) (*model.Formation, error) {
-	labelInput := newLabelInput(formation.Name, objectID, model.ApplicationLabelableObject)
+func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID string, formation model.Formation, objectType model.LabelableObject, modificationFunc modificationFunc) (*model.Formation, error) {
+	labelInput := newLabelInput(formation.Name, objectID, objectType)
 
 	existingLabel, err := s.labelService.GetLabel(ctx, tnt, labelInput)
 	if err != nil {
@@ -225,7 +251,7 @@ func (s *service) modifyAssignedFormationsForApplication(ctx context.Context, tn
 	formations := modificationFunc(existingFormations, formation.Name)
 	// can not set scenario label to empty value, violates the scenario label definition
 	if len(formations) == 0 {
-		if err := s.labelRepository.Delete(ctx, tnt, model.ApplicationLabelableObject, objectID, model.ScenariosKey); err != nil {
+		if err := s.labelRepository.Delete(ctx, tnt, objectType, objectID, model.ScenariosKey); err != nil {
 			return nil, err
 		}
 		return &formation, nil
@@ -278,4 +304,16 @@ func newAutomaticScenarioAssignmentModel(formation, callerTenant, targetTenant s
 		Tenant:         callerTenant,
 		TargetTenantID: targetTenant,
 	}
+}
+
+func objectTypeToLabelableObject(objectType graphql.FormationObjectType) (labelableObj model.LabelableObject) {
+	switch objectType {
+	case graphql.FormationObjectTypeApplication:
+		labelableObj = model.ApplicationLabelableObject
+	case graphql.FormationObjectTypeRuntime:
+		labelableObj = model.RuntimeLabelableObject
+	case graphql.FormationObjectTypeTenant:
+		labelableObj = model.TenantLabelableObject
+	}
+	return labelableObj
 }
