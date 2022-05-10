@@ -133,3 +133,17 @@ func (_m *LabelRepository) ListGlobalByKeyAndObjects(ctx context.Context, object
 
 	return r0, r1
 }
+
+// Upsert provides a mock function with given fields: ctx, tenant, label
+func (_m *LabelRepository) Upsert(ctx context.Context, tenant string, label *model.Label) error {
+	ret := _m.Called(ctx, tenant, label)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Label) error); ok {
+		r0 = rf(ctx, tenant, label)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}

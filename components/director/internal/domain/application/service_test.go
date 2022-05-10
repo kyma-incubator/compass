@@ -3196,6 +3196,17 @@ func TestService_Merge(t *testing.T) {
 		Value: scenarios,
 	}
 
+	labelKey1 := model.ScenariosKey
+	labelKey2 := "integrationSystemID"
+	labelKey3 := "managed"
+	labelValue1 := []interface{}{"Easter", "Egg"}
+	labelValue2 := []interface{}{"Easter", "Bunny"}
+	labelValue3 := "int-sys-id"
+
+	srcAppLabels := fixSourceApplicationLabels(labelKey1, labelKey2, labelKey3, labelValue3, srcID, labelValue1)
+	destAppLabels := fixDestinationApplicationLabels(labelKey1, labelKey2, labelKey3, srcID, labelValue2)
+	mergedAppLabels := fixMergedApplicationLabels(labelKey1, labelKey2, labelKey3, srcID, labelValue3)
+
 	srcModel := fixDetailedModelApplication(t, srcID, tnt, srcName, srcDescription)
 	srcModel.ApplicationTemplateID = &templateID
 	srcModel.Status.Timestamp = time.Time{}
@@ -3255,6 +3266,12 @@ func TestService_Merge(t *testing.T) {
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				repo.On("Upsert", ctx, tnt, mergedAppLabels[labelKey1]).Return(nil)
+				repo.On("Upsert", ctx, tnt, mergedAppLabels[labelKey2]).Return(nil)
+				repo.On("Upsert", ctx, tnt, mergedAppLabels[labelKey3]).Return(nil)
+				repo.On("DeleteAll", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(nil)
 				return repo
 			},
 			Ctx:                            ctx,
@@ -3306,6 +3323,9 @@ func TestService_Merge(t *testing.T) {
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.AssertNotCalled(t, "GetByKey")
+				repo.AssertNotCalled(t, "ListForObject")
+				repo.AssertNotCalled(t, "Upsert")
+				repo.AssertNotCalled(t, "DeleteAll")
 				return repo
 			},
 			Ctx:                ctx,
@@ -3332,6 +3352,9 @@ func TestService_Merge(t *testing.T) {
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.AssertNotCalled(t, "GetByKey")
+				repo.AssertNotCalled(t, "ListForObject")
+				repo.AssertNotCalled(t, "Upsert")
+				repo.AssertNotCalled(t, "DeleteAll")
 				return repo
 			},
 			Ctx:                ctx,
@@ -3358,6 +3381,10 @@ func TestService_Merge(t *testing.T) {
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.AssertNotCalled(t, "GetByKey")
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				repo.AssertNotCalled(t, "Upsert")
+				repo.AssertNotCalled(t, "DeleteAll")
 				return repo
 			},
 			Ctx:                ctx,
@@ -3384,6 +3411,10 @@ func TestService_Merge(t *testing.T) {
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.AssertNotCalled(t, "GetByKey")
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				repo.AssertNotCalled(t, "Upsert")
+				repo.AssertNotCalled(t, "DeleteAll")
 				return repo
 			},
 			Ctx:                ctx,
@@ -3410,6 +3441,10 @@ func TestService_Merge(t *testing.T) {
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				repo.AssertNotCalled(t, "Upsert")
+				repo.AssertNotCalled(t, "DeleteAll")
 				return repo
 			},
 			Ctx:                ctx,
@@ -3436,6 +3471,70 @@ func TestService_Merge(t *testing.T) {
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				repo.On("DeleteAll", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(nil)
+				repo.AssertNotCalled(t, "Upsert")
+				return repo
+			},
+			Ctx:                ctx,
+			DestinationID:      destID,
+			SourceID:           srcID,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Error when delete labels fails",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
+				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
+				repo.AssertNotCalled(t, "Update")
+				repo.On("Delete", ctx, tnt, srcModel.ID).Return(nil).Once()
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", ctx, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				repo.On("DeleteAll", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(testErr)
+				repo.AssertNotCalled(t, "Upsert")
+				return repo
+			},
+			Ctx:                ctx,
+			DestinationID:      destID,
+			SourceID:           srcID,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Error when update labels fails",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
+				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
+				repo.On("Update", ctx, tnt, mergedDestModel).Return(nil)
+				repo.On("Delete", ctx, tnt, srcModel.ID).Return(nil).Once()
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", ctx, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				repo.On("DeleteAll", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(nil)
+				repo.On("Upsert", ctx, tnt, mergedAppLabels[labelKey1]).Return(testErr)
 				return repo
 			},
 			Ctx:                ctx,
@@ -3467,7 +3566,13 @@ func TestService_Merge(t *testing.T) {
 			appRepo.AssertExpectations(t)
 			runtimeRepo.AssertExpectations(t)
 			labelRepo.AssertExpectations(t)
+
 		})
+
+		srcAppLabels = fixSourceApplicationLabels(labelKey1, labelKey2, labelKey3, labelValue3, srcID, labelValue1)
+		destAppLabels = fixDestinationApplicationLabels(labelKey1, labelKey2, labelKey3, srcID, labelValue2)
+		mergedAppLabels = fixMergedApplicationLabels(labelKey1, labelKey2, labelKey3, srcID, labelValue3)
+
 	}
 }
 
