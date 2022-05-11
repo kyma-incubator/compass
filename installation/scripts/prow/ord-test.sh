@@ -16,6 +16,39 @@ function is_ready(){
     return 1
 }
 
+function execute_gql_query(){
+    local URL=${1}
+    local DIRECTOR_TOKEN=${2}
+    local INTERNAL_TENANT_ID=${3}
+    local FILE_LOCATION=${4:-""}
+
+    if [[ "null" == "${FILE_LOCATION}" ]] || [[ -z "${FILE_LOCATION}" ]]; then
+        local FLAT_FILE_CONTENT=$(sed 's/\\/\\\\/g' ${FILE_LOCATION} | sed 's/\"/\\"/g' | sed 's/$/\\n/' | tr -d '\n')
+        local GQL_QUERY='{ "query": "'${FLAT_FILE_CONTENT}'" }'
+        echo -E ${GQL_QUERY} >> ${BASE_DIR}/gql_query.gql
+    fi
+    curl --request POST --url ${URL} --header "Content-Type: application/json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}" ${FILE_LOCATION:+"--data"} ${FILE_LOCATION:+"@${BASE_DIR}/gql_query.gql"} 
+}
+
+compare_values() {
+    local VAR1=${1}
+    local VAR2=${2}
+    local MESSAGE=${3}
+    if [ "${VAR1}" -ne "${VAR2}" ]; then
+        echo "COMPARE ERROR: ${MESSAGE}"
+        TEST_RESULT=false
+    fi
+}
+
+check_value() {
+    local VAR=${1}
+    local MESSAGE=${2}
+    if [[ "null" == "${VAR}" ]] || [[ -z "${VAR}" ]]; then
+        echo "VALIDATION ERROR: ${MESSAGE}"
+        TEST_RESULT=false
+    fi
+}
+
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 INSTALLATION_DIR="$( cd "$( dirname "${CURRENT_DIR}/../../.." )" && pwd )"
 BASE_DIR="$( cd "$( dirname "${INSTALLATION_DIR}/../../../../../../.." )" && pwd )"
@@ -24,6 +57,7 @@ M2_HOME="${BASE_DIR}/maven"
 MIGRATE_HOME="${BASE_DIR}/migrate"
 COMPASS_DIR="$( cd "$( dirname "${INSTALLATION_DIR}/../.." )" && pwd )"  
 ORD_SVC_DIR="${BASE_DIR}/ord-service"
+TEST_RESULT=true
 
 mkdir -p "${JAVA_HOME}"
 export JAVA_HOME
@@ -102,8 +136,7 @@ echo "-----------------------------------"
 
 echo "Starting compass"
 cd ${COMPASS_DIR}/components/director
-# source run.sh --auto-terminate > ${ARTIFACTS}/compass_run.log & 
-source run.sh --auto-terminate & 
+source run.sh --auto-terminate 300 & 
 
 COMPASS_URL="http://localhost:3000"
 
@@ -128,8 +161,7 @@ echo "Compass is ready"
 echo "Starting ord-service"
 cd ${ORD_SVC_DIR}/components/ord-service
 export SERVER_PORT=8081
-# ./run.sh --migrations-path ${COMPASS_DIR}/components/schema-migrator/migrations/director --auto-terminate  > ${ARTIFACTS}/ord_service_run.log &
-./run.sh --migrations-path ${COMPASS_DIR}/components/schema-migrator/migrations/director --auto-terminate &
+./run.sh --migrations-path ${COMPASS_DIR}/components/schema-migrator/migrations/director --auto-terminate 120 &
 
 ORD_URL="http://localhost:${SERVER_PORT}"
 
@@ -150,13 +182,288 @@ echo "ORD-service is ready"
 echo "Token: ${DIRECTOR_TOKEN}"
 echo "Internal Tenant ID: ${INTERNAL_TENANT_ID}"
 
-echo "Get allprocesses"
-ps x -o  "%p %r %c"
+echo "ord-test start!"
 
-echo "Wait 310s ..."
-sleep 310
+echo "Register applicaiton ..."
+REG_APP_FILE_LOCATION="${COMPASS_DIR}/components/director/examples/register-application/register-application-with-bundles.graphql"
+COMPASS_GQL_URL=${COMPASS_URL}/graphql
+read -r CREATE_APP_IN_COMPASS_RESULT <<< "$(execute_gql_query "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${REG_APP_FILE_LOCATION}")"
 
-echo "Get allprocesses"
-ps x -o  "%p %r %c"
+echo "Result from app creation request:"
+echo "---------------------------------"
+echo "${CREATE_APP_IN_COMPASS_RESULT}"
+echo "---------------------------------"
 
-echo "ord-test end reached!"
+CRT_APP_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.data.result.id')
+CRT_BUNDLES_COUNT=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.data.result.bundles.data | length')
+
+CRT_BUNDLE_0_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.data.result.bundles.data[0].id')
+CRT_BUNDLE_0_API_DEFS_COUNT=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.data.result.bundles.data[0].apiDefinitions.data | length')
+CRT_BUNDLE_0_API_DEF_0_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.data.result.bundles.data[0].apiDefinitions.data[0].id')
+CRT_BUNDLE_0_API_DEF_1_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.data.result.bundles.data[0].apiDefinitions.data[1].id')
+CRT_BUNDLE_0_API_DEF_2_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.data.result.bundles.data[0].apiDefinitions.data[2].id')
+CRT_BUNDLE_0_EVENT_DEFS_COUNT=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.data.result.bundles.data[0].eventDefinitions.data | length')
+CRT_BUNDLE_0_EVENT_DEF_0_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.data.result.bundles.data[0].eventDefinitions.data[0].id')
+CRT_BUNDLE_0_EVENT_DEF_1_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.data.result.bundles.data[0].eventDefinitions.data[1].id')
+
+CRT_BUNDLE_1_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.data.result.bundles.data[1].id')
+CRT_BUNDLE_1_API_DEFS_COUNT=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.data.result.bundles.data[1].apiDefinitions.data | length')
+CRT_BUNDLE_1_API_DEF_0_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.data.result.bundles.data[1].apiDefinitions.data[0].id')
+CRT_BUNDLE_1_API_DEF_1_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.data.result.bundles.data[1].apiDefinitions.data[1].id')
+CRT_BUNDLE_1_API_DEF_2_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.data.result.bundles.data[1].apiDefinitions.data[2].id')
+CRT_BUNDLE_1_EVENT_DEFS_COUNT=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.data.result.bundles.data[1].eventDefinitions.data | length')
+CRT_BUNDLE_1_EVENT_DEF_0_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.data.result.bundles.data[1].eventDefinitions.data[0].id')
+CRT_BUNDLE_1_EVENT_DEF_1_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.data.result.bundles.data[1].eventDefinitions.data[1].id')
+
+GET_APPS_FILE_LOCATION="${COMPASS_DIR}/components/director/examples/query-applications/query-applications.graphql"
+read -r GET_APPS_FROM_COMPASS_RESULT <<< "$(execute_gql_query "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${GET_APPS_FILE_LOCATION}")"
+
+echo "Result from get apps request:"
+echo "---------------------------------"
+echo "${GET_APPS_FROM_COMPASS_RESULT}"
+echo "---------------------------------"
+
+GET_APP_COUNT=$(echo -E ${GET_APPS_FROM_COMPASS_RESULT} | jq '.data.result.totalCount')
+compare_values 1 ${GET_APP_COUNT} "Applications count did not match. Expected: 1. From Compass recieved: ${GET_APP_COUNT}"
+
+
+GET_APP=$(echo -E ${GET_APPS_FROM_COMPASS_RESULT} | jq --arg appid ${CRT_APP_ID} '.data.result.data[] | select(.id==$appid)')
+check_value ${GET_APP} "Applicaiton with ID: ${CRT_APP_ID} not found in Compass"
+
+echo "Application from Compass:"
+echo "---------------------------------"
+echo "${GET_APP}"
+echo "---------------------------------"
+
+GET_APP_ID=$(echo -E ${GET_APP} | jq '.id')
+check_value ${GET_APP} "Applicaiton with ID: ${CRT_APP_ID} not found in Compass"
+
+GET_BUNDLES_COUNT=$(echo -E ${GET_APP} | jq '.bundles.data | length')
+compare_values ${CRT_BUNDLES_COUNT} ${GET_BUNDLES_COUNT} "Applicaiton bundles count did not match. On creation: ${CRT_BUNDLES_COUNT}. From Compass get: ${GET_BUNDLES_COUNT}"
+
+GET_BUNDLE_0=$(echo -E ${GET_APP} | jq --arg bundleid ${CRT_BUNDLE_0_ID} '.bundles.data[] | select(.id==$bundleid)')
+check_value ${GET_BUNDLE_0} "Bundle with ID: ${CRT_BUNDLE_0_ID} not found in Compass"
+
+GET_BUNDLE_0=$(echo -E ${GET_APP} | jq --arg bundleid ${CRT_BUNDLE_0_ID} '.bundles.data[] | select(.id==$bundleid)')
+check_value ${GET_BUNDLE_0} "Bundle with ID: ${CRT_BUNDLE_0_ID} not found in Compass"
+
+GET_BUNDLE_0_ID=$(echo -E ${GET_BUNDLE_0} | jq '.id')
+compare_values ${CRT_BUNDLE_0_ID} ${GET_BUNDLE_0_ID} "Bundle IDs did not match. On creation: ${CRT_BUNDLE_0_ID}. From Compass get: ${GET_BUNDLE_0_ID}"
+
+GET_BUNDLE_0_API_DEFS_COUNT=$(echo -E ${GET_BUNDLE_0} | jq '.apiDefinitions.data | length')
+compare_values ${CRT_BUNDLE_0_API_DEFS_COUNT} ${GET_BUNDLE_0_API_DEFS_COUNT} "Applicaiton bundles API Definitions count did not match. On creation: ${CRT_BUNDLE_0_API_DEFS_COUNT}. From Compass get: ${GET_BUNDLE_0_API_DEFS_COUNT}"
+
+GET_BUNDLE_0_API_DEF_0=$(echo -E ${GET_BUNDLE_0} | jq --arg apidefid ${CRT_BUNDLE_0_API_DEF_0_ID} '.apiDefinitions.data[] | select(.id==$apidefid)')
+check_value ${GET_BUNDLE_0_API_DEF_0} "API Def with ID: ${CRT_BUNDLE_0_API_DEF_0_ID} not found in Compass"
+
+GET_BUNDLE_0_API_DEF_0_ID=$(echo -E ${GET_BUNDLE_0_API_DEF_0} | jq '.id')
+compare_values ${CRT_BUNDLE_0_API_DEF_0_ID} ${GET_BUNDLE_0_API_DEF_0_ID} "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_0_API_DEF_0_ID}. From Compass get: ${GET_BUNDLE_0_API_DEF_0_ID}"
+
+GET_BUNDLE_0_API_DEF_1=$(echo -E ${GET_BUNDLE_0} | jq --arg apidefid ${CRT_BUNDLE_0_API_DEF_1_ID} '.apiDefinitions.data[] | select(.id==$apidefid)')
+check_value ${GET_BUNDLE_0_API_DEF_1} "API Def with ID: ${CRT_BUNDLE_0_API_DEF_1_ID} not found in Compass"
+
+GET_BUNDLE_0_API_DEF_1_ID=$(echo -E ${GET_BUNDLE_0_API_DEF_1} | jq '.id')
+compare_values ${CRT_BUNDLE_0_API_DEF_1_ID} ${GET_BUNDLE_0_API_DEF_1_ID} "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_0_API_DEF_1_ID}. From Compass get: ${GET_BUNDLE_0_API_DEF_1_ID}"
+
+GET_BUNDLE_0_API_DEF_2=$(echo -E ${GET_BUNDLE_0} | jq --arg apidefid ${CRT_BUNDLE_0_API_DEF_2_ID} '.apiDefinitions.data[] | select(.id==$apidefid)')
+check_value ${GET_BUNDLE_0_API_DEF_2} "API Def with ID: ${CRT_BUNDLE_0_API_DEF_2_ID} not found in Compass"
+
+GET_BUNDLE_0_API_DEF_2_ID=$(echo -E ${GET_BUNDLE_0_API_DEF_2} | jq '.id')
+compare_values ${CRT_BUNDLE_0_API_DEF_2_ID} ${GET_BUNDLE_0_API_DEF_2_ID} "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_0_API_DEF_2_ID}. From Compass get: ${GET_BUNDLE_0_API_DEF_2_ID}"
+
+GET_BUNDLE_0_EVENT_DEFS_COUNT=$(echo -E ${GET_BUNDLE_0} | jq '.eventDefinitions.data | length')
+compare_values ${CRT_BUNDLE_0_EVENT_DEFS_COUNT} ${GET_BUNDLE_0_EVENT_DEFS_COUNT} "Applicaiton bundles Events Definitions count did not match. On creation: ${CRT_BUNDLE_0_EVENT_DEFS_COUNT}. From Compass get: ${GET_BUNDLE_0_EVENT_DEFS_COUNT}"
+
+GET_BUNDLE_0_EVENT_DEF_0=$(echo -E ${GET_BUNDLE_0} | jq --arg eventdefid ${CRT_BUNDLE_0_EVENT_DEF_0_ID} '.eventDefinitions.data[] | select(.id==$eventdefid)')
+check_value ${GET_BUNDLE_0_EVENT_DEF_0} "API Def with ID: ${CRT_BUNDLE_0_EVENT_DEF_0_ID} not found in Compass"
+
+GET_BUNDLE_0_EVENT_DEF_0_ID=$(echo -E ${GET_BUNDLE_0_EVENT_DEF_0} | jq '.id')
+compare_values ${CRT_BUNDLE_0_EVENT_DEF_0_ID} ${GET_BUNDLE_0_EVENT_DEF_0_ID} "Applicaiton bundles Event Definitions IDs did not match. On creation: ${CRT_BUNDLE_0_EVENT_DEF_0_ID}. From Compass get: ${GET_BUNDLE_0_EVENT_DEF_0_ID}"
+
+GET_BUNDLE_0_EVENT_DEF_1=$(echo -E ${GET_BUNDLE_0} | jq --arg eventdefid ${CRT_BUNDLE_0_EVENT_DEF_1_ID} '.eventDefinitions.data[] | select(.id==$eventdefid)')
+check_value ${GET_BUNDLE_0_EVENT_DEF_1} "API Def with ID: ${CRT_BUNDLE_0_EVENT_DEF_1_ID} not found in Compass"
+
+GET_BUNDLE_0_EVENT_DEF_1_ID=$(echo -E ${GET_BUNDLE_0_EVENT_DEF_1} | jq '.id')
+compare_values ${CRT_BUNDLE_0_EVENT_DEF_1_ID} ${GET_BUNDLE_0_EVENT_DEF_1_ID} "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_0_EVENT_DEF_1_ID}. From Compass get: ${GET_BUNDLE_0_EVENT_DEF_1_ID}"
+
+GET_BUNDLE_1=$(echo -E ${GET_APP} | jq --arg bundleid ${CRT_BUNDLE_1_ID} '.bundles.data[] | select(.id==$bundleid)')
+check_value ${GET_BUNDLE_1} "Bundle with ID: ${CRT_BUNDLE_1_ID} not found in Compass"
+
+GET_BUNDLE_1=$(echo -E ${GET_APP} | jq --arg bundleid ${CRT_BUNDLE_1_ID} '.bundles.data[] | select(.id==$bundleid)')
+check_value ${GET_BUNDLE_1} "Bundle with ID: ${CRT_BUNDLE_1_ID} not found in Compass"
+
+GET_BUNDLE_1_ID=$(echo -E ${GET_BUNDLE_1} | jq '.id')
+compare_values ${CRT_BUNDLE_1_ID} ${GET_BUNDLE_1_ID} "Bundle IDs did not match. On creation: ${CRT_BUNDLE_1_ID}. From Compass get: ${GET_BUNDLE_1_ID}"
+
+GET_BUNDLE_1_API_DEFS_COUNT=$(echo -E ${GET_BUNDLE_1} | jq '.apiDefinitions.data | length')
+compare_values ${CRT_BUNDLE_1_API_DEFS_COUNT} ${GET_BUNDLE_1_API_DEFS_COUNT} "Applicaiton bundles API Definitions count did not match. On creation: ${CRT_BUNDLE_1_API_DEFS_COUNT}. From Compass get: ${GET_BUNDLE_1_API_DEFS_COUNT}"
+
+GET_BUNDLE_1_API_DEF_0=$(echo -E ${GET_BUNDLE_1} | jq --arg apidefid ${CRT_BUNDLE_1_API_DEF_0_ID} '.apiDefinitions.data[] | select(.id==$apidefid)')
+check_value ${GET_BUNDLE_1_API_DEF_0} "API Def with ID: ${CRT_BUNDLE_1_API_DEF_0_ID} not found in Compass"
+
+GET_BUNDLE_1_API_DEF_0_ID=$(echo -E ${GET_BUNDLE_1_API_DEF_0} | jq '.id')
+compare_values ${CRT_BUNDLE_1_API_DEF_0_ID} ${GET_BUNDLE_1_API_DEF_0_ID} "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_1_API_DEF_0_ID}. From Compass get: ${GET_BUNDLE_1_API_DEF_0_ID}"
+
+GET_BUNDLE_1_API_DEF_1=$(echo -E ${GET_BUNDLE_1} | jq --arg apidefid ${CRT_BUNDLE_1_API_DEF_1_ID} '.apiDefinitions.data[] | select(.id==$apidefid)')
+check_value ${GET_BUNDLE_1_API_DEF_1} "API Def with ID: ${CRT_BUNDLE_1_API_DEF_1_ID} not found in Compass"
+
+GET_BUNDLE_1_API_DEF_1_ID=$(echo -E ${GET_BUNDLE_1_API_DEF_1} | jq '.id')
+compare_values ${CRT_BUNDLE_1_API_DEF_1_ID} ${GET_BUNDLE_1_API_DEF_1_ID} "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_1_API_DEF_1_ID}. From Compass get: ${GET_BUNDLE_1_API_DEF_1_ID}"
+
+GET_BUNDLE_1_API_DEF_2=$(echo -E ${GET_BUNDLE_1} | jq --arg apidefid ${CRT_BUNDLE_1_API_DEF_2_ID} '.apiDefinitions.data[] | select(.id==$apidefid)')
+check_value ${GET_BUNDLE_1_API_DEF_2} "API Def with ID: ${CRT_BUNDLE_1_API_DEF_2_ID} not found in Compass"
+
+GET_BUNDLE_1_API_DEF_2_ID=$(echo -E ${GET_BUNDLE_1_API_DEF_2} | jq '.id')
+compare_values ${CRT_BUNDLE_1_API_DEF_2_ID} ${GET_BUNDLE_1_API_DEF_2_ID} "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_1_API_DEF_2_ID}. From Compass get: ${GET_BUNDLE_1_API_DEF_2_ID}"
+
+GET_BUNDLE_1_EVENT_DEFS_COUNT=$(echo -E ${GET_BUNDLE_1} | jq '.eventDefinitions.data | length')
+compare_values ${CRT_BUNDLE_1_EVENT_DEFS_COUNT} ${GET_BUNDLE_1_EVENT_DEFS_COUNT} "Applicaiton bundles Events Definitions count did not match. On creation: ${CRT_BUNDLE_1_EVENT_DEFS_COUNT}. From Compass get: ${GET_BUNDLE_1_EVENT_DEFS_COUNT}"
+
+GET_BUNDLE_1_EVENT_DEF_0=$(echo -E ${GET_BUNDLE_1} | jq --arg eventdefid ${CRT_BUNDLE_1_EVENT_DEF_0_ID} '.eventDefinitions.data[] | select(.id==$eventdefid)')
+check_value ${GET_BUNDLE_1_EVENT_DEF_0} "API Def with ID: ${CRT_BUNDLE_1_EVENT_DEF_0_ID} not found in Compass"
+
+GET_BUNDLE_1_EVENT_DEF_0_ID=$(echo -E ${GET_BUNDLE_1_EVENT_DEF_0} | jq '.id')
+compare_values ${CRT_BUNDLE_1_EVENT_DEF_0_ID} ${GET_BUNDLE_1_EVENT_DEF_0_ID} "Applicaiton bundles Event Definitions IDs did not match. On creation: ${CRT_BUNDLE_1_EVENT_DEF_0_ID}. From Compass get: ${GET_BUNDLE_1_EVENT_DEF_0_ID}"
+
+GET_BUNDLE_1_EVENT_DEF_1=$(echo -E ${GET_BUNDLE_1} | jq --arg eventdefid ${CRT_BUNDLE_1_EVENT_DEF_1_ID} '.eventDefinitions.data[] | select(.id==$eventdefid)')
+check_value ${GET_BUNDLE_1_EVENT_DEF_1} "API Def with ID: ${CRT_BUNDLE_1_EVENT_DEF_1_ID} not found in Compass"
+
+GET_BUNDLE_1_EVENT_DEF_1_ID=$(echo -E ${GET_BUNDLE_1_EVENT_DEF_1} | jq '.id')
+compare_values ${CRT_BUNDLE_1_EVENT_DEF_1_ID} ${GET_BUNDLE_1_EVENT_DEF_1_ID} "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_1_EVENT_DEF_1_ID}. From Compass get: ${GET_BUNDLE_1_EVENT_DEF_1_ID}"
+
+
+GET_BUNDLES_FROM_ORD_RESULT=$(curl --request GET --url "${ORD_URL}/open-resource-discovery-service/v0/systemInstances?%24expand=consumptionBundles(%24expand%3Dapis%2Cevents)&%24format=json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}")
+
+echo "Result from get bundles request:"
+echo "---------------------------------"
+echo "${GET_BUNDLES_FROM_ORD_RESULT}"
+echo "---------------------------------"
+
+ORD_APP_COUNT=$(echo -E ${GET_BUNDLES_FROM_ORD_RESULT} | jq '.value | length')
+ORD_APP=$(echo -E ${GET_BUNDLES_FROM_ORD_RESULT} | jq --arg appid ${CRT_APP_ID} '.value[] | select(.id==$appid)')
+check_value ${ORD_APP} "Applicaiton with ID: ${CRT_APP_ID} not found in ORD service"
+
+echo "Application from ORD:"
+echo "---------------------------------"
+echo "${ORD_APP}"
+echo "---------------------------------"
+
+ORD_BUNDLES_COUNT=$(echo -E ${ORD_APP} | jq '.consumptionBundles | length')
+compare_values ${CRT_BUNDLES_COUNT} ${ORD_BUNDLES_COUNT} "Applicaiton bundles count did not match. On creation: ${CRT_BUNDLES_COUNT} From ORD service get: ${ORD_BUNDLES_COUNT}"
+
+
+ORD_BUNDLES_COUNT=$(echo -E ${ORD_APP} | jq '.consumptionBundles | length')
+compare_values ${CRT_BUNDLES_COUNT} ${ORD_BUNDLES_COUNT} "Applicaiton bundles count did not match. On creation: ${CRT_BUNDLES_COUNT}. From ORD service get: ${ORD_BUNDLES_COUNT}"
+
+ORD_BUNDLE_0=$(echo -E ${ORD_APP} | jq --arg bundleid ${CRT_BUNDLE_0_ID} '.consumptionBundles[] | select(.id==$bundleid)')
+check_value ${ORD_BUNDLE_0} "Bundle with ID: ${CRT_BUNDLE_0_ID} not found in ORD service"
+
+ORD_BUNDLE_0=$(echo -E ${ORD_APP} | jq --arg bundleid ${CRT_BUNDLE_0_ID} '.consumptionBundles[] | select(.id==$bundleid)')
+check_value ${ORD_BUNDLE_0} "Bundle with ID: ${CRT_BUNDLE_0_ID} not found in ORD service"
+
+ORD_BUNDLE_0_ID=$(echo -E ${ORD_BUNDLE_0} | jq '.id')
+compare_values ${CRT_BUNDLE_0_ID} ${ORD_BUNDLE_0_ID} "Bundle IDs did not match. On creation: ${CRT_BUNDLE_0_ID}. From ORD service get: ${ORD_BUNDLE_0_ID}"
+
+ORD_BUNDLE_0_API_DEFS_COUNT=$(echo -E ${ORD_BUNDLE_0} | jq '.apis | length')
+compare_values ${CRT_BUNDLE_0_API_DEFS_COUNT} ${ORD_BUNDLE_0_API_DEFS_COUNT} "Applicaiton bundles API Definitions count did not match. On creation: ${CRT_BUNDLE_0_API_DEFS_COUNT}. From ORD service get: ${ORD_BUNDLE_0_API_DEFS_COUNT}"
+
+ORD_BUNDLE_0_API_DEF_0=$(echo -E ${ORD_BUNDLE_0} | jq --arg apidefid ${CRT_BUNDLE_0_API_DEF_0_ID} '.apis[] | select(.id==$apidefid)')
+check_value ${ORD_BUNDLE_0_API_DEF_0} "API Def with ID: ${CRT_BUNDLE_0_API_DEF_0_ID} not found in ORD service"
+
+ORD_BUNDLE_0_API_DEF_0_ID=$(echo -E ${ORD_BUNDLE_0_API_DEF_0} | jq '.id')
+compare_values ${CRT_BUNDLE_0_API_DEF_0_ID} ${ORD_BUNDLE_0_API_DEF_0_ID} "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_0_API_DEF_0_ID}. From ORD service get: ${ORD_BUNDLE_0_API_DEF_0_ID}"
+
+ORD_BUNDLE_0_API_DEF_1=$(echo -E ${ORD_BUNDLE_0} | jq --arg apidefid ${CRT_BUNDLE_0_API_DEF_1_ID} '.apis[] | select(.id==$apidefid)')
+check_value ${ORD_BUNDLE_0_API_DEF_1} "API Def with ID: ${CRT_BUNDLE_0_API_DEF_1_ID} not found in ORD service"
+
+ORD_BUNDLE_0_API_DEF_1_ID=$(echo -E ${ORD_BUNDLE_0_API_DEF_1} | jq '.id')
+compare_values ${CRT_BUNDLE_0_API_DEF_1_ID} ${ORD_BUNDLE_0_API_DEF_1_ID} "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_0_API_DEF_1_ID}. From ORD service get: ${ORD_BUNDLE_0_API_DEF_1_ID}"
+
+ORD_BUNDLE_0_API_DEF_2=$(echo -E ${ORD_BUNDLE_0} | jq --arg apidefid ${CRT_BUNDLE_0_API_DEF_2_ID} '.apis[] | select(.id==$apidefid)')
+check_value ${ORD_BUNDLE_0_API_DEF_2} "API Def with ID: ${CRT_BUNDLE_0_API_DEF_2_ID} not found in ORD service"
+
+ORD_BUNDLE_0_API_DEF_2_ID=$(echo -E ${ORD_BUNDLE_0_API_DEF_2} | jq '.id')
+compare_values ${CRT_BUNDLE_0_API_DEF_2_ID} ${ORD_BUNDLE_0_API_DEF_2_ID} "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_0_API_DEF_2_ID}. From ORD service get: ${ORD_BUNDLE_0_API_DEF_2_ID}"
+
+ORD_BUNDLE_0_EVENT_DEFS_COUNT=$(echo -E ${ORD_BUNDLE_0} | jq '.events | length')
+compare_values ${CRT_BUNDLE_0_EVENT_DEFS_COUNT} ${ORD_BUNDLE_0_EVENT_DEFS_COUNT} "Applicaiton bundles Events Definitions count did not match. On creation: ${CRT_BUNDLE_0_EVENT_DEFS_COUNT}. From ORD service get: ${ORD_BUNDLE_0_EVENT_DEFS_COUNT}"
+
+ORD_BUNDLE_0_EVENT_DEF_0=$(echo -E ${ORD_BUNDLE_0} | jq --arg eventdefid ${CRT_BUNDLE_0_EVENT_DEF_0_ID} '.events[] | select(.id==$eventdefid)')
+check_value ${ORD_BUNDLE_0_EVENT_DEF_0} "API Def with ID: ${CRT_BUNDLE_0_EVENT_DEF_0_ID} not found in ORD service"
+
+ORD_BUNDLE_0_EVENT_DEF_0_ID=$(echo -E ${ORD_BUNDLE_0_EVENT_DEF_0} | jq '.id')
+compare_values ${CRT_BUNDLE_0_EVENT_DEF_0_ID} ${ORD_BUNDLE_0_EVENT_DEF_0_ID} "Applicaiton bundles Event Definitions IDs did not match. On creation: ${CRT_BUNDLE_0_EVENT_DEF_0_ID}. From ORD service get: ${ORD_BUNDLE_0_EVENT_DEF_0_ID}"
+
+ORD_BUNDLE_0_EVENT_DEF_1=$(echo -E ${ORD_BUNDLE_0} | jq --arg eventdefid ${CRT_BUNDLE_0_EVENT_DEF_1_ID} '.events[] | select(.id==$eventdefid)')
+check_value ${ORD_BUNDLE_0_EVENT_DEF_1} "API Def with ID: ${CRT_BUNDLE_0_EVENT_DEF_1_ID} not found in ORD service"
+
+ORD_BUNDLE_0_EVENT_DEF_1_ID=$(echo -E ${ORD_BUNDLE_0_EVENT_DEF_1} | jq '.id')
+compare_values ${CRT_BUNDLE_0_EVENT_DEF_1_ID} ${ORD_BUNDLE_0_EVENT_DEF_1_ID} "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_0_EVENT_DEF_1_ID}. From ORD service get: ${ORD_BUNDLE_0_EVENT_DEF_1_ID}"
+
+ORD_BUNDLE_1=$(echo -E ${ORD_APP} | jq --arg bundleid ${CRT_BUNDLE_1_ID} '.consumptionBundles[] | select(.id==$bundleid)')
+check_value ${ORD_BUNDLE_1} "Bundle with ID: ${CRT_BUNDLE_1_ID} not found in ORD service"
+
+ORD_BUNDLE_1=$(echo -E ${ORD_APP} | jq --arg bundleid ${CRT_BUNDLE_1_ID} '.consumptionBundles[] | select(.id==$bundleid)')
+check_value ${ORD_BUNDLE_1} "Bundle with ID: ${CRT_BUNDLE_1_ID} not found in ORD service"
+
+ORD_BUNDLE_1_ID=$(echo -E ${ORD_BUNDLE_1} | jq '.id')
+compare_values ${CRT_BUNDLE_1_ID} ${ORD_BUNDLE_1_ID} "Bundle IDs did not match. On creation: ${CRT_BUNDLE_1_ID}. From ORD service get: ${ORD_BUNDLE_1_ID}"
+
+ORD_BUNDLE_1_API_DEFS_COUNT=$(echo -E ${ORD_BUNDLE_1} | jq '.apis | length')
+compare_values ${CRT_BUNDLE_1_API_DEFS_COUNT} ${ORD_BUNDLE_1_API_DEFS_COUNT} "Applicaiton bundles API Definitions count did not match. On creation: ${CRT_BUNDLE_1_API_DEFS_COUNT}. From ORD service get: ${ORD_BUNDLE_1_API_DEFS_COUNT}"
+
+ORD_BUNDLE_1_API_DEF_0=$(echo -E ${ORD_BUNDLE_1} | jq --arg apidefid ${CRT_BUNDLE_1_API_DEF_0_ID} '.apis[] | select(.id==$apidefid)')
+check_value ${ORD_BUNDLE_1_API_DEF_0} "API Def with ID: ${CRT_BUNDLE_1_API_DEF_0_ID} not found in ORD service"
+
+ORD_BUNDLE_1_API_DEF_0_ID=$(echo -E ${ORD_BUNDLE_1_API_DEF_0} | jq '.id')
+compare_values ${CRT_BUNDLE_1_API_DEF_0_ID} ${ORD_BUNDLE_1_API_DEF_0_ID} "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_1_API_DEF_0_ID}. From ORD service get: ${ORD_BUNDLE_1_API_DEF_0_ID}"
+
+ORD_BUNDLE_1_API_DEF_1=$(echo -E ${ORD_BUNDLE_1} | jq --arg apidefid ${CRT_BUNDLE_1_API_DEF_1_ID} '.apis[] | select(.id==$apidefid)')
+check_value ${ORD_BUNDLE_1_API_DEF_1} "API Def with ID: ${CRT_BUNDLE_1_API_DEF_1_ID} not found in ORD service"
+
+ORD_BUNDLE_1_API_DEF_1_ID=$(echo -E ${ORD_BUNDLE_1_API_DEF_1} | jq '.id')
+compare_values ${CRT_BUNDLE_1_API_DEF_1_ID} ${ORD_BUNDLE_1_API_DEF_1_ID} "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_1_API_DEF_1_ID}. From ORD service get: ${ORD_BUNDLE_1_API_DEF_1_ID}"
+
+ORD_BUNDLE_1_API_DEF_2=$(echo -E ${ORD_BUNDLE_1} | jq --arg apidefid ${CRT_BUNDLE_1_API_DEF_2_ID} '.apis[] | select(.id==$apidefid)')
+check_value ${ORD_BUNDLE_1_API_DEF_2} "API Def with ID: ${CRT_BUNDLE_1_API_DEF_2_ID} not found in ORD service"
+
+ORD_BUNDLE_1_API_DEF_2_ID=$(echo -E ${ORD_BUNDLE_1_API_DEF_2} | jq '.id')
+compare_values ${CRT_BUNDLE_1_API_DEF_2_ID} ${ORD_BUNDLE_1_API_DEF_2_ID} "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_1_API_DEF_2_ID}. From ORD service get: ${ORD_BUNDLE_1_API_DEF_2_ID}"
+
+ORD_BUNDLE_1_EVENT_DEFS_COUNT=$(echo -E ${ORD_BUNDLE_1} | jq '.events | length')
+compare_values ${CRT_BUNDLE_1_EVENT_DEFS_COUNT} ${ORD_BUNDLE_1_EVENT_DEFS_COUNT} "Applicaiton bundles Events Definitions count did not match. On creation: ${CRT_BUNDLE_1_EVENT_DEFS_COUNT}. From ORD service get: ${ORD_BUNDLE_1_EVENT_DEFS_COUNT}"
+
+ORD_BUNDLE_1_EVENT_DEF_0=$(echo -E ${ORD_BUNDLE_1} | jq --arg eventdefid ${CRT_BUNDLE_1_EVENT_DEF_0_ID} '.events[] | select(.id==$eventdefid)')
+check_value ${ORD_BUNDLE_1_EVENT_DEF_0} "API Def with ID: ${CRT_BUNDLE_1_EVENT_DEF_0_ID} not found in ORD service"
+
+ORD_BUNDLE_1_EVENT_DEF_0_ID=$(echo -E ${ORD_BUNDLE_1_EVENT_DEF_0} | jq '.id')
+compare_values ${CRT_BUNDLE_1_EVENT_DEF_0_ID} ${ORD_BUNDLE_1_EVENT_DEF_0_ID} "Applicaiton bundles Event Definitions IDs did not match. On creation: ${CRT_BUNDLE_1_EVENT_DEF_0_ID}. From ORD service get: ${ORD_BUNDLE_1_EVENT_DEF_0_ID}"
+
+ORD_BUNDLE_1_EVENT_DEF_1=$(echo -E ${ORD_BUNDLE_1} | jq --arg eventdefid ${CRT_BUNDLE_1_EVENT_DEF_1_ID} '.events[] | select(.id==$eventdefid)')
+check_value ${ORD_BUNDLE_1_EVENT_DEF_1} "API Def with ID: ${CRT_BUNDLE_1_EVENT_DEF_1_ID} not found in ORD service"
+
+ORD_BUNDLE_1_EVENT_DEF_1_ID=$(echo -E ${ORD_BUNDLE_1_EVENT_DEF_1} | jq '.id')
+compare_values ${CRT_BUNDLE_1_EVENT_DEF_1_ID} ${ORD_BUNDLE_1_EVENT_DEF_1_ID} "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_1_EVENT_DEF_1_ID}. From ORD service get: ${ORD_BUNDLE_1_EVENT_DEF_1_ID}"
+
+echo "Ord-test end reached. Test finished with ${TEST_RESULT}!"
+
+echo "Wait 5s before collect logs ..."
+sleep 5
+
+echo "Logs from Director:"
+echo "---------------------------------"
+cat ${COMPASS_DIR}/components/director/main.log || true
+echo "---------------------------------"
+
+echo "Logs from ORD Service:"
+echo "---------------------------------"
+cat ${ORD_SVC_DIR}/components/ord-service/target/main.log || true
+echo "---------------------------------"
+
+if [[ ${TEST_RESULT} == false ]]; then
+    echo "Test Fail. Look for COMPARE ERROR or VALIDATION ERROR messages."
+    exit 1
+else
+    echo "Test Pass"
+fi
+
