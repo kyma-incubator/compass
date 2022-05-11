@@ -39,7 +39,7 @@ import (
 )
 
 const (
-	timeout       = time.Minute * 5
+	timeout       = time.Minute * 15
 	checkInterval = time.Second * 60
 
 	globalAccountCreateSubPath = "global-account-create"
