@@ -9,7 +9,7 @@ set -o errexit
 function is_ready(){
     local URL=${1}
     local HTTP_CODE=$(curl -s -o /dev/null -I -w "%{http_code}" ${URL})
-    if [[ "${HTTP_CODE}" == "200" ]]; then
+    if [ "${HTTP_CODE}" == "200" ]; then
         return 0
     fi 
     echo "Response from ${URL} is still: ${HTTP_CODE}"
@@ -22,7 +22,7 @@ function execute_gql_query(){
     local INTERNAL_TENANT_ID=${3}
     local FILE_LOCATION=${4:-""}
 
-    if [[ "null" == "${FILE_LOCATION}" ]] || [[ -z "${FILE_LOCATION}" ]]; then
+    if [ "" != "${FILE_LOCATION}" ]; then
         local FLAT_FILE_CONTENT=$(sed 's/\\/\\\\/g' ${FILE_LOCATION} | sed 's/\"/\\"/g' | sed 's/$/\\n/' | tr -d '\n')
         local GQL_QUERY='{ "query": "'${FLAT_FILE_CONTENT}'" }'
     fi
