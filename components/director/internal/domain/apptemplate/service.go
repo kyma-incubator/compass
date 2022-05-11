@@ -146,7 +146,7 @@ func (s *service) ListLabels(ctx context.Context, appTemplateID string) (map[str
 
 	labels, err := s.labelRepo.ListForObject(ctx, appTenant, model.AppTemplateLabelableObject, appTemplateID)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting label for Application Template")
+		return nil, errors.Wrap(err, "while getting labels for Application Template")
 	}
 
 	return labels, nil
