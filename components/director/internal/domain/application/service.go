@@ -789,7 +789,7 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 		return nil, err
 	}
 
-	return destApp, nil
+	return s.appRepo.GetByID(ctx, appTenant, destID)
 }
 
 // handleMergeLabels merges source labels into destination labels

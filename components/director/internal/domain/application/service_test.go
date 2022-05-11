@@ -3258,6 +3258,7 @@ func TestService_Merge(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
+				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
 				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
 				repo.On("Update", ctx, tnt, destModel).Return(nil).Once()
