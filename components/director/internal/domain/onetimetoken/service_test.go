@@ -13,6 +13,8 @@ import (
 	"testing"
 	"time"
 
+	pkgadapters "github.com/kyma-incubator/compass/components/director/pkg/adapters"
+
 	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -41,6 +43,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		connectorURL        = "connector.url"
 		legacyTokenURL      = connectorURL + "?token=" + tokenValue
 		appID               = "4c86b315-c027-467f-a6fc-b184ca0a80f1"
+		appName             = "test-app-name"
 		runtimeID           = "31a607c7-695f-4a31-b2d1-777939f84aac"
 		integrationSystemID = "123607c7-695f-4a31-b2d1-777939f84123"
 
@@ -67,23 +70,35 @@ func TestGenerateOneTimeToken(t *testing.T) {
 		SuggestTokenHeaderKey: suggestedTokenHeaderKey,
 	}
 
+	pairingAdaptersWithMapping := pkgadapters.Adapters{
+		Mapping: map[string]string{integrationSystemID: "https://my-integration-service.url"},
+	}
+
+	pairingAdaptersWithEmptyMapping := pkgadapters.Adapters{
+		Mapping: map[string]string{},
+	}
+
+	pairingAdaptersWithNilMapping := pkgadapters.Adapters{
+		Mapping: nil,
+	}
+
 	testCases := []struct {
-		description               string
-		objectID                  string
-		ctx                       context.Context
-		connectorURL              string
-		shouldHaveError           bool
-		errorMsg                  string
-		tokenType                 pkgmodel.SystemAuthReferenceObjectType
-		expectedToken             interface{}
-		intSystemToAdapterMapping map[string]string
-		systemAuthSvc             func() onetimetoken.SystemAuthService
-		appSvc                    func() onetimetoken.ApplicationService
-		appConverter              func() onetimetoken.ApplicationConverter
-		tenantSvc                 func() onetimetoken.ExternalTenantsService
-		httpClient                func() onetimetoken.HTTPDoer
-		tokenGenerator            func() onetimetoken.TokenGenerator
-		timeService               directorTime.Service
+		description     string
+		objectID        string
+		ctx             context.Context
+		connectorURL    string
+		shouldHaveError bool
+		errorMsg        string
+		tokenType       pkgmodel.SystemAuthReferenceObjectType
+		expectedToken   interface{}
+		pairingAdapters *pkgadapters.Adapters
+		systemAuthSvc   func() onetimetoken.SystemAuthService
+		appSvc          func() onetimetoken.ApplicationService
+		appConverter    func() onetimetoken.ApplicationConverter
+		tenantSvc       func() onetimetoken.ExternalTenantsService
+		httpClient      func() onetimetoken.HTTPDoer
+		tokenGenerator  func() onetimetoken.TokenGenerator
+		timeService     directorTime.Service
 	}{
 		{
 			description: "Generate Application token, no int system, should succeed",
@@ -114,13 +129,13 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				tokenGenerator.On("NewToken").Return(tokenValue, nil)
 				return tokenGenerator
 			},
-			shouldHaveError:           false,
-			objectID:                  appID,
-			tokenType:                 pkgmodel.ApplicationReference,
-			connectorURL:              connectorURL,
-			intSystemToAdapterMapping: nil,
-			timeService:               directorTime.NewService(),
-			expectedToken:             tokenValue,
+			shouldHaveError: false,
+			objectID:        appID,
+			tokenType:       pkgmodel.ApplicationReference,
+			connectorURL:    connectorURL,
+			pairingAdapters: nil,
+			timeService:     directorTime.NewService(),
+			expectedToken:   tokenValue,
 		},
 		{
 			description: "Generate Application token, no int system, with suggestion enabled, should succeed",
@@ -152,12 +167,12 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				tokenGenerator.On("NewToken").Return(tokenValue, nil)
 				return tokenGenerator
 			},
-			shouldHaveError:           false,
-			objectID:                  appID,
-			tokenType:                 pkgmodel.ApplicationReference,
-			connectorURL:              connectorURL,
-			intSystemToAdapterMapping: nil,
-			timeService:               &Timer{},
+			shouldHaveError: false,
+			objectID:        appID,
+			tokenType:       pkgmodel.ApplicationReference,
+			connectorURL:    connectorURL,
+			pairingAdapters: nil,
+			timeService:     &Timer{},
 			expectedToken: func() string {
 				nowT := nowTime.Add(ottConfig.ApplicationExpiration)
 				converted, err := nowT.MarshalJSON()
@@ -202,13 +217,13 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				tokenGenerator.On("NewToken").Return(tokenValue, nil)
 				return tokenGenerator
 			},
-			shouldHaveError:           false,
-			objectID:                  appID,
-			tokenType:                 pkgmodel.ApplicationReference,
-			connectorURL:              connectorURL,
-			intSystemToAdapterMapping: nil,
-			timeService:               directorTime.NewService(),
-			expectedToken:             legacyTokenURL,
+			shouldHaveError: false,
+			objectID:        appID,
+			tokenType:       pkgmodel.ApplicationReference,
+			connectorURL:    connectorURL,
+			pairingAdapters: nil,
+			timeService:     directorTime.NewService(),
+			expectedToken:   legacyTokenURL,
 		},
 		{
 			description: "Generate Application token should fail when no such app found",
@@ -233,12 +248,47 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			tokenGenerator: func() onetimetoken.TokenGenerator {
 				return &automock.TokenGenerator{}
 			},
-			shouldHaveError:           true,
-			objectID:                  appID,
-			tokenType:                 pkgmodel.ApplicationReference,
-			errorMsg:                  "not found",
-			connectorURL:              connectorURL,
-			intSystemToAdapterMapping: nil,
+			shouldHaveError: true,
+			objectID:        appID,
+			tokenType:       pkgmodel.ApplicationReference,
+			errorMsg:        "not found",
+			connectorURL:    connectorURL,
+			pairingAdapters: nil,
+		},
+		{
+			description: "Generate Application token should fail when pairing adapter mapping is nil",
+			ctx:         ctx,
+			systemAuthSvc: func() onetimetoken.SystemAuthService {
+				return &automock.SystemAuthService{}
+			},
+			appSvc: func() onetimetoken.ApplicationService {
+				app := &model.Application{}
+				app.IntegrationSystemID = str.Ptr(integrationSystemID)
+				app.BaseEntity = &model.BaseEntity{
+					ID: appID,
+				}
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("Get", ctx, appID).Return(app, nil)
+				return appSvc
+			},
+			appConverter: func() onetimetoken.ApplicationConverter {
+				return &automock.ApplicationConverter{}
+			},
+			tenantSvc: func() onetimetoken.ExternalTenantsService {
+				return &automock.ExternalTenantsService{}
+			},
+			httpClient: func() onetimetoken.HTTPDoer {
+				return &automock.HTTPDoer{}
+			},
+			tokenGenerator: func() onetimetoken.TokenGenerator {
+				return &automock.TokenGenerator{}
+			},
+			shouldHaveError: true,
+			objectID:        appID,
+			tokenType:       pkgmodel.ApplicationReference,
+			errorMsg:        "pairing adapter configuration mapping cannot be nil",
+			connectorURL:    connectorURL,
+			pairingAdapters: &pairingAdaptersWithNilMapping,
 		},
 		{
 			description: "Generate Application token should fail on db error",
@@ -269,13 +319,13 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				tokenGenerator.On("NewToken").Return(tokenValue, nil)
 				return tokenGenerator
 			},
-			shouldHaveError:           true,
-			objectID:                  appID,
-			tokenType:                 pkgmodel.ApplicationReference,
-			errorMsg:                  "db error",
-			connectorURL:              connectorURL,
-			intSystemToAdapterMapping: nil,
-			timeService:               directorTime.NewService(),
+			shouldHaveError: true,
+			objectID:        appID,
+			tokenType:       pkgmodel.ApplicationReference,
+			errorMsg:        "db error",
+			connectorURL:    connectorURL,
+			pairingAdapters: nil,
+			timeService:     directorTime.NewService(),
 		},
 		{
 			description: "Generate Application token, with int system, should succeed when external tenant is in the context",
@@ -288,7 +338,8 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				return systemAuthSvc
 			},
 			appSvc: func() onetimetoken.ApplicationService {
-				app := &model.Application{}
+				app := &model.Application{BaseEntity: &model.BaseEntity{ID: appID}}
+				app.Name = appName
 				app.IntegrationSystemID = str.Ptr(integrationSystemID)
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Get", ctx, appID).Return(app, nil)
@@ -344,10 +395,8 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			tokenType:       pkgmodel.ApplicationReference,
 			expectedToken:   tokenValue,
 			connectorURL:    connectorURL,
-			intSystemToAdapterMapping: map[string]string{
-				integrationSystemID: "https://my-integration-service.url",
-			},
-			timeService: directorTime.NewService(),
+			pairingAdapters: &pairingAdaptersWithMapping,
+			timeService:     directorTime.NewService(),
 		},
 		{
 			description: "Generate Application token, with int system, should succeed when external tenant is not in the context",
@@ -360,7 +409,8 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				return systemAuthSvc
 			},
 			appSvc: func() onetimetoken.ApplicationService {
-				app := &model.Application{}
+				app := &model.Application{BaseEntity: &model.BaseEntity{ID: appID}}
+				app.Name = appName
 				app.IntegrationSystemID = str.Ptr(integrationSystemID)
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("Get", ctxWithoutExternalTenant, appID).Return(app, nil)
@@ -417,10 +467,8 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			tokenType:       pkgmodel.ApplicationReference,
 			expectedToken:   tokenValue,
 			connectorURL:    connectorURL,
-			intSystemToAdapterMapping: map[string]string{
-				integrationSystemID: "https://my-integration-service.url",
-			},
-			timeService: directorTime.NewService(),
+			pairingAdapters: &pairingAdaptersWithMapping,
+			timeService:     directorTime.NewService(),
 		},
 		{
 			description: "Generate Application token, with int system, and token suggestion enabled, should succeed",
@@ -489,10 +537,8 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			tokenType:       pkgmodel.ApplicationReference,
 			expectedToken:   tokenValue,
 			connectorURL:    connectorURL,
-			intSystemToAdapterMapping: map[string]string{
-				integrationSystemID: "https://my-integration-service.url",
-			},
-			timeService: directorTime.NewService(),
+			pairingAdapters: &pairingAdaptersWithMapping,
+			timeService:     directorTime.NewService(),
 		},
 		{
 			description: "Generate Application token, with int system, but no adapters defined should succeed",
@@ -525,13 +571,13 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				tokenGenerator.On("NewToken").Return(tokenValue, nil)
 				return tokenGenerator
 			},
-			shouldHaveError:           false,
-			objectID:                  appID,
-			tokenType:                 pkgmodel.ApplicationReference,
-			expectedToken:             tokenValue,
-			connectorURL:              connectorURL,
-			intSystemToAdapterMapping: map[string]string{},
-			timeService:               directorTime.NewService(),
+			shouldHaveError: false,
+			objectID:        appID,
+			tokenType:       pkgmodel.ApplicationReference,
+			expectedToken:   tokenValue,
+			connectorURL:    connectorURL,
+			pairingAdapters: &pairingAdaptersWithEmptyMapping,
+			timeService:     directorTime.NewService(),
 		},
 		{
 			description: "Generate Application token, with int system, should fail when int system fails",
@@ -597,9 +643,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			tokenType:       pkgmodel.ApplicationReference,
 			errorMsg:        "wrong status code",
 			connectorURL:    connectorURL,
-			intSystemToAdapterMapping: map[string]string{
-				integrationSystemID: "https://my-integration-service.url",
-			},
+			pairingAdapters: &pairingAdaptersWithMapping,
 		},
 		{
 			description: "Generate Application token, with int system, should fail when no tenant in the context",
@@ -635,9 +679,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			tokenType:       pkgmodel.ApplicationReference,
 			errorMsg:        "cannot read tenant from context",
 			connectorURL:    connectorURL,
-			intSystemToAdapterMapping: map[string]string{
-				integrationSystemID: "https://my-integration-service.url",
-			},
+			pairingAdapters: &pairingAdaptersWithMapping,
 		},
 		{
 			description: "Generate Application token, with int system, should fail when no external tenant found",
@@ -674,9 +716,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			tokenType:       pkgmodel.ApplicationReference,
 			errorMsg:        "some-error",
 			connectorURL:    connectorURL,
-			intSystemToAdapterMapping: map[string]string{
-				integrationSystemID: "https://my-integration-service.url",
-			},
+			pairingAdapters: &pairingAdaptersWithMapping,
 		},
 		{
 			description: "Generate Application token, should fail on token generating error",
@@ -703,12 +743,12 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				tokenGenerator.On("NewToken").Return("", errors.New("error generating token"))
 				return tokenGenerator
 			},
-			shouldHaveError:           true,
-			objectID:                  appID,
-			tokenType:                 pkgmodel.ApplicationReference,
-			errorMsg:                  "error generating token",
-			connectorURL:              connectorURL,
-			intSystemToAdapterMapping: nil,
+			shouldHaveError: true,
+			objectID:        appID,
+			tokenType:       pkgmodel.ApplicationReference,
+			errorMsg:        "error generating token",
+			connectorURL:    connectorURL,
+			pairingAdapters: nil,
 		},
 		{
 			description: "Generate Runtime token should succeed",
@@ -737,13 +777,13 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				tokenGenerator.On("NewToken").Return(tokenValue, nil)
 				return tokenGenerator
 			},
-			shouldHaveError:           false,
-			objectID:                  runtimeID,
-			tokenType:                 pkgmodel.RuntimeReference,
-			expectedToken:             tokenValue,
-			connectorURL:              connectorURL,
-			intSystemToAdapterMapping: nil,
-			timeService:               directorTime.NewService(),
+			shouldHaveError: false,
+			objectID:        runtimeID,
+			tokenType:       pkgmodel.RuntimeReference,
+			expectedToken:   tokenValue,
+			connectorURL:    connectorURL,
+			pairingAdapters: nil,
+			timeService:     directorTime.NewService(),
 		},
 		{
 			description: "Generate Runtime token should fail on token generating error",
@@ -768,12 +808,12 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				tokenGenerator.On("NewToken").Return("", errors.New("error generating token"))
 				return tokenGenerator
 			},
-			shouldHaveError:           true,
-			objectID:                  runtimeID,
-			tokenType:                 pkgmodel.RuntimeReference,
-			errorMsg:                  "error generating token",
-			connectorURL:              connectorURL,
-			intSystemToAdapterMapping: nil,
+			shouldHaveError: true,
+			objectID:        runtimeID,
+			tokenType:       pkgmodel.RuntimeReference,
+			errorMsg:        "error generating token",
+			connectorURL:    connectorURL,
+			pairingAdapters: nil,
 		},
 		{
 			description: "Generate Runtime token should fail on db error",
@@ -802,13 +842,13 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				tokenGenerator.On("NewToken").Return(tokenValue, nil)
 				return tokenGenerator
 			},
-			shouldHaveError:           true,
-			objectID:                  runtimeID,
-			tokenType:                 pkgmodel.RuntimeReference,
-			errorMsg:                  "db error",
-			connectorURL:              connectorURL,
-			intSystemToAdapterMapping: nil,
-			timeService:               directorTime.NewService(),
+			shouldHaveError: true,
+			objectID:        runtimeID,
+			tokenType:       pkgmodel.RuntimeReference,
+			errorMsg:        "db error",
+			connectorURL:    connectorURL,
+			pairingAdapters: nil,
+			timeService:     directorTime.NewService(),
 		},
 	}
 
@@ -823,7 +863,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			tokenGenerator := test.tokenGenerator()
 			timeService := test.timeService
 
-			tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, tokenGenerator, ottConfig, test.intSystemToAdapterMapping, timeService)
+			tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, tokenGenerator, ottConfig, test.pairingAdapters, timeService)
 
 			// WHEN
 			token, err := tokenSvc.GenerateOneTimeToken(test.ctx, test.objectID, test.tokenType)
@@ -853,7 +893,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 				assert.Equal(t, expectedToken, token.Token)
 				assert.Equal(t, fakeToken.UsedAt, token.UsedAt)
 				assert.Equal(t, fakeToken.Used, token.Used)
-				if test.intSystemToAdapterMapping == nil {
+				if test.pairingAdapters == nil {
 					assert.Equal(t, fakeToken.ConnectorURL, token.ConnectorURL)
 				}
 			}
@@ -880,13 +920,13 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		sysAuthSvc := &automock.SystemAuthService{}
 		tokenGenerator := &automock.TokenGenerator{}
 		timeService := &timeMocks.Service{}
-		intSystemToAdapterMapping := make(map[string]string)
+		pairingAdapters := &pkgadapters.Adapters{}
 
 		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(nil, errors.New("error while fetching"))
 		defer sysAuthSvc.AssertExpectations(t)
 
 		tokenService := onetimetoken.NewTokenService(sysAuthSvc, &automock.ApplicationService{}, &automock.ApplicationConverter{}, &automock.ExternalTenantsService{},
-			&automock.HTTPDoer{}, tokenGenerator, ottConfig, intSystemToAdapterMapping, timeService)
+			&automock.HTTPDoer{}, tokenGenerator, ottConfig, pairingAdapters, timeService)
 
 		// WHEN
 		token, err := tokenService.RegenerateOneTimeToken(context.Background(), systemAuthID)
@@ -902,14 +942,14 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		sysAuthSvc := &automock.SystemAuthService{}
 		tokenGenerator := &automock.TokenGenerator{}
 		timeService := &timeMocks.Service{}
-		intSystemToAdapterMapping := make(map[string]string)
+		pairingAdapters := &pkgadapters.Adapters{}
 		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&pkgmodel.SystemAuth{RuntimeID: &runtimeID, Value: &model.Auth{}}, nil)
 		defer sysAuthSvc.AssertExpectations(t)
 		tokenGenerator.On("NewToken").Return("", errors.New("error while token generating"))
 		defer tokenGenerator.AssertExpectations(t)
 
 		tokenService := onetimetoken.NewTokenService(sysAuthSvc, &automock.ApplicationService{}, &automock.ApplicationConverter{}, &automock.ExternalTenantsService{},
-			&automock.HTTPDoer{}, tokenGenerator, ottConfig, intSystemToAdapterMapping, timeService)
+			&automock.HTTPDoer{}, tokenGenerator, ottConfig, pairingAdapters, timeService)
 
 		// WHEN
 		token, err := tokenService.RegenerateOneTimeToken(context.Background(), systemAuthID)
@@ -926,7 +966,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		sysAuthSvc := &automock.SystemAuthService{}
 		tokenGenerator := &automock.TokenGenerator{}
 		timeService := &timeMocks.Service{}
-		intSystemToAdapterMapping := make(map[string]string)
+		pairingAdapters := &pkgadapters.Adapters{}
 
 		timeService.On("Now").Return(time.Now())
 		sysAuthSvc.On("GetGlobal", context.Background(), systemAuthID).Return(&pkgmodel.SystemAuth{RuntimeID: &runtimeID, Value: &model.Auth{}}, nil)
@@ -937,7 +977,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		defer tokenGenerator.AssertExpectations(t)
 
 		tokenService := onetimetoken.NewTokenService(sysAuthSvc, &automock.ApplicationService{}, &automock.ApplicationConverter{}, &automock.ExternalTenantsService{},
-			&automock.HTTPDoer{}, tokenGenerator, ottConfig, intSystemToAdapterMapping, timeService)
+			&automock.HTTPDoer{}, tokenGenerator, ottConfig, pairingAdapters, timeService)
 
 		// WHEN
 		token, err := tokenService.RegenerateOneTimeToken(context.Background(), systemAuthID)
@@ -953,7 +993,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		sysAuthSvc := &automock.SystemAuthService{}
 		tokenGenerator := &automock.TokenGenerator{}
 		timeService := &timeMocks.Service{}
-		intSystemToAdapterMapping := make(map[string]string)
+		pairingAdapters := &pkgadapters.Adapters{}
 		now := time.Now()
 		timeService.On("Now").Return(now)
 
@@ -965,7 +1005,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		defer tokenGenerator.AssertExpectations(t)
 
 		tokenService := onetimetoken.NewTokenService(sysAuthSvc, &automock.ApplicationService{}, &automock.ApplicationConverter{}, &automock.ExternalTenantsService{},
-			&automock.HTTPDoer{}, tokenGenerator, ottConfig, intSystemToAdapterMapping, timeService)
+			&automock.HTTPDoer{}, tokenGenerator, ottConfig, pairingAdapters, timeService)
 		expectedToken := &model.OneTimeToken{
 			Token:        token,
 			ConnectorURL: connectorURL,
@@ -989,7 +1029,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		sysAuthSvc := &automock.SystemAuthService{}
 		tokenGenerator := &automock.TokenGenerator{}
 		timeService := &timeMocks.Service{}
-		intSystemToAdapterMapping := make(map[string]string)
+		pairingAdapters := &pkgadapters.Adapters{}
 		now := time.Now()
 		timeService.On("Now").Return(now)
 
@@ -1010,7 +1050,7 @@ func TestRegenerateOneTimeToken(t *testing.T) {
 		}
 
 		tokenService := onetimetoken.NewTokenService(sysAuthSvc, &automock.ApplicationService{}, &automock.ApplicationConverter{}, &automock.ExternalTenantsService{},
-			&automock.HTTPDoer{}, tokenGenerator, ottConfig, intSystemToAdapterMapping, timeService)
+			&automock.HTTPDoer{}, tokenGenerator, ottConfig, pairingAdapters, timeService)
 
 		// WHEN
 		token, err := tokenService.RegenerateOneTimeToken(context.Background(), systemAuthID)
@@ -1041,7 +1081,7 @@ func TestIsTokenValid(t *testing.T) {
 	}
 
 	timeService := directorTime.NewService()
-	intSystemToAdapterMapping := map[string]string{}
+	pairingAdapters := &pkgadapters.Adapters{}
 	appSvc := &automock.ApplicationService{}
 	appConverter := &automock.ApplicationConverter{}
 	tenantSvc := &automock.ExternalTenantsService{}
@@ -1160,7 +1200,7 @@ func TestIsTokenValid(t *testing.T) {
 	for _, test := range testCases {
 		t.Run(test.description, func(t *testing.T) {
 			// GIVEN
-			tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, tokenGenerator, ottConfig, intSystemToAdapterMapping, timeService)
+			tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, httpClient, tokenGenerator, ottConfig, pairingAdapters, timeService)
 
 			// WHEN
 			isValid, err := tokenSvc.IsTokenValid(test.systemAuth)

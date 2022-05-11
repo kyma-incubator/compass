@@ -151,6 +151,7 @@ type ApplicationUpdateInput struct {
 	Description *string `json:"description"`
 	// **Validation:** valid URL, max=256
 	HealthCheckURL      *string                     `json:"healthCheckURL"`
+	BaseURL             *string                     `json:"baseUrl"`
 	IntegrationSystemID *string                     `json:"integrationSystemID"`
 	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
 }

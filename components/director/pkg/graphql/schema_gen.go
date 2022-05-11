@@ -4249,6 +4249,7 @@ input ApplicationUpdateInput {
 	**Validation:** valid URL, max=256
 	"""
 	healthCheckURL: String
+	baseUrl: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
 }
@@ -5355,9 +5356,29 @@ type Mutation {
 	- [delete document](examples/delete-document/delete-document.graphql)
 	"""
 	deleteDocument(id: ID!): Document! @hasScopes(path: "graphql.mutation.deleteDocument")
+	"""
+	**Examples**
+	- [create formation](examples/create-formation/create-formation.graphql)
+	"""
 	createFormation(formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.createFormation")
+	"""
+	**Examples**
+	- [delete formation](examples/delete-formation/delete-formation.graphql)
+	"""
 	deleteFormation(formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.deleteFormation")
+	"""
+	**Examples**
+	- [assign application to formation](examples/assign-formation/assign-application-to-formation.graphql)
+	- [assign runtime to formation](examples/assign-formation/assign-runtime-to-formation.graphql)
+	- [assign tenant to formation](examples/assign-formation/assign-tenant-to-formation.graphql)
+	"""
 	assignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.assignFormation")
+	"""
+	**Examples**
+	- [unassign application from formation](examples/unassign-formation/unassign-application-from-formation.graphql)
+	- [unassign runtime from formation](examples/unassign-formation/unassign-runtime-from-formation.graphql)
+	- [unassign tenant from formation](examples/unassign-formation/unassign-tenant-from-formation.graphql)
+	"""
 	unassignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.unassignFormation")
 	"""
 	**Examples**
@@ -5441,17 +5462,17 @@ type Mutation {
 	**Examples**
 	- [create automatic scenario assignment](examples/create-automatic-scenario-assignment/create-automatic-scenario-assignment.graphql)
 	"""
-	createAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput! @validate): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.createAutomaticScenarioAssignment")
+	createAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput! @validate): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.createAutomaticScenarioAssignment") @deprecated(reason: "Use assignFormation with objectType TENANT instead.")
 	"""
 	**Examples**
 	- [delete automatic scenario assignment for scenario](examples/delete-automatic-scenario-assignment-for-scenario/delete-automatic-scenario-assignment-for-scenario.graphql)
 	"""
-	deleteAutomaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForScenario")
+	deleteAutomaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForScenario") @deprecated(reason: "Use unassignFormation with objectType TENANT instead.")
 	"""
 	**Examples**
 	- [delete automatic scenario assignments for selector](examples/delete-automatic-scenario-assignments-for-selector/delete-automatic-scenario-assignments-for-selector.graphql)
 	"""
-	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput! @validate): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector")
+	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput! @validate): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector") @deprecated(reason: "Use unassignFormation with objectType TENANT instead.")
 	writeTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.writeTenants")
 	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
 	updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")
@@ -24696,6 +24717,12 @@ func (ec *executionContext) unmarshalInputApplicationUpdateInput(ctx context.Con
 		case "healthCheckURL":
 			var err error
 			it.HealthCheckURL, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "baseUrl":
+			var err error
+			it.BaseURL, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}

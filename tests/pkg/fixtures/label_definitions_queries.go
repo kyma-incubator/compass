@@ -109,12 +109,6 @@ func UpdateScenariosLabelDefinitionWithinTenant(t require.TestingT, ctx context.
 	return UpdateLabelDefinitionWithinTenant(t, ctx, gqlClient, "scenarios", jsonSchema, tenantID)
 }
 
-func DeleteLabelDefinition(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, labelDefinitionKey string, deleteRelatedResources bool, tenantID string) {
-	deleteRequest := FixDeleteLabelDefinitionRequest(labelDefinitionKey, deleteRelatedResources)
-
-	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, deleteRequest, nil))
-}
-
 func ListLabelDefinitionsWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID string) ([]*graphql.LabelDefinition, error) {
 	labelDefinitionsRequest := FixLabelDefinitionsRequest()
 

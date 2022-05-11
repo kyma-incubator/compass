@@ -9,6 +9,12 @@ import (
 	"os"
 	"time"
 
+	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes"
+
 	"github.com/kyma-incubator/compass/components/director/internal/subscription"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
@@ -54,6 +60,7 @@ import (
 	panichandler "github.com/kyma-incubator/compass/components/director/internal/panic_handler"
 	"github.com/kyma-incubator/compass/components/director/internal/statusupdate"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	pkgadapters "github.com/kyma-incubator/compass/components/director/pkg/adapters"
 	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
@@ -111,7 +118,7 @@ type config struct {
 
 	RuntimeJWKSCachePeriod time.Duration `envconfig:"default=5m"`
 
-	PairingAdapterSrc string `envconfig:"optional"`
+	PairingAdapterCfg configprovider.PairingAdapterConfig
 
 	OneTimeToken onetimetoken.Config
 	OAuth20      oauth20.Config
@@ -173,8 +180,13 @@ func main() {
 	dbStatsCollector := sqlstats.NewStatsCollector("director", transact)
 	prometheus.MustRegister(metricsCollector, dbStatsCollector)
 
-	pairingAdapters, err := getPairingAdaptersMapping(ctx, cfg.PairingAdapterSrc)
-	exitOnError(err, "Error while reading Pairing Adapters configuration")
+	k8sClient, err := kube.NewKubernetesClientSet(ctx, time.Second, time.Minute, time.Minute)
+	exitOnError(err, "Error while creating kubernetes client")
+
+	pa, err := getPairingAdaptersMapping(ctx, k8sClient, cfg.PairingAdapterCfg)
+	exitOnError(err, "Error while getting pairing adapters configuration")
+
+	startPairingAdaptersWatcher(ctx, k8sClient, pa, cfg.PairingAdapterCfg)
 
 	httpClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
@@ -190,9 +202,15 @@ func main() {
 			InsecureSkipVerify: cfg.SkipSSLValidation,
 		},
 	}
-	internalHTTPClient := &http.Client{
+
+	internalFQDNHTTPClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
-		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(internalClientTransport, "Authorization")),
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
+	}
+
+	internalGatewayHTTPClient := &http.Client{
+		Timeout:   cfg.ClientTimeout,
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(internalClientTransport, mp_authenticator.AuthorizationHeaderKey)),
 	}
 
 	appRepo := applicationRepo()
@@ -211,11 +229,12 @@ func main() {
 		cfgProvider,
 		cfg.OneTimeToken,
 		cfg.OAuth20,
-		pairingAdapters,
+		pa,
 		cfg.Features,
 		metricsCollector,
 		httpClient,
-		internalHTTPClient,
+		internalFQDNHTTPClient,
+		internalGatewayHTTPClient,
 		cfg.SelfRegConfig,
 		cfg.OneTimeToken.Length,
 		adminURL,
@@ -349,32 +368,75 @@ func main() {
 	runMainSrv()
 }
 
-func getPairingAdaptersMapping(ctx context.Context, filePath string) (map[string]string, error) {
+func getPairingAdaptersMapping(ctx context.Context, k8sClient *kubernetes.Clientset, adaptersCfg configprovider.PairingAdapterConfig) (*pkgadapters.Adapters, error) {
 	logger := log.C(ctx)
-
-	if filePath == "" {
-		logger.Infof("No configuration for pairing adapters")
-		return nil, nil
-	}
-
-	file, err := os.Open(filePath)
+	logger.Infof("Getting pairing adapter configuration from the cluster...")
+	cm, err := k8sClient.CoreV1().ConfigMaps(adaptersCfg.ConfigmapNamespace).Get(ctx, adaptersCfg.ConfigmapName, metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "while opening pairing adapter configuration file")
+		return nil, err
 	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			logger.Warnf("Got error on closing file with pairing adapters configuration: %v", err)
+
+	adaptersMap := make(map[string]string)
+	if err = json.Unmarshal([]byte(cm.Data[adaptersCfg.ConfigmapKey]), &adaptersMap); err != nil {
+		return nil, err
+	}
+
+	logger.Infof("Successfully read pairing adapters configuration from the cluster")
+
+	a := pkgadapters.NewAdapters()
+	a.Update(adaptersMap)
+
+	logger.Infof("Successfully updated pairing adapters configuration")
+
+	return a, nil
+}
+
+func startPairingAdaptersWatcher(ctx context.Context, k8sClient *kubernetes.Clientset, adapters *pkgadapters.Adapters, adaptersCfg configprovider.PairingAdapterConfig) {
+	processEventsFunc := func(ctx context.Context, events <-chan watch.Event) {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case ev, ok := <-events:
+				if !ok {
+					return
+				}
+				switch ev.Type {
+				case watch.Added:
+					fallthrough
+				case watch.Modified:
+					log.C(ctx).Info("Updating pairing adapter configuration...")
+					cm, ok := ev.Object.(*v1.ConfigMap)
+					if !ok {
+						log.C(ctx).Error("Unexpected error: object is not configmap. Try again")
+						continue
+					}
+					aCfg, found := cm.Data[adaptersCfg.ConfigmapKey]
+					if !found {
+						log.C(ctx).Errorf("Did not find the expected key: %s in the pairing adapter configmap", adaptersCfg.ConfigmapKey)
+						return
+					}
+					adaptersCM := make(map[string]string)
+					if err := json.Unmarshal([]byte(aCfg), &adaptersCM); err != nil {
+						log.C(ctx).Error("error while unmarshalling adapters configuration")
+						return
+					}
+					adapters.Update(adaptersCM)
+					log.C(ctx).Info("Successfully updated in memory pairing adapter configuration")
+				case watch.Deleted:
+					log.C(ctx).Info("Delete event is received, removing pairing adapter configuration")
+					adapters.Update(nil)
+				case watch.Error:
+					log.C(ctx).Error("Error event is received, stop pairing adapter configmap watcher and try again...")
+					return
+				}
+			}
 		}
-	}()
-
-	decoder := json.NewDecoder(file)
-	out := map[string]string{}
-	err = decoder.Decode(&out)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while decoding file [%s] to map[string]string", filePath)
 	}
-	logger.Infof("Successfully read pairing adapters configuration")
-	return out, nil
+
+	cmManager := k8sClient.CoreV1().ConfigMaps(adaptersCfg.ConfigmapNamespace)
+	w := kube.NewWatcher(ctx, cmManager, processEventsFunc, time.Second, adaptersCfg.ConfigmapName, adaptersCfg.WatcherCorrelationID)
+	go w.Run(ctx)
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
