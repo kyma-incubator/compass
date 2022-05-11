@@ -8,7 +8,7 @@ set -o errexit
 
 function is_ready(){
     local URL=${1}
-    local HTTP_CODE=$(curl -s -o /dev/null -I -w "%{http_code}" ${URL})
+    local HTTP_CODE=$(curl -fLSs -o /dev/null -I -w "%{http_code}" ${URL})
     if [[ "${HTTP_CODE}" == "200" ]]; then
         return 0
     fi 
@@ -25,9 +25,9 @@ function execute_gql_query(){
     if [[ "null" == "${FILE_LOCATION}" ]] || [[ -z "${FILE_LOCATION}" ]]; then
         local FLAT_FILE_CONTENT=$(sed 's/\\/\\\\/g' ${FILE_LOCATION} | sed 's/\"/\\"/g' | sed 's/$/\\n/' | tr -d '\n')
         local GQL_QUERY='{ "query": "'${FLAT_FILE_CONTENT}'" }'
-        echo -E ${GQL_QUERY} >> ${BASE_DIR}/gql_query.gql
+        echo -E ${GQL_QUERY} > ${BASE_DIR}/gqlquery.gql
     fi
-    curl --request POST --url ${URL} --header "Content-Type: application/json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}" ${FILE_LOCATION:+"--data"} ${FILE_LOCATION:+"@${BASE_DIR}/gql_query.gql"} 
+    curl -fLSs --request POST --url ${URL} --header "Content-Type: application/json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}" ${FILE_LOCATION:+"--data"} ${FILE_LOCATION:+"@${BASE_DIR}/gql_query.gql"} 
 }
 
 compare_values() {
@@ -154,8 +154,8 @@ done
 
 . ${COMPASS_DIR}/components/director/hack/jwt_generator.sh
 
-read -r DIRECTOR_TOKEN <<< $(get_token)
-read -r INTERNAL_TENANT_ID <<< $(get_internal_tenant)
+read -r DIRECTOR_TOKEN <<< "$(get_token)"
+read -r INTERNAL_TENANT_ID <<< "$(get_internal_tenant)"
 echo "Compass is ready"
 
 echo "Starting ord-service"
@@ -332,7 +332,7 @@ GET_BUNDLE_1_EVENT_DEF_1_ID=$(echo -E ${GET_BUNDLE_1_EVENT_DEF_1} | jq '.id')
 compare_values ${CRT_BUNDLE_1_EVENT_DEF_1_ID} ${GET_BUNDLE_1_EVENT_DEF_1_ID} "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_1_EVENT_DEF_1_ID}. From Compass get: ${GET_BUNDLE_1_EVENT_DEF_1_ID}"
 
 
-GET_BUNDLES_FROM_ORD_RESULT=$(curl --request GET --url "${ORD_URL}/open-resource-discovery-service/v0/systemInstances?%24expand=consumptionBundles(%24expand%3Dapis%2Cevents)&%24format=json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}")
+GET_BUNDLES_FROM_ORD_RESULT=$(curl -fLSs --request GET --url "${ORD_URL}/open-resource-discovery-service/v0/systemInstances?%24expand=consumptionBundles(%24expand%3Dapis%2Cevents)&%24format=json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}")
 
 echo "Result from get bundles request:"
 echo "---------------------------------"
