@@ -34,7 +34,7 @@ compare_values() {
     local VAR1=${1}
     local VAR2=${2}
     local MESSAGE=${3}
-    if [ "${VAR1}" -ne "${VAR2}" ]; then
+    if [ "${VAR1}" != "${VAR2}" ]; then
         echo "COMPARE ERROR: ${MESSAGE}"
         TEST_RESULT=false
     fi
@@ -154,8 +154,8 @@ done
 
 . ${COMPASS_DIR}/components/director/hack/jwt_generator.sh
 
-DIRECTOR_TOKEN="$(get_token)"
-INTERNAL_TENANT_ID="$(get_internal_tenant)"
+DIRECTOR_TOKEN="$(get_token | tr -d '\n')"
+INTERNAL_TENANT_ID="$(get_internal_tenant | tr -d '\n')"
 echo "Compass is ready"
 
 echo "Starting ord-service"
