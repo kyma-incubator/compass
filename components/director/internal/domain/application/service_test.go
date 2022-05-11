@@ -3203,9 +3203,13 @@ func TestService_Merge(t *testing.T) {
 	labelValue2 := []interface{}{"Easter", "Bunny"}
 	labelValue3 := "int-sys-id"
 
-	srcAppLabels := fixSourceApplicationLabels(labelKey1, labelKey2, labelKey3, labelValue3, srcID, labelValue1)
-	destAppLabels := fixDestinationApplicationLabels(labelKey1, labelKey2, labelKey3, srcID, labelValue2)
-	mergedAppLabels := fixMergedApplicationLabels(labelKey1, labelKey2, labelKey3, srcID, labelValue3)
+	upsertLabelValues := make(map[string]interface{})
+	upsertLabelValues[labelKey1] = []string{"Easter", "Bunny", "Egg"}
+	upsertLabelValues[labelKey2] = labelValue3
+	upsertLabelValues[labelKey3] = "true"
+
+	srcAppLabels := fixApplicationLabels(srcID, labelKey1, labelKey2, labelKey3, labelValue1, labelValue3, "true")
+	destAppLabels := fixApplicationLabels(srcID, labelKey1, labelKey2, labelKey3, labelValue2, "", "false")
 
 	srcModel := fixDetailedModelApplication(t, srcID, tnt, srcName, srcDescription)
 	srcModel.ApplicationTemplateID = &templateID
@@ -3240,6 +3244,7 @@ func TestService_Merge(t *testing.T) {
 		Name                           string
 		AppRepoFn                      func() *automock.ApplicationRepository
 		LabelRepoFn                    func() *automock.LabelRepository
+		LabelUpsertSvcFn               func() *automock.LabelUpsertService
 		RuntimeRepoFn                  func() *automock.RuntimeRepository
 		ExpectedDestinationApplication *model.Application
 		Ctx                            context.Context
@@ -3268,11 +3273,12 @@ func TestService_Merge(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
-				repo.On("Upsert", ctx, tnt, mergedAppLabels[labelKey1]).Return(nil)
-				repo.On("Upsert", ctx, tnt, mergedAppLabels[labelKey2]).Return(nil)
-				repo.On("Upsert", ctx, tnt, mergedAppLabels[labelKey3]).Return(nil)
-				repo.On("DeleteAll", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(nil)
 				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, destModel.ID, upsertLabelValues).Return(nil)
+				return svc
 			},
 			Ctx:                            ctx,
 			DestinationID:                  destID,
@@ -3298,7 +3304,13 @@ func TestService_Merge(t *testing.T) {
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.AssertNotCalled(t, "GetByKey")
+				repo.AssertNotCalled(t, "ListForObject")
 				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.AssertNotCalled(t, "UpsertMultipleLabels")
+				return svc
 			},
 			Ctx:                context.Background(),
 			DestinationID:      destID,
@@ -3324,9 +3336,12 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.LabelRepository{}
 				repo.AssertNotCalled(t, "GetByKey")
 				repo.AssertNotCalled(t, "ListForObject")
-				repo.AssertNotCalled(t, "Upsert")
-				repo.AssertNotCalled(t, "DeleteAll")
 				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.AssertNotCalled(t, "UpsertMultipleLabels")
+				return svc
 			},
 			Ctx:                ctx,
 			DestinationID:      destID,
@@ -3353,9 +3368,12 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.LabelRepository{}
 				repo.AssertNotCalled(t, "GetByKey")
 				repo.AssertNotCalled(t, "ListForObject")
-				repo.AssertNotCalled(t, "Upsert")
-				repo.AssertNotCalled(t, "DeleteAll")
 				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.AssertNotCalled(t, "UpsertMultipleLabels")
+				return svc
 			},
 			Ctx:                ctx,
 			DestinationID:      destID,
@@ -3383,9 +3401,12 @@ func TestService_Merge(t *testing.T) {
 				repo.AssertNotCalled(t, "GetByKey")
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
-				repo.AssertNotCalled(t, "Upsert")
-				repo.AssertNotCalled(t, "DeleteAll")
 				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.AssertNotCalled(t, "UpsertMultipleLabels")
+				return svc
 			},
 			Ctx:                ctx,
 			DestinationID:      destID,
@@ -3413,9 +3434,12 @@ func TestService_Merge(t *testing.T) {
 				repo.AssertNotCalled(t, "GetByKey")
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
-				repo.AssertNotCalled(t, "Upsert")
-				repo.AssertNotCalled(t, "DeleteAll")
 				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.AssertNotCalled(t, "UpsertMultipleLabels")
+				return svc
 			},
 			Ctx:                ctx,
 			DestinationID:      destID,
@@ -3443,9 +3467,12 @@ func TestService_Merge(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
-				repo.AssertNotCalled(t, "Upsert")
-				repo.AssertNotCalled(t, "DeleteAll")
 				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.AssertNotCalled(t, "UpsertMultipleLabels")
+				return svc
 			},
 			Ctx:                ctx,
 			DestinationID:      destID,
@@ -3473,39 +3500,12 @@ func TestService_Merge(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
-				repo.On("DeleteAll", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(nil)
-				repo.AssertNotCalled(t, "Upsert")
 				return repo
 			},
-			Ctx:                ctx,
-			DestinationID:      destID,
-			SourceID:           srcID,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "Error when delete labels fails",
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
-				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
-				repo.AssertNotCalled(t, "Update")
-				repo.On("Delete", ctx, tnt, srcModel.ID).Return(nil).Once()
-				return repo
-			},
-			RuntimeRepoFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("ListAll", ctx, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
-				return repo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
-				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
-				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
-				repo.On("DeleteAll", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(testErr)
-				repo.AssertNotCalled(t, "Upsert")
-				return repo
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.AssertNotCalled(t, "UpsertMultipleLabels")
+				return svc
 			},
 			Ctx:                ctx,
 			DestinationID:      destID,
@@ -3533,9 +3533,12 @@ func TestService_Merge(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
-				repo.On("DeleteAll", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(nil)
-				repo.On("Upsert", ctx, tnt, mergedAppLabels[labelKey1]).Return(testErr)
 				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, destModel.ID, upsertLabelValues).Return(testErr)
+				return svc
 			},
 			Ctx:                ctx,
 			DestinationID:      destID,
@@ -3549,7 +3552,8 @@ func TestService_Merge(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
 			runtimeRepo := testCase.RuntimeRepoFn()
 			labelRepo := testCase.LabelRepoFn()
-			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, nil, nil, nil, nil)
+			labelUpserSvc := testCase.LabelUpsertSvcFn()
+			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, labelUpserSvc, nil, nil, nil)
 
 			// WHEN
 			destApp, err := svc.Merge(testCase.Ctx, testCase.DestinationID, testCase.SourceID)
@@ -3566,13 +3570,11 @@ func TestService_Merge(t *testing.T) {
 			appRepo.AssertExpectations(t)
 			runtimeRepo.AssertExpectations(t)
 			labelRepo.AssertExpectations(t)
-
+			labelUpserSvc.AssertExpectations(t)
 		})
 
-		srcAppLabels = fixSourceApplicationLabels(labelKey1, labelKey2, labelKey3, labelValue3, srcID, labelValue1)
-		destAppLabels = fixDestinationApplicationLabels(labelKey1, labelKey2, labelKey3, srcID, labelValue2)
-		mergedAppLabels = fixMergedApplicationLabels(labelKey1, labelKey2, labelKey3, srcID, labelValue3)
-
+		srcAppLabels = fixApplicationLabels(srcID, labelKey1, labelKey2, labelKey3, labelValue1, labelValue3, "true")
+		destAppLabels = fixApplicationLabels(srcID, labelKey1, labelKey2, labelKey3, labelValue2, "", "false")
 	}
 }
 

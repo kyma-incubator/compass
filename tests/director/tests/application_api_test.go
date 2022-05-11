@@ -26,6 +26,8 @@ const (
 	deleteWebhookCategory       = "delete webhook"
 	addWebhookCategory          = "add webhook"
 	updateWebhookCategory       = "update webhook"
+	managedLabel                = "managed"
+	sccLabel                    = "scc"
 )
 
 func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
@@ -1493,7 +1495,11 @@ func TestMergeApplications(t *testing.T) {
 	description := ptr.String("app description")
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 	namePlaceholder := "name"
+	managedLabelValue := "true"
+	sccLabelValue := "cloud connector"
 	expectedProductType := "MergeTemplate"
+	newFormation := "formation-merge-applications-e2e"
+	destScenariosValue := []interface{}{"DEFAULT", "formation-merge-applications-e2e"}
 
 	appTmplInput := fixtures.FixApplicationTemplate(expectedProductType)
 	appTmplInput.ApplicationInput.Name = "{{name}}"
@@ -1531,29 +1537,25 @@ func TestMergeApplications(t *testing.T) {
 		},
 	}
 
+	t.Logf("Should create source application")
 	appFromTmplSrcGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmplSrc)
 	require.NoError(t, err)
-
-	appFromTmplDestGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmplDest)
-	require.NoError(t, err)
-
-	// Create Source Application
 	createAppFromTmplFirstRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplSrcGQL)
 	outputSrcApp := graphql.ApplicationExt{}
-
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, createAppFromTmplFirstRequest, &outputSrcApp)
-	//defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &outputSrcApp)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &outputSrcApp)
 	require.NoError(t, err)
 
-	// Create Destination Application
+	t.Logf("Should create destination application")
+	appFromTmplDestGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmplDest)
+	require.NoError(t, err)
 	createAppFromTmplSecondRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplDestGQL)
 	outputDestApp := graphql.ApplicationExt{}
-
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, createAppFromTmplSecondRequest, &outputDestApp)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &outputDestApp)
 	require.NoError(t, err)
 
-	// Update Source Application with more data
+	t.Logf("Should update source application with more data")
 	updateInput := fixtures.FixSampleApplicationUpdateInput("after")
 	updateInput.ProviderName = providerName
 	updateInput.HealthCheckURL = healthURL
@@ -1566,7 +1568,25 @@ func TestMergeApplications(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateRequest, &updatedApp)
 	require.NoError(t, err)
 
+	fixtures.SetApplicationLabelWithTenant(t, ctx, certSecuredGraphQLClient, tenantId, outputSrcApp.ID, managedLabel, managedLabelValue)
+	fixtures.SetApplicationLabelWithTenant(t, ctx, certSecuredGraphQLClient, tenantId, outputSrcApp.ID, sccLabel, sccLabelValue)
+
+	t.Logf("Should create formation: %s", newFormation)
+	var formation graphql.Formation
+	createReq := fixtures.FixCreateFormationRequest(newFormation)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createReq, &formation)
+	require.NoError(t, err)
+	require.Equal(t, newFormation, formation.Name)
+
+	t.Logf("Assign application to formation %s", newFormation)
+	assignReq := fixtures.FixAssignFormationRequest(outputSrcApp.ID, "APPLICATION", newFormation)
+	var assignFormation graphql.Formation
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
+	require.NoError(t, err)
+	require.Equal(t, newFormation, assignFormation.Name)
+
 	// WHEN
+	t.Logf("Should be able to merge application %s into %s", outputSrcApp.Name, outputDestApp.Name)
 	destApp := graphql.ApplicationExt{}
 	mergeRequest := fixtures.FixMergeApplicationsRequest(outputSrcApp.ID, outputDestApp.ID)
 	saveExample(t, mergeRequest.Query(), "merge applications")
@@ -1578,6 +1598,9 @@ func TestMergeApplications(t *testing.T) {
 	assert.Equal(t, description, destApp.Description)
 	assert.Equal(t, healthURL, destApp.HealthCheckURL)
 	assert.Equal(t, providerName, destApp.ProviderName)
+	assert.Equal(t, managedLabelValue, destApp.Labels[managedLabel])
+	assert.Equal(t, sccLabelValue, destApp.Labels[sccLabel])
+	assert.Equal(t, destScenariosValue, destApp.Labels[ScenariosLabel])
 
 	srcApp := graphql.ApplicationExt{}
 	getSrcAppReq := fixtures.FixGetApplicationRequest(outputSrcApp.ID)

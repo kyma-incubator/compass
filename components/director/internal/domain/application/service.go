@@ -78,7 +78,6 @@ type LabelRepository interface {
 	ListGlobalByKeyAndObjects(ctx context.Context, objectType model.LabelableObject, objectIDs []string, key string) ([]*model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
-	Upsert(ctx context.Context, tenant string, label *model.Label) error
 }
 
 // WebhookRepository missing godoc
@@ -781,28 +780,20 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 		return nil, err
 	}
 
-	log.C(ctx).Infof("Deleting source labels for application with id %s", srcID)
-	if err := s.labelRepo.DeleteAll(ctx, appTenant, model.ApplicationLabelableObject, srcID); err != nil {
-		return nil, err
-	}
-
 	log.C(ctx).Infof("Updating destination app with id %s", srcID)
 	if err := s.appRepo.Update(ctx, appTenant, destApp); err != nil {
 		return nil, err
 	}
 
-	for _, destAppLabel := range destAppLabelsMerged {
-		log.C(ctx).Infof("Upserting destination label with id %s", destAppLabel.ID)
-		if err := s.labelRepo.Upsert(ctx, appTenant, destAppLabel); err != nil {
-			return nil, err
-		}
+	if err := s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, destID, destAppLabelsMerged); err != nil {
+		return nil, err
 	}
 
 	return destApp, nil
 }
 
 // handleMergeLabels merges source labels into destination labels
-func (s *service) handleMergeLabels(srcAppLabels, destAppLabels map[string]*model.Label) (map[string]*model.Label, error) {
+func (s *service) handleMergeLabels(srcAppLabels, destAppLabels map[string]*model.Label) (map[string]interface{}, error) {
 	destIntSysID := fmt.Sprintf("%v", destAppLabels[intSysKey].Value)
 	srcIntSysID := fmt.Sprintf("%v", srcAppLabels[intSysKey].Value)
 	if len(destIntSysID) == 0 && len(srcIntSysID) > 0 {
@@ -819,7 +810,7 @@ func (s *service) handleMergeLabels(srcAppLabels, destAppLabels map[string]*mode
 		return nil, errors.Errorf("error while converting destination scenario with ID %s to slice", destAppLabels[model.ScenariosKey].ID)
 	}
 
-	srcScenariosStrSlice := make([]string, len(srcScenarios))
+	srcScenariosStrSlice := make([]string, 0, len(srcScenarios))
 	for _, srcScenario := range srcScenarios {
 		srcScenarioStr, ok := srcScenario.(string)
 		if !ok {
@@ -840,7 +831,7 @@ func (s *service) handleMergeLabels(srcAppLabels, destAppLabels map[string]*mode
 	}
 
 	for _, srcScenario := range srcScenariosStrSlice {
-		if len(srcScenario) > 0 && !containsStr(destScenariosStrSlice, srcScenario) {
+		if !containsStr(destScenariosStrSlice, srcScenario) {
 			destScenariosStrSlice = append(destScenariosStrSlice, srcScenario)
 		}
 	}
@@ -852,7 +843,12 @@ func (s *service) handleMergeLabels(srcAppLabels, destAppLabels map[string]*mode
 	destAppLabels[model.ScenariosKey].Value = destScenariosStrSlice
 	destAppLabels[managedKey].Value = srcAppLabels[managedKey].Value
 
-	return destAppLabels, nil
+	conv := make(map[string]interface{}, len(destAppLabels))
+	for key, val := range destAppLabels {
+		conv[key] = val.Value
+	}
+
+	return conv, nil
 }
 
 // ensureApplicationNotPartOfScenarioWithRuntime Checks if an application has scenarios associated with it. if a runtime is part of any scenario, then the application is considered being used by that runtime.
