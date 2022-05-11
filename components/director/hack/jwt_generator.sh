@@ -22,10 +22,10 @@ DB_NAME="${DB_NAME:-"compass"}"
 DB_PORT="${DB_PORT:-"5432"}"
 DB_HOST="${DB_HOST:-"127.0.0.1"}"
 
-read -r INTERNAL_TENANT_ID <<< $(get_internal_tenant)
+read -r INTERNAL_TENANT_ID <<< "$(get_internal_tenant)"
 echo "Internal Tenant ID for default tenant from dump:"
-echo -E ${INTERNAL_TENANT_ID}
+echo -E "${INTERNAL_TENANT_ID}"
 
-read -r JWT_TOKEN <<< $(get_token)
+read -r JWT_TOKEN <<< "$(get_token)"
 echo "Use the following JWT token when requesting Director as default tenant:"
-echo -E ${JWT_TOKEN}
+echo -E "${JWT_TOKEN}"

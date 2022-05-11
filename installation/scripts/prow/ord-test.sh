@@ -8,7 +8,7 @@ set -o errexit
 
 function is_ready(){
     local URL=${1}
-    local HTTP_CODE=$(curl -fLSs -o /dev/null -I -w "%{http_code}" ${URL})
+    local HTTP_CODE=$(curl -s -o /dev/null -I -w "%{http_code}" ${URL})
     if [[ "${HTTP_CODE}" == "200" ]]; then
         return 0
     fi 
@@ -27,7 +27,7 @@ function execute_gql_query(){
         local GQL_QUERY='{ "query": "'${FLAT_FILE_CONTENT}'" }'
         echo -E ${GQL_QUERY} > ${BASE_DIR}/gqlquery.gql
     fi
-    curl -fLSs --request POST --url ${URL} --header "Content-Type: application/json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}" ${FILE_LOCATION:+"--data"} ${FILE_LOCATION:+"@${BASE_DIR}/gql_query.gql"} 
+    curl -s --request POST --url ${URL} --header "Content-Type: application/json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}" ${FILE_LOCATION:+"--data"} ${FILE_LOCATION:+"@${BASE_DIR}/gql_query.gql"} 
 }
 
 compare_values() {
@@ -154,8 +154,8 @@ done
 
 . ${COMPASS_DIR}/components/director/hack/jwt_generator.sh
 
-read -r DIRECTOR_TOKEN <<< "$(get_token)"
-read -r INTERNAL_TENANT_ID <<< "$(get_internal_tenant)"
+DIRECTOR_TOKEN="$(get_token)"
+INTERNAL_TENANT_ID="$(get_internal_tenant)"
 echo "Compass is ready"
 
 echo "Starting ord-service"
@@ -187,7 +187,7 @@ echo "ord-test start!"
 echo "Register applicaiton ..."
 REG_APP_FILE_LOCATION="${COMPASS_DIR}/components/director/examples/register-application/register-application-with-bundles.graphql"
 COMPASS_GQL_URL=${COMPASS_URL}/graphql
-read -r CREATE_APP_IN_COMPASS_RESULT <<< "$(execute_gql_query "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${REG_APP_FILE_LOCATION}")"
+CREATE_APP_IN_COMPASS_RESULT="$(execute_gql_query "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${REG_APP_FILE_LOCATION}")"
 
 echo "Result from app creation request:"
 echo "---------------------------------"
@@ -216,7 +216,7 @@ CRT_BUNDLE_1_EVENT_DEF_0_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.dat
 CRT_BUNDLE_1_EVENT_DEF_1_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq '.data.result.bundles.data[1].eventDefinitions.data[1].id')
 
 GET_APPS_FILE_LOCATION="${COMPASS_DIR}/components/director/examples/query-applications/query-applications.graphql"
-read -r GET_APPS_FROM_COMPASS_RESULT <<< "$(execute_gql_query "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${GET_APPS_FILE_LOCATION}")"
+GET_APPS_FROM_COMPASS_RESULT="$(execute_gql_query "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${GET_APPS_FILE_LOCATION}")"
 
 echo "Result from get apps request:"
 echo "---------------------------------"
@@ -332,7 +332,7 @@ GET_BUNDLE_1_EVENT_DEF_1_ID=$(echo -E ${GET_BUNDLE_1_EVENT_DEF_1} | jq '.id')
 compare_values ${CRT_BUNDLE_1_EVENT_DEF_1_ID} ${GET_BUNDLE_1_EVENT_DEF_1_ID} "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_1_EVENT_DEF_1_ID}. From Compass get: ${GET_BUNDLE_1_EVENT_DEF_1_ID}"
 
 
-GET_BUNDLES_FROM_ORD_RESULT=$(curl -fLSs --request GET --url "${ORD_URL}/open-resource-discovery-service/v0/systemInstances?%24expand=consumptionBundles(%24expand%3Dapis%2Cevents)&%24format=json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}")
+GET_BUNDLES_FROM_ORD_RESULT=$(curl -s --request GET --url "${ORD_URL}/open-resource-discovery-service/v0/systemInstances?%24expand=consumptionBundles(%24expand%3Dapis%2Cevents)&%24format=json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}")
 
 echo "Result from get bundles request:"
 echo "---------------------------------"
