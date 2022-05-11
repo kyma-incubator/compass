@@ -252,7 +252,7 @@ GET_BUNDLE_0_API_DEFS_COUNT=$(echo -E ${GET_BUNDLE_0} | jq -r '.apiDefinitions.d
 compare_values "${CRT_BUNDLE_0_API_DEFS_COUNT}" "${GET_BUNDLE_0_API_DEFS_COUNT}" "Applicaiton bundles API Definitions count did not match. On creation: ${CRT_BUNDLE_0_API_DEFS_COUNT}. From Compass get: ${GET_BUNDLE_0_API_DEFS_COUNT}"
 
 GET_BUNDLE_0_API_DEF_0=$(echo -E ${GET_BUNDLE_0} | jq -c --arg apidefid ${CRT_BUNDLE_0_API_DEF_0_ID} '.apiDefinitions.data[] | select(.id==$apidefid)')
-check_value" ${GET_BUNDLE_0_API_DEF_0}" "API Def with ID: ${CRT_BUNDLE_0_API_DEF_0_ID} not found in Compass"
+check_value "${GET_BUNDLE_0_API_DEF_0}" "API Def with ID: ${CRT_BUNDLE_0_API_DEF_0_ID} not found in Compass"
 
 GET_BUNDLE_0_API_DEF_0_ID=$(echo -E ${GET_BUNDLE_0_API_DEF_0} | jq -r '.id')
 compare_values "${CRT_BUNDLE_0_API_DEF_0_ID}" "${GET_BUNDLE_0_API_DEF_0_ID}" "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_0_API_DEF_0_ID}. From Compass get: ${GET_BUNDLE_0_API_DEF_0_ID}"
