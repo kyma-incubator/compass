@@ -67,6 +67,9 @@ func (g *Graphqlizer) ApplicationUpdateInputToGQL(in graphql.ApplicationUpdateIn
 		{{- if .HealthCheckURL }}
 		healthCheckURL: "{{ .HealthCheckURL }}",
 		{{- end }}
+		{{- if .BaseURL }}
+		baseUrl: "{{ .BaseURL }}",
+		{{- end }}
 		{{- if .IntegrationSystemID }}
 		integrationSystemID: "{{ .IntegrationSystemID }}",
 		{{- end }}
@@ -181,6 +184,29 @@ func (g *Graphqlizer) CredentialDataInputToGQL(in *graphql.CredentialDataInput) 
 	}`)
 }
 
+// OneTimeTokenInputToGQL missing godoc
+func (g *Graphqlizer) OneTimeTokenInputToGQL(in *graphql.OneTimeTokenInput) (string, error) {
+	return g.genericToGQL(in, ` {
+			token: "{{ .Token }}",
+			{{- if .ConnectorURL }}
+			connectorURL: {{ .ConnectorURL }},
+			{{- end }}
+			used: "{{ .Used }}"
+			expiresAt: "{{ .ExpiresAt }}",
+			createdAt: "{{ .CreatedAt }}",
+			usedAt: "{{ .UsedAt }}",
+			{{- if .Raw }}
+			raw: "{{ .Raw }}",
+			{{- end }}
+			{{- if .RawEncoded }}
+			rawEncoded: "{{ .RawEncoded }}",
+			{{- end }}
+			{{- if .Type }}
+			type: {{ .Type }},
+			{{- end }}
+	}`)
+}
+
 // CSRFTokenCredentialRequestAuthInputToGQL missing godoc
 func (g *Graphqlizer) CSRFTokenCredentialRequestAuthInputToGQL(in *graphql.CSRFTokenCredentialRequestAuthInput) (string, error) {
 	in.AdditionalHeadersSerialized = quoteHTTPHeadersSerialized(in.AdditionalHeadersSerialized)
@@ -232,6 +258,12 @@ func (g *Graphqlizer) AuthInputToGQL(in *graphql.AuthInput) (string, error) {
 		{{- end }}
 		{{- if .RequestAuth }}
 		requestAuth: {{ CredentialRequestAuthInputToGQL .RequestAuth }},
+		{{- end }}
+		{{- if .CertCommonName }}
+		requestAuth: {{ .CertCommonName }},
+		{{- end }}
+		{{- if .OneTimeToken }}
+		oneTimeToken: {{ OneTimeTokenInputToGQL .OneTimeToken }}
 		{{- end }}
 	}`)
 }
@@ -403,6 +435,14 @@ func (g *Graphqlizer) RuntimeInputToGQL(in graphql.RuntimeInput) (string, error)
 		{{- if .StatusCondition }}
 		statusCondition: {{ .StatusCondition }},
 		{{- end }}
+	}`)
+}
+
+// RuntimeContextInputToGQL missing godoc
+func (g *Graphqlizer) RuntimeContextInputToGQL(in graphql.RuntimeContextInput) (string, error) {
+	return g.genericToGQL(in, `{
+		key: "{{.Key}}",
+		value: "{{.Value}}",
 	}`)
 }
 
@@ -680,6 +720,7 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["BundleInstanceAuthStatusInputToGQL"] = g.BundleInstanceAuthStatusInputToGQL
 	fm["BundleCreateInputToGQL"] = g.BundleCreateInputToGQL
 	fm["LabelSelectorInputToGQL"] = g.LabelSelectorInputToGQL
+	fm["OneTimeTokenInputToGQL"] = g.OneTimeTokenInputToGQL
 	fm["quote"] = strconv.Quote
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)

@@ -25,8 +25,8 @@ func BenchmarkSystemBundles(b *testing.B) {
 
 	appsCount := 15
 	for i := 0; i < appsCount; i++ {
-		app := fixtures.CreateApp(fmt.Sprintf("ord-service-%d", i))
-		appResp, err := fixtures.RegisterApplicationFromInput(b, ctx, certSecuredGraphQLClient, defaultTestTenant, app)
+		appInput := fixtures.CreateApp(fmt.Sprintf("ord-service-%d", i))
+		appResp, err := fixtures.RegisterApplicationFromInput(b, ctx, certSecuredGraphQLClient, defaultTestTenant, appInput)
 		defer fixtures.CleanupApplication(b, ctx, certSecuredGraphQLClient, defaultTestTenant, &appResp)
 		require.NoError(b, err)
 	}

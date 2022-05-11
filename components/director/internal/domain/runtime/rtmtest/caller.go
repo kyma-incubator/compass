@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	"github.com/kyma-incubator/compass/components/director/pkg/config"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/stretchr/testify/mock"
@@ -25,7 +25,7 @@ const (
 var TestError = errors.New("test-error")
 
 // CallerThatDoesNotGetCalled missing godoc
-func CallerThatDoesNotGetCalled(t *testing.T, _ runtime.SelfRegConfig, _ string) *automock.ExternalSvcCallerProvider {
+func CallerThatDoesNotGetCalled(t *testing.T, _ config.SelfRegConfig, _ string) *automock.ExternalSvcCallerProvider {
 	svcCaller := &automock.ExternalSvcCaller{}
 	svcCaller.AssertNotCalled(t, "Call", mock.Anything)
 
@@ -35,7 +35,7 @@ func CallerThatDoesNotGetCalled(t *testing.T, _ runtime.SelfRegConfig, _ string)
 }
 
 // CallerThatDoesNotSucceed missing godoc
-func CallerThatDoesNotSucceed(_ *testing.T, cfg runtime.SelfRegConfig, region string) *automock.ExternalSvcCallerProvider {
+func CallerThatDoesNotSucceed(_ *testing.T, cfg config.SelfRegConfig, region string) *automock.ExternalSvcCallerProvider {
 	svcCaller := &automock.ExternalSvcCaller{}
 	svcCaller.On("Call", mock.Anything).Return(nil, TestError).Once()
 
@@ -45,7 +45,7 @@ func CallerThatDoesNotSucceed(_ *testing.T, cfg runtime.SelfRegConfig, region st
 }
 
 // CallerThatReturnsBadStatus missing godoc
-func CallerThatReturnsBadStatus(_ *testing.T, cfg runtime.SelfRegConfig, region string) *automock.ExternalSvcCallerProvider {
+func CallerThatReturnsBadStatus(_ *testing.T, cfg config.SelfRegConfig, region string) *automock.ExternalSvcCallerProvider {
 	svcCaller := &automock.ExternalSvcCaller{}
 	response := httptest.ResponseRecorder{
 		Code: http.StatusBadRequest,
@@ -59,8 +59,8 @@ func CallerThatReturnsBadStatus(_ *testing.T, cfg runtime.SelfRegConfig, region 
 }
 
 // CallerThatGetsCalledOnce missing godoc
-func CallerThatGetsCalledOnce(statusCode int) func(*testing.T, runtime.SelfRegConfig, string) *automock.ExternalSvcCallerProvider {
-	return func(t *testing.T, cfg runtime.SelfRegConfig, region string) *automock.ExternalSvcCallerProvider {
+func CallerThatGetsCalledOnce(statusCode int) func(*testing.T, config.SelfRegConfig, string) *automock.ExternalSvcCallerProvider {
+	return func(t *testing.T, cfg config.SelfRegConfig, region string) *automock.ExternalSvcCallerProvider {
 		svcCaller := &automock.ExternalSvcCaller{}
 		response := httptest.ResponseRecorder{
 			Code: statusCode,
@@ -75,7 +75,7 @@ func CallerThatGetsCalledOnce(statusCode int) func(*testing.T, runtime.SelfRegCo
 }
 
 // CallerProviderThatFails missing godoc
-func CallerProviderThatFails(_ *testing.T, cfg runtime.SelfRegConfig, region string) *automock.ExternalSvcCallerProvider {
+func CallerProviderThatFails(_ *testing.T, cfg config.SelfRegConfig, region string) *automock.ExternalSvcCallerProvider {
 	svcCallerProvider := &automock.ExternalSvcCallerProvider{}
 	svcCallerProvider.On("GetCaller", cfg, region).Return(nil, TestError).Once()
 	return svcCallerProvider

@@ -8,4 +8,5 @@ metadata:
     release: {{ .Release.Name }}
 data:
   {{- (.Files.Glob .Values.configFile.name ).AsConfig | nindent 2 }}
+{{ toYaml .Values.global.scopes | indent 4 }}
     applicationHideSelectors: {{- .Values.applicationHideSelectors | nindent 6 }}

@@ -27,6 +27,7 @@ const (
 	Subaccount TenantType = "subaccount"
 
 	TestDefaultCustomerTenant                                  = "Test_DefaultCustomer"
+	TestSystemFetcherTenant                                    = "TestSystemFetcherAccount"
 	TenantSeparationTenantName                                 = "TestTenantSeparation"
 	TenantsQueryNotInitializedTenantName                       = "TestTenantsQueryTenantNotInitialized"
 	TenantsQueryInitializedTenantName                          = "TestTenantsQueryTenantInitialized"
@@ -42,6 +43,7 @@ const (
 	ApplicationsForRuntimeWithHiddenAppsTenantName             = "TestApplicationsForRuntimeWithHiddenApps"
 	TestDeleteApplicationIfInScenario                          = "TestDeleteApplicationIfInScenario"
 	TestProviderSubaccount                                     = "TestProviderSubaccount"
+	TestConsumerSubaccount                                     = "TestConsumerSubaccount"
 	TestIntegrationSystemManagedSubaccount                     = "TestIntegrationSystemManagedSubaccount"
 	TestIntegrationSystemManagedAccount                        = "TestIntegrationSystemManagedAccount"
 )
@@ -67,6 +69,14 @@ func (mgr *TestTenantsManager) Init() {
 		testDefaultTenant: {
 			Name:           testDefaultTenant,
 			ExternalTenant: "5577cf46-4f78-45fa-b55f-a42a3bdba868",
+			ProviderName:   testProvider,
+			Type:           Account,
+			Parent:         TestDefaultCustomerTenant,
+			Status:         Active,
+		},
+		TestSystemFetcherTenant: {
+			Name:           TestSystemFetcherTenant,
+			ExternalTenant: "c395681d-11dd-4cde-bbcf-570b4a153e79",
 			ProviderName:   testProvider,
 			Type:           Account,
 			Parent:         TestDefaultCustomerTenant,
@@ -185,6 +195,14 @@ func (mgr *TestTenantsManager) Init() {
 			Status:         Active,
 			Parent:         testDefaultTenant,
 		},
+		TestConsumerSubaccount: {
+			Name:           TestConsumerSubaccount,
+			ExternalTenant: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae",
+			ProviderName:   testProvider,
+			Type:           Subaccount,
+			Status:         Active,
+			Parent:         ApplicationsForRuntimeTenantName,
+		},
 		TestIntegrationSystemManagedSubaccount: {
 			Name:           TestIntegrationSystemManagedSubaccount,
 			ExternalTenant: "3cfcdd62-320d-403b-b66a-4ee3cdd06947",
@@ -225,6 +243,10 @@ func (mgr TestTenantsManager) GetIDByName(t require.TestingT, name string) strin
 
 func (mgr TestTenantsManager) GetDefaultTenantID() string {
 	return mgr.tenantsByName[testDefaultTenant].ExternalTenant
+}
+
+func (mgr TestTenantsManager) GetSystemFetcherTenantID() string {
+	return mgr.tenantsByName[TestSystemFetcherTenant].ExternalTenant
 }
 
 func (mgr TestTenantsManager) EmptyTenant() string {

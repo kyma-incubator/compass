@@ -60,8 +60,11 @@ type APISpecInput struct {
 }
 
 type AppSystemAuth struct {
-	ID   string `json:"id"`
-	Auth *Auth  `json:"auth"`
+	ID                string                   `json:"id"`
+	Auth              *Auth                    `json:"auth"`
+	Type              *SystemAuthReferenceType `json:"type"`
+	TenantID          *string                  `json:"tenantId"`
+	ReferenceObjectID *string                  `json:"referenceObjectId"`
 }
 
 func (AppSystemAuth) IsSystemAuth() {}
@@ -146,6 +149,7 @@ type ApplicationUpdateInput struct {
 	Description *string `json:"description"`
 	// **Validation:** valid URL, max=256
 	HealthCheckURL      *string                     `json:"healthCheckURL"`
+	BaseURL             *string                     `json:"baseUrl"`
 	IntegrationSystemID *string                     `json:"integrationSystemID"`
 	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
 }
@@ -172,6 +176,8 @@ type AuthInput struct {
 	AdditionalQueryParams           QueryParams                 `json:"additionalQueryParams"`
 	AdditionalQueryParamsSerialized *QueryParamsSerialized      `json:"additionalQueryParamsSerialized"`
 	RequestAuth                     *CredentialRequestAuthInput `json:"requestAuth"`
+	CertCommonName                  *string                     `json:"certCommonName"`
+	OneTimeToken                    *OneTimeTokenInput          `json:"oneTimeToken"`
 }
 
 type AutomaticScenarioAssignment struct {
@@ -438,8 +444,11 @@ type HealthCheckPage struct {
 func (HealthCheckPage) IsPageable() {}
 
 type IntSysSystemAuth struct {
-	ID   string `json:"id"`
-	Auth *Auth  `json:"auth"`
+	ID                string                   `json:"id"`
+	Auth              *Auth                    `json:"auth"`
+	Type              *SystemAuthReferenceType `json:"type"`
+	TenantID          *string                  `json:"tenantId"`
+	ReferenceObjectID *string                  `json:"referenceObjectId"`
 }
 
 func (IntSysSystemAuth) IsSystemAuth() {}
@@ -510,6 +519,18 @@ type OAuthCredentialDataInput struct {
 	URL string `json:"url"`
 }
 
+type OneTimeTokenInput struct {
+	Token        string            `json:"token"`
+	ConnectorURL *string           `json:"connectorURL"`
+	Used         bool              `json:"used"`
+	ExpiresAt    Timestamp         `json:"expiresAt"`
+	CreatedAt    Timestamp         `json:"createdAt"`
+	UsedAt       Timestamp         `json:"usedAt"`
+	Raw          *string           `json:"raw"`
+	RawEncoded   *string           `json:"rawEncoded"`
+	Type         *OneTimeTokenType `json:"type"`
+}
+
 type PageInfo struct {
 	StartCursor PageCursor `json:"startCursor"`
 	EndCursor   PageCursor `json:"endCursor"`
@@ -532,8 +553,6 @@ type RuntimeContextInput struct {
 	// **Validation:** required max=512, alphanumeric chartacters and underscore
 	Key   string `json:"key"`
 	Value string `json:"value"`
-	// **Validation:** key: required, alphanumeric with underscore
-	Labels Labels `json:"labels"`
 }
 
 type RuntimeContextPage struct {
@@ -576,11 +595,18 @@ type RuntimeStatus struct {
 }
 
 type RuntimeSystemAuth struct {
-	ID   string `json:"id"`
-	Auth *Auth  `json:"auth"`
+	ID                string                   `json:"id"`
+	Auth              *Auth                    `json:"auth"`
+	Type              *SystemAuthReferenceType `json:"type"`
+	TenantID          *string                  `json:"tenantId"`
+	ReferenceObjectID *string                  `json:"referenceObjectId"`
 }
 
 func (RuntimeSystemAuth) IsSystemAuth() {}
+
+type SystemAuthUpdateInput struct {
+	Auth *AuthInput `json:"auth"`
+}
 
 type TemplateValueInput struct {
 	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
@@ -1058,16 +1084,18 @@ type FormationObjectType string
 const (
 	FormationObjectTypeApplication FormationObjectType = "APPLICATION"
 	FormationObjectTypeTenant      FormationObjectType = "TENANT"
+	FormationObjectTypeRuntime     FormationObjectType = "RUNTIME"
 )
 
 var AllFormationObjectType = []FormationObjectType{
 	FormationObjectTypeApplication,
 	FormationObjectTypeTenant,
+	FormationObjectTypeRuntime,
 }
 
 func (e FormationObjectType) IsValid() bool {
 	switch e {
-	case FormationObjectTypeApplication, FormationObjectTypeTenant:
+	case FormationObjectTypeApplication, FormationObjectTypeTenant, FormationObjectTypeRuntime:
 		return true
 	}
 	return false
@@ -1171,6 +1199,47 @@ func (e *HealthCheckType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e HealthCheckType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type OneTimeTokenType string
+
+const (
+	OneTimeTokenTypeRuntime     OneTimeTokenType = "Runtime"
+	OneTimeTokenTypeApplication OneTimeTokenType = "Application"
+)
+
+var AllOneTimeTokenType = []OneTimeTokenType{
+	OneTimeTokenTypeRuntime,
+	OneTimeTokenTypeApplication,
+}
+
+func (e OneTimeTokenType) IsValid() bool {
+	switch e {
+	case OneTimeTokenTypeRuntime, OneTimeTokenTypeApplication:
+		return true
+	}
+	return false
+}
+
+func (e OneTimeTokenType) String() string {
+	return string(e)
+}
+
+func (e *OneTimeTokenType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OneTimeTokenType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OneTimeTokenType", str)
+	}
+	return nil
+}
+
+func (e OneTimeTokenType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -1343,6 +1412,49 @@ func (e *SpecFormat) UnmarshalGQL(v interface{}) error {
 }
 
 func (e SpecFormat) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type SystemAuthReferenceType string
+
+const (
+	SystemAuthReferenceTypeApplication       SystemAuthReferenceType = "APPLICATION"
+	SystemAuthReferenceTypeRuntime           SystemAuthReferenceType = "RUNTIME"
+	SystemAuthReferenceTypeIntegrationSystem SystemAuthReferenceType = "INTEGRATION_SYSTEM"
+)
+
+var AllSystemAuthReferenceType = []SystemAuthReferenceType{
+	SystemAuthReferenceTypeApplication,
+	SystemAuthReferenceTypeRuntime,
+	SystemAuthReferenceTypeIntegrationSystem,
+}
+
+func (e SystemAuthReferenceType) IsValid() bool {
+	switch e {
+	case SystemAuthReferenceTypeApplication, SystemAuthReferenceTypeRuntime, SystemAuthReferenceTypeIntegrationSystem:
+		return true
+	}
+	return false
+}
+
+func (e SystemAuthReferenceType) String() string {
+	return string(e)
+}
+
+func (e *SystemAuthReferenceType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = SystemAuthReferenceType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid SystemAuthReferenceType", str)
+	}
+	return nil
+}
+
+func (e SystemAuthReferenceType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

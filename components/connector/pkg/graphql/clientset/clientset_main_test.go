@@ -77,10 +77,9 @@ func TestMain(m *testing.M) {
 	directorGCLI := &gcliMocks.GraphQLClient{}
 	directorGCLI.On("Run", mock.Anything, mock.Anything, mock.Anything).
 		Run(GenerateTestToken(tokens.NewTokenResponse("abcd"))).Return(nil).Twice()
-	internalComponents, certsLoader, revokedCertsLoader := config.InitInternalComponents(cfg, k8sClientSet, directorGCLI)
+	internalComponents, certsLoader := config.InitInternalComponents(cfg, k8sClientSet, directorGCLI)
 
 	go certsLoader.Run(context.TODO())
-	go revokedCertsLoader.Run(context.TODO())
 
 	externalAPIUrl = fmt.Sprintf("https://%s%s", cfg.ExternalAddress, cfg.APIEndpoint)
 

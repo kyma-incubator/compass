@@ -240,6 +240,14 @@ func AssertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.
 	AssertRuntimeLabels(t, &in.Labels, actualRuntime.Labels, defaultScenarioEnabled, isSubaccountTenant)
 }
 
+func AssertRuntimePageContainOnlyIDs(t *testing.T, page graphql.RuntimePageExt, ids ...string) {
+	require.Equal(t, len(ids), len(page.Data))
+
+	for _, runtime := range page.Data {
+		require.Contains(t, ids, runtime.ID)
+	}
+}
+
 func AssertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels graphql.Labels, defaultScenarioEnabled, isSubaccountTenant bool) {
 	const (
 		scenariosKey    = "scenarios"
@@ -268,6 +276,11 @@ func AssertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels gr
 	for labelKey, labelValues := range *inLabels {
 		AssertLabel(t, actualLabels, labelKey, labelValues)
 	}
+}
+
+func AssertRuntimeContext(t *testing.T, in *graphql.RuntimeContextInput, actual *graphql.RuntimeContextExt) {
+	assert.Equal(t, in.Key, actual.Key)
+	assert.Equal(t, in.Value, actual.Value)
 }
 
 func AssertLabel(t *testing.T, actualLabels graphql.Labels, key string, values interface{}) {

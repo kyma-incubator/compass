@@ -1,3 +1,4 @@
+{{ if .Values.global.isForTesting }}
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
@@ -18,6 +19,13 @@ spec:
       labels:
         app: {{ .Chart.Name }}-pairing-adapter-tests-app
     spec:
+      {{ if .Values.global.isLocalEnv }}
+      hostAliases:
+        - ip: {{ .Values.global.minikubeIP }}
+          hostnames:
+            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
+      {{ end }}
+      serviceAccountName: {{ $.Chart.Name }}-e2e-pairing-adapter
       containers:
         - name: pairing-adapter-tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
@@ -28,7 +36,7 @@ spec:
 {{ $shouldAdd := true }}
 {{- range $adapterName, $config := (index .Values "pairing-adapter").deployment.adapters -}}
 {{if and (eq $config.enabled true) (eq $config.auth.type "mtls") $shouldAdd }}
-            - name: APP_MTLS_PAIRING_ADAPTER_URL
+            - name: APP_FQDN_PAIRING_ADAPTER_URL
               value: "http://compass-pairing-adapter.{{ $.Release.Namespace }}.svc.cluster.local/{{ $adapterName }}"
             - name: APP_TEST_TENANT
               value: "{{ $.Values.global.pairingAdapter.e2e.tenant }}"
@@ -38,7 +46,109 @@ spec:
               value: "{{ $.Values.global.pairingAdapter.e2e.appID }}"
             - name: APP_TEST_APPLICATION_NAME
               value: "{{ $.Values.global.pairingAdapter.e2e.appName }}"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
+              value: "https://{{ $.Values.global.gateway.mtls.external.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
+            - name: APP_SKIP_SSL_VALIDATION
+              value: "{{ $.Values.global.tests.http.client.skipSSLValidation }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ $.Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ $.Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_KEY
+              value: "{{ $.Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: APP_EXTERNAL_CLIENT_KEY_KEY
+              value: "{{ $.Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+            - name: APP_IS_LOCAL_ENV
+              value: {{ $.Values.global.isLocalEnv | quote }}
+            - name: APP_TEMPLATE_NAME
+              value: "{{ $.Values.global.pairingAdapter.templateName }}"
+            - name: APP_CLIENT_ID_HTTP_HEADER
+              value: {{ $.Values.global.director.clientIDHeaderKey }}
+            {{ if $.Values.global.isLocalEnv }}
+            - name: APP_CONFIG_MAP_NAME
+              value: "{{ $.Values.global.pairingAdapter.configMap.name }}"
+            - name: APP_CONFIG_MAP_NAMESPACE
+              value: "{{ $.Values.global.pairingAdapter.configMap.namespace }}"
+            - name: APP_CONFIG_MAP_KEY
+              value: "{{ $.Values.global.pairingAdapter.configMap.key }}"
+            - name: APP_INTEGRATION_SYSTEM_ID
+              value: "{{ $.Values.global.pairingAdapter.configMap.integrationSystemID }}"
+            - name: APP_LOCAL_ADAPTER_FQDN
+              value: "{{ $.Values.global.pairingAdapter.configMap.localAdapterFQDN }}"
+            {{ end }}
 {{ $shouldAdd = false }}
 {{ end }}
 {{- end -}}
       restartPolicy: Never
+{{ end }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $.Chart.Name }}-e2e-pairing-adapter
+  namespace: {{ .Values.global.tests.namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $.Chart.Name }}-e2e-pairing-adapter
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+rules:
+  - apiGroups: ["*"]
+    resources: ["configmaps"]
+    resourceNames: ["{{ .Values.global.pairingAdapter.configMap.name }}"]
+    verbs: ["get", "update", "patch"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ $.Chart.Name }}-e2e-pairing-adapter-client-cert
+  namespace: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $.Chart.Name }}-e2e-pairing-adapter
+    namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ $.Chart.Name }}-e2e-pairing-adapter-configmap
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $.Chart.Name }}-e2e-pairing-adapter
+    namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: {{ $.Chart.Name }}-e2e-pairing-adapter
+  apiGroup: rbac.authorization.k8s.io

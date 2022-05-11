@@ -1,13 +1,12 @@
 package config
 
 import (
-	"time"
+	"github.com/kyma-incubator/compass/components/connector/internal/namespacedname"
 
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 	"github.com/kyma-incubator/compass/components/connector/internal/certificates"
-	"github.com/kyma-incubator/compass/components/connector/internal/namespacedname"
 	"github.com/kyma-incubator/compass/components/connector/internal/revocation"
 	"github.com/kyma-incubator/compass/components/connector/internal/secrets"
 	"github.com/kyma-incubator/compass/components/connector/internal/tokens"
@@ -21,12 +20,12 @@ type Components struct {
 	CertificateService     certificates.Service
 	RevokedCertsRepository revocation.RevokedCertificatesRepository
 
-	ExternalIssuerSubjectConsts certificates.ExternalIssuerSubjectConsts
-	CSRSubjectConsts            certificates.CSRSubjectConsts
+	CSRSubjectConsts certificates.CSRSubjectConsts
 }
 
-func InitInternalComponents(cfg Config, k8sClientSet kubernetes.Interface, directorGCLI tokens.GraphQLClient) (Components, certificates.Loader, revocation.Loader) {
+func InitInternalComponents(cfg Config, k8sClientSet kubernetes.Interface, directorGCLI tokens.GraphQLClient) (Components, certificates.Loader) {
 	caSecret := namespacedname.Parse(cfg.CASecret.Name)
+
 	rootCASecret := namespacedname.Parse(cfg.RootCASecret.Name)
 
 	certsCache := certificates.NewCertificateCache()
@@ -41,29 +40,23 @@ func InitInternalComponents(cfg Config, k8sClientSet kubernetes.Interface, direc
 	)
 	certsLoader := certificates.NewCertificateLoader(certsCache, newSecretsRepository(k8sClientSet), caSecret, rootCASecret)
 
-	revokedCertsCache := revocation.NewCache()
 	revokedCertsConfigMap := namespacedname.Parse(cfg.RevocationConfigMapName)
-	revokedCertsRepository := newRevokedCertsRepository(k8sClientSet, revokedCertsConfigMap, revokedCertsCache)
-	revokedCertsLoader := revocation.NewRevokedCertificatesLoader(revokedCertsCache,
-		k8sClientSet.CoreV1().ConfigMaps(revokedCertsConfigMap.Namespace),
-		revokedCertsConfigMap.Name,
-		time.Second,
-	)
+
+	revokedCertsRepository := newRevokedCertsRepository(k8sClientSet, revokedCertsConfigMap)
 
 	return Components{
-		Authenticator:               authentication.NewAuthenticator(),
-		TokenService:                tokens.NewTokenService(directorGCLI),
-		CertificateService:          certsService,
-		RevokedCertsRepository:      revokedCertsRepository,
-		CSRSubjectConsts:            newCSRSubjectConsts(cfg),
-		ExternalIssuerSubjectConsts: newExternalIssuerSubjectConsts(cfg),
-	}, certsLoader, revokedCertsLoader
+		Authenticator:          authentication.NewAuthenticator(),
+		TokenService:           tokens.NewTokenService(directorGCLI),
+		CertificateService:     certsService,
+		RevokedCertsRepository: revokedCertsRepository,
+		CSRSubjectConsts:       newCSRSubjectConsts(cfg),
+	}, certsLoader
 }
 
-func newRevokedCertsRepository(k8sClientSet kubernetes.Interface, revokedCertsConfigMap types.NamespacedName, revokedCertsCache revocation.Cache) revocation.RevokedCertificatesRepository {
+func newRevokedCertsRepository(k8sClientSet kubernetes.Interface, revokedCertsConfigMap types.NamespacedName) revocation.RevokedCertificatesRepository {
 	cmi := k8sClientSet.CoreV1().ConfigMaps(revokedCertsConfigMap.Namespace)
 
-	return revocation.NewRepository(cmi, revokedCertsConfigMap.Name, revokedCertsCache)
+	return revocation.NewRepository(cmi, revokedCertsConfigMap.Name)
 }
 
 func newSecretsRepository(k8sClientSet kubernetes.Interface) secrets.Repository {
@@ -81,13 +74,5 @@ func newCSRSubjectConsts(config Config) certificates.CSRSubjectConsts {
 		OrganizationalUnit: config.CSRSubject.OrganizationalUnit,
 		Locality:           config.CSRSubject.Locality,
 		Province:           config.CSRSubject.Province,
-	}
-}
-
-func newExternalIssuerSubjectConsts(config Config) certificates.ExternalIssuerSubjectConsts {
-	return certificates.ExternalIssuerSubjectConsts{
-		Country:                   config.ExternalIssuerSubject.Country,
-		Organization:              config.ExternalIssuerSubject.Organization,
-		OrganizationalUnitPattern: config.ExternalIssuerSubject.OrganizationalUnitPattern,
 	}
 }
