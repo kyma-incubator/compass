@@ -25,10 +25,8 @@ function execute_gql_query(){
     if [[ "null" == "${FILE_LOCATION}" ]] || [[ -z "${FILE_LOCATION}" ]]; then
         local FLAT_FILE_CONTENT=$(sed 's/\\/\\\\/g' ${FILE_LOCATION} | sed 's/\"/\\"/g' | sed 's/$/\\n/' | tr -d '\n')
         local GQL_QUERY='{ "query": "'${FLAT_FILE_CONTENT}'" }'
-        rm "${BASE_DIR}/gqlquery.gql" || true
-        cat <<< "${GQL_QUERY}" > "${BASE_DIR}/gqlquery.gql"
     fi
-    curl --request POST --url ${URL} --header "Content-Type: application/json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}" ${FILE_LOCATION:+"--data"} ${FILE_LOCATION:+"@${BASE_DIR}/gqlquery.gql"} 
+    curl --request POST --url ${URL} --header "Content-Type: application/json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}" ${FILE_LOCATION:+"--data"} ${FILE_LOCATION:+"${GQL_QUERY}"} 
 }
 
 compare_values() {
