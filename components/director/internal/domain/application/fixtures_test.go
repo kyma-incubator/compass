@@ -536,34 +536,3 @@ func fixApplicationLabels(appID, labelKey1, labelKey2, labelKey3 string, labelVa
 		},
 	}
 }
-
-func fixDestinationApplicationLabels(labelKey1, labelKey2, labelKey3, srcID string, labelValue1 []interface{}) map[string]*model.Label {
-	tnt := "tenant"
-
-	return map[string]*model.Label{
-		labelKey1: {
-			ID:         "abc",
-			Tenant:     str.Ptr(tnt),
-			Key:        labelKey1,
-			Value:      labelValue1,
-			ObjectID:   srcID,
-			ObjectType: model.ApplicationLabelableObject,
-		},
-		labelKey2: {
-			ID:         "def",
-			Tenant:     str.Ptr(tnt),
-			Key:        labelKey2,
-			Value:      "",
-			ObjectID:   srcID,
-			ObjectType: model.ApplicationLabelableObject,
-		},
-		labelKey3: {
-			ID:         "ghi",
-			Tenant:     str.Ptr(tnt),
-			Key:        labelKey3,
-			Value:      "false",
-			ObjectID:   srcID,
-			ObjectType: model.ApplicationLabelableObject,
-		},
-	}
-}
