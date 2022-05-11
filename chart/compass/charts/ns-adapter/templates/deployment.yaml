@@ -23,6 +23,7 @@ spec:
   template:
     metadata:
       annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         {{ if .Values.deployment.resourcesIstioProxy.requests.cpu }}
         sidecar.istio.io/proxyCPU: {{ .Values.deployment.resourcesIstioProxy.requests.cpu }}
         {{ end }}
