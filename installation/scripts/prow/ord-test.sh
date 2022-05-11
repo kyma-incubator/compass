@@ -28,7 +28,7 @@ function execute_gql_query(){
         rm ${BASE_DIR}/gqlquery.gql || true
         echo -E ${GQL_QUERY} > ${BASE_DIR}/gqlquery.gql
     fi
-    curl -s --request POST --url ${URL} --header "Content-Type: application/json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}" ${FILE_LOCATION:+"--data"} ${FILE_LOCATION:+"@${BASE_DIR}/gqlquery.gql"} 
+    curl --request POST --url ${URL} --header "Content-Type: application/json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}" ${FILE_LOCATION:+"--data"} ${FILE_LOCATION:+"@${BASE_DIR}/gqlquery.gql"} 
 }
 
 compare_values() {
@@ -333,7 +333,7 @@ GET_BUNDLE_1_EVENT_DEF_1_ID=$(echo -E ${GET_BUNDLE_1_EVENT_DEF_1} | jq '.id')
 compare_values ${CRT_BUNDLE_1_EVENT_DEF_1_ID} ${GET_BUNDLE_1_EVENT_DEF_1_ID} "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_1_EVENT_DEF_1_ID}. From Compass get: ${GET_BUNDLE_1_EVENT_DEF_1_ID}"
 
 
-GET_BUNDLES_FROM_ORD_RESULT=$(curl -s --request GET --url "${ORD_URL}/open-resource-discovery-service/v0/systemInstances?%24expand=consumptionBundles(%24expand%3Dapis%2Cevents)&%24format=json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}")
+GET_BUNDLES_FROM_ORD_RESULT=$(curl --request GET --url "${ORD_URL}/open-resource-discovery-service/v0/systemInstances?%24expand=consumptionBundles(%24expand%3Dapis%2Cevents)&%24format=json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}")
 
 echo "Result from get bundles request:"
 echo "---------------------------------"
