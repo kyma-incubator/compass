@@ -134,7 +134,7 @@ echo "-----------------------------------"
 
 echo "Starting compass"
 cd "${COMPASS_DIR}/components/director"
-source run.sh --auto-terminate 300 & 
+source run.sh --auto-terminate 180 & 
 
 COMPASS_URL="http://localhost:3000"
 
@@ -159,7 +159,7 @@ echo "Compass is ready"
 echo "Starting ord-service"
 cd "${ORD_SVC_DIR}/components/ord-service"
 export SERVER_PORT=8081
-./run.sh --migrations-path ${COMPASS_DIR}/components/schema-migrator/migrations/director --auto-terminate 120 &
+./run.sh --migrations-path ${COMPASS_DIR}/components/schema-migrator/migrations/director --auto-terminate 90 &
 
 ORD_URL="http://localhost:${SERVER_PORT}"
 
