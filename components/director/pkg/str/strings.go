@@ -114,7 +114,7 @@ func ContainsInSlice(s []string, str string) bool {
 	return false
 }
 
-// ContainsInSlice casts the given value to string and then parsers it to a bool value
+// CastToBool casts the given value to string and then parsers it to a bool value
 func CastToBool(i interface{}) (bool, error) {
 	str := CastOrEmpty(i)
 	return strconv.ParseBool(str)

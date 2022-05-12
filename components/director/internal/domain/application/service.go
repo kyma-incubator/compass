@@ -855,7 +855,7 @@ func (s *service) handleMergeLabels(srcAppLabels, destAppLabels map[string]*mode
 		return nil, errors.Wrapf(err, "while converting %s value for source label with ID: %s", managedKey, srcAppLabels[managedKey].ID)
 	}
 
-	if destLabelManaged == true || srcLabelManaged == true {
+	if destLabelManaged || srcLabelManaged {
 		destAppLabels[managedKey].Value = "true"
 	}
 
