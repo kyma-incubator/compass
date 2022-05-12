@@ -12,6 +12,8 @@ const (
 	appNameLengthLimit                 = 36
 	groupLengthLimit                   = 36
 	alphanumericUnderscoreRegexpString = "^[a-zA-Z0-9_]*$"
+	scenarioRegexpString               = "^scenarios$"
 )
 
 var alphanumericUnderscoreRegexp = regexp.MustCompile(alphanumericUnderscoreRegexpString)
+var scenarioRegExp = regexp.MustCompile(scenarioRegexpString)

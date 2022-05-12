@@ -205,7 +205,7 @@ func NewRootResolver(
 		runtimeContext:     runtimectx.NewResolver(transact, runtimeContextSvc, runtimeContextConverter),
 		healthCheck:        healthcheck.NewResolver(healthCheckSvc),
 		webhook:            webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, webhookConverter),
-		labelDef:           labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
+		labelDef:           labeldef.NewResolver(transact, labelDefSvc, formationSvc, labelDefConverter),
 		token:              onetimetoken.NewTokenResolver(transact, tokenSvc, tokenConverter, oneTimeTokenCfg.SuggestTokenHeaderKey),
 		systemAuth:         systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, tokenSvc, systemAuthConverter, authConverter),
 		oAuth20:            oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
@@ -627,11 +627,6 @@ func (r *mutationResolver) CreateLabelDefinition(ctx context.Context, in graphql
 // UpdateLabelDefinition missing godoc
 func (r *mutationResolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDefinitionInput) (*graphql.LabelDefinition, error) {
 	return r.labelDef.UpdateLabelDefinition(ctx, in)
-}
-
-// DeleteLabelDefinition missing godoc
-func (r *mutationResolver) DeleteLabelDefinition(ctx context.Context, key string, deleteRelatedLabels *bool) (*graphql.LabelDefinition, error) {
-	return r.labelDef.DeleteLabelDefinition(ctx, key, deleteRelatedLabels)
 }
 
 // SetApplicationLabel missing godoc

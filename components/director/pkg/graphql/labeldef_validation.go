@@ -12,7 +12,7 @@ import (
 func (i LabelDefinitionInput) Validate() error {
 	return validation.Errors{
 		"rule.validSchema": i.validateSchema(),
-		"key":              validation.Validate(i.Key, validation.Required, validation.RuneLength(0, longStringLengthLimit), validation.Match(alphanumericUnderscoreRegexp)),
+		"key":              validation.Validate(i.Key, validation.Required, validation.Match(scenarioRegExp)),
 		"schema":           validation.Validate(i.Schema),
 	}.Filter()
 }

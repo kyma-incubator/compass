@@ -22,7 +22,6 @@ type Repository interface {
 	Update(ctx context.Context, def model.LabelDefinition) error
 	Exists(ctx context.Context, tenant string, key string) (bool, error)
 	List(ctx context.Context, tenant string) ([]model.LabelDefinition, error)
-	DeleteByKey(ctx context.Context, tenant, key string) error
 }
 
 // ScenarioAssignmentLister missing godoc
@@ -122,6 +121,15 @@ func (s *service) Get(ctx context.Context, tenant string, key string) (*model.La
 	return def, nil
 }
 
+// GetWithoutCreating returns the tenant scoped label definition with the provided key without creating default Scenarios Definition
+func (s *service) GetWithoutCreating(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
+	def, err := s.repo.GetByKey(ctx, tenant, key)
+	if err != nil {
+		return nil, errors.Wrap(err, "while fetching Label Definition")
+	}
+	return def, nil
+}
+
 // List returns all label definitions for the provided tenant
 func (s *service) List(ctx context.Context, tenant string) ([]model.LabelDefinition, error) {
 	defs, err := s.repo.List(ctx, tenant)
@@ -170,38 +178,6 @@ func (s service) Upsert(ctx context.Context, def model.LabelDefinition) error {
 	log.C(ctx).Debugf("Successfully upserted Label Definition with id %s and key %s", def.ID, def.Key)
 
 	return nil
-}
-
-// Delete removes label definitions
-func (s *service) Delete(ctx context.Context, tenant, key string, deleteRelatedLabels bool) error {
-	if key == model.ScenariosKey {
-		return fmt.Errorf("labelDefinition with key %s can not be deleted", model.ScenariosKey)
-	}
-
-	ld, err := s.Get(ctx, tenant, key)
-	if err != nil {
-		return errors.Wrap(err, "while getting Label Definition")
-	}
-	if ld == nil {
-		return fmt.Errorf("labelDefinition with key %s not found", key)
-	}
-
-	if deleteRelatedLabels {
-		err := s.labelRepo.DeleteByKey(ctx, tenant, key)
-		if err != nil {
-			return errors.Wrapf(err, `while deleting labels with key "%s"`, key)
-		}
-	}
-
-	existingLabels, err := s.labelRepo.ListByKey(ctx, tenant, key)
-	if err != nil {
-		return errors.Wrap(err, "while listing labels by key")
-	}
-	if len(existingLabels) > 0 {
-		return apperrors.NewInvalidOperationError("could not delete label definition, it is already used by at least one label")
-	}
-
-	return s.repo.DeleteByKey(ctx, tenant, ld.Key)
 }
 
 // EnsureScenariosLabelDefinitionExists creates scenario label definition if missing
