@@ -59,7 +59,7 @@ func (s *Handler) HandleFunc(typee string) func(rw http.ResponseWriter, req *htt
 		rw.WriteHeader(http.StatusOK)
 
 		resp := []byte("[]")
-		if events, found := s.mockedEvents[typee]; found {
+		if events, found := s.mockedEvents[typee]; found && len(events) > 0 {
 			resp = events[0]
 			events = events[1:]
 			s.mockedEvents[typee] = events

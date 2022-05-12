@@ -113,15 +113,23 @@ func main() {
 	jobsNames := tenantfetcher.GetJobsNames(envVars)
 	log.C(ctx).Infof("Tenant fetcher jobs are: %s", jobsNames)
 
-	stopJobChannels := make([]chan bool, 0, len(jobsNames))
+	dbCloseFunctions := make([]func() error, 0, len(jobsNames))
+	defer func() {
+		for _, fn := range dbCloseFunctions {
+			err := fn()
+			exitOnError(err, "Error while closing the connection to the database")
+		}
+	}()
 
+	stopJobChannels := make([]chan bool, 0, len(jobsNames))
 	go func() {
 		for _, job := range jobsNames {
 			stopJob := make(chan bool, 1)
 			stopJobChannels = append(stopJobChannels, stopJob)
 
 			jobConfig := readJobConfig(ctx, job, envVars)
-			runTenantFetcherJob(ctx, jobConfig, stopJob)
+			closeFn := runTenantFetcherJob(ctx, jobConfig, stopJob)
+			dbCloseFunctions = append(dbCloseFunctions, closeFn)
 		}
 	}()
 
@@ -152,7 +160,7 @@ func readJobConfig(ctx context.Context, jobName string, environmentVars map[stri
 	return tenantfetcher.NewTenantFetcherJobEnvironment(ctx, jobName, environmentVars).ReadJobConfig()
 }
 
-func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig, stopJob chan bool) {
+func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig, stopJob chan bool) func() error {
 	jobInterval := jobConfig.GetHandlerCgf().TenantFetcherJobIntervalMins
 	ticker := time.NewTicker(jobInterval)
 	jobName := jobConfig.JobName
@@ -160,11 +168,6 @@ func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig,
 	log.C(ctx).Infof("Job %s database config: %+v", jobConfig.JobName, jobConfig.GetHandlerCgf().Database)
 	transact, closeFunc, err := persistence.Configure(ctx, jobConfig.GetHandlerCgf().Database)
 	exitOnError(err, "Error while establishing the connection to the database")
-
-	defer func() {
-		err := closeFunc()
-		exitOnError(err, "Error while closing the connection to the database")
-	}()
 
 	go func() {
 		for {
@@ -180,6 +183,8 @@ func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig,
 			}
 		}
 	}()
+
+	return closeFunc
 }
 
 func syncTenants(ctx context.Context, jobConfig tenantfetcher.JobConfig, transact persistence.Transactioner) {

@@ -39,20 +39,14 @@ import (
 )
 
 const (
-	timeout       = time.Minute * 15
-	checkInterval = time.Second * 60
+	timeout       = time.Minute * 3
+	checkInterval = time.Second * 5
 
 	globalAccountCreateSubPath = "global-account-create"
 	globalAccountDeleteSubPath = "global-account-delete"
 	subaccountMoveSubPath      = "subaccount-move"
 	subaccountCreateSubPath    = "subaccount-create"
 	subaccountDeleteSubPath    = "subaccount-delete"
-
-	namespace                 = "compass-system"
-	globalAccountsJobName     = "tenant-fetcher-account-test"
-	globalAccountsCronJobName = "compass-tenant-fetcher-account-fetcher"
-	subaccountsJobName        = "tenant-fetcher-subaccount-test"
-	subaccountsCronJobName    = "compass-tenant-fetcher-subaccount-fetcher"
 
 	mockEventsPagePattern = `
 {
@@ -98,11 +92,11 @@ func TestGlobalAccounts(t *testing.T) {
 
 	createEvent1 := genMockGlobalAccountEvent(externalTenantIDs[0], names[0], customerIDs[0], subdomains[0])
 	createEvent2 := genMockGlobalAccountEvent(externalTenantIDs[1], names[1], customerIDs[1], subdomains[1])
-	setMockTenantEvents(t, []byte(genMockPage(strings.Join([]string{createEvent1, createEvent2}, ","), 2)), globalAccountCreateSubPath)
+	setMockTenantEvents(t, genMockPage(strings.Join([]string{createEvent1, createEvent2}, ","), 2), globalAccountCreateSubPath)
 	defer cleanupMockEvents(t, globalAccountCreateSubPath)
 
 	deleteEvent1 := genMockGlobalAccountEvent(externalTenantIDs[0], names[0], customerIDs[0], subdomains[0])
-	setMockTenantEvents(t, []byte(genMockPage(deleteEvent1, 1)), globalAccountDeleteSubPath)
+	setMockTenantEvents(t, genMockPage(deleteEvent1, 1), globalAccountDeleteSubPath)
 	defer cleanupMockEvents(t, globalAccountDeleteSubPath)
 
 	require.Eventually(t, func() bool {
@@ -198,7 +192,7 @@ func TestMoveSubaccounts(t *testing.T) {
 
 	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, directoryParentGUID, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion)
 	event2 := genMockSubaccountMoveEvent(subaccountExternalTenants[1], subaccountNames[1], subaccountSubdomain, directoryParentGUID, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion)
-	setMockTenantEvents(t, []byte(genMockPage(strings.Join([]string{event1, event2}, ","), 2)), subaccountMoveSubPath)
+	setMockTenantEvents(t, genMockPage(strings.Join([]string{event1, event2}, ","), 2), subaccountMoveSubPath)
 	defer cleanupMockEvents(t, subaccountMoveSubPath)
 
 	require.Eventually(t, func() bool {
@@ -308,7 +302,7 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountExternalTenants[0], defaultTenantID)
 
 	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, directoryParentGUID, defaultTenantID, defaultTenantID, gaExternalTenantIDs[0], subaccountRegion)
-	setMockTenantEvents(t, []byte(genMockPage(strings.Join([]string{event1}, ","), 1)), subaccountMoveSubPath)
+	setMockTenantEvents(t, genMockPage(strings.Join([]string{event1}, ","), 1), subaccountMoveSubPath)
 	defer cleanupMockEvents(t, subaccountMoveSubPath)
 
 	require.Eventually(t, func() bool {
@@ -382,11 +376,11 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 	defer cleanupTenants(t, ctx, directorInternalGQLClient, append(subaccountExternalTenants, gaExternalTenant))
 
 	deleteEvent := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, directoryParentGUID, subaccountParent, "", "", subaccountDeleteSubPath)
-	setMockTenantEvents(t, []byte(genMockPage(deleteEvent, 1)), subaccountDeleteSubPath)
+	setMockTenantEvents(t, genMockPage(deleteEvent, 1), subaccountDeleteSubPath)
 	defer cleanupMockEvents(t, subaccountDeleteSubPath)
 
 	createEvent := genMockSubaccountMoveEvent(subaccountExternalTenants[1], subaccountNames[1], subaccountSubdomain, directoryParentGUID, subaccountParent, "", "", subaccountCreateSubPath)
-	setMockTenantEvents(t, []byte(genMockPage(createEvent, 1)), subaccountCreateSubPath)
+	setMockTenantEvents(t, genMockPage(createEvent, 1), subaccountCreateSubPath)
 	defer cleanupMockEvents(t, subaccountCreateSubPath)
 
 	require.Eventually(t, func() bool {
@@ -433,7 +427,7 @@ func TestMoveMissingSubaccounts(t *testing.T) {
 	defer cleanupTenants(t, ctx, directorInternalGQLClient, []string{subaccountExternalTenant, gaExternalTenantIDs[1]})
 
 	event := genMockSubaccountMoveEvent(subaccountExternalTenant, subaccountName, subaccountSubdomain, directoryParentGUID, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion)
-	setMockTenantEvents(t, []byte(genMockPage(event, 1)), subaccountMoveSubPath)
+	setMockTenantEvents(t, genMockPage(event, 1), subaccountMoveSubPath)
 	defer cleanupMockEvents(t, subaccountMoveSubPath)
 
 	require.Eventually(t, func() bool {
@@ -472,9 +466,12 @@ func genMockPage(events string, numEvents int) string {
 	return fmt.Sprintf(mockEventsPagePattern, numEvents, 1, events)
 }
 
-func setMockTenantEvents(t *testing.T, mockEvents []byte, subPath string) {
-	reader := bytes.NewReader(mockEvents)
-	response, err := http.DefaultClient.Post(cfg.ExternalSvcMockURL+fmt.Sprintf("/tenant-fetcher/%s/configure", subPath), "application/json", reader)
+func setMockTenantEvents(t *testing.T, mockEvents string, subPath string) {
+	t.Logf("Mocked events: %s", mockEvents)
+	reader := bytes.NewReader([]byte(mockEvents))
+	url := cfg.ExternalSvcMockURL + fmt.Sprintf("/tenant-fetcher/%s/configure", subPath)
+	t.Logf("Mocked events URL: %s", url)
+	response, err := http.DefaultClient.Post(url, "application/json", reader)
 	require.NoError(t, err)
 	defer func() {
 		if err := response.Body.Close(); err != nil {
