@@ -845,8 +845,18 @@ func (s *service) handleMergeLabels(srcAppLabels, destAppLabels map[string]*mode
 
 	destAppLabels[model.ScenariosKey].Value = destScenariosStrSlice
 
-	if destAppLabels[managedKey].Value.(bool) == true || srcAppLabels[managedKey].Value.(bool) == true {
-		destAppLabels[managedKey].Value = true
+	destLabelManaged, err := str.CastToBool(destAppLabels[managedKey].Value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting %s value for destination label with ID: %s", managedKey, destAppLabels[managedKey].ID)
+	}
+
+	srcLabelManaged, err := str.CastToBool(srcAppLabels[managedKey].Value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting %s value for source label with ID: %s", managedKey, srcAppLabels[managedKey].ID)
+	}
+
+	if destLabelManaged == true || srcLabelManaged == true {
+		destAppLabels[managedKey].Value = "true"
 	}
 
 	conv := make(map[string]interface{}, len(destAppLabels))

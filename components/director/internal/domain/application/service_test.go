@@ -3209,8 +3209,14 @@ func TestService_Merge(t *testing.T) {
 	upsertLabelValues[labelKey2] = labelValue3
 	upsertLabelValues[labelKey3] = "true"
 
+	upsertLabelValuesWithManagedFalse := make(map[string]interface{})
+	upsertLabelValuesWithManagedFalse[labelKey1] = []string{"Easter", "Bunny", "Egg"}
+	upsertLabelValuesWithManagedFalse[labelKey2] = labelValue3
+	upsertLabelValuesWithManagedFalse[labelKey3] = "false"
+
 	srcAppLabels := fixApplicationLabels(srcID, labelKey1, labelKey2, labelKey3, labelValue1, labelValue3, "true")
 	destAppLabels := fixApplicationLabels(srcID, labelKey1, labelKey2, labelKey3, labelValue2, "", "false")
+	srcAppLabelsWithFalseManaged := fixApplicationLabels(srcID, labelKey1, labelKey2, labelKey3, labelValue1, labelValue3, "false")
 
 	srcModel := fixDetailedModelApplication(t, srcID, tnt, srcName, srcDescription)
 	srcModel.ApplicationTemplateID = &templateID
@@ -3280,6 +3286,41 @@ func TestService_Merge(t *testing.T) {
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, destModel.ID, upsertLabelValues).Return(nil)
+				return svc
+			},
+			Ctx:                            ctx,
+			DestinationID:                  destID,
+			SourceID:                       srcID,
+			ExpectedDestinationApplication: mergedDestModel,
+			ExpectedErrMessage:             "",
+		},
+		{
+			Name: "Success with managed \"false\" label when both labels are \"false\"",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
+				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
+				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
+				repo.On("Update", ctx, tnt, destModel).Return(nil).Once()
+				repo.On("Delete", ctx, tnt, srcModel.ID).Return(nil).Once()
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", ctx, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabelsWithFalseManaged, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, destModel.ID, upsertLabelValuesWithManagedFalse).Return(nil)
 				return svc
 			},
 			Ctx:                            ctx,
