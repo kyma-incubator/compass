@@ -467,11 +467,8 @@ func genMockPage(events string, numEvents int) string {
 }
 
 func setMockTenantEvents(t *testing.T, mockEvents string, subPath string) {
-	t.Logf("Mocked events: %s", mockEvents)
 	reader := bytes.NewReader([]byte(mockEvents))
-	url := cfg.ExternalSvcMockURL + fmt.Sprintf("/tenant-fetcher/%s/configure", subPath)
-	t.Logf("Mocked events URL: %s", url)
-	response, err := http.DefaultClient.Post(url, "application/json", reader)
+	response, err := http.DefaultClient.Post(cfg.ExternalSvcMockURL+fmt.Sprintf("/tenant-fetcher/%s/configure", subPath), "application/json", reader)
 	require.NoError(t, err)
 	defer func() {
 		if err := response.Body.Close(); err != nil {
