@@ -76,9 +76,13 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	_, err = r.srv.GetWithoutCreating(ctx, tnt, ld.Key)
-	// TODO add check for only not found
 	if err == nil {
 		return nil, errors.New("while creating label definition: Object is not unique [object=labelDefinition]")
+	}
+
+	// apperrors.IsNotFoundError doesn't recognize this
+	if err.Error() != "not found" {
+		return nil, err
 	}
 
 	formations, err := ParseFormationsFromSchema(ld.Schema)
