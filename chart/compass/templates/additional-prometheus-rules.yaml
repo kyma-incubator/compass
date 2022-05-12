@@ -29,9 +29,9 @@ spec:
             severity: critical
         - alert: IstioRequests-WorkloadFailures-5xx
           annotations:
-            description: From source_workload={{ $labels.source_workload }} to destination_workload={{
-              $labels.destination_workload }} its 5xx failure rate ({{ $value | humanizePercentage
-              }} > 30%) in the past 5 minutes.
+            description: From source_workload={{`{{`}} $labels.source_workload {{`}}`}} to destination_workload={{`{{`}}
+              $labels.destination_workload {{`}}`}} its 5xx failure rate ({{`{{`}} $value | humanizePercentage
+              {{`}}`}} > 30%) in the past 5 minutes.
           expr: (sum by (source_workload,destination_workload)(rate(istio_requests_total{response_code=~"5.*"}[5m]))
             / sum by (source_workload,destination_workload)(rate(istio_requests_total[5m])))
             > 0.3
@@ -40,9 +40,9 @@ spec:
             severity: warning
         - alert: IstioRequests-TotalCountFailures-5xx
           annotations:
-            description: Total failure account of requests is ({{ $value }} > 30) which
-              came from source_workload={{ $labels.source_workload }} to destination_workload={{
-              $labels.destination_workload}} in the past 5 minutes.
+            description: Total failure account of requests is ({{`{{`}} $value {{`}}`}} > 30) which
+              came from source_workload={{`{{`}} $labels.source_workload {{`}}`}} to destination_workload={{`{{`}}
+              $labels.destination_workload{{`}}`}} in the past 5 minutes.
           expr: (sum by (source_workload,destination_workload)(increase(istio_requests_total{response_code=~"5.*"}[5m])))
             > 30
           for: 10m
@@ -50,8 +50,8 @@ spec:
             severity: warning
         - alert: CompassOperationsControllerIncreaseOfReconciliationErrors
           annotations:
-            description: Reconciliation errors percentage is ({{ $value | humanizePercentage
-              }} > 30%) in the past 5 minutes.
+            description: Reconciliation errors percentage is ({{`{{`}} $value | humanizePercentage
+              {{`}}`}} > 30%) in the past 5 minutes.
           expr: (rate(controller_runtime_reconcile_errors_total{controller="operation"}[2m])/rate(controller_runtime_reconcile_errors_total{controller="operation"}[2m]
             offset 1h))>1.3
           for: 5m
@@ -59,8 +59,8 @@ spec:
             severity: critical
         - alert: CompassOperationsControllerIncreaseOfReconciliationQueueLength
           annotations:
-            description: Reconciliation queue length increase is ({{ $value | humanizePercentage
-              }} > 30%) in the past 5 minutes.
+            description: Reconciliation queue length increase is ({{`{{`}} $value | humanizePercentage
+              {{`}}`}} > 30%) in the past 5 minutes.
           expr: workqueue_depth{name="operation"} > 4
           for: 5m
           labels:
@@ -90,8 +90,8 @@ spec:
             severity: warning
         - alert: CompassOperationsControllerPodCrashes
           annotations:
-            description: Container {{ $labels.container }} in pod {{ $labels.namespace
-              }}/{{ $labels.pod }} has been restarted {{ $value }} times in the last 5
+            description: Container {{`{{`}} $labels.container {{`}}`}} in pod {{`{{`}} $labels.namespace
+              {{`}}`}}/{{`{{`}} $labels.pod {{`}}`}} has been restarted {{`{{`}} $value {{`}}`}} times in the last 5
               minutes.
           expr: rate(kube_pod_container_status_restarts_total{pod=~"compass-operations-controller-manager.*"}[5m])
             * 60 * 5 > 0
@@ -100,8 +100,8 @@ spec:
             severity: critical
         - alert: CompassOperationsControllerIncreaceOfOperationsLatency
           annotations:
-            description: Operations with type {{ $labels.type }} starting to take {{ $value
-              | humanizePercentage }} > 30% longer in the last 5 minutes.
+            description: Operations with type {{`{{`}} $labels.type {{`}}`}} starting to take {{`{{`}} $value
+              | humanizePercentage {{`}}`}} > 30% longer in the last 5 minutes.
           expr: ((rate(compass_operations_controller_operation_duration_seconds_sum[5m])
             / rate(compass_operations_controller_operation_duration_seconds_count[5m]))
             / (rate(compass_operations_controller_operation_duration_seconds_sum[5m] offset
@@ -112,9 +112,9 @@ spec:
             severity: critical
         - alert: OperationGotErrorCondition
           annotations:
-            description: Operation name={{ $labels.name }} with correlationID={{ $labels.correlation_id
-              }}, operationType={{ $labels.type }}, category={{ $labels.category }}, requestObject={{
-              $labels.request_object }} failed with error={{ $labels.error }}
+            description: Operation name={{`{{`}} $labels.name {{`}}`}} with correlationID={{`{{`}} $labels.correlation_id
+              {{`}}`}}, operationType={{`{{`}} $labels.type {{`}}`}}, category={{`{{`}} $labels.category {{`}}`}}, requestObject={{`{{`}}
+              $labels.request_object {{`}}`}} failed with error={{`{{`}} $labels.error {{`}}`}}
           expr: (compass_operations_controller_failed_operations_count == 1) unless (compass_operations_controller_failed_operations_count
             offset 1m == 1 )
           for: 0m
@@ -122,7 +122,7 @@ spec:
             severity: critical
         - alert: OperationInProgressNearTimeout
           annotations:
-            description: Operation with type={{ $labels.type }} has been InProgress near
+            description: Operation with type={{`{{`}} $labels.type {{`}}`}} has been InProgress near
               reconciliation timeout.
           expr: (compass_operations_controller_operations_near_reconciliation_timeout_count
             >= 1) unless (compass_operations_controller_operations_near_reconciliation_timeout_count
@@ -132,9 +132,9 @@ spec:
             severity: warning
         - alert: IstioRequests-RateLimited-429
           annotations:
-            description: From source_workload={{ $labels.source_workload }} to destination_workload={{
-              $labels.destination_workload }} there is 429 (rate-limited) failure rate
-              ({{ $value | humanizePercentage }} > 30%) in the past 5 minutes.
+            description: From source_workload={{`{{`}} $labels.source_workload {{`}}`}} to destination_workload={{`{{`}}
+              $labels.destination_workload {{`}}`}} there is 429 (rate-limited) failure rate
+              ({{`{{`}} $value | humanizePercentage {{`}}`}} > 30%) in the past 5 minutes.
           expr: (sum by (source_workload,destination_workload)(rate(istio_requests_total{source_workload!="unknown",
             response_code=~"429"}[5m])) / sum by (source_workload,destination_workload)(rate(istio_requests_total{source_workload!="unknown"}[5m])))
             > 0.3
