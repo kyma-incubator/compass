@@ -1,8 +1,11 @@
 #!/bin/bash
 
 ###
-# Following script installs necessary tooling for Debian, starts Director and Ord service, and runs the smoke tests.
-#
+# Following script installs necessary tooling, build and starts Director and Ord service, then runs the following smoke tests scenario:
+# - Crafts a local token
+# - Registers single application in Director using the register-application-with-bundles.graphql template
+# - Fetches applications and verify that the applicaiton was successfuly registered
+# - Fetches ORD service systems with all expands, and verify app info that is returned is the expected one
 
 set -o errexit
 
@@ -50,7 +53,7 @@ check_value() {
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 INSTALLATION_DIR="$( cd "$( dirname "${CURRENT_DIR}/../../.." )" && pwd )"
-BASE_DIR="$( cd "$( dirname "${INSTALLATION_DIR}/../../../../../../.." )" && pwd )"
+BASE_DIR="${1}"
 JAVA_HOME="${BASE_DIR}/openjdk-11"
 M2_HOME="${BASE_DIR}/maven"
 MIGRATE_HOME="${BASE_DIR}/migrate"
@@ -72,24 +75,6 @@ export PATH="${MIGRATE_HOME}:${PATH}"
 
 export ARTIFACTS="/var/log/prow_artifacts"
 mkdir -p "${ARTIFACTS}"
-
-POSITIONAL=()
-while [[ $# -gt 0 ]]
-do
-    key="$1"
-
-    case ${key} in
-        --*)
-            echo "Unknown flag ${1}"
-            exit 1
-        ;;
-        *)    # unknown option
-            POSITIONAL+=("$1") # save it in an array for later
-            shift # past argument
-        ;;
-    esac
-done
-set -- "${POSITIONAL[@]}" # restore positional parameters
 
 echo "Install java"
 curl -fLSs -o adoptopenjdk11.tgz "https://github.com/AdoptOpenJDK/openjdk11-binaries/releases/download/jdk-11.0.9.1%2B1/OpenJDK11U-jdk_x64_linux_hotspot_11.0.9.1_1.tar.gz"
@@ -180,7 +165,7 @@ echo "ORD-service is ready"
 echo "Token: ${DIRECTOR_TOKEN}"
 echo "Internal Tenant ID: ${INTERNAL_TENANT_ID}"
 
-echo "ord-test start!"
+echo "Compass smoke test - start!"
 
 echo "Register applicaiton ..."
 REG_APP_FILE_LOCATION="${COMPASS_DIR}/components/director/examples/register-application/register-application-with-bundles.graphql"
@@ -330,15 +315,15 @@ GET_BUNDLE_1_EVENT_DEF_1_ID=$(echo -E ${GET_BUNDLE_1_EVENT_DEF_1} | jq -r '.id')
 compare_values "${CRT_BUNDLE_1_EVENT_DEF_1_ID}" "${GET_BUNDLE_1_EVENT_DEF_1_ID}" "Applicaiton bundles API Definitions IDs did not match. On creation: ${CRT_BUNDLE_1_EVENT_DEF_1_ID}. From Compass get: ${GET_BUNDLE_1_EVENT_DEF_1_ID}"
 
 
-GET_BUNDLES_FROM_ORD_RESULT=$(curl --request GET --url "${ORD_URL}/open-resource-discovery-service/v0/systemInstances?%24expand=consumptionBundles(%24expand%3Dapis%2Cevents)&%24format=json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}")
+GET_APPS_FROM_ORD_RESULT=$(curl --request GET --url "${ORD_URL}/open-resource-discovery-service/v0/systemInstances?%24expand=consumptionBundles(%24expand%3Dapis%2Cevents)&%24format=json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}")
 
 echo "Result from get bundles request:"
 echo "---------------------------------"
-echo "${GET_BUNDLES_FROM_ORD_RESULT}"
+echo "${GET_APPS_FROM_ORD_RESULT}"
 echo "---------------------------------"
 
-ORD_APP_COUNT=$(echo -E ${GET_BUNDLES_FROM_ORD_RESULT} | jq -r '.value | length')
-ORD_APP=$(echo -E ${GET_BUNDLES_FROM_ORD_RESULT} | jq -c --arg appid ${CRT_APP_ID} '.value[] | select(.id==$appid)')
+ORD_APP_COUNT=$(echo -E ${GET_APPS_FROM_ORD_RESULT} | jq -r '.value | length')
+ORD_APP=$(echo -E ${GET_APPS_FROM_ORD_RESULT} | jq -c --arg appid ${CRT_APP_ID} '.value[] | select(.id==$appid)')
 check_value "${ORD_APP}" "Applicaiton with ID: ${CRT_APP_ID} not found in ORD service"
 
 echo "Application from ORD:"
