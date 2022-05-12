@@ -22,5 +22,6 @@ readinessProbe:
   timeoutSeconds: 2
   periodSeconds: 5
 timeouts:
-  server: "300s"
+  requestHeaders: "30s"
+  server: "3600"
   client: "30s"

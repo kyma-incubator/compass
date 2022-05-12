@@ -42,3 +42,8 @@ metrics:
 auditLog:
   maxBodySizeBytes: 998000
 
+timeouts:
+  metricsServer: "30s"
+  nsAdapter: "3600s"
+  handlers: "30s"
+  requestHeaders: "30s"
