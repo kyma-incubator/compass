@@ -32,10 +32,10 @@ import (
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:3000"`
 
-	MetricsServerTimeout      time.Duration `envconfig:"default=114s"`
-	NsAdapterTimeout          time.Duration `envconfig:"default=3600s"`
-	DefaultHandlerTimeout     time.Duration `envconfig:"default=114s"`
-	ReadRequestHeadersTimeout time.Duration `envconfig:"default=114s"`
+	MetricsServerTimeout      time.Duration `envconfig:"APP_METRICS_SERVER_TIMEOUT,default=114s"`
+	NsAdapterTimeout          time.Duration `envconfig:"APP_NS_ADAPTER_TIMEOUT,default=3600s"`
+	DefaultHandlerTimeout     time.Duration `envconfig:"APP_DEFAULT_HANDLERS_TIMEOUT,default=114s"`
+	ReadRequestHeadersTimeout time.Duration `envconfig:"APP_READ_REQUEST_HEADERS_TIMEOUT,default=114s"`
 
 	Log log.Config
 

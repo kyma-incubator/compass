@@ -13,7 +13,7 @@ import (
 
 // Configuration contains ns-adapter specific configuration values
 type Configuration struct {
-	ReadHeadersTimeout time.Duration `envconfig:"APP_READ_HEADERS_TIMEOUT,default=30s"`
+	ReadHeadersTimeout time.Duration `envconfig:" APP_READ_REQUEST_HEADERS_TIMEOUT,default=30s"`
 	ServerTimeout      time.Duration `envconfig:"APP_SERVER_TIMEOUT,default=30s"` // TODO What is the proper timeout value?
 	ClientTimeout      time.Duration `envconfig:"APP_CLIENT_TIMEOUT,default=30s"`
 	Address            string        `envconfig:"default=127.0.0.1:8080"`
