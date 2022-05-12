@@ -803,34 +803,14 @@ func (s *service) handleMergeLabels(srcAppLabels, destAppLabels map[string]*mode
 		destAppLabels[intSysKey].Value = srcIntSysID
 	}
 
-	srcScenarios, ok := srcAppLabels[model.ScenariosKey].Value.([]interface{})
-	if !ok {
-		return nil, errors.Errorf("error while converting source scenario with ID %s to slice", srcAppLabels[model.ScenariosKey].ID)
+	srcScenariosStrSlice, err := label.ValueToStringsSlice(srcAppLabels[model.ScenariosKey].Value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting source application labels to string slice")
 	}
 
-	destScenarios, ok := destAppLabels[model.ScenariosKey].Value.([]interface{})
-	if !ok {
-		return nil, errors.Errorf("error while converting destination scenario with ID %s to slice", destAppLabels[model.ScenariosKey].ID)
-	}
-
-	srcScenariosStrSlice := make([]string, 0, len(srcScenarios))
-	for _, srcScenario := range srcScenarios {
-		srcScenarioStr, ok := srcScenario.(string)
-		if !ok {
-			return nil, errors.Errorf("error while converting source scenario to string")
-		}
-
-		srcScenariosStrSlice = append(srcScenariosStrSlice, srcScenarioStr)
-	}
-
-	destScenariosStrSlice := make([]string, 0, len(destScenarios))
-	for _, destScenario := range destScenarios {
-		destScenarioStr, ok := destScenario.(string)
-		if !ok {
-			return nil, errors.Errorf("error while converting destination scenario to string")
-		}
-
-		destScenariosStrSlice = append(destScenariosStrSlice, destScenarioStr)
+	destScenariosStrSlice, err := label.ValueToStringsSlice(destAppLabels[model.ScenariosKey].Value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting destination application labels to string slice")
 	}
 
 	for _, srcScenario := range srcScenariosStrSlice {
