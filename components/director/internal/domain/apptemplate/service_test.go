@@ -65,7 +65,7 @@ func TestService_Create(t *testing.T) {
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				labelUpsertService := &automock.LabelUpsertService{}
-				labelUpsertService.On("UpsertMultipleLabels", ctx, testTenant, model.AppTemplateLabelableObject, "foo", map[string]interface{}{"test": "test"}).Return(nil).Once()
+				labelUpsertService.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, "foo", map[string]interface{}{"test": "test"}).Return(nil).Once()
 				return labelUpsertService
 			},
 			ExpectedOutput: testID,
@@ -85,7 +85,7 @@ func TestService_Create(t *testing.T) {
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				labelUpsertService := &automock.LabelUpsertService{}
-				labelUpsertService.On("UpsertMultipleLabels", ctx, testTenant, model.AppTemplateLabelableObject, "foo", map[string]interface{}{"test": "test"}).Return(nil).Once()
+				labelUpsertService.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, "foo", map[string]interface{}{"test": "test"}).Return(nil).Once()
 				return labelUpsertService
 			},
 			ExpectedOutput: testID,
