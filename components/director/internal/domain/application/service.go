@@ -792,17 +792,10 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 	return s.appRepo.GetByID(ctx, appTenant, destID)
 }
 
-// handleMergeLabels merges source labels into destination labels. intSysKey labels are merged into destination labels only
-// when the source label if present and the destination is not. model.ScenariosKey is merged manually as well due to limitation
+// handleMergeLabels merges source labels into destination labels. model.ScenariosKey is merged manually as well due to limitation
 // of the lib that is used. The last manually merged label is managedKey which is updated only if the destination or
 // source label have a value "true"
 func (s *service) handleMergeLabels(srcAppLabels, destAppLabels map[string]*model.Label) (map[string]interface{}, error) {
-	destIntSysID := fmt.Sprintf("%v", destAppLabels[intSysKey].Value)
-	srcIntSysID := fmt.Sprintf("%v", srcAppLabels[intSysKey].Value)
-	if len(destIntSysID) == 0 && len(srcIntSysID) > 0 {
-		destAppLabels[intSysKey].Value = srcIntSysID
-	}
-
 	srcScenariosStrSlice, err := label.ValueToStringsSlice(srcAppLabels[model.ScenariosKey].Value)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting source application labels to string slice")

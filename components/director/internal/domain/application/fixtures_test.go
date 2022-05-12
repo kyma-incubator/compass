@@ -506,7 +506,7 @@ func fixAppColumns() []string {
 	return []string{"id", "app_template_id", "system_number", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "documentation_labels"}
 }
 
-func fixApplicationLabels(appID, labelKey1, labelKey2, labelKey3 string, labelValue1 []interface{}, labelValue2, labelValue3 string) map[string]*model.Label {
+func fixApplicationLabels(appID, labelKey1, labelKey2 string, labelValue1 []interface{}, labelValue2 string) map[string]*model.Label {
 	tnt := "tenant"
 
 	return map[string]*model.Label{
@@ -523,14 +523,6 @@ func fixApplicationLabels(appID, labelKey1, labelKey2, labelKey3 string, labelVa
 			Tenant:     str.Ptr(tnt),
 			Key:        labelKey2,
 			Value:      labelValue2,
-			ObjectID:   appID,
-			ObjectType: model.ApplicationLabelableObject,
-		},
-		labelKey3: {
-			ID:         "ghi",
-			Tenant:     str.Ptr(tnt),
-			Key:        labelKey3,
-			Value:      labelValue3,
 			ObjectID:   appID,
 			ObjectType: model.ApplicationLabelableObject,
 		},

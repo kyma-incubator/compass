@@ -3198,25 +3198,21 @@ func TestService_Merge(t *testing.T) {
 	}
 
 	labelKey1 := model.ScenariosKey
-	labelKey2 := "integrationSystemID"
-	labelKey3 := "managed"
+	labelKey2 := "managed"
 	labelValue1 := []interface{}{"Easter", "Egg"}
 	labelValue2 := []interface{}{"Easter", "Bunny"}
-	labelValue3 := "int-sys-id"
 
 	upsertLabelValues := make(map[string]interface{})
 	upsertLabelValues[labelKey1] = []string{"Easter", "Bunny", "Egg"}
-	upsertLabelValues[labelKey2] = labelValue3
-	upsertLabelValues[labelKey3] = "true"
+	upsertLabelValues[labelKey2] = "true"
 
 	upsertLabelValuesWithManagedFalse := make(map[string]interface{})
 	upsertLabelValuesWithManagedFalse[labelKey1] = []string{"Easter", "Bunny", "Egg"}
-	upsertLabelValuesWithManagedFalse[labelKey2] = labelValue3
-	upsertLabelValuesWithManagedFalse[labelKey3] = "false"
+	upsertLabelValuesWithManagedFalse[labelKey2] = "false"
 
-	srcAppLabels := fixApplicationLabels(srcID, labelKey1, labelKey2, labelKey3, labelValue1, labelValue3, "true")
-	destAppLabels := fixApplicationLabels(srcID, labelKey1, labelKey2, labelKey3, labelValue2, "", "false")
-	srcAppLabelsWithFalseManaged := fixApplicationLabels(srcID, labelKey1, labelKey2, labelKey3, labelValue1, labelValue3, "false")
+	srcAppLabels := fixApplicationLabels(srcID, labelKey1, labelKey2, labelValue1, "true")
+	destAppLabels := fixApplicationLabels(srcID, labelKey1, labelKey2, labelValue2, "false")
+	srcAppLabelsWithFalseManaged := fixApplicationLabels(srcID, labelKey1, labelKey2, labelValue1, "false")
 
 	srcModel := fixDetailedModelApplication(t, srcID, tnt, srcName, srcDescription)
 	srcModel.ApplicationTemplateID = &templateID
@@ -3616,8 +3612,8 @@ func TestService_Merge(t *testing.T) {
 			labelUpserSvc.AssertExpectations(t)
 		})
 
-		srcAppLabels = fixApplicationLabels(srcID, labelKey1, labelKey2, labelKey3, labelValue1, labelValue3, "true")
-		destAppLabels = fixApplicationLabels(srcID, labelKey1, labelKey2, labelKey3, labelValue2, "", "false")
+		srcAppLabels = fixApplicationLabels(srcID, labelKey1, labelKey2, labelValue1, "true")
+		destAppLabels = fixApplicationLabels(srcID, labelKey1, labelKey2, labelValue2, "false")
 	}
 }
 
