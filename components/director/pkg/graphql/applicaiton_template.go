@@ -9,4 +9,5 @@ type ApplicationTemplate struct {
 	ApplicationInput string                         `json:"applicationInput"`
 	Placeholders     []*PlaceholderDefinition       `json:"placeholders"`
 	AccessLevel      ApplicationTemplateAccessLevel `json:"accessLevel"`
+	Labels           Labels                         `json:"labels"`
 }

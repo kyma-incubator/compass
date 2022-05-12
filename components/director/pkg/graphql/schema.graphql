@@ -113,6 +113,7 @@ enum FetchRequestStatusCondition {
 enum FormationObjectType {
 	APPLICATION
 	TENANT
+	RUNTIME
 }
 
 enum HealthCheckStatusCondition {
@@ -122,6 +123,11 @@ enum HealthCheckStatusCondition {
 
 enum HealthCheckType {
 	MANAGEMENT_PLANE_APPLICATION_HEALTHCHECK
+}
+
+enum OneTimeTokenType {
+	Runtime
+	Application
 }
 
 enum OperationMode {
@@ -146,6 +152,12 @@ enum SpecFormat {
 	YAML
 	JSON
 	XML
+}
+
+enum SystemAuthReferenceType {
+	APPLICATION
+	RUNTIME
+	INTEGRATION_SYSTEM
 }
 
 enum ViewerType {
@@ -173,8 +185,11 @@ interface OneTimeToken {
 	connectorURL: String!
 	used: Boolean!
 	expiresAt: Timestamp!
+	createdAt: Timestamp
+	usedAt: Timestamp
 	raw: String
 	rawEncoded: String
+	type: OneTimeTokenType
 }
 
 """
@@ -191,6 +206,9 @@ interface Pageable {
 interface SystemAuth {
 	id: ID!
 	auth: Auth
+	type: SystemAuthReferenceType
+	tenantId: String
+	referenceObjectId: ID
 }
 
 union CredentialData = BasicCredentialData | OAuthCredentialData
@@ -283,6 +301,10 @@ input ApplicationTemplateInput {
 	"""
 	webhooks: [WebhookInput!]
 	description: String
+	"""
+	**Validation:** label key is alphanumeric with underscore
+	"""
+	labels: Labels
 	applicationInput: ApplicationRegisterInput!
 	placeholders: [PlaceholderDefinitionInput!]
 	accessLevel: ApplicationTemplateAccessLevel!
@@ -315,6 +337,7 @@ input ApplicationUpdateInput {
 	**Validation:** valid URL, max=256
 	"""
 	healthCheckURL: String
+	baseUrl: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
 }
@@ -333,6 +356,8 @@ input AuthInput {
 	additionalQueryParams: QueryParams @deprecated(reason: "Use `additionalHeadersSerialized`.")
 	additionalQueryParamsSerialized: QueryParamsSerialized
 	requestAuth: CredentialRequestAuthInput
+	certCommonName: String
+	oneTimeToken: OneTimeTokenInput
 }
 
 input AutomaticScenarioAssignmentSetInput {
@@ -594,6 +619,18 @@ input OAuthCredentialDataInput {
 	url: String!
 }
 
+input OneTimeTokenInput {
+	token: String!
+	connectorURL: String
+	used: Boolean!
+	expiresAt: Timestamp!
+	createdAt: Timestamp!
+	usedAt: Timestamp!
+	raw: String
+	rawEncoded: String
+	type: OneTimeTokenType
+}
+
 input PlaceholderDefinitionInput {
 	"""
 	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
@@ -611,10 +648,6 @@ input RuntimeContextInput {
 	"""
 	key: String!
 	value: String!
-	"""
-	**Validation:** key: required, alphanumeric with underscore
-	"""
-	labels: Labels
 }
 
 input RuntimeInput {
@@ -631,6 +664,10 @@ input RuntimeInput {
 	"""
 	labels: Labels
 	statusCondition: RuntimeStatusCondition
+}
+
+input SystemAuthUpdateInput {
+	auth: AuthInput
 }
 
 input TemplateValueInput {
@@ -709,6 +746,9 @@ type APISpec {
 type AppSystemAuth implements SystemAuth {
 	id: ID!
 	auth: Auth @sanitize(path: "graphql.field.application.auths")
+	type: SystemAuthReferenceType
+	tenantId: String
+	referenceObjectId: ID
 }
 
 type Application {
@@ -757,6 +797,7 @@ type ApplicationTemplate {
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.application_template.webhooks")
 	applicationInput: String!
 	placeholders: [PlaceholderDefinition!]!
+	labels(key: String): Labels
 	accessLevel: ApplicationTemplateAccessLevel!
 }
 
@@ -963,6 +1004,9 @@ type HealthCheckPage implements Pageable {
 type IntSysSystemAuth implements SystemAuth {
 	id: ID!
 	auth: Auth @sanitize(path: "graphql.field.integration_system.auths")
+	type: SystemAuthReferenceType
+	tenantId: String
+	referenceObjectId: ID
 }
 
 type IntegrationSystem {
@@ -1003,8 +1047,11 @@ type OneTimeTokenForApplication implements OneTimeToken {
 	legacyConnectorURL: String!
 	used: Boolean!
 	expiresAt: Timestamp!
+	createdAt: Timestamp
+	usedAt: Timestamp
 	raw: String
 	rawEncoded: String
+	type: OneTimeTokenType
 }
 
 type OneTimeTokenForRuntime implements OneTimeToken {
@@ -1012,8 +1059,11 @@ type OneTimeTokenForRuntime implements OneTimeToken {
 	connectorURL: String!
 	used: Boolean!
 	expiresAt: Timestamp!
+	createdAt: Timestamp
+	usedAt: Timestamp
 	raw: String
 	rawEncoded: String
+	type: OneTimeTokenType
 }
 
 type PageInfo {
@@ -1039,6 +1089,8 @@ type Runtime {
 	"""
 	auths: [RuntimeSystemAuth!]
 	eventingConfiguration: RuntimeEventingConfiguration
+	runtimeContext(id: ID!): RuntimeContext
+	runtimeContexts(first: Int = 200, after: PageCursor): RuntimeContextPage
 }
 
 type RuntimeContext {
@@ -1076,6 +1128,9 @@ type RuntimeStatus {
 type RuntimeSystemAuth implements SystemAuth {
 	id: ID!
 	auth: Auth @sanitize(path: "graphql.field.runtime.auths")
+	type: SystemAuthReferenceType
+	tenantId: String
+	referenceObjectId: ID
 }
 
 type Tenant {
@@ -1177,13 +1232,12 @@ type Query {
 	- [query runtimes](examples/query-runtimes/query-runtimes.graphql)
 	"""
 	runtimes(filter: [LabelFilter!], first: Int = 200, after: PageCursor): RuntimePage! @hasScopes(path: "graphql.query.runtimes")
-	runtimeContexts(filter: [LabelFilter!], first: Int = 200, after: PageCursor): RuntimeContextPage! @hasScopes(path: "graphql.query.runtimeContexts")
 	"""
 	**Examples**
 	- [query runtime](examples/query-runtime/query-runtime.graphql)
 	"""
 	runtime(id: ID!): Runtime @hasScopes(path: "graphql.query.runtime")
-	runtimeContext(id: ID!): RuntimeContext @hasScopes(path: "graphql.query.runtimeContext")
+	runtimeByTokenIssuer(issuer: String!): Runtime
 	labelDefinitions: [LabelDefinition!]! @hasScopes(path: "graphql.query.labelDefinitions")
 	"""
 	**Examples**
@@ -1212,6 +1266,8 @@ type Query {
 	"""
 	tenants(first: Int = 500, after: PageCursor, searchTerm: String): TenantPage! @hasScopes(path: "graphql.query.tenants")
 	tenantByExternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenants")
+	tenantByInternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenantByInternalID")
+	tenantByLowestOwnerForResource(id: ID!, resource: String!): String! @hasScopes(path: "graphql.query.tenantByLowestOwnerForResource")
 	"""
 	**Examples**
 	- [query automatic scenario assignment for scenario](examples/query-automatic-scenario-assignment-for-scenario/query-automatic-scenario-assignment-for-scenario.graphql)
@@ -1227,6 +1283,8 @@ type Query {
 	- [query automatic scenario assignments](examples/query-automatic-scenario-assignments/query-automatic-scenario-assignments.graphql)
 	"""
 	automaticScenarioAssignments(first: Int = 200, after: PageCursor): AutomaticScenarioAssignmentPage @hasScopes(path: "graphql.query.automaticScenarioAssignments")
+	systemAuth(id: ID!): SystemAuth @hasScopes(path: "graphql.query.systemAuth")
+	systemAuthByToken(token: String!): SystemAuth @hasScopes(path: "graphql.query.systemAuthByToken")
 }
 
 type Mutation {
@@ -1288,7 +1346,15 @@ type Mutation {
 	- [unregister runtime](examples/unregister-runtime/unregister-runtime.graphql)
 	"""
 	unregisterRuntime(id: ID!): Runtime! @hasScopes(path: "graphql.mutation.unregisterRuntime")
-	registerRuntimeContext(in: RuntimeContextInput! @validate): RuntimeContext! @hasScopes(path: "graphql.mutation.registerRuntimeContext")
+	"""
+	**Examples**
+	- [register runtime context](examples/register-runtime-context/register-runtime-context.graphql)
+	"""
+	registerRuntimeContext(runtimeID: ID!, in: RuntimeContextInput! @validate): RuntimeContext! @hasScopes(path: "graphql.mutation.registerRuntimeContext")
+	"""
+	**Examples**
+	- [update runtime context](examples/update-runtime-context/update-runtime-context.graphql)
+	"""
 	updateRuntimeContext(id: ID!, in: RuntimeContextInput! @validate): RuntimeContext! @hasScopes(path: "graphql.mutation.updateRuntimeContext")
 	unregisterRuntimeContext(id: ID!): RuntimeContext! @hasScopes(path: "graphql.mutation.unregisterRuntimeContext")
 	"""
@@ -1350,6 +1416,8 @@ type Mutation {
 	deleteSystemAuthForRuntime(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForRuntime")
 	deleteSystemAuthForApplication(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForApplication")
 	deleteSystemAuthForIntegrationSystem(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.deleteSystemAuthForIntegrationSystem")
+	updateSystemAuth(authID: ID!, in: AuthInput!): SystemAuth! @hasScopes(path: "graphql.mutation.updateSystemAuth")
+	invalidateSystemAuthOneTimeToken(authID: ID!): SystemAuth! @hasScopes(path: "graphql.mutation.invalidateSystemAuthOneTimeToken")
 	"""
 	**Examples**
 	- [add event definition to bundle](examples/add-event-definition-to-bundle/add-event-definition-to-bundle.graphql)
@@ -1376,9 +1444,29 @@ type Mutation {
 	- [delete document](examples/delete-document/delete-document.graphql)
 	"""
 	deleteDocument(id: ID!): Document! @hasScopes(path: "graphql.mutation.deleteDocument")
+	"""
+	**Examples**
+	- [create formation](examples/create-formation/create-formation.graphql)
+	"""
 	createFormation(formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.createFormation")
+	"""
+	**Examples**
+	- [delete formation](examples/delete-formation/delete-formation.graphql)
+	"""
 	deleteFormation(formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.deleteFormation")
+	"""
+	**Examples**
+	- [assign application to formation](examples/assign-formation/assign-application-to-formation.graphql)
+	- [assign runtime to formation](examples/assign-formation/assign-runtime-to-formation.graphql)
+	- [assign tenant to formation](examples/assign-formation/assign-tenant-to-formation.graphql)
+	"""
 	assignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.assignFormation")
+	"""
+	**Examples**
+	- [unassign application from formation](examples/unassign-formation/unassign-application-from-formation.graphql)
+	- [unassign runtime from formation](examples/unassign-formation/unassign-runtime-from-formation.graphql)
+	- [unassign tenant from formation](examples/unassign-formation/unassign-tenant-from-formation.graphql)
+	"""
 	unassignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.unassignFormation")
 	"""
 	**Examples**
@@ -1462,17 +1550,17 @@ type Mutation {
 	**Examples**
 	- [create automatic scenario assignment](examples/create-automatic-scenario-assignment/create-automatic-scenario-assignment.graphql)
 	"""
-	createAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput! @validate): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.createAutomaticScenarioAssignment")
+	createAutomaticScenarioAssignment(in: AutomaticScenarioAssignmentSetInput! @validate): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.createAutomaticScenarioAssignment") @deprecated(reason: "Use assignFormation with objectType TENANT instead.")
 	"""
 	**Examples**
 	- [delete automatic scenario assignment for scenario](examples/delete-automatic-scenario-assignment-for-scenario/delete-automatic-scenario-assignment-for-scenario.graphql)
 	"""
-	deleteAutomaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForScenario")
+	deleteAutomaticScenarioAssignmentForScenario(scenarioName: String!): AutomaticScenarioAssignment @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentForScenario") @deprecated(reason: "Use unassignFormation with objectType TENANT instead.")
 	"""
 	**Examples**
 	- [delete automatic scenario assignments for selector](examples/delete-automatic-scenario-assignments-for-selector/delete-automatic-scenario-assignments-for-selector.graphql)
 	"""
-	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput! @validate): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector")
+	deleteAutomaticScenarioAssignmentsForSelector(selector: LabelSelectorInput! @validate): [AutomaticScenarioAssignment!]! @hasScopes(path: "graphql.mutation.deleteAutomaticScenarioAssignmentsForSelector") @deprecated(reason: "Use unassignFormation with objectType TENANT instead.")
 	writeTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.writeTenants")
 	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
 	updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")

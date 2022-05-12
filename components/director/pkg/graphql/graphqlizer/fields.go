@@ -126,6 +126,7 @@ func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
 		applicationInput
 		placeholders {%s}
 		webhooks {%s}
+		labels
 		accessLevel
 	`, fp.ForPlaceholders(), fp.ForWebhooks())
 }
@@ -415,8 +416,8 @@ func (fp *GqlFieldsProvider) ForLabel() string {
 }
 
 // ForRuntime missing godoc
-func (fp *GqlFieldsProvider) ForRuntime() string {
-	return fmt.Sprintf(`
+func (fp *GqlFieldsProvider) ForRuntime(ctx ...FieldCtx) string {
+	return addFieldsFromContext(fmt.Sprintf(`
 		id
 		name
 		description
@@ -424,7 +425,16 @@ func (fp *GqlFieldsProvider) ForRuntime() string {
 		status {condition timestamp}
 		metadata { creationTimestamp }
 		auths {%s}
-		eventingConfiguration { defaultURL }`, fp.ForSystemAuth())
+		runtimeContexts {%s}
+		eventingConfiguration { defaultURL }`, fp.ForSystemAuth(), fp.Page(fp.ForRuntimeContext())), ctx, []string{"Runtime.runtimeContext"})
+}
+
+// ForRuntimeContext missing godoc
+func (fp *GqlFieldsProvider) ForRuntimeContext() string {
+	return `id
+			key
+			value
+			labels`
 }
 
 // ForApplicationLabel missing godoc

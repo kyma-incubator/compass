@@ -26,8 +26,7 @@ var (
 	cfg                          config.ConnectorTestConfig
 	directorClient               *clients.CertSecuredGraphQLClient
 	directorAppsForRuntimeClient *clients.CertSecuredGraphQLClient
-	connectorHydratorClient      *clients.HydratorClient
-	directorHydratorClient       *clients.HydratorClient
+	hydratorClient               *clients.HydratorClient
 	connectorClient              *clients.TokenSecuredClient
 	configmapCleaner             *k8s.ConfigmapCleaner
 	ctx                          context.Context
@@ -68,8 +67,8 @@ func TestMain(m *testing.M) {
 		log.D().Errorf("Failed to create director client: %s", err.Error())
 		os.Exit(1)
 	}
-	connectorHydratorClient = clients.NewHydratorClient(cfg.ConnectorHydratorURL)
-	directorHydratorClient = clients.NewHydratorClient(cfg.DirectorHydratorURL)
+
+	hydratorClient = clients.NewHydratorClient(cfg.HydratorURL)
 	connectorClient = clients.NewTokenSecuredClient(cfg.ConnectorURL)
 
 	configmapInterface, err := newConfigMapInterface()

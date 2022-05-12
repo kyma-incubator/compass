@@ -6,10 +6,13 @@ import (
 	"net/http"
 	"net/url"
 
+	pkgadapters "github.com/kyma-incubator/compass/components/director/pkg/adapters"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	"github.com/kyma-incubator/compass/components/director/internal/subscription"
 
 	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -40,10 +43,10 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
-	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -85,18 +88,19 @@ type RootResolver struct {
 func NewRootResolver(
 	appNameNormalizer normalizer.Normalizator,
 	transact persistence.Transactioner,
-	cfgProvider *configprovider.Provider,
+	cfgProvider *config.Provider,
 	oneTimeTokenCfg onetimetoken.Config,
 	oAuth20Cfg oauth20.Config,
-	pairingAdaptersMapping map[string]string,
+	pairingAdapters *pkgadapters.Adapters,
 	featuresConfig features.Config,
 	metricsCollector *metrics.Collector,
-	httpClient, internalHTTPClient *http.Client,
-	selfRegConfig runtime.SelfRegConfig,
+	httpClient, internalFQDNHTTPClient, internalGatewayHTTPClient *http.Client,
+	selfRegConfig config.SelfRegConfig,
 	tokenLength int,
 	hydraURL *url.URL,
 	accessStrategyExecutorProvider *accessstrategy.Provider,
 	subscriptionConfig subscription.Config,
+	tenantOnDemandURL string,
 ) (*RootResolver, error) {
 	oAuth20HTTPClient := &http.Client{
 		Timeout:   oAuth20Cfg.HTTPClientTimeout,
@@ -159,7 +163,7 @@ func NewRootResolver(
 
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessStrategyExecutorProvider)
@@ -171,7 +175,7 @@ func NewRootResolver(
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo, runtimeRepo)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc, scenarioAssignmentEngine)
-	runtimeCtxSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, uidSvc)
+	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, uidSvc)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
@@ -182,10 +186,11 @@ func NewRootResolver(
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, labelDefSvc, bundleSvc, uidSvc)
 	timeService := time.NewService()
-	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdaptersMapping, timeService)
+	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalFQDNHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdapters, timeService)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentSvc, tenantSvc)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentSvc, tenantSvc, scenarioAssignmentEngine)
 	subscriptionSvc := subscription.NewService(runtimeSvc, tenantSvc, labelSvc, uidSvc, subscriptionConfig.ProviderLabelKey, subscriptionConfig.ConsumerSubaccountIDsLabelKey)
+	tenantOnDemandSvc := tenant.NewFetchOnDemandService(internalGatewayHTTPClient, tenantOnDemandURL)
 
 	return &RootResolver{
 		appNameNormalizer:  appNameNormalizer,
@@ -195,21 +200,21 @@ func NewRootResolver(
 		eventAPI:           eventdef.NewResolver(transact, eventAPISvc, bundleSvc, bundleReferenceSvc, eventAPIConverter, frConverter, specSvc, specConverter),
 		eventing:           eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:                document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
-		formation:          formation.NewResolver(transact, formationSvc, formationConv),
-		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc, subscriptionSvc),
-		runtimeContext:     runtimectx.NewResolver(transact, runtimeCtxSvc, runtimeContextConverter),
+		formation:          formation.NewResolver(transact, formationSvc, formationConv, tenantOnDemandSvc),
+		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc, subscriptionSvc, runtimeContextSvc, runtimeContextConverter, tenantOnDemandSvc),
+		runtimeContext:     runtimectx.NewResolver(transact, runtimeContextSvc, runtimeContextConverter),
 		healthCheck:        healthcheck.NewResolver(healthCheckSvc),
 		webhook:            webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, webhookConverter),
 		labelDef:           labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
 		token:              onetimetoken.NewTokenResolver(transact, tokenSvc, tokenConverter, oneTimeTokenCfg.SuggestTokenHeaderKey),
-		systemAuth:         systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, systemAuthConverter),
+		systemAuth:         systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, tokenSvc, systemAuthConverter, authConverter),
 		oAuth20:            oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
 		intSys:             integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
 		viewer:             viewer.NewViewerResolver(),
 		tenant:             tenant.NewResolver(transact, tenantSvc, tenantConverter),
 		mpBundle:           bundleutil.NewResolver(transact, bundleSvc, bundleInstanceAuthSvc, bundleReferenceSvc, apiSvc, eventAPISvc, docSvc, bundleConverter, bundleInstanceAuthConv, apiConverter, eventAPIConverter, docConverter, specSvc),
 		bundleInstanceAuth: bundleinstanceauth.NewResolver(transact, bundleInstanceAuthSvc, bundleSvc, bundleInstanceAuthConv, bundleConverter),
-		scenarioAssignment: scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv, tenantSvc),
+		scenarioAssignment: scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv, tenantSvc, tenantOnDemandSvc),
 	}, nil
 }
 
@@ -246,6 +251,11 @@ func (r *RootResolver) FetchRequestEventDefDataloader(ids []dataloader.ParamFetc
 // FetchRequestDocumentDataloader missing godoc
 func (r *RootResolver) FetchRequestDocumentDataloader(ids []dataloader.ParamFetchRequestDocument) ([]*graphql.FetchRequest, []error) {
 	return r.doc.FetchRequestDocumentDataLoader(ids)
+}
+
+// RuntimeContextsDataloader missing godoc
+func (r *RootResolver) RuntimeContextsDataloader(ids []dataloader.ParamRuntimeContext) ([]*graphql.RuntimeContextPage, []error) {
+	return r.runtime.RuntimeContextsDataLoader(ids)
 }
 
 // Mutation missing godoc
@@ -399,14 +409,9 @@ func (r *queryResolver) Runtime(ctx context.Context, id string) (*graphql.Runtim
 	return r.runtime.Runtime(ctx, id)
 }
 
-// RuntimeContexts missing godoc
-func (r *queryResolver) RuntimeContexts(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.RuntimeContextPage, error) {
-	return r.runtimeContext.RuntimeContexts(ctx, filter, first, after)
-}
-
-// RuntimeContext missing godoc
-func (r *queryResolver) RuntimeContext(ctx context.Context, id string) (*graphql.RuntimeContext, error) {
-	return r.runtimeContext.RuntimeContext(ctx, id)
+// RuntimeByTokenIssuer missing godoc
+func (r *queryResolver) RuntimeByTokenIssuer(ctx context.Context, issuer string) (*graphql.Runtime, error) {
+	return r.runtime.RuntimeByTokenIssuer(ctx, issuer)
 }
 
 // LabelDefinitions missing godoc
@@ -462,6 +467,16 @@ func (r *queryResolver) AutomaticScenarioAssignmentsForSelector(ctx context.Cont
 // AutomaticScenarioAssignments missing godoc
 func (r *queryResolver) AutomaticScenarioAssignments(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.AutomaticScenarioAssignmentPage, error) {
 	return r.scenarioAssignment.AutomaticScenarioAssignments(ctx, first, after)
+}
+
+// SystemAuth missing godoc
+func (r *queryResolver) SystemAuth(ctx context.Context, id string) (graphql.SystemAuth, error) {
+	return r.systemAuth.SystemAuth(ctx, id)
+}
+
+// SystemAuthByToken missing godoc
+func (r *queryResolver) SystemAuthByToken(ctx context.Context, id string) (graphql.SystemAuth, error) {
+	return r.systemAuth.SystemAuthByToken(ctx, id)
 }
 
 type mutationResolver struct {
@@ -585,8 +600,8 @@ func (r *mutationResolver) UnregisterRuntime(ctx context.Context, id string) (*g
 }
 
 // RegisterRuntimeContext missing godoc
-func (r *mutationResolver) RegisterRuntimeContext(ctx context.Context, in graphql.RuntimeContextInput) (*graphql.RuntimeContext, error) {
-	return r.runtimeContext.RegisterRuntimeContext(ctx, in)
+func (r *mutationResolver) RegisterRuntimeContext(ctx context.Context, runtimeID string, in graphql.RuntimeContextInput) (*graphql.RuntimeContext, error) {
+	return r.runtimeContext.RegisterRuntimeContext(ctx, runtimeID, in)
 }
 
 // UpdateRuntimeContext missing godoc
@@ -680,6 +695,16 @@ func (r *mutationResolver) DeleteSystemAuthForApplication(ctx context.Context, a
 func (r *mutationResolver) DeleteSystemAuthForIntegrationSystem(ctx context.Context, authID string) (graphql.SystemAuth, error) {
 	fn := r.systemAuth.GenericDeleteSystemAuth(model.IntegrationSystemReference)
 	return fn(ctx, authID)
+}
+
+// UpdateSystemAuth missing godoc
+func (r *mutationResolver) UpdateSystemAuth(ctx context.Context, authID string, in graphql.AuthInput) (graphql.SystemAuth, error) {
+	return r.systemAuth.UpdateSystemAuth(ctx, authID, in)
+}
+
+// InvalidateSystemAuthOneTimeToken missing godoc
+func (r *mutationResolver) InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) (graphql.SystemAuth, error) {
+	return r.systemAuth.InvalidateSystemAuthOneTimeToken(ctx, authID)
 }
 
 // RegisterIntegrationSystem missing godoc
@@ -839,6 +864,11 @@ func (r applicationTemplateResolver) Webhooks(ctx context.Context, obj *graphql.
 	return r.appTemplate.Webhooks(ctx, obj)
 }
 
+// Labels missing godoc
+func (r applicationTemplateResolver) Labels(ctx context.Context, obj *graphql.ApplicationTemplate, key *string) (graphql.Labels, error) {
+	return r.appTemplate.Labels(ctx, obj, key)
+}
+
 type runtimeResolver struct {
 	*RootResolver
 }
@@ -856,6 +886,16 @@ func (r *runtimeResolver) Auths(ctx context.Context, obj *graphql.Runtime) ([]*g
 // EventingConfiguration missing godoc
 func (r *runtimeResolver) EventingConfiguration(ctx context.Context, obj *graphql.Runtime) (*graphql.RuntimeEventingConfiguration, error) {
 	return r.runtime.EventingConfiguration(ctx, obj)
+}
+
+// RuntimeContexts missing godoc
+func (r *runtimeResolver) RuntimeContexts(ctx context.Context, obj *graphql.Runtime, first *int, after *graphql.PageCursor) (*graphql.RuntimeContextPage, error) {
+	return r.runtime.RuntimeContexts(ctx, obj, first, after)
+}
+
+// RuntimeContext missing godoc
+func (r *runtimeResolver) RuntimeContext(ctx context.Context, obj *graphql.Runtime, id string) (*graphql.RuntimeContext, error) {
+	return r.runtime.RuntimeContext(ctx, obj, id)
 }
 
 type apiSpecResolver struct{ *RootResolver }
@@ -971,7 +1011,17 @@ func (r *tenantResolver) Labels(ctx context.Context, obj *graphql.Tenant, key *s
 	return r.tenant.Labels(ctx, obj, key)
 }
 
-// TenantByExternalID missing godoc
+// TenantByExternalID returns a tenant by external ID
 func (r *queryResolver) TenantByExternalID(ctx context.Context, id string) (*graphql.Tenant, error) {
 	return r.tenant.Tenant(ctx, id)
+}
+
+// TenantByInternalID returns а tenant by an internal ID
+func (r *queryResolver) TenantByInternalID(ctx context.Context, id string) (*graphql.Tenant, error) {
+	return r.tenant.TenantByID(ctx, id)
+}
+
+// TenantByLowestOwnerForResource returns the lowest tenant in the hierarchy that is owner of a given resource.
+func (r *queryResolver) TenantByLowestOwnerForResource(ctx context.Context, resource, objectID string) (string, error) {
+	return r.tenant.TenantByLowestOwnerForResource(ctx, resource, objectID)
 }

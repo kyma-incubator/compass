@@ -1,8 +1,0 @@
-reviewers:
-  - team-raptor
-approvers:
-  - team-raptor
-labels:
-  - ":t-rex: team-raptor"
-options:
-  no_parent_owners: true

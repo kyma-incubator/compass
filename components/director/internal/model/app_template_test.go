@@ -54,6 +54,7 @@ func TestApplicationTemplateInput_ToApplicationTemplate(t *testing.T) {
 				ApplicationInputJSON: testAppInputJSON,
 				Placeholders:         testPlaceholders,
 				AccessLevel:          testAccessLevel,
+				Labels:               map[string]interface{}{"test": "test"},
 				Webhooks:             testWebhooks,
 			},
 			Expected: model.ApplicationTemplate{

@@ -687,6 +687,122 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 	})
 }
 
+func TestResolver_Labels(t *testing.T) {
+	// GIVEN
+
+	id := "foo"
+	tenant := "tenant"
+	labelKey1 := "key1"
+	labelValue1 := "val1"
+	labelKey2 := "key2"
+	labelValue2 := "val2"
+
+	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
+
+	modelLabels := map[string]*model.Label{
+		"abc": {
+			ID:         "abc",
+			Tenant:     str.Ptr(tenant),
+			Key:        labelKey1,
+			Value:      labelValue1,
+			ObjectID:   id,
+			ObjectType: model.AppTemplateLabelableObject,
+		},
+		"def": {
+			ID:         "def",
+			Tenant:     str.Ptr(tenant),
+			Key:        labelKey2,
+			Value:      labelValue2,
+			ObjectID:   id,
+			ObjectType: model.AppTemplateLabelableObject,
+		},
+	}
+
+	gqlLabels := graphql.Labels{
+		labelKey1: labelValue1,
+		labelKey2: labelValue2,
+	}
+
+	gqlLabels1 := graphql.Labels{
+		labelKey1: labelValue1,
+	}
+
+	testErr := errors.New("Test error")
+
+	testCases := []struct {
+		Name             string
+		PersistenceFn    func() *persistenceautomock.PersistenceTx
+		TransactionerFn  func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		AppTemplateSvcFn func() *automock.ApplicationTemplateService
+		InputKey         *string
+		ExpectedResult   graphql.Labels
+		ExpectedErr      error
+	}{
+		{
+			Name:            "Success",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				svc := &automock.ApplicationTemplateService{}
+				svc.On("ListLabels", txtest.CtxWithDBMatcher(), id).Return(modelLabels, nil).Once()
+				return svc
+			},
+			InputKey:       nil,
+			ExpectedResult: gqlLabels,
+			ExpectedErr:    nil,
+		},
+		{
+			Name:            "Success when labels are filtered",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				svc := &automock.ApplicationTemplateService{}
+				svc.On("ListLabels", txtest.CtxWithDBMatcher(), id).Return(modelLabels, nil).Once()
+				return svc
+			},
+			InputKey:       &labelKey1,
+			ExpectedResult: gqlLabels1,
+			ExpectedErr:    nil,
+		},
+		{
+			Name:            "Returns error when label listing failed",
+			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				svc := &automock.ApplicationTemplateService{}
+				svc.On("ListLabels", txtest.CtxWithDBMatcher(), id).Return(nil, testErr).Once()
+				return svc
+			},
+			InputKey:       &labelKey1,
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persistTx := testCase.PersistenceFn()
+			transact := testCase.TransactionerFn(persistTx)
+
+			//persist, transact := testCase.TxFn()
+			appTemplateSvc := testCase.AppTemplateSvcFn()
+
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, nil, nil, nil)
+
+			// WHEN
+			result, err := resolver.Labels(context.TODO(), gqlAppTemplate, testCase.InputKey)
+
+			// then
+			assert.Equal(t, testCase.ExpectedResult, result)
+			assert.Equal(t, testCase.ExpectedErr, err)
+
+			appTemplateSvc.AssertExpectations(t)
+			transact.AssertExpectations(t)
+			persistTx.AssertExpectations(t)
+		})
+	}
+}
+
 func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
