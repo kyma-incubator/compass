@@ -1502,7 +1502,7 @@ func TestMergeApplications(t *testing.T) {
 	sccLabelValue := "cloud connector"
 	expectedProductType := "MergeTemplate"
 	newFormation := "formation-merge-applications-e2e"
-	destScenariosValue := []interface{}{"DEFAULT", "formation-merge-applications-e2e"}
+	destScenariosValue := []interface{}{"DEFAULT", newFormation}
 
 	appTmplInput := fixtures.FixApplicationTemplate(expectedProductType)
 	appTmplInput.ApplicationInput.Name = "{{name}}"

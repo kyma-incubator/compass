@@ -102,3 +102,13 @@ func CastOrEmpty(i interface{}) string {
 	}
 	return ""
 }
+
+// ContainsInSlice checks if a string value is present in a given slice
+func ContainsInSlice(s []string, str string) bool {
+	for _, val := range s {
+		if val == str {
+			return true
+		}
+	}
+	return false
+}
