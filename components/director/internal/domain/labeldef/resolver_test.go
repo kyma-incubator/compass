@@ -58,7 +58,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 		defer mockService.AssertExpectations(t)
 		mockService.On("GetWithoutCreating",
 			contextThatHasTenant(tnt),
-			tnt, model.ScenariosKey).Return(nil, errors.New("not found")).Once()
+			tnt, model.ScenariosKey).Return(nil, errors.New("Object not found")).Once()
 
 		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, nil)
 
@@ -92,7 +92,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 		defer mockFormationsService.AssertExpectations(t)
 		mockService.On("GetWithoutCreating",
 			contextThatHasTenant(tnt),
-			tnt, model.ScenariosKey).Return(nil, errors.New("not found")).Once()
+			tnt, model.ScenariosKey).Return(nil, errors.New("Object not found")).Once()
 
 		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, nil)
 
@@ -208,7 +208,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 		defer mockService.AssertExpectations(t)
 		mockService.On("GetWithoutCreating",
 			contextThatHasTenant(tnt),
-			tnt, model.ScenariosKey).Return(nil, errors.New("not found")).Once()
+			tnt, model.ScenariosKey).Return(nil, errors.New("Object not found")).Once()
 
 		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, nil)
 

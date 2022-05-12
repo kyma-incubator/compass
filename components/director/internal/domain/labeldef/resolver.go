@@ -2,6 +2,7 @@ package labeldef
 
 import (
 	"context"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -80,8 +81,7 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 		return nil, errors.New("while creating label definition: Object is not unique [object=labelDefinition]")
 	}
 
-	// apperrors.IsNotFoundError doesn't recognize this
-	if err.Error() != "not found" {
+	if !strings.Contains(err.Error(), "Object not found") {
 		return nil, err
 	}
 
