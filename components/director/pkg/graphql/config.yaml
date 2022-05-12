@@ -167,6 +167,8 @@ models:
     fields:
       webhooks:
         resolver: true
+      labels:
+        resolver: true
 
   Tenant:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.Tenant"
