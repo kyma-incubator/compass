@@ -33,6 +33,7 @@ type ApplicationTemplateInput struct {
 	ApplicationInputJSON string
 	Placeholders         []ApplicationTemplatePlaceholder
 	AccessLevel          ApplicationTemplateAccessLevel
+	Labels               map[string]interface{}
 	Webhooks             []*WebhookInput
 }
 
