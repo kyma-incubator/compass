@@ -214,6 +214,7 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 				Description: &displayNamePlaceholderDescription,
 			},
 		},
+		Labels:      map[string]interface{}{},
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
 	}
 

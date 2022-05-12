@@ -94,6 +94,9 @@ func (g *Graphqlizer) ApplicationTemplateInputToGQL(in graphql.ApplicationTempla
 			{{- end }} ],
 		{{- end }}
 		accessLevel: {{.AccessLevel}},
+		{{- if .Labels }}
+		labels: {{ LabelsToGQL .Labels}},
+		{{- end }}
 		{{- if .Webhooks }}
 		webhooks: [
 			{{- range $i, $e := .Webhooks }} 

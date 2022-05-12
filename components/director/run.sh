@@ -209,7 +209,6 @@ export APP_DB_USER=${DB_USER}
 export APP_DB_PASSWORD=${DB_PWD}
 export APP_DB_NAME=${DB_NAME}
 export APP_CONFIGURATION_FILE=${ROOT_PATH}/hack/config-local.yaml
-export APP_STATIC_GROUPS_SRC=${ROOT_PATH}/hack/static-groups-local.yaml
 export APP_OAUTH20_URL="https://oauth2-admin.kyma.local"
 export APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT="https://oauth2.kyma.local/oauth2/token"
 export APP_ONE_TIME_TOKEN_URL="http://connector.not.configured.url/graphql"
