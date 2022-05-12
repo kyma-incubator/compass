@@ -7,7 +7,10 @@ import (
 	"strings"
 	"testing"
 
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
@@ -586,5 +589,65 @@ func TestFullReport(stdT *testing.T) {
 		apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
 		require.NoError(t, err)
 		require.Empty(t, apps)
+	})
+
+	t.Run("Full report with large request body", func(t *testing.T) {
+		ctx := context.Background()
+		appsToCreate := 110
+
+		// Create a fake description in order to make the request body
+		// larger. The whole request body must be larger than the auditlog
+		// max-body-size limit, which is currently 1MB
+		dummyDescription := strings.Repeat("#", 10_000)
+
+		//WHEN
+		apps, err := retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
+		require.NoError(t, err)
+		require.Empty(t, apps)
+
+		report := baseReport
+		report.Value = append(report.Value,
+			SCC{
+				Subaccount:     testTenant,
+				LocationID:     "",
+				ExposedSystems: []System{},
+			})
+
+		for i := 0; i < appsToCreate; i++ {
+			report.Value[0].ExposedSystems = append(report.Value[0].ExposedSystems, System{
+				Protocol:     "http",
+				Host:         fmt.Sprintf("virtual-host-%d:3000", i),
+				SystemType:   "nonSAPsys",
+				Description:  dummyDescription,
+				Status:       "reachable",
+				SystemNumber: "",
+			})
+		}
+
+		body, err := json.Marshal(report)
+		require.NoError(t, err)
+		log.C(ctx).Infof("Sending request with body length of %d bytes", len(body))
+
+		defer func() {
+			for {
+				apps, err = retrieveApps(t, ctx, sccLabelFilterWithoutLocationID)
+				require.NoError(t, err, "failed to clean-up after test")
+
+				if len(apps) == 0 {
+					break
+				}
+
+				log.C(ctx).Infof("Cleaning up %d applications", len(apps))
+				for i := 0; i < len(apps); i++ {
+					fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testTenant, apps[i])
+				}
+			}
+
+			log.C(ctx).Infof("Successfully cleaned up after test")
+		}()
+
+		resp, err := sendRequestWithTimeout(body, "full", token, 5*time.Minute)
+		require.NoError(t, err, "failed to send request with a large request body")
+		require.Equal(t, http.StatusNoContent, resp.StatusCode)
 	})
 }
