@@ -55,6 +55,8 @@ const (
 	ApplicationLabelableObject LabelableObject = "Application"
 	// TenantLabelableObject represents a tenant entity.
 	TenantLabelableObject LabelableObject = "Tenant"
+	// AppTemplateLabelableObject represents an application template entity.
+	AppTemplateLabelableObject LabelableObject = "Application Template"
 )
 
 // GetResourceType returns the resource type of the label based on the referenced entity.
