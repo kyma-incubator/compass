@@ -41,6 +41,7 @@ type ApplicationService interface {
 	ListLabels(ctx context.Context, applicationID string) (map[string]*model.Label, error)
 	DeleteLabel(ctx context.Context, applicationID string, key string) error
 	Unpair(ctx context.Context, id string) error
+	Merge(ctx context.Context, destID, sourceID string) (*model.Application, error)
 }
 
 // ApplicationConverter missing godoc
@@ -441,6 +442,34 @@ func (r *Resolver) SetApplicationLabel(ctx context.Context, applicationID string
 		Key:   key,
 		Value: value,
 	}, nil
+}
+
+// MergeApplications merges properties from Source Application into Destination Application, provided that the Destination's
+// Application does not have a value set for a given property. Then the Source Application is being deleted.
+func (r *Resolver) MergeApplications(ctx context.Context, destID string, sourceID string) (*graphql.Application, error) {
+	log.C(ctx).Infof("Merging source app with id %s into destination app with id %s", sourceID, destID)
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	mergedApp, err := r.appSvc.Merge(ctx, destID, sourceID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	gqlApp := r.appConverter.ToGraphQL(mergedApp)
+
+	return gqlApp, nil
 }
 
 // DeleteApplicationLabel missing godoc

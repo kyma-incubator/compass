@@ -173,6 +173,15 @@ func FixGetApplicationRequest(id string) *gcli.Request {
 			}`, id, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
 
+func FixMergeApplicationsRequest(srcID, destID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			  result: mergeApplications(sourceID: "%s", destinationID: "%s") {
+					%s
+			  }
+			}`, srcID, destID, testctx.Tc.GQLFieldsProvider.ForApplication()))
+}
+
 func FixUpdateApplicationRequest(id, updateInputGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {

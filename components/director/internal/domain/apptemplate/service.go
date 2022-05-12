@@ -73,17 +73,12 @@ func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo Webho
 
 // Create missing godoc
 func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error) {
-	appTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return "", err
-	}
-
 	appTemplateID := s.uidService.Generate()
 	log.C(ctx).Debugf("ID %s generated for Application Template with name %s", appTemplateID, in.Name)
 
 	appTemplate := in.ToApplicationTemplate(appTemplateID)
 
-	err = s.appTemplateRepo.Create(ctx, appTemplate)
+	err := s.appTemplateRepo.Create(ctx, appTemplate)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating Application Template with name %s", in.Name)
 	}
@@ -100,7 +95,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 		in.Labels = map[string]interface{}{}
 	}
 
-	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.AppTemplateLabelableObject, appTemplateID, in.Labels)
+	err = s.labelUpsertService.UpsertMultipleLabels(ctx, "", model.AppTemplateLabelableObject, appTemplateID, in.Labels)
 	if err != nil {
 		return appTemplateID, errors.Wrapf(err, "while creating multiple labels for Application Template with id %s", appTemplateID)
 	}

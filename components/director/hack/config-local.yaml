@@ -28,6 +28,7 @@ graphql:
     registerApplicationFromTemplate: ["application:write"]
     updateApplication: ["application:write"]
     unregisterApplication: ["application:write"]
+    mergeApplications: ["application:write"]
     createApplicationTemplate: ["application_template:write"]
     updateApplicationTemplate: ["application_template:write"]
     deleteApplicationTemplate: ["application_template:write"]

@@ -3,6 +3,7 @@ package str
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -101,4 +102,20 @@ func CastOrEmpty(i interface{}) string {
 		return s
 	}
 	return ""
+}
+
+// ContainsInSlice checks if a string value is present in a given slice
+func ContainsInSlice(s []string, str string) bool {
+	for _, val := range s {
+		if val == str {
+			return true
+		}
+	}
+	return false
+}
+
+// CastToBool casts the given value to string and then parsers it to a bool value
+func CastToBool(i interface{}) (bool, error) {
+	str := CastOrEmpty(i)
+	return strconv.ParseBool(str)
 }
