@@ -3,6 +3,7 @@ package labeldef_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -120,6 +121,108 @@ func TestCreateLabelDefinition(t *testing.T) {
 		transact.AssertExpectations(t)
 	})
 
+	t.Run("got error different from not found while getting label definition", func(t *testing.T) {
+		// GIVEN
+		persist, transact := txGen.ThatDoesntExpectCommit()
+
+		mockConverter := &automock.ModelConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromGraphQL", labelDefInput, tnt).Return(model.LabelDefinition{
+			Key:    model.ScenariosKey,
+			Tenant: tnt,
+			Schema: &scenarioSchemaInt,
+		}, nil)
+
+		mockService := &automock.Service{}
+		defer mockService.AssertExpectations(t)
+		mockService.On("GetWithoutCreating",
+			contextThatHasTenant(tnt),
+			tnt, model.ScenariosKey).Return(nil, errors.New("db error")).Once()
+
+		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
+		sut := labeldef.NewResolver(transact, mockService, nil, mockConverter)
+
+		// WHEN
+		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
+		// THEN
+		require.Error(t, err)
+		require.EqualError(t, err, "while getting label definition: db error")
+		persist.AssertExpectations(t)
+		transact.AssertExpectations(t)
+	})
+
+	t.Run("got error during formation creating", func(t *testing.T) {
+		// GIVEN
+		persist, transact := txGen.ThatDoesntExpectCommit()
+
+		mockService := &automock.Service{}
+		defer mockService.AssertExpectations(t)
+		mockConverter := &automock.ModelConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockFormationsService := &automock.FormationService{}
+		defer mockFormationsService.AssertExpectations(t)
+
+		mockConverter.On("FromGraphQL", labelDefInput, tnt).Return(model.LabelDefinition{
+			Key:    model.ScenariosKey,
+			Tenant: tnt,
+			Schema: &scenarioSchemaInt,
+		}, nil)
+
+		defer mockService.AssertExpectations(t)
+		mockService.On("GetWithoutCreating",
+			contextThatHasTenant(tnt),
+			tnt, model.ScenariosKey).Return(nil, errors.New("Object not found")).Once()
+
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, testErr)
+
+		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
+		sut := labeldef.NewResolver(transact, mockService, mockFormationsService, mockConverter)
+		// WHEN
+		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
+		require.Error(t, err)
+		require.EqualError(t, err, fmt.Sprintf("while creating formation: %s", testErr.Error()))
+		persist.AssertExpectations(t)
+		transact.AssertExpectations(t)
+	})
+
+	t.Run("got error during getting updated label definition", func(t *testing.T) {
+		// GIVEN
+		persist, transact := txGen.ThatDoesntExpectCommit()
+
+		mockService := &automock.Service{}
+		defer mockService.AssertExpectations(t)
+		mockConverter := &automock.ModelConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockFormationsService := &automock.FormationService{}
+		defer mockFormationsService.AssertExpectations(t)
+
+		mockConverter.On("FromGraphQL", labelDefInput, tnt).Return(model.LabelDefinition{
+			Key:    model.ScenariosKey,
+			Tenant: tnt,
+			Schema: &scenarioSchemaInt,
+		}, nil)
+
+		defer mockService.AssertExpectations(t)
+		mockService.On("GetWithoutCreating",
+			contextThatHasTenant(tnt),
+			tnt, model.ScenariosKey).Return(nil, errors.New("Object not found")).Once()
+
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, nil)
+
+		mockService.On("Get",
+			contextThatHasTenant(tnt),
+			tnt, model.ScenariosKey).Return(nil, testErr).Once()
+
+		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
+		sut := labeldef.NewResolver(transact, mockService, mockFormationsService, mockConverter)
+		// WHEN
+		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
+		require.Error(t, err)
+		require.EqualError(t, err, fmt.Sprintf("while getting label definition: %s", testErr.Error()))
+		persist.AssertExpectations(t)
+		transact.AssertExpectations(t)
+	})
+
 	t.Run("got error when missing tenant in context", func(t *testing.T) {
 		// GIVEN
 		sut := labeldef.NewResolver(nil, nil, nil, nil)
@@ -169,7 +272,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 		// THEN
 		transact.AssertExpectations(t)
 		persist.AssertExpectations(t)
-		require.EqualError(t, err, "while creating label definition: Object is not unique [object=labelDefinition]")
+		require.EqualError(t, err, "Object is not unique [object=labelDefinition]")
 	})
 
 	t.Run("got error on converting to model", func(t *testing.T) {
@@ -778,6 +881,36 @@ func TestUpdateLabelDefinition(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, "while receiving stored label definition: test error")
+		transact.AssertExpectations(t)
+		persist.AssertExpectations(t)
+	})
+
+	t.Run("get error on getting updated label definition", func(t *testing.T) {
+		// GIVEN
+		persist, transact := txGen.ThatDoesntExpectCommit()
+
+		mockConverter := &automock.ModelConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromGraphQL", gqlLabelDefinitionInput, tnt).Return(gqlLabelDefinition, nil)
+
+		mockFormationsService := &automock.FormationService{}
+		defer mockFormationsService.AssertExpectations(t)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "additional-1"}).Return(nil, nil)
+		mockFormationsService.On("DeleteFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "initial-1"}).Return(nil, nil)
+
+		mockService := &automock.Service{}
+		defer mockService.AssertExpectations(t)
+		mockService.On("Get", contextThatHasTenant(tnt), tnt, modelLabelDefinition.Key).Return(&modelLabelDefinition, nil).Once()
+		mockService.On("Get", contextThatHasTenant(tnt), tnt, modelLabelDefinition.Key).Return(nil, testErr).Once()
+
+		ctx := persistence.SaveToContext(context.TODO(), nil)
+		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+		sut := labeldef.NewResolver(transact, mockService, mockFormationsService, mockConverter)
+		// WHEN
+		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
+		// THEN
+		require.Error(t, err)
+		require.EqualError(t, err, "while receiving updated label definition: test error")
 		transact.AssertExpectations(t)
 		persist.AssertExpectations(t)
 	})
