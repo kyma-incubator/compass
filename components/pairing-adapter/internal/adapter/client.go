@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery --name=HTTPDoer --output=automock --outpkg=automock
+//go:generate mockery --name=HTTPDoer --output=automock --outpkg=automock --disable-version-string
 type HTTPDoer interface {
 	Do(r *http.Request) (*http.Response, error)
 }

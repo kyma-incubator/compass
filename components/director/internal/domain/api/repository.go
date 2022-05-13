@@ -30,7 +30,7 @@ var (
 )
 
 // APIDefinitionConverter converts APIDefinitions between the model.APIDefinition service-layer representation and the repo-layer representation Entity.
-//go:generate mockery --name=APIDefinitionConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=APIDefinitionConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIDefinitionConverter interface {
 	FromEntity(entity *Entity) *model.APIDefinition
 	ToEntity(apiModel *model.APIDefinition) *Entity

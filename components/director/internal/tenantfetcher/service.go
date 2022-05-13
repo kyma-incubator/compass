@@ -77,38 +77,38 @@ type PageConfig struct {
 }
 
 // TenantStorageService missing godoc
-//go:generate mockery --name=TenantStorageService --output=automock --outpkg=automock --case=underscore --unroll-variadic=False
+//go:generate mockery --name=TenantStorageService --output=automock --outpkg=automock --case=underscore --unroll-variadic=False --disable-version-string
 type TenantStorageService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // LabelRepo missing godoc
-//go:generate mockery --name=LabelRepo --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepo interface {
 	GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error)
 }
 
 // EventAPIClient missing godoc
-//go:generate mockery --name=EventAPIClient --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=EventAPIClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventAPIClient interface {
 	FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (TenantEventsResponse, error)
 }
 
 // RuntimeService missing godoc
-//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	ListByFilters(ctx context.Context, filters []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
 // TenantSyncService missing godoc
-//go:generate mockery --name=TenantSyncService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TenantSyncService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantSyncService interface {
 	SyncTenants() error
 }
 
 // DirectorGraphQLClient expects graphql implementation
-//go:generate mockery --name=DirectorGraphQLClient --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=DirectorGraphQLClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DirectorGraphQLClient interface {
 	WriteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
 	DeleteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
@@ -116,13 +116,13 @@ type DirectorGraphQLClient interface {
 }
 
 // LabelDefConverter missing godoc
-//go:generate mockery --name=LabelDefConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelDefConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelDefConverter interface {
 	ToGraphQLInput(definition model.LabelDefinition) (graphql.LabelDefinitionInput, error)
 }
 
 // TenantConverter expects tenant converter implementation
-//go:generate mockery --name=TenantConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TenantConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantConverter interface {
 	MultipleInputToGraphQLInput([]model.BusinessTenantMappingInput) []graphql.BusinessTenantMappingInput
 	ToGraphQLInput(model.BusinessTenantMappingInput) graphql.BusinessTenantMappingInput

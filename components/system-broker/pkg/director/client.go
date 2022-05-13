@@ -33,7 +33,7 @@ type Client interface {
 	Do(ctx context.Context, req *gcli.Request, res interface{}) error
 }
 
-//go:generate mockery --name=GqlFieldsProvider
+//go:generate mockery --name=GqlFieldsProvider --disable-version-string
 type GqlFieldsProvider interface {
 	OmitForApplication(omit []string) string
 	ForApplication(ctx ...graphqlizer.FieldCtx) string
@@ -47,7 +47,7 @@ type GqlFieldsProvider interface {
 	Page(item string) string
 }
 
-//go:generate mockery --name=GraphQLizer
+//go:generate mockery --name=GraphQLizer --disable-version-string
 type GraphQLizer interface {
 	BundleInstanceAuthRequestInputToGQL(in schema.BundleInstanceAuthRequestInput) (string, error)
 }

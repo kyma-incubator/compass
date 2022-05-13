@@ -16,7 +16,7 @@ import (
 )
 
 // AuthConverter missing godoc
-//go:generate mockery --name=AuthConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=AuthConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AuthConverter interface {
 	ToGraphQL(in *model.Auth) (*graphql.Auth, error)
 	InputFromGraphQL(in *graphql.AuthInput) (*model.AuthInput, error)

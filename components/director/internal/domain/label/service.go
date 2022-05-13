@@ -14,7 +14,7 @@ import (
 )
 
 // LabelRepository missing godoc
-//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	Create(ctx context.Context, tenant string, label *model.Label) error
 	Upsert(ctx context.Context, tenant string, label *model.Label) error
@@ -23,7 +23,7 @@ type LabelRepository interface {
 }
 
 // LabelDefinitionRepository missing godoc
-//go:generate mockery --name=LabelDefinitionRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelDefinitionRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelDefinitionRepository interface {
 	Create(ctx context.Context, def model.LabelDefinition) error
 	Exists(ctx context.Context, tenant string, key string) (bool, error)
@@ -31,7 +31,7 @@ type LabelDefinitionRepository interface {
 }
 
 // UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }

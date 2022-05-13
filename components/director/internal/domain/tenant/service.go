@@ -18,7 +18,7 @@ const (
 )
 
 // TenantMappingRepository is responsible for the repo-layer tenant operations.
-//go:generate mockery --name=TenantMappingRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TenantMappingRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantMappingRepository interface {
 	UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) error
 	Upsert(ctx context.Context, item model.BusinessTenantMapping) error
@@ -35,19 +35,19 @@ type TenantMappingRepository interface {
 }
 
 // LabelUpsertService is responsible for creating, or updating already existing labels, and their label definitions.
-//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
 // LabelRepository is responsible for the repo-layer label operations.
-//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 }
 
 // UIDService is responsible for generating GUIDs, which will be used as internal tenant IDs when tenants are created.
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }

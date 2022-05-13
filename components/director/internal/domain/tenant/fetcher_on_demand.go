@@ -8,7 +8,7 @@ import (
 )
 
 // Client is responsible for making HTTP requests.
-//go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
 	Do(req *http.Request) (*http.Response, error)
 }

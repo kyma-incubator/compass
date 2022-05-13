@@ -15,7 +15,7 @@ import (
 )
 
 // WebhookService missing godoc
-//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookService interface {
 	Get(ctx context.Context, id string, objectType model.WebhookReferenceObjectType) (*model.Webhook, error)
 	ListAllApplicationWebhooks(ctx context.Context, applicationID string) ([]*model.Webhook, error)
@@ -25,19 +25,19 @@ type WebhookService interface {
 }
 
 // ApplicationService missing godoc
-//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
 // ApplicationTemplateService missing godoc
-//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateService interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
 // WebhookConverter missing godoc
-//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookConverter interface {
 	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
 	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)

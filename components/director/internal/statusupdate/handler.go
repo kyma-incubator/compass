@@ -19,7 +19,7 @@ type update struct {
 }
 
 // StatusUpdateRepository missing godoc
-//go:generate mockery --name=StatusUpdateRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=StatusUpdateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type StatusUpdateRepository interface {
 	UpdateStatus(ctx context.Context, id string, object WithStatusObject) error
 	IsConnected(ctx context.Context, id string, object WithStatusObject) (bool, error)

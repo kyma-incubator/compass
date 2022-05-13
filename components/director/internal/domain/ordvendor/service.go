@@ -10,7 +10,7 @@ import (
 )
 
 // VendorRepository missing godoc
-//go:generate mockery --name=VendorRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=VendorRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type VendorRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Vendor) error
 	CreateGlobal(ctx context.Context, model *model.Vendor) error
@@ -26,7 +26,7 @@ type VendorRepository interface {
 }
 
 // UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
