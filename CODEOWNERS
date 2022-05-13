@@ -1,0 +1,61 @@
+# This file provides an overview of code owners in the `compass` repository.
+
+# Each line is a file pattern followed by one or more owners.
+# The last matching pattern has the most precedence.
+# For more details, read the following article on GitHub: https://help.github.com/articles/about-codeowners/.
+
+# These are the default owners for the whole content of the `compass` repository. The default owners are automatically added as reviewers when you open a pull request, unless different owners are specified in the file.
+
+* @kyma-incubator/team-dragon @kyma-incubator/team-falcon @kyma-incubator/team-raptor
+/chart/compass/charts/connectivity-adapter @kyma-incubator/team-falcon
+/chart/compass/charts/connector @kyma-incubator/team-raptor
+/chart/compass/charts/gateway @kyma-incubator/team-raptor
+/chart/compass/charts/ns-adapter @kyma-incubator/team-falcon
+/chart/compass/charts/operations-controller @kyma-incubator/team-falcon
+/chart/compass/charts/ord-service @kyma-incubator/team-raptor
+/chart/compass/charts/pairing-adapter @kyma-incubator/team-falcon
+/chart/compass/charts/tenant-fetcher @kyma-incubator/team-dragon
+/chart/compass/templates/filters @kyma-incubator/team-raptor
+/components/connectivity-adapter @kyma-incubator/team-falcon
+/components/connector @kyma-incubator/team-raptor
+/components/director/cmd/director @kyma-incubator/team-dragon @kyma-incubator/team-falcon @kyma-incubator/team-raptor
+/components/director/cmd/ns-adapter @kyma-incubator/team-falcon
+/components/director/cmd/ordaggregator @kyma-incubator/team-falcon
+/components/director/cmd/scopessynchronizer @kyma-incubator/team-raptor
+/components/director/cmd/systemfetcher @kyma-incubator/team-falcon
+/components/director/cmd/tenantfetcher-job @kyma-incubator/team-dragon
+/components/director/cmd/tenantfetcher-svc @kyma-incubator/team-dragon
+/components/director/cmd/tenantloader @kyma-incubator/team-raptor @kyma-incubator/team-dragon @kyma-incubator/team-falcon
+/components/director/internal/domain/formation @kyma-incubator/team-raptor
+/components/director/internal/info @kyma-incubator/team-raptor
+/components/director/internal/nsadapter @kyma-incubator/team-falcon
+/components/director/internal/open_resource_discovery @kyma-incubator/team-falcon
+/components/director/internal/scopes_sync @kyma-incubator/team-raptor
+/components/director/internal/systemfetcher @kyma-incubator/team-falcon
+/components/director/internal/tenantfetcher @kyma-incubator/team-dragon
+/components/director/internal/tenantfetchersvc @kyma-incubator/team-dragon
+/components/director/pkg/accessstrategy @kyma-incubator/team-falcon
+/components/director/pkg/operation @kyma-incubator/team-falcon
+/components/director/pkg/scenario @kyma-incubator/team-raptor
+/components/external-services-mock @kyma-incubator/team-dragon @kyma-incubator/team-falcon @kyma-incubator/team-raptor
+/components/gateway @kyma-incubator/team-raptor
+/components/hydrator @kyma-incubator/team-raptor
+/components/operations-controller @kyma-incubator/team-falcon
+/components/pairing-adapter @kyma-incubator/team-falcon
+/components/schema-migrator @kyma-incubator/team-falcon @kyma-incubator/team-raptor @kyma-incubator/team-dragon
+/installation/cmd @kyma-incubator/team-raptor
+/installation/scripts @kyma-incubator/team-raptor
+/tests/connectivity-adapter @kyma-incubator/team-falcon
+/tests/connector @kyma-incubator/team-raptor
+/tests/gateway @kyma-incubator/team-raptor
+/tests/istio @kyma-incubator/team-raptor
+/tests/ns-adapter @kyma-incubator/team-falcon
+/tests/ord-aggregator @kyma-incubator/team-falcon
+/tests/ord-service @kyma-incubator/team-raptor
+/tests/pairing-adapter @kyma-incubator/team-falcon
+/tests/system-fetcher @kyma-incubator/team-falcon
+/tests/tenant-fetcher @kyma-incubator/team-dragon
+/tests/tenant-fetcher-job @kyma-incubator/team-dragon
+
+# All .md files
+*.md @kyma-incubator/cmp-technical-writers
