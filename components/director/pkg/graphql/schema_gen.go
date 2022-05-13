@@ -140,6 +140,7 @@ type ComplexityRoot struct {
 		ApplicationInput func(childComplexity int) int
 		Description      func(childComplexity int) int
 		ID               func(childComplexity int) int
+		Labels           func(childComplexity int, key *string) int
 		Name             func(childComplexity int) int
 		Placeholders     func(childComplexity int) int
 		Webhooks         func(childComplexity int) int
@@ -376,6 +377,7 @@ type ComplexityRoot struct {
 		DeleteTenants                                 func(childComplexity int, in []string) int
 		DeleteWebhook                                 func(childComplexity int, webhookID string) int
 		InvalidateSystemAuthOneTimeToken              func(childComplexity int, authID string) int
+		MergeApplications                             func(childComplexity int, destinationID string, sourceID string) int
 		RefetchAPISpec                                func(childComplexity int, apiID string) int
 		RefetchEventDefinitionSpec                    func(childComplexity int, eventID string) int
 		RegisterApplication                           func(childComplexity int, in ApplicationRegisterInput, mode *OperationMode) int
@@ -604,6 +606,8 @@ type ApplicationResolver interface {
 }
 type ApplicationTemplateResolver interface {
 	Webhooks(ctx context.Context, obj *ApplicationTemplate) ([]*Webhook, error)
+
+	Labels(ctx context.Context, obj *ApplicationTemplate, key *string) (Labels, error)
 }
 type BundleResolver interface {
 	InstanceAuth(ctx context.Context, obj *Bundle, id string) (*BundleInstanceAuth, error)
@@ -634,6 +638,7 @@ type MutationResolver interface {
 	RegisterApplicationFromTemplate(ctx context.Context, in ApplicationFromTemplateInput) (*Application, error)
 	UpdateApplicationTemplate(ctx context.Context, id string, in ApplicationTemplateUpdateInput) (*ApplicationTemplate, error)
 	DeleteApplicationTemplate(ctx context.Context, id string) (*ApplicationTemplate, error)
+	MergeApplications(ctx context.Context, destinationID string, sourceID string) (*Application, error)
 	RegisterRuntime(ctx context.Context, in RuntimeInput) (*Runtime, error)
 	UpdateRuntime(ctx context.Context, id string, in RuntimeInput) (*Runtime, error)
 	UnregisterRuntime(ctx context.Context, id string) (*Runtime, error)
@@ -1159,6 +1164,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ApplicationTemplate.ID(childComplexity), true
+
+	case "ApplicationTemplate.labels":
+		if e.complexity.ApplicationTemplate.Labels == nil {
+			break
+		}
+
+		args, err := ec.field_ApplicationTemplate_labels_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.ApplicationTemplate.Labels(childComplexity, args["key"].(*string)), true
 
 	case "ApplicationTemplate.name":
 		if e.complexity.ApplicationTemplate.Name == nil {
@@ -2424,6 +2441,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.InvalidateSystemAuthOneTimeToken(childComplexity, args["authID"].(string)), true
+
+	case "Mutation.mergeApplications":
+		if e.complexity.Mutation.MergeApplications == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_mergeApplications_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.MergeApplications(childComplexity, args["destinationID"].(string), args["sourceID"].(string)), true
 
 	case "Mutation.refetchAPISpec":
 		if e.complexity.Mutation.RefetchAPISpec == nil {
@@ -4198,6 +4227,10 @@ input ApplicationTemplateInput {
 	"""
 	webhooks: [WebhookInput!]
 	description: String
+	"""
+	**Validation:** label key is alphanumeric with underscore
+	"""
+	labels: Labels
 	applicationInput: ApplicationRegisterInput!
 	placeholders: [PlaceholderDefinitionInput!]
 	accessLevel: ApplicationTemplateAccessLevel!
@@ -4690,6 +4723,7 @@ type ApplicationTemplate {
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.application_template.webhooks")
 	applicationInput: String!
 	placeholders: [PlaceholderDefinition!]!
+	labels(key: String): Labels
 	accessLevel: ApplicationTemplateAccessLevel!
 }
 
@@ -5225,6 +5259,11 @@ type Mutation {
 	deleteApplicationTemplate(id: ID!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.deleteApplicationTemplate")
 	"""
 	**Examples**
+	- [merge applications](examples/merge-applications/merge-applications.graphql)
+	"""
+	mergeApplications(destinationID: ID!, sourceID: ID!): Application! @hasScopes(path: "graphql.mutation.mergeApplications")
+	"""
+	**Examples**
 	- [register runtime](examples/register-runtime/register-runtime.graphql)
 	"""
 	registerRuntime(in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.registerRuntime")
@@ -5545,6 +5584,20 @@ func (ec *executionContext) dir_sanitize_args(ctx context.Context, rawArgs map[s
 		}
 	}
 	args["path"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_ApplicationTemplate_labels_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["key"]; ok {
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["key"] = arg0
 	return args, nil
 }
 
@@ -6362,6 +6415,28 @@ func (ec *executionContext) field_Mutation_invalidateSystemAuthOneTimeToken_args
 		}
 	}
 	args["authID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_mergeApplications_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["destinationID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["destinationID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["sourceID"]; ok {
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sourceID"] = arg1
 	return args, nil
 }
 
@@ -9958,6 +10033,44 @@ func (ec *executionContext) _ApplicationTemplate_placeholders(ctx context.Contex
 	res := resTmp.([]*PlaceholderDefinition)
 	fc.Result = res
 	return ec.marshalNPlaceholderDefinition2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPlaceholderDefinitionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ApplicationTemplate_labels(ctx context.Context, field graphql.CollectedField, obj *ApplicationTemplate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ApplicationTemplate",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_ApplicationTemplate_labels_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ApplicationTemplate().Labels(rctx, obj, args["key"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(Labels)
+	fc.Result = res
+	return ec.marshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ApplicationTemplate_accessLevel(ctx context.Context, field graphql.CollectedField, obj *ApplicationTemplate) (ret graphql.Marshaler) {
@@ -14783,6 +14896,71 @@ func (ec *executionContext) _Mutation_deleteApplicationTemplate(ctx context.Cont
 	res := resTmp.(*ApplicationTemplate)
 	fc.Result = res
 	return ec.marshalNApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_mergeApplications(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_mergeApplications_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().MergeApplications(rctx, args["destinationID"].(string), args["sourceID"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.mergeApplications")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Application); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Application`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Application)
+	fc.Result = res
+	return ec.marshalNApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_registerRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -24568,6 +24746,12 @@ func (ec *executionContext) unmarshalInputApplicationTemplateInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
+		case "labels":
+			var err error
+			it.Labels, err = ec.unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "applicationInput":
 			var err error
 			it.ApplicationInput, err = ec.unmarshalNApplicationRegisterInput2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationRegisterInput(ctx, v)
@@ -26385,6 +26569,17 @@ func (ec *executionContext) _ApplicationTemplate(ctx context.Context, sel ast.Se
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "labels":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ApplicationTemplate_labels(ctx, field, obj)
+				return res
+			})
 		case "accessLevel":
 			out.Values[i] = ec._ApplicationTemplate_accessLevel(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -27547,6 +27742,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "deleteApplicationTemplate":
 			out.Values[i] = ec._Mutation_deleteApplicationTemplate(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "mergeApplications":
+			out.Values[i] = ec._Mutation_mergeApplications(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

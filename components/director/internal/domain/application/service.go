@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/imdario/mergo"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
@@ -32,11 +34,13 @@ import (
 )
 
 const (
-	intSysKey     = "integrationSystemID"
-	nameKey       = "name"
-	sccLabelKey   = "scc"
-	subaccountKey = "Subaccount"
-	locationIDKey = "LocationID"
+	intSysKey            = "integrationSystemID"
+	nameKey              = "name"
+	sccLabelKey          = "scc"
+	managedKey           = "managed"
+	subaccountKey        = "Subaccount"
+	locationIDKey        = "LocationID"
+	urlSuffixToBeTrimmed = "/"
 )
 
 type repoCreatorFunc func(ctx context.Context, tenant string, application *model.Application) error
@@ -710,6 +714,130 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	}
 
 	return nil
+}
+
+// Merge merges properties from Source Application into Destination Application, provided that the Destination's
+// Application does not have a value set for a given property. Then the Source Application is being deleted.
+func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Application, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	destApp, err := s.Get(ctx, destID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting destination application")
+	}
+
+	srcApp, err := s.Get(ctx, srcID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting source application")
+	}
+
+	destAppLabels, err := s.labelRepo.ListForObject(ctx, appTenant, model.ApplicationLabelableObject, destID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting labels for Application with id %s", destID)
+	}
+
+	srcAppLabels, err := s.labelRepo.ListForObject(ctx, appTenant, model.ApplicationLabelableObject, srcID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting labels for Application with id %s", srcID)
+	}
+
+	srcBaseURL := strings.TrimSuffix(str.PtrStrToStr(srcApp.BaseURL), urlSuffixToBeTrimmed)
+	destBaseURL := strings.TrimSuffix(str.PtrStrToStr(destApp.BaseURL), urlSuffixToBeTrimmed)
+	if len(srcBaseURL) == 0 || len(destBaseURL) == 0 || srcBaseURL != destBaseURL {
+		return nil, errors.Errorf("BaseURL for applications %s and %s are not the same. Destination app BaseURL: %s. Source app BaseURL: %s", destID, srcID, destBaseURL, srcBaseURL)
+	}
+
+	srcTemplateID := str.PtrStrToStr(srcApp.ApplicationTemplateID)
+	destTemplateID := str.PtrStrToStr(destApp.ApplicationTemplateID)
+	if len(srcTemplateID) == 0 || len(destTemplateID) == 0 || srcTemplateID != destTemplateID {
+		return nil, errors.Errorf("Application templates are not the same. Destination app template: %s. Source app template: %s", destTemplateID, srcTemplateID)
+	}
+
+	if srcApp.Status == nil {
+		return nil, errors.Errorf("Could not determine status of source application with id %s", srcID)
+	}
+
+	if srcApp.Status.Condition != model.ApplicationStatusConditionInitial {
+		return nil, errors.Errorf("Cannot merge application with id %s, because it is in a %s status", srcID, model.ApplicationStatusConditionConnected)
+	}
+
+	log.C(ctx).Infof("Merging applications with ids %s and %s", destID, srcID)
+	if err := mergo.Merge(destApp, *srcApp); err != nil {
+		return nil, errors.Wrapf(err, "while trying to merge applications with ids %s and %s", destID, srcID)
+	}
+
+	log.C(ctx).Infof("Merging labels for applications with ids %s and %s", destID, srcID)
+	destAppLabelsMerged, err := s.handleMergeLabels(srcAppLabels, destAppLabels)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while trying to merge labels for applications with ids %s and %s", destID, srcID)
+	}
+
+	log.C(ctx).Infof("Deleting source application with id %s", srcID)
+	if err := s.Delete(ctx, srcID); err != nil {
+		return nil, err
+	}
+
+	log.C(ctx).Infof("Updating destination app with id %s", srcID)
+	if err := s.appRepo.Update(ctx, appTenant, destApp); err != nil {
+		return nil, err
+	}
+
+	if err := s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, destID, destAppLabelsMerged); err != nil {
+		return nil, err
+	}
+
+	return s.appRepo.GetByID(ctx, appTenant, destID)
+}
+
+// handleMergeLabels merges source labels into destination labels. model.ScenariosKey is merged manually as well due to limitation
+// of the lib that is used. The last manually merged label is managedKey which is updated only if the destination or
+// source label have a value "true"
+func (s *service) handleMergeLabels(srcAppLabels, destAppLabels map[string]*model.Label) (map[string]interface{}, error) {
+	srcScenariosStrSlice, err := label.ValueToStringsSlice(srcAppLabels[model.ScenariosKey].Value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting source application labels to string slice")
+	}
+
+	destScenariosStrSlice, err := label.ValueToStringsSlice(destAppLabels[model.ScenariosKey].Value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting destination application labels to string slice")
+	}
+
+	for _, srcScenario := range srcScenariosStrSlice {
+		if !str.ContainsInSlice(destScenariosStrSlice, srcScenario) {
+			destScenariosStrSlice = append(destScenariosStrSlice, srcScenario)
+		}
+	}
+
+	if err := mergo.Merge(&destAppLabels, srcAppLabels); err != nil {
+		return nil, errors.Wrapf(err, "while trying to merge labels")
+	}
+
+	destAppLabels[model.ScenariosKey].Value = destScenariosStrSlice
+
+	destLabelManaged, err := str.CastToBool(destAppLabels[managedKey].Value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting %s value for destination label with ID: %s", managedKey, destAppLabels[managedKey].ID)
+	}
+
+	srcLabelManaged, err := str.CastToBool(srcAppLabels[managedKey].Value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting %s value for source label with ID: %s", managedKey, srcAppLabels[managedKey].ID)
+	}
+
+	if destLabelManaged || srcLabelManaged {
+		destAppLabels[managedKey].Value = "true"
+	}
+
+	conv := make(map[string]interface{}, len(destAppLabels))
+	for key, val := range destAppLabels {
+		conv[key] = val.Value
+	}
+
+	return conv, nil
 }
 
 // ensureApplicationNotPartOfScenarioWithRuntime Checks if an application has scenarios associated with it. if a runtime is part of any scenario, then the application is considered being used by that runtime.

@@ -163,7 +163,7 @@ func NewRootResolver(
 
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessStrategyExecutorProvider)
@@ -519,6 +519,12 @@ func (r *mutationResolver) UnpairApplication(ctx context.Context, id string, _ *
 	return r.app.UnpairApplication(ctx, id)
 }
 
+// MergeApplications Merges properties from Source Application into Destination Application, provided that the Destination's
+// Application does not have a value set for a given property. Then the Source Application is being deleted.
+func (r *mutationResolver) MergeApplications(ctx context.Context, destID, srcID string) (*graphql.Application, error) {
+	return r.app.MergeApplications(ctx, destID, srcID)
+}
+
 // CreateApplicationTemplate missing godoc
 func (r *mutationResolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
 	return r.appTemplate.CreateApplicationTemplate(ctx, in)
@@ -862,6 +868,11 @@ type applicationTemplateResolver struct {
 // Webhooks missing godoc
 func (r applicationTemplateResolver) Webhooks(ctx context.Context, obj *graphql.ApplicationTemplate) ([]*graphql.Webhook, error) {
 	return r.appTemplate.Webhooks(ctx, obj)
+}
+
+// Labels missing godoc
+func (r applicationTemplateResolver) Labels(ctx context.Context, obj *graphql.ApplicationTemplate, key *string) (graphql.Labels, error) {
+	return r.appTemplate.Labels(ctx, obj, key)
 }
 
 type runtimeResolver struct {

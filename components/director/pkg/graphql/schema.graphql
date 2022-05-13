@@ -301,6 +301,10 @@ input ApplicationTemplateInput {
 	"""
 	webhooks: [WebhookInput!]
 	description: String
+	"""
+	**Validation:** label key is alphanumeric with underscore
+	"""
+	labels: Labels
 	applicationInput: ApplicationRegisterInput!
 	placeholders: [PlaceholderDefinitionInput!]
 	accessLevel: ApplicationTemplateAccessLevel!
@@ -793,6 +797,7 @@ type ApplicationTemplate {
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.application_template.webhooks")
 	applicationInput: String!
 	placeholders: [PlaceholderDefinition!]!
+	labels(key: String): Labels
 	accessLevel: ApplicationTemplateAccessLevel!
 }
 
@@ -1326,6 +1331,11 @@ type Mutation {
 	- [delete application template](examples/delete-application-template/delete-application-template.graphql)
 	"""
 	deleteApplicationTemplate(id: ID!): ApplicationTemplate! @hasScopes(path: "graphql.mutation.deleteApplicationTemplate")
+	"""
+	**Examples**
+	- [merge applications](examples/merge-applications/merge-applications.graphql)
+	"""
+	mergeApplications(destinationID: ID!, sourceID: ID!): Application! @hasScopes(path: "graphql.mutation.mergeApplications")
 	"""
 	**Examples**
 	- [register runtime](examples/register-runtime/register-runtime.graphql)
