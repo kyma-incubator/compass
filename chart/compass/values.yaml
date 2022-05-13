@@ -106,7 +106,7 @@ global:
       version: "PR-2297"
     director:
       dir:
-      version: "PR-2351"
+      version: "PR-2354"
     hydrator:
       dir:
       version: "PR-2268"
@@ -135,10 +135,10 @@ global:
       version: "PR-2307"
     console:
       dir:
-      version: "PR-67"
+      version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2335"
+      version: "PR-2318"
   isLocalEnv: false
   isForTesting: false
   oauth2:
