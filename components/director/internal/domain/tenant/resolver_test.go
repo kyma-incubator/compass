@@ -143,7 +143,7 @@ func TestResolver_Tenants(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
 
 			// WHEN
 			result, err := resolver.Tenants(ctx, testCase.first, &gqlAfter, &searchTerm)
@@ -264,7 +264,7 @@ func TestResolver_Tenant(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
 
 			// WHEN
 			result, err := resolver.Tenant(ctx, testCase.IDInput)
@@ -380,7 +380,7 @@ func TestResolver_TenantByID(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
 
 			// WHEN
 			result, err := resolver.TenantByID(ctx, testCase.InternalIDInput)
@@ -467,7 +467,7 @@ func TestResolver_TenantByLowestOwnerForResource(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
 
 			// WHEN
 			tenantID, err := resolver.TenantByLowestOwnerForResource(ctx, resourceTypeStr, objectID)
@@ -515,7 +515,7 @@ func TestResolver_Labels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
 
-		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
 
 		result, err := resolver.Labels(ctx, testTenant, nil)
 		assert.NoError(t, err)
@@ -532,7 +532,7 @@ func TestResolver_Labels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
 
-		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
 
 		labels, err := resolver.Labels(ctx, testTenant, nil)
 		assert.NoError(t, err)
@@ -545,7 +545,7 @@ func TestResolver_Labels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
 
-		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
 
 		_, err := resolver.Labels(ctx, nil, nil)
 		assert.Error(t, err)
@@ -558,7 +558,7 @@ func TestResolver_Labels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
 
-		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
 
 		result, err := resolver.Labels(ctx, testTenant, nil)
 		assert.Error(t, err)
@@ -572,7 +572,7 @@ func TestResolver_Labels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
 
-		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
 
 		_, err := resolver.Labels(ctx, testTenant, nil)
 		assert.Error(t, err)
@@ -586,7 +586,7 @@ func TestResolver_Labels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
 
-		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
 
 		_, err := resolver.Labels(ctx, testTenant, nil)
 		assert.Error(t, err)
@@ -723,7 +723,7 @@ func TestResolver_Write(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
 
 			// WHEN
 			result, err := resolver.Write(ctx, testCase.TenantsInput)
@@ -813,7 +813,7 @@ func TestResolver_Delete(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
 
 			// WHEN
 			result, err := resolver.Delete(ctx, testCase.TenantsInput)
@@ -988,7 +988,7 @@ func TestResolver_Update(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
 
 			// WHEN
 			result, err := resolver.Update(ctx, testCase.IDInput, testCase.TenantInput)

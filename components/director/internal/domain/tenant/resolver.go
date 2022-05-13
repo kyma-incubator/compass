@@ -107,9 +107,6 @@ func (r *Resolver) Tenants(ctx context.Context, first *int, after *graphql.PageC
 
 // Tenant retrieves a tenant with the provided external ID from the Compass storage.
 func (r *Resolver) Tenant(ctx context.Context, externalID string) (*graphql.Tenant, error) {
-	if err := r.fetcher.FetchOnDemand(externalID); err != nil {
-		return nil, errors.Wrapf(err, "while trying to create if not exists tenant %s", externalID)
-	}
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -118,15 +115,19 @@ func (r *Resolver) Tenant(ctx context.Context, externalID string) (*graphql.Tena
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	t, err := r.srv.GetTenantByExternalID(ctx, externalID)
+	tenant, err := r.srv.GetTenantByExternalID(ctx, externalID)
+	if err != nil && apperrors.IsNotFoundError(err) {
+		err = r.fetchTenant(&tx, externalID)
+	}
 	if err != nil {
 		return nil, err
 	}
+
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
-	gqlTenant := r.conv.MultipleToGraphQL([]*model.BusinessTenantMapping{t})
+	gqlTenant := r.conv.MultipleToGraphQL([]*model.BusinessTenantMapping{tenant})
 	return gqlTenant[0], nil
 }
 
@@ -280,4 +281,19 @@ func (r *Resolver) Update(ctx context.Context, id string, in graphql.BusinessTen
 	}
 
 	return r.conv.ToGraphQL(tenant), nil
+}
+
+func (r *Resolver) fetchTenant(tx *persistence.PersistenceTx, externalID string) error {
+	if err := (*tx).Commit(); err != nil {
+		return err
+	}
+	if err := r.fetcher.FetchOnDemand(externalID); err != nil {
+		return errors.Wrapf(err, "while trying to create if not exists tenant %s", externalID)
+	}
+	tr, err := r.transact.Begin()
+	if err != nil {
+		return err
+	}
+	tx = &tr
+	return nil
 }
