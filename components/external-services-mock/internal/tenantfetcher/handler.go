@@ -2,13 +2,27 @@ package tenantfetcher
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"sync"
 
+	"github.com/gorilla/mux"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"github.com/pkg/errors"
+)
+
+const (
+	AccountCreationEventType = "create"
+	AccountDeletionEventType = "delete"
+	AccountUpdateEventType   = "update"
+
+	SubaccountCreationEventType = "create_subaccount"
+	SubaccountDeletionEventType = "delete_subaccount"
+	SubaccountUpdateEventType   = "update_subaccount"
+	SubaccountMoveEventType     = "move_subaccount"
 )
 
 type Handler struct {
@@ -23,7 +37,7 @@ func NewHandler() *Handler {
 	}
 }
 
-func (s *Handler) HandleConfigure(typee string) func(rw http.ResponseWriter, req *http.Request) {
+func (s *Handler) HandleConfigure(eventType string) func(rw http.ResponseWriter, req *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		s.mutex.Lock()
 		defer s.mutex.Unlock()
@@ -43,26 +57,28 @@ func (s *Handler) HandleConfigure(typee string) func(rw http.ResponseWriter, req
 			httphelpers.WriteError(rw, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
 			return
 		}
-		eventsPages, found := s.mockedEvents[typee]
+		eventsPages, found := s.mockedEvents[eventType]
 		if !found {
 			eventsPages = make([][]byte, 0)
 		}
 		eventsPages = append(eventsPages, bodyBytes)
-		s.mockedEvents[typee] = eventsPages
+		s.mockedEvents[eventType] = eventsPages
 		rw.WriteHeader(http.StatusOK)
-		log.C(req.Context()).Infof("Tenant fetcher handler for type %s configured successfully", typee)
+		log.C(req.Context()).Infof("Tenant fetcher handler for type %s configured successfully", eventType)
 	}
 }
 
-func (s *Handler) HandleFunc(typee string) func(rw http.ResponseWriter, req *http.Request) {
+func (s *Handler) HandleFunc(eventType string) func(rw http.ResponseWriter, req *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		rw.WriteHeader(http.StatusOK)
 
 		resp := []byte("[]")
-		if events, found := s.mockedEvents[typee]; found {
+		if isSpecificSubaccountBeingFetched(req, eventType) {
+			resp = getMockEventForSubaccount(req)
+		} else if events, found := s.mockedEvents[eventType]; found {
 			resp = events[0]
 			events = events[1:]
-			s.mockedEvents[typee] = events
+			s.mockedEvents[eventType] = events
 		}
 		s.mutex.Lock()
 		defer s.mutex.Unlock()
@@ -73,12 +89,37 @@ func (s *Handler) HandleFunc(typee string) func(rw http.ResponseWriter, req *htt
 	}
 }
 
-func (s *Handler) HandleReset(typee string) func(rw http.ResponseWriter, req *http.Request) {
+func (s *Handler) HandleReset(eventType string) func(rw http.ResponseWriter, req *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		s.mutex.Lock()
 		defer s.mutex.Unlock()
-		log.C(req.Context()).Infof("Received a reset call for type %s. TenantFetcher queue will be emptied...", typee)
-		delete(s.mockedEvents, typee)
+		log.C(req.Context()).Infof("Received a reset call for type %s. TenantFetcher queue will be emptied...", eventType)
+		delete(s.mockedEvents, eventType)
 		rw.WriteHeader(http.StatusOK)
 	}
+}
+
+func isSpecificSubaccountBeingFetched(req *http.Request, eventType string) bool {
+	vars := mux.Vars(req)
+	_, hasEntityIdQueryParam := vars["entityId"]
+	return hasEntityIdQueryParam && eventType == SubaccountCreationEventType
+}
+
+func getMockEventForSubaccount(req *http.Request) []byte {
+	vars := mux.Vars(req)
+	subaccountID, _ := vars["entityId"]
+	mockSubaccountEventPattern := `
+{
+	"eventData": {
+		"guid": "%s",
+		"displayName": "%s",
+		"subdomain": "%s",
+		"parentGuid": "%s",
+		"region": "%s"
+	},
+	"globalAccountGUID": "%s",
+	"type": "Subaccount"
+}`
+	mockedEvent := fmt.Sprintf(mockSubaccountEventPattern, subaccountID, "Subaccount on demand", "subdomain", "SubaacountOnDemandParent", "region", "SubaacountOnDemandParent")
+	return []byte(mockedEvent)
 }
