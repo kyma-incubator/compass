@@ -189,6 +189,7 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) mo
 		IntegrationSystemID: in.IntegrationSystemID,
 		ProviderName:        in.ProviderName,
 		StatusCondition:     statusCondition,
+		BaseURL:             in.BaseURL,
 	}
 }
 
