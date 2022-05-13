@@ -519,6 +519,12 @@ func (r *mutationResolver) UnpairApplication(ctx context.Context, id string, _ *
 	return r.app.UnpairApplication(ctx, id)
 }
 
+// MergeApplications Merges properties from Source Application into Destination Application, provided that the Destination's
+// Application does not have a value set for a given property. Then the Source Application is being deleted.
+func (r *mutationResolver) MergeApplications(ctx context.Context, destID, srcID string) (*graphql.Application, error) {
+	return r.app.MergeApplications(ctx, destID, srcID)
+}
+
 // CreateApplicationTemplate missing godoc
 func (r *mutationResolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
 	return r.appTemplate.CreateApplicationTemplate(ctx, in)

@@ -26,6 +26,8 @@ const (
 	deleteWebhookCategory       = "delete webhook"
 	addWebhookCategory          = "add webhook"
 	updateWebhookCategory       = "update webhook"
+	managedLabel                = "managed"
+	sccLabel                    = "scc"
 )
 
 func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
@@ -1484,4 +1486,130 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 	request = fixtures.FixUnregisterApplicationRequest(actualApp.ID)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, request, nil)
 	require.NoError(t, err)
+}
+
+func TestMergeApplications(t *testing.T) {
+	// GIVEN
+
+	ctx := context.Background()
+	baseURL := ptr.String("http://base.com")
+	healthURL := ptr.String("http://health.com")
+	providerName := ptr.String("test-provider")
+	description := ptr.String("app description")
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	namePlaceholder := "name"
+	managedLabelValue := "true"
+	sccLabelValue := "cloud connector"
+	expectedProductType := "MergeTemplate"
+	newFormation := "formation-merge-applications-e2e"
+	destScenariosValue := []interface{}{"DEFAULT", newFormation}
+
+	appTmplInput := fixtures.FixApplicationTemplate(expectedProductType)
+	appTmplInput.ApplicationInput.Name = "{{name}}"
+	appTmplInput.ApplicationInput.BaseURL = baseURL
+	appTmplInput.ApplicationInput.ProviderName = nil
+	appTmplInput.ApplicationInput.Description = nil
+	appTmplInput.ApplicationInput.HealthCheckURL = nil
+	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+		{
+			Name:        namePlaceholder,
+			Description: ptr.String("description"),
+		},
+	}
+
+	// Create Application Template
+	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTmpl)
+	require.NoError(t, err)
+
+	appFromTmplSrc := graphql.ApplicationFromTemplateInput{
+		TemplateName: expectedProductType, Values: []*graphql.TemplateValueInput{
+			{
+				Placeholder: namePlaceholder,
+				Value:       "app1",
+			},
+		},
+	}
+
+	appFromTmplDest := graphql.ApplicationFromTemplateInput{
+		TemplateName: expectedProductType, Values: []*graphql.TemplateValueInput{
+			{
+				Placeholder: namePlaceholder,
+				Value:       "app2",
+			},
+		},
+	}
+
+	t.Logf("Should create source application")
+	appFromTmplSrcGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmplSrc)
+	require.NoError(t, err)
+	createAppFromTmplFirstRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplSrcGQL)
+	outputSrcApp := graphql.ApplicationExt{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, createAppFromTmplFirstRequest, &outputSrcApp)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &outputSrcApp)
+	require.NoError(t, err)
+
+	t.Logf("Should create destination application")
+	appFromTmplDestGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmplDest)
+	require.NoError(t, err)
+	createAppFromTmplSecondRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplDestGQL)
+	outputDestApp := graphql.ApplicationExt{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, createAppFromTmplSecondRequest, &outputDestApp)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &outputDestApp)
+	require.NoError(t, err)
+
+	t.Logf("Should update source application with more data")
+	updateInput := fixtures.FixSampleApplicationUpdateInput("after")
+	updateInput.ProviderName = providerName
+	updateInput.HealthCheckURL = healthURL
+	updateInput.Description = description
+	updateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationUpdateInputToGQL(updateInput)
+	require.NoError(t, err)
+
+	updateRequest := fixtures.FixUpdateApplicationRequest(outputSrcApp.ID, updateInputGQL)
+	updatedApp := graphql.ApplicationExt{}
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateRequest, &updatedApp)
+	require.NoError(t, err)
+
+	fixtures.SetApplicationLabelWithTenant(t, ctx, certSecuredGraphQLClient, tenantId, outputSrcApp.ID, managedLabel, managedLabelValue)
+	fixtures.SetApplicationLabelWithTenant(t, ctx, certSecuredGraphQLClient, tenantId, outputSrcApp.ID, sccLabel, sccLabelValue)
+
+	t.Logf("Should create formation: %s", newFormation)
+	var formation graphql.Formation
+	createReq := fixtures.FixCreateFormationRequest(newFormation)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createReq, &formation)
+	require.NoError(t, err)
+	require.Equal(t, newFormation, formation.Name)
+
+	t.Logf("Assign application to formation %s", newFormation)
+	assignReq := fixtures.FixAssignFormationRequest(outputSrcApp.ID, "APPLICATION", newFormation)
+	var assignFormation graphql.Formation
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
+	require.NoError(t, err)
+	require.Equal(t, newFormation, assignFormation.Name)
+
+	// WHEN
+	t.Logf("Should be able to merge application %s into %s", outputSrcApp.Name, outputDestApp.Name)
+	destApp := graphql.ApplicationExt{}
+	mergeRequest := fixtures.FixMergeApplicationsRequest(outputSrcApp.ID, outputDestApp.ID)
+	saveExample(t, mergeRequest.Query(), "merge applications")
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, mergeRequest, &destApp)
+
+	// THEN
+	require.NoError(t, err)
+
+	assert.Equal(t, description, destApp.Description)
+	assert.Equal(t, healthURL, destApp.HealthCheckURL)
+	assert.Equal(t, providerName, destApp.ProviderName)
+	assert.Equal(t, managedLabelValue, destApp.Labels[managedLabel])
+	assert.Equal(t, sccLabelValue, destApp.Labels[sccLabel])
+	assert.Equal(t, destScenariosValue, destApp.Labels[ScenariosLabel])
+
+	srcApp := graphql.ApplicationExt{}
+	getSrcAppReq := fixtures.FixGetApplicationRequest(outputSrcApp.ID)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getSrcAppReq, &srcApp)
+	require.NoError(t, err)
+
+	// Source application is deleted
+	assert.Empty(t, srcApp.BaseEntity)
 }

@@ -184,6 +184,29 @@ func (_m *ApplicationService) ListLabels(ctx context.Context, applicationID stri
 	return r0, r1
 }
 
+// Merge provides a mock function with given fields: ctx, destID, sourceID
+func (_m *ApplicationService) Merge(ctx context.Context, destID string, sourceID string) (*model.Application, error) {
+	ret := _m.Called(ctx, destID, sourceID)
+
+	var r0 *model.Application
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Application); ok {
+		r0 = rf(ctx, destID, sourceID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Application)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, destID, sourceID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // SetLabel provides a mock function with given fields: ctx, label
 func (_m *ApplicationService) SetLabel(ctx context.Context, label *model.LabelInput) error {
 	ret := _m.Called(ctx, label)
