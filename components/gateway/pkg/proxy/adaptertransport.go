@@ -179,7 +179,7 @@ func calculateShardLength(ctx context.Context, auditLogCtx *auditLogContext, bod
 	// Compute the maximum size of each auditlog message
 	shardLength := min(auditLogCtx.cfg.MsgBodySizeLimit, len(bodyBytes))
 	if shards > 1 {
-		shardLength = len(bodyBytes) / shards
+		shardLength = (len(bodyBytes) + 1) / shards
 	}
 
 	log.C(ctx).Infof("The data for %s will be split to %d shards of approximately %d bytes", transactionId, shards, shardLength)
