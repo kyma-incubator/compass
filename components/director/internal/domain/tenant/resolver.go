@@ -117,7 +117,7 @@ func (r *Resolver) Tenant(ctx context.Context, externalID string) (*graphql.Tena
 
 	tenant, err := r.srv.GetTenantByExternalID(ctx, externalID)
 	if err != nil && apperrors.IsNotFoundError(err) {
-		err = r.fetchTenant(&tx, externalID)
+		tx, err = r.fetchTenant(&tx, externalID)
 	}
 	if err != nil {
 		return nil, err
@@ -283,17 +283,16 @@ func (r *Resolver) Update(ctx context.Context, id string, in graphql.BusinessTen
 	return r.conv.ToGraphQL(tenant), nil
 }
 
-func (r *Resolver) fetchTenant(tx *persistence.PersistenceTx, externalID string) error {
+func (r *Resolver) fetchTenant(tx *persistence.PersistenceTx, externalID string) (persistence.PersistenceTx, error) {
 	if err := (*tx).Commit(); err != nil {
-		return err
+		return nil, err
 	}
 	if err := r.fetcher.FetchOnDemand(externalID); err != nil {
-		return errors.Wrapf(err, "while trying to create if not exists tenant %s", externalID)
+		return nil, errors.Wrapf(err, "while trying to create if not exists tenant %s", externalID)
 	}
 	tr, err := r.transact.Begin()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	tx = &tr
-	return nil
+	return tr, nil
 }
