@@ -19,19 +19,19 @@ import (
 )
 
 // TokenVerifier missing godoc
-//go:generate mockery --name=TokenVerifier --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TokenVerifier --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TokenVerifier interface {
 	Verify(ctx context.Context, token string) (*jwt.MapClaims, error)
 }
 
 // ReqDataParser missing godoc
-//go:generate mockery --name=ReqDataParser --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ReqDataParser --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ReqDataParser interface {
 	Parse(req *http.Request) (oathkeeper.ReqData, error)
 }
 
 // DirectorClient missing godoc
-//go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DirectorClient interface {
 	GetTenantByInternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetTenantByLowestOwnerForResource(ctx context.Context, resourceID, resourceType string) (string, error)

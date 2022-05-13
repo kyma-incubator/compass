@@ -15,7 +15,7 @@ import (
 )
 
 // Repository missing godoc
-//go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Repository interface {
 	Create(ctx context.Context, item model.SystemAuth) error
 	GetByIDForObject(ctx context.Context, tenant, id string, objType model.SystemAuthReferenceObjectType) (*model.SystemAuth, error)
@@ -30,7 +30,7 @@ type Repository interface {
 }
 
 // UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }

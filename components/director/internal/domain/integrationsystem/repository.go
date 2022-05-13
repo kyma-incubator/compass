@@ -14,7 +14,7 @@ const tableName string = `public.integration_systems`
 var tableColumns = []string{"id", "name", "description"}
 
 // Converter missing godoc
-//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Converter interface {
 	ToEntity(in *model.IntegrationSystem) *Entity
 	FromEntity(in *Entity) *model.IntegrationSystem

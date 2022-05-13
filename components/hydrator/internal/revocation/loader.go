@@ -13,12 +13,12 @@ import (
 
 const revocationListLoaderCorrelationID = "revocation-list-loader"
 
-//go:generate mockery --name=Manager --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Manager --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Manager interface {
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 }
 
-//go:generate mockery --name=RevokedCertificatesCache --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RevokedCertificatesCache --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RevokedCertificatesCache interface {
 	Put(data map[string]string)
 }

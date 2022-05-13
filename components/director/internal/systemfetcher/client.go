@@ -14,7 +14,7 @@ import (
 )
 
 // APIClient missing godoc
-//go:generate mockery --name=APIClient --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=APIClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIClient interface {
 	Do(*http.Request, string) (*http.Response, error)
 }

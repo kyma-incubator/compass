@@ -19,7 +19,7 @@ import (
 
 const appNamePathVariable = "app-name"
 
-//go:generate mockery --name=GraphQLRequestBuilder --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=GraphQLRequestBuilder --output=automock --outpkg=automock --case=underscore --disable-version-string
 type GraphQLRequestBuilder interface {
 	GetApplicationsByName(appName string) *gcli.Request
 }

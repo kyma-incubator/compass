@@ -8,13 +8,13 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
-//go:generate mockery --name=Manager
+//go:generate mockery --name=Manager --disable-version-string
 type Manager interface {
 	Get(ctx context.Context, name string, options metav1.GetOptions) (*v1.ConfigMap, error)
 	Update(ctx context.Context, configMap *v1.ConfigMap, opts metav1.UpdateOptions) (*v1.ConfigMap, error)
 }
 
-//go:generate mockery --name=RevokedCertificatesRepository
+//go:generate mockery --name=RevokedCertificatesRepository --disable-version-string
 type RevokedCertificatesRepository interface {
 	Insert(ctx context.Context, hash string) error
 }
