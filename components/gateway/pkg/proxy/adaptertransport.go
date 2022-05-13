@@ -172,16 +172,18 @@ func doPostAuditLog(ctx context.Context, auditLogCtx *auditLogContext, responseB
 
 func calculateShardLength(ctx context.Context, auditLogCtx *auditLogContext, bodyBytes []byte, transactionId string) int {
 	shards := len(bodyBytes) / auditLogCtx.cfg.MsgBodySizeLimit
-	if shards%auditLogCtx.cfg.MsgBodySizeLimit != 0 {
+	if len(bodyBytes)%auditLogCtx.cfg.MsgBodySizeLimit != 0 {
 		shards += 1
 	}
 
 	// Compute the maximum size of each auditlog message
 	shardLength := min(auditLogCtx.cfg.MsgBodySizeLimit, len(bodyBytes))
 	if shards > 1 {
-		shardLength = multipleOfFour(len(bodyBytes) / shards)
+		shardLength = len(bodyBytes) / shards
 	}
+
 	log.C(ctx).Infof("The data for %s will be split to %d shards of approximately %d bytes", transactionId, shards, shardLength)
+
 	return shardLength
 }
 
@@ -223,8 +225,4 @@ func min(a int, b int) int {
 	}
 
 	return b
-}
-
-func multipleOfFour(i int) int {
-	return ((i + 3) / 4) * 4
 }
