@@ -211,7 +211,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			manager, err := runtime.NewSelfRegisterManager(testCase.Config, svcCallerProvider)
 			require.NoError(t, err)
 
-			output, err := manager.PrepareRuntimeForSelfRegistration(testCase.Context, testCase.Input, testUUID)
+			output, err := manager.PrepareForSelfRegistration(testCase.Context, testCase.Input, testUUID)
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedErr.Error())
@@ -308,7 +308,7 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 			manager, err := runtime.NewSelfRegisterManager(testCase.Config, svcCallerProvider)
 			require.NoError(t, err)
 
-			err = manager.CleanupSelfRegisteredRuntime(testCase.Context, testCase.SelfRegisteredDistinguishLabelValue, testCase.Region)
+			err = manager.CleanupSelfRegistration(testCase.Context, testCase.SelfRegisteredDistinguishLabelValue, testCase.Region)
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedErr.Error())
