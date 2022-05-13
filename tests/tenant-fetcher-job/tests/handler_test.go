@@ -39,7 +39,7 @@ import (
 )
 
 const (
-	timeout       = time.Minute * 3
+	timeout       = time.Minute * 5
 	checkInterval = time.Second * 5
 
 	globalAccountCreateSubPath = "global-account-create"
@@ -235,7 +235,7 @@ func TestMoveSubaccounts(t *testing.T) {
 
 		t.Log("TestMoveSubaccounts checks are successful")
 		return true
-	}, timeout, checkInterval, "Waiting for tenants retrieval.")
+	}, timeout*2, checkInterval, "Waiting for tenants retrieval.")
 }
 
 func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) {
