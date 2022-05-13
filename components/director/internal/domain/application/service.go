@@ -47,7 +47,7 @@ type repoCreatorFunc func(ctx context.Context, tenant string, application *model
 type repoUpserterFunc func(ctx context.Context, tenant string, application *model.Application) (string, error)
 
 // ApplicationRepository missing godoc
-//go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
@@ -70,7 +70,7 @@ type ApplicationRepository interface {
 }
 
 // LabelRepository missing godoc
-//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
@@ -81,46 +81,46 @@ type LabelRepository interface {
 }
 
 // WebhookRepository missing godoc
-//go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
 }
 
 // RuntimeRepository missing godoc
-//go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	ListAll(ctx context.Context, tenantID string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
 // IntegrationSystemRepository missing godoc
-//go:generate mockery --name=IntegrationSystemRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=IntegrationSystemRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationSystemRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
 // LabelUpsertService missing godoc
-//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
 // ScenariosService missing godoc
-//go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
 	AddDefaultScenarioIfEnabled(ctx context.Context, tenant string, labels *map[string]interface{})
 }
 
 // UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
 
 // ApplicationHideCfgProvider missing godoc
-//go:generate mockery --name=ApplicationHideCfgProvider --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationHideCfgProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationHideCfgProvider interface {
 	GetApplicationHideSelectors() (map[string][]string, error)
 }

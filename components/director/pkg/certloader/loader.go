@@ -26,7 +26,7 @@ type Loader interface {
 }
 
 // Manager is a kubernetes secret manager that has methods to work with secret resources
-//go:generate mockery --name=Manager --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Manager --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Manager interface {
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 }

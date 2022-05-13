@@ -36,7 +36,7 @@ func FromCtx(ctx context.Context) (PersistenceOp, error) {
 }
 
 // Transactioner missing godoc
-//go:generate mockery --name=Transactioner --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Transactioner --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Transactioner interface {
 	Begin() (PersistenceTx, error)
 	RollbackUnlessCommitted(ctx context.Context, tx PersistenceTx) (didRollback bool)
@@ -110,7 +110,7 @@ func (db *Transaction) Commit() error {
 }
 
 // PersistenceTx missing godoc
-//go:generate mockery --name=PersistenceTx --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=PersistenceTx --output=automock --outpkg=automock --case=underscore --disable-version-string
 type PersistenceTx interface {
 	Commit() error
 	Rollback() error
@@ -118,7 +118,7 @@ type PersistenceTx interface {
 }
 
 // PersistenceOp missing godoc
-//go:generate mockery --name=PersistenceOp --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=PersistenceOp --output=automock --outpkg=automock --case=underscore --disable-version-string
 type PersistenceOp interface {
 	GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
 	SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error

@@ -10,7 +10,7 @@ import (
 )
 
 // Watcher is a K8S watcher that listen for resources changes and receive events based on that
-//go:generate mockery --name=Watcher --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Watcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Watcher interface {
 	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
 }

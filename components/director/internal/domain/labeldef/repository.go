@@ -19,7 +19,7 @@ const (
 )
 
 // EntityConverter missing godoc
-//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityConverter interface {
 	ToEntity(in model.LabelDefinition) (Entity, error)
 	FromEntity(in Entity) (model.LabelDefinition, error)

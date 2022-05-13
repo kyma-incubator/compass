@@ -11,7 +11,7 @@ import (
 )
 
 // FetchRequestConverter missing godoc
-//go:generate mockery --name=FetchRequestConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=FetchRequestConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestConverter interface {
 	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
 	InputFromGraphQL(in *graphql.FetchRequestInput) (*model.FetchRequestInput, error)

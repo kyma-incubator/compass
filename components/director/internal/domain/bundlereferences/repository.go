@@ -42,7 +42,7 @@ var (
 )
 
 // BundleReferenceConverter converts BundleReferences between the model.BundleReference service-layer representation and the repo-layer representation Entity.
-//go:generate mockery --name=BundleReferenceConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=BundleReferenceConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleReferenceConverter interface {
 	ToEntity(in model.BundleReference) Entity
 	FromEntity(in Entity) (model.BundleReference, error)

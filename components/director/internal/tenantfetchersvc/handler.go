@@ -26,13 +26,13 @@ const (
 )
 
 // TenantFetcher is used to fectch tenants for creation;
-//go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantFetcher interface {
 	FetchTenantOnDemand(ctx context.Context, tenantID string) error
 }
 
 // TenantSubscriber is used to apply subscription changes for tenants;
-//go:generate mockery --name=TenantSubscriber --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TenantSubscriber --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantSubscriber interface {
 	Subscribe(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest) error
 	Unsubscribe(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest) error

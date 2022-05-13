@@ -13,7 +13,7 @@ import (
 )
 
 // GraphQLClient expects graphql implementation
-//go:generate mockery --name=GraphQLClient --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=GraphQLClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type GraphQLClient interface {
 	Run(context.Context, *gcli.Request, interface{}) error
 }

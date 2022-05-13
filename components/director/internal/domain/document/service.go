@@ -13,7 +13,7 @@ import (
 )
 
 // DocumentRepository missing godoc
-//go:generate mockery --name=DocumentRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=DocumentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DocumentRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Document, error)
@@ -24,7 +24,7 @@ type DocumentRepository interface {
 }
 
 // FetchRequestRepository missing godoc
-//go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestRepository interface {
 	Create(ctx context.Context, tenant string, item *model.FetchRequest) error
 	Delete(ctx context.Context, tenant, id string, objectType model.FetchRequestReferenceObjectType) error
@@ -32,7 +32,7 @@ type FetchRequestRepository interface {
 }
 
 // UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
