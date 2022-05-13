@@ -110,7 +110,7 @@ func TestAdapterTransport(t *testing.T) {
 		postAuditlogSvc.On("Log", mock.Anything, mock.MatchedBy(func(msg proxy.AuditlogMessage) bool { return msg.Claims == fixClaims() })).Return(nil).Twice()
 
 		transport := proxy.NewAdapterTransport(postAuditlogSvc, preAuditlogSvc, roundTripper, proxy.AdapterConfig{
-			MsgBodySizeLimit: 500,
+			MsgBodySizeLimit: (len(gqlPayload) + 1) / 2,
 		})
 
 		//WHEN
