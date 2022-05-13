@@ -23,7 +23,7 @@ import (
 )
 
 // DirectorClient missing godoc
-//go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DirectorClient interface {
 	GetTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetSystemAuthByID(ctx context.Context, authID string) (*model.SystemAuth, error)
@@ -31,26 +31,26 @@ type DirectorClient interface {
 }
 
 // ScopesGetter missing godoc
-//go:generate mockery --name=ScopesGetter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ScopesGetter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ScopesGetter interface {
 	GetRequiredScopes(scopesDefinition string) ([]string, error)
 }
 
 // ReqDataParser missing godoc
-//go:generate mockery --name=ReqDataParser --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ReqDataParser --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ReqDataParser interface {
 	Parse(req *http.Request) (oathkeeper.ReqData, error)
 }
 
 // ObjectContextProvider missing godoc
-//go:generate mockery --name=ObjectContextProvider --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ObjectContextProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ObjectContextProvider interface {
 	GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error)
 	Match(ctx context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error)
 }
 
 // ClientInstrumenter collects metrics for different client and auth flows.
-//go:generate mockery --name=ClientInstrumenter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ClientInstrumenter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ClientInstrumenter interface {
 	InstrumentClient(clientID string, authFlow string, details string)
 }

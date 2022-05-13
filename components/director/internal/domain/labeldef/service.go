@@ -14,7 +14,7 @@ import (
 )
 
 // Repository missing godoc
-//go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Repository interface {
 	Create(ctx context.Context, def model.LabelDefinition) error
 	Upsert(ctx context.Context, def model.LabelDefinition) error
@@ -26,13 +26,13 @@ type Repository interface {
 }
 
 // ScenarioAssignmentLister missing godoc
-//go:generate mockery --name=ScenarioAssignmentLister --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ScenarioAssignmentLister --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ScenarioAssignmentLister interface {
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
 }
 
 // LabelRepository missing godoc
-//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
@@ -43,13 +43,13 @@ type LabelRepository interface {
 }
 
 // TenantRepository missing godoc
-//go:generate mockery --name=TenantRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TenantRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantRepository interface {
 	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }

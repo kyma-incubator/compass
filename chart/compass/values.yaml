@@ -97,25 +97,25 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2268"
+      version: "PR-2358"
     connectivity_adapter:
       dir:
-      version: "PR-2297"
+      version: "PR-2358"
     pairing_adapter:
       dir:
-      version: "PR-2297"
+      version: "PR-2358"
     director:
       dir:
-      version: "PR-2322"
+      version: "PR-2358"
     hydrator:
       dir:
-      version: "PR-2268"
+      version: "PR-2358"
     gateway:
       dir:
-      version: "PR-2297"
+      version: "PR-2358"
     operations_controller:
       dir:
-      version: "PR-2297"
+      version: "PR-2358"
     ord_service:
       dir:
       version: "PR-65"
@@ -124,7 +124,7 @@ global:
       version: "PR-2335"
     system_broker:
       dir:
-      version: "PR-2297"
+      version: "PR-2358"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -132,13 +132,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2322"
+      version: "PR-2358"
     console:
       dir:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2322"
+      version: "PR-2318"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -645,11 +645,7 @@ global:
     containerName: "system-fetcher"
   tenantFetchers:
     job1:
-      cron:
-        enabled: false
       enabled: false
-      job:
-        interval: "5m"
       configMapNamespace: "compass-system"
       manageSecrets: true
       providerName: "compass"

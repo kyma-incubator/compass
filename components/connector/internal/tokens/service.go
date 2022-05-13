@@ -11,12 +11,12 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/authentication"
 )
 
-//go:generate mockery --name=GraphQLClient --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=GraphQLClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type GraphQLClient interface {
 	Run(ctx context.Context, req *gcli.Request, resp interface{}) error
 }
 
-//go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Service interface {
 	GetToken(ctx context.Context, clientId, consumerType string) (string, apperrors.AppError)
 }

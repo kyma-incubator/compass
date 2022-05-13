@@ -22,17 +22,17 @@ const (
 
 var emptyQuery error = errors.New("empty graphql query")
 
-//go:generate mockery --name=RoundTrip --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RoundTrip --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RoundTrip interface {
 	RoundTrip(*http.Request) (*http.Response, error)
 }
 
-//go:generate mockery --name=AuditlogService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=AuditlogService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AuditlogService interface {
 	Log(ctx context.Context, msg AuditlogMessage) error
 }
 
-//go:generate mockery --name=PreAuditlogService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=PreAuditlogService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type PreAuditlogService interface {
 	AuditlogService
 	PreLog(ctx context.Context, msg AuditlogMessage) error
