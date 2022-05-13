@@ -39,7 +39,7 @@ import (
 )
 
 const (
-	timeout       = time.Minute * 5
+	timeout       = time.Minute * 3
 	checkInterval = time.Second * 5
 
 	globalAccountCreateSubPath = "global-account-create"
@@ -196,6 +196,13 @@ func TestMoveSubaccounts(t *testing.T) {
 	defer cleanupMockEvents(t, subaccountMoveSubPath)
 
 	require.Eventually(t, func() bool {
+		tenant1, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, gaExternalTenantIDs[0])
+		if tenant1 == nil {
+			t.Logf("Waiting for global account %s to be read", gaExternalTenantIDs[0])
+			return false
+		}
+		assert.NoError(t, err)
+
 		tenant2, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, gaExternalTenantIDs[1])
 		if tenant2 == nil {
 			t.Logf("Waiting for global account %s to be read", gaExternalTenantIDs[1])
@@ -204,16 +211,16 @@ func TestMoveSubaccounts(t *testing.T) {
 		assert.NoError(t, err)
 
 		subaccount1, err = fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[0])
-		if subaccount1 == nil {
-			t.Logf("Waiting for subaccount %s to be read", subaccountExternalTenants[0])
+		if subaccount1 == nil || subaccount1.ParentID == tenant1.InternalID {
+			t.Logf("Waiting for moved subaccount %s to be read", subaccountExternalTenants[0])
 			return false
 		}
 		assert.NoError(t, err)
 		assert.Equal(t, tenant2.InternalID, subaccount1.ParentID)
 
 		subaccount2, err = fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[1])
-		if subaccount2 == nil {
-			t.Logf("Waiting for subaccount %s to be read", subaccountExternalTenants[1])
+		if subaccount2 == nil || subaccount2.ParentID == tenant1.InternalID {
+			t.Logf("Waiting for moved subaccount %s to be read", subaccountExternalTenants[1])
 			return false
 		}
 		assert.NoError(t, err)
@@ -235,7 +242,7 @@ func TestMoveSubaccounts(t *testing.T) {
 
 		t.Log("TestMoveSubaccounts checks are successful")
 		return true
-	}, timeout*2, checkInterval, "Waiting for tenants retrieval.")
+	}, timeout, checkInterval, "Waiting for tenants retrieval.")
 }
 
 func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) {
