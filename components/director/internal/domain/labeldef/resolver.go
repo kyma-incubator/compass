@@ -89,8 +89,8 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing schema")
 	}
-	for _, formation := range formations {
-		_, err := r.formationsSrv.CreateFormation(ctx, tnt, model.Formation{Name: formation})
+	for _, f := range formations {
+		_, err := r.formationsSrv.CreateFormation(ctx, tnt, model.Formation{Name: f})
 		if err != nil {
 			return nil, errors.Wrap(err, "while creating formation")
 		}
@@ -208,9 +208,13 @@ func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDe
 		return nil, errors.Wrap(err, "while receiving stored label definition")
 	}
 
-	formations, err := ParseFormationsFromSchema(ld.Schema)
+	inputFormations, err := ParseFormationsFromSchema(ld.Schema)
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing schema")
+	}
+	inputFormationsMap := make(map[string]struct{}, len(inputFormations))
+	for _, f := range inputFormations {
+		inputFormationsMap[f] = struct{}{}
 	}
 
 	storedFormations, err := ParseFormationsFromSchema(storedLd.Schema)
@@ -218,17 +222,23 @@ func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDe
 		return nil, errors.Wrap(err, "while parsing schema")
 	}
 
-	for _, formation := range formations {
-		if !containsFormation(storedFormations, formation) {
-			_, err := r.formationsSrv.CreateFormation(ctx, tnt, model.Formation{Name: formation})
+	storedFormationsMap := make(map[string]struct{}, len(storedFormations))
+	for _, f := range storedFormations {
+		storedFormationsMap[f] = struct{}{}
+	}
+
+	for _, f := range inputFormations {
+		if _, ok := storedFormationsMap[f]; !ok {
+			_, err := r.formationsSrv.CreateFormation(ctx, tnt, model.Formation{Name: f})
 			if err != nil {
 				return nil, errors.Wrap(err, "while creating formation")
 			}
 		}
 	}
-	for _, formation := range storedFormations {
-		if !containsFormation(formations, formation) {
-			_, err := r.formationsSrv.DeleteFormation(ctx, tnt, model.Formation{Name: formation})
+
+	for _, f := range storedFormations {
+		if _, ok := inputFormationsMap[f]; !ok {
+			_, err := r.formationsSrv.DeleteFormation(ctx, tnt, model.Formation{Name: f})
 			if err != nil {
 				return nil, errors.Wrap(err, "while deleting formation")
 			}
@@ -250,13 +260,4 @@ func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	}
 
 	return &out, nil
-}
-
-func containsFormation(storedFormations []string, formationToFind string) bool {
-	for _, formation := range storedFormations {
-		if formation == formationToFind {
-			return true
-		}
-	}
-	return false
 }
