@@ -6,56 +6,56 @@
 
 # These are the default owners for the whole content of the `compass` repository. The default owners are automatically added as reviewers when you open a pull request, unless different owners are specified in the file.
 
-* @krasish @kaloyanspiridonov @ivantenevvasilev @la4ezar @nyordanoff @stanislavstefanov @kirilkabakchiev @dzahariev @svetlinzarev-sap @alextargov @dimitarpetrov @petartodorovv @stefancholakov @nickymateev @desislavaa
-/chart/compass/charts/connectivity-adapter @kirilkabakchiev @nickymateev @svetlinzarev-sap @alextargov @dzahariev @kaloyanspiridonov
-/chart/compass/charts/connector @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov
-/chart/compass/charts/gateway @la4ezar @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev
-/chart/compass/charts/ns-adapter @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap
-/chart/compass/charts/operations-controller @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap
-/chart/compass/charts/ord-service @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar
-/chart/compass/charts/pairing-adapter @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap @alextargov
-/chart/compass/charts/tenant-fetcher @kirilkabakchiev @krasish @stefancholakov @desislavaa
-/chart/compass/templates/filters @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv
-/components/connectivity-adapter @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap @alextargov
-/components/connector @la4ezar @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev
-/components/director/cmd/director @alextargov @kirilkabakchiev @nickymateev @la4ezar @petartodorovv @stanislavstefanov @krasish @kaloyanspiridonov @svetlinzarev-sap @ivantenevvasilev @stefancholakov @dzahariev @dimitarpetrov @nyordanoff @desislavaa
-/components/director/cmd/ns-adapter @svetlinzarev-sap @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev
-/components/director/cmd/ordaggregator @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap @alextargov
-/components/director/cmd/scopessynchronizer @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv @stanislavstefanov
-/components/director/cmd/systemfetcher @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap
-/components/director/cmd/tenantfetcher-job @desislavaa @kirilkabakchiev @krasish @stefancholakov
-/components/director/cmd/tenantfetcher-svc @stefancholakov @desislavaa @kirilkabakchiev @krasish
-/components/director/cmd/tenantloader @kaloyanspiridonov @stanislavstefanov @stefancholakov @alextargov @dzahariev @svetlinzarev-sap @ivantenevvasilev @la4ezar @desislavaa @krasish @nyordanoff @petartodorovv @kirilkabakchiev @dimitarpetrov @nickymateev
-/components/director/internal/domain/formation @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov
-/components/director/internal/info @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar
-/components/director/internal/nsadapter @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap @alextargov
-/components/director/internal/open_resource_discovery @kirilkabakchiev @nickymateev @svetlinzarev-sap @alextargov @dzahariev @kaloyanspiridonov
-/components/director/internal/scopes_sync @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev
-/components/director/internal/systemfetcher @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap
-/components/director/internal/tenantfetcher @kirilkabakchiev @krasish @stefancholakov @desislavaa
-/components/director/internal/tenantfetchersvc @kirilkabakchiev @krasish @stefancholakov @desislavaa
-/components/director/pkg/accessstrategy @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap @alextargov
-/components/director/pkg/operation @kirilkabakchiev @nickymateev @svetlinzarev-sap @alextargov @dzahariev @kaloyanspiridonov
-/components/director/pkg/scenario @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov
-/components/external-services-mock @krasish @kirilkabakchiev @kaloyanspiridonov @ivantenevvasilev @nyordanoff @desislavaa @stefancholakov @alextargov @dzahariev @nickymateev @svetlinzarev-sap @la4ezar @petartodorovv @stanislavstefanov @dimitarpetrov
-/components/gateway @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev
-/components/hydrator @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv
-/components/operations-controller @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap
-/components/pairing-adapter @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap
-/components/schema-migrator @desislavaa @dimitarpetrov @stanislavstefanov @kirilkabakchiev @krasish @kaloyanspiridonov @svetlinzarev-sap @ivantenevvasilev @la4ezar @nyordanoff @nickymateev @stefancholakov @alextargov @dzahariev @petartodorovv
-/installation/cmd @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff
-/installation/scripts @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv
-/tests/connectivity-adapter @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap
-/tests/connector @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv @stanislavstefanov
-/tests/gateway @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov
-/tests/istio @la4ezar @nyordanoff @petartodorovv @stanislavstefanov @dimitarpetrov @ivantenevvasilev @kirilkabakchiev
-/tests/ns-adapter @kirilkabakchiev @nickymateev @svetlinzarev-sap @alextargov @dzahariev @kaloyanspiridonov
-/tests/ord-aggregator @alextargov @dzahariev @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap
-/tests/ord-service @dimitarpetrov @ivantenevvasilev @kirilkabakchiev @la4ezar @nyordanoff @petartodorovv @stanislavstefanov
-/tests/pairing-adapter @kirilkabakchiev @nickymateev @svetlinzarev-sap @alextargov @dzahariev @kaloyanspiridonov
-/tests/system-fetcher @kaloyanspiridonov @kirilkabakchiev @nickymateev @svetlinzarev-sap @alextargov @dzahariev
-/tests/tenant-fetcher @desislavaa @kirilkabakchiev @krasish @stefancholakov
-/tests/tenant-fetcher-job @desislavaa @kirilkabakchiev @krasish @stefancholakov
+* @kyma-incubator/team-dragon @kyma-incubator/team-falcon @kyma-incubator/team-raptor
+/chart/compass/charts/connectivity-adapter @kyma-incubator/team-falcon
+/chart/compass/charts/connector @kyma-incubator/team-raptor
+/chart/compass/charts/gateway @kyma-incubator/team-raptor
+/chart/compass/charts/ns-adapter @kyma-incubator/team-falcon
+/chart/compass/charts/operations-controller @kyma-incubator/team-falcon
+/chart/compass/charts/ord-service @kyma-incubator/team-raptor
+/chart/compass/charts/pairing-adapter @kyma-incubator/team-falcon
+/chart/compass/charts/tenant-fetcher @kyma-incubator/team-dragon
+/chart/compass/templates/filters @kyma-incubator/team-raptor
+/components/connectivity-adapter @kyma-incubator/team-falcon
+/components/connector @kyma-incubator/team-raptor
+/components/director/cmd/director @kyma-incubator/team-dragon @kyma-incubator/team-falcon @kyma-incubator/team-raptor
+/components/director/cmd/ns-adapter @kyma-incubator/team-falcon
+/components/director/cmd/ordaggregator @kyma-incubator/team-falcon
+/components/director/cmd/scopessynchronizer @kyma-incubator/team-raptor
+/components/director/cmd/systemfetcher @kyma-incubator/team-falcon
+/components/director/cmd/tenantfetcher-job @kyma-incubator/team-dragon
+/components/director/cmd/tenantfetcher-svc @kyma-incubator/team-dragon
+/components/director/cmd/tenantloader @kyma-incubator/team-raptor @kyma-incubator/team-dragon @kyma-incubator/team-falcon
+/components/director/internal/domain/formation @kyma-incubator/team-raptor
+/components/director/internal/info @kyma-incubator/team-raptor
+/components/director/internal/nsadapter @kyma-incubator/team-falcon
+/components/director/internal/open_resource_discovery @kyma-incubator/team-falcon
+/components/director/internal/scopes_sync @kyma-incubator/team-raptor
+/components/director/internal/systemfetcher @kyma-incubator/team-falcon
+/components/director/internal/tenantfetcher @kyma-incubator/team-dragon
+/components/director/internal/tenantfetchersvc @kyma-incubator/team-dragon
+/components/director/pkg/accessstrategy @kyma-incubator/team-falcon
+/components/director/pkg/operation @kyma-incubator/team-falcon
+/components/director/pkg/scenario @kyma-incubator/team-raptor
+/components/external-services-mock @kyma-incubator/team-dragon @kyma-incubator/team-falcon @kyma-incubator/team-raptor
+/components/gateway @kyma-incubator/team-raptor
+/components/hydrator @kyma-incubator/team-raptor
+/components/operations-controller @kyma-incubator/team-falcon
+/components/pairing-adapter @kyma-incubator/team-falcon
+/components/schema-migrator @kyma-incubator/team-falcon @kyma-incubator/team-raptor @kyma-incubator/team-dragon
+/installation/cmd @kyma-incubator/team-raptor
+/installation/scripts @kyma-incubator/team-raptor
+/tests/connectivity-adapter @kyma-incubator/team-falcon
+/tests/connector @kyma-incubator/team-raptor
+/tests/gateway @kyma-incubator/team-raptor
+/tests/istio @kyma-incubator/team-raptor
+/tests/ns-adapter @kyma-incubator/team-falcon
+/tests/ord-aggregator @kyma-incubator/team-falcon
+/tests/ord-service @kyma-incubator/team-raptor
+/tests/pairing-adapter @kyma-incubator/team-falcon
+/tests/system-fetcher @kyma-incubator/team-falcon
+/tests/tenant-fetcher @kyma-incubator/team-dragon
+/tests/tenant-fetcher-job @kyma-incubator/team-dragon
 
 # All .md files
-*.md @Peteva @ekaterina-mitova @nkanchev
+*.md @kyma-incubator/cmp-technical-writers
