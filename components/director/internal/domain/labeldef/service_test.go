@@ -272,6 +272,41 @@ func TestServiceGet(t *testing.T) {
 	})
 }
 
+func TestServiceGetWithoutCreating(t *testing.T) {
+	t.Run("success when repository returns label definition", func(t *testing.T) {
+		testKey := model.ScenariosKey
+		ctx := context.TODO()
+		given := model.LabelDefinition{
+			Key:    testKey,
+			Tenant: "tenant",
+		}
+
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+		mockRepository.On("GetByKey", ctx, "tenant", testKey).Return(&given, nil)
+
+		sut := labeldef.NewService(mockRepository, nil, nil, nil, nil, defaultScenarioEnabled)
+		// WHEN
+		actual, err := sut.GetWithoutCreating(ctx, "tenant", testKey)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, &given, actual)
+	})
+	t.Run("on error from repository", func(t *testing.T) {
+		// GIVEN
+		mockRepository := &automock.Repository{}
+		defer mockRepository.AssertExpectations(t)
+		mockRepository.On("GetByKey", mock.Anything, mock.Anything, mock.Anything).
+			Return(nil, errors.New("some error"))
+
+		sut := labeldef.NewService(mockRepository, nil, nil, nil, nil, defaultScenarioEnabled)
+		// WHEN
+		_, err := sut.GetWithoutCreating(context.TODO(), "tenant", "key")
+		// THEN
+		require.EqualError(t, err, "while fetching Label Definition: some error")
+	})
+}
+
 func TestServiceList(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		// GIVEN
