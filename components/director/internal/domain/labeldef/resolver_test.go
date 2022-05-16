@@ -37,6 +37,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 	storedModel := model.LabelDefinition{Key: model.ScenariosKey, Tenant: tnt, ID: fixUUID(), Schema: &scenarioSchemaInt}
 	externalTnt := "external-tenant"
 	testErr := errors.New("test error")
+	notFoundError := apperrors.NewNotFoundErrorWithMessage(resource.LabelDefinition, fixUUID(), "test-error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	t.Run("successfully created Label Definition", func(t *testing.T) {
@@ -59,7 +60,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 		defer mockService.AssertExpectations(t)
 		mockService.On("GetWithoutCreating",
 			contextThatHasTenant(tnt),
-			tnt, model.ScenariosKey).Return(nil, errors.New("Object not found")).Once()
+			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
 
 		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, nil)
 
@@ -93,7 +94,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 		defer mockFormationsService.AssertExpectations(t)
 		mockService.On("GetWithoutCreating",
 			contextThatHasTenant(tnt),
-			tnt, model.ScenariosKey).Return(nil, errors.New("Object not found")).Once()
+			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
 
 		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, nil)
 
@@ -108,7 +109,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 			Tenant: tnt,
 			Schema: &scenarioSchemaInt,
 		}, nil)
-		mockConverter.On("ToGraphQL", storedModel).Return(graphql.LabelDefinition{}, testErr)
+		mockConverter.On("ToGraphQL", storedModel).Return(graphql.LabelDefinition{}, notFoundError)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := labeldef.NewResolver(transact, mockService, mockFormationsService, mockConverter)
@@ -116,7 +117,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
 		// THEN
 		require.Error(t, err)
-		require.EqualError(t, err, testErr.Error())
+		require.EqualError(t, err, notFoundError.Error())
 		persist.AssertExpectations(t)
 		transact.AssertExpectations(t)
 	})
@@ -171,16 +172,16 @@ func TestCreateLabelDefinition(t *testing.T) {
 		defer mockService.AssertExpectations(t)
 		mockService.On("GetWithoutCreating",
 			contextThatHasTenant(tnt),
-			tnt, model.ScenariosKey).Return(nil, errors.New("Object not found")).Once()
+			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
 
-		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, testErr)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, notFoundError)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := labeldef.NewResolver(transact, mockService, mockFormationsService, mockConverter)
 		// WHEN
 		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
 		require.Error(t, err)
-		require.EqualError(t, err, fmt.Sprintf("while creating formation: %s", testErr.Error()))
+		require.EqualError(t, err, fmt.Sprintf("while creating formation with name %s: %s", "DEFAULT", notFoundError.Error()))
 		persist.AssertExpectations(t)
 		transact.AssertExpectations(t)
 	})
@@ -205,20 +206,20 @@ func TestCreateLabelDefinition(t *testing.T) {
 		defer mockService.AssertExpectations(t)
 		mockService.On("GetWithoutCreating",
 			contextThatHasTenant(tnt),
-			tnt, model.ScenariosKey).Return(nil, errors.New("Object not found")).Once()
+			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
 
 		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, nil)
 
 		mockService.On("Get",
 			contextThatHasTenant(tnt),
-			tnt, model.ScenariosKey).Return(nil, testErr).Once()
+			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := labeldef.NewResolver(transact, mockService, mockFormationsService, mockConverter)
 		// WHEN
 		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
 		require.Error(t, err)
-		require.EqualError(t, err, fmt.Sprintf("while getting label definition: %s", testErr.Error()))
+		require.EqualError(t, err, fmt.Sprintf("while getting label definition: %s", notFoundError.Error()))
 		persist.AssertExpectations(t)
 		transact.AssertExpectations(t)
 	})
@@ -243,7 +244,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 		// WHEN
 		_, err := sut.CreateLabelDefinition(ctx, graphql.LabelDefinitionInput{Key: "scenarios"})
 		// THEN
-		require.EqualError(t, err, "while starting transaction: test error")
+		require.EqualError(t, err, fmt.Sprintf("while starting transaction: %s", testErr.Error()))
 		transact.AssertExpectations(t)
 		persist.AssertExpectations(t)
 	})
@@ -311,7 +312,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 		defer mockService.AssertExpectations(t)
 		mockService.On("GetWithoutCreating",
 			contextThatHasTenant(tnt),
-			tnt, model.ScenariosKey).Return(nil, errors.New("Object not found")).Once()
+			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
 
 		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, nil)
 
@@ -329,7 +330,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 		// WHEN
 		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
 		// THEN
-		require.EqualError(t, err, "while committing transaction: test error")
+		require.EqualError(t, err, fmt.Sprintf("while committing transaction: %s", testErr.Error()))
 		transact.AssertExpectations(t)
 		persist.AssertExpectations(t)
 	})
@@ -825,7 +826,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 		// WHEN
 		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
 		// THEN
-		require.EqualError(t, err, "while creating formation: test error")
+		require.EqualError(t, err, fmt.Sprintf("while creating formation with name %s: %s", "additional-1", testErr.Error()))
 	})
 	t.Run("got error on deleting formation", func(t *testing.T) {
 		// GIVEN
@@ -858,7 +859,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 		// WHEN
 		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
 		// THEN
-		require.EqualError(t, err, "while deleting formation: test error")
+		require.EqualError(t, err, fmt.Sprintf("while deleting formation with name %s: %s", "initial-1", testErr.Error()))
 	})
 
 	t.Run("got error on getting Label Definition", func(t *testing.T) {

@@ -19,12 +19,12 @@ import (
 type Resolver struct {
 	conv          ModelConverter
 	srv           Service
-	formationsSrv FormationService
+	formationsSrv formationService
 	transactioner persistence.Transactioner
 }
 
 // NewResolver missing godoc
-func NewResolver(transactioner persistence.Transactioner, srv Service, formationSvc FormationService, conv ModelConverter) *Resolver {
+func NewResolver(transactioner persistence.Transactioner, srv Service, formationSvc formationService, conv ModelConverter) *Resolver {
 	return &Resolver{
 		conv:          conv,
 		srv:           srv,
@@ -49,9 +49,8 @@ type Service interface {
 	List(ctx context.Context, tenant string) ([]model.LabelDefinition, error)
 }
 
-// FormationService missing godoc
-//go:generate mockery --name=FormationService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type FormationService interface {
+//go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationService interface {
 	CreateFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
 	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
 }
@@ -76,9 +75,10 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	_, err = r.srv.GetWithoutCreating(ctx, tnt, ld.Key)
-	if err == nil {
+	if _, err = r.srv.GetWithoutCreating(ctx, tnt, ld.Key); err == nil {
 		return nil, apperrors.NewNotUniqueError(resource.LabelDefinition)
+	} else if !apperrors.IsNotFoundError(err) {
+		return nil, errors.Wrap(err, "while getting label definition")
 	}
 
 	if !strings.Contains(err.Error(), "Object not found") {
@@ -90,9 +90,8 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 		return nil, errors.Wrap(err, "while parsing schema")
 	}
 	for _, f := range formations {
-		_, err := r.formationsSrv.CreateFormation(ctx, tnt, model.Formation{Name: f})
-		if err != nil {
-			return nil, errors.Wrap(err, "while creating formation")
+		if _, err := r.formationsSrv.CreateFormation(ctx, tnt, model.Formation{Name: f}); err != nil {
+			return nil, errors.Wrapf(err, "while creating formation with name %s", f)
 		}
 	}
 
@@ -229,18 +228,16 @@ func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDe
 
 	for _, f := range inputFormations {
 		if _, ok := storedFormationsMap[f]; !ok {
-			_, err := r.formationsSrv.CreateFormation(ctx, tnt, model.Formation{Name: f})
-			if err != nil {
-				return nil, errors.Wrap(err, "while creating formation")
+			if _, err := r.formationsSrv.CreateFormation(ctx, tnt, model.Formation{Name: f}); err != nil {
+				return nil, errors.Wrapf(err, "while creating formation with name %s", f)
 			}
 		}
 	}
 
 	for _, f := range storedFormations {
 		if _, ok := inputFormationsMap[f]; !ok {
-			_, err := r.formationsSrv.DeleteFormation(ctx, tnt, model.Formation{Name: f})
-			if err != nil {
-				return nil, errors.Wrap(err, "while deleting formation")
+			if _, err := r.formationsSrv.DeleteFormation(ctx, tnt, model.Formation{Name: f}); err != nil {
+				return nil, errors.Wrapf(err, "while deleting formation with name %s", f)
 			}
 		}
 	}
