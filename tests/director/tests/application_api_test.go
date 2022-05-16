@@ -320,12 +320,13 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 		request := fixtures.FixRegisterApplicationWithPackagesRequest(expectedAppName)
 		err := testctx.Tc.NewOperation(ctx).Run(request, certSecuredGraphQLClient, &actualApp)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &graphql.ApplicationExt{Application: actualApp.Application})
-		appID := actualApp.ID
-		packageID := actualApp.Packages.Data[0].ID
-
 		require.NoError(t, err)
+
+		appID := actualApp.ID
 		require.NotEmpty(t, appID)
 
+		require.NotNil(t, actualApp.Packages.Data[0])
+		packageID := actualApp.Packages.Data[0].ID
 		require.NotEmpty(t, packageID)
 		require.Equal(t, expectedAppName, actualApp.Name)
 
@@ -343,14 +344,12 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 		runtimeInput := fixtures.FixRuntimeInput("test-runtime")
 		(runtimeInput.Labels)[ScenariosLabel] = []string{"DEFAULT"}
 		runtimeInputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInput)
-
 		require.NoError(t, err)
 		registerRuntimeRequest := fixtures.FixRegisterRuntimeRequest(runtimeInputGQL)
 
 		runtime := graphql.RuntimeExt{}
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, registerRuntimeRequest, &runtime)
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &runtime)
-
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 
@@ -361,6 +360,7 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 			request := fixtures.FixApplicationsForRuntimeWithPackagesRequest(runtime.ID)
 
 			rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), runtime.ID)
+			require.NotNil(t, rtmAuth.Auth)
 			rtmOauthCredentialData, ok := rtmAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 			require.True(t, ok)
 			require.NotEmpty(t, rtmOauthCredentialData.ClientSecret)
@@ -368,6 +368,7 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 
 			t.Log("Issue a Hydra token with Client Credentials")
 			accessToken := token.GetAccessToken(t, rtmOauthCredentialData, token.RuntimeScopes)
+			require.NotEmpty(t, accessToken)
 			oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 			err = testctx.Tc.NewOperation(ctx).Run(request, oauthGraphQLClient, &applicationPage)
