@@ -583,7 +583,10 @@ func appUpdaterFunc(appRepo application.ApplicationRepository) operation.Resourc
 func runtimeSvc(cfg config) claims.RuntimeService {
 	uidSvc := uid.NewService()
 
-	rtConverter := runtime.NewConverter()
+	authConverter := auth.NewConverter()
+
+	webhookConverter := webhook.NewConverter(authConverter)
+	rtConverter := runtime.NewConverter(webhookConverter)
 	rtRepo := runtime.NewRepository(rtConverter)
 
 	lblRepo := label.NewRepository(label.NewConverter())
@@ -602,7 +605,7 @@ func runtimeSvc(cfg config) claims.RuntimeService {
 
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, lblRepo, labelSvc)
 
-	return runtime.NewService(rtRepo, lblRepo, labelDefSvc, labelSvc, uidSvc, scenarioAssignmentEngine, tenantSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
+	return runtime.NewService(rtRepo, lblRepo, labelDefSvc, labelSvc, uidSvc, scenarioAssignmentEngine, tenantSvc, webhookService(), cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
 }
 
 func intSystemSvc() claims.IntegrationSystemService {

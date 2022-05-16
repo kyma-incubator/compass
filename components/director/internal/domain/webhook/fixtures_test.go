@@ -38,6 +38,22 @@ func fixApplicationModelWebhook(id, appID, tenant, url string) *model.Webhook {
 	}
 }
 
+func fixRuntimeModelWebhook(id, runtimeID, url string) *model.Webhook {
+	return &model.Webhook{
+		ID:             id,
+		ObjectID:       runtimeID,
+		ObjectType:     model.RuntimeWebhookReference,
+		Type:           model.WebhookTypeConfigurationChanged,
+		URL:            &url,
+		Auth:           fixBasicAuth(),
+		Mode:           &modelWebhookMode,
+		URLTemplate:    &emptyTemplate,
+		InputTemplate:  &emptyTemplate,
+		HeaderTemplate: &emptyTemplate,
+		OutputTemplate: &emptyTemplate,
+	}
+}
+
 func fixApplicationTemplateModelWebhook(id, appTemplateID, url string) *model.Webhook {
 	return &model.Webhook{
 		ID:             id,
@@ -143,6 +159,21 @@ func fixApplicationWebhookEntityWithID(t *testing.T, id string) *webhook.Entity 
 	}
 }
 
+func fixRuntimeWebhookEntityWithID(t *testing.T, id string) *webhook.Entity {
+	return &webhook.Entity{
+		ID:             id,
+		RuntimeID:      repo.NewValidNullableString(givenRuntimeID()),
+		Type:           string(model.WebhookTypeConfigurationChanged),
+		URL:            repo.NewValidNullableString("http://kyma.io"),
+		Mode:           repo.NewValidNullableString(string(model.WebhookModeSync)),
+		Auth:           sql.NullString{Valid: true, String: fixAuthAsAString(t)},
+		URLTemplate:    repo.NewValidNullableString(emptyTemplate),
+		InputTemplate:  repo.NewValidNullableString(emptyTemplate),
+		HeaderTemplate: repo.NewValidNullableString(emptyTemplate),
+		OutputTemplate: repo.NewValidNullableString(emptyTemplate),
+	}
+}
+
 func fixApplicationTemplateWebhookEntity(t *testing.T) *webhook.Entity {
 	return &webhook.Entity{
 		ID:                    givenID(),
@@ -176,6 +207,10 @@ func givenExternalTenant() string {
 
 func givenApplicationID() string {
 	return "cccccccc-cccc-cccc-cccc-cccccccccccc"
+}
+
+func givenRuntimeID() string {
+	return "rrrrrrrr-rrrr-rrrr-rrrr-rrrrrrrrrrrr"
 }
 
 func givenApplicationTemplateID() string {

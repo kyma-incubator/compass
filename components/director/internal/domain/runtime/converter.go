@@ -10,11 +10,15 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-type converter struct{}
+type converter struct {
+	webhook WebhookConverter
+}
 
 // NewConverter missing godoc
-func NewConverter() *converter {
-	return &converter{}
+func NewConverter(webhook WebhookConverter) *converter {
+	return &converter{
+		webhook: webhook,
+	}
 }
 
 // ToGraphQL missing godoc
@@ -46,14 +50,35 @@ func (c *converter) MultipleToGraphQL(in []*model.Runtime) []*graphql.Runtime {
 	return runtimes
 }
 
-// InputFromGraphQL missing godoc
-func (c *converter) InputFromGraphQL(in graphql.RuntimeInput) model.RuntimeInput {
+// RegisterInputFromGraphQL missing godoc
+func (c *converter) RegisterInputFromGraphQL(in graphql.RuntimeRegisterInput) (model.RuntimeRegisterInput, error) {
 	var labels map[string]interface{}
 	if in.Labels != nil {
 		labels = in.Labels
 	}
 
-	return model.RuntimeInput{
+	webhooks, err := c.webhook.MultipleInputFromGraphQL(in.Webhooks)
+	if err != nil {
+		return model.RuntimeRegisterInput{}, err
+	}
+
+	return model.RuntimeRegisterInput{
+		Name:            in.Name,
+		Description:     in.Description,
+		Labels:          labels,
+		Webhooks:        webhooks,
+		StatusCondition: c.statusConditionToModel(in.StatusCondition),
+	}, nil
+}
+
+// UpdateInputFromGraphQL missing godoc
+func (c *converter) UpdateInputFromGraphQL(in graphql.RuntimeUpdateInput) model.RuntimeUpdateInput {
+	var labels map[string]interface{}
+	if in.Labels != nil {
+		labels = in.Labels
+	}
+
+	return model.RuntimeUpdateInput{
 		Name:            in.Name,
 		Description:     in.Description,
 		Labels:          labels,

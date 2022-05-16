@@ -38,8 +38,8 @@ type OAuth20Service interface {
 // RuntimeService missing godoc
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
 type RuntimeService interface {
-	CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeInput, id string, mandatoryLabels map[string]interface{}) error
-	Update(ctx context.Context, id string, in model.RuntimeInput) error
+	CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeRegisterInput, id string, mandatoryLabels map[string]interface{}) error
+	Update(ctx context.Context, id string, in model.RuntimeUpdateInput) error
 	Get(ctx context.Context, id string) (*model.Runtime, error)
 	GetByTokenIssuer(ctx context.Context, issuer string) (*model.Runtime, error)
 	Delete(ctx context.Context, id string) error
@@ -62,7 +62,8 @@ type ScenarioAssignmentService interface {
 type RuntimeConverter interface {
 	ToGraphQL(in *model.Runtime) *graphql.Runtime
 	MultipleToGraphQL(in []*model.Runtime) []*graphql.Runtime
-	InputFromGraphQL(in graphql.RuntimeInput) model.RuntimeInput
+	RegisterInputFromGraphQL(in graphql.RuntimeRegisterInput) (model.RuntimeRegisterInput, error)
+	UpdateInputFromGraphQL(in graphql.RuntimeUpdateInput) model.RuntimeUpdateInput
 }
 
 // SystemAuthConverter missing godoc
@@ -87,7 +88,7 @@ type BundleInstanceAuthService interface {
 // SelfRegisterManager missing godoc
 //go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore
 type SelfRegisterManager interface {
-	PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeInput, id string) (map[string]interface{}, error)
+	PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeRegisterInput, id string) (map[string]interface{}, error)
 	CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterLabelValue, region string) error
 	GetSelfRegDistinguishingLabelKey() string
 }
@@ -119,6 +120,20 @@ type RuntimeContextConverter interface {
 	MultipleToGraphQL(in []*model.RuntimeContext) []*graphql.RuntimeContext
 }
 
+// WebhookService missing godoc
+//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore
+type WebhookService interface {
+	ListForRuntime(ctx context.Context, runtimeID string) ([]*model.Webhook, error)
+	Create(ctx context.Context, owningResourceID string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) (string, error)
+}
+
+// WebhookConverter missing godoc
+//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore
+type WebhookConverter interface {
+	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
+	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
+}
+
 // Resolver missing godoc
 type Resolver struct {
 	transact                  persistence.Transactioner
@@ -133,16 +148,18 @@ type Resolver struct {
 	selfRegManager            SelfRegisterManager
 	uidService                uidService
 	subscriptionSvc           SubscriptionService
-	fetcher                   TenantFetcher
 	runtimeContextService     RuntimeContextService
 	runtimeContextConverter   RuntimeContextConverter
+	webhookService            WebhookService
+	webhookConverter          WebhookConverter
+	fetcher                   TenantFetcher
 }
 
 // NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService,
 	sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService, selfRegManager SelfRegisterManager,
-	uidService uidService, subscriptionSvc SubscriptionService, runtimeContextService RuntimeContextService, runtimeContextConverter RuntimeContextConverter, fetcher TenantFetcher) *Resolver {
+	uidService uidService, subscriptionSvc SubscriptionService, runtimeContextService RuntimeContextService, runtimeContextConverter RuntimeContextConverter, webhookService WebhookService, webhookConverter WebhookConverter, fetcher TenantFetcher) *Resolver {
 	return &Resolver{
 		transact:                  transact,
 		runtimeService:            runtimeService,
@@ -156,9 +173,11 @@ func NewResolver(transact persistence.Transactioner, runtimeService RuntimeServi
 		selfRegManager:            selfRegManager,
 		uidService:                uidService,
 		subscriptionSvc:           subscriptionSvc,
-		fetcher:                   fetcher,
 		runtimeContextService:     runtimeContextService,
 		runtimeContextConverter:   runtimeContextConverter,
+		webhookService:            webhookService,
+		webhookConverter:          webhookConverter,
+		fetcher:                   fetcher,
 	}
 }
 
@@ -256,8 +275,12 @@ func (r *Resolver) RuntimeByTokenIssuer(ctx context.Context, issuer string) (*gr
 }
 
 // RegisterRuntime missing godoc
-func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput) (*graphql.Runtime, error) {
-	convertedIn := r.converter.InputFromGraphQL(in)
+func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegisterInput) (*graphql.Runtime, error) {
+	convertedIn, err := r.converter.RegisterInputFromGraphQL(in)
+	if err != nil {
+		return nil, err
+	}
+
 	id := r.uidService.Generate()
 
 	labels, err := r.selfRegManager.PrepareRuntimeForSelfRegistration(ctx, convertedIn, id)
@@ -314,8 +337,8 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 }
 
 // UpdateRuntime missing godoc
-func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.RuntimeInput) (*graphql.Runtime, error) {
-	convertedIn := r.converter.InputFromGraphQL(in)
+func (r *Resolver) UpdateRuntime(ctx context.Context, id string, in graphql.RuntimeUpdateInput) (*graphql.Runtime, error) {
+	convertedIn := r.converter.UpdateInputFromGraphQL(in)
 
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -542,6 +565,37 @@ func (r *Resolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key
 		Key:   key,
 		Value: label.Value,
 	}, nil
+}
+
+// Webhooks missing godoc
+func (r *Resolver) Webhooks(ctx context.Context, obj *graphql.Runtime) ([]*graphql.Webhook, error) {
+	if obj == nil {
+		return nil, apperrors.NewInternalError("Runtime cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	webhooks, err := r.webhookService.ListForRuntime(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	gqlWebhooks, err := r.webhookConverter.MultipleToGraphQL(webhooks)
+	if err != nil {
+		return nil, err
+	}
+
+	return gqlWebhooks, nil
 }
 
 // Labels missing godoc
