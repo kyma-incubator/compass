@@ -31,6 +31,7 @@ const (
 func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
+	// comment
 
 	in := graphql.ApplicationRegisterInput{
 		Name:           "wordpress",
