@@ -436,6 +436,7 @@ func TestListLabelDefinitions(t *testing.T) {
 
 	output := graphql.LabelDefinition{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createRequest, &output)
+	require.NoError(t, err)
 
 	firstLabelDefinition := &output
 	defer tenant.TestTenants.CleanupTenant(tenantID)
