@@ -9,7 +9,7 @@ import (
 	gcli "github.com/machinebox/graphql"
 )
 
-//go:generate mockery --name=ClientProvider --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ClientProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ClientProvider interface {
 	Client() Client
 }

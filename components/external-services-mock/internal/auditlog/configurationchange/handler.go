@@ -18,7 +18,7 @@ import (
 
 const timestampLayout = "2006-01-02T15:04:05"
 
-//go:generate mockery --name=ConfigChangeService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ConfigChangeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ConfigChangeService interface {
 	Save(change model.ConfigurationChange) (string, error)
 	Get(id string) *model.ConfigurationChange

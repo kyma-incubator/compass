@@ -13,7 +13,7 @@ import (
 )
 
 // Repository missing godoc
-//go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Repository interface {
 	Create(ctx context.Context, model model.AutomaticScenarioAssignment) error
 	ListForTargetTenant(ctx context.Context, tenantID string, targetTenantID string) ([]*model.AutomaticScenarioAssignment, error)
@@ -25,14 +25,14 @@ type Repository interface {
 }
 
 // ScenariosDefService missing godoc
-//go:generate mockery --name=ScenariosDefService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ScenariosDefService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ScenariosDefService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenantID string) error
 	GetAvailableScenarios(ctx context.Context, tenantID string) ([]string, error)
 }
 
 // AssignmentEngine missing godoc
-//go:generate mockery --name=AssignmentEngine --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=AssignmentEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AssignmentEngine interface {
 	EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error
 	RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment) error

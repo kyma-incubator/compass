@@ -10,13 +10,13 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-//go:generate mockery --name=applicationTemplateService --output=automock --outpkg=automock --case=underscore --exported=true
+//go:generate mockery --name=applicationTemplateService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type applicationTemplateService interface {
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
 }
 
-//go:generate mockery --name=applicationConverter --output=automock --outpkg=automock --case=underscore --exported=true
+//go:generate mockery --name=applicationConverter --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type applicationConverter interface {
 	CreateInputJSONToModel(ctx context.Context, in string) (model.ApplicationRegisterInput, error)
 }

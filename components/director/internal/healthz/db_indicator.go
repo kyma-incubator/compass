@@ -8,7 +8,7 @@ import (
 const DBIndicatorName = "database"
 
 // Pinger missing godoc
-//go:generate mockery --name=Pinger --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Pinger --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Pinger interface {
 	PingContext(ctx context.Context) error
 }

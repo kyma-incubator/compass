@@ -4,12 +4,10 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-PROJECT_ROOT=$(dirname ${BASH_SOURCE})/..
+PROJECT_ROOT=$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. && pwd )
 
-echo "Installing mockery 2.9.0..."
-go get github.com/vektra/mockery/v2/.../@v2.9.0
-echo "Installing latest failery..."
-go get github.com/kyma-project/kyma/tools/failery/.../
-echo "Generating mock implementation for interfaces..."
-cd ${PROJECT_ROOT}
-go generate ./...
+echo "Cleaning up old mocks"
+find . -name automock -type d -exec rm -r "{}" \; || true
+
+echo "Generating new mock implementation for interfaces..."
+docker run --rm -v $PROJECT_ROOT:/home/app -w /home/app --entrypoint go vektra/mockery:v2.12.2 -- generate ./...
