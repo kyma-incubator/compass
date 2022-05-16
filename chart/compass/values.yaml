@@ -608,7 +608,7 @@ global:
     # can be put in the queue for processing before blocking. It is best for the queue to be about 2 times bigger than the parallellism
     queueSize: 100
     # fetchRequestTimeout - shows the timeout to wait for oauth token and for fetching systems (in one request) separately
-    fetchRequestTimeout: "15s"
+    fetchRequestTimeout: "30s"
     # directorRequestTimeout - graphql requests timeout to director
     directorRequestTimeout: "30s"
     dbPool:
@@ -632,7 +632,7 @@ global:
       tokenPath: "/cert/token"
       scopesClaim: "scopes"
       tenantHeaderName: "x-zid"
-      tokenRequestTimeout: 15s
+      tokenRequestTimeout: 30s
       skipSSLValidation: true
     secret:
       name: "compass-system-fetcher-secret"

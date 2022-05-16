@@ -177,9 +177,9 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 		}
 
 		wg.Wait()
-		close(systemsQueue)
-		wgDB.Wait()
 	}
+	close(systemsQueue)
+	wgDB.Wait()
 
 	return nil
 }
