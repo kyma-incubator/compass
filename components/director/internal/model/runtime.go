@@ -62,6 +62,7 @@ func (i *RuntimeRegisterInput) ToRuntime(id string, creationTimestamp, condition
 	}
 }
 
+// RuntimeUpdateInput missing godoc
 type RuntimeUpdateInput struct {
 	Name            string
 	Description     *string

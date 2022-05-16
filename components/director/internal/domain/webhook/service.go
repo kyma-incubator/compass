@@ -20,7 +20,7 @@ import (
 type WebhookRepository interface {
 	GetByID(ctx context.Context, tenant, id string, objectType model.WebhookReferenceObjectType) (*model.Webhook, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.Webhook, error)
-	ListByReferenceObjectID(ctx context.Context, tenant, objId string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error)
+	ListByReferenceObjectID(ctx context.Context, tenant, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error)
 	ListByApplicationIDWithSelectForUpdate(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error)
 	ListByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 	Create(ctx context.Context, tenant string, item *model.Webhook) error

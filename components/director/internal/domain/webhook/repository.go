@@ -90,7 +90,7 @@ func (r *repository) GetByIDGlobal(ctx context.Context, id string) (*model.Webho
 }
 
 // ListByReferenceObjectID missing godoc
-func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant, objId string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error) {
+func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error) {
 	var entities Collection
 
 	refColumn, err := getReferenceColumnForListByReferenceObjectType(objType)
@@ -99,7 +99,7 @@ func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant, objId 
 	}
 
 	conditions := repo.Conditions{
-		repo.NewEqualCondition(refColumn, objId),
+		repo.NewEqualCondition(refColumn, objID),
 	}
 
 	if err := r.lister.List(ctx, objType.GetResourceType(), tenant, &entities, conditions...); err != nil {

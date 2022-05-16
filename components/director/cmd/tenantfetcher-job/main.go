@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"net/http"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
@@ -13,8 +16,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
-	"net/http"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 

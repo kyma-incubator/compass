@@ -1,11 +1,12 @@
 package runtime_test
 
 import (
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
