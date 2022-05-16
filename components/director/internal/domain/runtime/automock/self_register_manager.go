@@ -5,7 +5,6 @@ package automock
 import (
 	context "context"
 
-	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
 
 	testing "testing"
@@ -16,8 +15,8 @@ type SelfRegisterManager struct {
 	mock.Mock
 }
 
-// CleanupSelfRegisteredRuntime provides a mock function with given fields: ctx, selfRegisterLabelValue, region
-func (_m *SelfRegisterManager) CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterLabelValue string, region string) error {
+// CleanupSelfRegistration provides a mock function with given fields: ctx, selfRegisterLabelValue, region
+func (_m *SelfRegisterManager) CleanupSelfRegistration(ctx context.Context, selfRegisterLabelValue string, region string) error {
 	ret := _m.Called(ctx, selfRegisterLabelValue, region)
 
 	var r0 error
@@ -44,13 +43,13 @@ func (_m *SelfRegisterManager) GetSelfRegDistinguishingLabelKey() string {
 	return r0
 }
 
-// PrepareRuntimeForSelfRegistration provides a mock function with given fields: ctx, in, id
-func (_m *SelfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeInput, id string) (map[string]interface{}, error) {
-	ret := _m.Called(ctx, in, id)
+// PrepareForSelfRegistration provides a mock function with given fields: ctx, labels, id
+func (_m *SelfRegisterManager) PrepareForSelfRegistration(ctx context.Context, labels map[string]interface{}, id string) (map[string]interface{}, error) {
+	ret := _m.Called(ctx, labels, id)
 
 	var r0 map[string]interface{}
-	if rf, ok := ret.Get(0).(func(context.Context, model.RuntimeInput, string) map[string]interface{}); ok {
-		r0 = rf(ctx, in, id)
+	if rf, ok := ret.Get(0).(func(context.Context, map[string]interface{}, string) map[string]interface{}); ok {
+		r0 = rf(ctx, labels, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[string]interface{})
@@ -58,8 +57,8 @@ func (_m *SelfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Con
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, model.RuntimeInput, string) error); ok {
-		r1 = rf(ctx, in, id)
+	if rf, ok := ret.Get(1).(func(context.Context, map[string]interface{}, string) error); ok {
+		r1 = rf(ctx, labels, id)
 	} else {
 		r1 = ret.Error(1)
 	}
