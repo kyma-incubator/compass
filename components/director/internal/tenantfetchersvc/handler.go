@@ -72,6 +72,7 @@ type TenantProviderConfig struct {
 	SubdomainProperty              string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY,default=subdomain"`
 	TenantProvider                 string `envconfig:"APP_TENANT_PROVIDER,default=external-provider"`
 	SubscriptionProviderIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY,default=subscriptionProviderId"`
+	ProviderSubaccountIDProperty   string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY,default=providerSubaccountId"`
 }
 
 // EventsConfig contains configuration for Events API requests
@@ -204,6 +205,7 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		h.config.SubdomainProperty:              true,
 		h.config.CustomerIDProperty:             false,
 		h.config.SubscriptionProviderIDProperty: true,
+		h.config.ProviderSubaccountIDProperty:   true,
 	})
 	if err != nil {
 		return nil, err
@@ -215,6 +217,7 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		CustomerTenantID:       properties[h.config.CustomerIDProperty],
 		Subdomain:              properties[h.config.SubdomainProperty],
 		SubscriptionProviderID: properties[h.config.SubscriptionProviderIDProperty],
+		ProviderSubaccountID:   properties[h.config.ProviderSubaccountIDProperty],
 		Region:                 region,
 	}
 
