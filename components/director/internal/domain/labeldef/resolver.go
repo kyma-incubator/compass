@@ -50,7 +50,7 @@ type Service interface {
 }
 
 // FormationService missing godoc
-//go:generate mockery --name=FormationService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=FormationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationService interface {
 	CreateFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
 	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
