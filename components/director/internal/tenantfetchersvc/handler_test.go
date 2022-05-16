@@ -23,6 +23,7 @@ type regionalTenantCreationRequest struct {
 	TenantID               string `json:"tenantId"`
 	Subdomain              string `json:"subdomain"`
 	SubscriptionProviderID string `json:"subscriptionProviderId"`
+	ProviderSubaccountID   string `json:"providerSubaccountId"`
 }
 
 type errReader int
@@ -43,6 +44,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		TenantID:               tenantExtID,
 		Subdomain:              regionalTenantSubdomain,
 		SubscriptionProviderID: subscriptionProviderID,
+		ProviderSubaccountID:   providerSubaccountID,
 	})
 	assert.NoError(t, err)
 
@@ -50,6 +52,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		SubaccountID:           subaccountTenantExtID,
 		Subdomain:              regionalTenantSubdomain,
 		SubscriptionProviderID: subscriptionProviderID,
+		ProviderSubaccountID:   providerSubaccountID,
 	})
 	assert.NoError(t, err)
 
@@ -57,13 +60,15 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		SubaccountID:           subaccountTenantExtID,
 		TenantID:               tenantExtID,
 		SubscriptionProviderID: subscriptionProviderID,
+		ProviderSubaccountID:   providerSubaccountID,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMissingSubscriptionConsumerID, err := json.Marshal(regionalTenantCreationRequest{
-		SubaccountID: subaccountTenantExtID,
-		TenantID:     tenantExtID,
-		Subdomain:    regionalTenantSubdomain,
+		SubaccountID:         subaccountTenantExtID,
+		TenantID:             tenantExtID,
+		Subdomain:            regionalTenantSubdomain,
+		ProviderSubaccountID: providerSubaccountID,
 	})
 	assert.NoError(t, err)
 
@@ -72,7 +77,17 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		SubaccountID:           tenantExtID,
 		Subdomain:              regionalTenantSubdomain,
 		SubscriptionProviderID: subscriptionProviderID,
+		ProviderSubaccountID:   providerSubaccountID,
 	})
+	assert.NoError(t, err)
+
+	bodyWithMissingProviderSubaccountID, err := json.Marshal(regionalTenantCreationRequest{
+		TenantID:               tenantExtID,
+		SubaccountID:           tenantExtID,
+		Subdomain:              regionalTenantSubdomain,
+		SubscriptionProviderID: subscriptionProviderID,
+	})
+
 	assert.NoError(t, err)
 
 	validHandlerConfig := tenantfetchersvc.HandlerConfig{
@@ -84,6 +99,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 			CustomerIDProperty:             tenantProviderCustomerIDProperty,
 			SubdomainProperty:              tenantProviderSubdomainProperty,
 			SubscriptionProviderIDProperty: subscriptionProviderIDProperty,
+			ProviderSubaccountIDProperty:   providerSubaccountIDProperty,
 		},
 	}
 	regionalTenant := tenantfetchersvc.TenantSubscriptionRequest{
@@ -92,6 +108,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		Subdomain:              regionalTenantSubdomain,
 		Region:                 region,
 		SubscriptionProviderID: subscriptionProviderID,
+		ProviderSubaccountID:   providerSubaccountID,
 	}
 	regionalTenantWithMatchingParentID := tenantfetchersvc.TenantSubscriptionRequest{
 		SubaccountTenantID:     "",
@@ -99,6 +116,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		Subdomain:              regionalTenantSubdomain,
 		Region:                 region,
 		SubscriptionProviderID: subscriptionProviderID,
+		ProviderSubaccountID:   providerSubaccountID,
 	}
 
 	// Subscribe flow
@@ -157,6 +175,14 @@ func TestService_SubscriptionFlows(t *testing.T) {
 			Region:              region,
 			ExpectedStatusCode:  http.StatusBadRequest,
 			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", subscriptionProviderIDProperty),
+		},
+		{
+			Name:                "Returns error when providerSubaccountIDProperty is not found in body",
+			TenantSubscriberFn:  func() *automock.TenantSubscriber { return &automock.TenantSubscriber{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingProviderSubaccountID)),
+			Region:              region,
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", providerSubaccountIDProperty),
 		},
 		{
 			Name:                "Returns error when request body doesn't contain tenant subdomain",
