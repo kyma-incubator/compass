@@ -16,13 +16,13 @@ type DirectorGraphQLClient struct {
 	mock.Mock
 }
 
-// SubscribeTenantToRuntime provides a mock function with given fields: ctx, providerID, subaccountID, region
-func (_m *DirectorGraphQLClient) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountID string, region string) error {
-	ret := _m.Called(ctx, providerID, subaccountID, region)
+// SubscribeTenantToRuntime provides a mock function with given fields: ctx, providerID, subaccountID, providerSubaccountID, region
+func (_m *DirectorGraphQLClient) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) error {
+	ret := _m.Called(ctx, providerID, subaccountID, providerSubaccountID, region)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
-		r0 = rf(ctx, providerID, subaccountID, region)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) error); ok {
+		r0 = rf(ctx, providerID, subaccountID, providerSubaccountID, region)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -30,13 +30,13 @@ func (_m *DirectorGraphQLClient) SubscribeTenantToRuntime(ctx context.Context, p
 	return r0
 }
 
-// UnsubscribeTenantFromRuntime provides a mock function with given fields: ctx, providerID, subaccountID, region
-func (_m *DirectorGraphQLClient) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountID string, region string) error {
-	ret := _m.Called(ctx, providerID, subaccountID, region)
+// UnsubscribeTenantFromRuntime provides a mock function with given fields: ctx, providerID, subaccountID, providerSubaccountID, region
+func (_m *DirectorGraphQLClient) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) error {
+	ret := _m.Called(ctx, providerID, subaccountID, providerSubaccountID, region)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
-		r0 = rf(ctx, providerID, subaccountID, region)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) error); ok {
+		r0 = rf(ctx, providerID, subaccountID, providerSubaccountID, region)
 	} else {
 		r0 = ret.Error(0)
 	}
