@@ -132,13 +132,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2358"
+      version: "PR-2332"
     console:
       dir:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2318"
+      version: "PR-2332"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -507,6 +507,7 @@ global:
       subdomainProperty: "subdomain"
       name: "provider"
       subscriptionProviderIdProperty: "subscriptionProviderIdProperty"
+      providerSubaccountIdProperty: "providerSubaccountIdProperty"
     server:
       fetchTenantEndpoint: "/v1/fetch/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
@@ -758,6 +759,7 @@ global:
       providerSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd" # TestProviderSubaccount from our testing tenants
       consumerSubaccountID: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae" # randomly chosen
       consumerTenantID: "ba49f1aa-ddc1-43ff-943c-fe949857a34a" # randomly chosen
+      propagatedProviderSubaccountHeader: "X-Provider-Subaccount"
       externalClientCertTestSecretName: "external-client-certificate-test-secret"
       externalClientCertTestSecretNamespace: "compass-system"
       externalCertTestJobName: "external-certificate-rotation-test-job"

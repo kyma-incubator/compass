@@ -17,9 +17,10 @@ import (
 )
 
 var (
-	testErr = errors.New("test error")
-	url     = "https://target-url.com"
-	token   = "token-value"
+	testErr          = errors.New("test error")
+	url              = "https://target-url.com"
+	token            = "token-value"
+	providerSubaccID = "c062f54a-5626-4ad1-907a-3cca6fe3b80d"
 )
 
 type RoundTripFunc func(req *http.Request) *http.Response
@@ -53,16 +54,17 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 	}
 
 	tenantCfg := Config{
-		TenantFetcherURL:             "https://tenant-fetcher.com",
-		RootAPI:                      "/tenants",
-		RegionalHandlerEndpoint:      "/v1/regional/{region}/callback/{tenantId}",
-		TenantPathParam:              "tenantId",
-		RegionPathParam:              "region",
-		SubscriptionProviderID:       "id-value!t12345",
-		TenantFetcherFullRegionalURL: "",
-		TestConsumerAccountID:        "consumerAccountID",
-		TestConsumerSubaccountID:     "consumberSubaccountID",
-		TestConsumerTenantID:         "consumerTenantID",
+		TenantFetcherURL:                   "https://tenant-fetcher.com",
+		RootAPI:                            "/tenants",
+		RegionalHandlerEndpoint:            "/v1/regional/{region}/callback/{tenantId}",
+		TenantPathParam:                    "tenantId",
+		RegionPathParam:                    "region",
+		SubscriptionProviderID:             "id-value!t12345",
+		TenantFetcherFullRegionalURL:       "",
+		TestConsumerAccountID:              "consumerAccountID",
+		TestConsumerSubaccountID:           "consumberSubaccountID",
+		TestConsumerTenantID:               "consumerTenantID",
+		PropagatedProviderSubaccountHeader: "X-Propagated-Provider",
 	}
 
 	providerCfg := ProviderConfig{
@@ -70,6 +72,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		SubaccountTenantIDProperty:     "subaccountProperty",
 		SubdomainProperty:              "subdomainProperty",
 		SubscriptionProviderIDProperty: "subscriptionProviderProperty",
+		ProviderSubaccountIDProperty:   "providerSubaccountIDProperty",
 	}
 
 	t.Run("Error when missing authorization header", func(t *testing.T) {
@@ -122,11 +125,30 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		assertExpectedResponse(t, resp, expectedBody, http.StatusBadRequest)
 	})
 
+	t.Run("Error when missing propagated provider subaccount header", func(t *testing.T) {
+		//GIVEN
+		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
+		require.NoError(t, err)
+		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
+		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"tenant_id": consumerTenantID})
+		h := NewHandler(httpClient, emptyTenantConfig, emptyProviderConfig, "")
+		r := httptest.NewRecorder()
+
+		//WHEN
+		h.Subscribe(r, subscribeReq)
+		resp := r.Result()
+
+		//THEN
+		expectedBody := "{\"error\":\"while executing subscribe request: while creating subscription request: An error occured when setting json value: path cannot be empty\"}\n"
+		assertExpectedResponse(t, resp, expectedBody, http.StatusInternalServerError)
+	})
+
 	t.Run("Error when subscription request to tenant fetcher fails", func(t *testing.T) {
 		//GIVEN
 		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
 		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
+		subscribeReq.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
 		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"tenant_id": consumerTenantID})
 
 		testErr = errors.New("while executing subscribe request to tenant fetcher")
@@ -154,6 +176,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		subscribeReq, err := http.NewRequest(http.MethodPost, url+apiPath, bytes.NewBuffer([]byte(reqBody)))
 		require.NoError(t, err)
 		subscribeReq.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
+		subscribeReq.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
 		subscribeReq = mux.SetURLVars(subscribeReq, map[string]string{"tenant_id": consumerTenantID})
 
 		testClient := NewTestClient(func(req *http.Request) *http.Response {
@@ -206,6 +229,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 				//GIVEN
 				req := testCase.Request
 				req.Header.Add(oauth2.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
+				req.Header.Add(tenantCfg.PropagatedProviderSubaccountHeader, providerSubaccID)
 				req = mux.SetURLVars(req, map[string]string{"tenant_id": consumerTenantID})
 
 				testClient := NewTestClient(func(req *http.Request) *http.Response {

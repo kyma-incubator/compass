@@ -125,10 +125,11 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		log.C(ctx).Error("parameter [tenant_id] not provided")
 		return http.StatusBadRequest, errors.New("parameter [tenant_id] not provided")
 	}
+	providerSubaccID := r.Header.Get(h.tenantConfig.PropagatedProviderSubaccountHeader)
 
 	// Build a request for consumer subscribe/unsubscribe
 	BuildTenantFetcherRegionalURL(&h.tenantConfig)
-	request, err := h.createTenantRequest(httpMethod, h.tenantConfig.TenantFetcherFullRegionalURL, token)
+	request, err := h.createTenantRequest(httpMethod, h.tenantConfig.TenantFetcherFullRegionalURL, token, providerSubaccID)
 	if err != nil {
 		log.C(ctx).Errorf("while creating subscription request: %s", err.Error())
 		return http.StatusInternalServerError, errors.Wrap(err, "while creating subscription request")
@@ -154,7 +155,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 	return http.StatusOK, nil
 }
 
-func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token string) (*http.Request, error) {
+func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, providerSubaccID string) (*http.Request, error) {
 	var (
 		body = "{}"
 		err  error
@@ -183,6 +184,11 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token string
 		if err != nil {
 			return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 		}
+	}
+
+	body, err = sjson.Set(body, h.providerConfig.ProviderSubaccountIDProperty, providerSubaccID)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
 	}
 
 	request, err := http.NewRequest(httpMethod, tenantFetcherUrl, bytes.NewBuffer([]byte(body)))
