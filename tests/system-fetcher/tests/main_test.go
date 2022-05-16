@@ -18,6 +18,7 @@ import (
 type Config struct {
 	ExternalSvcMockURL             string `envconfig:"EXTERNAL_SERVICES_MOCK_BASE_URL"`
 	SystemFetcherPageSize          int    `envconfig:"SYSTEM_FETCHER_PAGE_SIZE"`
+	SystemFetcherContainerName     string `envconfig:"SYSTEM_FETCHER_CONTAINER_NAME"`
 	DirectorExternalCertSecuredURL string
 	SkipSSLValidation              bool `envconfig:"default=false"`
 	CertLoaderConfig               certloader.Config

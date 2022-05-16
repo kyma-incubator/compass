@@ -11,7 +11,7 @@ import (
 
 //CertificateCache is an interface which provides a certificate which is
 //dynamically reloaded when its Get method is called
-//go:generate mockery --name=CertificateCache --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=CertificateCache --output=automock --outpkg=automock --case=underscore --disable-version-string
 type CertificateCache interface {
 	Get() *tls.Certificate
 }

@@ -3,6 +3,8 @@ package integrationsystem
 import (
 	"context"
 
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -11,7 +13,7 @@ import (
 )
 
 // IntegrationSystemService missing godoc
-//go:generate mockery --name=IntegrationSystemService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=IntegrationSystemService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationSystemService interface {
 	Create(ctx context.Context, in model.IntegrationSystemInput) (string, error)
 	Get(ctx context.Context, id string) (*model.IntegrationSystem, error)
@@ -21,7 +23,7 @@ type IntegrationSystemService interface {
 }
 
 // IntegrationSystemConverter missing godoc
-//go:generate mockery --name=IntegrationSystemConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=IntegrationSystemConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationSystemConverter interface {
 	ToGraphQL(in *model.IntegrationSystem) *graphql.IntegrationSystem
 	MultipleToGraphQL(in []*model.IntegrationSystem) []*graphql.IntegrationSystem
@@ -29,21 +31,21 @@ type IntegrationSystemConverter interface {
 }
 
 // SystemAuthService missing godoc
-//go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemAuthService interface {
-	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
+	ListForObject(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType, objectID string) ([]pkgmodel.SystemAuth, error)
 }
 
 // SystemAuthConverter missing godoc
-//go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemAuthConverter interface {
-	ToGraphQL(in *model.SystemAuth) (graphql.SystemAuth, error)
+	ToGraphQL(in *pkgmodel.SystemAuth) (graphql.SystemAuth, error)
 }
 
 // OAuth20Service missing godoc
-//go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OAuth20Service interface {
-	DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error
+	DeleteMultipleClientCredentials(ctx context.Context, auths []pkgmodel.SystemAuth) error
 }
 
 // Resolver missing godoc
@@ -214,7 +216,7 @@ func (r *Resolver) UnregisterIntegrationSystem(ctx context.Context, id string) (
 		return nil, err
 	}
 
-	auths, err := r.sysAuthSvc.ListForObject(ctx, model.IntegrationSystemReference, intSys.ID)
+	auths, err := r.sysAuthSvc.ListForObject(ctx, pkgmodel.IntegrationSystemReference, intSys.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +255,7 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.IntegrationSystem) ([
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	sysAuths, err := r.sysAuthSvc.ListForObject(ctx, model.IntegrationSystemReference, obj.ID)
+	sysAuths, err := r.sysAuthSvc.ListForObject(ctx, pkgmodel.IntegrationSystemReference, obj.ID)
 	if err != nil {
 		return nil, err
 	}

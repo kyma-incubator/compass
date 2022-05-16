@@ -22,6 +22,7 @@ import (
 
 type Config struct {
 	ExternalSvcMockURL             string `envconfig:"EXTERNAL_SERVICES_MOCK_BASE_URL"`
+	TenantFetcherContainerName     string `envconfig:"TENANT_FETCHER_CONTAINER_NAME"`
 	InternalDirectorGQLURL         string `envconfig:"INTERNAL_DIRECTOR_URL"`
 	DirectorExternalCertSecuredURL string ``
 	SkipSSLValidation              bool   `envconfig:"default=false"`

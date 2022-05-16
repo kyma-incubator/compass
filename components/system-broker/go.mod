@@ -1,6 +1,6 @@
 module github.com/kyma-incubator/compass/components/system-broker
 
-go 1.17
+go 1.18
 
 require (
 	code.cloudfoundry.org/lager v2.0.0+incompatible

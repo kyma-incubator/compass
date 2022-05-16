@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	logrustest "github.com/sirupsen/logrus/hooks/test"
@@ -30,7 +30,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 )
 
 func TestUpdate_Handler(t *testing.T) {

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -19,6 +17,7 @@ import (
 
 const (
 	ScenariosLabel          = "scenarios"
+	RegionLabel             = "region"
 	IsNormalizedLabel       = "isNormalized"
 	QueryRuntimesCategory   = "query runtimes"
 	RegisterRuntimeCategory = "register runtime"
@@ -128,11 +127,12 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 
 func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	const (
-		testScenario = "test-scenario"
+		testFormation = "test-scenario"
 	)
 	// GIVEN
 	ctx := context.Background()
 	subaccount := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
+	tenantID := tenant.TestTenants.GetDefaultTenantID()
 
 	givenInput := graphql.RuntimeInput{
 		Name:        "runtime-with-scenario-assignments",
@@ -146,7 +146,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	// WHEN
 	registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, registerReq, &actualRuntime)
-	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualRuntime)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &actualRuntime)
 
 	//THEN
 	require.NoError(t, err)
@@ -154,31 +154,21 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	assertions.AssertRuntime(t, givenInput, actualRuntime, conf.DefaultScenarioEnabled, true)
 
 	// update label definition
-	_ = fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), []string{testScenario, "DEFAULT"})
+	_ = fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), []string{testFormation, "DEFAULT"})
 	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), []string{"DEFAULT"})
 
-	// register automatic sccenario assignment
-	givenScenarioAssignment := graphql.AutomaticScenarioAssignmentSetInput{
-		ScenarioName: testScenario,
-		Selector: &graphql.LabelSelectorInput{
-			Key:   "global_subaccount_id",
-			Value: subaccount,
-		},
-	}
+	// assign to formation
+	givenFormation := graphql.FormationInput{Name: testFormation}
 
-	scenarioAssignmentInGQL, err := testctx.Tc.Graphqlizer.AutomaticScenarioAssignmentSetInputToGQL(givenScenarioAssignment)
-	require.NoError(t, err)
-	actualScenarioAssignment := graphql.AutomaticScenarioAssignment{}
+	actualFormation := graphql.Formation{}
 
 	// WHEN
-	createAutomaticScenarioAssignmentReq := fixtures.FixCreateAutomaticScenarioAssignmentRequest(scenarioAssignmentInGQL)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAutomaticScenarioAssignmentReq, &actualScenarioAssignment)
+	assignFormationReq := fixtures.FixAssignFormationRequest(subaccount, string(graphql.FormationObjectTypeTenant), givenFormation.Name)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, assignFormationReq, &actualFormation)
 
 	// THEN
 	require.NoError(t, err)
-	assert.Equal(t, givenScenarioAssignment.ScenarioName, actualScenarioAssignment.ScenarioName)
-	assert.Equal(t, givenScenarioAssignment.Selector.Key, actualScenarioAssignment.Selector.Key)
-	assert.Equal(t, givenScenarioAssignment.Selector.Value, actualScenarioAssignment.Selector.Value)
+	assert.Equal(t, givenFormation.Name, actualFormation.Name)
 
 	// get runtime - verify it is in scenario
 	getRuntimeReq := fixtures.FixGetRuntimeRequest(actualRuntime.ID)
@@ -188,7 +178,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	scenarios, hasScenarios := actualRuntime.Labels["scenarios"]
 	assert.True(t, hasScenarios)
 	assert.Len(t, scenarios, 1)
-	assert.Contains(t, scenarios, testScenario)
+	assert.Contains(t, scenarios, testFormation)
 
 	// delete runtime
 
@@ -479,7 +469,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		runtimeInput = &graphql.RuntimeInput{
 			Name:        "runtime-create-update-delete",
 			Description: ptr.String("runtime-create-update-delete-description"),
-			Labels:      graphql.Labels{conf.SelfRegDistinguishLabelKey: []interface{}{distinguishLabelValue}, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue},
+			Labels:      graphql.Labels{conf.SelfRegDistinguishLabelKey: []interface{}{distinguishLabelValue}, RegionLabel: conf.SelfRegRegion},
 		}
 
 		actualRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, runtimeInput)
@@ -528,7 +518,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		runtimeInput.Name = "updated-runtime"
 		runtimeInput.Description = ptr.String("updated-runtime-description")
 		runtimeInput.Labels = graphql.Labels{
-			conf.SelfRegDistinguishLabelKey: []interface{}{distinguishLabelValue}, tenantfetcher.RegionKey: tenantfetcher.RegionPathParamValue, protectedConsumerSubaccountIdsLabel: []interface{}{"subaccountID-1", "subaccountID-2"},
+			conf.SelfRegDistinguishLabelKey: []interface{}{distinguishLabelValue}, RegionLabel: conf.SelfRegRegion, protectedConsumerSubaccountIdsLabel: []interface{}{"subaccountID-1", "subaccountID-2"},
 		}
 		runtimeStatusCond := graphql.RuntimeStatusConditionConnected
 		runtimeInput.StatusCondition = &runtimeStatusCond

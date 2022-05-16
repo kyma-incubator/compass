@@ -7,6 +7,11 @@ metadata:
     app: {{ .Chart.Name }}
     reqlimit: big
     release: {{ .Release.Name }}
+  {{- if .Values.global.isLocalEnv }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "0"
+  {{- end }}
 spec:
   replicas: {{ .Values.deployment.minReplicas }}
   selector:
@@ -18,6 +23,7 @@ spec:
   template:
     metadata:
       annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         {{ if .Values.deployment.resourcesIstioProxy.requests.cpu }}
         sidecar.istio.io/proxyCPU: {{ .Values.deployment.resourcesIstioProxy.requests.cpu }}
         {{ end }}
@@ -122,6 +128,13 @@ spec:
             initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              port: {{ .Values.global.nsAdapter.external.port }}
+              path: "/readyz"
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            periodSeconds: {{.Values.readinessProbe.periodSeconds }}
           volumeMounts:
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy

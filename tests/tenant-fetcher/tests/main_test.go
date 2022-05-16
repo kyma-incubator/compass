@@ -3,10 +3,8 @@ package tests
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
 	"net/http"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -29,7 +27,6 @@ type testConfig struct {
 	DirectorExternalCertSecuredURL string
 	TenantFetcherURL               string
 	RootAPI                        string
-	HandlerEndpoint                string
 	RegionalHandlerEndpoint        string
 	DependenciesEndpoint           string
 	TenantPathParam                string
@@ -39,7 +36,6 @@ type testConfig struct {
 	ExternalServicesMockURL          string
 	ClientID                         string
 	ClientSecret                     string
-	TenantFetcherFullURL             string `envconfig:"-"`
 	TenantFetcherFullRegionalURL     string `envconfig:"-"`
 	TenantFetcherFullDependenciesURL string `envconfig:"-"`
 	SkipSSLValidation                bool   `envconfig:"default=false"`
@@ -52,6 +48,7 @@ type TenantProviderConfig struct {
 	CustomerIDProperty             string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY"`
 	SubdomainProperty              string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"`
 	SubscriptionProviderIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY"`
+	ProviderSubaccountIDProperty   string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY"`
 }
 
 var config testConfig
@@ -83,9 +80,6 @@ func TestMain(m *testing.M) {
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 	}
-
-	endpoint := strings.Replace(config.HandlerEndpoint, fmt.Sprintf("{%s}", config.TenantPathParam), tenantfetcher.TenantPathParamValue, 1)
-	config.TenantFetcherFullURL = config.TenantFetcherURL + config.RootAPI + endpoint
 
 	config.TenantFetcherFullRegionalURL = tenantfetcher.BuildTenantFetcherRegionalURL(config.RegionalHandlerEndpoint, config.TenantPathParam, config.RegionPathParam, config.TenantFetcherURL, config.RootAPI)
 

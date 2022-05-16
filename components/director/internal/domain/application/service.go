@@ -4,11 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
+
+	"github.com/imdario/mergo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -30,18 +34,20 @@ import (
 )
 
 const (
-	intSysKey     = "integrationSystemID"
-	nameKey       = "name"
-	sccLabelKey   = "scc"
-	subaccountKey = "Subaccount"
-	locationIDKey = "LocationID"
+	intSysKey            = "integrationSystemID"
+	nameKey              = "name"
+	sccLabelKey          = "scc"
+	managedKey           = "managed"
+	subaccountKey        = "Subaccount"
+	locationIDKey        = "LocationID"
+	urlSuffixToBeTrimmed = "/"
 )
 
 type repoCreatorFunc func(ctx context.Context, tenant string, application *model.Application) error
 type repoUpserterFunc func(ctx context.Context, tenant string, application *model.Application) (string, error)
 
 // ApplicationRepository missing godoc
-//go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
@@ -57,13 +63,14 @@ type ApplicationRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Application) error
 	Update(ctx context.Context, tenant string, item *model.Application) error
 	Upsert(ctx context.Context, tenant string, model *model.Application) (string, error)
+	TrustedUpsert(ctx context.Context, tenant string, model *model.Application) (string, error)
 	TechnicalUpdate(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteGlobal(ctx context.Context, id string) error
 }
 
 // LabelRepository missing godoc
-//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
@@ -74,46 +81,46 @@ type LabelRepository interface {
 }
 
 // WebhookRepository missing godoc
-//go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
 }
 
 // RuntimeRepository missing godoc
-//go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	ListAll(ctx context.Context, tenantID string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
 // IntegrationSystemRepository missing godoc
-//go:generate mockery --name=IntegrationSystemRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=IntegrationSystemRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationSystemRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
 // LabelUpsertService missing godoc
-//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
 // ScenariosService missing godoc
-//go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
 	AddDefaultScenarioIfEnabled(ctx context.Context, tenant string, labels *map[string]interface{})
 }
 
 // UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
 
 // ApplicationHideCfgProvider missing godoc
-//go:generate mockery --name=ApplicationHideCfgProvider --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationHideCfgProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationHideCfgProvider interface {
 	GetApplicationHideSelectors() (map[string][]string, error)
 }
@@ -482,7 +489,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationUpd
 	return nil
 }
 
-// Upsert missing godoc
+// Upsert persists application or update it if it already exists
 func (s *service) Upsert(ctx context.Context, in model.ApplicationRegisterInput) error {
 	tenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -500,8 +507,55 @@ func (s *service) Upsert(ctx context.Context, in model.ApplicationRegisterInput)
 	return s.genericUpsert(ctx, tenant, in, upserterFunc)
 }
 
-// UpsertFromTemplate missing godoc
-func (s *service) UpsertFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) error {
+// UpdateBaseURL Gets application by ID. If the application does not have a BaseURL set, the API TargetURL is parsed and set as BaseURL
+func (s *service) UpdateBaseURL(ctx context.Context, appID, targetURL string) error {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	app, err := s.Get(ctx, appID)
+	if err != nil {
+		return err
+	}
+
+	if app.BaseURL != nil && len(*app.BaseURL) > 0 {
+		log.C(ctx).Infof("BaseURL for Application %s already exists. Will not update it.", appID)
+		return nil
+	}
+
+	log.C(ctx).Infof("BaseURL for Application %s does not exist. Will update it.", appID)
+
+	parsedTargetURL, err := url.Parse(targetURL)
+	if err != nil {
+		return errors.Wrapf(err, "while parsing targetURL")
+	}
+
+	app.BaseURL = str.Ptr(fmt.Sprintf("%s://%s", parsedTargetURL.Scheme, parsedTargetURL.Host))
+
+	return s.appRepo.Update(ctx, appTenant, app)
+}
+
+// TrustedUpsert persists application or update it if it already exists ignoring tenant isolation
+func (s *service) TrustedUpsert(ctx context.Context, in model.ApplicationRegisterInput) error {
+	tenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	upserterFunc := func(ctx context.Context, tenant string, application *model.Application) (string, error) {
+		id, err := s.appRepo.TrustedUpsert(ctx, tenant, application)
+		if err != nil {
+			return "", errors.Wrapf(err, "while upserting Application with name %s", application.Name)
+		}
+		return id, nil
+	}
+
+	return s.genericUpsert(ctx, tenant, in, upserterFunc)
+}
+
+// TrustedUpsertFromTemplate persists application from template id or update it if it already exists ignoring tenant isolation
+func (s *service) TrustedUpsertFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) error {
 	tenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
@@ -509,7 +563,7 @@ func (s *service) UpsertFromTemplate(ctx context.Context, in model.ApplicationRe
 
 	upserterFunc := func(ctx context.Context, tenant string, application *model.Application) (string, error) {
 		application.ApplicationTemplateID = appTemplateID
-		id, err := s.appRepo.Upsert(ctx, tenant, application)
+		id, err := s.appRepo.TrustedUpsert(ctx, tenant, application)
 		if err != nil {
 			return "", errors.Wrapf(err, "while upserting Application with name %s from template", application.Name)
 		}
@@ -660,6 +714,130 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	}
 
 	return nil
+}
+
+// Merge merges properties from Source Application into Destination Application, provided that the Destination's
+// Application does not have a value set for a given property. Then the Source Application is being deleted.
+func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Application, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	destApp, err := s.Get(ctx, destID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting destination application")
+	}
+
+	srcApp, err := s.Get(ctx, srcID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting source application")
+	}
+
+	destAppLabels, err := s.labelRepo.ListForObject(ctx, appTenant, model.ApplicationLabelableObject, destID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting labels for Application with id %s", destID)
+	}
+
+	srcAppLabels, err := s.labelRepo.ListForObject(ctx, appTenant, model.ApplicationLabelableObject, srcID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting labels for Application with id %s", srcID)
+	}
+
+	srcBaseURL := strings.TrimSuffix(str.PtrStrToStr(srcApp.BaseURL), urlSuffixToBeTrimmed)
+	destBaseURL := strings.TrimSuffix(str.PtrStrToStr(destApp.BaseURL), urlSuffixToBeTrimmed)
+	if len(srcBaseURL) == 0 || len(destBaseURL) == 0 || srcBaseURL != destBaseURL {
+		return nil, errors.Errorf("BaseURL for applications %s and %s are not the same. Destination app BaseURL: %s. Source app BaseURL: %s", destID, srcID, destBaseURL, srcBaseURL)
+	}
+
+	srcTemplateID := str.PtrStrToStr(srcApp.ApplicationTemplateID)
+	destTemplateID := str.PtrStrToStr(destApp.ApplicationTemplateID)
+	if len(srcTemplateID) == 0 || len(destTemplateID) == 0 || srcTemplateID != destTemplateID {
+		return nil, errors.Errorf("Application templates are not the same. Destination app template: %s. Source app template: %s", destTemplateID, srcTemplateID)
+	}
+
+	if srcApp.Status == nil {
+		return nil, errors.Errorf("Could not determine status of source application with id %s", srcID)
+	}
+
+	if srcApp.Status.Condition != model.ApplicationStatusConditionInitial {
+		return nil, errors.Errorf("Cannot merge application with id %s, because it is in a %s status", srcID, model.ApplicationStatusConditionConnected)
+	}
+
+	log.C(ctx).Infof("Merging applications with ids %s and %s", destID, srcID)
+	if err := mergo.Merge(destApp, *srcApp); err != nil {
+		return nil, errors.Wrapf(err, "while trying to merge applications with ids %s and %s", destID, srcID)
+	}
+
+	log.C(ctx).Infof("Merging labels for applications with ids %s and %s", destID, srcID)
+	destAppLabelsMerged, err := s.handleMergeLabels(srcAppLabels, destAppLabels)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while trying to merge labels for applications with ids %s and %s", destID, srcID)
+	}
+
+	log.C(ctx).Infof("Deleting source application with id %s", srcID)
+	if err := s.Delete(ctx, srcID); err != nil {
+		return nil, err
+	}
+
+	log.C(ctx).Infof("Updating destination app with id %s", srcID)
+	if err := s.appRepo.Update(ctx, appTenant, destApp); err != nil {
+		return nil, err
+	}
+
+	if err := s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, destID, destAppLabelsMerged); err != nil {
+		return nil, err
+	}
+
+	return s.appRepo.GetByID(ctx, appTenant, destID)
+}
+
+// handleMergeLabels merges source labels into destination labels. model.ScenariosKey is merged manually as well due to limitation
+// of the lib that is used. The last manually merged label is managedKey which is updated only if the destination or
+// source label have a value "true"
+func (s *service) handleMergeLabels(srcAppLabels, destAppLabels map[string]*model.Label) (map[string]interface{}, error) {
+	srcScenariosStrSlice, err := label.ValueToStringsSlice(srcAppLabels[model.ScenariosKey].Value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting source application labels to string slice")
+	}
+
+	destScenariosStrSlice, err := label.ValueToStringsSlice(destAppLabels[model.ScenariosKey].Value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting destination application labels to string slice")
+	}
+
+	for _, srcScenario := range srcScenariosStrSlice {
+		if !str.ContainsInSlice(destScenariosStrSlice, srcScenario) {
+			destScenariosStrSlice = append(destScenariosStrSlice, srcScenario)
+		}
+	}
+
+	if err := mergo.Merge(&destAppLabels, srcAppLabels); err != nil {
+		return nil, errors.Wrapf(err, "while trying to merge labels")
+	}
+
+	destAppLabels[model.ScenariosKey].Value = destScenariosStrSlice
+
+	destLabelManaged, err := str.CastToBool(destAppLabels[managedKey].Value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting %s value for destination label with ID: %s", managedKey, destAppLabels[managedKey].ID)
+	}
+
+	srcLabelManaged, err := str.CastToBool(srcAppLabels[managedKey].Value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting %s value for source label with ID: %s", managedKey, srcAppLabels[managedKey].ID)
+	}
+
+	if destLabelManaged || srcLabelManaged {
+		destAppLabels[managedKey].Value = "true"
+	}
+
+	conv := make(map[string]interface{}, len(destAppLabels))
+	for key, val := range destAppLabels {
+		conv[key] = val.Value
+	}
+
+	return conv, nil
 }
 
 // ensureApplicationNotPartOfScenarioWithRuntime Checks if an application has scenarios associated with it. if a runtime is part of any scenario, then the application is considered being used by that runtime.

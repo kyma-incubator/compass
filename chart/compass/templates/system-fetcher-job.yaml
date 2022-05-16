@@ -20,7 +20,7 @@ spec:
         spec:
           serviceAccountName: {{ $.Chart.Name }}-system-fetcher
           containers:
-            - name: system-fetcher
+            - name: {{ .Values.global.systemFetcher.containerName }}
               image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
               imagePullPolicy: IfNotPresent
               volumeMounts:
@@ -43,8 +43,6 @@ spec:
                   value: {{ .Values.global.systemFetcher.fetchRequestTimeout | quote }}
                 - name: APP_SYSTEM_INFORMATION_ENDPOINT
                   value: {{ .Values.global.systemFetcher.systemsAPIEndpoint | quote }}
-                - name: APP_SYSTEM_INFORMATION_FILTER_TENANT_CRITERIA_PATTERN
-                  value: {{ .Values.global.systemFetcher.systemsAPIFilterTenantCriteriaPattern | quote }}
                 - name: APP_SYSTEM_INFORMATION_FILTER_CRITERIA
                   value: {{ .Values.global.systemFetcher.systemsAPIFilterCriteria | quote }}
                 - name: APP_SYSTEM_INFORMATION_SYSTEM_TO_TEMPLATE_MAPPINGS

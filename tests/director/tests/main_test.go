@@ -34,6 +34,7 @@ type DirectorConfig struct {
 	certprovider.ExternalCertProviderConfig
 	SelfRegDistinguishLabelKey   string
 	SelfRegDistinguishLabelValue string
+	SelfRegRegion                string
 }
 
 type BaseDirectorConfig struct {

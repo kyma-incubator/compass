@@ -22,7 +22,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 )
@@ -78,18 +77,18 @@ type OAuthMtlsCredentials struct {
 	AdditionalHeaders map[string]string
 }
 
-// NewOAuthMtlsCredentials creates OAuthMtlsCredentials from SelfRegConfig
-func NewOAuthMtlsCredentials(config *runtime.SelfRegConfig) (*OAuthMtlsCredentials, error) {
-	mtlsCert, err := cert.ParseCertificate(config.Cert, config.Key)
+// NewOAuthMtlsCredentials creates OAuthMtlsCredentials based on the provided credentials and url
+func NewOAuthMtlsCredentials(clientID, certificate, key, tokenURL, oauthTokenPath string) (*OAuthMtlsCredentials, error) {
+	mtlsCert, err := cert.ParseCertificate(certificate, key)
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing certificate for self-registration config")
 	}
 	return &OAuthMtlsCredentials{
-		ClientID: config.ClientID,
+		ClientID: clientID,
 		CertCache: &certCache{
 			cert: mtlsCert,
 		},
-		TokenURL: config.TokenURL + config.OauthTokenPath,
+		TokenURL: tokenURL + oauthTokenPath,
 	}, nil
 }
 

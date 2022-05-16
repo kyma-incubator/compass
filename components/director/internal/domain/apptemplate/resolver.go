@@ -3,6 +3,7 @@ package apptemplate
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
@@ -17,7 +18,7 @@ import (
 )
 
 // ApplicationTemplateService missing godoc
-//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateService interface {
 	Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error)
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
@@ -26,10 +27,11 @@ type ApplicationTemplateService interface {
 	Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error
 	Delete(ctx context.Context, id string) error
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
+	ListLabels(ctx context.Context, appTemplateID string) (map[string]*model.Label, error)
 }
 
 // ApplicationTemplateConverter missing godoc
-//go:generate mockery --name=ApplicationTemplateConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationTemplateConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateConverter interface {
 	ToGraphQL(in *model.ApplicationTemplate) (*graphql.ApplicationTemplate, error)
 	MultipleToGraphQL(in []*model.ApplicationTemplate) ([]*graphql.ApplicationTemplate, error)
@@ -39,7 +41,7 @@ type ApplicationTemplateConverter interface {
 }
 
 // ApplicationConverter missing godoc
-//go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
 	CreateInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error)
@@ -47,7 +49,7 @@ type ApplicationConverter interface {
 }
 
 // ApplicationService missing godoc
-//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
 	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error)
@@ -55,13 +57,13 @@ type ApplicationService interface {
 }
 
 // WebhookService missing godoc
-//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookService interface {
 	ListForApplicationTemplate(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 }
 
 // WebhookConverter missing godoc
-//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookConverter interface {
 	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
 	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
@@ -186,6 +188,10 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, err
 	}
 
+	if convertedIn.Labels == nil {
+		convertedIn.Labels = make(map[string]interface{})
+	}
+
 	log.C(ctx).Infof("Creating an Application Template with name %s", convertedIn.Name)
 	id, err := r.appTemplateSvc.Create(ctx, convertedIn)
 	if err != nil {
@@ -209,6 +215,45 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	}
 
 	return gqlAppTemplate, nil
+}
+
+// Labels retrieve all labels for application template
+func (r *Resolver) Labels(ctx context.Context, obj *graphql.ApplicationTemplate, key *string) (graphql.Labels, error) {
+	if obj == nil {
+		return nil, apperrors.NewInternalError("Application Template cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	itemMap, err := r.appTemplateSvc.ListLabels(ctx, obj.ID)
+	if err != nil {
+		if strings.Contains(err.Error(), "doesn't exist") {
+			return nil, tx.Commit()
+		}
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	resultLabels := make(map[string]interface{})
+
+	for _, label := range itemMap {
+		if key == nil || label.Key == *key {
+			resultLabels[label.Key] = label.Value
+		}
+	}
+
+	var gqlLabels graphql.Labels = resultLabels
+	return gqlLabels, nil
 }
 
 // RegisterApplicationFromTemplate missing godoc

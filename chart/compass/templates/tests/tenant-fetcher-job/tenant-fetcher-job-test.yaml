@@ -1,3 +1,4 @@
+{{ if .Values.global.isForTesting }}
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
@@ -21,7 +22,7 @@ spec:
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-tenant-fetcher-job
       containers:
-        - name: tenant-fetcher-job-tests
+        - name: {{ .Values.global.tenantFetcher.containerName }}
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
@@ -71,6 +72,8 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
+            - name: TENANT_FETCHER_CONTAINER_NAME
+              value: "{{ .Values.global.tenantFetcher.containerName }}"
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.19.1-alpine
@@ -141,6 +144,9 @@ rules:
   resources: ["cronjobs"]
   resourceNames: ["{{ .Chart.Name }}-tenant-fetcher-account-fetcher", "{{ .Chart.Name }}-tenant-fetcher-subaccount-fetcher"]
   verbs: ["get"]
+- apiGroups: ["*"]
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "list"]
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -183,3 +189,4 @@ roleRef:
   kind: Role
   name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
   apiGroup: rbac.authorization.k8s.io
+{{ end }}

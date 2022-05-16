@@ -1,3 +1,4 @@
+{{ if .Values.global.isForTesting }}
 {{if and (eq .Values.global.externalServicesMock.enabled true) (eq .Values.gateway.gateway.auditlog.enabled true) }}
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
@@ -163,3 +164,4 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 
 {{end}}
+{{ end }}

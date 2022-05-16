@@ -16,19 +16,19 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-//go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type labelRepository interface {
 	GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 }
 
-//go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeRepository interface {
 	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 }
 
-//go:generate mockery --exported --name=labelUpsertService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=labelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type labelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
@@ -87,7 +87,7 @@ func (e *engine) RemoveAssignedScenarios(ctx context.Context, in []*model.Automa
 func (e *engine) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error) {
 	scenariosSet := make(map[string]struct{})
 
-	scenariosFromAssignments, err := e.getScenariosFromMatchingASAs(ctx, runtimeID)
+	scenariosFromAssignments, err := e.GetScenariosFromMatchingASAs(ctx, runtimeID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting scenarios for selector labels")
 	}
@@ -141,10 +141,10 @@ func (e *engine) getScenarioLabelsForRuntimes(ctx context.Context, in model.Auto
 	return labels, runtimeIDs, nil
 }
 
-// getScenariosFromMatchingASAs gets all the scenarios that should be added to the runtime based on the matching Automatic Scenario Assignments
+// GetScenariosFromMatchingASAs gets all the scenarios that should be added to the runtime based on the matching Automatic Scenario Assignments
 // In order to do that, the ASAs should be searched in the caller tenant as this is the tenant that modifies the runtime and this is the tenant that the ASA
 // produced labels should be added to.
-func (e *engine) getScenariosFromMatchingASAs(ctx context.Context, runtimeID string) ([]string, error) {
+func (e *engine) GetScenariosFromMatchingASAs(ctx context.Context, runtimeID string) ([]string, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err

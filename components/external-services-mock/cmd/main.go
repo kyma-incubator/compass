@@ -55,6 +55,7 @@ type config struct {
 	ORDServers    ORDServers
 	SelfRegConfig selfreg.Config
 	DefaultTenant string `envconfig:"APP_DEFAULT_TENANT"`
+	TrustedTenant string `envconfig:"APP_TRUSTED_TENANT"`
 
 	TenantConfig         subscription.Config
 	TenantProviderConfig subscription.ProviderConfig
@@ -67,12 +68,14 @@ type config struct {
 // This is needed in order to ensure that every call in the context of an application happens in a single server isolated from others.
 // Prior to this separation there were cases when tests succeeded (false positive) due to mistakenly configured baseURL resulting in different flow - different access strategy returned.
 type ORDServers struct {
-	CertPort           int `envconfig:"default=8082"`
-	UnsecuredPort      int `envconfig:"default=8083"`
-	BasicPort          int `envconfig:"default=8084"`
-	OauthPort          int `envconfig:"default=8085"`
-	GlobalRegistryPort int `envconfig:"default=8086"`
-	CertSecuredBaseURL string
+	CertPort                    int `envconfig:"default=8082"`
+	UnsecuredPort               int `envconfig:"default=8083"`
+	BasicPort                   int `envconfig:"default=8084"`
+	OauthPort                   int `envconfig:"default=8085"`
+	GlobalRegistryCertPort      int `envconfig:"default=8086"`
+	GlobalRegistryUnsecuredPort int `envconfig:"default=8087"`
+	CertSecuredBaseURL          string
+	CertSecuredGlobalBaseURL    string
 }
 
 type OAuthConfig struct {
@@ -198,7 +201,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
 	router.Methods(http.MethodDelete).PathPrefix("/systemfetcher/reset").HandlerFunc(systemFetcherHandler.HandleReset)
 	systemsRouter := router.PathPrefix("/systemfetcher/systems").Subrouter()
-	systemsRouter.Use(oauthMiddleware(&key.PublicKey, getClaimsValidator(cfg.DefaultTenant, cfg.ClientID, cfg.Scopes)))
+	systemsRouter.Use(oauthMiddleware(&key.PublicKey, getClaimsValidator([]string{cfg.DefaultTenant, cfg.TrustedTenant})))
 	systemsRouter.HandleFunc("", systemFetcherHandler.HandleFunc)
 
 	// Tenant fetcher handlers
@@ -290,7 +293,8 @@ func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 	servers = append(servers, initUnsecuredORDServer(cfg))
 	servers = append(servers, initBasicSecuredORDServer(cfg))
 	servers = append(servers, initOauthSecuredORDServer(cfg, key))
-	servers = append(servers, initGlobalRegistryORDServer(cfg))
+	servers = append(servers, initSecuredGlobalRegistryORDServer(cfg))
+	servers = append(servers, initUnsecuredGlobalRegistryORDServer(cfg))
 	return servers
 }
 
@@ -329,15 +333,24 @@ func initUnsecuredORDServer(cfg config) *http.Server {
 	}
 }
 
-func initGlobalRegistryORDServer(cfg config) *http.Server {
+func initUnsecuredGlobalRegistryORDServer(cfg config) *http.Server {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/.well-known/open-resource-discovery", ord_global_registry.HandleFuncOrdConfig())
+	router.HandleFunc("/.well-known/open-resource-discovery", ord_global_registry.HandleFuncOrdConfig(cfg.ORDServers.CertSecuredGlobalBaseURL))
+
+	return &http.Server{
+		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.GlobalRegistryUnsecuredPort),
+		Handler: router,
+	}
+}
+
+func initSecuredGlobalRegistryORDServer(cfg config) *http.Server {
+	router := mux.NewRouter()
 
 	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_global_registry.HandleFuncOrdDocument())
 
 	return &http.Server{
-		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.GlobalRegistryPort),
+		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.GlobalRegistryCertPort),
 		Handler: router,
 	}
 }
@@ -404,6 +417,7 @@ func oauthMiddleware(key *rsa.PublicKey, validateClaims func(claims *oauth.Claim
 				httphelpers.WriteError(w, errors.New("Could not validate claims"), http.StatusUnauthorized)
 				return
 			}
+			r.Header.Set("tenant", parsed.Tenant)
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -469,8 +483,14 @@ func stopServer(server *http.Server) {
 func noopClaimsValidator(_ *oauth.Claims) bool {
 	return true
 }
-func getClaimsValidator(expectedTenant, expectedClient, expectedScopes string) func(*oauth.Claims) bool {
+
+func getClaimsValidator(trustedTenants []string) func(*oauth.Claims) bool {
 	return func(claims *oauth.Claims) bool {
-		return claims.Tenant == expectedTenant
+		for _, tenant := range trustedTenants {
+			if claims.Tenant == tenant {
+				return true
+			}
+		}
+		return false
 	}
 }

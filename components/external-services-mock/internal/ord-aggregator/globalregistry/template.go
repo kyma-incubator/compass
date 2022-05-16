@@ -1,7 +1,8 @@
 package ord_global_registry
 
-const ordConfig = `{
+const ordConfigTemplate = `{
     "$schema": "../spec/v1/generated/Configuration.schema.json",
+    "baseUrl": "%s",
 	"openResourceDiscoveryV1": {
         "documents": [
             {
@@ -9,7 +10,7 @@ const ordConfig = `{
                 "systemInstanceAware": true,
                 "accessStrategies": [
                     {
-                        "type": "open",
+                        "type": "sap:cmp-mtls:v1",
                         "customType": "",
                         "customDescription": ""
                     }

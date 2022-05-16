@@ -1,3 +1,4 @@
+{{ if .Values.global.isForTesting }}
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
@@ -21,7 +22,7 @@ spec:
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-system-fetcher
       containers:
-        - name: system-fetcher-tests
+        - name: {{ .Values.global.systemFetcher.containerName }}
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
@@ -33,6 +34,8 @@ spec:
               value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080"
             - name: SYSTEM_FETCHER_PAGE_SIZE
               value: "{{ .Values.global.systemFetcher.paging.pageSize }}"
+            - name: SYSTEM_FETCHER_CONTAINER_NAME
+              value: "{{ .Values.global.systemFetcher.containerName }}"
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
@@ -144,6 +147,9 @@ rules:
 - apiGroups: ["operations.compass"]
   resources: ["operations"]
   verbs: ["get"]
+- apiGroups: ["*"]
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "list"]
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -186,3 +192,4 @@ roleRef:
   kind: Role
   name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
   apiGroup: rbac.authorization.k8s.io
+{{ end }}

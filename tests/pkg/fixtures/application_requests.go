@@ -30,6 +30,12 @@ func FixSampleApplicationRegisterInputWithName(placeholder, name string) graphql
 	return sampleInput
 }
 
+func FixSampleApplicationRegisterInputWithBaseURL(placeholder, baseURL string) graphql.ApplicationRegisterInput {
+	sampleInput := FixSampleApplicationRegisterInput(placeholder)
+	sampleInput.BaseURL = &baseURL
+	return sampleInput
+}
+
 func FixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRegisterInput {
 	return graphql.ApplicationRegisterInput{
 		Name:         placeholder,
@@ -165,6 +171,15 @@ func FixGetApplicationRequest(id string) *gcli.Request {
 					%s
 				}
 			}`, id, testctx.Tc.GQLFieldsProvider.ForApplication()))
+}
+
+func FixMergeApplicationsRequest(srcID, destID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			  result: mergeApplications(sourceID: "%s", destinationID: "%s") {
+					%s
+			  }
+			}`, srcID, destID, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
 
 func FixUpdateApplicationRequest(id, updateInputGQL string) *gcli.Request {

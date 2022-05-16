@@ -17,6 +17,7 @@ spec:
   template:
     metadata:
       annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         {{ if .Values.deployment.resourcesIstioProxy.requests.cpu }}
         sidecar.istio.io/proxyCPU: {{ .Values.deployment.resourcesIstioProxy.requests.cpu }}
         {{ end }}
@@ -34,6 +35,14 @@ spec:
         reqlimit: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit2MBLabel }}
         release: {{ .Release.Name }}
     spec:
+      {{ if $.Values.global.isLocalEnv }}
+      # HostAliases are used by Pod to resolve kyma.local domain
+      hostAliases:
+        - ip: {{ $.Values.global.minikubeIP }}
+          hostnames:
+            # Used for calls to Director
+            - "{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}"
+      {{ end }}
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
@@ -69,10 +78,8 @@ spec:
               value: {{ .Values.global.tenantFetcher.tenantProvider.name }}
             - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
-            - name: APP_SUBSCRIPTION_PROVIDER_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
-            - name: APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.consumerSubaccountIdsLabelKey }}
+            - name: APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY #The property which states the provider subaccount used in the tenant provider
+              value: {{.Values.global.tenantFetcher.tenantProvider.providerSubaccountIdProperty }}
             - name: APP_DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: APP_LOG_FORMAT
@@ -81,8 +88,8 @@ spec:
               value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             - name: APP_ROOT_API
               value: "{{ .Values.global.tenantFetcher.prefix }}"
-            - name: APP_HANDLER_ENDPOINT
-              value: "{{ .Values.global.tenantFetcher.server.handlerEndpoint }}"
+            - name: APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT
+              value: "{{ .Values.global.tenantFetcher.server.fetchTenantEndpoint }}"
             - name: APP_REGIONAL_HANDLER_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.server.regionalHandlerEndpoint }}"
             - name: APP_DEPENDENCIES_ENDPOINT
@@ -93,6 +100,14 @@ spec:
               value: "{{ .Values.global.tenantFetcher.server.regionPathParam }}"
             - name: APP_JWKS_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.authentication.jwksEndpoint }}"
+            - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
+              value: {{ .Values.global.tenantFetcher.requiredAuthScope | quote }}
+            - name: APP_FETCH_TENANT_ON_DEMAND_SCOPE
+              value: {{ .Values.global.tenantFetcher.fetchTenantAuthScope | quote }}
+            - name: APP_DIRECTOR_GRAPHQL_ENDPOINT
+              value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
+            - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
+              value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
@@ -124,11 +139,63 @@ spec:
                   name: compass-postgresql
                   key: postgresql-sslMode
             - name: APP_DB_MAX_OPEN_CONNECTIONS
-              value: "{{.Values.database.dbPool.maxOpenConnections}}"
+              value: {{ .Values.database.dbPool.maxOpenConnections | quote }}
             - name: APP_DB_MAX_IDLE_CONNECTIONS
-              value: "{{.Values.database.dbPool.maxIdleConnections}}"
-            - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
-              value: "{{ .Values.global.tenantFetcher.requiredAuthScope }}"
+              value: {{ .Values.database.dbPool.maxIdleConnections | quote }}
+            - name: APP_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tenantFetcher.secret.name }}
+                  key: {{ .Values.global.tenantFetcher.secret.clientIdKey }}
+            - name: APP_OAUTH_AUTH_MODE
+              value: {{ .Values.global.tenantFetcher.secret.oauthMode }}
+            - name: APP_OAUTH_TOKEN_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tenantFetcher.secret.name }}
+                  key: {{ .Values.global.tenantFetcher.secret.oauthUrlKey }}
+            - name: APP_OAUTH_TOKEN_PATH
+              value: {{  .Values.global.tenantFetcher.oauth.tokenPath }}
+            - name: APP_OAUTH_SKIP_SSL_VALIDATION
+              value: {{ .Values.global.tenantFetcher.secret.skipSSLValidation | quote }}
+            - name: APP_OAUTH_X509_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tenantFetcher.secret.name }}
+                  key: {{ .Values.global.tenantFetcher.secret.clientCertKey }}
+            - name: APP_OAUTH_X509_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tenantFetcher.secret.name }}
+                  key: {{ .Values.global.tenantFetcher.secret.clientKeyKey }}
+            - name: APP_ENDPOINT_SUBACCOUNT_CREATED
+              value: {{ default "127.0.0.1/events?type=subaccount-created" .Values.global.tenantFetcher.endpoints.subaccountCreated }}
+            - name: APP_TENANT_TOTAL_PAGES_FIELD
+              value: {{ .Values.global.tenantFetcher.fieldMapping.totalPagesField }}
+            - name: APP_TENANT_TOTAL_RESULTS_FIELD
+              value: {{ .Values.global.tenantFetcher.fieldMapping.totalResultsField }}
+            - name: APP_TENANT_EVENTS_FIELD
+              value: {{ .Values.global.tenantFetcher.fieldMapping.tenantEventsField }}
+            - name: APP_MAPPING_FIELD_ID
+              value: {{ .Values.global.tenantFetcher.fieldMapping.idField }}
+            - name: APP_MAPPING_FIELD_NAME
+              value: {{ .Values.global.tenantFetcher.fieldMapping.nameField }}
+            - name: APP_MAPPING_FIELD_CUSTOMER_ID
+              value: {{ .Values.global.tenantFetcher.fieldMapping.customerIdField }}
+            - name: APP_MAPPING_FIELD_SUBDOMAIN
+              value: {{ .Values.global.tenantFetcher.fieldMapping.subdomainField }}
+            - name: APP_MAPPING_FIELD_DETAILS
+              value: {{ .Values.global.tenantFetcher.fieldMapping.detailsField }}
+            - name: APP_MAPPING_FIELD_DISCRIMINATOR
+              value: {{ .Values.global.tenantFetcher.fieldMapping.discriminatorField }}
+            - name: APP_MAPPING_VALUE_DISCRIMINATOR
+              value: {{ .Values.global.tenantFetcher.fieldMapping.discriminatorValue }}
+            - name: APP_MAPPING_FIELD_REGION
+              value: {{  default "region" .Values.global.tenantFetcher.fieldMapping.regionField }}
+            - name: APP_MAPPING_FIELD_ENTITY_TYPE
+              value: {{ .Values.global.tenantFetcher.fieldMapping.entityTypeField }}
+            - name: APP_GLOBAL_ACCOUNT_KEY
+              value: {{ default "gaID" .Values.global.tenantFetcher.fieldMapping.globalAccountID }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
@@ -155,4 +222,4 @@ spec:
           securityContext:
 {{ toYaml . | indent 12 }}
           {{- end }}
-          {{end}}
+        {{end}}

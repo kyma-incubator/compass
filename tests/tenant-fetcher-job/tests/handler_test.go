@@ -109,6 +109,7 @@ func TestGlobalAccounts(t *testing.T) {
 
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, globalAccountsCronJobName, globalAccountsJobName, namespace)
 	defer func() {
+		k8s.PrintJobLogs(t, ctx, k8sClient, globalAccountsJobName, namespace, cfg.TenantFetcherContainerName, false)
 		k8s.DeleteJob(t, ctx, k8sClient, globalAccountsJobName, namespace)
 	}()
 
@@ -201,7 +202,10 @@ func TestMoveSubaccounts(t *testing.T) {
 	assert.NoError(t, err)
 
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, subaccountsCronJobName, subaccountsJobName, namespace)
-	defer k8s.DeleteJob(t, ctx, k8sClient, subaccountsJobName, namespace)
+	defer func() {
+		k8s.PrintJobLogs(t, ctx, k8sClient, subaccountsJobName, namespace, cfg.TenantFetcherContainerName, false)
+		k8s.DeleteJob(t, ctx, k8sClient, subaccountsJobName, namespace)
+	}()
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, subaccountsJobName, namespace)
 
@@ -282,9 +286,9 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, defaultTenantID, []string{"DEFAULT", scenarioName})
 	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, defaultTenantID, []string{"DEFAULT"})
 
-	asaInput := fixtures.FixAutomaticScenarioAssigmentInput(scenarioName, "global_subaccount_id", subaccountExternalTenants[0])
-	fixtures.CreateAutomaticScenarioAssignmentInTenant(t, ctx, certSecuredGraphQLClient, asaInput, defaultTenantID)
-	defer fixtures.DeleteAutomaticScenarioAssignmentForScenarioWithinTenant(t, ctx, certSecuredGraphQLClient, defaultTenantID, scenarioName)
+	formationInput := graphql.FormationInput{Name: scenarioName}
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountExternalTenants[0], defaultTenantID)
+	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountExternalTenants[0], defaultTenantID)
 
 	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, directoryParentGUID, defaultTenantID, defaultTenantID, gaExternalTenantIDs[0], subaccountRegion)
 	setMockTenantEvents(t, []byte(genMockPage(strings.Join([]string{event1}, ","), 1)), subaccountMoveSubPath)
@@ -294,7 +298,10 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 	assert.NoError(t, err)
 
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, subaccountsCronJobName, subaccountsJobName, namespace)
-	defer k8s.DeleteJob(t, ctx, k8sClient, subaccountsJobName, namespace)
+	defer func() {
+		k8s.PrintJobLogs(t, ctx, k8sClient, subaccountsJobName, namespace, cfg.TenantFetcherContainerName, true)
+		k8s.DeleteJob(t, ctx, k8sClient, subaccountsJobName, namespace)
+	}()
 
 	k8s.WaitForJobToFail(t, ctx, k8sClient, subaccountsJobName, namespace)
 
@@ -363,7 +370,10 @@ func TestCreateDeleteSubaccounts(t *testing.T) {
 	assert.NoError(t, err)
 
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, subaccountsCronJobName, subaccountsJobName, namespace)
-	defer k8s.DeleteJob(t, ctx, k8sClient, subaccountsJobName, namespace)
+	defer func() {
+		k8s.PrintJobLogs(t, ctx, k8sClient, subaccountsJobName, namespace, cfg.TenantFetcherContainerName, false)
+		k8s.DeleteJob(t, ctx, k8sClient, subaccountsJobName, namespace)
+	}()
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, subaccountsJobName, namespace)
 
@@ -401,7 +411,10 @@ func TestMoveMissingSubaccounts(t *testing.T) {
 	assert.NoError(t, err)
 
 	k8s.CreateJobByCronJob(t, ctx, k8sClient, subaccountsCronJobName, subaccountsJobName, namespace)
-	defer k8s.DeleteJob(t, ctx, k8sClient, subaccountsJobName, namespace)
+	defer func() {
+		k8s.PrintJobLogs(t, ctx, k8sClient, subaccountsJobName, namespace, cfg.TenantFetcherContainerName, false)
+		k8s.DeleteJob(t, ctx, k8sClient, subaccountsJobName, namespace)
+	}()
 
 	k8s.WaitForJobToSucceed(t, ctx, k8sClient, subaccountsJobName, namespace)
 

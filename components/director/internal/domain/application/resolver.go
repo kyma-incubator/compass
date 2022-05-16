@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -26,7 +28,7 @@ import (
 )
 
 // ApplicationService missing godoc
-//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
@@ -39,10 +41,11 @@ type ApplicationService interface {
 	ListLabels(ctx context.Context, applicationID string) (map[string]*model.Label, error)
 	DeleteLabel(ctx context.Context, applicationID string, key string) error
 	Unpair(ctx context.Context, id string) error
+	Merge(ctx context.Context, destID, sourceID string) (*model.Application, error)
 }
 
 // ApplicationConverter missing godoc
-//go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
 	MultipleToGraphQL(in []*model.Application) []*graphql.Application
@@ -52,27 +55,27 @@ type ApplicationConverter interface {
 }
 
 // EventingService missing godoc
-//go:generate mockery --name=EventingService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=EventingService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventingService interface {
 	CleanupAfterUnregisteringApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error)
 	GetForApplication(ctx context.Context, app model.Application) (*model.ApplicationEventingConfiguration, error)
 }
 
 // WebhookService missing godoc
-//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookService interface {
 	ListAllApplicationWebhooks(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 }
 
 // SystemAuthService missing godoc
-//go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemAuthService interface {
-	ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error)
-	DeleteMultipleByIDForObject(ctx context.Context, systemAuths []model.SystemAuth) error
+	ListForObject(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType, objectID string) ([]pkgmodel.SystemAuth, error)
+	DeleteMultipleByIDForObject(ctx context.Context, systemAuths []pkgmodel.SystemAuth) error
 }
 
 // WebhookConverter missing godoc
-//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookConverter interface {
 	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
 	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
@@ -81,26 +84,26 @@ type WebhookConverter interface {
 }
 
 // SystemAuthConverter missing godoc
-//go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemAuthConverter interface {
-	ToGraphQL(in *model.SystemAuth) (graphql.SystemAuth, error)
+	ToGraphQL(in *pkgmodel.SystemAuth) (graphql.SystemAuth, error)
 }
 
 // OAuth20Service missing godoc
-//go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OAuth20Service interface {
-	DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error
+	DeleteMultipleClientCredentials(ctx context.Context, auths []pkgmodel.SystemAuth) error
 }
 
 // RuntimeService missing godoc
-//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 	GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error)
 }
 
 // BundleService missing godoc
-//go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleService interface {
 	GetForApplication(ctx context.Context, id string, applicationID string) (*model.Bundle, error)
 	ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error)
@@ -108,7 +111,7 @@ type BundleService interface {
 }
 
 // BundleConverter missing godoc
-//go:generate mockery --name=BundleConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=BundleConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleConverter interface {
 	ToGraphQL(in *model.Bundle) (*graphql.Bundle, error)
 	MultipleToGraphQL(in []*model.Bundle) ([]*graphql.Bundle, error)
@@ -116,9 +119,9 @@ type BundleConverter interface {
 }
 
 // OneTimeTokenService missing godoc
-//go:generate mockery --name=OneTimeTokenService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=OneTimeTokenService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OneTimeTokenService interface {
-	IsTokenValid(systemAuth *model.SystemAuth) (bool, error)
+	IsTokenValid(systemAuth *pkgmodel.SystemAuth) (bool, error)
 }
 
 // Resolver missing godoc
@@ -352,7 +355,7 @@ func (r *Resolver) UnregisterApplication(ctx context.Context, id string) (*graph
 		return nil, err
 	}
 
-	auths, err := r.sysAuthSvc.ListForObject(ctx, model.ApplicationReference, app.ID)
+	auths, err := r.sysAuthSvc.ListForObject(ctx, pkgmodel.ApplicationReference, app.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -385,7 +388,7 @@ func (r *Resolver) UnpairApplication(ctx context.Context, id string) (*graphql.A
 		return nil, err
 	}
 
-	auths, err := r.sysAuthSvc.ListForObject(ctx, model.ApplicationReference, app.ID)
+	auths, err := r.sysAuthSvc.ListForObject(ctx, pkgmodel.ApplicationReference, app.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -439,6 +442,34 @@ func (r *Resolver) SetApplicationLabel(ctx context.Context, applicationID string
 		Key:   key,
 		Value: value,
 	}, nil
+}
+
+// MergeApplications merges properties from Source Application into Destination Application, provided that the Destination's
+// Application does not have a value set for a given property. Then the Source Application is being deleted.
+func (r *Resolver) MergeApplications(ctx context.Context, destID string, sourceID string) (*graphql.Application, error) {
+	log.C(ctx).Infof("Merging source app with id %s into destination app with id %s", sourceID, destID)
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	mergedApp, err := r.appSvc.Merge(ctx, destID, sourceID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	gqlApp := r.appConverter.ToGraphQL(mergedApp)
+
+	return gqlApp, nil
 }
 
 // DeleteApplicationLabel missing godoc
@@ -555,7 +586,7 @@ func (r *Resolver) Auths(ctx context.Context, obj *graphql.Application) ([]*grap
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	sysAuths, err := r.sysAuthSvc.ListForObject(ctx, model.ApplicationReference, obj.ID)
+	sysAuths, err := r.sysAuthSvc.ListForObject(ctx, pkgmodel.ApplicationReference, obj.ID)
 	if err != nil {
 		return nil, err
 	}

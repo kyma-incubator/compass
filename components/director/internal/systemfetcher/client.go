@@ -14,20 +14,19 @@ import (
 )
 
 // APIClient missing godoc
-//go:generate mockery --name=APIClient --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=APIClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIClient interface {
 	Do(*http.Request, string) (*http.Response, error)
 }
 
 // APIConfig missing godoc
 type APIConfig struct {
-	Endpoint                    string        `envconfig:"APP_SYSTEM_INFORMATION_ENDPOINT"`
-	FilterCriteria              string        `envconfig:"APP_SYSTEM_INFORMATION_FILTER_CRITERIA"`
-	FilterTenantCriteriaPattern string        `envconfig:"APP_SYSTEM_INFORMATION_FILTER_TENANT_CRITERIA_PATTERN"`
-	Timeout                     time.Duration `envconfig:"APP_SYSTEM_INFORMATION_FETCH_TIMEOUT"`
-	PageSize                    uint64        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SIZE"`
-	PagingSkipParam             string        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SKIP_PARAM"`
-	PagingSizeParam             string        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SIZE_PARAM"`
+	Endpoint        string        `envconfig:"APP_SYSTEM_INFORMATION_ENDPOINT"`
+	FilterCriteria  string        `envconfig:"APP_SYSTEM_INFORMATION_FILTER_CRITERIA"`
+	Timeout         time.Duration `envconfig:"APP_SYSTEM_INFORMATION_FETCH_TIMEOUT"`
+	PageSize        uint64        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SIZE"`
+	PagingSkipParam string        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SKIP_PARAM"`
+	PagingSizeParam string        `envconfig:"APP_SYSTEM_INFORMATION_PAGE_SIZE_PARAM"`
 }
 
 // Client missing godoc
@@ -44,29 +43,19 @@ func NewClient(apiConfig APIConfig, client APIClient) *Client {
 	}
 }
 
-// FetchSystemsForTenant fetches systems from the service by making 2 HTTP calls with different filter criteria
+// FetchSystemsForTenant fetches systems from the service
 func (c *Client) FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error) {
-	qp1 := map[string]string{"$filter": c.apiConfig.FilterCriteria}
+	qp := map[string]string{"$filter": c.apiConfig.FilterCriteria, "fetchAcrossZones": "true"}
 	var systems []System
 
 	systemsFunc := c.getSystemsPagingFunc(ctx, &systems, tenant)
-	pi1 := paging.NewPageIterator(c.apiConfig.Endpoint, c.apiConfig.PagingSkipParam, c.apiConfig.PagingSizeParam, qp1, c.apiConfig.PageSize, systemsFunc)
-	if err := pi1.FetchAll(); err != nil {
+	pi := paging.NewPageIterator(c.apiConfig.Endpoint, c.apiConfig.PagingSkipParam, c.apiConfig.PagingSizeParam, qp, c.apiConfig.PageSize, systemsFunc)
+	if err := pi.FetchAll(); err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch systems for tenant %s", tenant)
 	}
 
-	tenantFilter := fmt.Sprintf(c.apiConfig.FilterTenantCriteriaPattern, tenant)
-	qp2 := map[string]string{"$filter": tenantFilter}
-	var systemsByTenantFilter []System
-
-	systemsByTenantFilterFunc := c.getSystemsPagingFunc(ctx, &systemsByTenantFilter, tenant)
-	pi2 := paging.NewPageIterator(c.apiConfig.Endpoint, c.apiConfig.PagingSkipParam, c.apiConfig.PagingSizeParam, qp2, c.apiConfig.PageSize, systemsByTenantFilterFunc)
-	if err := pi2.FetchAll(); err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch systems with tenant filter for tenant %s", tenant)
-	}
-
 	log.C(ctx).Infof("Fetched systems for tenant %s", tenant)
-	return append(systems, systemsByTenantFilter...), nil
+	return systems, nil
 }
 
 func (c *Client) fetchSystemsForTenant(ctx context.Context, url, tenant string) ([]System, error) {

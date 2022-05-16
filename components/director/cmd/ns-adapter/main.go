@@ -8,6 +8,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/schema"
+	"github.com/kyma-incubator/compass/components/director/internal/healthz"
+
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/internal/methodnotallowed"
@@ -127,7 +130,7 @@ func main() {
 
 	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 
 	tntSvc := tenant.NewService(tenantRepo, uidSvc)
 
@@ -148,6 +151,11 @@ func main() {
 	router.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
 	})
+
+	log.C(ctx).Info("Registering readiness endpoint...")
+	schemaRepo := schema.NewRepository()
+	ready := healthz.NewReady(transact, conf.ReadyConfig, schemaRepo)
+	router.HandleFunc("/readyz", healthz.NewReadinessHandler(ready))
 
 	subrouter := router.PathPrefix("/api").Subrouter()
 	subrouter.Use(authenticator.New(http.DefaultClient, conf.JwksEndpoint, conf.AllowJWTSigningNone, "", claims.NewClaimsValidator()).NSAdapterHandler())
@@ -276,9 +284,14 @@ func calculateTemplateMappings(ctx context.Context, cfg adapter.Configuration, t
 	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConv)
 	webhookRepo := webhook.NewRepository(webhookConverter)
+	labelDefConverter := labeldef.NewConverter()
+	labelConverter := label.NewConverter()
+	labelRepo := label.NewRepository(labelConverter)
+	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 
 	uidSvc := uid.NewService()
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
+	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 
 	tx, err := transact.Begin()
 	if err != nil {

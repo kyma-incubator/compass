@@ -62,4 +62,9 @@ override-local-full.yaml
 .changelog/
 docs/investigations/storage/postgres/sql/*.csv
 
+# Code coverage related resources
+cover.out.tmp
+cover.out
+
 main
+*.test

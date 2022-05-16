@@ -1,3 +1,4 @@
+{{ if .Values.global.isForTesting }}
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
@@ -86,7 +87,7 @@ spec:
             - name: TENANT_CONFIG_REGION_PATH_PARAM
               value: "{{ .Values.global.tenantFetcher.server.regionPathParam }}"
             - name: TENANT_CONFIG_REGION
-              value: {{ .Values.global.tests.ordService.region }}
+              value: {{ .Values.global.tests.selfRegistration.region }}
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
@@ -123,6 +124,8 @@ spec:
               value: {{ .Values.global.director.selfRegister.label }}
             - name: SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_VALUE_PREFIX
               value: {{ .Values.global.director.selfRegister.labelValuePrefix }}
+            - name: SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
+              value: {{ .Values.global.tests.ordService.propagatedProviderSubaccountHeader }}
             - name: TEST_EXTERNAL_CERT_SUBJECT
               value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.ordService.providerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
             - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME
@@ -163,6 +166,8 @@ spec:
               value: {{ .Values.global.tests.ordService.consumerSubaccountID }}
             - name: TEST_CONSUMER_TENANT_ID
               value: {{ .Values.global.tests.ordService.consumerTenantID }}
+            - name: SKIP_TESTS_REGEX
+              value: {{ .Values.global.tests.ordService.skipPattern }}
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
@@ -241,6 +246,9 @@ rules:
   resources: ["cronjobs"]
   resourceNames: ["director-external-certificate-rotation-job"]
   verbs: ["get"]
+- apiGroups: ["*"]
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "list"]
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -283,3 +291,4 @@ roleRef:
   kind: Role
   name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
   apiGroup: rbac.authorization.k8s.io
+{{ end }}

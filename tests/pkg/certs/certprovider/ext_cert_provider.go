@@ -31,6 +31,8 @@ func NewExternalCertFromConfig(t *testing.T, ctx context.Context, testConfig Ext
 	require.NoError(t, err)
 	createExtCertJob(t, ctx, k8sClient, testConfig, testConfig.ExternalCertTestJobName) // Create temporary external certificate job which will save the modified client certificate in temporary secret
 	defer func() {
+		k8s.PrintJobLogs(t, ctx, k8sClient, testConfig.ExternalCertTestJobName, testConfig.ExternalClientCertTestSecretNamespace, testConfig.ExternalCertCronjobContainerName, false)
+
 		k8s.DeleteJob(t, ctx, k8sClient, testConfig.ExternalCertTestJobName, testConfig.ExternalClientCertTestSecretNamespace)
 		k8s.DeleteSecret(t, ctx, k8sClient, testConfig.ExternalClientCertTestSecretName, testConfig.ExternalClientCertTestSecretNamespace)
 	}()

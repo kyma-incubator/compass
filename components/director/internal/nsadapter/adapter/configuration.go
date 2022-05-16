@@ -3,6 +3,8 @@ package adapter
 import (
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/healthz"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -24,4 +26,6 @@ type Configuration struct {
 	SystemToTemplateMappings string `envconfig:"APP_SYSTEM_TO_TEMPLATE_MAPPINGS,default='{}'"`
 	AllowJWTSigningNone      bool   `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
 	JwksEndpoint             string `envconfig:"APP_JWKS_ENDPOINT"`
+
+	ReadyConfig healthz.ReadyConfig
 }

@@ -85,6 +85,8 @@ spec:
                   value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
                 - name: APP_GLOBAL_REGISTRY_URL
                   value: "{{ .Values.global.ordAggregator.globalRegistryUrl }}"
+                - name: APP_ORD_MAX_PARALLEL_DOWNLOADS
+                  value: "{{ .Values.global.ordAggregator.maxOrdParallelDownloads }}"
               command:
                 - "/bin/sh"
               args:

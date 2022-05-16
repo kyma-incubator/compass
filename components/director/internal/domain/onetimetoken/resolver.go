@@ -3,6 +3,8 @@ package onetimetoken
 import (
 	"context"
 
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -11,14 +13,14 @@ import (
 )
 
 // TokenService missing godoc
-//go:generate mockery --name=TokenService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TokenService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TokenService interface {
-	GenerateOneTimeToken(ctx context.Context, runtimeID string, tokenType model.SystemAuthReferenceObjectType) (*model.OneTimeToken, error)
+	GenerateOneTimeToken(ctx context.Context, runtimeID string, tokenType pkgmodel.SystemAuthReferenceObjectType) (*model.OneTimeToken, error)
 	RegenerateOneTimeToken(ctx context.Context, sysAuthID string) (*model.OneTimeToken, error)
 }
 
 // TokenConverter missing godoc
-//go:generate mockery --name=TokenConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TokenConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TokenConverter interface {
 	ToGraphQLForRuntime(model model.OneTimeToken) graphql.OneTimeTokenForRuntime
 	ToGraphQLForApplication(model model.OneTimeToken) (graphql.OneTimeTokenForApplication, error)
@@ -50,7 +52,7 @@ func (r *Resolver) RequestOneTimeTokenForRuntime(ctx context.Context, id string,
 	if systemAuthID != nil {
 		token, err = r.svc.RegenerateOneTimeToken(ctx, *systemAuthID)
 	} else {
-		token, err = r.svc.GenerateOneTimeToken(ctx, id, model.RuntimeReference)
+		token, err = r.svc.GenerateOneTimeToken(ctx, id, pkgmodel.RuntimeReference)
 	}
 	if err != nil {
 		return nil, err
@@ -76,7 +78,7 @@ func (r *Resolver) RequestOneTimeTokenForApplication(ctx context.Context, id str
 	if systemAuthID != nil {
 		token, err = r.svc.RegenerateOneTimeToken(ctx, *systemAuthID)
 	} else {
-		token, err = r.svc.GenerateOneTimeToken(ctx, id, model.ApplicationReference)
+		token, err = r.svc.GenerateOneTimeToken(ctx, id, pkgmodel.ApplicationReference)
 	}
 	if err != nil {
 		return nil, err
@@ -107,6 +109,9 @@ func (r *Resolver) RawEncoded(ctx context.Context, obj *graphql.TokenWithURL) (*
 		ConnectorURL: obj.ConnectorURL,
 		Used:         obj.Used,
 		ExpiresAt:    obj.ExpiresAt,
+		CreatedAt:    obj.CreatedAt,
+		UsedAt:       obj.UsedAt,
+		Type:         obj.Type,
 	})
 }
 
@@ -125,5 +130,8 @@ func (r *Resolver) Raw(ctx context.Context, obj *graphql.TokenWithURL) (*string,
 		ConnectorURL: obj.ConnectorURL,
 		Used:         obj.Used,
 		ExpiresAt:    obj.ExpiresAt,
+		CreatedAt:    obj.CreatedAt,
+		UsedAt:       obj.UsedAt,
+		Type:         obj.Type,
 	})
 }

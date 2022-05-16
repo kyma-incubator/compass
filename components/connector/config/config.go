@@ -14,8 +14,6 @@ type Config struct {
 
 	Log log.Config
 
-	HydratorAddress string `envconfig:"default=127.0.0.1:8080"`
-
 	ServerTimeout time.Duration `envconfig:"default=100s"`
 
 	CSRSubject struct {
@@ -24,11 +22,6 @@ type Config struct {
 		OrganizationalUnit string `envconfig:"default=OrgUnit"`
 		Locality           string `envconfig:"default=Locality"`
 		Province           string `envconfig:"default=State"`
-	}
-	ExternalIssuerSubject struct {
-		Country                   string `envconfig:"default=DE"`
-		Organization              string `envconfig:"default=Org"`
-		OrganizationalUnitPattern string `envconfig:"default=OrgUnit"`
 	}
 	CertificateValidityTime time.Duration `envconfig:"default=2160h"`
 	CASecret                struct {
@@ -41,7 +34,6 @@ type Config struct {
 		CertificateKey string `envconfig:"optional"`
 	}
 
-	CertificateDataHeader   string `envconfig:"default=Certificate-Data"`
 	RevocationConfigMapName string `envconfig:"default=compass-system/revocations-Config"`
 
 	DirectorURL                    string `envconfig:"default=127.0.0.1:3003"`
@@ -55,31 +47,27 @@ type Config struct {
 	OneTimeTokenURL             string
 	HttpClientSkipSslValidation bool          `envconfig:"default=false"`
 	HTTPClientTimeout           time.Duration `envconfig:"default=30s"`
-
-	SubjectConsumerMappingConfig string `envconfig:"default=[]"`
 }
 
 func (c *Config) String() string {
-	return fmt.Sprintf("ExternalAddress: %s, APIEndpoint: %s, HydratorAddress: %s, "+
+	return fmt.Sprintf("ExternalAddress: %s, APIEndpoint: %s, "+
 		"CSRSubjectCountry: %s, CSRSubjectOrganization: %s, CSRSubjectOrganizationalUnit: %s, "+
 		"CSRSubjectLocality: %s, CSRSubjectProvince: %s, "+
-		"ExternalIssuerSubjectCountry: %s, ExternalIssuerSubjectOrganization: %s, ExternalIssuerSubjectOrganizationalUnitPattern: %s,"+
 		"CertificateValidityTime: %s, CASecretName: %s, CASecretCertificateKey: %s, CASecretKeyKey: %s, "+
-		"RootCASecretName: %s, RootCASecretCertificateKey: %s, CertificateDataHeader: %s, "+
+		"RootCASecretName: %s, RootCASecretCertificateKey: %s, "+
 		"CertificateSecuredConnectorURL: %s, "+
 		"RevocationConfigMapName: %s, "+
 		"DirectorURL: %s "+
 		"KubernetesClientPollInteval: %s, KubernetesClientPollTimeout: %s"+
-		"OneTimeTokenURL: %s, HTTPClienttimeout: %s, SubjectConsumerMappingConfig: %s",
-		c.ExternalAddress, c.APIEndpoint, c.HydratorAddress,
+		"OneTimeTokenURL: %s, HTTPClienttimeout: %s",
+		c.ExternalAddress, c.APIEndpoint,
 		c.CSRSubject.Country, c.CSRSubject.Organization, c.CSRSubject.OrganizationalUnit,
 		c.CSRSubject.Locality, c.CSRSubject.Province,
-		c.ExternalIssuerSubject.Country, c.ExternalIssuerSubject.Organization, c.ExternalIssuerSubject.OrganizationalUnitPattern,
 		c.CertificateValidityTime, c.CASecret.Name, c.CASecret.CertificateKey, c.CASecret.KeyKey,
-		c.RootCASecret.Name, c.RootCASecret.CertificateKey, c.CertificateDataHeader,
+		c.RootCASecret.Name, c.RootCASecret.CertificateKey,
 		c.CertificateSecuredConnectorURL,
 		c.RevocationConfigMapName,
 		c.DirectorURL,
 		c.KubernetesClient.PollInteval, c.KubernetesClient.PollTimeout,
-		c.OneTimeTokenURL, c.HTTPClientTimeout, c.SubjectConsumerMappingConfig)
+		c.OneTimeTokenURL, c.HTTPClientTimeout)
 }

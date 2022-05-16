@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -23,32 +24,33 @@ const (
 
 	// ConcurrentDeleteOperationErrMsg is the error message returned by the Compass Director, when we try to delete an application, which is already undergoing a delete operation.
 	ConcurrentDeleteOperationErrMsg = "Concurrent operation [reason=delete operation is in progress]"
+	mainURLKey                      = "mainUrl"
 )
 
-//go:generate mockery --name=tenantService --output=automock --outpkg=automock --case=underscore --exported=true
+//go:generate mockery --name=tenantService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type tenantService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
-//go:generate mockery --name=systemsService --output=automock --outpkg=automock --case=underscore --exported=true
+//go:generate mockery --name=systemsService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type systemsService interface {
-	Upsert(ctx context.Context, in model.ApplicationRegisterInput) error
-	UpsertFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) error
+	TrustedUpsert(ctx context.Context, in model.ApplicationRegisterInput) error
+	TrustedUpsertFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) error
 	GetByNameAndSystemNumber(ctx context.Context, name, systemNumber string) (*model.Application, error)
 }
 
-//go:generate mockery --name=systemsAPIClient --output=automock --outpkg=automock --case=underscore --exported=true
+//go:generate mockery --name=systemsAPIClient --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type systemsAPIClient interface {
 	FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error)
 }
 
-//go:generate mockery --name=directorClient --output=automock --outpkg=automock --case=underscore --exported=true
+//go:generate mockery --name=directorClient --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type directorClient interface {
 	DeleteSystemAsync(ctx context.Context, id, tenant string) error
 }
 
-//go:generate mockery --name=templateRenderer --output=automock --outpkg=automock --case=underscore --exported=true
+//go:generate mockery --name=templateRenderer --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type templateRenderer interface {
 	ApplicationRegisterInputFromTemplate(ctx context.Context, sc System) (*model.ApplicationRegisterInput, error)
 }
@@ -96,12 +98,37 @@ type tenantSystems struct {
 	systems []System
 }
 
+func splitBusinessTenantMappingsToChunks(slice []*model.BusinessTenantMapping, chunkSize int) [][]*model.BusinessTenantMapping {
+	var chunks [][]*model.BusinessTenantMapping
+	for {
+		if len(slice) == 0 {
+			break
+		}
+
+		if len(slice) < chunkSize {
+			chunkSize = len(slice)
+		}
+
+		chunks = append(chunks, slice[0:chunkSize])
+		slice = slice[chunkSize:]
+	}
+
+	return chunks
+}
+
 // SyncSystems synchronizes applications between Compass and external source. It deletes the applications with deleted state in the external source from Compass,
 // and creates any new applications present in the external source.
 func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
-	tenants, err := s.listTenants(ctx)
+	allTenants, err := s.listTenants(ctx)
 	if err != nil {
 		return errors.Wrap(err, "failed to list tenants")
+	}
+
+	tenants := make([]*model.BusinessTenantMapping, 0, len(allTenants))
+	for _, tnt := range allTenants {
+		if tnt.Type == tenantEntity.Account {
+			tenants = append(tenants, tnt)
+		}
 	}
 
 	systemsQueue := make(chan tenantSystems, s.config.SystemsQueueSize)
@@ -121,30 +148,36 @@ func (s *SystemFetcher) SyncSystems(ctx context.Context) error {
 		}
 	}()
 
-	wg := sync.WaitGroup{}
-	for _, t := range tenants {
-		wg.Add(1)
-		s.workers <- struct{}{}
-		go func(t *model.BusinessTenantMapping) {
-			defer func() {
-				wg.Done()
-				<-s.workers
-			}()
-			systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, t.ExternalTenant)
-			if err != nil {
-				log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s", t.ExternalTenant)))
-				return
-			}
-			if len(systems) > 0 {
-				systemsQueue <- tenantSystems{
-					tenant:  t,
-					systems: systems,
-				}
-			}
-		}(t)
-	}
+	chunks := splitBusinessTenantMappingsToChunks(tenants, 20)
 
-	wg.Wait()
+	for _, chunk := range chunks {
+		time.Sleep(time.Second * 1)
+
+		wg := sync.WaitGroup{}
+		for _, t := range chunk {
+			wg.Add(1)
+			s.workers <- struct{}{}
+			go func(t *model.BusinessTenantMapping) {
+				defer func() {
+					wg.Done()
+					<-s.workers
+				}()
+				systems, err := s.systemsAPIClient.FetchSystemsForTenant(ctx, t.ExternalTenant)
+				if err != nil {
+					log.C(ctx).Error(errors.Wrap(err, fmt.Sprintf("failed to fetch systems for tenant %s", t.ExternalTenant)))
+					return
+				}
+				if len(systems) > 0 {
+					systemsQueue <- tenantSystems{
+						tenant:  t,
+						systems: systems,
+					}
+				}
+			}(t)
+		}
+
+		wg.Wait()
+	}
 	close(systemsQueue)
 	wgDB.Wait()
 
@@ -215,11 +248,11 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 			}
 
 			if appInput.TemplateID == "" {
-				if err = s.systemsService.Upsert(ctx, appInput.ApplicationRegisterInput); err != nil {
+				if err = s.systemsService.TrustedUpsert(ctx, appInput.ApplicationRegisterInput); err != nil {
 					return errors.Wrap(err, "while upserting application")
 				}
 			} else {
-				if err = s.systemsService.UpsertFromTemplate(ctx, appInput.ApplicationRegisterInput, &appInput.TemplateID); err != nil {
+				if err = s.systemsService.TrustedUpsertFromTemplate(ctx, appInput.ApplicationRegisterInput, &appInput.TemplateID); err != nil {
 					return errors.Wrap(err, "while upserting application")
 				}
 			}
@@ -254,15 +287,18 @@ func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model
 	}
 
 	initStatusCond := model.ApplicationStatusConditionInitial
+	baseURL := sc.AdditionalURLs[mainURLKey]
 	return &model.ApplicationRegisterInput{
 		Name:            sc.DisplayName,
 		Description:     &sc.ProductDescription,
 		StatusCondition: &initStatusCond,
 		ProviderName:    &sc.InfrastructureProvider,
-		BaseURL:         &sc.BaseURL,
+		BaseURL:         &baseURL,
 		SystemNumber:    &sc.SystemNumber,
 		Labels: map[string]interface{}{
-			"managed": "true",
+			"managed":              "true",
+			"productId":            &sc.ProductID,
+			"ppmsProductVersionId": &sc.PpmsProductVersionID,
 		},
 	}, nil
 }

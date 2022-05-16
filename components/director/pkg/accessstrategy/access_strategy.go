@@ -76,7 +76,7 @@ func (a Type) isSupported() bool {
 }
 
 // Executor defines an interface for execution of different access strategies
-//go:generate mockery --name=Executor --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Executor --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Executor interface {
 	Execute(client *http.Client, url string) (*http.Response, error)
 }

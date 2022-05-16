@@ -12,7 +12,6 @@ import (
 
 func TestConverter_ToGraphQL(t *testing.T) {
 	id := "test_id"
-	runtimeID := "test_runtime_id"
 	key := "key"
 	val := "val"
 	// GIVEN
@@ -105,9 +104,46 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 func TestConverter_InputFromGraphQL(t *testing.T) {
 	key := "key"
 	val := "val"
-	labels := graphql.Labels(map[string]interface{}{
-		"test": "test",
-	})
+
+	// GIVEN
+	testCases := []struct {
+		Name     string
+		Input    graphql.RuntimeContextInput
+		Expected model.RuntimeContextInput
+	}{
+		{
+			Name: "All properties given",
+			Input: graphql.RuntimeContextInput{
+				Key:   key,
+				Value: val,
+			},
+			Expected: model.RuntimeContextInput{
+				Key:   key,
+				Value: val,
+			},
+		},
+		{
+			Name:     "Empty",
+			Input:    graphql.RuntimeContextInput{},
+			Expected: model.RuntimeContextInput{},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// WHEN
+			converter := runtimectx.NewConverter()
+			res := converter.InputFromGraphQL(testCase.Input)
+
+			// THEN
+			assert.Equal(t, testCase.Expected, res)
+		})
+	}
+}
+
+func TestConverter_InputFromGraphQLWithRuntimeID(t *testing.T) {
+	key := "key"
+	val := "val"
 	runtimeID := "runtime_id"
 
 	// GIVEN
@@ -119,15 +155,13 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		{
 			Name: "All properties given",
 			Input: graphql.RuntimeContextInput{
-				Key:    key,
-				Value:  val,
-				Labels: labels,
+				Key:   key,
+				Value: val,
 			},
 			Expected: model.RuntimeContextInput{
 				Key:       key,
 				Value:     val,
 				RuntimeID: runtimeID,
-				Labels:    labels,
 			},
 		},
 		{
@@ -143,7 +177,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// WHEN
 			converter := runtimectx.NewConverter()
-			res := converter.InputFromGraphQL(testCase.Input, runtimeID)
+			res := converter.InputFromGraphQLWithRuntimeID(testCase.Input, runtimeID)
 
 			// THEN
 			assert.Equal(t, testCase.Expected, res)

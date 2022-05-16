@@ -576,7 +576,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return appSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       testErr,
+			ExpectedErr:       errors.New("failed to process 1 app"),
 		},
 		{
 			Name:            "Returns error when application locking fails",
@@ -590,7 +590,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return appSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       testErr,
+			ExpectedErr:       errors.New("failed to process 1 app"),
 		},
 		{
 			Name:            "Does not resync resources when event list fails",
@@ -647,7 +647,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       testErr,
+			ExpectedErr:       errors.New("failed to process 1 app"),
 		},
 		{
 			Name:            "Skips app when ORD documents fetch fails",
@@ -1898,7 +1898,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client = test.clientFn()
 			}
 
-			svc := ord.NewAggregatorService(tx, labelRepo, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, client)
+			ordCfg := ord.ServiceConfig{MaxParallelDownloads: 4}
+			svc := ord.NewAggregatorService(ordCfg, tx, labelRepo, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, client)
 			err := svc.SyncORDDocuments(context.TODO())
 			if test.ExpectedErr != nil {
 				require.Error(t, err)

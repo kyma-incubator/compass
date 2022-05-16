@@ -8,7 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
-//go:generate mockery --name=Client --output=automock --outpkg=automock
+//go:generate mockery --name=Client --output=automock --outpkg=automock --disable-version-string
 type Client interface {
 	Do(ctx context.Context, req RequestData) (*ExternalToken, error)
 }

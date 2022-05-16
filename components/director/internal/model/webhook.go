@@ -1,6 +1,8 @@
 package model
 
-import "github.com/kyma-incubator/compass/components/director/pkg/resource"
+import (
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+)
 
 // Webhook represents a webhook that is called by Compass.
 type Webhook struct {

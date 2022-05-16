@@ -21,12 +21,14 @@ graphql:
     automaticScenarioAssignments: ["automatic_scenario_assignment:read"]
     automaticScenarioAssignmentForScenario: ["automatic_scenario_assignment:read"]
     automaticScenarioAssignmentsForSelector: ["automatic_scenario_assignment:read"]
+    systemAuth: ["runtime.auths:read", "application.auths:read", "integration_system.auths:read"]
 
   mutation:
     registerApplication: ["application:write"]
     registerApplicationFromTemplate: ["application:write"]
     updateApplication: ["application:write"]
     unregisterApplication: ["application:write"]
+    mergeApplications: ["application:write"]
     createApplicationTemplate: ["application_template:write"]
     updateApplicationTemplate: ["application_template:write"]
     deleteApplicationTemplate: ["application_template:write"]
@@ -86,6 +88,8 @@ graphql:
     writeTenants: ["tenant:write"]
     deleteTenants: ["tenant:write"]
     updateTenant: ["tenant:write"]
+    subscribeTenantToRuntime: ["tenant_subscription:write"]
+    unsubscribeTenantFromRuntime: ["tenant_subscription:write"]
 
   field:
     fetch_request:

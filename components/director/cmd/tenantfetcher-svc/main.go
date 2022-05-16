@@ -18,26 +18,29 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"net/http"
 	"os"
 	"time"
 
-	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	graphqlclient "github.com/kyma-incubator/compass/components/director/pkg/graphql_client"
+	gcli "github.com/machinebox/graphql"
+
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 
 	auth "github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
+	tf "github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 	tenantfetcher "github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
 
 	"github.com/gorilla/mux"
@@ -58,11 +61,10 @@ type config struct {
 
 	Log log.Config
 
-	RootAPI string `envconfig:"APP_ROOT_API,default=/tenants"`
+	TenantsRootAPI string `envconfig:"APP_ROOT_API,default=/tenants"`
 
-	Handler tenantfetcher.HandlerConfig
-
-	Database persistence.DatabaseConfig
+	Handler   tenantfetcher.HandlerConfig
+	EventsCfg tenantfetcher.EventsConfig
 
 	SecurityConfig securityConfig
 }
@@ -72,6 +74,7 @@ type securityConfig struct {
 	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
 	JwksEndpoint              string        `envconfig:"default=file://hack/default-jwks.json,APP_JWKS_ENDPOINT"`
 	SubscriptionCallbackScope string        `envconfig:"APP_SUBSCRIPTION_CALLBACK_SCOPE"`
+	FetchTenantOnDemandScope  string        `envconfig:"APP_FETCH_TENANT_ON_DEMAND_SCOPE"`
 }
 
 func main() {
@@ -89,11 +92,11 @@ func main() {
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Failed to configure Logger")
 
-	if cfg.Handler.HandlerEndpoint == "" || cfg.Handler.TenantPathParam == "" {
-		exitOnError(errors.New("missing handler endpoint or tenant path parameter"), "Error while loading app handler config")
+	if cfg.Handler.TenantPathParam == "" {
+		exitOnError(errors.New("missing tenant path parameter"), "Error while loading app handler config")
 	}
 
-	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
+	transact, closeFunc, err := persistence.Configure(ctx, cfg.Handler.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
 	defer func() {
@@ -125,16 +128,17 @@ func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, tr
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 
-	router := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
-	healthCheckRouter := mainRouter.PathPrefix(cfg.RootAPI).Subrouter()
+	tenantsAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
+	configureAuthMiddleware(ctx, httpClient, tenantsAPIRouter, cfg.SecurityConfig, cfg.SecurityConfig.SubscriptionCallbackScope)
+	registerTenantsHandler(ctx, tenantsAPIRouter, cfg.Handler)
 
-	configureAuthMiddleware(ctx, httpClient, router, cfg.SecurityConfig)
+	tenantsOnDemandAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
+	configureAuthMiddleware(ctx, httpClient, tenantsOnDemandAPIRouter, cfg.SecurityConfig, cfg.SecurityConfig.FetchTenantOnDemandScope)
+	registerTenantsOnDemandHandler(ctx, tenantsOnDemandAPIRouter, cfg.EventsCfg, cfg.Handler, transact)
 
-	registerHandler(ctx, router, cfg.Handler, transact)
-
+	healthCheckRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
 	logger.Infof("Registering readiness endpoint...")
 	healthCheckRouter.HandleFunc("/readyz", newReadinessHandler())
-
 	logger.Infof("Registering liveness endpoint...")
 	healthCheckRouter.HandleFunc("/healthz", newReadinessHandler())
 
@@ -180,8 +184,8 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg securityConfig) {
-	scopeValidator := claims.NewScopesValidator([]string{cfg.SubscriptionCallbackScope})
+func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg securityConfig, requiredScopes ...string) {
+	scopeValidator := claims.NewScopesValidator(requiredScopes)
 	middleware := auth.New(httpClient, cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
 	router.Use(middleware.Handler())
 
@@ -194,36 +198,15 @@ func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, route
 	go periodicExecutor.Run(ctx)
 }
 
-func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.HandlerConfig, transact persistence.Transactioner) {
-	uidSvc := uid.NewService()
+func registerTenantsHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.HandlerConfig) {
+	gqlClient := newInternalGraphQLClient(cfg.DirectorGraphQLEndpoint, cfg.ClientTimeout, cfg.HTTPClientSkipSslValidation)
+	directorClient := graphqlclient.NewDirector(gqlClient)
 
-	labelConv := label.NewConverter()
-	labelRepo := label.NewRepository(labelConv)
-	labelDefConv := labeldef.NewConverter()
-	labelDefRepo := labeldef.NewRepository(labelDefConv)
-	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
+	tenantConverter := tenant.NewConverter()
 
-	converter := tenant.NewConverter()
-	tenantRepo := tenant.NewRepository(converter)
-	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-
-	runtimeConverter := runtime.NewConverter()
-	runtimeRepo := runtime.NewRepository(runtimeConverter)
-	assignmentConv := scenarioassignment.NewConverter()
-	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
-	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo, runtimeRepo)
-	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, cfg.DefaultScenarioEnabled)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, scenariosSvc, labelSvc, uidSvc, scenarioAssignmentEngine, tenantSvc, cfg.ProtectedLabelPattern, cfg.ImmutableLabelPattern)
-
-	provisioner := tenantfetcher.NewTenantProvisioner(tenantSvc, cfg.TenantProvider)
-	subscriber := tenantfetcher.NewSubscriber(provisioner, runtimeSvc, labelSvc, uidSvc, tenantSvc, cfg.SubscriptionProviderLabelKey, cfg.ConsumerSubaccountIDsLabelKey)
-	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(subscriber, transact, cfg)
-
-	log.C(ctx).Infof("Registering Tenant Onboarding endpoint on %s...", cfg.HandlerEndpoint)
-	router.HandleFunc(cfg.HandlerEndpoint, tenantHandler.Create).Methods(http.MethodPut)
-
-	log.C(ctx).Infof("Registering Tenant Decommissioning endpoint on %s...", cfg.HandlerEndpoint)
-	router.HandleFunc(cfg.HandlerEndpoint, tenantHandler.DeleteByExternalID).Methods(http.MethodDelete)
+	provisioner := tenantfetcher.NewTenantProvisioner(directorClient, tenantConverter, cfg.TenantProvider)
+	subscriber := tenantfetcher.NewSubscriber(directorClient, provisioner)
+	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(subscriber, cfg)
 
 	log.C(ctx).Infof("Registering Regional Tenant Onboarding endpoint on %s...", cfg.RegionalHandlerEndpoint)
 	router.HandleFunc(cfg.RegionalHandlerEndpoint, tenantHandler.SubscribeTenant).Methods(http.MethodPut)
@@ -235,8 +218,64 @@ func registerHandler(ctx context.Context, router *mux.Router, cfg tenantfetcher.
 	router.HandleFunc(cfg.DependenciesEndpoint, tenantHandler.Dependencies).Methods(http.MethodGet)
 }
 
+func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, eventsCfg tenantfetcher.EventsConfig, tenantHandlerCfg tenantfetcher.HandlerConfig, transact persistence.Transactioner) {
+	onDemandSvc, err := createTenantFetcherOnDemandSvc(eventsCfg, tenantHandlerCfg, transact)
+	exitOnError(err, "failed to create tenant fetcher on-demand service")
+
+	fetcher := tenantfetcher.NewTenantFetcher(*onDemandSvc)
+	tenantHandler := tenantfetcher.NewTenantFetcherHTTPHandler(fetcher, tenantHandlerCfg)
+
+	log.C(ctx).Infof("Registering fetch tenant on-demand endpoint on %s...", tenantHandlerCfg.TenantOnDemandHandlerEndpoint)
+	router.HandleFunc(tenantHandlerCfg.TenantOnDemandHandlerEndpoint, tenantHandler.FetchTenantOnDemand).Methods(http.MethodPost)
+}
+
+func createTenantFetcherOnDemandSvc(eventsCfg tenantfetcher.EventsConfig, handlerCfg tenantfetcher.HandlerConfig, transact persistence.Transactioner) (*tf.SubaccountOnDemandService, error) {
+	eventAPIClient, err := tf.NewClient(eventsCfg.OAuthConfig, eventsCfg.AuthMode, eventsCfg.APIConfig, handlerCfg.ClientTimeout)
+	if nil != err {
+		return nil, err
+	}
+
+	tenantStorageConv := tenant.NewConverter()
+	uidSvc := uid.NewService()
+
+	labelDefConverter := labeldef.NewConverter()
+	labelDefRepository := labeldef.NewRepository(labelDefConverter)
+
+	labelConverter := label.NewConverter()
+	labelRepository := label.NewRepository(labelConverter)
+	labelService := label.NewLabelService(labelRepository, labelDefRepository, uidSvc)
+
+	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
+	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepository, labelService)
+
+	gqlClient := newInternalGraphQLClient(handlerCfg.DirectorGraphQLEndpoint, handlerCfg.ClientTimeout, handlerCfg.HTTPClientSkipSslValidation)
+	directorClient := graphqlclient.NewDirector(gqlClient)
+
+	return tf.NewSubaccountOnDemandService(eventsCfg.QueryConfig, eventsCfg.TenantFieldMapping, eventAPIClient, transact, tenantStorageSvc, directorClient, handlerCfg.TenantProvider, tenantStorageConv), nil
+}
+
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
 	}
+}
+
+func newInternalGraphQLClient(url string, timeout time.Duration, skipSSLValidation bool) *gcli.Client {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: skipSSLValidation,
+		},
+	}
+	client := &http.Client{
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(tr, "Authorization")),
+		Timeout:   timeout,
+	}
+
+	gqlClient := gcli.NewClient(url, gcli.WithHTTPClient(client))
+
+	gqlClient.Log = func(s string) {
+		log.D().Debug(s)
+	}
+
+	return gqlClient
 }

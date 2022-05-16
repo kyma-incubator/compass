@@ -11,7 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 )
 
-//go:generate mockery --name=CertificateUtility
+//go:generate mockery --name=CertificateUtility --disable-version-string
 type CertificateUtility interface {
 	LoadCert(encodedData []byte) (*x509.Certificate, apperrors.AppError)
 	LoadKey(encodedData []byte) (*rsa.PrivateKey, apperrors.AppError)

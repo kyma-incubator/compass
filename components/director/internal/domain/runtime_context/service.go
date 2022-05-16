@@ -4,29 +4,30 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/pkg/errors"
 )
 
 // RuntimeContextRepository missing godoc
-//go:generate mockery --name=RuntimeContextRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RuntimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeContextRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
+	GetForRuntime(ctx context.Context, tenant, id, runtimeID string) (*model.RuntimeContext, error)
 	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.RuntimeContext, error)
 	List(ctx context.Context, runtimeID string, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error)
+	ListByRuntimeIDs(ctx context.Context, tenantID string, runtimeIDs []string, pageSize int, cursor string) ([]*model.RuntimeContextPage, error)
 	Create(ctx context.Context, tenant string, item *model.RuntimeContext) error
 	Update(ctx context.Context, tenant string, item *model.RuntimeContext) error
 	Delete(ctx context.Context, tenant, id string) error
 }
 
 // LabelRepository missing godoc
-//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
@@ -35,14 +36,14 @@ type LabelRepository interface {
 }
 
 // LabelUpsertService missing godoc
-//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
 // UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
@@ -68,36 +69,7 @@ func NewService(repo RuntimeContextRepository,
 	}
 }
 
-// List missing godoc
-func (s *service) List(ctx context.Context, runtimeID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error) {
-	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	if pageSize < 1 || pageSize > 200 {
-		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
-	}
-
-	return s.repo.List(ctx, runtimeID, rtmCtxTenant, filter, pageSize, cursor)
-}
-
-// Get missing godoc
-func (s *service) Get(ctx context.Context, id string) (*model.RuntimeContext, error) {
-	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	runtimeCtx, err := s.repo.GetByID(ctx, rtmCtxTenant, id)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Runtime Context with ID %s", id)
-	}
-
-	return runtimeCtx, nil
-}
-
-// Exist missing godoc
+// Exist checks if RuntimeContext with ID `id` exists
 func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -112,7 +84,7 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
-// Create missing godoc
+// Create creates RuntimeContext using `in`
 func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (string, error) {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -125,31 +97,10 @@ func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (str
 		return "", errors.Wrapf(err, "while creating Runtime Context")
 	}
 
-	/*err = s.scenariosService.EnsureScenariosLabelDefinitionExists(ctx, rtmCtxTenant) TODO: Revisit when scenarios for runtime contexts are introduced
-	if err != nil {
-		return "", errors.Wrapf(err, "while ensuring Label Definition with key %s exists", model.ScenariosKey)
-	}
-
-	scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctx, in.Labels)
-	if err != nil {
-		return "", errors.Wrap(err, "while merging scenarios from input and assignments")
-	}
-
-	if len(scenarios) > 0 {
-		in.Labels[model.ScenariosKey] = scenarios
-	} else {
-		s.scenariosService.AddDefaultScenarioIfEnabled(&in.Labels)
-	}*/
-
-	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmCtxTenant, model.RuntimeContextLabelableObject, id, in.Labels)
-	if err != nil {
-		return id, errors.Wrapf(err, "while creating multiple labels for Runtime Context")
-	}
-
 	return id, nil
 }
 
-// Update missing godoc
+// Update updates RuntimeContext with ID `id` using `in`
 func (s *service) Update(ctx context.Context, id string, in model.RuntimeContextInput) error {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -166,32 +117,10 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeContext
 		return errors.Wrapf(err, "while updating Runtime Context with id %s", id)
 	}
 
-	if err = s.labelRepo.DeleteAll(ctx, rtmCtxTenant, model.RuntimeContextLabelableObject, id); err != nil {
-		return errors.Wrapf(err, "while deleting all labels for Runtime Context with id %s", id)
-	}
-
-	if in.Labels == nil {
-		return nil
-	}
-
-	/*scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctx, in.Labels) TODO: Revisit when scenarios for runtime contexts are introduced
-	if err != nil {
-		return errors.Wrap(err, "while merging scenarios from input and assignments")
-	}
-
-	if len(scenarios) > 0 {
-		in.Labels[model.ScenariosKey] = scenarios
-	}*/
-
-	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmCtxTenant, model.RuntimeContextLabelableObject, id, in.Labels)
-	if err != nil {
-		return errors.Wrapf(err, "while creating multiple labels for Runtime Context with id %s", id)
-	}
-
 	return nil
 }
 
-// Delete missing godoc
+// Delete deletes RuntimeContext with ID `id`
 func (s *service) Delete(ctx context.Context, id string) error {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -208,7 +137,65 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-// ListLabels missing godoc
+// GetByID retrieves the RuntimeContext with the provided `id`
+func (s *service) GetByID(ctx context.Context, id string) (*model.RuntimeContext, error) {
+	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	runtimeCtx, err := s.repo.GetByID(ctx, rtmCtxTenant, id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Runtime Context with ID %s", id)
+	}
+
+	return runtimeCtx, nil
+}
+
+// GetForRuntime retrieves the RuntimeContext with the provided `id` associated with Runtime with id `runtimeID`
+func (s *service) GetForRuntime(ctx context.Context, id, runtimeID string) (*model.RuntimeContext, error) {
+	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	runtimeCtx, err := s.repo.GetForRuntime(ctx, rtmCtxTenant, id, runtimeID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Runtime Context with ID %s", id)
+	}
+
+	return runtimeCtx, nil
+}
+
+// ListByFilter retrieves a page of RuntimeContext objects associated to Runtime with id `runtimeID` that are matching the provided filters
+func (s *service) ListByFilter(ctx context.Context, runtimeID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error) {
+	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
+	}
+
+	return s.repo.List(ctx, runtimeID, rtmCtxTenant, filter, pageSize, cursor)
+}
+
+// ListByRuntimeIDs retrieves a page of RuntimeContext objects for each runtimeID
+func (s *service) ListByRuntimeIDs(ctx context.Context, runtimeIDs []string, pageSize int, cursor string) ([]*model.RuntimeContextPage, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
+	}
+
+	return s.repo.ListByRuntimeIDs(ctx, tnt, runtimeIDs, pageSize, cursor)
+}
+
+// ListLabels lists Labels for RuntimeContext with ID `runtimeCtxID`
 func (s *service) ListLabels(ctx context.Context, runtimeCtxID string) (map[string]*model.Label, error) {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {

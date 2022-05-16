@@ -3,10 +3,11 @@ package systemauth_test
 import (
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth/automock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemauth"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/stretchr/testify/assert"
@@ -38,7 +39,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 				return authConv
 			},
 			Input:          modelRtmSysAuth,
-			ExpectedOutput: fixGQLRuntimeSystemAuth(sysAuthID, gqlAuth),
+			ExpectedOutput: fixGQLRuntimeSystemAuth(sysAuthID, gqlAuth, objectID),
 		},
 		{
 			Name: "Success when converting auth for Application",
@@ -48,7 +49,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 				return authConv
 			},
 			Input:          modelAppSysAuth,
-			ExpectedOutput: fixGQLAppSystemAuth(sysAuthID, gqlAuth),
+			ExpectedOutput: fixGQLAppSystemAuth(sysAuthID, gqlAuth, objectID),
 		},
 		{
 			Name: "Success when converting auth for Integration System",
@@ -58,7 +59,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 				return authConv
 			},
 			Input:          modelIntSysAuth,
-			ExpectedOutput: fixGQLIntSysSystemAuth(sysAuthID, gqlAuth),
+			ExpectedOutput: fixGQLIntSysSystemAuth(sysAuthID, gqlAuth, objectID),
 		},
 		{
 			Name: "Returns nil when input is nil",

@@ -13,9 +13,6 @@ verify:: gqlgen check-gqlgen
 errcheck-local:
 	errcheck -blank -asserts -exclude ./excluded.txt -ignoregenerated ./...
 
-test-local:
-	go test ./...
-
 resolve-local:
 	@echo ${SKIP_STEP_MESSAGE}
 

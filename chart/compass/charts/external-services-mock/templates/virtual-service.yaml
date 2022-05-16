@@ -51,6 +51,31 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
+  name: {{ template "fullname" . }}-external-services-mock-external-mtls-global-ord-registry
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+spec:
+  hosts:
+    - '{{ .Values.global.externalServicesMock.ordGlobalCertSecuredHost }}.{{ .Values.global.ingress.domainName }}'
+  gateways:
+    - {{ .Values.global.istio.externalMtlsGateway.namespace }}/{{ .Values.global.istio.externalMtlsGateway.name }}
+  http:
+    - match:
+        - uri:
+            regex: /.*
+      route:
+        - destination:
+            host: {{ .Values.global.externalServicesMock.host }}
+            port:
+              number: {{ .Values.global.externalServicesMock.ordGlobalRegistryCertPort }}
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
   name: {{ template "fullname" . }}-external-services-mock
   namespace: {{ .Release.Namespace }}
   labels:

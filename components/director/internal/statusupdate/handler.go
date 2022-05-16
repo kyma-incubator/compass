@@ -4,13 +4,13 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/director/internal/oathkeeper"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 )
 
 type update struct {
@@ -19,7 +19,7 @@ type update struct {
 }
 
 // StatusUpdateRepository missing godoc
-//go:generate mockery --name=StatusUpdateRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=StatusUpdateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type StatusUpdateRepository interface {
 	UpdateStatus(ctx context.Context, id string, object WithStatusObject) error
 	IsConnected(ctx context.Context, id string, object WithStatusObject) (bool, error)

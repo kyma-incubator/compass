@@ -34,6 +34,7 @@ func TestHandler_Generate(t *testing.T) {
 
 	encodedAuthValue := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", id, secret)))
 	req.Header.Set("authorization", fmt.Sprintf("Basic %s", encodedAuthValue))
+	req.Header.Set(oauth2.XExternalHost, "target.com")
 	req.Header.Set(oauth2.ContentTypeHeader, oauth2.ContentTypeApplicationURLEncoded)
 
 	h := oauth2.NewHandler(secret, id)
@@ -150,7 +151,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		bodyErr := gjson.GetBytes(body, "error")
 		require.True(t, bodyErr.Exists())
 		require.NotEmpty(t, bodyErr)
-		require.Contains(t, bodyErr.String(), "client_id or client_secret from authorization header doesn't match the expected one")
+		require.Contains(t, bodyErr.String(), "client_id from authorization header doesn't match the expected one")
 	})
 
 	t.Run("Successfully issue client_credentials token with client_id and client_secret as part of the request body", func(t *testing.T) {
@@ -219,6 +220,43 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		require.NotEmpty(t, response.AccessToken)
 	})
 
+	t.Run("Fail to issue client_credentials token with certificate when wrong auth header is provided", func(t *testing.T) {
+		//GIVEN
+		id, secret, tenantHeader := "id", "wrong-secret", "x-zid"
+
+		data := url.Values{}
+		data.Add(oauth2.GrantTypeFieldName, oauth2.CredentialsGrantType)
+		data.Add(oauth2.ClientIDKey, id)
+
+		req := httptest.NewRequest(http.MethodPost, "https://target.com/oauth/token", bytes.NewBuffer([]byte(data.Encode())))
+		req.Header.Set(oauth2.ContentTypeHeader, oauth2.ContentTypeApplicationURLEncoded)
+		req.Header.Set(oauth2.XExternalHost, extHost)
+
+		encodedAuthValue := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", id, secret)))
+		req.Header.Set("authorization", fmt.Sprintf("Basic %s", encodedAuthValue))
+
+		key, err := rsa.GenerateKey(rand.Reader, 2048)
+		require.NoError(t, err)
+
+		h := oauth2.NewHandlerWithSigningKey("", id, "", "", tenantHeader, extHost, key, map[string]oauth2.ClaimsGetterFunc{})
+		r := httptest.NewRecorder()
+
+		//WHEN
+		h.Generate(r, req)
+		resp := r.Result()
+
+		//THEN
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+		require.NotEmpty(t, body)
+		bodyErr := gjson.GetBytes(body, "error")
+		require.True(t, bodyErr.Exists())
+		require.NotEmpty(t, bodyErr)
+		require.Contains(t, bodyErr.String(), "client_secret from authorization header doesn't match the expected one")
+
+	})
+
 	t.Run("Failed issuing client_credentials token if the client_id or client_secret as part of the request body does not match the expected one", func(t *testing.T) {
 		//GIVEN
 		id, secret, tenantHeader := "id", "secret", "x-zid"
@@ -251,7 +289,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		bodyErr := gjson.GetBytes(body, "error")
 		require.True(t, bodyErr.Exists())
 		require.NotEmpty(t, bodyErr)
-		require.Contains(t, bodyErr.String(), "client_id or client_secret from request body doesn't match the expected one")
+		require.Contains(t, bodyErr.String(), "client_id from request body doesn't match the expected one")
 	})
 
 	t.Run("Successfully issue user token", func(t *testing.T) {
@@ -359,7 +397,7 @@ func TestHandler_GenerateWithSigningKey(t *testing.T) {
 		bodyErr := gjson.GetBytes(body, "error")
 		require.True(t, bodyErr.Exists())
 		require.NotEmpty(t, bodyErr)
-		require.Contains(t, bodyErr.String(), "client_id or client_secret doesn't match the expected one")
+		require.Contains(t, bodyErr.String(), "client_id doesn't match the expected one")
 	})
 
 	t.Run("Failed issuing user token if username or password does not match the expected one", func(t *testing.T) {

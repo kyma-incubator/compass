@@ -14,8 +14,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/authenticator"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 	"github.com/lestrrat-go/iter/arrayiter"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
@@ -36,7 +36,7 @@ const (
 )
 
 // ClaimsValidator missing godoc
-//go:generate mockery --name=ClaimsValidator --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ClaimsValidator --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ClaimsValidator interface {
 	Validate(context.Context, claims.Claims) error
 }
@@ -69,7 +69,7 @@ func (a *Authenticator) SynchronizeJWKS(ctx context.Context) error {
 	a.mux.Lock()
 	defer a.mux.Unlock()
 
-	jwks, err := authenticator.FetchJWK(ctx, a.jwksEndpoint, jwk.WithHTTPClient(a.httpClient))
+	jwks, err := FetchJWK(ctx, a.jwksEndpoint, jwk.WithHTTPClient(a.httpClient))
 	if err != nil {
 		return errors.Wrapf(err, "while fetching JWKS from endpoint %s", a.jwksEndpoint)
 	}

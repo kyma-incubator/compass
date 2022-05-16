@@ -121,13 +121,26 @@ func (h *handler) authenticateClientCredentialsRequest(r *http.Request) error {
 	log.C(ctx).Info("Validating client credentials token request...")
 	authorization := r.Header.Get("authorization")
 	isReqWithCert := h.isRequestWithCert(r)
+
+	flowName := "oauth"
+	if isReqWithCert {
+		flowName = "cert"
+	}
+
 	if id, secret, err := getBasicCredentials(authorization); err != nil {
-		log.C(ctx).Info("Did not find client_id or client_secret in the authorization header. Checking the request body...")
-		if err = h.validateCredentials(isReqWithCert, r.FormValue(ClientIDKey), r.FormValue(ClientSecretKey), "from request body doesn't match the expected one"); err != nil {
-			return err
+		log.C(ctx).Infof("Authorization header not found in %s flow. Checking the request body...", flowName)
+		if isReqWithCert {
+			if err = h.validateClientID(r.FormValue(ClientIDKey), "from request body doesn't match the expected one"); err != nil {
+				return err
+			}
+		} else {
+			if err = h.validateClientIDAndSecret(r.FormValue(ClientIDKey), r.FormValue(ClientSecretKey), "from request body doesn't match the expected one"); err != nil {
+				return err
+			}
 		}
-	} else {
-		if err = h.validateCredentials(isReqWithCert, id, secret, "from authorization header doesn't match the expected one"); err != nil {
+	} else { //Auth header is provided
+		log.C(ctx).Infof("Authorization header found in %s flow.", flowName)
+		if err = h.validateClientIDAndSecret(id, secret, "from authorization header doesn't match the expected one"); err != nil {
 			return err
 		}
 	}
@@ -145,7 +158,7 @@ func (h *handler) authenticatePasswordCredentialsRequest(r *http.Request) error 
 		return errors.Wrap(err, "client_id or client_secret doesn't match the expected one")
 	}
 
-	if err = h.validateCredentials(h.isRequestWithCert(r), id, secret, "doesn't match the expected one"); err != nil {
+	if err = h.validateClientIDAndSecret(id, secret, "doesn't match the expected one"); err != nil {
 		return err
 	}
 
@@ -232,15 +245,19 @@ func (h *handler) isRequestWithCert(r *http.Request) bool {
 	return xExternalHost == h.externalHost || xExternalHost == h.externalHost+":443"
 }
 
-func (h *handler) validateCredentials(isReqWithCert bool, clientId, clientSecret, errMsg string) error {
-	if isReqWithCert {
-		if clientId != h.expectedID {
-			return errors.New(fmt.Sprintf("client_id %s", errMsg))
-		}
-	} else {
-		if clientId != h.expectedID || clientSecret != h.expectedSecret {
-			return errors.New(fmt.Sprintf("client_id or client_secret %s", errMsg))
-		}
+func (h *handler) validateClientID(clientId, errMsg string) error {
+	if clientId != h.expectedID {
+		return errors.New(fmt.Sprintf("client_id %s", errMsg))
+	}
+	return nil
+}
+
+func (h *handler) validateClientIDAndSecret(clientId, clientSecret, errMsg string) error {
+	if err := h.validateClientID(clientId, errMsg); err != nil {
+		return err
+	}
+	if clientSecret != h.expectedSecret {
+		return errors.New(fmt.Sprintf("client_secret %s", errMsg))
 	}
 
 	return nil

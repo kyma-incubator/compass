@@ -44,6 +44,7 @@ type TenantFieldMapping struct {
 	DiscriminatorValue     string `envconfig:"optional,APP_MAPPING_VALUE_DISCRIMINATOR"`
 
 	RegionField     string `envconfig:"APP_MAPPING_FIELD_REGION"`
+	EntityIDField   string `envconfig:"default=entityId,APP_MAPPING_FIELD_ENTITY_ID"`
 	EntityTypeField string `envconfig:"default=entityType,APP_MAPPING_FIELD_ENTITY_TYPE"`
 
 	// This is not a value from the actual event but the key under which the GlobalAccountGUIDField will be stored to avoid collisions
@@ -59,12 +60,13 @@ type MovedSubaccountsFieldMapping struct {
 
 // QueryConfig contains the name of query parameters fields and default/start values
 type QueryConfig struct {
-	PageNumField   string `envconfig:"default=pageNum,APP_QUERY_PAGE_NUM_FIELD"`
-	PageSizeField  string `envconfig:"default=pageSize,APP_QUERY_PAGE_SIZE_FIELD"`
-	TimestampField string `envconfig:"default=timestamp,APP_QUERY_TIMESTAMP_FIELD"`
-	RegionField    string `envconfig:"APP_QUERY_REGION_FIELD"`
-	PageStartValue string `envconfig:"default=0,APP_QUERY_PAGE_START"`
-	PageSizeValue  string `envconfig:"default=150,APP_QUERY_PAGE_SIZE"`
+	PageNumField    string `envconfig:"default=pageNum,APP_QUERY_PAGE_NUM_FIELD"`
+	PageSizeField   string `envconfig:"default=pageSize,APP_QUERY_PAGE_SIZE_FIELD"`
+	TimestampField  string `envconfig:"default=timestamp,APP_QUERY_TIMESTAMP_FIELD"`
+	RegionField     string `envconfig:"default=region,APP_QUERY_REGION_FIELD"`
+	PageStartValue  string `envconfig:"default=0,APP_QUERY_PAGE_START"`
+	PageSizeValue   string `envconfig:"default=150,APP_QUERY_PAGE_SIZE"`
+	SubaccountField string `envconfig:"default=entityId,APP_QUERY_ENTITY_FIELD"`
 }
 
 // PageConfig missing godoc
@@ -75,38 +77,38 @@ type PageConfig struct {
 }
 
 // TenantStorageService missing godoc
-//go:generate mockery --name=TenantStorageService --output=automock --outpkg=automock --case=underscore --unroll-variadic=False
+//go:generate mockery --name=TenantStorageService --output=automock --outpkg=automock --case=underscore --unroll-variadic=False --disable-version-string
 type TenantStorageService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // LabelRepo missing godoc
-//go:generate mockery --name=LabelRepo --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepo interface {
 	GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error)
 }
 
 // EventAPIClient missing godoc
-//go:generate mockery --name=EventAPIClient --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=EventAPIClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventAPIClient interface {
 	FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (TenantEventsResponse, error)
 }
 
 // RuntimeService missing godoc
-//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	ListByFilters(ctx context.Context, filters []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
 // TenantSyncService missing godoc
-//go:generate mockery --name=TenantSyncService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TenantSyncService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantSyncService interface {
 	SyncTenants() error
 }
 
 // DirectorGraphQLClient expects graphql implementation
-//go:generate mockery --name=DirectorGraphQLClient --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=DirectorGraphQLClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DirectorGraphQLClient interface {
 	WriteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
 	DeleteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
@@ -114,22 +116,39 @@ type DirectorGraphQLClient interface {
 }
 
 // LabelDefConverter missing godoc
-//go:generate mockery --name=LabelDefConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelDefConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelDefConverter interface {
 	ToGraphQLInput(definition model.LabelDefinition) (graphql.LabelDefinitionInput, error)
 }
 
 // TenantConverter expects tenant converter implementation
-//go:generate mockery --name=TenantConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TenantConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantConverter interface {
 	MultipleInputToGraphQLInput([]model.BusinessTenantMappingInput) []graphql.BusinessTenantMappingInput
 	ToGraphQLInput(model.BusinessTenantMappingInput) graphql.BusinessTenantMappingInput
 }
 
 const (
-	retryAttempts          = 7
+	// RetryAttempts Failed requests retry attempts number
+	RetryAttempts          = 7
 	retryDelayMilliseconds = 100
+	// size of a tenant and parent tenants if not already existing
+	chunkSizeForTenantOnDemand = 5
 )
+
+// SubaccountOnDemandService for an on-demand creation of a subaccount tenant
+type SubaccountOnDemandService struct {
+	queryConfig          QueryConfig
+	fieldMapping         TenantFieldMapping
+	eventAPIClient       EventAPIClient
+	retryAttempts        uint
+	toEventsPage         func([]byte) *eventsPage
+	transact             persistence.Transactioner
+	tenantStorageService TenantStorageService
+	gqlClient            DirectorGraphQLClient
+	providerName         string
+	tenantConverter      TenantConverter
+}
 
 // GlobalAccountService missing godoc
 type GlobalAccountService struct {
@@ -170,6 +189,36 @@ type SubaccountService struct {
 	tenantConverter              TenantConverter
 }
 
+// NewSubaccountOnDemandService missing godoc
+func NewSubaccountOnDemandService(
+	queryConfig QueryConfig,
+	fieldMapping TenantFieldMapping,
+	client EventAPIClient,
+	transact persistence.Transactioner,
+	tenantStorageService TenantStorageService,
+	gqlClient DirectorGraphQLClient,
+	providerName string,
+	tenantConverter TenantConverter) *SubaccountOnDemandService {
+	return &SubaccountOnDemandService{
+		queryConfig:    queryConfig,
+		fieldMapping:   fieldMapping,
+		eventAPIClient: client,
+		retryAttempts:  RetryAttempts,
+		toEventsPage: func(bytes []byte) *eventsPage {
+			return &eventsPage{
+				fieldMapping: fieldMapping,
+				payload:      bytes,
+				providerName: providerName,
+			}
+		},
+		transact:             transact,
+		tenantStorageService: tenantStorageService,
+		gqlClient:            gqlClient,
+		providerName:         providerName,
+		tenantConverter:      tenantConverter,
+	}
+}
+
 // NewGlobalAccountService missing godoc
 func NewGlobalAccountService(queryConfig QueryConfig,
 	transact persistence.Transactioner,
@@ -190,7 +239,7 @@ func NewGlobalAccountService(queryConfig QueryConfig,
 		eventAPIClient:       client,
 		tenantStorageService: tenantStorageService,
 		queryConfig:          queryConfig,
-		retryAttempts:        retryAttempts,
+		retryAttempts:        RetryAttempts,
 		fullResyncInterval:   fullResyncInterval,
 		toEventsPage: func(bytes []byte) *eventsPage {
 			return &eventsPage{
@@ -232,7 +281,7 @@ func NewSubaccountService(queryConfig QueryConfig,
 		runtimeStorageService:        runtimeStorageService,
 		queryConfig:                  queryConfig,
 		movedSubaccountsFieldMapping: movRuntime,
-		retryAttempts:                retryAttempts,
+		retryAttempts:                RetryAttempts,
 		labelRepo:                    labelRepo,
 		fullResyncInterval:           fullResyncInterval,
 		toEventsPage: func(bytes []byte) *eventsPage {
@@ -339,6 +388,45 @@ func (s SubaccountService) SyncTenants() error {
 	}
 
 	if err = s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixMilliSecondString(startTime), newLastResyncTimestamp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// SyncTenant fetches creation events for a subaccount and creates a subaccount tenant in case it doesn't exist
+func (s SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID string) error {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	currentTenants, err := getCurrentTenants(ctx, s.tenantStorageService)
+	if err != nil {
+		return err
+	}
+
+	if _, ok := currentTenants[subaccountID]; ok {
+		log.C(ctx).Infof("Subbaccount %s alredy exists in the database", subaccountID)
+		return nil
+	}
+
+	tenantToCreate, err := s.getSubaccountToCreate(subaccountID)
+	if err != nil {
+		return err
+	}
+	log.C(ctx).Infof("Got create event for provided subaccount %s", subaccountID)
+
+	var tenantsToCreate = []model.BusinessTenantMappingInput{*tenantToCreate}
+	if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, tenantToCreate.Region, s.providerName, chunkSizeForTenantOnDemand, s.tenantConverter); err != nil {
+		return err
+	}
+
+	log.C(ctx).Infof("Provided subaccount %s stored successfully", subaccountID)
+
+	if err := tx.Commit(); err != nil {
 		return err
 	}
 
@@ -578,7 +666,7 @@ func (s GlobalAccountService) getAccountsToCreate(fromTimestamp string) ([]model
 }
 
 func (s SubaccountService) getSubaccountsToCreateForRegion(fromTimestamp string, region string) ([]model.BusinessTenantMappingInput, error) {
-	var tenantsToCreate []model.BusinessTenantMappingInput
+	var fetchedTenants []model.BusinessTenantMappingInput
 
 	configProvider := func() (QueryParams, PageConfig) {
 		return QueryParams{
@@ -596,16 +684,43 @@ func (s SubaccountService) getSubaccountsToCreateForRegion(fromTimestamp string,
 	if err != nil {
 		return nil, fmt.Errorf("while fetching created subaccounts: %v", err)
 	}
-	tenantsToCreate = append(tenantsToCreate, createdTenants...)
+	fetchedTenants = append(fetchedTenants, createdTenants...)
 
 	updatedTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, UpdatedSubaccountType, configProvider, s.toEventsPage)
 	if err != nil {
 		return nil, fmt.Errorf("while fetching updated subaccounts: %v", err)
 	}
 
-	tenantsToCreate = append(tenantsToCreate, updatedTenants...)
+	fetchedTenants = append(fetchedTenants, updatedTenants...)
 
-	return tenantsToCreate, nil
+	return fetchedTenants, nil
+}
+
+func (s SubaccountOnDemandService) getSubaccountToCreate(subaccountID string) (*model.BusinessTenantMappingInput, error) {
+	configProvider := func() (QueryParams, PageConfig) {
+		return QueryParams{
+				s.queryConfig.PageNumField:    s.queryConfig.PageStartValue,
+				s.queryConfig.PageSizeField:   s.queryConfig.PageSizeValue,
+				s.queryConfig.SubaccountField: subaccountID,
+			}, PageConfig{
+				TotalPagesField:   s.fieldMapping.TotalPagesField,
+				TotalResultsField: s.fieldMapping.TotalResultsField,
+				PageNumField:      s.queryConfig.PageNumField,
+			}
+	}
+	fetchedTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, CreatedSubaccountType, configProvider, s.toEventsPage)
+	if err != nil {
+		return nil, fmt.Errorf("while fetching subaccount by ID: %v", err)
+	}
+
+	if len(fetchedTenants) < 1 {
+		return nil, fmt.Errorf("no create events for subaccount with ID %s were found", subaccountID)
+	}
+	if len(fetchedTenants) > 1 {
+		return nil, fmt.Errorf("expected one create event for tenant with ID %s, found %d", subaccountID, len(fetchedTenants))
+	}
+
+	return &fetchedTenants[0], nil
 }
 
 func (s GlobalAccountService) getAccountsToDelete(fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
