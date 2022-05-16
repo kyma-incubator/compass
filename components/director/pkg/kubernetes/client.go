@@ -29,7 +29,7 @@ func NewKubernetesClientSet(ctx context.Context, interval, pollingTimeout, timeo
 		log.C(ctx).WithError(err).Errorf("An error has occurred while trying to read in cluster Config: %v", err)
 		log.C(ctx).Debug("Trying to initialize Kubernetes Client with local Config")
 		home := homedir.HomeDir()
-		kubeConfPath := filepath.Join(home, ".kube", "Config")
+		kubeConfPath := filepath.Join(home, ".kube", "config")
 		kubeConfig, err = clientcmd.BuildConfigFromFlags("", kubeConfPath)
 		if err != nil {
 			return nil, errors.Errorf("failed to read k8s in-cluster configuration, %s", err.Error())
