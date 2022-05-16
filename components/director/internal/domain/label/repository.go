@@ -26,7 +26,7 @@ var (
 )
 
 // Converter missing godoc
-//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Converter interface {
 	ToEntity(in *model.Label) (*Entity, error)
 	FromEntity(in *Entity) (*model.Label, error)

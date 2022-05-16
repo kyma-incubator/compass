@@ -24,7 +24,7 @@ func NewClient(gqlClient *graphql.Client) Client {
 	}
 }
 
-//go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
 	Configuration(ctx context.Context, headers map[string]string) (schema.Configuration, apperrors.AppError)
 	SignCSR(ctx context.Context, csr string, headers map[string]string) (schema.CertificationResult, apperrors.AppError)

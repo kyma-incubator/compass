@@ -5,7 +5,7 @@ import (
 )
 
 // TenantProvisioner is used to create all related to the incoming request tenants, and build their hierarchy;
-//go:generate mockery --name=TenantProvisioner --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TenantProvisioner --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantProvisioner interface {
 	ProvisionTenants(context.Context, *TenantSubscriptionRequest) error
 }

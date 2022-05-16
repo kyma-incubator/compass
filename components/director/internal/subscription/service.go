@@ -22,26 +22,26 @@ type Config struct {
 }
 
 // RuntimeService missing godoc
-//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	ListByFiltersGlobal(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
 // TenantService provides functionality for retrieving, and creating tenants.
-//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore --unroll-variadic=False
+//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore --unroll-variadic=False --disable-version-string
 type TenantService interface {
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
 }
 
 // LabelService is responsible updating already existing labels, and their label definitions.
-//go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelService interface {
 	GetLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) (*model.Label, error)
 	CreateLabel(ctx context.Context, tenant, id string, labelInput *model.LabelInput) error
 	UpdateLabel(ctx context.Context, tenant, id string, labelInput *model.LabelInput) error
 }
 
-//go:generate mockery --exported --name=uidService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=uidService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type uidService interface {
 	Generate() string
 }

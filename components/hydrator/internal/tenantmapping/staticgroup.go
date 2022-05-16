@@ -22,7 +22,7 @@ type StaticGroup struct {
 type StaticGroups []StaticGroup
 
 // StaticGroupRepository missing godoc
-//go:generate mockery --name=StaticGroupRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=StaticGroupRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type StaticGroupRepository interface {
 	Get(ctx context.Context, groupnames []string) StaticGroups
 }

@@ -29,7 +29,7 @@ const (
 	notSubaccountMarker  = "not subaccount"
 )
 
-//go:generate mockery --exported --name=applicationService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=applicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type applicationService interface {
 	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error)
 	Upsert(ctx context.Context, in model.ApplicationRegisterInput) error
@@ -41,18 +41,18 @@ type applicationService interface {
 	ListSCCs(ctx context.Context) ([]*model.SccMetadata, error)
 }
 
-//go:generate mockery --exported --name=applicationConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=applicationConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type applicationConverter interface {
 	CreateInputJSONToModel(ctx context.Context, in string) (model.ApplicationRegisterInput, error)
 }
 
-//go:generate mockery --exported --name=applicationTemplateService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=applicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type applicationTemplateService interface {
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
 }
 
-//go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantService interface {
 	ListsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error)
 }

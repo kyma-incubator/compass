@@ -27,30 +27,30 @@ const (
 	mainURLKey                      = "mainUrl"
 )
 
-//go:generate mockery --name=tenantService --output=automock --outpkg=automock --case=underscore --exported=true
+//go:generate mockery --name=tenantService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type tenantService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
-//go:generate mockery --name=systemsService --output=automock --outpkg=automock --case=underscore --exported=true
+//go:generate mockery --name=systemsService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type systemsService interface {
 	TrustedUpsert(ctx context.Context, in model.ApplicationRegisterInput) error
 	TrustedUpsertFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) error
 	GetByNameAndSystemNumber(ctx context.Context, name, systemNumber string) (*model.Application, error)
 }
 
-//go:generate mockery --name=systemsAPIClient --output=automock --outpkg=automock --case=underscore --exported=true
+//go:generate mockery --name=systemsAPIClient --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type systemsAPIClient interface {
 	FetchSystemsForTenant(ctx context.Context, tenant string) ([]System, error)
 }
 
-//go:generate mockery --name=directorClient --output=automock --outpkg=automock --case=underscore --exported=true
+//go:generate mockery --name=directorClient --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type directorClient interface {
 	DeleteSystemAsync(ctx context.Context, id, tenant string) error
 }
 
-//go:generate mockery --name=templateRenderer --output=automock --outpkg=automock --case=underscore --exported=true
+//go:generate mockery --name=templateRenderer --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type templateRenderer interface {
 	ApplicationRegisterInputFromTemplate(ctx context.Context, sc System) (*model.ApplicationRegisterInput, error)
 }

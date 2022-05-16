@@ -25,13 +25,13 @@ import (
 )
 
 // ExternalSvcCaller is used to call external services with given authentication
-//go:generate mockery --name=ExternalSvcCaller --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ExternalSvcCaller --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ExternalSvcCaller interface {
 	Call(*http.Request) (*http.Response, error)
 }
 
 // ExternalSvcCallerProvider provides ExternalSvcCaller based on the provided SelfRegConfig and region
-//go:generate mockery --name=ExternalSvcCallerProvider --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ExternalSvcCallerProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ExternalSvcCallerProvider interface {
 	GetCaller(config.SelfRegConfig, string) (ExternalSvcCaller, error)
 }

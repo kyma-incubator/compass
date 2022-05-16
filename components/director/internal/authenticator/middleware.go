@@ -36,7 +36,7 @@ const (
 )
 
 // ClaimsValidator missing godoc
-//go:generate mockery --name=ClaimsValidator --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ClaimsValidator --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ClaimsValidator interface {
 	Validate(context.Context, claims.Claims) error
 }
