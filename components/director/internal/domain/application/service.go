@@ -744,6 +744,14 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 		return nil, errors.Wrapf(err, "while getting labels for Application with id %s", srcID)
 	}
 
+	if destAppLabels == nil {
+		destAppLabels = make(map[string]*model.Label)
+	}
+
+	if srcAppLabels == nil {
+		srcAppLabels = make(map[string]*model.Label)
+	}
+
 	srcBaseURL := strings.TrimSuffix(str.PtrStrToStr(srcApp.BaseURL), urlSuffixToBeTrimmed)
 	destBaseURL := strings.TrimSuffix(str.PtrStrToStr(destApp.BaseURL), urlSuffixToBeTrimmed)
 	if len(srcBaseURL) == 0 || len(destBaseURL) == 0 || srcBaseURL != destBaseURL {
@@ -770,7 +778,7 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 	}
 
 	log.C(ctx).Infof("Merging labels for applications with ids %s and %s", destID, srcID)
-	destAppLabelsMerged, err := s.handleMergeLabels(srcAppLabels, destAppLabels)
+	destAppLabelsMerged, err := s.handleMergeLabels(ctx, srcAppLabels, destAppLabels)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while trying to merge labels for applications with ids %s and %s", destID, srcID)
 	}
@@ -795,13 +803,25 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 // handleMergeLabels merges source labels into destination labels. model.ScenariosKey is merged manually as well due to limitation
 // of the lib that is used. The last manually merged label is managedKey which is updated only if the destination or
 // source label have a value "true"
-func (s *service) handleMergeLabels(srcAppLabels, destAppLabels map[string]*model.Label) (map[string]interface{}, error) {
-	srcScenariosStrSlice, err := label.ValueToStringsSlice(srcAppLabels[model.ScenariosKey].Value)
+func (s *service) handleMergeLabels(ctx context.Context, srcAppLabels, destAppLabels map[string]*model.Label) (map[string]interface{}, error) {
+	srcScenarios, ok := srcAppLabels[model.ScenariosKey]
+	if !ok {
+		log.C(ctx).Infof("No %q label found in source object.", model.ScenariosKey)
+		srcScenarios = &model.Label{Value: make([]interface{}, 0)}
+	}
+
+	destScenarios, ok := destAppLabels[model.ScenariosKey]
+	if !ok {
+		log.C(ctx).Infof("No %q label found in destination object.", model.ScenariosKey)
+		destScenarios = &model.Label{Value: make([]interface{}, 0)}
+	}
+
+	srcScenariosStrSlice, err := label.ValueToStringsSlice(srcScenarios.Value)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting source application labels to string slice")
 	}
 
-	destScenariosStrSlice, err := label.ValueToStringsSlice(destAppLabels[model.ScenariosKey].Value)
+	destScenariosStrSlice, err := label.ValueToStringsSlice(destScenarios.Value)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting destination application labels to string slice")
 	}
@@ -818,17 +838,29 @@ func (s *service) handleMergeLabels(srcAppLabels, destAppLabels map[string]*mode
 
 	destAppLabels[model.ScenariosKey].Value = destScenariosStrSlice
 
-	destLabelManaged, err := str.CastToBool(destAppLabels[managedKey].Value)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while converting %s value for destination label with ID: %s", managedKey, destAppLabels[managedKey].ID)
+	srcLabelManaged, ok := srcAppLabels[managedKey]
+	if !ok {
+		log.C(ctx).Infof("No %q label found in source object.", managedKey)
+		srcLabelManaged = &model.Label{Value: "false"}
 	}
 
-	srcLabelManaged, err := str.CastToBool(srcAppLabels[managedKey].Value)
+	srcLabelManagedValue, err := str.CastToBool(srcLabelManaged.Value)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting %s value for source label with ID: %s", managedKey, srcAppLabels[managedKey].ID)
 	}
 
-	if destLabelManaged || srcLabelManaged {
+	destLabelManaged, ok := destAppLabels[managedKey]
+	if !ok {
+		log.C(ctx).Infof("No %q label found in destination object.", managedKey)
+		destLabelManaged = &model.Label{Value: "false"}
+	}
+
+	destLabelManagedValue, err := str.CastToBool(destLabelManaged.Value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting %s value for destination label with ID: %s", managedKey, destAppLabels[managedKey].ID)
+	}
+
+	if destLabelManagedValue || srcLabelManagedValue {
 		destAppLabels[managedKey].Value = "true"
 	}
 
