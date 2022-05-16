@@ -10,7 +10,7 @@ import (
 )
 
 // GlobalRegistryService processes global resources (products and vendors) provided via global registry.
-//go:generate mockery --name=GlobalRegistryService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=GlobalRegistryService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type GlobalRegistryService interface {
 	SyncGlobalResources(ctx context.Context) (map[string]bool, error)
 	ListGlobalResources(ctx context.Context) (map[string]bool, error)

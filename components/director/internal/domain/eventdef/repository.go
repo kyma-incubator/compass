@@ -35,7 +35,7 @@ var (
 )
 
 // EventAPIDefinitionConverter converts EventDefinitions between the model.EventDefinition service-layer representation and the repo-layer representation Entity.
-//go:generate mockery --name=EventAPIDefinitionConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=EventAPIDefinitionConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventAPIDefinitionConverter interface {
 	FromEntity(entity *Entity) *model.EventDefinition
 	ToEntity(apiModel *model.EventDefinition) *Entity

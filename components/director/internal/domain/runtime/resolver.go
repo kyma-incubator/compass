@@ -24,19 +24,19 @@ import (
 )
 
 // EventingService missing godoc
-//go:generate mockery --name=EventingService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=EventingService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventingService interface {
 	GetForRuntime(ctx context.Context, runtimeID uuid.UUID) (*model.RuntimeEventingConfiguration, error)
 }
 
 // OAuth20Service missing godoc
-//go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OAuth20Service interface {
 	DeleteMultipleClientCredentials(ctx context.Context, auths []pkgmodel.SystemAuth) error
 }
 
 // RuntimeService missing godoc
-//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeInput, id string, mandatoryLabels map[string]interface{}) error
 	Update(ctx context.Context, id string, in model.RuntimeInput) error
@@ -51,14 +51,14 @@ type RuntimeService interface {
 }
 
 // ScenarioAssignmentService missing godoc
-//go:generate mockery --name=ScenarioAssignmentService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ScenarioAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ScenarioAssignmentService interface {
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
 	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
 // RuntimeConverter missing godoc
-//go:generate mockery --name=RuntimeConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RuntimeConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeConverter interface {
 	ToGraphQL(in *model.Runtime) *graphql.Runtime
 	MultipleToGraphQL(in []*model.Runtime) []*graphql.Runtime
@@ -66,26 +66,26 @@ type RuntimeConverter interface {
 }
 
 // SystemAuthConverter missing godoc
-//go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemAuthConverter interface {
 	ToGraphQL(in *pkgmodel.SystemAuth) (graphql.SystemAuth, error)
 }
 
 // SystemAuthService missing godoc
-//go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemAuthService interface {
 	ListForObject(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType, objectID string) ([]pkgmodel.SystemAuth, error)
 }
 
 // BundleInstanceAuthService missing godoc
-//go:generate mockery --name=BundleInstanceAuthService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=BundleInstanceAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleInstanceAuthService interface {
 	ListByRuntimeID(ctx context.Context, runtimeID string) ([]*model.BundleInstanceAuth, error)
 	Update(ctx context.Context, instanceAuth *model.BundleInstanceAuth) error
 }
 
 // SelfRegisterManager missing godoc
-//go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SelfRegisterManager interface {
 	PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeInput, id string) (map[string]interface{}, error)
 	CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterLabelValue, region string) error
@@ -93,27 +93,27 @@ type SelfRegisterManager interface {
 }
 
 // SubscriptionService missing godoc
-//go:generate mockery --name=SubscriptionService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=SubscriptionService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SubscriptionService interface {
 	SubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error)
 	UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, region string) (bool, error)
 }
 
 // TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
-//go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantFetcher interface {
 	FetchOnDemand(tenant string) error
 }
 
 // RuntimeContextService missing godoc
-//go:generate mockery --name=RuntimeContextService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RuntimeContextService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeContextService interface {
 	GetForRuntime(ctx context.Context, id, runtimeID string) (*model.RuntimeContext, error)
 	ListByRuntimeIDs(ctx context.Context, runtimeIDs []string, pageSize int, cursor string) ([]*model.RuntimeContextPage, error)
 }
 
 // RuntimeContextConverter missing godoc
-//go:generate mockery --name=RuntimeContextConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RuntimeContextConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeContextConverter interface {
 	ToGraphQL(in *model.RuntimeContext) *graphql.RuntimeContext
 	MultipleToGraphQL(in []*model.RuntimeContext) []*graphql.RuntimeContext

@@ -10,7 +10,7 @@ import (
 	"github.com/machinebox/graphql"
 )
 
-//go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
 	GetApplication(ctx context.Context, systemAuthID string) (schema.ApplicationExt, apperrors.AppError)
 }

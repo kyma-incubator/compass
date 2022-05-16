@@ -9,7 +9,7 @@ import (
 )
 
 // BundleReferenceRepository is responsible for the repo-layer BundleReference operations.
-//go:generate mockery --name=BundleReferenceRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=BundleReferenceRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleReferenceRepository interface {
 	Create(ctx context.Context, item *model.BundleReference) error
 	Update(ctx context.Context, item *model.BundleReference) error
@@ -20,7 +20,7 @@ type BundleReferenceRepository interface {
 }
 
 // UIDService is responsible for generating GUIDs, which will be used as internal bundleReference IDs when they are created.
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }

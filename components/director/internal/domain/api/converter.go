@@ -16,7 +16,7 @@ import (
 )
 
 // VersionConverter converts Version between model.Version, graphql.Version and repo-layer version.Version
-//go:generate mockery --name=VersionConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=VersionConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type VersionConverter interface {
 	ToGraphQL(in *model.Version) *graphql.Version
 	InputFromGraphQL(in *graphql.VersionInput) *model.VersionInput
@@ -25,7 +25,7 @@ type VersionConverter interface {
 }
 
 // SpecConverter converts Specifications between the model.Spec service-layer representation and the graphql-layer representation graphql.APISpec.
-//go:generate mockery --name=SpecConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=SpecConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SpecConverter interface {
 	ToGraphQLAPISpec(in *model.Spec) (*graphql.APISpec, error)
 	InputFromGraphQLAPISpec(in *graphql.APISpecInput) (*model.SpecInput, error)

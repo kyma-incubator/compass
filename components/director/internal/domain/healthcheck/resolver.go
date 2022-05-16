@@ -7,11 +7,11 @@ import (
 )
 
 // HealthCheckService missing godoc
-//go:generate mockery --name=HealthCheckService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=HealthCheckService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type HealthCheckService interface{}
 
 // HealthCheckConverter missing godoc
-//go:generate mockery --name=HealthCheckConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=HealthCheckConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type HealthCheckConverter interface{}
 
 // Resolver missing godoc
