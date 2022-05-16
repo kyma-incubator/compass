@@ -207,7 +207,7 @@ echo "${GET_APPS_FROM_COMPASS_RESULT}"
 echo "---------------------------------"
 
 GET_APP_COUNT=$(echo -E ${GET_APPS_FROM_COMPASS_RESULT} | jq -r '.data.result.totalCount')
-compare_values 1 "${GET_APP_COUNT}" "Applications count did not match. Expected: 1. From Compass recieved: ${GET_APP_COUNT}"
+compare_values 1 "${GET_APP_COUNT}" "Applications count did not match. Expected: 1. From Compass received: ${GET_APP_COUNT}"
 
 
 GET_APP=$(echo -E ${GET_APPS_FROM_COMPASS_RESULT} | jq -c --arg appid ${CRT_APP_ID} '.data.result.data[] | select(.id==$appid)')
@@ -258,7 +258,7 @@ GET_BUNDLE_0_EVENT_DEFS_COUNT=$(echo -E ${GET_BUNDLE_0} | jq -r '.eventDefinitio
 compare_values "${CRT_BUNDLE_0_EVENT_DEFS_COUNT}" "${GET_BUNDLE_0_EVENT_DEFS_COUNT}" "Applicaiton bundles Events Definitions count did not match. On creation: ${CRT_BUNDLE_0_EVENT_DEFS_COUNT}. From Compass get: ${GET_BUNDLE_0_EVENT_DEFS_COUNT}"
 
 GET_BUNDLE_0_EVENT_DEF_0=$(echo -E ${GET_BUNDLE_0} | jq -c --arg eventdefid ${CRT_BUNDLE_0_EVENT_DEF_0_ID} '.eventDefinitions.data[] | select(.id==$eventdefid)')
-check_value "${GET_BUNDLE_0_EVENT_DEF_0}" "API Def with ID: ${CRT_BUNDLE_0_EVENT_DEF_0_ID} not found in Compass"
+check_value "${GET_BUNDLE_0_EVENT_DEF_0}" "Event Def with ID: ${CRT_BUNDLE_0_EVENT_DEF_0_ID} not found in Compass"
 
 GET_BUNDLE_0_EVENT_DEF_0_ID=$(echo -E ${GET_BUNDLE_0_EVENT_DEF_0} | jq -r '.id')
 compare_values "${CRT_BUNDLE_0_EVENT_DEF_0_ID}" "${GET_BUNDLE_0_EVENT_DEF_0_ID}" "Applicaiton bundles Event Definitions IDs did not match. On creation: ${CRT_BUNDLE_0_EVENT_DEF_0_ID}. From Compass get: ${GET_BUNDLE_0_EVENT_DEF_0_ID}"
