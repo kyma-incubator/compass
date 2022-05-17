@@ -29,7 +29,7 @@ const (
 )
 
 type Client interface {
-	CreateRuntime(in schema.RuntimeInput) (string, error)
+	CreateRuntime(in schema.RuntimeRegisterInput) (string, error)
 	CleanupRuntime(runtimeID string) error
 	SetRuntimeLabel(runtimeID, key, value string) error
 	CreateApplication(in schema.ApplicationRegisterInput) (string, error)
@@ -184,8 +184,8 @@ func (c *DirectorClient) DeleteApplicationLabel(applicationID, key string) error
 	return nil
 }
 
-func (c *DirectorClient) CreateRuntime(in schema.RuntimeInput) (string, error) {
-	runtimeGraphQL, err := c.graphqulizer.RuntimeInputToGQL(in)
+func (c *DirectorClient) CreateRuntime(in schema.RuntimeRegisterInput) (string, error) {
+	runtimeGraphQL, err := c.graphqulizer.RuntimeRegisterInputToGQL(in)
 
 	var result RuntimeResponse
 	query := fixtures.FixRegisterRuntimeRequest(runtimeGraphQL)

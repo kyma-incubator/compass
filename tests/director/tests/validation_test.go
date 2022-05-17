@@ -23,10 +23,10 @@ func TestCreateRuntime_ValidationSuccess(t *testing.T) {
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	runtimeIn := graphql.RuntimeInput{
+	runtimeIn := graphql.RuntimeRegisterInput{
 		Name: "012345Myaccount_Runtime",
 	}
-	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
+	inputString, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
 	request := fixtures.FixRegisterRuntimeRequest(inputString)
@@ -43,10 +43,10 @@ func TestCreateRuntime_ValidationFailure(t *testing.T) {
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	runtimeIn := graphql.RuntimeInput{
+	runtimeIn := graphql.RuntimeRegisterInput{
 		Name: "my runtime",
 	}
-	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
+	inputString, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
 	request := fixtures.FixRegisterRuntimeRequest(inputString)
@@ -56,7 +56,7 @@ func TestCreateRuntime_ValidationFailure(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=must be in a valid format]")
+	assert.EqualError(t, err, "graphql: Invalid data RuntimeRegisterInput [name=must be in a valid format]")
 }
 
 func TestUpdateRuntime_ValidationSuccess(t *testing.T) {
@@ -65,16 +65,16 @@ func TestUpdateRuntime_ValidationSuccess(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixtures.FixRuntimeInput("validation-test-rtm")
+	input := fixtures.FixRuntimeRegisterInput("validation-test-rtm")
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 
-	runtimeIn := graphql.RuntimeInput{
+	runtimeIn := graphql.RuntimeUpdateInput{
 		Name: "012345Myaccount_Runtime",
 	}
-	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
+	inputString, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
 	request := fixtures.FixUpdateRuntimeRequest(rtm.ID, inputString)
@@ -92,16 +92,16 @@ func TestUpdateRuntime_ValidationFailure(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixtures.FixRuntimeInput("validation-test-rtm")
+	input := fixtures.FixRuntimeRegisterInput("validation-test-rtm")
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 
-	runtimeIn := graphql.RuntimeInput{
+	runtimeIn := graphql.RuntimeUpdateInput{
 		Name: "my runtime",
 	}
-	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
+	inputString, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
 	request := fixtures.FixUpdateRuntimeRequest(rtm.ID, inputString)
@@ -111,7 +111,7 @@ func TestUpdateRuntime_ValidationFailure(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=must be in a valid format]")
+	assert.EqualError(t, err, "graphql: Invalid data RuntimeUpdateInput [name=must be in a valid format]")
 }
 
 // Label Definition Validation
@@ -191,7 +191,7 @@ func TestSetRuntimeLabel_Validation(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixtures.FixRuntimeInput("validation-test-rtm")
+	input := fixtures.FixRuntimeRegisterInput("validation-test-rtm")
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
 	require.NoError(t, err)

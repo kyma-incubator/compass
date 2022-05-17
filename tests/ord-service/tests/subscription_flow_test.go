@@ -88,7 +88,7 @@ func TestSelfRegisterFlow(t *testing.T) {
 	}()
 
 	// Self register runtime
-	runtimeInput := graphql.RuntimeInput{
+	runtimeInput := graphql.RuntimeRegisterInput{
 		Name:        "selfRegisterRuntime",
 		Description: ptr.String("selfRegisterRuntime-description"),
 		Labels:      graphql.Labels{testConfig.ProviderLabelKey: testConfig.ProviderID, tenantfetcher.RegionKey: testConfig.Region},
@@ -132,7 +132,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, testConfig.ExternalCertProviderConfig)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
 
-		runtimeInput := graphql.RuntimeInput{
+		runtimeInput := graphql.RuntimeRegisterInput{
 			Name:        "providerRuntime",
 			Description: ptr.String("providerRuntime-description"),
 			Labels:      graphql.Labels{testConfig.ProviderLabelKey: testConfig.ProviderID, tenantfetcher.RegionKey: testConfig.Region},

@@ -9,8 +9,28 @@ import (
 	gcli "github.com/machinebox/graphql"
 )
 
-func FixRuntimeInput(placeholder string) graphql.RuntimeInput {
-	return graphql.RuntimeInput{
+func FixRuntimeRegisterInput(placeholder string) graphql.RuntimeRegisterInput {
+	return graphql.RuntimeRegisterInput{
+		Name:        placeholder,
+		Description: ptr.String(fmt.Sprintf("%s-description", placeholder)),
+		Labels:      graphql.Labels{"placeholder": []interface{}{"placeholder"}},
+	}
+}
+
+func FixRuntimeRegisterInputWithWebhooks(placeholder string) graphql.RuntimeRegisterInput {
+	return graphql.RuntimeRegisterInput{
+		Name:        placeholder,
+		Description: ptr.String(fmt.Sprintf("%s-description", placeholder)),
+		Labels:      graphql.Labels{"placeholder": []interface{}{"placeholder"}},
+		Webhooks: []*graphql.WebhookInput{{
+			Type: graphql.WebhookTypeOpenResourceDiscovery,
+			URL:  ptr.String(webhookURL),
+		}},
+	}
+}
+
+func FixRuntimeUpdateInput(placeholder string) graphql.RuntimeUpdateInput {
+	return graphql.RuntimeUpdateInput{
 		Name:        placeholder,
 		Description: ptr.String(fmt.Sprintf("%s-description", placeholder)),
 		Labels:      graphql.Labels{"placeholder": []interface{}{"placeholder"}},
