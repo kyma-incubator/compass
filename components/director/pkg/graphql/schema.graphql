@@ -1356,6 +1356,7 @@ type Mutation {
 	mergeApplications(destinationID: ID!, sourceID: ID!): Application! @hasScopes(path: "graphql.mutation.mergeApplications")
 	"""
 	**Examples**
+	- [register runtime with webhooks](examples/register-runtime/register-runtime-with-webhooks.graphql)
 	- [register runtime](examples/register-runtime/register-runtime.graphql)
 	"""
 	registerRuntime(in: RuntimeRegisterInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.registerRuntime")
@@ -1399,16 +1400,19 @@ type Mutation {
 	**Examples**
 	- [add application template webhook](examples/add-webhook/add-application-template-webhook.graphql)
 	- [add application webhook](examples/add-webhook/add-application-webhook.graphql)
+	- [add runtime webhook](examples/add-webhook/add-runtime-webhook.graphql)
 	"""
 	addWebhook(applicationID: ID, applicationTemplateID: ID, runtimeID: ID, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
 	"""
 	**Examples**
 	- [update application webhook](examples/update-webhook/update-application-webhook.graphql)
+	- [update runtime webhook](examples/update-webhook/update-runtime-webhook.graphql)
 	"""
 	updateWebhook(webhookID: ID!, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.updateWebhook")
 	"""
 	**Examples**
 	- [delete application webhook](examples/delete-webhook/delete-application-webhook.graphql)
+	- [delete runtime webhook](examples/delete-webhook/delete-runtime-webhook.graphql)
 	"""
 	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "graphql.mutation.deleteWebhook")
 	"""
