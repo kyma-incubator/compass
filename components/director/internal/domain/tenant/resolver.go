@@ -117,7 +117,12 @@ func (r *Resolver) Tenant(ctx context.Context, externalID string) (*graphql.Tena
 
 	tenant, err := r.srv.GetTenantByExternalID(ctx, externalID)
 	if err != nil && apperrors.IsNotFoundError(err) {
-		tx, err = r.fetchTenant(&tx, externalID)
+		tx, err = r.fetchTenant(tx, externalID)
+		if err != nil {
+			return nil, err
+		}
+		ctx = persistence.SaveToContext(ctx, tx)
+		tenant, err = r.srv.GetTenantByExternalID(ctx, externalID)
 	}
 	if err != nil {
 		return nil, err
@@ -283,8 +288,8 @@ func (r *Resolver) Update(ctx context.Context, id string, in graphql.BusinessTen
 	return r.conv.ToGraphQL(tenant), nil
 }
 
-func (r *Resolver) fetchTenant(tx *persistence.PersistenceTx, externalID string) (persistence.PersistenceTx, error) {
-	if err := (*tx).Commit(); err != nil {
+func (r *Resolver) fetchTenant(tx persistence.PersistenceTx, externalID string) (persistence.PersistenceTx, error) {
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	if err := r.fetcher.FetchOnDemand(externalID); err != nil {
