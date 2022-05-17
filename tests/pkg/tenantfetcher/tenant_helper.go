@@ -44,6 +44,7 @@ type Tenant struct {
 	CustomerID             string
 	Subdomain              string
 	SubscriptionProviderID string
+	ProviderSubaccountID   string
 }
 
 type TenantIDProperties struct {
@@ -52,6 +53,7 @@ type TenantIDProperties struct {
 	CustomerIDProperty             string
 	SubdomainProperty              string
 	SubscriptionProviderIDProperty string
+	ProviderSubaccountIdProperty   string
 }
 
 // CreateTenantRequest returns a prepared tenant request with token in the header with the necessary tenant-fetcher claims
@@ -79,6 +81,10 @@ func CreateTenantRequest(t *testing.T, tenants Tenant, tenantProperties TenantID
 	}
 	if len(tenants.SubscriptionProviderID) > 0 {
 		body, err = sjson.Set(body, tenantProperties.SubscriptionProviderIDProperty, tenants.SubscriptionProviderID)
+		require.NoError(t, err)
+	}
+	if len(tenants.ProviderSubaccountID) > 0 {
+		body, err = sjson.Set(body, tenantProperties.ProviderSubaccountIdProperty, tenants.ProviderSubaccountID)
 		require.NoError(t, err)
 	}
 

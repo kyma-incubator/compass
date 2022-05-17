@@ -3,7 +3,7 @@ package accessstrategy
 import "github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 // ExecutorProvider defines an interface for access strategy executor provider
-//go:generate mockery --name=ExecutorProvider --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ExecutorProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ExecutorProvider interface {
 	Provide(accessStrategyType Type) (Executor, error)
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery --exported --name=labelDefRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=labelDefRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type labelDefRepository interface {
 	Create(ctx context.Context, def model.LabelDefinition) error
 	Exists(ctx context.Context, tenant string, key string) (bool, error)
@@ -21,44 +21,44 @@ type labelDefRepository interface {
 	UpdateWithVersion(ctx context.Context, def model.LabelDefinition) error
 }
 
-//go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type labelRepository interface {
 	Delete(context.Context, string, model.LabelableObject, string, string) error
 }
 
-//go:generate mockery --exported --name=labelDefService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=labelDefService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type labelDefService interface {
 	CreateWithFormations(ctx context.Context, tnt string, formations []string) error
 	ValidateExistingLabelsAgainstSchema(ctx context.Context, schema interface{}, tenant, key string) error
 	ValidateAutomaticScenarioAssignmentAgainstSchema(ctx context.Context, schema interface{}, tenantID, key string) error
 }
 
-//go:generate mockery --exported --name=labelService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=labelService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type labelService interface {
 	CreateLabel(ctx context.Context, tenant, id string, labelInput *model.LabelInput) error
 	UpdateLabel(ctx context.Context, tenant, id string, labelInput *model.LabelInput) error
 	GetLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) (*model.Label, error)
 }
 
-//go:generate mockery --exported --name=uidService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=uidService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type uidService interface {
 	Generate() string
 }
 
-//go:generate mockery --exported --name=automaticFormationAssignmentService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=automaticFormationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type automaticFormationAssignmentService interface {
 	Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
 	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
-//go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantService interface {
 	CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
-//go:generate mockery --exported --name=scenarioAssignmentEngine --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=scenarioAssignmentEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
 type scenarioAssignmentEngine interface {
 	GetScenariosFromMatchingASAs(ctx context.Context, runtimeID string) ([]string, error)
 }

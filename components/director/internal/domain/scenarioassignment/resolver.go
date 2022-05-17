@@ -12,13 +12,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery --exported --name=gqlConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=gqlConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type gqlConverter interface {
 	FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput, targetTenantInternalID string) model.AutomaticScenarioAssignment
 	ToGraphQL(in model.AutomaticScenarioAssignment, targetTenantExternalID string) graphql.AutomaticScenarioAssignment
 }
 
-//go:generate mockery --exported --name=asaService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=asaService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type asaService interface {
 	Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
@@ -28,14 +28,14 @@ type asaService interface {
 	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
-//go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantService interface {
 	GetExternalTenant(ctx context.Context, id string) (string, error)
 	CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
-//go:generate mockery --exported --name=tenantFetcher --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=tenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantFetcher interface {
 	FetchOnDemand(tenant string) error
 }

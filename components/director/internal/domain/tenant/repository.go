@@ -50,7 +50,7 @@ var (
 )
 
 // Converter converts tenants between the model.BusinessTenantMapping service-layer representation of a tenant and the repo-layer representation tenant.Entity.
-//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Converter interface {
 	ToEntity(in *model.BusinessTenantMapping) *tenant.Entity
 	FromEntity(in *tenant.Entity) *model.BusinessTenantMapping

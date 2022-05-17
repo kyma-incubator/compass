@@ -14,7 +14,7 @@ import (
 )
 
 // SystemAuthService missing godoc
-//go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemAuthService interface {
 	GetByIDForObject(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType, authID string) (*pkgmodel.SystemAuth, error)
 	GetGlobal(ctx context.Context, id string) (*pkgmodel.SystemAuth, error)
@@ -26,19 +26,19 @@ type SystemAuthService interface {
 }
 
 // OAuth20Service missing godoc
-//go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=OAuth20Service --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OAuth20Service interface {
 	DeleteClientCredentials(ctx context.Context, clientID string) error
 }
 
 // OneTimeTokenService missing godoc
-//go:generate mockery --name=OneTimeTokenService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=OneTimeTokenService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OneTimeTokenService interface {
 	IsTokenValid(systemAuth *pkgmodel.SystemAuth) (bool, error)
 }
 
 // SystemAuthConverter missing godoc
-//go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=SystemAuthConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemAuthConverter interface {
 	ToGraphQL(model *pkgmodel.SystemAuth) (graphql.SystemAuth, error)
 }

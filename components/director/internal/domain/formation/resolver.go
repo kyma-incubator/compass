@@ -11,7 +11,7 @@ import (
 )
 
 // Service missing godoc
-//go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Service interface {
 	CreateFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
 	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
@@ -20,14 +20,14 @@ type Service interface {
 }
 
 // Converter missing godoc
-//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Converter interface {
 	FromGraphQL(i graphql.FormationInput) model.Formation
 	ToGraphQL(i *model.Formation) *graphql.Formation
 }
 
 // TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
-//go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantFetcher interface {
 	FetchOnDemand(tenant string) error
 }

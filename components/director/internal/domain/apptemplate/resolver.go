@@ -18,7 +18,7 @@ import (
 )
 
 // ApplicationTemplateService missing godoc
-//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateService interface {
 	Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error)
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
@@ -31,7 +31,7 @@ type ApplicationTemplateService interface {
 }
 
 // ApplicationTemplateConverter missing godoc
-//go:generate mockery --name=ApplicationTemplateConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationTemplateConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateConverter interface {
 	ToGraphQL(in *model.ApplicationTemplate) (*graphql.ApplicationTemplate, error)
 	MultipleToGraphQL(in []*model.ApplicationTemplate) ([]*graphql.ApplicationTemplate, error)
@@ -41,7 +41,7 @@ type ApplicationTemplateConverter interface {
 }
 
 // ApplicationConverter missing godoc
-//go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
 	CreateInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error)
@@ -49,7 +49,7 @@ type ApplicationConverter interface {
 }
 
 // ApplicationService missing godoc
-//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
 	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error)
@@ -57,13 +57,13 @@ type ApplicationService interface {
 }
 
 // WebhookService missing godoc
-//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookService interface {
 	ListForApplicationTemplate(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 }
 
 // WebhookConverter missing godoc
-//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookConverter interface {
 	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
 	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)

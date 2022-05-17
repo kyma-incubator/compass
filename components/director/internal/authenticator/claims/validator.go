@@ -16,14 +16,14 @@ import (
 )
 
 // RuntimeService is used to interact with runtimes.
-//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	GetLabel(context.Context, string, string) (*model.Label, error)
 	ListByFilters(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
 // IntegrationSystemService is used to check if integration system with a given ID exists.
-//go:generate mockery --name=IntegrationSystemService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=IntegrationSystemService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationSystemService interface {
 	Exists(context.Context, string) (bool, error)
 }

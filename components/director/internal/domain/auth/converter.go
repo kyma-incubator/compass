@@ -11,7 +11,7 @@ import (
 )
 
 // TokenConverter missing godoc
-//go:generate mockery --name=TokenConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TokenConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TokenConverter interface {
 	ToGraphQLForApplication(model model.OneTimeToken) (graphql.OneTimeTokenForApplication, error)
 }

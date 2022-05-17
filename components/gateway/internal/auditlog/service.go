@@ -14,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery --name=MetricCollector --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=MetricCollector --output=automock --outpkg=automock --case=underscore --disable-version-string
 type MetricCollector interface {
 	SetChannelSize(size int)
 }
@@ -61,13 +61,13 @@ const (
 	PostAuditlogOperation = "post-operation"
 )
 
-//go:generate mockery --name=AuditlogClient --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=AuditlogClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AuditlogClient interface {
 	LogConfigurationChange(ctx context.Context, change model.ConfigurationChange) error
 	LogSecurityEvent(ctx context.Context, event model.SecurityEvent) error
 }
 
-//go:generate mockery --name=AuditlogMessageFactory --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=AuditlogMessageFactory --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AuditlogMessageFactory interface {
 	CreateConfigurationChange() model.ConfigurationChange
 	CreateSecurityEvent() model.SecurityEvent

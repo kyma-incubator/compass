@@ -14,7 +14,7 @@ import (
 )
 
 // Service missing godoc
-//go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Service interface {
 	RequestDeletion(ctx context.Context, instanceAuth *model.BundleInstanceAuth, defaultBundleInstanceAuth *model.Auth) (bool, error)
 	Create(ctx context.Context, bundleID string, in model.BundleInstanceAuthRequestInput, defaultAuth *model.Auth, requestInputSchema *string) (string, error)
@@ -24,7 +24,7 @@ type Service interface {
 }
 
 // Converter missing godoc
-//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Converter interface {
 	ToGraphQL(in *model.BundleInstanceAuth) (*graphql.BundleInstanceAuth, error)
 	RequestInputFromGraphQL(in graphql.BundleInstanceAuthRequestInput) model.BundleInstanceAuthRequestInput
@@ -32,13 +32,13 @@ type Converter interface {
 }
 
 // BundleService missing godoc
-//go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleService interface {
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 }
 
 // BundleConverter missing godoc
-//go:generate mockery --name=BundleConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=BundleConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleConverter interface {
 	ToGraphQL(in *model.Bundle) (*graphql.Bundle, error)
 }

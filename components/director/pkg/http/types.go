@@ -21,7 +21,7 @@ import (
 )
 
 // HTTPRoundTripper missing godoc
-//go:generate mockery --name=HTTPRoundTripper --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=HTTPRoundTripper --output=automock --outpkg=automock --case=underscore --disable-version-string
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . HTTPRoundTripper
 type HTTPRoundTripper interface {
 	RoundTrip(*http.Request) (*http.Response, error)

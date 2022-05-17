@@ -10,7 +10,7 @@ import (
 )
 
 // ScopesGetter missing godoc
-//go:generate mockery --name=ScopesGetter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ScopesGetter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ScopesGetter interface {
 	GetRequiredScopes(scopesDefinition string) ([]string, error)
 }

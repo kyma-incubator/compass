@@ -77,38 +77,38 @@ type PageConfig struct {
 }
 
 // TenantStorageService missing godoc
-//go:generate mockery --name=TenantStorageService --output=automock --outpkg=automock --case=underscore --unroll-variadic=False
+//go:generate mockery --name=TenantStorageService --output=automock --outpkg=automock --case=underscore --unroll-variadic=False --disable-version-string
 type TenantStorageService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // LabelRepo missing godoc
-//go:generate mockery --name=LabelRepo --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepo interface {
 	GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error)
 }
 
 // EventAPIClient missing godoc
-//go:generate mockery --name=EventAPIClient --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=EventAPIClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventAPIClient interface {
 	FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (TenantEventsResponse, error)
 }
 
 // RuntimeService missing godoc
-//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	ListByFilters(ctx context.Context, filters []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
 // TenantSyncService missing godoc
-//go:generate mockery --name=TenantSyncService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TenantSyncService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantSyncService interface {
 	SyncTenants() error
 }
 
 // DirectorGraphQLClient expects graphql implementation
-//go:generate mockery --name=DirectorGraphQLClient --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=DirectorGraphQLClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DirectorGraphQLClient interface {
 	WriteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
 	DeleteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
@@ -116,13 +116,13 @@ type DirectorGraphQLClient interface {
 }
 
 // LabelDefConverter missing godoc
-//go:generate mockery --name=LabelDefConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelDefConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelDefConverter interface {
 	ToGraphQLInput(definition model.LabelDefinition) (graphql.LabelDefinitionInput, error)
 }
 
 // TenantConverter expects tenant converter implementation
-//go:generate mockery --name=TenantConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TenantConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantConverter interface {
 	MultipleInputToGraphQLInput([]model.BusinessTenantMappingInput) []graphql.BusinessTenantMappingInput
 	ToGraphQLInput(model.BusinessTenantMappingInput) graphql.BusinessTenantMappingInput
@@ -395,7 +395,7 @@ func (s SubaccountService) SyncTenants() error {
 }
 
 // SyncTenant fetches creation events for a subaccount and creates a subaccount tenant in case it doesn't exist
-func (s SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID string) error {
+func (s *SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID string) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -403,14 +403,12 @@ func (s SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID 
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	currentTenants, err := getCurrentTenants(ctx, s.tenantStorageService)
-	if err != nil {
-		return err
-	}
-
-	if _, ok := currentTenants[subaccountID]; ok {
+	_, err = s.tenantStorageService.GetTenantByExternalID(ctx, subaccountID)
+	if err == nil {
 		log.C(ctx).Infof("Subbaccount %s alredy exists in the database", subaccountID)
 		return nil
+	} else if err != nil && !apperrors.IsNotFoundError(err) {
+		return err
 	}
 
 	tenantToCreate, err := s.getSubaccountToCreate(subaccountID)
@@ -419,8 +417,13 @@ func (s SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID 
 	}
 	log.C(ctx).Infof("Got create event for provided subaccount %s", subaccountID)
 
+	parentTenantDetails, err := s.getParentDetailsForSubaccount(ctx, tenantToCreate)
+	if err != nil {
+		return err
+	}
+
 	var tenantsToCreate = []model.BusinessTenantMappingInput{*tenantToCreate}
-	if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, tenantToCreate.Region, s.providerName, chunkSizeForTenantOnDemand, s.tenantConverter); err != nil {
+	if err := createTenants(ctx, s.gqlClient, parentTenantDetails, tenantsToCreate, tenantToCreate.Region, s.providerName, chunkSizeForTenantOnDemand, s.tenantConverter); err != nil {
 		return err
 	}
 
@@ -562,6 +565,18 @@ func parents(currTenants map[string]string, eventsTenants []model.BusinessTenant
 	}
 
 	return dedupeTenants(parentsToCreate)
+}
+
+func (s *SubaccountOnDemandService) getParentDetailsForSubaccount(ctx context.Context, subaccount *model.BusinessTenantMappingInput) (map[string]string, error) {
+	parentTenantDetails := make(map[string]string)
+	parent, err := s.tenantStorageService.GetTenantByExternalID(ctx, subaccount.Parent)
+	if err == nil {
+		parentTenantDetails[parent.ExternalTenant] = parent.ID
+		return parentTenantDetails, nil
+	} else if err != nil && apperrors.IsNotFoundError(err) {
+		return parentTenantDetails, nil
+	}
+	return nil, err
 }
 
 func getTenantParentType(tenantType string) string {

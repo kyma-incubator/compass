@@ -13,7 +13,7 @@ import (
 )
 
 // EventAPIRepository is responsible for the repo-layer EventDefinition operations.
-//go:generate mockery --name=EventAPIRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=EventAPIRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventAPIRepository interface {
 	GetByID(ctx context.Context, tenantID string, id string) (*model.EventDefinition, error)
 	GetForBundle(ctx context.Context, tenant string, id string, bundleID string) (*model.EventDefinition, error)
@@ -26,13 +26,13 @@ type EventAPIRepository interface {
 }
 
 // UIDService is responsible for generating GUIDs, which will be used as internal eventDefinition IDs when they are created.
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
 
 // SpecService is responsible for the service-layer Specification operations.
-//go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=SpecService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SpecService interface {
 	CreateByReferenceObjectID(ctx context.Context, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) (string, error)
 	UpdateByReferenceObjectID(ctx context.Context, id string, in model.SpecInput, objectType model.SpecReferenceObjectType, objectID string) error
@@ -42,7 +42,7 @@ type SpecService interface {
 }
 
 // BundleReferenceService is responsible for the service-layer BundleReference operations.
-//go:generate mockery --name=BundleReferenceService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=BundleReferenceService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleReferenceService interface {
 	GetForBundle(ctx context.Context, objectType model.BundleReferenceObjectType, objectID, bundleID *string) (*model.BundleReference, error)
 	CreateByReferenceObjectID(ctx context.Context, in model.BundleReferenceInput, objectType model.BundleReferenceObjectType, objectID, bundleID *string) error

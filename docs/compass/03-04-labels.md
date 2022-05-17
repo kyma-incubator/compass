@@ -30,7 +30,6 @@ type Query {
 type Mutation {
     createLabelDefinition(in: LabelDefinitionInput!): LabelDefinition!
     updateLabelDefinition(in: LabelDefinitionInput!): LabelDefinition!
-    deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean=false): LabelDefinition!
 }
 ```
 
@@ -96,16 +95,6 @@ updateLabelDefinition(in: {
                                 }
                       }) {...}
 ```
-
-### Remove LabelDefinitions
-
-Use this mutation to remove a LabelDefinition:
-
-```graphql
-deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean=false): LabelDefinition
-
-```
-This mutation allows you to remove only definitions that are not used. If you want to delete a LabelDefinition with all its values, set the **deleteRelatedLabels** parameter to `true`.
 
 ## LabelFilters
 
