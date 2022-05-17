@@ -16,6 +16,7 @@ mutation {
         { name: "new-placeholder", description: "new-placeholder-desc" }
       ]
       accessLevel: GLOBAL
+      labels: { test: ["test"] }
     }
   ) {
     id
@@ -83,6 +84,7 @@ mutation {
         }
       }
     }
+    labels
     accessLevel
   }
 }

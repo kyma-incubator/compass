@@ -6,6 +6,7 @@ mutation {
       providerName: "after"
       description: "after"
       healthCheckURL: "https://kyma-project.io"
+      baseUrl: "after"
       statusCondition: CONNECTED
     }
   ) {
