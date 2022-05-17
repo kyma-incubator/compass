@@ -2882,6 +2882,7 @@ func TestResolver_SubscribeTenant(t *testing.T) {
 	// GIVEN
 	providerID := "provider-id"
 	subaccountID := "subaccount-id"
+	providerSubaccountID := "provider-subaccount-id"
 	region := "region"
 
 	ctx := context.TODO()
@@ -2901,7 +2902,7 @@ func TestResolver_SubscribeTenant(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			SubscriptionSvcFn: func() *automock.SubscriptionService {
 				subscriptionSvc := &automock.SubscriptionService{}
-				subscriptionSvc.On("SubscribeTenant", txtest.CtxWithDBMatcher(), providerID, subaccountID, region).Return(true, nil).Once()
+				subscriptionSvc.On("SubscribeTenant", txtest.CtxWithDBMatcher(), providerID, subaccountID, providerSubaccountID, region).Return(true, nil).Once()
 				return subscriptionSvc
 			},
 			ExpectedOutput: true,
@@ -2921,7 +2922,7 @@ func TestResolver_SubscribeTenant(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			SubscriptionSvcFn: func() *automock.SubscriptionService {
 				subscriptionSvc := &automock.SubscriptionService{}
-				subscriptionSvc.On("SubscribeTenant", txtest.CtxWithDBMatcher(), providerID, subaccountID, region).Return(false, testErr).Once()
+				subscriptionSvc.On("SubscribeTenant", txtest.CtxWithDBMatcher(), providerID, subaccountID, providerSubaccountID, region).Return(false, testErr).Once()
 				return subscriptionSvc
 			},
 			ExpectedOutput: false,
@@ -2932,7 +2933,7 @@ func TestResolver_SubscribeTenant(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			SubscriptionSvcFn: func() *automock.SubscriptionService {
 				subscriptionSvc := &automock.SubscriptionService{}
-				subscriptionSvc.On("SubscribeTenant", txtest.CtxWithDBMatcher(), providerID, subaccountID, region).Return(true, nil).Once()
+				subscriptionSvc.On("SubscribeTenant", txtest.CtxWithDBMatcher(), providerID, subaccountID, providerSubaccountID, region).Return(true, nil).Once()
 				return subscriptionSvc
 			},
 			ExpectedOutput: false,
@@ -2949,7 +2950,7 @@ func TestResolver_SubscribeTenant(t *testing.T) {
 			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, subscriptionSvc, nil, nil, nil)
 
 			// WHEN
-			result, err := resolver.SubscribeTenant(ctx, providerID, subaccountID, region)
+			result, err := resolver.SubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, region)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -2967,6 +2968,7 @@ func TestResolver_UnsubscribeTenant(t *testing.T) {
 	// GIVEN
 	providerID := "provider-id"
 	subaccountID := "subaccount-id"
+	providerSubaccountID := "provider-subaccount-id"
 	region := "region"
 
 	ctx := context.TODO()
@@ -2986,7 +2988,7 @@ func TestResolver_UnsubscribeTenant(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			SubscriptionSvcFn: func() *automock.SubscriptionService {
 				subscriptionSvc := &automock.SubscriptionService{}
-				subscriptionSvc.On("UnsubscribeTenant", txtest.CtxWithDBMatcher(), providerID, subaccountID, region).Return(true, nil).Once()
+				subscriptionSvc.On("UnsubscribeTenant", txtest.CtxWithDBMatcher(), providerID, subaccountID, providerSubaccountID, region).Return(true, nil).Once()
 				return subscriptionSvc
 			},
 			ExpectedOutput: true,
@@ -3006,7 +3008,7 @@ func TestResolver_UnsubscribeTenant(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			SubscriptionSvcFn: func() *automock.SubscriptionService {
 				subscriptionSvc := &automock.SubscriptionService{}
-				subscriptionSvc.On("UnsubscribeTenant", txtest.CtxWithDBMatcher(), providerID, subaccountID, region).Return(false, testErr).Once()
+				subscriptionSvc.On("UnsubscribeTenant", txtest.CtxWithDBMatcher(), providerID, subaccountID, providerSubaccountID, region).Return(false, testErr).Once()
 				return subscriptionSvc
 			},
 			ExpectedOutput: false,
@@ -3017,7 +3019,7 @@ func TestResolver_UnsubscribeTenant(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			SubscriptionSvcFn: func() *automock.SubscriptionService {
 				subscriptionSvc := &automock.SubscriptionService{}
-				subscriptionSvc.On("UnsubscribeTenant", txtest.CtxWithDBMatcher(), providerID, subaccountID, region).Return(true, nil).Once()
+				subscriptionSvc.On("UnsubscribeTenant", txtest.CtxWithDBMatcher(), providerID, subaccountID, providerSubaccountID, region).Return(true, nil).Once()
 				return subscriptionSvc
 			},
 			ExpectedOutput: false,
@@ -3034,7 +3036,7 @@ func TestResolver_UnsubscribeTenant(t *testing.T) {
 			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, subscriptionSvc, nil, nil, nil)
 
 			// WHEN
-			result, err := resolver.UnsubscribeTenant(ctx, providerID, subaccountID, region)
+			result, err := resolver.UnsubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, region)
 
 			// THEN
 			if testCase.ExpectedError != nil {
