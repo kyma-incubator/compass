@@ -829,6 +829,7 @@ global:
         - "application:read"
         - "runtime.auths:read"
         - "bundle.instance_auths:read"
+        - "runtime.webhooks:read"
         - "webhook:write"
       application:
         - "application:read"
@@ -887,6 +888,7 @@ global:
         - "webhooks.auth:read"
         - "formation:write"
         - "internal_visibility:read"
+        - "runtime.webhooks:read"
         - "webhook:write"
       default:
         - "runtime:read"
