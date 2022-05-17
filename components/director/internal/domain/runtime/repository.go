@@ -22,7 +22,7 @@ var (
 )
 
 // EntityConverter missing godoc
-//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityConverter interface {
 	ToEntity(in *model.Runtime) (*Runtime, error)
 	FromEntity(entity *Runtime) *model.Runtime

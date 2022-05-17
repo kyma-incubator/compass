@@ -47,7 +47,7 @@ type repoCreatorFunc func(ctx context.Context, tenant string, application *model
 type repoUpserterFunc func(ctx context.Context, tenant string, application *model.Application) (string, error)
 
 // ApplicationRepository missing godoc
-//go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
@@ -70,7 +70,7 @@ type ApplicationRepository interface {
 }
 
 // LabelRepository missing godoc
-//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
@@ -81,46 +81,46 @@ type LabelRepository interface {
 }
 
 // WebhookRepository missing godoc
-//go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
 }
 
 // RuntimeRepository missing godoc
-//go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	ListAll(ctx context.Context, tenantID string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
 // IntegrationSystemRepository missing godoc
-//go:generate mockery --name=IntegrationSystemRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=IntegrationSystemRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationSystemRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
 // LabelUpsertService missing godoc
-//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelUpsertService interface {
 	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
 // ScenariosService missing godoc
-//go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
 	AddDefaultScenarioIfEnabled(ctx context.Context, tenant string, labels *map[string]interface{})
 }
 
 // UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
 
 // ApplicationHideCfgProvider missing godoc
-//go:generate mockery --name=ApplicationHideCfgProvider --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationHideCfgProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationHideCfgProvider interface {
 	GetApplicationHideSelectors() (map[string][]string, error)
 }
@@ -744,6 +744,14 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 		return nil, errors.Wrapf(err, "while getting labels for Application with id %s", srcID)
 	}
 
+	if destAppLabels == nil {
+		destAppLabels = make(map[string]*model.Label)
+	}
+
+	if srcAppLabels == nil {
+		srcAppLabels = make(map[string]*model.Label)
+	}
+
 	srcBaseURL := strings.TrimSuffix(str.PtrStrToStr(srcApp.BaseURL), urlSuffixToBeTrimmed)
 	destBaseURL := strings.TrimSuffix(str.PtrStrToStr(destApp.BaseURL), urlSuffixToBeTrimmed)
 	if len(srcBaseURL) == 0 || len(destBaseURL) == 0 || srcBaseURL != destBaseURL {
@@ -770,7 +778,7 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 	}
 
 	log.C(ctx).Infof("Merging labels for applications with ids %s and %s", destID, srcID)
-	destAppLabelsMerged, err := s.handleMergeLabels(srcAppLabels, destAppLabels)
+	destAppLabelsMerged, err := s.handleMergeLabels(ctx, srcAppLabels, destAppLabels)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while trying to merge labels for applications with ids %s and %s", destID, srcID)
 	}
@@ -795,13 +803,25 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 // handleMergeLabels merges source labels into destination labels. model.ScenariosKey is merged manually as well due to limitation
 // of the lib that is used. The last manually merged label is managedKey which is updated only if the destination or
 // source label have a value "true"
-func (s *service) handleMergeLabels(srcAppLabels, destAppLabels map[string]*model.Label) (map[string]interface{}, error) {
-	srcScenariosStrSlice, err := label.ValueToStringsSlice(srcAppLabels[model.ScenariosKey].Value)
+func (s *service) handleMergeLabels(ctx context.Context, srcAppLabels, destAppLabels map[string]*model.Label) (map[string]interface{}, error) {
+	srcScenarios, ok := srcAppLabels[model.ScenariosKey]
+	if !ok {
+		log.C(ctx).Infof("No %q label found in source object.", model.ScenariosKey)
+		srcScenarios = &model.Label{Value: make([]interface{}, 0)}
+	}
+
+	destScenarios, ok := destAppLabels[model.ScenariosKey]
+	if !ok {
+		log.C(ctx).Infof("No %q label found in destination object.", model.ScenariosKey)
+		destScenarios = &model.Label{Value: make([]interface{}, 0)}
+	}
+
+	srcScenariosStrSlice, err := label.ValueToStringsSlice(srcScenarios.Value)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting source application labels to string slice")
 	}
 
-	destScenariosStrSlice, err := label.ValueToStringsSlice(destAppLabels[model.ScenariosKey].Value)
+	destScenariosStrSlice, err := label.ValueToStringsSlice(destScenarios.Value)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting destination application labels to string slice")
 	}
@@ -818,17 +838,29 @@ func (s *service) handleMergeLabels(srcAppLabels, destAppLabels map[string]*mode
 
 	destAppLabels[model.ScenariosKey].Value = destScenariosStrSlice
 
-	destLabelManaged, err := str.CastToBool(destAppLabels[managedKey].Value)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while converting %s value for destination label with ID: %s", managedKey, destAppLabels[managedKey].ID)
+	srcLabelManaged, ok := srcAppLabels[managedKey]
+	if !ok {
+		log.C(ctx).Infof("No %q label found in source object.", managedKey)
+		srcLabelManaged = &model.Label{Value: "false"}
 	}
 
-	srcLabelManaged, err := str.CastToBool(srcAppLabels[managedKey].Value)
+	srcLabelManagedValue, err := str.CastToBool(srcLabelManaged.Value)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting %s value for source label with ID: %s", managedKey, srcAppLabels[managedKey].ID)
 	}
 
-	if destLabelManaged || srcLabelManaged {
+	destLabelManaged, ok := destAppLabels[managedKey]
+	if !ok {
+		log.C(ctx).Infof("No %q label found in destination object.", managedKey)
+		destLabelManaged = &model.Label{Value: "false"}
+	}
+
+	destLabelManagedValue, err := str.CastToBool(destLabelManaged.Value)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting %s value for destination label with ID: %s", managedKey, destAppLabels[managedKey].ID)
+	}
+
+	if destLabelManagedValue || srcLabelManagedValue {
 		destAppLabels[managedKey].Value = "true"
 	}
 

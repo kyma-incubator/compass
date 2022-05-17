@@ -10,7 +10,7 @@ import (
 )
 
 // TombstoneRepository missing godoc
-//go:generate mockery --name=TombstoneRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TombstoneRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TombstoneRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Tombstone) error
 	Update(ctx context.Context, tenant string, item *model.Tombstone) error
@@ -21,7 +21,7 @@ type TombstoneRepository interface {
 }
 
 // UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }

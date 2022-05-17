@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/connector/internal/apperrors"
 )
 
-//go:generate mockery --name=Service
+//go:generate mockery --name=Service --disable-version-string
 type Service interface {
 	// SignCSR takes encoded CSR, validates subject and generates Certificate based on CA stored in secret
 	// returns base64 encoded certificate chain

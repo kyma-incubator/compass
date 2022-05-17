@@ -11,14 +11,14 @@ import (
 )
 
 // EventingService missing godoc
-//go:generate mockery --name=EventingService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=EventingService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EventingService interface {
 	SetForApplication(ctx context.Context, runtimeID uuid.UUID, app model.Application) (*model.ApplicationEventingConfiguration, error)
 	UnsetForApplication(ctx context.Context, app model.Application) (*model.ApplicationEventingConfiguration, error)
 }
 
 // ApplicationService missing godoc
-//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	Get(ctx context.Context, id string) (*model.Application, error)
 }

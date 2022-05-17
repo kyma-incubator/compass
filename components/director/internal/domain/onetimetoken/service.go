@@ -26,7 +26,7 @@ import (
 )
 
 // SystemAuthService missing godoc
-//go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=SystemAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemAuthService interface {
 	Create(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error)
 	GetByToken(ctx context.Context, token string) (*pkgmodel.SystemAuth, error)
@@ -35,26 +35,26 @@ type SystemAuthService interface {
 }
 
 // ApplicationConverter missing godoc
-//go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
 }
 
 // ApplicationService missing godoc
-//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	Get(ctx context.Context, id string) (*model.Application, error)
 	ListLabels(ctx context.Context, applicationID string) (map[string]*model.Label, error)
 }
 
 // ExternalTenantsService missing godoc
-//go:generate mockery --name=ExternalTenantsService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ExternalTenantsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ExternalTenantsService interface {
 	GetExternalTenant(ctx context.Context, id string) (string, error)
 }
 
 // HTTPDoer missing godoc
-//go:generate mockery --name=HTTPDoer --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=HTTPDoer --output=automock --outpkg=automock --case=underscore --disable-version-string
 type HTTPDoer interface {
 	Do(req *http.Request) (*http.Response, error)
 }

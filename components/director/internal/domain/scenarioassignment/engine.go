@@ -16,19 +16,19 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-//go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type labelRepository interface {
 	GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
 }
 
-//go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeRepository interface {
 	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 }
 
-//go:generate mockery --exported --name=labelUpsertService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=labelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type labelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }

@@ -50,14 +50,15 @@ type TenantConfig struct {
 }
 
 type SubscriptionConfig struct {
-	URL                          string
-	TokenURL                     string
-	ClientID                     string
-	ClientSecret                 string
-	ProviderLabelKey             string
-	ProviderID                   string
-	SelfRegisterLabelKey         string
-	SelfRegisterLabelValuePrefix string
+	URL                                string
+	TokenURL                           string
+	ClientID                           string
+	ClientSecret                       string
+	ProviderLabelKey                   string
+	ProviderID                         string
+	SelfRegisterLabelKey               string
+	SelfRegisterLabelValuePrefix       string
+	PropagatedProviderSubaccountHeader string
 }
 
 type config struct {
