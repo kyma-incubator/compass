@@ -205,7 +205,7 @@ func NewRootResolver(
 		runtimeContext:     runtimectx.NewResolver(transact, runtimeContextSvc, runtimeContextConverter),
 		healthCheck:        healthcheck.NewResolver(healthCheckSvc),
 		webhook:            webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, runtimeSvc, webhookConverter),
-		labelDef:           labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
+		labelDef:           labeldef.NewResolver(transact, labelDefSvc, formationSvc, labelDefConverter),
 		token:              onetimetoken.NewTokenResolver(transact, tokenSvc, tokenConverter, oneTimeTokenCfg.SuggestTokenHeaderKey),
 		systemAuth:         systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, tokenSvc, systemAuthConverter, authConverter),
 		oAuth20:            oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
@@ -635,11 +635,6 @@ func (r *mutationResolver) UpdateLabelDefinition(ctx context.Context, in graphql
 	return r.labelDef.UpdateLabelDefinition(ctx, in)
 }
 
-// DeleteLabelDefinition missing godoc
-func (r *mutationResolver) DeleteLabelDefinition(ctx context.Context, key string, deleteRelatedLabels *bool) (*graphql.LabelDefinition, error) {
-	return r.labelDef.DeleteLabelDefinition(ctx, key, deleteRelatedLabels)
-}
-
 // SetApplicationLabel missing godoc
 func (r *mutationResolver) SetApplicationLabel(ctx context.Context, applicationID string, key string, value interface{}) (*graphql.Label, error) {
 	return r.app.SetApplicationLabel(ctx, applicationID, key, value)
@@ -814,13 +809,13 @@ func (r *mutationResolver) DeleteTenants(ctx context.Context, in []string) (int,
 }
 
 // SubscribeTenantToRuntime subscribes given tenant to runtime
-func (r *mutationResolver) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountID string, region string) (bool, error) {
-	return r.runtime.SubscribeTenant(ctx, providerID, subaccountID, region)
+func (r *mutationResolver) SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountID, providerSubaccountID, region string) (bool, error) {
+	return r.runtime.SubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, region)
 }
 
 // UnsubscribeTenantFromRuntime unsubscribes given tenant from runtime
-func (r *mutationResolver) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountID string, region string) (bool, error) {
-	return r.runtime.UnsubscribeTenant(ctx, providerID, subaccountID, region)
+func (r *mutationResolver) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, subaccountID, providerSubaccountID, region string) (bool, error) {
+	return r.runtime.UnsubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, region)
 }
 
 func (r *mutationResolver) UpdateTenant(ctx context.Context, id string, in graphql.BusinessTenantMappingInput) (*graphql.Tenant, error) {

@@ -2,7 +2,6 @@ package labeldef
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -19,20 +18,22 @@ import (
 type Resolver struct {
 	conv          ModelConverter
 	srv           Service
+	formationsSrv formationService
 	transactioner persistence.Transactioner
 }
 
 // NewResolver missing godoc
-func NewResolver(transactioner persistence.Transactioner, srv Service, conv ModelConverter) *Resolver {
+func NewResolver(transactioner persistence.Transactioner, srv Service, formationSvc formationService, conv ModelConverter) *Resolver {
 	return &Resolver{
 		conv:          conv,
 		srv:           srv,
+		formationsSrv: formationSvc,
 		transactioner: transactioner,
 	}
 }
 
 // ModelConverter missing godoc
-//go:generate mockery --name=ModelConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ModelConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ModelConverter interface {
 	// TODO: Use model.LabelDefinitionInput
 	FromGraphQL(input graphql.LabelDefinitionInput, tenant string) (model.LabelDefinition, error)
@@ -40,13 +41,17 @@ type ModelConverter interface {
 }
 
 // Service missing godoc
-//go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Service interface {
-	Create(ctx context.Context, ld model.LabelDefinition) (model.LabelDefinition, error)
 	Get(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)
+	GetWithoutCreating(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error)
 	List(ctx context.Context, tenant string) ([]model.LabelDefinition, error)
-	Delete(ctx context.Context, tenant string, key string, deleteRelatedLabels bool) error
-	Update(ctx context.Context, ld model.LabelDefinition) error
+}
+
+//go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationService interface {
+	CreateFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
+	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
 }
 
 // CreateLabelDefinition missing godoc
@@ -69,12 +74,29 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	createdLd, err := r.srv.Create(ctx, ld)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating label definition")
+	if _, err = r.srv.GetWithoutCreating(ctx, tnt, ld.Key); err == nil {
+		return nil, apperrors.NewNotUniqueError(resource.LabelDefinition)
+	} else if !apperrors.IsNotFoundError(err) {
+		return nil, errors.Wrap(err, "while getting label definition")
 	}
 
-	out, err := r.conv.ToGraphQL(createdLd)
+	formations, err := ParseFormationsFromSchema(ld.Schema)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing schema")
+	}
+	for _, f := range formations {
+		if _, err := r.formationsSrv.CreateFormation(ctx, tnt, model.Formation{Name: f}); err != nil {
+			return nil, errors.Wrapf(err, "while creating formation with name %s", f)
+		}
+	}
+
+	labelDef, err := r.srv.Get(ctx, tnt, ld.Key)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting label definition")
+	}
+
+	out, err := r.conv.ToGraphQL(*labelDef)
 	if err != nil {
 		return nil, err
 	}
@@ -168,16 +190,51 @@ func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	}
 	defer r.transactioner.RollbackUnlessCommitted(ctx, tx)
 
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	ld, err := r.conv.FromGraphQL(in, tnt)
 	if err != nil {
 		return nil, err
 	}
 
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	err = r.srv.Update(ctx, ld)
+	storedLd, err := r.srv.Get(ctx, tnt, ld.Key)
 	if err != nil {
-		return nil, errors.Wrap(err, "while updating label definition")
+		return nil, errors.Wrap(err, "while receiving stored label definition")
+	}
+
+	inputFormations, err := ParseFormationsFromSchema(ld.Schema)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing schema")
+	}
+	inputFormationsMap := make(map[string]struct{}, len(inputFormations))
+	for _, f := range inputFormations {
+		inputFormationsMap[f] = struct{}{}
+	}
+
+	storedFormations, err := ParseFormationsFromSchema(storedLd.Schema)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing schema")
+	}
+
+	storedFormationsMap := make(map[string]struct{}, len(storedFormations))
+	for _, f := range storedFormations {
+		storedFormationsMap[f] = struct{}{}
+	}
+
+	for _, f := range inputFormations {
+		if _, ok := storedFormationsMap[f]; !ok {
+			if _, err := r.formationsSrv.CreateFormation(ctx, tnt, model.Formation{Name: f}); err != nil {
+				return nil, errors.Wrapf(err, "while creating formation with name %s", f)
+			}
+		}
+	}
+
+	for _, f := range storedFormations {
+		if _, ok := inputFormationsMap[f]; !ok {
+			if _, err := r.formationsSrv.DeleteFormation(ctx, tnt, model.Formation{Name: f}); err != nil {
+				return nil, errors.Wrapf(err, "while deleting formation with name %s", f)
+			}
+		}
 	}
 
 	updatedLd, err := r.srv.Get(ctx, tnt, in.Key)
@@ -195,48 +252,4 @@ func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	}
 
 	return &out, nil
-}
-
-// DeleteLabelDefinition missing godoc
-func (r *Resolver) DeleteLabelDefinition(ctx context.Context, key string, deleteRelatedLabels *bool) (*graphql.LabelDefinition, error) {
-	tnt, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	tx, err := r.transactioner.Begin()
-	if err != nil {
-		return nil, errors.Wrap(err, "while starting transaction")
-	}
-	defer r.transactioner.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	if deleteRelatedLabels == nil {
-		return nil, apperrors.NewInternalError("deleteRelatedLabels can not be nil")
-	}
-
-	ld, err := r.srv.Get(ctx, tnt, key)
-	if err != nil {
-		return nil, err
-	}
-	if ld == nil {
-		return nil, fmt.Errorf("labelDefinition with key %s not found", key)
-	}
-
-	err = r.srv.Delete(ctx, tnt, key, *deleteRelatedLabels)
-	if err != nil {
-		return nil, err
-	}
-
-	deletedLD, err := r.conv.ToGraphQL(*ld)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := tx.Commit(); err != nil {
-		return nil, errors.Wrap(err, "while committing transaction")
-	}
-
-	return &deletedLD, nil
 }

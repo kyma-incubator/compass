@@ -11,8 +11,10 @@ import (
 )
 
 var (
-	validSchema   = graphql.JSONSchema(`{"type": "string"}`)
-	invalidSchema = graphql.JSONSchema(`{invalid`)
+	validScenario, _      = json.Marshal(model.ScenariosSchema)
+	validSchema           = graphql.JSONSchema(validScenario)
+	invalidScenarioSchema = graphql.JSONSchema(`{"type": "string"}`)
+	invalidSchema         = graphql.JSONSchema(`{invalid`)
 )
 
 func TestLabelDefinitionInput_Validate(t *testing.T) {
@@ -29,7 +31,7 @@ func TestLabelDefinitionInput_Validate(t *testing.T) {
 		{
 			Name: "ExpectedValid - Schema provided",
 			Value: graphql.LabelDefinitionInput{
-				Key:    "ok",
+				Key:    model.ScenariosKey,
 				Schema: &validSchema,
 			},
 			ExpectedValid: true,
@@ -62,7 +64,7 @@ func TestLabelDefinitionInput_Validate(t *testing.T) {
 			Name: "Invalid - Scenarios schema invalid",
 			Value: graphql.LabelDefinitionInput{
 				Key:    model.ScenariosKey,
-				Schema: &validSchema,
+				Schema: &invalidScenarioSchema,
 			},
 			ExpectedValid: false,
 		},
@@ -148,7 +150,7 @@ func TestLabelDefinitionInput_Validate_Key(t *testing.T) {
 	}{
 		{
 			Name:          "ExpectedValid",
-			Value:         "valid",
+			Value:         model.ScenariosKey,
 			ExpectedValid: true,
 		},
 		{
@@ -197,9 +199,9 @@ func TestLabelDefinitionInput_Validate_Schema(t *testing.T) {
 			ExpectedValid: true,
 		},
 		{
-			Name:          "ExpectedValid - Nil",
+			Name:          "ExpectedInvalid - Nil",
 			Value:         (*graphql.JSONSchema)(nil),
-			ExpectedValid: true,
+			ExpectedValid: false,
 		},
 	}
 
@@ -222,8 +224,8 @@ func TestLabelDefinitionInput_Validate_Schema(t *testing.T) {
 
 func fixValidLabelDefinitionInput() graphql.LabelDefinitionInput {
 	return graphql.LabelDefinitionInput{
-		Key:    "valid",
-		Schema: nil,
+		Key:    model.ScenariosKey,
+		Schema: &validSchema,
 	}
 }
 

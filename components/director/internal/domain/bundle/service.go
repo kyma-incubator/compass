@@ -13,7 +13,7 @@ import (
 )
 
 // BundleRepository missing godoc
-//go:generate mockery --name=BundleRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=BundleRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Bundle) error
 	Update(ctx context.Context, tenant string, item *model.Bundle) error
@@ -26,7 +26,7 @@ type BundleRepository interface {
 }
 
 // UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery --name=Authenticator
+//go:generate mockery --name=Authenticator --disable-version-string
 type Authenticator interface {
 	AuthenticateToken(context context.Context) (string, error)
 	Authenticate(context context.Context) (string, error)

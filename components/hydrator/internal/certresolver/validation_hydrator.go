@@ -16,7 +16,7 @@ type ValidationHydrator interface {
 	ServeHTTP(w http.ResponseWriter, r *http.Request)
 }
 
-//go:generate mockery --name=RevokedCertificatesCache --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RevokedCertificatesCache --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RevokedCertificatesCache interface {
 	Get() map[string]string
 }

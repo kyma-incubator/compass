@@ -12,16 +12,17 @@ const (
 )
 
 type Config struct {
-	TenantFetcherURL             string
-	RootAPI                      string
-	RegionalHandlerEndpoint      string
-	TenantPathParam              string
-	RegionPathParam              string
-	SubscriptionProviderID       string
-	TenantFetcherFullRegionalURL string `envconfig:"-"`
-	TestConsumerAccountID        string
-	TestConsumerSubaccountID     string
-	TestConsumerTenantID         string
+	TenantFetcherURL                   string
+	RootAPI                            string
+	RegionalHandlerEndpoint            string
+	TenantPathParam                    string
+	RegionPathParam                    string
+	SubscriptionProviderID             string
+	TenantFetcherFullRegionalURL       string `envconfig:"-"`
+	TestConsumerAccountID              string
+	TestConsumerSubaccountID           string
+	TestConsumerTenantID               string
+	PropagatedProviderSubaccountHeader string
 }
 
 // ProviderConfig includes the configuration for tenant providers - the tenant ID json property names - account, subaccount, customer. The subdomain property name and subscription provider ID property.
@@ -31,6 +32,7 @@ type ProviderConfig struct {
 	CustomerIDProperty             string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY"`
 	SubdomainProperty              string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"`
 	SubscriptionProviderIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY"`
+	ProviderSubaccountIDProperty   string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY"`
 }
 
 func BuildTenantFetcherRegionalURL(tenantConfig *Config) {

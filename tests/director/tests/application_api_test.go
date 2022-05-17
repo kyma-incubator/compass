@@ -1502,7 +1502,6 @@ func TestMergeApplications(t *testing.T) {
 	sccLabelValue := "cloud connector"
 	expectedProductType := "MergeTemplate"
 	newFormation := "formation-merge-applications-e2e"
-	destScenariosValue := []interface{}{"DEFAULT", newFormation}
 
 	appTmplInput := fixtures.FixApplicationTemplate(expectedProductType)
 	appTmplInput.ApplicationInput.Name = "{{name}}"
@@ -1526,7 +1525,7 @@ func TestMergeApplications(t *testing.T) {
 		TemplateName: expectedProductType, Values: []*graphql.TemplateValueInput{
 			{
 				Placeholder: namePlaceholder,
-				Value:       "app1",
+				Value:       "app1-e2e-merge",
 			},
 		},
 	}
@@ -1535,7 +1534,7 @@ func TestMergeApplications(t *testing.T) {
 		TemplateName: expectedProductType, Values: []*graphql.TemplateValueInput{
 			{
 				Placeholder: namePlaceholder,
-				Value:       "app2",
+				Value:       "app2-e2e-merge",
 			},
 		},
 	}
@@ -1603,7 +1602,7 @@ func TestMergeApplications(t *testing.T) {
 	assert.Equal(t, providerName, destApp.ProviderName)
 	assert.Equal(t, managedLabelValue, destApp.Labels[managedLabel])
 	assert.Equal(t, sccLabelValue, destApp.Labels[sccLabel])
-	assert.Equal(t, destScenariosValue, destApp.Labels[ScenariosLabel])
+	assert.Contains(t, destApp.Labels[ScenariosLabel], newFormation)
 
 	srcApp := graphql.ApplicationExt{}
 	getSrcAppReq := fixtures.FixGetApplicationRequest(outputSrcApp.ID)

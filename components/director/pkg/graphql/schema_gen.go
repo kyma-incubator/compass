@@ -369,7 +369,6 @@ type ComplexityRoot struct {
 		DeleteDocument                                func(childComplexity int, id string) int
 		DeleteEventDefinition                         func(childComplexity int, id string) int
 		DeleteFormation                               func(childComplexity int, formation FormationInput) int
-		DeleteLabelDefinition                         func(childComplexity int, key string, deleteRelatedLabels *bool) int
 		DeleteRuntimeLabel                            func(childComplexity int, runtimeID string, key string) int
 		DeleteSystemAuthForApplication                func(childComplexity int, authID string) int
 		DeleteSystemAuthForIntegrationSystem          func(childComplexity int, authID string) int
@@ -396,14 +395,14 @@ type ComplexityRoot struct {
 		SetBundleInstanceAuth                         func(childComplexity int, authID string, in BundleInstanceAuthSetInput) int
 		SetDefaultEventingForApplication              func(childComplexity int, appID string, runtimeID string) int
 		SetRuntimeLabel                               func(childComplexity int, runtimeID string, key string, value interface{}) int
-		SubscribeTenantToRuntime                      func(childComplexity int, providerID string, subaccountID string, region string) int
+		SubscribeTenantToRuntime                      func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, region string) int
 		UnassignFormation                             func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
 		UnpairApplication                             func(childComplexity int, id string, mode *OperationMode) int
 		UnregisterApplication                         func(childComplexity int, id string, mode *OperationMode) int
 		UnregisterIntegrationSystem                   func(childComplexity int, id string) int
 		UnregisterRuntime                             func(childComplexity int, id string) int
 		UnregisterRuntimeContext                      func(childComplexity int, id string) int
-		UnsubscribeTenantFromRuntime                  func(childComplexity int, providerID string, subaccountID string, region string) int
+		UnsubscribeTenantFromRuntime                  func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, region string) int
 		UpdateAPIDefinition                           func(childComplexity int, id string, in APIDefinitionInput) int
 		UpdateApplication                             func(childComplexity int, id string, in ApplicationUpdateInput) int
 		UpdateApplicationTemplate                     func(childComplexity int, id string, in ApplicationTemplateUpdateInput) int
@@ -678,7 +677,6 @@ type MutationResolver interface {
 	UnassignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
 	CreateLabelDefinition(ctx context.Context, in LabelDefinitionInput) (*LabelDefinition, error)
 	UpdateLabelDefinition(ctx context.Context, in LabelDefinitionInput) (*LabelDefinition, error)
-	DeleteLabelDefinition(ctx context.Context, key string, deleteRelatedLabels *bool) (*LabelDefinition, error)
 	SetApplicationLabel(ctx context.Context, applicationID string, key string, value interface{}) (*Label, error)
 	DeleteApplicationLabel(ctx context.Context, applicationID string, key string) (*Label, error)
 	SetRuntimeLabel(ctx context.Context, runtimeID string, key string, value interface{}) (*Label, error)
@@ -698,8 +696,8 @@ type MutationResolver interface {
 	WriteTenants(ctx context.Context, in []*BusinessTenantMappingInput) (int, error)
 	DeleteTenants(ctx context.Context, in []string) (int, error)
 	UpdateTenant(ctx context.Context, id string, in BusinessTenantMappingInput) (*Tenant, error)
-	SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountID string, region string) (bool, error)
-	UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountID string, region string) (bool, error)
+	SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) (bool, error)
+	UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) (bool, error)
 }
 type OneTimeTokenForApplicationResolver interface {
 	Raw(ctx context.Context, obj *OneTimeTokenForApplication) (*string, error)
@@ -2348,18 +2346,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteFormation(childComplexity, args["formation"].(FormationInput)), true
 
-	case "Mutation.deleteLabelDefinition":
-		if e.complexity.Mutation.DeleteLabelDefinition == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_deleteLabelDefinition_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.DeleteLabelDefinition(childComplexity, args["key"].(string), args["deleteRelatedLabels"].(*bool)), true
-
 	case "Mutation.deleteRuntimeLabel":
 		if e.complexity.Mutation.DeleteRuntimeLabel == nil {
 			break
@@ -2682,7 +2668,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SubscribeTenantToRuntime(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["region"].(string)), true
+		return e.complexity.Mutation.SubscribeTenantToRuntime(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string)), true
 
 	case "Mutation.unassignFormation":
 		if e.complexity.Mutation.UnassignFormation == nil {
@@ -2766,7 +2752,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UnsubscribeTenantFromRuntime(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["region"].(string)), true
+		return e.complexity.Mutation.UnsubscribeTenantFromRuntime(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string)), true
 
 	case "Mutation.updateAPIDefinition":
 		if e.complexity.Mutation.UpdateAPIDefinition == nil {
@@ -5436,7 +5422,6 @@ type Mutation {
 	- [update label definition](examples/update-label-definition/update-label-definition.graphql)
 	"""
 	updateLabelDefinition(in: LabelDefinitionInput! @validate): LabelDefinition! @hasScopes(path: "graphql.mutation.updateLabelDefinition")
-	deleteLabelDefinition(key: String!, deleteRelatedLabels: Boolean = false): LabelDefinition! @hasScopes(path: "graphql.mutation.deleteLabelDefinition")
 	"""
 	If a label with given key already exist, it will be replaced with provided value.
 	
@@ -5522,8 +5507,8 @@ type Mutation {
 	writeTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.writeTenants")
 	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
 	updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")
-	subscribeTenantToRuntime(providerID: String!, subaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenantToRuntime")
-	unsubscribeTenantFromRuntime(providerID: String!, subaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenantFromRuntime")
+	subscribeTenantToRuntime(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenantToRuntime")
+	unsubscribeTenantFromRuntime(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenantFromRuntime")
 }
 
 `, BuiltIn: false},
@@ -6325,28 +6310,6 @@ func (ec *executionContext) field_Mutation_deleteFormation_args(ctx context.Cont
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_deleteLabelDefinition_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["key"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["key"] = arg0
-	var arg1 *bool
-	if tmp, ok := rawArgs["deleteRelatedLabels"]; ok {
-		arg1, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["deleteRelatedLabels"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_deleteRuntimeLabel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -6940,13 +6903,21 @@ func (ec *executionContext) field_Mutation_subscribeTenantToRuntime_args(ctx con
 	}
 	args["subaccountID"] = arg1
 	var arg2 string
-	if tmp, ok := rawArgs["region"]; ok {
+	if tmp, ok := rawArgs["providerSubaccountID"]; ok {
 		arg2, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["region"] = arg2
+	args["providerSubaccountID"] = arg2
+	var arg3 string
+	if tmp, ok := rawArgs["region"]; ok {
+		arg3, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["region"] = arg3
 	return args, nil
 }
 
@@ -7086,13 +7057,21 @@ func (ec *executionContext) field_Mutation_unsubscribeTenantFromRuntime_args(ctx
 	}
 	args["subaccountID"] = arg1
 	var arg2 string
-	if tmp, ok := rawArgs["region"]; ok {
+	if tmp, ok := rawArgs["providerSubaccountID"]; ok {
 		arg2, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["region"] = arg2
+	args["providerSubaccountID"] = arg2
+	var arg3 string
+	if tmp, ok := rawArgs["region"]; ok {
+		arg3, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["region"] = arg3
 	return args, nil
 }
 
@@ -17452,71 +17431,6 @@ func (ec *executionContext) _Mutation_updateLabelDefinition(ctx context.Context,
 	return ec.marshalNLabelDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinition(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_deleteLabelDefinition(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deleteLabelDefinition_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().DeleteLabelDefinition(rctx, args["key"].(string), args["deleteRelatedLabels"].(*bool))
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deleteLabelDefinition")
-			if err != nil {
-				return nil, err
-			}
-			if ec.directives.HasScopes == nil {
-				return nil, errors.New("directive hasScopes is not implemented")
-			}
-			return ec.directives.HasScopes(ctx, nil, directive0, path)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, err
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(*LabelDefinition); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.LabelDefinition`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*LabelDefinition)
-	fc.Result = res
-	return ec.marshalNLabelDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelDefinition(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Mutation_setApplicationLabel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -18799,7 +18713,7 @@ func (ec *executionContext) _Mutation_subscribeTenantToRuntime(ctx context.Conte
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().SubscribeTenantToRuntime(rctx, args["providerID"].(string), args["subaccountID"].(string), args["region"].(string))
+			return ec.resolvers.Mutation().SubscribeTenantToRuntime(rctx, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.subscribeTenantToRuntime")
@@ -18864,7 +18778,7 @@ func (ec *executionContext) _Mutation_unsubscribeTenantFromRuntime(ctx context.C
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UnsubscribeTenantFromRuntime(rctx, args["providerID"].(string), args["subaccountID"].(string), args["region"].(string))
+			return ec.resolvers.Mutation().UnsubscribeTenantFromRuntime(rctx, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.unsubscribeTenantFromRuntime")
@@ -28053,11 +27967,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "updateLabelDefinition":
 			out.Values[i] = ec._Mutation_updateLabelDefinition(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "deleteLabelDefinition":
-			out.Values[i] = ec._Mutation_deleteLabelDefinition(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

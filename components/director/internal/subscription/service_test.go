@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"testing"
 	"time"
 
@@ -29,6 +28,8 @@ const (
 	regionalTenantSubdomain = "myregionaltenant"
 	subaccountTenantExtID   = "subaccount-tenant-external-id"
 	subscriptionProviderID  = "123"
+	providerSubaccountID    = "123-456"
+	providerInternalID      = "456-789"
 
 	uuid = "647af599-7f2d-485c-a63b-615b5ff6daf1"
 )
@@ -102,6 +103,13 @@ var (
 	}
 )
 
+func CtxWithTenantMatcher(expectedTenantID string) interface{} {
+	return mock.MatchedBy(func(ctx context.Context) bool {
+		tenantID, err := tenant.LoadFromContext(ctx)
+		return err == nil && tenantID == expectedTenantID
+	})
+}
+
 func TestSubscribeRegionalTenant(t *testing.T) {
 	// GIVEN
 
@@ -111,6 +119,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 		Subdomain:              regionalTenantSubdomain,
 		Region:                 tenantRegion,
 		SubscriptionProviderID: subscriptionProviderID,
+		ProviderSubaccountID:   providerSubaccountID,
 	}
 
 	// Subscribe flow
@@ -130,8 +139,13 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{}, nil).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return([]*model.Runtime{}, nil).Once()
 				return provisioner
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				return tenantSvc
 			},
 			LabelServiceFn:            emptyLabelSvcFn,
 			UIDServiceFn:              emptyUIDSvcFn,
@@ -139,11 +153,33 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			IsSuccessful:              true,
 		},
 		{
+			Name: "Returns an error when can't internal provider tenant",
+			RuntimeServiceFn: func() *automock.RuntimeService {
+				return &automock.RuntimeService{}
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return("", testError).Once()
+				return tenantSvc
+			},
+			LabelServiceFn:            emptyLabelSvcFn,
+			UIDServiceFn:              emptyUIDSvcFn,
+			Region:                    tenantRegion,
+			TenantSubscriptionRequest: regionalTenant,
+			ExpectedErrorOutput:       testError.Error(),
+			IsSuccessful:              false,
+		},
+		{
 			Name: "Returns an error when can't find runtimes",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return(nil, notFoundErr).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return(nil, notFoundErr).Once()
 				return provisioner
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				return tenantSvc
 			},
 			LabelServiceFn:            emptyLabelSvcFn,
 			UIDServiceFn:              emptyUIDSvcFn,
@@ -155,8 +191,13 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Name: "Returns an error when could not list runtimes",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return(nil, testError).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return(nil, testError).Once()
 				return provisioner
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				return tenantSvc
 			},
 			LabelServiceFn:            emptyLabelSvcFn,
 			UIDServiceFn:              emptyUIDSvcFn,
@@ -170,12 +211,13 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return("", testError).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", mock.AnythingOfType("*context.valueCtx"), resource.Runtime, runtimeID).Return("", testError).Once()
 				return tenantSvc
 			},
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				return provisioner
 			},
 			LabelServiceFn:            emptyLabelSvcFn,
@@ -188,17 +230,18 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Name: "Returns an error when could not get label for runtime",
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", mock.AnythingOfType("*context.valueCtx"), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
 				return tenantSvc
 			},
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				return provisioner
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelSvc := &automock.LabelService{}
-				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(nil, testError).Once()
+				labelSvc.On("GetLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, &getLabelInput).Return(nil, testError).Once()
 				return labelSvc
 			},
 			UIDServiceFn:              emptyUIDSvcFn,
@@ -211,18 +254,19 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Name: "Returns an error when could not create label for runtime",
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", mock.AnythingOfType("*context.valueCtx"), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
 				return tenantSvc
 			},
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("ListByFilters", mock.AnythingOfType("*context.valueCtx"), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				return provisioner
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelSvc := &automock.LabelService{}
-				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(nil, notFoundErr).Once()
-				labelSvc.On("CreateLabel", context.TODO(), tenantID, uuid, &createLabelInput).Return(testError).Once()
+				labelSvc.On("GetLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, &getLabelInput).Return(nil, notFoundErr).Once()
+				labelSvc.On("CreateLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, uuid, &createLabelInput).Return(testError).Once()
 				return labelSvc
 			},
 			UIDServiceFn: func() *automock.UidService {
@@ -239,17 +283,18 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Name: "Returns an error when could not parse label value",
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", mock.AnythingOfType("*context.valueCtx"), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
 				return tenantSvc
 			},
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				return provisioner
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelSvc := &automock.LabelService{}
-				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(&invalidTestLabel, nil).Once()
+				labelSvc.On("GetLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, &getLabelInput).Return(&invalidTestLabel, nil).Once()
 				return labelSvc
 			},
 			UIDServiceFn:              emptyUIDSvcFn,
@@ -262,18 +307,19 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Name: "Returns an error when could not update label for runtime",
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", mock.AnythingOfType("*context.valueCtx"), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
 				return tenantSvc
 			},
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				return provisioner
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelSvc := &automock.LabelService{}
-				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(&testLabel, nil).Once()
-				labelSvc.On("UpdateLabel", context.TODO(), tenantID, testLabel.ID, &updateLabelInput).Return(testError).Twice()
+				labelSvc.On("GetLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, &getLabelInput).Return(&testLabel, nil).Once()
+				labelSvc.On("UpdateLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, testLabel.ID, &updateLabelInput).Return(testError).Twice()
 				return labelSvc
 			},
 			UIDServiceFn:              emptyUIDSvcFn,
@@ -286,18 +332,19 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Name: "Succeeds and creates label",
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", mock.AnythingOfType("*context.valueCtx"), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
 				return tenantSvc
 			},
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				return provisioner
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelSvc := &automock.LabelService{}
-				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(nil, notFoundErr).Once()
-				labelSvc.On("CreateLabel", context.TODO(), tenantID, uuid, &createLabelInput).Return(nil).Once()
+				labelSvc.On("GetLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, &getLabelInput).Return(nil, notFoundErr).Once()
+				labelSvc.On("CreateLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, uuid, &createLabelInput).Return(nil).Once()
 				return labelSvc
 			},
 			UIDServiceFn: func() *automock.UidService {
@@ -313,18 +360,19 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Name: "Succeeds and updates label",
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", mock.AnythingOfType("*context.valueCtx"), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
 				return tenantSvc
 			},
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				return provisioner
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelSvc := &automock.LabelService{}
-				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(&testLabel, nil).Once()
-				labelSvc.On("UpdateLabel", context.TODO(), tenantID, testLabel.ID, &updateLabelInput).Return(nil).Once()
+				labelSvc.On("GetLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, &getLabelInput).Return(&testLabel, nil).Once()
+				labelSvc.On("UpdateLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, testLabel.ID, &updateLabelInput).Return(nil).Once()
 				return labelSvc
 			},
 			UIDServiceFn:              emptyUIDSvcFn,
@@ -336,19 +384,20 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Name: "Succeeds and updates label on second try",
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", mock.AnythingOfType("*context.valueCtx"), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
 				return tenantSvc
 			},
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				return provisioner
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelSvc := &automock.LabelService{}
-				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(&testLabel, nil).Once()
-				labelSvc.On("UpdateLabel", context.TODO(), tenantID, testLabel.ID, &updateLabelInput).Return(testError).Once()
-				labelSvc.On("UpdateLabel", context.TODO(), tenantID, testLabel.ID, &updateLabelInput).Return(nil).Once()
+				labelSvc.On("GetLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, &getLabelInput).Return(&testLabel, nil).Once()
+				labelSvc.On("UpdateLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, testLabel.ID, &updateLabelInput).Return(testError).Once()
+				labelSvc.On("UpdateLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, testLabel.ID, &updateLabelInput).Return(nil).Once()
 				return labelSvc
 			},
 			UIDServiceFn:              emptyUIDSvcFn,
@@ -371,7 +420,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			service := NewService(runtimeSvc, tenantSvc, labelSvc, uuidSvc, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
 
 			// WHEN
-			isSubscribeSuccessful, err := service.SubscribeTenant(context.TODO(), subscriptionProviderID, subaccountTenantExtID, testCase.Region)
+			isSubscribeSuccessful, err := service.SubscribeTenant(context.TODO(), subscriptionProviderID, subaccountTenantExtID, providerSubaccountID, testCase.Region)
 
 			// THEN
 			if len(testCase.ExpectedErrorOutput) > 0 {
@@ -415,8 +464,13 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{}, nil).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return([]*model.Runtime{}, nil).Once()
 				return provisioner
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				return tenantSvc
 			},
 			LabelServiceFn:            emptyLabelSvcFn,
 			UIDServiceFn:              emptyUIDSvcFn,
@@ -424,11 +478,33 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			IsSuccessful:              true,
 		},
 		{
+			Name: "Returns an error when can't internal provider tenant",
+			RuntimeServiceFn: func() *automock.RuntimeService {
+				return &automock.RuntimeService{}
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return("", testError).Once()
+				return tenantSvc
+			},
+			LabelServiceFn:            emptyLabelSvcFn,
+			UIDServiceFn:              emptyUIDSvcFn,
+			Region:                    tenantRegion,
+			TenantSubscriptionRequest: regionalTenant,
+			ExpectedErrorOutput:       testError.Error(),
+			IsSuccessful:              false,
+		},
+		{
 			Name: "Returns an error when can't find runtimes",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return(nil, notFoundErr).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return(nil, notFoundErr).Once()
 				return provisioner
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				return tenantSvc
 			},
 			LabelServiceFn:            emptyLabelSvcFn,
 			UIDServiceFn:              emptyUIDSvcFn,
@@ -440,8 +516,13 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Name: "Returns an error when could not list runtimes",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return(nil, testError).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return(nil, testError).Once()
 				return provisioner
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				return tenantSvc
 			},
 			LabelServiceFn:            emptyLabelSvcFn,
 			UIDServiceFn:              emptyUIDSvcFn,
@@ -454,12 +535,13 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Name: "Returns an error when could not get tenant for runtime",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				return provisioner
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return("", testError).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", mock.AnythingOfType("*context.valueCtx"), resource.Runtime, runtimeID).Return("", testError).Once()
 				return tenantSvc
 			},
 			LabelServiceFn:            emptyLabelSvcFn,
@@ -473,17 +555,18 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Name: "Returns an error when could not get label for runtime",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				return provisioner
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", mock.AnythingOfType("*context.valueCtx"), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
 				return tenantSvc
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelSvc := &automock.LabelService{}
-				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(nil, testError).Once()
+				labelSvc.On("GetLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, &getLabelInput).Return(nil, testError).Once()
 				return labelSvc
 			},
 			UIDServiceFn:              emptyUIDSvcFn,
@@ -496,17 +579,18 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Name: "Succeeds if label for runtime is not found",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				return provisioner
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", mock.AnythingOfType("*context.valueCtx"), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
 				return tenantSvc
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelSvc := &automock.LabelService{}
-				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(nil, apperrors.NewNotFoundError(resource.Label, getLabelInput.ObjectID)).Once()
+				labelSvc.On("GetLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, &getLabelInput).Return(nil, apperrors.NewNotFoundError(resource.Label, getLabelInput.ObjectID)).Once()
 				return labelSvc
 			},
 			UIDServiceFn:              emptyUIDSvcFn,
@@ -518,17 +602,18 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Name: "Returns an error when could not parse label value",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				return provisioner
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", mock.AnythingOfType("*context.valueCtx"), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
 				return tenantSvc
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelSvc := &automock.LabelService{}
-				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(&invalidTestLabel, nil).Once()
+				labelSvc.On("GetLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, &getLabelInput).Return(&invalidTestLabel, nil).Once()
 				return labelSvc
 			},
 			UIDServiceFn:              emptyUIDSvcFn,
@@ -541,18 +626,19 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Name: "Returns an error when could not update label for runtime",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				return provisioner
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", mock.AnythingOfType("*context.valueCtx"), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
 				return tenantSvc
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelSvc := &automock.LabelService{}
-				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(&testLabel, nil).Once()
-				labelSvc.On("UpdateLabel", context.TODO(), tenantID, testLabel.ID, &removeLabelInput).Return(testError).Twice()
+				labelSvc.On("GetLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, &getLabelInput).Return(&testLabel, nil).Once()
+				labelSvc.On("UpdateLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, testLabel.ID, &removeLabelInput).Return(testError).Twice()
 				return labelSvc
 			},
 			UIDServiceFn:              emptyUIDSvcFn,
@@ -565,18 +651,19 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Name: "Succeeds and updates label",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				return provisioner
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", mock.AnythingOfType("*context.valueCtx"), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
 				return tenantSvc
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelSvc := &automock.LabelService{}
-				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(&testLabel, nil).Once()
-				labelSvc.On("UpdateLabel", context.TODO(), tenantID, testLabel.ID, &removeLabelInput).Return(nil).Once()
+				labelSvc.On("GetLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, &getLabelInput).Return(&testLabel, nil).Once()
+				labelSvc.On("UpdateLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, testLabel.ID, &removeLabelInput).Return(nil).Once()
 				return labelSvc
 			},
 			UIDServiceFn:              emptyUIDSvcFn,
@@ -588,19 +675,20 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Name: "Succeeds and updates label on second try",
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFiltersGlobal", context.TODO(), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
+				provisioner.On("ListByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return([]*model.Runtime{&testRuntime}, nil).Once()
 				return provisioner
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetLowestOwnerForResource", context.TODO(), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", mock.AnythingOfType("*context.valueCtx"), resource.Runtime, runtimeID).Return(tenantID, nil).Once()
 				return tenantSvc
 			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelSvc := &automock.LabelService{}
-				labelSvc.On("GetLabel", context.TODO(), tenantID, &getLabelInput).Return(&testLabel, nil).Once()
-				labelSvc.On("UpdateLabel", context.TODO(), tenantID, testLabel.ID, &removeLabelInput).Return(testError).Once()
-				labelSvc.On("UpdateLabel", context.TODO(), tenantID, testLabel.ID, &removeLabelInput).Return(nil).Once()
+				labelSvc.On("GetLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, &getLabelInput).Return(&testLabel, nil).Once()
+				labelSvc.On("UpdateLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, testLabel.ID, &removeLabelInput).Return(testError).Once()
+				labelSvc.On("UpdateLabel", mock.AnythingOfType("*context.valueCtx"), tenantID, testLabel.ID, &removeLabelInput).Return(nil).Once()
 				return labelSvc
 			},
 			UIDServiceFn:              emptyUIDSvcFn,
@@ -623,7 +711,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			service := NewService(runtimeSvc, tenantSvc, labelSvc, uidSvc, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
 
 			// WHEN
-			isUnsubscribeSuccessful, err := service.UnsubscribeTenant(context.TODO(), subscriptionProviderID, subaccountTenantExtID, testCase.Region)
+			isUnsubscribeSuccessful, err := service.UnsubscribeTenant(context.TODO(), subscriptionProviderID, subaccountTenantExtID, providerSubaccountID, testCase.Region)
 
 			// THEN
 			if len(testCase.ExpectedErrorOutput) > 0 {

@@ -16,7 +16,7 @@ import (
 )
 
 // WebhookRepository missing godoc
-//go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookRepository interface {
 	GetByID(ctx context.Context, tenant, id string, objectType model.WebhookReferenceObjectType) (*model.Webhook, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.Webhook, error)
@@ -29,13 +29,13 @@ type WebhookRepository interface {
 }
 
 // ApplicationRepository missing godoc
-//go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationRepository interface {
 	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
 }
 
 // UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }

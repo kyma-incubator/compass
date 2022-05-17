@@ -64,7 +64,6 @@ graphql:
     unassignFormation: [ "formation:write" ]
     createLabelDefinition: ["label_definition:write"]
     updateLabelDefinition: ["label_definition:write"]
-    deleteLabelDefinition: ["label_definition:write"]
     setApplicationLabel: ["application:write"]
     deleteApplicationLabel: ["application:write"]
     setRuntimeLabel: ["runtime:write"]
