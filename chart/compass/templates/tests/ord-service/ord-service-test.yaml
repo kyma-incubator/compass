@@ -132,6 +132,8 @@ spec:
               value: {{ .Values.global.director.selfRegister.label }}
             - name: SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_VALUE_PREFIX
               value: {{ .Values.global.director.selfRegister.labelValuePrefix }}
+            - name: SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
+              value: {{ .Values.global.tests.ordService.propagatedProviderSubaccountHeader }}
             - name: TEST_EXTERNAL_CERT_SUBJECT
               value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.ordService.providerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
             - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME
