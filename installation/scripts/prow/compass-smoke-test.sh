@@ -60,6 +60,7 @@ MIGRATE_HOME="${BASE_DIR}/migrate"
 COMPASS_DIR="$( cd "$( dirname "${INSTALLATION_DIR}/../.." )" && pwd )"  
 ORD_SVC_DIR="${BASE_DIR}/ord-service"
 TEST_RESULT=true
+export PATH="/google-cloud-sdk/bin:${PATH}"
 
 mkdir -p "${JAVA_HOME}"
 export JAVA_HOME
