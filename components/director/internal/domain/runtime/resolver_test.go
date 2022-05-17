@@ -38,7 +38,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const RegionKey = "region"
+const (
+	RegionKey  = "region"
+	testRegion = "test-region"
+)
 
 var contextParam = mock.MatchedBy(func(ctx context.Context) bool {
 	persistenceOp, err := persistence.FromCtx(ctx)

@@ -26,6 +26,7 @@ var (
 	labelsWithNormalization = map[string]interface{}{runtime.IsNormalizedLabel: "true"}
 	protectedLabelPattern   = ".*_defaultEventing$|^consumer_subaccount_ids$"
 	immutableLabelPattern   = "^xsappnameCMPClone$"
+	testUUID                = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
 )
 
 func TestService_CreateWithMandatoryLabels(t *testing.T) {
@@ -2465,7 +2466,7 @@ func TestService_GetByFiltersGlobal(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 	filters := []*labelfilter.LabelFilter{
-		&labelfilter.LabelFilter{Key: "test-key", Query: str.Ptr("test-filter")},
+		{Key: "test-key", Query: str.Ptr("test-filter")},
 	}
 	testRuntime := &model.Runtime{
 		ID:   "test-id",

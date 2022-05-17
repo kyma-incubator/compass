@@ -1,9 +1,11 @@
-package runtime_test
+package selfregmanager_test
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"net/http"
 	"testing"
 	"time"
@@ -13,7 +15,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/rtmtest"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
@@ -27,7 +28,6 @@ const (
 	testUUID                        = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
 	testRegion                      = "test-region"
 	fakeRegion                      = "fake-region"
-	regionLabelKey                  = "region"
 )
 
 var testConfig = config.SelfRegConfig{
@@ -69,24 +69,44 @@ var testConfig = config.SelfRegConfig{
 }
 
 func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
+	consumerID := "test-consumer-id"
 	tokenConsumer := consumer.Consumer{
-		ConsumerID: "test-consumer-id",
+		ConsumerID: consumerID,
 		Flow:       oathkeeper.OAuth2Flow,
 	}
 	certConsumer := consumer.Consumer{
-		ConsumerID: "test-consumer-id",
+		ConsumerID: consumerID,
 		Flow:       oathkeeper.CertificateFlow,
 	}
+	var emptyLabels map[string]interface{}
+
 	lblInput := model.RuntimeInput{
-		Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal, regionLabelKey: testRegion},
+		Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: testRegion},
 	}
 	lblInputWithoutRegion := model.RuntimeInput{
 		Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal},
 	}
 	lblInputAfterPrep := map[string]interface{}{
-		testConfig.SelfRegisterLabelKey: rtmtest.ResponseLabelValue,
+		testConfig.SelfRegisterLabelKey:    rtmtest.ResponseLabelValue,
+		scenarioassignment.SubaccountIDKey: consumerID,
+		selfregmanager.RegionLabel:         testRegion,
+		selfRegisterDistinguishLabelKey:    distinguishLblVal,
 	}
-	emptyLabels := make(map[string]interface{})
+	lblWithDistinguish := map[string]interface{}{
+		selfRegisterDistinguishLabelKey: distinguishLblVal,
+	}
+	lblWithDistinguishAndFakeRegion := map[string]interface{}{
+		selfRegisterDistinguishLabelKey: "invalid value",
+		selfregmanager.RegionLabel:      fakeRegion,
+	}
+	lblWithDistinguishAndStructRegion := map[string]interface{}{
+		selfRegisterDistinguishLabelKey: distinguishLblVal,
+		selfregmanager.RegionLabel:      struct{}{},
+	}
+	lblWithDistinguishAndInvalidRegion := map[string]interface{}{
+		selfRegisterDistinguishLabelKey: distinguishLblVal,
+		selfregmanager.RegionLabel:      "not-valid",
+	}
 
 	ctxWithTokenConsumer := consumer.SaveToContext(context.TODO(), tokenConsumer)
 	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
@@ -119,7 +139,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Input:          lblInputWithoutRegion,
 			Context:        ctxWithTokenConsumer,
 			ExpectedErr:    nil,
-			ExpectedOutput: emptyLabels,
+			ExpectedOutput: lblWithDistinguish,
 		},
 		{
 			Name:           "Error when region label is missing",
@@ -128,8 +148,8 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Region:         testRegion,
 			Input:          lblInputWithoutRegion,
 			Context:        ctxWithCertConsumer,
-			ExpectedErr:    fmt.Errorf("missing %q label", regionLabelKey),
-			ExpectedOutput: emptyLabels,
+			ExpectedErr:    fmt.Errorf("missing %q label", selfregmanager.RegionLabel),
+			ExpectedOutput: lblWithDistinguish,
 		},
 		{
 			Name:           "Error when region label is not string",
@@ -137,21 +157,21 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			CallerProvider: rtmtest.CallerThatDoesNotGetCalled,
 			Region:         testRegion,
 			Input: model.RuntimeInput{
-				Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal, regionLabelKey: struct{}{}},
+				Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: struct{}{}},
 			},
 			Context:        ctxWithCertConsumer,
 			ExpectedErr:    fmt.Errorf("region value should be of type %q", "string"),
-			ExpectedOutput: emptyLabels,
+			ExpectedOutput: lblWithDistinguishAndStructRegion,
 		},
 		{
 			Name:           "Error when region doesn't exist",
 			Config:         testConfig,
 			CallerProvider: rtmtest.CallerThatDoesNotGetCalled,
 			Region:         testRegion,
-			Input:          model.RuntimeInput{Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal, regionLabelKey: "not-valid"}},
+			Input:          model.RuntimeInput{Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: "not-valid"}},
 			Context:        ctxWithCertConsumer,
 			ExpectedErr:    errors.New("missing configuration for region"),
-			ExpectedOutput: emptyLabels,
+			ExpectedOutput: lblWithDistinguishAndInvalidRegion,
 		},
 		{
 			Name:           "Error when caller provider fails",
@@ -161,7 +181,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Input:          lblInput,
 			Context:        ctxWithCertConsumer,
 			ExpectedErr:    errors.New("while getting caller"),
-			ExpectedOutput: emptyLabels,
+			ExpectedOutput: lblInputAfterPrep,
 		},
 		{
 			Name:           "Error when context does not contain consumer",
@@ -174,14 +194,14 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			ExpectedOutput: emptyLabels,
 		},
 		{
-			Name:           "Error when can't create URL for preparation of self-registered runtime",
+			Name:           "Error when can't create URL for preparation of self-registration",
 			Config:         testConfig,
 			CallerProvider: rtmtest.CallerThatDoesNotGetCalled,
 			Region:         fakeRegion,
-			Input:          model.RuntimeInput{Labels: graphql.Labels{selfRegisterDistinguishLabelKey: "invalid value", regionLabelKey: fakeRegion}},
+			Input:          model.RuntimeInput{Labels: graphql.Labels{selfRegisterDistinguishLabelKey: "invalid value", selfregmanager.RegionLabel: fakeRegion}},
 			Context:        ctxWithCertConsumer,
-			ExpectedErr:    errors.New("while creating url for preparation of self-registered runtime"),
-			ExpectedOutput: emptyLabels,
+			ExpectedErr:    errors.New("while creating url for preparation of self-registered resource"),
+			ExpectedOutput: lblWithDistinguishAndFakeRegion,
 		},
 		{
 			Name:           "Error when Call doesn't succeed",
@@ -191,7 +211,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Input:          lblInput,
 			Context:        ctxWithCertConsumer,
 			ExpectedErr:    rtmtest.TestError,
-			ExpectedOutput: emptyLabels,
+			ExpectedOutput: lblInputAfterPrep,
 		},
 		{
 			Name:           "Error when status code is unexpected",
@@ -201,17 +221,17 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Input:          lblInput,
 			Context:        ctxWithCertConsumer,
 			ExpectedErr:    errors.New("received unexpected status"),
-			ExpectedOutput: emptyLabels,
+			ExpectedOutput: lblInputAfterPrep,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svcCallerProvider := testCase.CallerProvider(t, testCase.Config, testCase.Region)
-			manager, err := runtime.NewSelfRegisterManager(testCase.Config, svcCallerProvider)
+			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider)
 			require.NoError(t, err)
 
-			output, err := manager.PrepareForSelfRegistration(testCase.Context, testCase.Input, testUUID)
+			output, err := manager.PrepareForSelfRegistration(testCase.Context, testCase.Input.Labels, testUUID)
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedErr.Error())
@@ -247,7 +267,7 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 			ExpectedErr:                         nil,
 		},
 		{
-			Name:                                "Success when runtime is not self-registered",
+			Name:                                "Success when resoource is not self-registered",
 			CallerProvider:                      rtmtest.CallerThatDoesNotGetCalled,
 			Region:                              testRegion,
 			Config:                              testConfig,
@@ -256,13 +276,13 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 			ExpectedErr:                         nil,
 		},
 		{
-			Name:                                "Error when can't create URL for cleanup of self-registered runtime",
+			Name:                                "Error when can't create URL for cleanup of self-registered resource",
 			CallerProvider:                      rtmtest.CallerThatDoesNotGetCalled,
 			Region:                              fakeRegion,
 			Config:                              testConfig,
 			SelfRegisteredDistinguishLabelValue: "invalid value",
 			Context:                             ctx,
-			ExpectedErr:                         errors.New("while creating url for cleanup of self-registered runtime"),
+			ExpectedErr:                         errors.New("while creating url for cleanup of self-registered resource"),
 		},
 		{
 			Name:                                "Error when region doesn't exist",
@@ -305,7 +325,7 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svcCallerProvider := testCase.CallerProvider(t, testCase.Config, testCase.Region)
-			manager, err := runtime.NewSelfRegisterManager(testCase.Config, svcCallerProvider)
+			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider)
 			require.NoError(t, err)
 
 			err = manager.CleanupSelfRegistration(testCase.Context, testCase.SelfRegisteredDistinguishLabelValue, testCase.Region)
@@ -322,7 +342,7 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 func TestNewSelfRegisterManager(t *testing.T) {
 	t.Run("Error when creating self register manager fails", func(t *testing.T) {
 		cfg := config.SelfRegConfig{}
-		manager, err := runtime.NewSelfRegisterManager(cfg, nil)
+		manager, err := selfregmanager.NewSelfRegisterManager(cfg, nil)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "self registration secret path cannot be empty")
 		require.Nil(t, manager)

@@ -3,9 +3,9 @@ package apptemplate
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
@@ -75,7 +75,7 @@ type WebhookConverter interface {
 }
 
 // SelfRegisterManager missing godoc
-//go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SelfRegisterManager interface {
 	PrepareForSelfRegistration(ctx context.Context, labels map[string]interface{}, id string) (map[string]interface{}, error)
 	CleanupSelfRegistration(ctx context.Context, selfRegisterLabelValue, region string) error
@@ -429,7 +429,7 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 			return nil, errors.Wrapf(err, "while getting self register label")
 		}
 	} else {
-		regionLabel, err := r.appTemplateSvc.GetLabel(ctx, id, runtime.RegionLabel)
+		regionLabel, err := r.appTemplateSvc.GetLabel(ctx, id, selfregmanager.RegionLabel)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting region label")
 		}

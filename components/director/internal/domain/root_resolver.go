@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"net/http"
 	"net/url"
 
@@ -111,7 +112,7 @@ func NewRootResolver(
 	hydra := hydraClient.New(transport, nil)
 
 	metricsCollector.InstrumentOAuth20HTTPClient(oAuth20HTTPClient)
-	selfRegisterManager, err := runtime.NewSelfRegisterManager(selfRegConfig, &runtime.CallerProvider{})
+	selfRegisterManager, err := selfregmanager.NewSelfRegisterManager(selfRegConfig, &selfregmanager.CallerProvider{})
 	if err != nil {
 		return nil, err
 	}

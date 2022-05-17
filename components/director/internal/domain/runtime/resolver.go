@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"strings"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
@@ -285,7 +286,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 		if didRollback {
 			labelVal := str.CastOrEmpty(convertedIn.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
 			if labelVal != "" {
-				label, ok := in.Labels[RegionLabel].(string)
+				label, ok := in.Labels[selfregmanager.RegionLabel].(string)
 				if !ok {
 					log.C(ctx).Errorf("An error occurred while casting region label value to string")
 				} else {
@@ -370,7 +371,7 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 			return nil, errors.Wrapf(err, "while getting self register info label")
 		}
 	} else {
-		regionLabel, err := r.runtimeService.GetLabel(ctx, runtime.ID, RegionLabel)
+		regionLabel, err := r.runtimeService.GetLabel(ctx, runtime.ID, selfregmanager.RegionLabel)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting region label")
 		}
