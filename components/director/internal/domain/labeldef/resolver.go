@@ -2,8 +2,6 @@ package labeldef
 
 import (
 	"context"
-	"strings"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -78,10 +76,6 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 	if _, err = r.srv.GetWithoutCreating(ctx, tnt, ld.Key); err == nil {
 		return nil, apperrors.NewNotUniqueError(resource.LabelDefinition)
 	} else if !apperrors.IsNotFoundError(err) {
-		return nil, errors.Wrap(err, "while getting label definition")
-	}
-
-	if !strings.Contains(err.Error(), "Object not found") {
 		return nil, errors.Wrap(err, "while getting label definition")
 	}
 
