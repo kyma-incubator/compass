@@ -35,7 +35,8 @@ type EntityConverter interface {
 type repository struct {
 	singleGetter       repo.SingleGetter
 	singleGetterGlobal repo.SingleGetterGlobal
-	updater            repo.Updater
+	rtmWebhookUpdater  repo.Updater
+	appWebhookUpdater  repo.Updater
 	updaterGlobal      repo.UpdaterGlobal
 	creator            repo.Creator
 	globalCreator      repo.CreatorGlobal
@@ -53,7 +54,8 @@ func NewRepository(conv EntityConverter) *repository {
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Webhook, tableName, webhookColumns),
 		creator:            repo.NewCreator(tableName, webhookColumns),
 		globalCreator:      repo.NewCreatorGlobal(resource.Webhook, tableName, webhookColumns),
-		updater:            repo.NewUpdater(tableName, updatableColumns, []string{"id", "app_id"}),
+		rtmWebhookUpdater:  repo.NewUpdater(tableName, updatableColumns, []string{"id", "runtime_id"}),
+		appWebhookUpdater:  repo.NewUpdater(tableName, updatableColumns, []string{"id", "app_id"}),
 		updaterGlobal:      repo.NewUpdaterGlobal(resource.Webhook, tableName, updatableColumns, []string{"id", "app_template_id"}),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.Webhook, tableName),
 		deleter:            repo.NewDeleter(tableName),
@@ -178,7 +180,10 @@ func (r *repository) Update(ctx context.Context, tenant string, item *model.Webh
 	if item.ObjectType.GetResourceType() == resource.Webhook { // Global resource webhook
 		return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 	}
-	return r.updater.UpdateSingle(ctx, item.ObjectType.GetResourceType(), tenant, entity)
+	if item.ObjectType.GetResourceType() == resource.RuntimeWebhook {
+		return r.rtmWebhookUpdater.UpdateSingle(ctx, item.ObjectType.GetResourceType(), tenant, entity)
+	}
+	return r.appWebhookUpdater.UpdateSingle(ctx, item.ObjectType.GetResourceType(), tenant, entity)
 }
 
 // Delete missing godoc
