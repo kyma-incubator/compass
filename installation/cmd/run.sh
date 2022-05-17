@@ -14,7 +14,7 @@ source $SCRIPTS_DIR/prom-mtls-patch.sh
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 PATH_TO_VALUES="$CURRENT_DIR/../../chart/compass/values.yaml"
-PATH_TO_DIRECTOR_VALUES="$CURRENT_DIR/../../chart/compass/charts/director/values.yaml"
+PATH_TO_HYDRATOR_VALUES="$CURRENT_DIR/../../chart/compass/charts/hydrator/values.yaml"
 PATH_TO_COMPASS_OIDC_CONFIG_FILE="$HOME/.compass.yaml"
 MIGRATOR_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/migrator-job.yaml)
 UPDATE_EXPECTED_SCHEMA_VERSION_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/update-expected-schema-version-job.yaml)
@@ -112,7 +112,7 @@ function set_oidc_config() {
   yq -i ".global.cockpit.auth.idpHost = \"$1\"" "$PATH_TO_VALUES"
   yq -i ".global.cockpit.auth.clientID = \"$2\"" "$PATH_TO_VALUES"
   if [[ -n ${3}  ]]; then
-   yq -i ".adminGroupNames = \"$3\"" "$PATH_TO_DIRECTOR_VALUES"
+   yq -i ".adminGroupNames = \"$3\"" "$PATH_TO_HYDRATOR_VALUES"
   fi
 }
 
@@ -152,7 +152,7 @@ trap 'pkill -P $$' EXIT INT TERM
 if [[ -z ${OIDC_HOST} || -z ${OIDC_CLIENT_ID} ]]; then
   if [[ -f ${PATH_TO_COMPASS_OIDC_CONFIG_FILE} ]]; then
     echo -e "${YELLOW}OIDC configuration not provided. Configuration from default config file will be used.${NC}"
-    DEFAULT_OIDC_ADMIN_GROUPS="$(yq ".adminGroupNames" "$PATH_TO_DIRECTOR_VALUES")"
+    DEFAULT_OIDC_ADMIN_GROUPS="$(yq ".adminGroupNames" "$PATH_TO_HYDRATOR_VALUES")"
     OIDC_HOST=$(yq ".idpHost" "$PATH_TO_COMPASS_OIDC_CONFIG_FILE")
     OIDC_CLIENT_ID=$(yq ".clientID" "$PATH_TO_COMPASS_OIDC_CONFIG_FILE")
     OIDC_GROUPS=$(yq ".adminGroupNames" "$PATH_TO_COMPASS_OIDC_CONFIG_FILE")
@@ -162,7 +162,7 @@ if [[ -z ${OIDC_HOST} || -z ${OIDC_CLIENT_ID} ]]; then
     RESET_VALUES_YAML=false
   fi
 else
-  DEFAULT_OIDC_ADMIN_GROUPS="$(yq ".adminGroupNames" "$PATH_TO_DIRECTOR_VALUES")"
+  DEFAULT_OIDC_ADMIN_GROUPS="$(yq ".adminGroupNames" "$PATH_TO_HYDRATOR_VALUES")"
   if [[ -z ${OIDC_ADMIN_GROUP} ]]; then
     echo -e "${GREEN}Using provided OIDC host and client-id.${NC}"
     echo -e "${YELLOW}OIDC admin group was not provided. Will use default values.${NC}"
