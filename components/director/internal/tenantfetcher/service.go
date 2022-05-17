@@ -395,7 +395,7 @@ func (s SubaccountService) SyncTenants() error {
 }
 
 // SyncTenant fetches creation events for a subaccount and creates a subaccount tenant in case it doesn't exist
-func (s SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID string) error {
+func (s *SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID string) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -403,14 +403,12 @@ func (s SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID 
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	currentTenants, err := getCurrentTenants(ctx, s.tenantStorageService)
-	if err != nil {
-		return err
-	}
-
-	if _, ok := currentTenants[subaccountID]; ok {
+	_, err = s.tenantStorageService.GetTenantByExternalID(ctx, subaccountID)
+	if err == nil {
 		log.C(ctx).Infof("Subbaccount %s alredy exists in the database", subaccountID)
 		return nil
+	} else if err != nil && !apperrors.IsNotFoundError(err) {
+		return err
 	}
 
 	tenantToCreate, err := s.getSubaccountToCreate(subaccountID)
@@ -419,8 +417,13 @@ func (s SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID 
 	}
 	log.C(ctx).Infof("Got create event for provided subaccount %s", subaccountID)
 
+	parentTenantDetails, err := s.getParentDetailsForSubaccount(ctx, tenantToCreate)
+	if err != nil {
+		return err
+	}
+
 	var tenantsToCreate = []model.BusinessTenantMappingInput{*tenantToCreate}
-	if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, tenantToCreate.Region, s.providerName, chunkSizeForTenantOnDemand, s.tenantConverter); err != nil {
+	if err := createTenants(ctx, s.gqlClient, parentTenantDetails, tenantsToCreate, tenantToCreate.Region, s.providerName, chunkSizeForTenantOnDemand, s.tenantConverter); err != nil {
 		return err
 	}
 
@@ -562,6 +565,18 @@ func parents(currTenants map[string]string, eventsTenants []model.BusinessTenant
 	}
 
 	return dedupeTenants(parentsToCreate)
+}
+
+func (s *SubaccountOnDemandService) getParentDetailsForSubaccount(ctx context.Context, subaccount *model.BusinessTenantMappingInput) (map[string]string, error) {
+	parentTenantDetails := make(map[string]string)
+	parent, err := s.tenantStorageService.GetTenantByExternalID(ctx, subaccount.Parent)
+	if err == nil {
+		parentTenantDetails[parent.ExternalTenant] = parent.ID
+		return parentTenantDetails, nil
+	} else if err != nil && apperrors.IsNotFoundError(err) {
+		return parentTenantDetails, nil
+	}
+	return nil, err
 }
 
 func getTenantParentType(tenantType string) string {
