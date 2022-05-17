@@ -34,14 +34,6 @@ spec:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
     spec:
-      {{ if .Values.global.isLocalEnv }}
-      # HostAliases are used by Pod to resolve kyma.local domain
-      hostAliases:
-        - ip: {{ .Values.global.minikubeIP }}
-          hostnames:
-            # Used for calls to Director
-            - "{{ .Values.global.director.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}"
-      {{ end }}
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}

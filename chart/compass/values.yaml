@@ -803,6 +803,7 @@ global:
       name: "compass-director-migrations"
       namespace: "compass-system"
       migrationsPath: "/compass-migrations"
+      isLocalEnv: true
   http:
     client:
       skipSSLValidation: false
