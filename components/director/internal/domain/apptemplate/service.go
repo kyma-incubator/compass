@@ -109,7 +109,12 @@ func (s *service) CreateWithLabels(ctx context.Context, in model.ApplicationTemp
 		in.Labels[key] = val
 	}
 
-	return s.Create(ctx, in)
+	appTemplateId, err := s.Create(ctx, in)
+	if err != nil {
+		return "", errors.Wrapf(err, "while creating Application Template")
+	}
+
+	return appTemplateId, nil
 }
 
 // Get missing godoc
@@ -165,7 +170,7 @@ func (s *service) GetLabel(ctx context.Context, appTemplateID string, key string
 
 	label, ok := labels[key]
 	if !ok {
-		return nil, fmt.Errorf("label %s for application template with ID %s doesn't exist", key, appTemplateID)
+		return nil, errors.Errorf("label %s for application template with ID %s doesn't exist", key, appTemplateID)
 	}
 
 	return label, nil
