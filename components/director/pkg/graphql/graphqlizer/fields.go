@@ -426,7 +426,8 @@ func (fp *GqlFieldsProvider) ForRuntime(ctx ...FieldCtx) string {
 		metadata { creationTimestamp }
 		auths {%s}
 		runtimeContexts {%s}
-		eventingConfiguration { defaultURL }`, fp.ForSystemAuth(), fp.Page(fp.ForRuntimeContext())), ctx, []string{"Runtime.runtimeContext"})
+        webhooks {%s}
+		eventingConfiguration { defaultURL }`, fp.ForSystemAuth(), fp.Page(fp.ForRuntimeContext()), fp.ForWebhooks()), ctx, []string{"Runtime.runtimeContext"})
 }
 
 // ForRuntimeContext missing godoc
