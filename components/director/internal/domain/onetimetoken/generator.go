@@ -7,7 +7,7 @@ import (
 )
 
 // TokenGenerator missing godoc
-//go:generate mockery --name=TokenGenerator --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TokenGenerator --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TokenGenerator interface {
 	NewToken() (string, error)
 }

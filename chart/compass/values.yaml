@@ -97,34 +97,34 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2268"
+      version: "PR-2358"
     connectivity_adapter:
       dir:
-      version: "PR-2297"
+      version: "PR-2358"
     pairing_adapter:
       dir:
-      version: "PR-2297"
+      version: "PR-2358"
     director:
       dir:
       version: "PR-2322"
     hydrator:
       dir:
-      version: "PR-2268"
+      version: "PR-2358"
     gateway:
       dir:
-      version: "PR-2297"
+      version: "PR-2302"
     operations_controller:
       dir:
-      version: "PR-2297"
+      version: "PR-2358"
     ord_service:
       dir:
-      version: "PR-65"
+      version: "PR-67"
     schema_migrator:
       dir:
       version: "PR-2335"
     system_broker:
       dir:
-      version: "PR-2297"
+      version: "PR-2358"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -400,6 +400,7 @@ global:
     host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
     port: 4455
     timeout_ms: 120000
+    ns_adapter_timeout_ms: 3600000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
       internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
@@ -507,6 +508,7 @@ global:
       subdomainProperty: "subdomain"
       name: "provider"
       subscriptionProviderIdProperty: "subscriptionProviderIdProperty"
+      providerSubaccountIdProperty: "providerSubaccountIdProperty"
     server:
       fetchTenantEndpoint: "/v1/fetch/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
@@ -608,7 +610,7 @@ global:
     # can be put in the queue for processing before blocking. It is best for the queue to be about 2 times bigger than the parallellism
     queueSize: 100
     # fetchRequestTimeout - shows the timeout to wait for oauth token and for fetching systems (in one request) separately
-    fetchRequestTimeout: "15s"
+    fetchRequestTimeout: "30s"
     # directorRequestTimeout - graphql requests timeout to director
     directorRequestTimeout: "30s"
     dbPool:
@@ -632,7 +634,7 @@ global:
       tokenPath: "/cert/token"
       scopesClaim: "scopes"
       tenantHeaderName: "x-zid"
-      tokenRequestTimeout: 15s
+      tokenRequestTimeout: 30s
       skipSSLValidation: true
     secret:
       name: "compass-system-fetcher-secret"
@@ -762,6 +764,7 @@ global:
       providerSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd" # TestProviderSubaccount from our testing tenants
       consumerSubaccountID: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae" # randomly chosen
       consumerTenantID: "ba49f1aa-ddc1-43ff-943c-fe949857a34a" # randomly chosen
+      propagatedProviderSubaccountHeader: "X-Provider-Subaccount"
       externalClientCertTestSecretName: "external-client-certificate-test-secret"
       externalClientCertTestSecretNamespace: "compass-system"
       externalCertTestJobName: "external-certificate-rotation-test-job"

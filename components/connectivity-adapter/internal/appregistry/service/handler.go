@@ -16,7 +16,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DirectorClient interface {
 	CreateBundle(ctx context.Context, appID string, in graphql.BundleCreateInput) (string, error)
 	GetBundle(ctx context.Context, appID string, bundleID string) (graphql.BundleExt, error)
@@ -34,7 +34,7 @@ type DirectorClient interface {
 	SetApplicationLabel(ctx context.Context, appID string, label graphql.LabelInput) error
 }
 
-//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Converter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Converter interface {
 	DetailsToGraphQLCreateInput(deprecated model.ServiceDetails) (graphql.BundleCreateInput, error)
 	GraphQLCreateInputToUpdateInput(in graphql.BundleCreateInput) graphql.BundleUpdateInput
@@ -42,17 +42,17 @@ type Converter interface {
 	ServiceDetailsToService(in model.ServiceDetails, serviceID string) (model.Service, error)
 }
 
-//go:generate mockery --name=RequestContextProvider --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RequestContextProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RequestContextProvider interface {
 	ForRequest(r *http.Request) (RequestContext, error)
 }
 
-//go:generate mockery --name=Validator --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Validator --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Validator interface {
 	Validate(details model.ServiceDetails) apperrors.AppError
 }
 
-//go:generate mockery --name=AppLabeler --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=AppLabeler --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AppLabeler interface {
 	WriteServiceReference(appLabels graphql.Labels, serviceReference LegacyServiceReference) (graphql.LabelInput, error)
 	DeleteServiceReference(appLabels graphql.Labels, serviceID string) (graphql.LabelInput, error)

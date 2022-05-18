@@ -1,7 +1,7 @@
 package healthcheck
 
 // HealthCheckRepository missing godoc
-//go:generate mockery --name=HealthCheckRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=HealthCheckRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type HealthCheckRepository interface {
 }
 

@@ -23,7 +23,7 @@ type validationHydrator struct {
 }
 
 // DirectorClient missing godoc
-//go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DirectorClient interface {
 	GetSystemAuthByToken(ctx context.Context, token string) (*model.SystemAuth, error)
 	InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) error

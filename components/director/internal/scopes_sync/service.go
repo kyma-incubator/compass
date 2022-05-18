@@ -21,13 +21,13 @@ type SyncService interface {
 }
 
 // SystemAuthRepo missing godoc
-//go:generate mockery --name=SystemAuthRepo --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=SystemAuthRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemAuthRepo interface {
 	ListGlobalWithConditions(ctx context.Context, conditions repo.Conditions) ([]model.SystemAuth, error)
 }
 
 // OAuthService missing godoc
-//go:generate mockery --name=OAuthService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=OAuthService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OAuthService interface {
 	ListClients() ([]*models.OAuth2Client, error)
 	UpdateClient(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error

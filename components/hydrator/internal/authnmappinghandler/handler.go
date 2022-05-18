@@ -46,21 +46,21 @@ import (
 )
 
 // TokenData represents the authentication token
-//go:generate mockery --name=TokenData --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TokenData --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TokenData interface {
 	// Claims reads the Claims from the token into the specified struct
 	Claims(v interface{}) error
 }
 
 // TokenVerifier attempts to verify a token and returns it or an error if the verification was not successful
-//go:generate mockery --name=TokenVerifier --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TokenVerifier --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TokenVerifier interface {
 	// Verify verifies that the token is valid and returns a token if so, otherwise returns an error
 	Verify(ctx context.Context, token string) (TokenData, error)
 }
 
 // ReqDataParser parses request data
-//go:generate mockery --name=ReqDataParser --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ReqDataParser --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ReqDataParser interface {
 	Parse(req *http.Request) (oathkeeper.ReqData, error)
 }

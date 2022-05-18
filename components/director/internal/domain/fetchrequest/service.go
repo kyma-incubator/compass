@@ -32,7 +32,7 @@ type service struct {
 }
 
 // FetchRequestRepository missing godoc
-//go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestRepository interface {
 	Update(ctx context.Context, tenant string, item *model.FetchRequest) error
 }

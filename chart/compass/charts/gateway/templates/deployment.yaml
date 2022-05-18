@@ -62,6 +62,16 @@ spec:
               value: {{.Values.global.log.format | quote }}
             - name: APP_AUDITLOG_ENABLED
               value: "{{ .Values.gateway.auditlog.enabled }}"
+            - name: APP_AUDIT_LOG_MSG_BODY_SIZE_LIMIT
+              value: "{{ .Values.auditLog.maxBodySizeBytes }}"
+            - name: APP_METRICS_SERVER_TIMEOUT
+              value: {{ .Values.timeouts.metricsServer }}
+            - name: APP_NS_ADAPTER_TIMEOUT
+              value: {{ .Values.timeouts.nsAdapter }}
+            - name: APP_DEFAULT_HANDLERS_TIMEOUT
+              value: {{ .Values.timeouts.handlers }}
+            - name: APP_READ_REQUEST_HEADERS_TIMEOUT
+              value: {{ .Values.timeouts.requestHeaders }}
             {{ if .Values.gateway.auditlog.enabled }}
             {{ if eq .Values.gateway.auditlog.authMode "basic"}}
             - name: APP_AUDITLOG_AUTH_MODE

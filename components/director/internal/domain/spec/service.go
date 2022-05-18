@@ -13,7 +13,7 @@ import (
 )
 
 // SpecRepository missing godoc
-//go:generate mockery --name=SpecRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=SpecRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SpecRepository interface {
 	Create(ctx context.Context, tenant string, item *model.Spec) error
 	GetByID(ctx context.Context, tenantID string, id string, objectType model.SpecReferenceObjectType) (*model.Spec, error)
@@ -26,7 +26,7 @@ type SpecRepository interface {
 }
 
 // FetchRequestRepository missing godoc
-//go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=FetchRequestRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestRepository interface {
 	Create(ctx context.Context, tenant string, item *model.FetchRequest) error
 	GetByReferenceObjectID(ctx context.Context, tenant string, objectType model.FetchRequestReferenceObjectType, objectID string) (*model.FetchRequest, error)
@@ -35,13 +35,13 @@ type FetchRequestRepository interface {
 }
 
 // UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
 
 // FetchRequestService missing godoc
-//go:generate mockery --name=FetchRequestService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=FetchRequestService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestService interface {
 	HandleSpec(ctx context.Context, fr *model.FetchRequest) *string
 }

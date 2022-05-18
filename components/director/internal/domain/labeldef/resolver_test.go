@@ -2,6 +2,8 @@ package labeldef_test
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -24,71 +26,207 @@ import (
 )
 
 func TestCreateLabelDefinition(t *testing.T) {
+	scenariosSchema := model.ScenariosSchema
+	var scenarioSchemaInt interface{} = scenariosSchema
+
 	labelDefInput := graphql.LabelDefinitionInput{
-		Key: "scenarios",
+		Key:    "scenarios",
+		Schema: getJSONSchemaFromSchema(t, &scenarioSchemaInt),
 	}
 	tnt := "tenant"
+	storedModel := model.LabelDefinition{Key: model.ScenariosKey, Tenant: tnt, ID: fixUUID(), Schema: &scenarioSchemaInt}
 	externalTnt := "external-tenant"
 	testErr := errors.New("test error")
+	notFoundError := apperrors.NewNotFoundErrorWithMessage(resource.LabelDefinition, fixUUID(), "test-error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	t.Run("successfully created Label Definition", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatSucceeds()
+
 		mockService := &automock.Service{}
 		defer mockService.AssertExpectations(t)
-		mockService.On("Create", contextThatHasTenant(tnt), model.LabelDefinition{Key: "scenarios", Tenant: tnt}).
-			Return(model.LabelDefinition{Key: "scenarios", Tenant: tnt, ID: "id"}, nil)
-
 		mockConverter := &automock.ModelConverter{}
 		defer mockConverter.AssertExpectations(t)
+		mockFormationsService := &automock.FormationService{}
+		defer mockFormationsService.AssertExpectations(t)
+
 		mockConverter.On("FromGraphQL", labelDefInput, tnt).Return(model.LabelDefinition{
-			Key:    "scenarios",
+			Key:    model.ScenariosKey,
 			Tenant: tnt,
+			Schema: &scenarioSchemaInt,
 		}, nil)
-		mockConverter.On("ToGraphQL", model.LabelDefinition{Key: "scenarios", Tenant: tnt, ID: "id"}).Return(graphql.LabelDefinition{
-			Key: "scenarios",
+
+		defer mockService.AssertExpectations(t)
+		mockService.On("GetWithoutCreating",
+			contextThatHasTenant(tnt),
+			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
+
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, nil)
+
+		mockService.On("Get",
+			contextThatHasTenant(tnt),
+			tnt, model.ScenariosKey).Return(&storedModel, nil).Once()
+
+		mockConverter.On("ToGraphQL", storedModel).Return(graphql.LabelDefinition{
+			Key:    model.ScenariosKey,
+			Schema: getJSONSchemaFromSchema(t, &scenarioSchemaInt),
 		}, nil)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := labeldef.NewResolver(transact, mockService, mockConverter)
+		sut := labeldef.NewResolver(transact, mockService, mockFormationsService, mockConverter)
 		// WHEN
 		actual, err := sut.CreateLabelDefinition(ctx, labelDefInput)
 		// THEN
 		require.NoError(t, err)
 		persist.AssertExpectations(t)
 		transact.AssertExpectations(t)
-		assert.Equal(t, "scenarios", actual.Key)
+		assert.Equal(t, model.ScenariosKey, actual.Key)
 	})
 
 	t.Run("got error on converting to graphql", func(t *testing.T) {
 		// GIVEN
-		ldModel := model.LabelDefinition{Key: "scenarios", Tenant: tnt, ID: "id"}
 		persist, transact := txGen.ThatDoesntExpectCommit()
 		mockService := &automock.Service{}
 		defer mockService.AssertExpectations(t)
-		mockService.On("Create", contextThatHasTenant(tnt), model.LabelDefinition{Key: "scenarios", Tenant: tnt}).
-			Return(ldModel, nil)
+
+		mockFormationsService := &automock.FormationService{}
+		defer mockFormationsService.AssertExpectations(t)
+		mockService.On("GetWithoutCreating",
+			contextThatHasTenant(tnt),
+			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
+
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, nil)
+
+		mockService.On("Get",
+			contextThatHasTenant(tnt),
+			tnt, model.ScenariosKey).Return(&storedModel, nil).Once()
 
 		mockConverter := &automock.ModelConverter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("FromGraphQL", labelDefInput, tnt).Return(model.LabelDefinition{Key: "scenarios", Tenant: tnt}, nil)
-		mockConverter.On("ToGraphQL", ldModel).Return(graphql.LabelDefinition{}, testErr)
+		mockConverter.On("FromGraphQL", labelDefInput, tnt).Return(model.LabelDefinition{
+			Key:    model.ScenariosKey,
+			Tenant: tnt,
+			Schema: &scenarioSchemaInt,
+		}, nil)
+		mockConverter.On("ToGraphQL", storedModel).Return(graphql.LabelDefinition{}, notFoundError)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := labeldef.NewResolver(transact, mockService, mockConverter)
+		sut := labeldef.NewResolver(transact, mockService, mockFormationsService, mockConverter)
 		// WHEN
 		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
 		// THEN
 		require.Error(t, err)
-		require.EqualError(t, err, testErr.Error())
+		require.EqualError(t, err, notFoundError.Error())
+		persist.AssertExpectations(t)
+		transact.AssertExpectations(t)
+	})
+
+	t.Run("got error different from not found while getting label definition", func(t *testing.T) {
+		// GIVEN
+		persist, transact := txGen.ThatDoesntExpectCommit()
+
+		mockConverter := &automock.ModelConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromGraphQL", labelDefInput, tnt).Return(model.LabelDefinition{
+			Key:    model.ScenariosKey,
+			Tenant: tnt,
+			Schema: &scenarioSchemaInt,
+		}, nil)
+
+		mockService := &automock.Service{}
+		defer mockService.AssertExpectations(t)
+		mockService.On("GetWithoutCreating",
+			contextThatHasTenant(tnt),
+			tnt, model.ScenariosKey).Return(nil, errors.New("db error")).Once()
+
+		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
+		sut := labeldef.NewResolver(transact, mockService, nil, mockConverter)
+
+		// WHEN
+		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
+		// THEN
+		require.Error(t, err)
+		require.EqualError(t, err, "while getting label definition: db error")
+		persist.AssertExpectations(t)
+		transact.AssertExpectations(t)
+	})
+
+	t.Run("got error during formation creating", func(t *testing.T) {
+		// GIVEN
+		persist, transact := txGen.ThatDoesntExpectCommit()
+
+		mockService := &automock.Service{}
+		defer mockService.AssertExpectations(t)
+		mockConverter := &automock.ModelConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockFormationsService := &automock.FormationService{}
+		defer mockFormationsService.AssertExpectations(t)
+
+		mockConverter.On("FromGraphQL", labelDefInput, tnt).Return(model.LabelDefinition{
+			Key:    model.ScenariosKey,
+			Tenant: tnt,
+			Schema: &scenarioSchemaInt,
+		}, nil)
+
+		defer mockService.AssertExpectations(t)
+		mockService.On("GetWithoutCreating",
+			contextThatHasTenant(tnt),
+			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
+
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, notFoundError)
+
+		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
+		sut := labeldef.NewResolver(transact, mockService, mockFormationsService, mockConverter)
+		// WHEN
+		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
+		require.Error(t, err)
+		require.EqualError(t, err, fmt.Sprintf("while creating formation with name %s: %s", "DEFAULT", notFoundError.Error()))
+		persist.AssertExpectations(t)
+		transact.AssertExpectations(t)
+	})
+
+	t.Run("got error during getting updated label definition", func(t *testing.T) {
+		// GIVEN
+		persist, transact := txGen.ThatDoesntExpectCommit()
+
+		mockService := &automock.Service{}
+		defer mockService.AssertExpectations(t)
+		mockConverter := &automock.ModelConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockFormationsService := &automock.FormationService{}
+		defer mockFormationsService.AssertExpectations(t)
+
+		mockConverter.On("FromGraphQL", labelDefInput, tnt).Return(model.LabelDefinition{
+			Key:    model.ScenariosKey,
+			Tenant: tnt,
+			Schema: &scenarioSchemaInt,
+		}, nil)
+
+		defer mockService.AssertExpectations(t)
+		mockService.On("GetWithoutCreating",
+			contextThatHasTenant(tnt),
+			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
+
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, nil)
+
+		mockService.On("Get",
+			contextThatHasTenant(tnt),
+			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
+
+		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
+		sut := labeldef.NewResolver(transact, mockService, mockFormationsService, mockConverter)
+		// WHEN
+		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
+		require.Error(t, err)
+		require.EqualError(t, err, fmt.Sprintf("while getting label definition: %s", notFoundError.Error()))
 		persist.AssertExpectations(t)
 		transact.AssertExpectations(t)
 	})
 
 	t.Run("got error when missing tenant in context", func(t *testing.T) {
 		// GIVEN
-		sut := labeldef.NewResolver(nil, nil, nil)
+		sut := labeldef.NewResolver(nil, nil, nil, nil)
 		// WHEN
 		_, err := sut.CreateLabelDefinition(context.TODO(), graphql.LabelDefinitionInput{})
 		// THEN
@@ -102,11 +240,11 @@ func TestCreateLabelDefinition(t *testing.T) {
 
 		mockConverter := &automock.ModelConverter{}
 		defer mockConverter.AssertExpectations(t)
-		sut := labeldef.NewResolver(transact, nil, mockConverter)
+		sut := labeldef.NewResolver(transact, nil, nil, mockConverter)
 		// WHEN
 		_, err := sut.CreateLabelDefinition(ctx, graphql.LabelDefinitionInput{Key: "scenarios"})
 		// THEN
-		require.EqualError(t, err, "while starting transaction: test error")
+		require.EqualError(t, err, fmt.Sprintf("while starting transaction: %s", testErr.Error()))
 		transact.AssertExpectations(t)
 		persist.AssertExpectations(t)
 	})
@@ -116,24 +254,26 @@ func TestCreateLabelDefinition(t *testing.T) {
 		persist, transact := txGen.ThatDoesntExpectCommit()
 		mockService := &automock.Service{}
 		defer mockService.AssertExpectations(t)
-		mockService.On("Create", mock.Anything, model.LabelDefinition{Key: "scenarios", Tenant: tnt}).
-			Return(model.LabelDefinition{}, errors.New("some error"))
+		mockService.On("GetWithoutCreating",
+			contextThatHasTenant(tnt),
+			tnt, model.ScenariosKey).Return(&storedModel, nil).Once()
 
 		mockConverter := &automock.ModelConverter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("FromGraphQL", labelDefInput, tnt).Return(model.LabelDefinition{
-			Key:    "scenarios",
+			Key:    model.ScenariosKey,
 			Tenant: tnt,
+			Schema: &scenarioSchemaInt,
 		}, nil)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := labeldef.NewResolver(transact, mockService, mockConverter)
+		sut := labeldef.NewResolver(transact, mockService, nil, mockConverter)
 		// WHEN
 		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
 		// THEN
 		transact.AssertExpectations(t)
 		persist.AssertExpectations(t)
-		require.EqualError(t, err, "while creating label definition: some error")
+		require.EqualError(t, err, "Object is not unique [object=labelDefinition]")
 	})
 
 	t.Run("got error on converting to model", func(t *testing.T) {
@@ -144,7 +284,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 		mockConverter.On("FromGraphQL", labelDefInput, tnt).Return(model.LabelDefinition{}, errors.New("json schema is not valid"))
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := labeldef.NewResolver(transact, nil, mockConverter)
+		sut := labeldef.NewResolver(transact, nil, nil, mockConverter)
 		// WHEN
 		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
 		// THEN
@@ -158,25 +298,39 @@ func TestCreateLabelDefinition(t *testing.T) {
 		persist, transact := txGen.ThatFailsOnCommit()
 		mockService := &automock.Service{}
 		defer mockService.AssertExpectations(t)
-		mockService.On("Create", contextThatHasTenant(tnt), model.LabelDefinition{Key: "scenarios", Tenant: tnt}).
-			Return(model.LabelDefinition{Key: "scenarios", Tenant: tnt, ID: "id"}, nil)
-
 		mockConverter := &automock.ModelConverter{}
 		defer mockConverter.AssertExpectations(t)
+		mockFormationsService := &automock.FormationService{}
+		defer mockFormationsService.AssertExpectations(t)
+
 		mockConverter.On("FromGraphQL", labelDefInput, tnt).Return(model.LabelDefinition{
-			Key:    "scenarios",
+			Key:    model.ScenariosKey,
 			Tenant: tnt,
+			Schema: &scenarioSchemaInt,
 		}, nil)
-		mockConverter.On("ToGraphQL", model.LabelDefinition{Key: "scenarios", Tenant: tnt, ID: "id"}).Return(graphql.LabelDefinition{
-			Key: "scenarios",
+
+		defer mockService.AssertExpectations(t)
+		mockService.On("GetWithoutCreating",
+			contextThatHasTenant(tnt),
+			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
+
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, nil)
+
+		mockService.On("Get",
+			contextThatHasTenant(tnt),
+			tnt, model.ScenariosKey).Return(&storedModel, nil).Once()
+
+		mockConverter.On("ToGraphQL", storedModel).Return(graphql.LabelDefinition{
+			Key:    model.ScenariosKey,
+			Schema: getJSONSchemaFromSchema(t, &scenarioSchemaInt),
 		}, nil)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := labeldef.NewResolver(transact, mockService, mockConverter)
+		sut := labeldef.NewResolver(transact, mockService, mockFormationsService, mockConverter)
 		// WHEN
 		_, err := sut.CreateLabelDefinition(ctx, labelDefInput)
 		// THEN
-		require.EqualError(t, err, "while committing transaction: test error")
+		require.EqualError(t, err, fmt.Sprintf("while committing transaction: %s", testErr.Error()))
 		transact.AssertExpectations(t)
 		persist.AssertExpectations(t)
 	})
@@ -213,7 +367,7 @@ func TestQueryLabelDefinitions(t *testing.T) {
 			Key: "key2",
 		}, nil)
 
-		sut := labeldef.NewResolver(transact, mockService, mockConverter)
+		sut := labeldef.NewResolver(transact, mockService, nil, mockConverter)
 		// WHEN
 		actual, err := sut.LabelDefinitions(ctx)
 		// THEN
@@ -242,7 +396,7 @@ func TestQueryLabelDefinitions(t *testing.T) {
 		mockConverter.On("ToGraphQL", givenModels[0]).Return(graphql.LabelDefinition{Key: "key1"}, nil)
 		mockConverter.On("ToGraphQL", givenModels[1]).Return(graphql.LabelDefinition{}, testErr)
 
-		sut := labeldef.NewResolver(transact, mockService, mockConverter)
+		sut := labeldef.NewResolver(transact, mockService, nil, mockConverter)
 		// WHEN
 		_, err := sut.LabelDefinitions(ctx)
 		// THEN
@@ -262,7 +416,7 @@ func TestQueryLabelDefinitions(t *testing.T) {
 			contextThatHasTenant(tnt),
 			tnt).Return(nil, nil)
 
-		sut := labeldef.NewResolver(transact, mockService, nil)
+		sut := labeldef.NewResolver(transact, mockService, nil, nil)
 		// WHEN
 		actual, err := sut.LabelDefinitions(ctx)
 		// THEN
@@ -274,7 +428,7 @@ func TestQueryLabelDefinitions(t *testing.T) {
 
 	t.Run("got error when missing tenant in context", func(t *testing.T) {
 		// GIVEN
-		sut := labeldef.NewResolver(nil, nil, nil)
+		sut := labeldef.NewResolver(nil, nil, nil, nil)
 		// WHEN
 		_, err := sut.LabelDefinitions(context.TODO())
 		// THEN
@@ -285,7 +439,7 @@ func TestQueryLabelDefinitions(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatFailsOnBegin()
 		ctx := tenant.SaveToContext(context.TODO(), "tenant", "external-tenant")
-		sut := labeldef.NewResolver(transact, nil, nil)
+		sut := labeldef.NewResolver(transact, nil, nil, nil)
 		// WHEN
 		_, err := sut.LabelDefinitions(ctx)
 		// THEN
@@ -304,7 +458,7 @@ func TestQueryLabelDefinitions(t *testing.T) {
 		mockService.On("List", contextThatHasTenant(tnt), tnt).
 			Return(nil, testErr)
 
-		sut := labeldef.NewResolver(transact, mockService, nil)
+		sut := labeldef.NewResolver(transact, mockService, nil, nil)
 		// WHEN
 		_, err := sut.LabelDefinitions(ctx)
 		// THEN
@@ -322,7 +476,7 @@ func TestQueryLabelDefinitions(t *testing.T) {
 		defer mockService.AssertExpectations(t)
 		mockService.On("List", contextThatHasTenant(tnt), tnt).Return(nil, nil)
 
-		sut := labeldef.NewResolver(transact, mockService, nil)
+		sut := labeldef.NewResolver(transact, mockService, nil, nil)
 		// WHEN
 		_, err := sut.LabelDefinitions(ctx)
 		// THEN
@@ -367,7 +521,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 			Key: "key",
 		}, nil)
 
-		sut := labeldef.NewResolver(mockTransactioner, mockService, mockConverter)
+		sut := labeldef.NewResolver(mockTransactioner, mockService, nil, mockConverter)
 		// WHEN
 		actual, err := sut.LabelDefinition(ctx, "key")
 		// THEN
@@ -390,7 +544,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToGraphQL", *givenModel).Return(graphql.LabelDefinition{}, testErr)
 
-		sut := labeldef.NewResolver(transact, mockService, mockConverter)
+		sut := labeldef.NewResolver(transact, mockService, nil, mockConverter)
 		// WHEN
 		_, err := sut.LabelDefinition(ctx, "key")
 		// THEN
@@ -419,7 +573,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 			contextThatHasTenant(tnt),
 			tnt, "key").Return(nil, apperrors.NewNotFoundError(resource.LabelDefinition, ""))
 
-		sut := labeldef.NewResolver(mockTransactioner, mockService, nil)
+		sut := labeldef.NewResolver(mockTransactioner, mockService, nil, nil)
 		// WHEN
 		_, err := sut.LabelDefinition(ctx, "key")
 		// THEN
@@ -442,7 +596,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 		defer mockService.AssertExpectations(t)
 		mockService.On("Get", mock.Anything, mock.Anything, mock.Anything).Return(nil, errors.New("error from service"))
 
-		sut := labeldef.NewResolver(mockTransactioner, mockService, nil)
+		sut := labeldef.NewResolver(mockTransactioner, mockService, nil, nil)
 		// WHEN
 		_, err := sut.LabelDefinition(ctx, "key")
 		// THEN
@@ -451,7 +605,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 
 	t.Run("got error when missing tenant in context", func(t *testing.T) {
 		// GIVEN
-		sut := labeldef.NewResolver(nil, nil, nil)
+		sut := labeldef.NewResolver(nil, nil, nil, nil)
 		// WHEN
 		_, err := sut.LabelDefinition(context.TODO(), "anything")
 		// THEN
@@ -463,7 +617,7 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 		mockTransactioner := getInvalidMockTransactioner()
 		defer mockTransactioner.AssertExpectations(t)
 		ctx := tenant.SaveToContext(context.TODO(), "tenant", "external-tenant")
-		sut := labeldef.NewResolver(mockTransactioner, nil, nil)
+		sut := labeldef.NewResolver(mockTransactioner, nil, nil, nil)
 		// WHEN
 		_, err := sut.LabelDefinition(ctx, "anything")
 		// THEN
@@ -489,247 +643,9 @@ func TestQueryGivenLabelDefinition(t *testing.T) {
 			contextThatHasTenant(tnt),
 			tnt, "key").Return(nil, nil)
 
-		sut := labeldef.NewResolver(mockTransactioner, mockService, nil)
+		sut := labeldef.NewResolver(mockTransactioner, mockService, nil, nil)
 		// WHEN
 		_, err := sut.LabelDefinition(ctx, "key")
-		// THEN
-		require.EqualError(t, err, "while committing transaction: commit errror")
-	})
-}
-
-func TestResolver_DeleteLabelDefinition(t *testing.T) {
-	tnt := "tenant"
-	externalTnt := "external-tenant"
-	testErr := errors.New("test error")
-	txGen := txtest.NewTransactionContextGenerator(testErr)
-
-	t.Run("success", func(t *testing.T) {
-		// GIVEN
-		persist, transact := txGen.ThatSucceeds()
-
-		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		givenModel := &model.LabelDefinition{
-			ID:     "id",
-			Key:    "key",
-			Tenant: tnt,
-		}
-		deleteRelatedLabels := true
-
-		mockService := &automock.Service{}
-		defer mockService.AssertExpectations(t)
-		mockService.On("Get",
-			contextThatHasTenant(tnt),
-			tnt, givenModel.Key).Return(givenModel, nil)
-		mockService.On("Delete", contextThatHasTenant(tnt), tnt, givenModel.Key, deleteRelatedLabels).Return(nil).Once()
-
-		mockConverter := &automock.ModelConverter{}
-		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToGraphQL", *givenModel).Return(graphql.LabelDefinition{
-			Key: givenModel.Key,
-		}, nil)
-
-		sut := labeldef.NewResolver(transact, mockService, mockConverter)
-		// WHEN
-		actual, err := sut.DeleteLabelDefinition(ctx, givenModel.Key, &deleteRelatedLabels)
-		// THEN
-		require.NoError(t, err)
-		assert.Equal(t, "key", actual.Key)
-		assert.Nil(t, actual.Schema)
-		transact.AssertExpectations(t)
-		persist.AssertExpectations(t)
-	})
-
-	t.Run("error when conversion to graphql failed", func(t *testing.T) {
-		// GIVEN
-		persist, transact := txGen.ThatDoesntExpectCommit()
-
-		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		givenModel := &model.LabelDefinition{
-			ID:     "id",
-			Key:    "key",
-			Tenant: tnt,
-		}
-		deleteRelatedLabels := true
-
-		mockService := &automock.Service{}
-		defer mockService.AssertExpectations(t)
-		mockService.On("Get",
-			contextThatHasTenant(tnt),
-			tnt, givenModel.Key).Return(givenModel, nil)
-		mockService.On("Delete", contextThatHasTenant(tnt), tnt, givenModel.Key, deleteRelatedLabels).Return(nil).Once()
-
-		mockConverter := &automock.ModelConverter{}
-		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToGraphQL", *givenModel).Return(graphql.LabelDefinition{}, testErr)
-
-		sut := labeldef.NewResolver(transact, mockService, mockConverter)
-		// WHEN
-		_, err := sut.DeleteLabelDefinition(ctx, givenModel.Key, &deleteRelatedLabels)
-		// THEN
-		require.Error(t, err)
-		transact.AssertExpectations(t)
-		persist.AssertExpectations(t)
-	})
-
-	t.Run("error when get failed", func(t *testing.T) {
-		// GIVEN
-		mockPersistanceCtx := &pautomock.PersistenceTx{}
-		defer mockPersistanceCtx.AssertExpectations(t)
-
-		mockTransactioner := &pautomock.Transactioner{}
-		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
-		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything, mock.Anything).Return(true)
-		defer mockTransactioner.AssertExpectations(t)
-
-		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		givenModel := &model.LabelDefinition{
-			ID:     "id",
-			Key:    "key",
-			Tenant: tnt,
-		}
-		deleteRelatedLabels := true
-
-		mockService := &automock.Service{}
-		defer mockService.AssertExpectations(t)
-		mockService.On("Get",
-			contextThatHasTenant(tnt),
-			tnt, givenModel.Key).Return(nil, errors.New("test"))
-
-		mockConverter := &automock.ModelConverter{}
-		defer mockConverter.AssertExpectations(t)
-
-		sut := labeldef.NewResolver(mockTransactioner, mockService, mockConverter)
-		// WHEN
-		_, err := sut.DeleteLabelDefinition(ctx, givenModel.Key, &deleteRelatedLabels)
-		// THEN
-		require.Error(t, err)
-	})
-
-	t.Run("error when label definition not found", func(t *testing.T) {
-		// GIVEN
-		mockPersistanceCtx := &pautomock.PersistenceTx{}
-		defer mockPersistanceCtx.AssertExpectations(t)
-
-		mockTransactioner := &pautomock.Transactioner{}
-		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
-		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything, mock.Anything).Return(true)
-		defer mockTransactioner.AssertExpectations(t)
-
-		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		givenModel := &model.LabelDefinition{
-			ID:     "id",
-			Key:    "key",
-			Tenant: tnt,
-		}
-		deleteRelatedLabels := true
-
-		mockService := &automock.Service{}
-		defer mockService.AssertExpectations(t)
-		mockService.On("Get",
-			contextThatHasTenant(tnt),
-			tnt, givenModel.Key).Return(nil, nil)
-
-		mockConverter := &automock.ModelConverter{}
-		defer mockConverter.AssertExpectations(t)
-
-		sut := labeldef.NewResolver(mockTransactioner, mockService, mockConverter)
-		// WHEN
-		_, err := sut.DeleteLabelDefinition(ctx, givenModel.Key, &deleteRelatedLabels)
-		// THEN
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "not found")
-	})
-
-	t.Run("error when label definition delete failed", func(t *testing.T) {
-		// GIVEN
-		mockPersistanceCtx := &pautomock.PersistenceTx{}
-		defer mockPersistanceCtx.AssertExpectations(t)
-
-		mockTransactioner := &pautomock.Transactioner{}
-		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
-		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything, mock.Anything).Return(true)
-		defer mockTransactioner.AssertExpectations(t)
-
-		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		givenModel := &model.LabelDefinition{
-			ID:     "id",
-			Key:    "key",
-			Tenant: tnt,
-		}
-		deleteRelatedLabels := true
-
-		mockService := &automock.Service{}
-		defer mockService.AssertExpectations(t)
-		mockService.On("Get",
-			contextThatHasTenant(tnt),
-			tnt, givenModel.Key).Return(givenModel, nil)
-		mockService.On("Delete", contextThatHasTenant(tnt), tnt, givenModel.Key, deleteRelatedLabels).Return(errors.New("test")).Once()
-
-		sut := labeldef.NewResolver(mockTransactioner, mockService, nil)
-		// WHEN
-		_, err := sut.DeleteLabelDefinition(ctx, givenModel.Key, &deleteRelatedLabels)
-		// THEN
-		require.Error(t, err)
-	})
-
-	t.Run("got error when missing tenant in context", func(t *testing.T) {
-		// GIVEN
-		deleteRelatedLabels := true
-		sut := labeldef.NewResolver(nil, nil, nil)
-		// WHEN
-		_, err := sut.DeleteLabelDefinition(context.TODO(), "test", &deleteRelatedLabels)
-		// THEN
-		require.EqualError(t, err, "cannot read tenant from context")
-	})
-
-	t.Run("got error on starting transaction", func(t *testing.T) {
-		// GIVEN
-		mockTransactioner := getInvalidMockTransactioner()
-		defer mockTransactioner.AssertExpectations(t)
-		ctx := tenant.SaveToContext(context.TODO(), "tenant", "external-tenant")
-		deleteRelatedLabels := true
-		sut := labeldef.NewResolver(mockTransactioner, nil, nil)
-		// WHEN
-		_, err := sut.DeleteLabelDefinition(ctx, "test", &deleteRelatedLabels)
-		// THEN
-		require.EqualError(t, err, "while starting transaction: some error")
-	})
-
-	t.Run("got error on committing transaction", func(t *testing.T) {
-		// GIVEN
-		mockPersistanceCtx := &pautomock.PersistenceTx{}
-		defer mockPersistanceCtx.AssertExpectations(t)
-		mockPersistanceCtx.On("Commit").Return(errors.New("commit errror"))
-
-		mockTransactioner := &pautomock.Transactioner{}
-		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
-		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything, mock.Anything).Return(true)
-		defer mockTransactioner.AssertExpectations(t)
-
-		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		givenModel := &model.LabelDefinition{
-			ID:     "id",
-			Key:    "key",
-			Tenant: tnt,
-		}
-		deleteRelatedLabels := true
-
-		mockService := &automock.Service{}
-		defer mockService.AssertExpectations(t)
-		mockService.On("Get",
-			contextThatHasTenant(tnt),
-			tnt, givenModel.Key).Return(givenModel, nil)
-		mockService.On("Delete", contextThatHasTenant(tnt), tnt, givenModel.Key, deleteRelatedLabels).Return(nil).Once()
-
-		mockConverter := &automock.ModelConverter{}
-		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToGraphQL", *givenModel).Return(graphql.LabelDefinition{
-			Key: givenModel.Key,
-		}, nil)
-
-		sut := labeldef.NewResolver(mockTransactioner, mockService, mockConverter)
-		// WHEN
-		_, err := sut.DeleteLabelDefinition(ctx, givenModel.Key, &deleteRelatedLabels)
 		// THEN
 		require.EqualError(t, err, "while committing transaction: commit errror")
 	})
@@ -738,17 +654,30 @@ func TestResolver_DeleteLabelDefinition(t *testing.T) {
 func TestUpdateLabelDefinition(t *testing.T) {
 	tnt := "tenant"
 	externalTnt := "external-tenant"
+	desiredSchema := getScenarioSchemaWithFormations([]string{"DEFAULT", "additional-1"})
+	var desiredSchemaInt interface{} = desiredSchema
+	initialSchema := getScenarioSchemaWithFormations([]string{"DEFAULT", "initial-1"})
+	var initialSchemaInt interface{} = initialSchema
+
 	gqlLabelDefinitionInput := graphql.LabelDefinitionInput{
-		Key:    "key",
-		Schema: fixBasicInputSchema(),
+		Key:    model.ScenariosKey,
+		Schema: getJSONSchemaFromSchema(t, &desiredSchemaInt),
+	}
+	gqlLabelDefinition := model.LabelDefinition{
+		ID:     fixUUID(),
+		Tenant: tnt,
+		Key:    model.ScenariosKey,
+		Schema: &desiredSchemaInt,
 	}
 	modelLabelDefinition := model.LabelDefinition{
-		Key:    "key",
-		Schema: fixBasicSchema(t),
+		ID:     fixUUID(),
+		Tenant: tnt,
+		Key:    model.ScenariosKey,
+		Schema: &initialSchemaInt,
 	}
 	updatedGQLLabelDefinition := graphql.LabelDefinition{
-		Key:    "key",
-		Schema: fixBasicInputSchema(),
+		Key:    model.ScenariosKey,
+		Schema: getJSONSchemaFromSchema(t, &desiredSchemaInt),
 	}
 	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -766,22 +695,27 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockConverter := &automock.ModelConverter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("FromGraphQL", gqlLabelDefinitionInput, tnt).Return(modelLabelDefinition, nil)
-		mockConverter.On("ToGraphQL", modelLabelDefinition).Return(updatedGQLLabelDefinition, nil)
+		mockConverter.On("FromGraphQL", gqlLabelDefinitionInput, tnt).Return(gqlLabelDefinition, nil)
+		mockConverter.On("ToGraphQL", gqlLabelDefinition).Return(updatedGQLLabelDefinition, nil)
+
+		mockFormationsService := &automock.FormationService{}
+		defer mockFormationsService.AssertExpectations(t)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "additional-1"}).Return(nil, nil)
+		mockFormationsService.On("DeleteFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "initial-1"}).Return(nil, nil)
 
 		mockService := &automock.Service{}
 		defer mockService.AssertExpectations(t)
-		mockService.On("Update", contextThatHasTenant(tnt), modelLabelDefinition).Return(nil)
 		mockService.On("Get", contextThatHasTenant(tnt), tnt, modelLabelDefinition.Key).Return(&modelLabelDefinition, nil).Once()
+		mockService.On("Get", contextThatHasTenant(tnt), tnt, modelLabelDefinition.Key).Return(&gqlLabelDefinition, nil).Once()
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-		sut := labeldef.NewResolver(mockTransactioner, mockService, mockConverter)
+		sut := labeldef.NewResolver(mockTransactioner, mockService, mockFormationsService, mockConverter)
 		// WHEN
 		actual, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
 		// THEN
 		require.NoError(t, err)
-		assert.Equal(t, "key", actual.Key)
+		assert.Equal(t, model.ScenariosKey, actual.Key)
 	})
 
 	t.Run("got error when convert to graphql failed", func(t *testing.T) {
@@ -790,17 +724,22 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockConverter := &automock.ModelConverter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("FromGraphQL", gqlLabelDefinitionInput, tnt).Return(modelLabelDefinition, nil)
-		mockConverter.On("ToGraphQL", modelLabelDefinition).Return(graphql.LabelDefinition{}, testErr)
+		mockConverter.On("FromGraphQL", gqlLabelDefinitionInput, tnt).Return(gqlLabelDefinition, nil)
+		mockConverter.On("ToGraphQL", gqlLabelDefinition).Return(graphql.LabelDefinition{}, testErr)
+
+		mockFormationsService := &automock.FormationService{}
+		defer mockFormationsService.AssertExpectations(t)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "additional-1"}).Return(nil, nil)
+		mockFormationsService.On("DeleteFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "initial-1"}).Return(nil, nil)
 
 		mockService := &automock.Service{}
 		defer mockService.AssertExpectations(t)
-		mockService.On("Update", contextThatHasTenant(tnt), modelLabelDefinition).Return(nil)
 		mockService.On("Get", contextThatHasTenant(tnt), tnt, modelLabelDefinition.Key).Return(&modelLabelDefinition, nil).Once()
+		mockService.On("Get", contextThatHasTenant(tnt), tnt, modelLabelDefinition.Key).Return(&gqlLabelDefinition, nil).Once()
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-		sut := labeldef.NewResolver(transact, mockService, mockConverter)
+		sut := labeldef.NewResolver(transact, mockService, mockFormationsService, mockConverter)
 		// WHEN
 		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
 		// THEN
@@ -812,7 +751,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 	t.Run("missing tenant in context", func(t *testing.T) {
 		// GIVEN
-		sut := labeldef.NewResolver(nil, nil, nil)
+		sut := labeldef.NewResolver(nil, nil, nil, nil)
 		// WHEN
 		_, err := sut.UpdateLabelDefinition(context.TODO(), graphql.LabelDefinitionInput{})
 		// THEN
@@ -830,7 +769,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-		sut := labeldef.NewResolver(mockTransactioner, nil, mockConverter)
+		sut := labeldef.NewResolver(mockTransactioner, nil, nil, mockConverter)
 		// WHEN
 		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
 		// THEN
@@ -847,7 +786,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-		sut := labeldef.NewResolver(transact, nil, mockConverter)
+		sut := labeldef.NewResolver(transact, nil, nil, mockConverter)
 		// WHEN
 		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
 		// THEN
@@ -857,31 +796,70 @@ func TestUpdateLabelDefinition(t *testing.T) {
 		persist.AssertExpectations(t)
 	})
 
-	t.Run("got error on updating Label Definition", func(t *testing.T) {
+	t.Run("got error on creating formation", func(t *testing.T) {
 		// GIVEN
 		mockPersistanceCtx := &pautomock.PersistenceTx{}
 		defer mockPersistanceCtx.AssertExpectations(t)
 
 		mockTransactioner := &pautomock.Transactioner{}
 		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
-		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything, mock.Anything).Return(true)
+		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything, mock.Anything).Return(false)
 		defer mockTransactioner.AssertExpectations(t)
 
 		mockConverter := &automock.ModelConverter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("FromGraphQL", gqlLabelDefinitionInput, tnt).Return(modelLabelDefinition, nil)
+		mockConverter.On("FromGraphQL", gqlLabelDefinitionInput, tnt).Return(gqlLabelDefinition, nil)
 
 		mockService := &automock.Service{}
 		defer mockService.AssertExpectations(t)
-		mockService.On("Update", contextThatHasTenant(tnt), modelLabelDefinition).Return(errors.New("some error"))
+		mockService.On("Get", contextThatHasTenant(tnt), tnt, modelLabelDefinition.Key).Return(&modelLabelDefinition, nil).Once()
+
+		mockFormationsService := &automock.FormationService{}
+		defer mockFormationsService.AssertExpectations(t)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "additional-1"}).Return(nil, testErr)
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-		sut := labeldef.NewResolver(mockTransactioner, mockService, mockConverter)
+		sut := labeldef.NewResolver(mockTransactioner, mockService, mockFormationsService, mockConverter)
+		defer mockService.AssertExpectations(t)
+
 		// WHEN
 		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
 		// THEN
-		require.EqualError(t, err, "while updating label definition: some error")
+		require.EqualError(t, err, fmt.Sprintf("while creating formation with name %s: %s", "additional-1", testErr.Error()))
+	})
+	t.Run("got error on deleting formation", func(t *testing.T) {
+		// GIVEN
+		mockPersistanceCtx := &pautomock.PersistenceTx{}
+		defer mockPersistanceCtx.AssertExpectations(t)
+
+		mockTransactioner := &pautomock.Transactioner{}
+		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
+		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything, mock.Anything).Return(false)
+		defer mockTransactioner.AssertExpectations(t)
+
+		mockConverter := &automock.ModelConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromGraphQL", gqlLabelDefinitionInput, tnt).Return(gqlLabelDefinition, nil)
+
+		mockService := &automock.Service{}
+		defer mockService.AssertExpectations(t)
+		mockService.On("Get", contextThatHasTenant(tnt), tnt, modelLabelDefinition.Key).Return(&modelLabelDefinition, nil).Once()
+
+		mockFormationsService := &automock.FormationService{}
+		defer mockFormationsService.AssertExpectations(t)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "additional-1"}).Return(nil, nil)
+		mockFormationsService.On("DeleteFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "initial-1"}).Return(nil, testErr)
+
+		ctx := persistence.SaveToContext(context.TODO(), nil)
+		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+		sut := labeldef.NewResolver(mockTransactioner, mockService, mockFormationsService, mockConverter)
+		defer mockService.AssertExpectations(t)
+
+		// WHEN
+		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
+		// THEN
+		require.EqualError(t, err, fmt.Sprintf("while deleting formation with name %s: %s", "initial-1", testErr.Error()))
 	})
 
 	t.Run("got error on getting Label Definition", func(t *testing.T) {
@@ -894,12 +872,41 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockService := &automock.Service{}
 		defer mockService.AssertExpectations(t)
-		mockService.On("Update", contextThatHasTenant(tnt), modelLabelDefinition).Return(nil)
 		mockService.On("Get", contextThatHasTenant(tnt), tnt, modelLabelDefinition.Key).Return(nil, testErr)
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-		sut := labeldef.NewResolver(transact, mockService, mockConverter)
+		sut := labeldef.NewResolver(transact, mockService, nil, mockConverter)
+		// WHEN
+		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
+		// THEN
+		require.Error(t, err)
+		require.EqualError(t, err, "while receiving stored label definition: test error")
+		transact.AssertExpectations(t)
+		persist.AssertExpectations(t)
+	})
+
+	t.Run("get error on getting updated label definition", func(t *testing.T) {
+		// GIVEN
+		persist, transact := txGen.ThatDoesntExpectCommit()
+
+		mockConverter := &automock.ModelConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromGraphQL", gqlLabelDefinitionInput, tnt).Return(gqlLabelDefinition, nil)
+
+		mockFormationsService := &automock.FormationService{}
+		defer mockFormationsService.AssertExpectations(t)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "additional-1"}).Return(nil, nil)
+		mockFormationsService.On("DeleteFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "initial-1"}).Return(nil, nil)
+
+		mockService := &automock.Service{}
+		defer mockService.AssertExpectations(t)
+		mockService.On("Get", contextThatHasTenant(tnt), tnt, modelLabelDefinition.Key).Return(&modelLabelDefinition, nil).Once()
+		mockService.On("Get", contextThatHasTenant(tnt), tnt, modelLabelDefinition.Key).Return(nil, testErr).Once()
+
+		ctx := persistence.SaveToContext(context.TODO(), nil)
+		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+		sut := labeldef.NewResolver(transact, mockService, mockFormationsService, mockConverter)
 		// WHEN
 		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
 		// THEN
@@ -917,22 +924,28 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockTransactioner := &pautomock.Transactioner{}
 		mockTransactioner.On("Begin").Return(mockPersistanceCtx, nil)
-		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything, mock.Anything).Return(true)
+		mockTransactioner.On("RollbackUnlessCommitted", mock.Anything, mock.Anything).Return(false)
 		defer mockTransactioner.AssertExpectations(t)
-
-		mockService := &automock.Service{}
-		defer mockService.AssertExpectations(t)
-		mockService.On("Update", contextThatHasTenant(tnt), modelLabelDefinition).Return(nil)
-		mockService.On("Get", contextThatHasTenant(tnt), tnt, modelLabelDefinition.Key).Return(&modelLabelDefinition, nil)
 
 		mockConverter := &automock.ModelConverter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("FromGraphQL", gqlLabelDefinitionInput, tnt).Return(modelLabelDefinition, nil)
-		mockConverter.On("ToGraphQL", modelLabelDefinition).Return(updatedGQLLabelDefinition, nil)
+		mockConverter.On("FromGraphQL", gqlLabelDefinitionInput, tnt).Return(gqlLabelDefinition, nil)
+		mockConverter.On("ToGraphQL", gqlLabelDefinition).Return(updatedGQLLabelDefinition, nil)
+
+		mockFormationsService := &automock.FormationService{}
+		defer mockFormationsService.AssertExpectations(t)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "additional-1"}).Return(nil, nil)
+		mockFormationsService.On("DeleteFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "initial-1"}).Return(nil, nil)
+
+		mockService := &automock.Service{}
+		defer mockService.AssertExpectations(t)
+		mockService.On("Get", contextThatHasTenant(tnt), tnt, modelLabelDefinition.Key).Return(&modelLabelDefinition, nil).Once()
+		mockService.On("Get", contextThatHasTenant(tnt), tnt, modelLabelDefinition.Key).Return(&gqlLabelDefinition, nil).Once()
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-		sut := labeldef.NewResolver(mockTransactioner, mockService, mockConverter)
+		sut := labeldef.NewResolver(mockTransactioner, mockService, mockFormationsService, mockConverter)
+
 		// WHEN
 		_, err := sut.UpdateLabelDefinition(ctx, gqlLabelDefinitionInput)
 		// THEN
@@ -954,4 +967,25 @@ func contextThatHasTenant(expectedTenant string) interface{} {
 		}
 		return actualTenant == expectedTenant
 	})
+}
+
+func getJSONSchemaFromSchema(t *testing.T, schema *interface{}) *graphql.JSONSchema {
+	data, err := json.Marshal(schema)
+	require.NoError(t, err)
+	jsonSchema := graphql.JSONSchema(data)
+	return &jsonSchema
+}
+
+func getScenarioSchemaWithFormations(formations []string) map[string]interface{} {
+	return map[string]interface{}{
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+		"items": map[string]interface{}{
+			"type":      "string",
+			"pattern":   "^[A-Za-z0-9]([-_A-Za-z0-9\\s]*[A-Za-z0-9])$",
+			"enum":      formations,
+			"maxLength": 128,
+		},
+	}
 }

@@ -13,14 +13,14 @@ import (
 )
 
 // TokenService missing godoc
-//go:generate mockery --name=TokenService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TokenService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TokenService interface {
 	GenerateOneTimeToken(ctx context.Context, runtimeID string, tokenType pkgmodel.SystemAuthReferenceObjectType) (*model.OneTimeToken, error)
 	RegenerateOneTimeToken(ctx context.Context, sysAuthID string) (*model.OneTimeToken, error)
 }
 
 // TokenConverter missing godoc
-//go:generate mockery --name=TokenConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TokenConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TokenConverter interface {
 	ToGraphQLForRuntime(model model.OneTimeToken) graphql.OneTimeTokenForRuntime
 	ToGraphQLForApplication(model model.OneTimeToken) (graphql.OneTimeTokenForApplication, error)

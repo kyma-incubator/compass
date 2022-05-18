@@ -16,7 +16,7 @@ import (
 )
 
 // APIService is responsible for the service-layer APIDefinition operations.
-//go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIService interface {
 	CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput, spec *model.SpecInput) error
@@ -26,13 +26,13 @@ type APIService interface {
 }
 
 // RuntimeService is responsible for the service-layer Runtime operations.
-//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	Get(ctx context.Context, id string) (*model.Runtime, error)
 }
 
 // APIConverter converts EventDefinitions between the model.APIDefinition service-layer representation and the graphql-layer representation.
-//go:generate mockery --name=APIConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=APIConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIConverter interface {
 	ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.APIDefinition, error)
 	MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error)
@@ -41,20 +41,20 @@ type APIConverter interface {
 }
 
 // FetchRequestConverter converts FetchRequest between the model.FetchRequest service-layer representation and the graphql-layer one.
-//go:generate mockery --name=FetchRequestConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=FetchRequestConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestConverter interface {
 	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
 	InputFromGraphQL(in *graphql.FetchRequestInput) (*model.FetchRequestInput, error)
 }
 
 // BundleService is responsible for the service-layer Bundle operations.
-//go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleService interface {
 	Get(ctx context.Context, id string) (*model.Bundle, error)
 }
 
 // ApplicationService is responsible for the service-layer Application operations.
-//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	UpdateBaseURL(ctx context.Context, appID, targetURL string) error
 }
