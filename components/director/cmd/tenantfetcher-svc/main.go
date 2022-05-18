@@ -204,7 +204,6 @@ func syncTenants(ctx context.Context, jobConfig tenantfetcher.JobConfig, metrics
 	err = tenantsFetcherSvc.SyncTenants()
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Error while running tenant fetcher job %s: %v", jobConfig.JobName, err)
-
 		if metricsReporter != nil {
 			metricsReporter.ReportFailedSync(err, ctx)
 		}
@@ -213,9 +212,9 @@ func syncTenants(ctx context.Context, jobConfig tenantfetcher.JobConfig, metrics
 
 func createMetricsReporter(jobConfig tenantfetcher.JobConfig) *metrics.MetricsReporter {
 	var metricsPusher *metrics.Pusher
-	pushEndpoint := jobConfig.GetEventsCgf().MetricsPushEndpoint
-	if pushEndpoint != "" {
-		metricsPusher = metrics.NewPusherPerJob(jobConfig.JobName, pushEndpoint, jobConfig.GetHandlerCgf().ClientTimeout)
+	eventsCfg := jobConfig.GetEventsCgf()
+	if eventsCfg.MetricsPushEndpoint != "" {
+		metricsPusher = metrics.NewPusherPerJob(jobConfig.JobName, eventsCfg.MetricsPushEndpoint, jobConfig.GetHandlerCgf().ClientTimeout)
 	}
 
 	var metricsReporter metrics.MetricsReporter
