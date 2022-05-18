@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/gorilla/mux"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"github.com/pkg/errors"
@@ -102,14 +100,12 @@ func (s *Handler) HandleReset(eventType string) func(rw http.ResponseWriter, req
 }
 
 func isSpecificSubaccountBeingFetched(req *http.Request, eventType string) bool {
-	vars := mux.Vars(req)
-	_, hasEntityIdQueryParam := vars["entityId"]
-	return hasEntityIdQueryParam && eventType == SubaccountCreationEventType
+	entityIdParam := req.URL.Query().Get("entityId")
+	return entityIdParam != "" && eventType == SubaccountCreationEventType
 }
 
 func getMockEventForSubaccount(req *http.Request, tenantOnDemandID string) []byte {
-	vars := mux.Vars(req)
-	subaccountID, _ := vars["entityId"]
+	subaccountID := req.URL.Query().Get("entityId")
 	mockSubaccountEventPattern := `
 {
 	"eventData": {
