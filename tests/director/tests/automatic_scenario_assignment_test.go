@@ -98,6 +98,8 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 	rtms := make([]*graphql.RuntimeExt, 3)
 	for i := 0; i < 2; i++ {
 		rmtInput := fixtures.FixRuntimeInput(fmt.Sprintf("runtime%d", i))
+		rmtInput.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
+		rmtInput.Labels[RegionLabel] = conf.SelfRegRegion
 
 		rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, subaccount, &rmtInput)
 		rtms[i] = &rtm
@@ -106,9 +108,11 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 		require.NotEmpty(t, rtm.ID)
 	}
 
-	rmtInput := fixtures.FixRuntimeInput(fmt.Sprintf("runtime%d", 2))
+	rtmInput := fixtures.FixRuntimeInput(fmt.Sprintf("runtime%d", 2))
+	rtmInput.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
+	rtmInput.Labels[RegionLabel] = conf.SelfRegRegion
 
-	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, &rmtInput)
+	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, &rtmInput)
 	rtms[2] = &rtm
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &rtm)
 	require.NoError(t, err)
@@ -193,6 +197,10 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 
 	rtmInput := graphql.RuntimeInput{
 		Name: "test-name",
+		Labels: graphql.Labels{
+			conf.SelfRegDistinguishLabelKey: []interface{}{conf.SelfRegDistinguishLabelValue},
+			RegionLabel:                     conf.SelfRegRegion,
+		},
 	}
 
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, subaccountID, &rtmInput)

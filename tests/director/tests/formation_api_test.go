@@ -166,7 +166,9 @@ func TestRuntimeFormationFlow(t *testing.T) {
 		Name:        rtmName,
 		Description: &rtmDesc,
 		Labels: graphql.Labels{
-			selectorKey: subaccountID,
+			selectorKey:                     subaccountID,
+			conf.SelfRegDistinguishLabelKey: []interface{}{conf.SelfRegDistinguishLabelValue},
+			RegionLabel:                     conf.SelfRegRegion,
 		},
 	}
 

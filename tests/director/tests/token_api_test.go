@@ -25,6 +25,9 @@ func TestTokenGeneration(t *testing.T) {
 		tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 		input := fixtures.FixRuntimeInput("test")
+		input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
+		input.Labels[RegionLabel] = conf.SelfRegRegion
+
 		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 		require.NoError(t, err)

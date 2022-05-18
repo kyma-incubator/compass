@@ -61,6 +61,8 @@ func TestGenerateClientCredentialsToRuntime(t *testing.T) {
 
 	name := "runtime"
 	input := fixtures.FixRuntimeInput(name)
+	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
+	input.Labels[RegionLabel] = conf.SelfRegRegion
 
 	t.Log("Create runtime")
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
@@ -224,6 +226,8 @@ func TestDeleteSystemAuthFromRuntime(t *testing.T) {
 
 	name := "rtm"
 	input := fixtures.FixRuntimeInput(name)
+	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
+	input.Labels[RegionLabel] = conf.SelfRegRegion
 
 	t.Log("Create runtime")
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
@@ -258,6 +262,9 @@ func TestDeleteSystemAuthFromRuntimeUsingApplicationMutationShouldReportError(t 
 
 	name := "rtm"
 	input := fixtures.FixRuntimeInput(name)
+	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
+	input.Labels[RegionLabel] = conf.SelfRegRegion
+
 	t.Log("Create runtime")
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
@@ -288,6 +295,9 @@ func TestDeleteSystemAuthFromRuntimeUsingIntegrationSystemMutationShouldReportEr
 
 	name := "rtm"
 	input := fixtures.FixRuntimeInput(name)
+	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
+	input.Labels[RegionLabel] = conf.SelfRegRegion
+
 	t.Log("Create runtime")
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
