@@ -191,10 +191,29 @@ func syncTenants(ctx context.Context, jobConfig tenantfetcher.JobConfig, transac
 	tenantsFetcherSvc, err := createTenantsFetcherSvc(ctx, jobConfig, transact)
 	exitOnError(err, "failed to create tenants fetcher service")
 
+	metricsReporter := createMetricsReporter(jobConfig)
+
 	err = tenantsFetcherSvc.SyncTenants()
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Error while running tenant fetcher job %s: %v", jobConfig.JobName, err)
+		if metricsReporter != nil {
+			metricsReporter.ReportFailedSync(err)
+		}
 	}
+}
+
+func createMetricsReporter(jobConfig tenantfetcher.JobConfig) *metrics.MetricsReporter {
+	var metricsPusher *metrics.Pusher
+	eventsCfg := jobConfig.GetEventsCgf()
+	if eventsCfg.MetricsPushEndpoint != "" {
+		metricsPusher = metrics.NewPusherPerJob(jobConfig.JobName, eventsCfg.MetricsPushEndpoint, jobConfig.GetHandlerCgf().ClientTimeout)
+	}
+
+	var metricsReporter metrics.MetricsReporter
+	if metricsPusher != nil {
+		metricsReporter = metrics.NewMetricsReporter(metricsPusher)
+	}
+	return &metricsReporter
 }
 
 func createTenantsFetcherSvc(ctx context.Context, jobConfig tenantfetcher.JobConfig, transact persistence.Transactioner) (tf.TenantSyncService, error) {

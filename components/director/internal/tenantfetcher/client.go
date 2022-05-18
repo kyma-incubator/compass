@@ -57,6 +57,8 @@ func (c APIConfig) isUnassignedOptionalProperty(eventsType EventsType) bool {
 //go:generate mockery --name=MetricsPusher --output=automock --outpkg=automock --case=underscore
 type MetricsPusher interface {
 	RecordEventingRequest(method string, statusCode int, desc string)
+	RecordTenantsSyncJobFailure(method string, statusCode int, desc string)
+	Push()
 }
 
 // QueryParams describes the key and the corresponding value for query parameters when requesting the service
@@ -219,6 +221,10 @@ func (c *Client) buildRequestURL(endpoint string, queryParams QueryParams) (stri
 }
 
 func (c *Client) failedRequestDesc(err error) string {
+	return GetErrorDesc(err)
+}
+
+func GetErrorDesc(err error) string {
 	var e *net.OpError
 	if errors.As(err, &e) && e.Err != nil {
 		return e.Err.Error()
