@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"strings"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
@@ -88,7 +89,7 @@ type BundleInstanceAuthService interface {
 // SelfRegisterManager missing godoc
 //go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SelfRegisterManager interface {
-	PrepareForSelfRegistration(ctx context.Context, labels map[string]interface{}, id string) (map[string]interface{}, error)
+	PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string) (map[string]interface{}, error)
 	CleanupSelfRegistration(ctx context.Context, selfRegisterLabelValue, region string) error
 	GetSelfRegDistinguishingLabelKey() string
 }
@@ -261,7 +262,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 	convertedIn := r.converter.InputFromGraphQL(in)
 	id := r.uidService.Generate()
 
-	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, convertedIn.Labels, id)
+	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.Runtime, convertedIn.Labels, id)
 	if err != nil {
 		return nil, err
 	}

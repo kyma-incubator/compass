@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager/selfregmngrtest"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"net/http"
 	"testing"
 	"time"
@@ -15,8 +18,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/rtmtest"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/require"
@@ -34,7 +35,7 @@ var testConfig = config.SelfRegConfig{
 	SelfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
 	SelfRegisterLabelKey:            "test-label-key",
 	SelfRegisterLabelValuePrefix:    "test-prefix",
-	SelfRegisterResponseKey:         rtmtest.ResponseLabelKey,
+	SelfRegisterResponseKey:         selfregmngrtest.ResponseLabelKey,
 	SelfRegisterPath:                "test-path",
 	SelfRegisterNameQueryParam:      "testNameQuery",
 	SelfRegisterTenantQueryParam:    "testTenantQuery",
@@ -87,7 +88,12 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 		Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal},
 	}
 	lblInputAfterPrep := map[string]interface{}{
-		testConfig.SelfRegisterLabelKey:    rtmtest.ResponseLabelValue,
+		testConfig.SelfRegisterLabelKey: selfregmngrtest.ResponseLabelValue,
+		selfregmanager.RegionLabel:      testRegion,
+		selfRegisterDistinguishLabelKey: distinguishLblVal,
+	}
+	lblInputAfterPrepWithSubaccount := map[string]interface{}{
+		testConfig.SelfRegisterLabelKey:    selfregmngrtest.ResponseLabelValue,
 		scenarioassignment.SubaccountIDKey: consumerID,
 		selfregmanager.RegionLabel:         testRegion,
 		selfRegisterDistinguishLabelKey:    distinguishLblVal,
@@ -118,6 +124,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 		Region         string
 		Input          model.RuntimeInput
 		Context        context.Context
+		ResourceType   resource.Type
 		ExpectedErr    error
 		ExpectedOutput map[string]interface{}
 	}{
@@ -125,101 +132,122 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Name:           "Success",
 			Config:         testConfig,
 			Input:          lblInput,
-			CallerProvider: rtmtest.CallerThatGetsCalledOnce(http.StatusCreated),
+			CallerProvider: selfregmngrtest.CallerThatGetsCalledOnce(http.StatusCreated),
 			Region:         testRegion,
 			Context:        ctxWithCertConsumer,
+			ResourceType:   resource.Runtime,
 			ExpectedErr:    nil,
 			ExpectedOutput: lblInputAfterPrep,
 		},
 		{
+			Name:           "Success with subaccount label for application templates",
+			Config:         testConfig,
+			Input:          lblInput,
+			CallerProvider: selfregmngrtest.CallerThatGetsCalledOnce(http.StatusCreated),
+			Region:         testRegion,
+			Context:        ctxWithCertConsumer,
+			ResourceType:   resource.ApplicationTemplate,
+			ExpectedErr:    nil,
+			ExpectedOutput: lblInputAfterPrepWithSubaccount,
+		},
+		{
 			Name:           "Success for non-matching consumer",
 			Config:         testConfig,
-			CallerProvider: rtmtest.CallerThatDoesNotGetCalled,
+			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:         testRegion,
 			Input:          lblInputWithoutRegion,
 			Context:        ctxWithTokenConsumer,
+			ResourceType:   resource.Runtime,
 			ExpectedErr:    nil,
 			ExpectedOutput: lblWithDistinguish,
 		},
 		{
 			Name:           "Error when region label is missing",
 			Config:         testConfig,
-			CallerProvider: rtmtest.CallerThatDoesNotGetCalled,
+			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:         testRegion,
 			Input:          lblInputWithoutRegion,
 			Context:        ctxWithCertConsumer,
+			ResourceType:   resource.Runtime,
 			ExpectedErr:    fmt.Errorf("missing %q label", selfregmanager.RegionLabel),
 			ExpectedOutput: lblWithDistinguish,
 		},
 		{
 			Name:           "Error when region label is not string",
 			Config:         testConfig,
-			CallerProvider: rtmtest.CallerThatDoesNotGetCalled,
+			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:         testRegion,
 			Input: model.RuntimeInput{
 				Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: struct{}{}},
 			},
 			Context:        ctxWithCertConsumer,
+			ResourceType:   resource.Runtime,
 			ExpectedErr:    fmt.Errorf("region value should be of type %q", "string"),
 			ExpectedOutput: lblWithDistinguishAndStructRegion,
 		},
 		{
 			Name:           "Error when region doesn't exist",
 			Config:         testConfig,
-			CallerProvider: rtmtest.CallerThatDoesNotGetCalled,
+			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:         testRegion,
 			Input:          model.RuntimeInput{Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: "not-valid"}},
 			Context:        ctxWithCertConsumer,
+			ResourceType:   resource.Runtime,
 			ExpectedErr:    errors.New("missing configuration for region"),
 			ExpectedOutput: lblWithDistinguishAndInvalidRegion,
 		},
 		{
 			Name:           "Error when caller provider fails",
 			Config:         testConfig,
-			CallerProvider: rtmtest.CallerProviderThatFails,
+			CallerProvider: selfregmngrtest.CallerProviderThatFails,
 			Region:         testRegion,
 			Input:          lblInput,
 			Context:        ctxWithCertConsumer,
+			ResourceType:   resource.Runtime,
 			ExpectedErr:    errors.New("while getting caller"),
 			ExpectedOutput: lblInputAfterPrep,
 		},
 		{
 			Name:           "Error when context does not contain consumer",
 			Config:         testConfig,
-			CallerProvider: rtmtest.CallerThatDoesNotGetCalled,
+			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:         testRegion,
 			Input:          model.RuntimeInput{},
 			Context:        context.TODO(),
+			ResourceType:   resource.Runtime,
 			ExpectedErr:    consumer.NoConsumerError,
 			ExpectedOutput: emptyLabels,
 		},
 		{
 			Name:           "Error when can't create URL for preparation of self-registration",
 			Config:         testConfig,
-			CallerProvider: rtmtest.CallerThatDoesNotGetCalled,
+			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:         fakeRegion,
 			Input:          model.RuntimeInput{Labels: graphql.Labels{selfRegisterDistinguishLabelKey: "invalid value", selfregmanager.RegionLabel: fakeRegion}},
 			Context:        ctxWithCertConsumer,
+			ResourceType:   resource.Runtime,
 			ExpectedErr:    errors.New("while creating url for preparation of self-registered resource"),
 			ExpectedOutput: lblWithDistinguishAndFakeRegion,
 		},
 		{
 			Name:           "Error when Call doesn't succeed",
 			Config:         testConfig,
-			CallerProvider: rtmtest.CallerThatDoesNotSucceed,
+			CallerProvider: selfregmngrtest.CallerThatDoesNotSucceed,
 			Region:         testRegion,
 			Input:          lblInput,
 			Context:        ctxWithCertConsumer,
-			ExpectedErr:    rtmtest.TestError,
+			ResourceType:   resource.Runtime,
+			ExpectedErr:    selfregmngrtest.TestError,
 			ExpectedOutput: lblInputAfterPrep,
 		},
 		{
 			Name:           "Error when status code is unexpected",
 			Config:         testConfig,
-			CallerProvider: rtmtest.CallerThatReturnsBadStatus,
+			CallerProvider: selfregmngrtest.CallerThatReturnsBadStatus,
 			Region:         testRegion,
 			Input:          lblInput,
 			Context:        ctxWithCertConsumer,
+			ResourceType:   resource.Runtime,
 			ExpectedErr:    errors.New("received unexpected status"),
 			ExpectedOutput: lblInputAfterPrep,
 		},
@@ -231,7 +259,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider)
 			require.NoError(t, err)
 
-			output, err := manager.PrepareForSelfRegistration(testCase.Context, testCase.Input.Labels, testUUID)
+			output, err := manager.PrepareForSelfRegistration(testCase.Context, testCase.ResourceType, testCase.Input.Labels, testUUID)
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedErr.Error())
@@ -259,7 +287,7 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 	}{
 		{
 			Name:                                "Success",
-			CallerProvider:                      rtmtest.CallerThatGetsCalledOnce(http.StatusOK),
+			CallerProvider:                      selfregmngrtest.CallerThatGetsCalledOnce(http.StatusOK),
 			Region:                              testRegion,
 			Config:                              testConfig,
 			SelfRegisteredDistinguishLabelValue: distinguishLblVal,
@@ -268,7 +296,7 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 		},
 		{
 			Name:                                "Success when resoource is not self-registered",
-			CallerProvider:                      rtmtest.CallerThatDoesNotGetCalled,
+			CallerProvider:                      selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:                              testRegion,
 			Config:                              testConfig,
 			SelfRegisteredDistinguishLabelValue: "",
@@ -277,7 +305,7 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 		},
 		{
 			Name:                                "Error when can't create URL for cleanup of self-registered resource",
-			CallerProvider:                      rtmtest.CallerThatDoesNotGetCalled,
+			CallerProvider:                      selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:                              fakeRegion,
 			Config:                              testConfig,
 			SelfRegisteredDistinguishLabelValue: "invalid value",
@@ -287,7 +315,7 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 		{
 			Name:                                "Error when region doesn't exist",
 			Config:                              testConfig,
-			CallerProvider:                      rtmtest.CallerThatDoesNotGetCalled,
+			CallerProvider:                      selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:                              "not-valid",
 			SelfRegisteredDistinguishLabelValue: distinguishLblVal,
 			Context:                             ctx,
@@ -296,7 +324,7 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 		{
 			Name:                                "Error when caller provider fails",
 			Config:                              testConfig,
-			CallerProvider:                      rtmtest.CallerProviderThatFails,
+			CallerProvider:                      selfregmngrtest.CallerProviderThatFails,
 			Region:                              testRegion,
 			SelfRegisteredDistinguishLabelValue: distinguishLblVal,
 			Context:                             ctx,
@@ -304,16 +332,16 @@ func TestSelfRegisterManager_CleanupSelfRegisteredRuntime(t *testing.T) {
 		},
 		{
 			Name:                                "Error when Call doesn't succeed",
-			CallerProvider:                      rtmtest.CallerThatDoesNotSucceed,
+			CallerProvider:                      selfregmngrtest.CallerThatDoesNotSucceed,
 			Region:                              testRegion,
 			Config:                              testConfig,
 			SelfRegisteredDistinguishLabelValue: distinguishLblVal,
 			Context:                             ctx,
-			ExpectedErr:                         rtmtest.TestError,
+			ExpectedErr:                         selfregmngrtest.TestError,
 		},
 		{
 			Name:                                "Error when Call doesn't succeed",
-			CallerProvider:                      rtmtest.CallerThatReturnsBadStatus,
+			CallerProvider:                      selfregmngrtest.CallerThatReturnsBadStatus,
 			Region:                              testRegion,
 			Config:                              testConfig,
 			SelfRegisteredDistinguishLabelValue: distinguishLblVal,

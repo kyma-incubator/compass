@@ -14,6 +14,9 @@ const (
 	SelfRegErrorMsg = "error during self-reg prep"
 )
 
+// TestError is a testing error
+var TestError = errors.New("test-error")
+
 // NoopSelfRegManager missing godoc
 func NoopSelfRegManager() *automock.SelfRegisterManager {
 	return &automock.SelfRegisterManager{}

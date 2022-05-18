@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -77,7 +78,7 @@ type WebhookConverter interface {
 // SelfRegisterManager missing godoc
 //go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SelfRegisterManager interface {
-	PrepareForSelfRegistration(ctx context.Context, labels map[string]interface{}, id string) (map[string]interface{}, error)
+	PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string) (map[string]interface{}, error)
 	CleanupSelfRegistration(ctx context.Context, selfRegisterLabelValue, region string) error
 	GetSelfRegDistinguishingLabelKey() string
 }
@@ -210,7 +211,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	}
 
 	selfRegID := r.uidService.Generate()
-	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, convertedIn.Labels, selfRegID)
+	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID)
 	if err != nil {
 		return nil, err
 	}

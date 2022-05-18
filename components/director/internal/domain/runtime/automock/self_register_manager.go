@@ -5,6 +5,7 @@ package automock
 import (
 	context "context"
 
+	resource "github.com/kyma-incubator/compass/components/director/pkg/resource"
 	mock "github.com/stretchr/testify/mock"
 
 	testing "testing"
@@ -43,13 +44,13 @@ func (_m *SelfRegisterManager) GetSelfRegDistinguishingLabelKey() string {
 	return r0
 }
 
-// PrepareForSelfRegistration provides a mock function with given fields: ctx, labels, id
-func (_m *SelfRegisterManager) PrepareForSelfRegistration(ctx context.Context, labels map[string]interface{}, id string) (map[string]interface{}, error) {
-	ret := _m.Called(ctx, labels, id)
+// PrepareForSelfRegistration provides a mock function with given fields: ctx, resourceType, labels, id
+func (_m *SelfRegisterManager) PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string) (map[string]interface{}, error) {
+	ret := _m.Called(ctx, resourceType, labels, id)
 
 	var r0 map[string]interface{}
-	if rf, ok := ret.Get(0).(func(context.Context, map[string]interface{}, string) map[string]interface{}); ok {
-		r0 = rf(ctx, labels, id)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, map[string]interface{}, string) map[string]interface{}); ok {
+		r0 = rf(ctx, resourceType, labels, id)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[string]interface{})
@@ -57,8 +58,8 @@ func (_m *SelfRegisterManager) PrepareForSelfRegistration(ctx context.Context, l
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, map[string]interface{}, string) error); ok {
-		r1 = rf(ctx, labels, id)
+	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, map[string]interface{}, string) error); ok {
+		r1 = rf(ctx, resourceType, labels, id)
 	} else {
 		r1 = ret.Error(1)
 	}

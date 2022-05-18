@@ -3,6 +3,7 @@ package selfregmanager
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"io"
 	"net/http"
 	urlpkg "net/url"
@@ -55,7 +56,7 @@ func NewSelfRegisterManager(cfg config.SelfRegConfig, provider ExternalSvcCaller
 
 // PrepareForSelfRegistration executes the prerequisite calls for self-registration in case the runtime
 // is being self-registered
-func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, labels map[string]interface{}, id string) (map[string]interface{}, error) {
+func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string) (map[string]interface{}, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
 		return labels, errors.Wrapf(err, "while loading consumer")
@@ -109,7 +110,10 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, la
 
 		selfRegLabelVal := gjson.GetBytes(respBytes, s.cfg.SelfRegisterResponseKey)
 		labels[s.cfg.SelfRegisterLabelKey] = selfRegLabelVal.Str
-		labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
+
+		if resource.ApplicationTemplate == resourceType {
+			labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
+		}
 
 		log.C(ctx).Infof("Successfully executed prep for self-registration with distinguishing label value %s", str.CastOrEmpty(distinguishLabel))
 	}
