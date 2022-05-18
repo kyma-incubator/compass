@@ -45,7 +45,7 @@ func TestFetcher_FetchTenantOnDemand(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			TenantStorageSvcFn: func() *tfautomock.TenantStorageService {
 				svc := &tfautomock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{&businessSubaccount1BusinessMapping}, nil).Once()
+				svc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), businessSubaccount1BusinessMapping.ExternalTenant).Return(&businessSubaccount1BusinessMapping, nil).Once()
 				return svc
 			},
 			APIClientFn:      UnusedEventAPIClient,
