@@ -205,7 +205,7 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	systemsRouter.HandleFunc("", systemFetcherHandler.HandleFunc)
 
 	// Tenant fetcher handlers
-	tenantFetcherHandler := tenantfetcher.NewHandler()
+	tenantFetcherHandler := tenantfetcher.NewHandler(cfg.TenantConfig.TestTenantOnDemandID)
 
 	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/global-account-create/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure(tenantfetcher.AccountCreationEventType))
 	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-create/reset").HandlerFunc(tenantFetcherHandler.HandleReset(tenantfetcher.AccountCreationEventType))

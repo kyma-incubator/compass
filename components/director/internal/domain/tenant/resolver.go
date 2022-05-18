@@ -119,7 +119,8 @@ func (r *Resolver) Tenant(ctx context.Context, externalID string) (*graphql.Tena
 	if err != nil && apperrors.IsNotFoundError(err) {
 		tx, err = r.fetchTenant(tx, externalID)
 		if err != nil {
-			return nil, err
+			log.C(ctx).Error(err)
+			return nil, apperrors.NewNotFoundError(resource.API, externalID)
 		}
 		ctx = persistence.SaveToContext(ctx, tx)
 		tenant, err = r.srv.GetTenantByExternalID(ctx, externalID)

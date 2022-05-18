@@ -26,14 +26,16 @@ const (
 )
 
 type Handler struct {
-	mutex        sync.Mutex
-	mockedEvents map[string][][]byte
+	mutex            sync.Mutex
+	mockedEvents     map[string][][]byte
+	tenantOnDemandID string
 }
 
-func NewHandler() *Handler {
+func NewHandler(tenantOnDemandID string) *Handler {
 	return &Handler{
-		mutex:        sync.Mutex{},
-		mockedEvents: make(map[string][][]byte),
+		mutex:            sync.Mutex{},
+		mockedEvents:     make(map[string][][]byte),
+		tenantOnDemandID: tenantOnDemandID,
 	}
 }
 
@@ -74,7 +76,7 @@ func (s *Handler) HandleFunc(eventType string) func(rw http.ResponseWriter, req 
 
 		resp := []byte("[]")
 		if isSpecificSubaccountBeingFetched(req, eventType) {
-			resp = getMockEventForSubaccount(req)
+			resp = getMockEventForSubaccount(req, s.tenantOnDemandID)
 		} else if events, found := s.mockedEvents[eventType]; found {
 			resp = events[0]
 			events = events[1:]
@@ -105,7 +107,7 @@ func isSpecificSubaccountBeingFetched(req *http.Request, eventType string) bool 
 	return hasEntityIdQueryParam && eventType == SubaccountCreationEventType
 }
 
-func getMockEventForSubaccount(req *http.Request) []byte {
+func getMockEventForSubaccount(req *http.Request, tenantOnDemandID string) []byte {
 	vars := mux.Vars(req)
 	subaccountID, _ := vars["entityId"]
 	mockSubaccountEventPattern := `
@@ -120,6 +122,17 @@ func getMockEventForSubaccount(req *http.Request) []byte {
 	"globalAccountGUID": "%s",
 	"type": "Subaccount"
 }`
-	mockedEvent := fmt.Sprintf(mockSubaccountEventPattern, subaccountID, "Subaccount on demand", "subdomain", "SubaacountOnDemandParent", "region", "SubaacountOnDemandParent")
-	return []byte(mockedEvent)
+	emptyTenantProviderResponse := `
+{
+	"total": 0,
+	"totalPages": 0,
+	"pageNum": 0,
+	"morePages": false,
+	"events": []
+}`
+	if subaccountID == tenantOnDemandID {
+		mockedEvent := fmt.Sprintf(mockSubaccountEventPattern, subaccountID, "Subaccount on demand", "subdomain", "SubaacountOnDemandParent", "region", "SubaacountOnDemandParent")
+		return []byte(mockedEvent)
+	}
+	return []byte(emptyTenantProviderResponse)
 }
