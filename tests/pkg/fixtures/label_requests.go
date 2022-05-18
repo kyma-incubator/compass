@@ -79,15 +79,6 @@ func FixLabelDefinitionsRequest() *gcli.Request {
 			}`))
 }
 
-func FixDeleteLabelDefinitionRequest(labelDefinitionKey string, deleteRelatedLabels bool) *gcli.Request {
-	return gcli.NewRequest(
-		fmt.Sprintf(`mutation {
-			result: deleteLabelDefinition(key: "%s", deleteRelatedLabels: %t) {
-					%s
-				}
-			}`, labelDefinitionKey, deleteRelatedLabels, testctx.Tc.GQLFieldsProvider.ForLabelDefinition()))
-}
-
 func FixDeleteRuntimeLabelRequest(runtimeID, labelKey string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
