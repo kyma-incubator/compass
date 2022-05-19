@@ -169,7 +169,7 @@ func main() {
 	server := &http.Server{
 		Addr:              conf.Address,
 		Handler:           router,
-		ReadHeaderTimeout: conf.ServerTimeout,
+		ReadHeaderTimeout: conf.ReadHeadersTimeout,
 	}
 	ctx, err = log.Configure(ctx, conf.Log)
 	exitOnError(err, "while configuring logger")

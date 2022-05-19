@@ -32,7 +32,10 @@ import (
 type config struct {
 	Address string `envconfig:"default=127.0.0.1:3000"`
 
-	ServerTimeout time.Duration `envconfig:"default=114s"`
+	MetricsServerTimeout      time.Duration `envconfig:"APP_METRICS_SERVER_TIMEOUT,default=114s"`
+	NsAdapterTimeout          time.Duration `envconfig:"APP_NS_ADAPTER_TIMEOUT,default=3600s"`
+	DefaultHandlerTimeout     time.Duration `envconfig:"APP_DEFAULT_HANDLERS_TIMEOUT,default=114s"`
+	ReadRequestHeadersTimeout time.Duration `envconfig:"APP_READ_REQUEST_HEADERS_TIMEOUT,default=114s"`
 
 	Log log.Config
 
@@ -41,6 +44,8 @@ type config struct {
 	NsadapterOrigin string `envconfig:"default=http://127.0.0.1:3005"`
 	MetricsAddress  string `envconfig:"default=127.0.0.1:3003"`
 	AuditlogEnabled bool   `envconfig:"default=false"`
+
+	AuditLogMessageBodySizeLimit int `envconfig:"APP_AUDIT_LOG_MSG_BODY_SIZE_LIMIT"`
 }
 
 func main() {
@@ -77,15 +82,18 @@ func main() {
 
 	correlationTr := httputil.NewCorrelationIDTransport(http.DefaultTransport)
 	tr := proxy.NewTransport(auditlogSink, auditlogSvc, correlationTr)
-	adapterTr := proxy.NewAdapterTransport(auditlogSink, auditlogSvc, correlationTr)
+	adapterCfg := proxy.AdapterConfig{
+		MsgBodySizeLimit: cfg.AuditLogMessageBodySizeLimit,
+	}
+	adapterTr := proxy.NewAdapterTransport(auditlogSink, auditlogSvc, correlationTr, adapterCfg)
 
-	err = proxyRequestsForComponent(ctx, router, "/connector", cfg.ConnectorOrigin, tr)
+	err = proxyRequestsForComponent(ctx, router, "/connector", cfg.ConnectorOrigin, tr, cfg.DefaultHandlerTimeout)
 	exitOnError(err, "Error while initializing proxy for Connector")
 
-	err = proxyRequestsForComponent(ctx, router, "/director", cfg.DirectorOrigin, tr)
+	err = proxyRequestsForComponent(ctx, router, "/director", cfg.DirectorOrigin, tr, cfg.DefaultHandlerTimeout)
 	exitOnError(err, "Error while initializing proxy for Director")
 
-	err = proxyRequestsForComponent(ctx, router, "/nsadapter", cfg.NsadapterOrigin, adapterTr)
+	err = proxyRequestsForComponent(ctx, router, "/nsadapter", cfg.NsadapterOrigin, adapterTr, cfg.NsAdapterTimeout)
 	exitOnError(err, "Error while initializing proxy for NSAdapter")
 
 	router.HandleFunc("/healthz", func(writer http.ResponseWriter, request *http.Request) {
@@ -99,8 +107,8 @@ func main() {
 	metricsHandler := http.NewServeMux()
 	metricsHandler.Handle("/metrics", promhttp.Handler())
 
-	metricsServer := createServer(cfg.MetricsAddress, metricsHandler, cfg.ServerTimeout)
-	mainServer := createServer(cfg.Address, router, cfg.ServerTimeout)
+	metricsServer := createServer(cfg.MetricsAddress, metricsHandler, cfg.MetricsServerTimeout)
+	mainServer := createServer(cfg.Address, router, cfg.ReadRequestHeadersTimeout)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
@@ -111,7 +119,7 @@ func main() {
 	wg.Wait()
 }
 
-func proxyRequestsForComponent(ctx context.Context, router *mux.Router, path string, targetOrigin string, transport http.RoundTripper, middleware ...mux.MiddlewareFunc) error {
+func proxyRequestsForComponent(ctx context.Context, router *mux.Router, path string, targetOrigin string, transport http.RoundTripper, timeout time.Duration, middleware ...mux.MiddlewareFunc) error {
 	log.C(ctx).Infof("Proxying requests on path `%s` to `%s`", path, targetOrigin)
 
 	componentProxy, err := proxy.New(targetOrigin, path, transport)
@@ -119,21 +127,23 @@ func proxyRequestsForComponent(ctx context.Context, router *mux.Router, path str
 		return errors.Wrapf(err, "while initializing proxy for component")
 	}
 
+	handlerWithTimeout, err := timeouthandler.WithTimeout(componentProxy, timeout)
+	if err != nil {
+		return errors.Wrapf(err, "while initializing timeout handler for component")
+	}
+
 	connector := router.PathPrefix(path).Subrouter()
-	connector.PathPrefix("").HandlerFunc(componentProxy.ServeHTTP)
+	connector.PathPrefix("").HandlerFunc(handlerWithTimeout.ServeHTTP)
 	connector.Use(middleware...)
 
 	return nil
 }
 
-func createServer(address string, handler http.Handler, timeout time.Duration) *http.Server {
-	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, timeout)
-	exitOnError(err, "Error while configuring server handler")
-
+func createServer(address string, handler http.Handler, readHeadersTimeout time.Duration) *http.Server {
 	return &http.Server{
 		Addr:              address,
-		Handler:           handlerWithTimeout,
-		ReadHeaderTimeout: timeout,
+		Handler:           handler,
+		ReadHeaderTimeout: readHeadersTimeout,
 	}
 }
 
