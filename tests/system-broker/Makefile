@@ -1,6 +1,6 @@
 APP_NAME = system-broker-tests
 APP_PATH = tests/system-broker
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.17.0
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 INSTALLATION_SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/installation/scripts
 export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"
