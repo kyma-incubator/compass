@@ -2214,7 +2214,7 @@ func TestResolver_Webhooks(t *testing.T) {
 			assert.Equal(t, testCase.ExpectedResult, result)
 			assert.Equal(t, testCase.ExpectedErr, err)
 
-			mock.AssertExpectationsForObjects(t, svc, transact, persist)
+			mock.AssertExpectationsForObjects(t, svc, transact, persist, converter)
 		})
 	}
 	t.Run("Returns error when Runtime object is missing", func(t *testing.T) {

@@ -37,9 +37,8 @@ type ApplicationTemplateService interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
-// RuntimeService missing godoc
-//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
-type RuntimeService interface {
+//go:generate mockery --exported --name=runtimeService --output=automock --outpkg=automock --case=underscore
+type runtimeService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
@@ -59,13 +58,13 @@ type Resolver struct {
 	webhookSvc       WebhookService
 	appSvc           ApplicationService
 	appTemplateSvc   ApplicationTemplateService
-	runtimeSvc       RuntimeService
+	runtimeSvc       runtimeService
 	webhookConverter WebhookConverter
 	transact         persistence.Transactioner
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, webhookSvc WebhookService, applicationService ApplicationService, appTemplateService ApplicationTemplateService, runtimeService RuntimeService, webhookConverter WebhookConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, webhookSvc WebhookService, applicationService ApplicationService, appTemplateService ApplicationTemplateService, runtimeService runtimeService, webhookConverter WebhookConverter) *Resolver {
 	return &Resolver{
 		webhookSvc:       webhookSvc,
 		appSvc:           applicationService,

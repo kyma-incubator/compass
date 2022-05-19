@@ -189,7 +189,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 		TenantSvcFn          func() *automock.TenantService
 		LabelUpsertServiceFn func() *automock.LabelUpsertService
 		UIDServiceFn         func() *automock.UidService
-		WebhookService       func() *automock.WebhookService
+		WebhookServiceFn     func() *automock.WebhookService
 		EngineServiceFn      func() *automock.ScenarioAssignmentEngine
 		Input                model.RuntimeRegisterInput
 		MandatoryLabels      func() map[string]interface{}
@@ -218,8 +218,8 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctx, tnt).Return(ga, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: rtmtest.UnusedUUIDService(),
-			WebhookService: func() *automock.WebhookService {
+			UIDServiceFn: rtmtest.UnusedUUIDService,
+			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
 				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, webhookInput, model.RuntimeWebhookReference).Return("webhookID", nil)
 				return webhookSvc
@@ -259,8 +259,8 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctx, tnt).Return(ga, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn:   rtmtest.UnusedUUIDService(),
-			WebhookService: rtmtest.UnusedWebhookService(),
+			UIDServiceFn:     rtmtest.UnusedUUIDService,
+			WebhookServiceFn: rtmtest.UnusedWebhookService,
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
@@ -298,8 +298,8 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: rtmtest.UnusedUUIDService(),
-			WebhookService: func() *automock.WebhookService {
+			UIDServiceFn: rtmtest.UnusedUUIDService,
+			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
 				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, webhookInput, model.RuntimeWebhookReference).Return("webhookID", nil)
 				return webhookSvc
@@ -342,8 +342,8 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: rtmtest.UnusedUUIDService(),
-			WebhookService: func() *automock.WebhookService {
+			UIDServiceFn: rtmtest.UnusedUUIDService,
+			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
 				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, webhookInput, model.RuntimeWebhookReference).Return("webhookID", nil)
 				return webhookSvc
@@ -383,8 +383,8 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: rtmtest.UnusedUUIDService(),
-			WebhookService: func() *automock.WebhookService {
+			UIDServiceFn: rtmtest.UnusedUUIDService,
+			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
 				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, webhookInput, model.RuntimeWebhookReference).Return("webhookID", nil)
 				return webhookSvc
@@ -423,8 +423,8 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctx, tnt).Return(ga, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: rtmtest.UnusedUUIDService(),
-			WebhookService: func() *automock.WebhookService {
+			UIDServiceFn: rtmtest.UnusedUUIDService,
+			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
 				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, webhookInput, model.RuntimeWebhookReference).Return("webhookID", nil)
 				return webhookSvc
@@ -456,8 +456,8 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			TenantSvcFn: func() *automock.TenantService {
 				return &automock.TenantService{}
 			},
-			UIDServiceFn:   rtmtest.UnusedUUIDService(),
-			WebhookService: rtmtest.UnusedWebhookService(),
+			UIDServiceFn:     rtmtest.UnusedUUIDService,
+			WebhookServiceFn: rtmtest.UnusedWebhookService,
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
@@ -487,8 +487,8 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(nil, testErr).Once()
 				return tenantSvc
 			},
-			UIDServiceFn:   rtmtest.UnusedUUIDService(),
-			WebhookService: rtmtest.UnusedWebhookService(),
+			UIDServiceFn:     rtmtest.UnusedUUIDService,
+			WebhookServiceFn: rtmtest.UnusedWebhookService,
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
@@ -518,8 +518,8 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				repo := &automock.ScenariosService{}
 				return repo
 			},
-			UIDServiceFn:   rtmtest.UnusedUUIDService(),
-			WebhookService: rtmtest.UnusedWebhookService(),
+			UIDServiceFn:     rtmtest.UnusedUUIDService,
+			WebhookServiceFn: rtmtest.UnusedWebhookService,
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
@@ -549,8 +549,8 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByExternalID", ctx, extSubaccountID).Return(&model.BusinessTenantMapping{ID: subaccountID, ExternalTenant: extSubaccountID, Parent: "anotherParent"}, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn:   rtmtest.UnusedUUIDService(),
-			WebhookService: rtmtest.UnusedWebhookService(),
+			UIDServiceFn:     rtmtest.UnusedUUIDService,
+			WebhookServiceFn: rtmtest.UnusedWebhookService,
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
@@ -585,8 +585,12 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(nil, testErr).Once()
 				return tenantSvc
 			},
-			UIDServiceFn:   rtmtest.UnusedUUIDService(),
-			WebhookService: rtmtest.UnusedWebhookService(),
+			UIDServiceFn: rtmtest.UnusedUUIDService,
+			WebhookServiceFn: func() *automock.WebhookService {
+				webhookSvc := &automock.WebhookService{}
+				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, webhookInput, model.RuntimeWebhookReference).Return("webhookID", nil)
+				return webhookSvc
+			},
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
@@ -617,11 +621,10 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetTenantByID", ctx, tnt).Return(ga, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: rtmtest.UnusedUUIDService(),
-			WebhookService: func() *automock.WebhookService {
+			UIDServiceFn: rtmtest.UnusedUUIDService,
+			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
 				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, webhookInput, model.RuntimeWebhookReference).Return("", testErr)
 				return webhookSvc
@@ -662,8 +665,8 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: rtmtest.UnusedUUIDService(),
-			WebhookService: func() *automock.WebhookService {
+			UIDServiceFn: rtmtest.UnusedUUIDService,
+			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
 				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, webhookInput, model.RuntimeWebhookReference).Return("webhookID", nil)
 				return webhookSvc
@@ -700,8 +703,8 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			TenantSvcFn: func() *automock.TenantService {
 				return &automock.TenantService{}
 			},
-			UIDServiceFn:   rtmtest.UnusedUUIDService(),
-			WebhookService: rtmtest.UnusedWebhookService(),
+			UIDServiceFn:     rtmtest.UnusedUUIDService,
+			WebhookServiceFn: rtmtest.UnusedWebhookService,
 			EngineServiceFn: func() *automock.ScenarioAssignmentEngine {
 				svc := &automock.ScenarioAssignmentEngine{}
 				return svc
@@ -737,8 +740,8 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				tenantSvc.On("GetTenantByID", ctxWithSubaccountMatcher, subaccountID).Return(subaccount, nil).Once()
 				return tenantSvc
 			},
-			UIDServiceFn: rtmtest.UnusedUUIDService(),
-			WebhookService: func() *automock.WebhookService {
+			UIDServiceFn: rtmtest.UnusedUUIDService,
+			WebhookServiceFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
 				webhookSvc.Mock.On("Create", mock.Anything, runtimeID, webhookInput, model.RuntimeWebhookReference).Return("webhookID", nil)
 				return webhookSvc
@@ -766,7 +769,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			engineSvc := testCase.EngineServiceFn()
 			tenantSvc := testCase.TenantSvcFn()
 			mandatoryLabels := testCase.MandatoryLabels()
-			webhookSvc := testCase.WebhookService()
+			webhookSvc := testCase.WebhookServiceFn()
 			svc := runtime.NewService(repo, nil, scenariosSvc, labelSvc, idSvc, engineSvc, tenantSvc, webhookSvc, protectedLabelPattern, immutableLabelPattern)
 
 			// WHEN

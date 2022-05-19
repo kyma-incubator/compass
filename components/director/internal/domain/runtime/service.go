@@ -265,17 +265,16 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 		return errors.Wrapf(err, "while creating multiple labels for Runtime")
 	}
 
+	for _, w := range in.Webhooks {
+		if _, err = s.webhookService.Create(ctx, rtm.ID, *w, model.RuntimeWebhookReference); err != nil {
+			return errors.Wrap(err, "while Creating Webhook for Runtime")
+		}
+	}
+
 	// The runtime is created successfully, however there can be ASAs in the parent that should be processed.
 	tnt, err := s.tenantSvc.GetTenantByID(ctx, rtmTenant)
 	if err != nil {
 		return errors.Wrapf(err, "while getting tenant with id %s", rtmTenant)
-	}
-
-	for _, w := range in.Webhooks {
-		_, err = s.webhookService.Create(ctx, rtm.ID, *w, model.RuntimeWebhookReference)
-		if err != nil {
-			return errors.Wrap(err, "while Creating Webhook for Runtime")
-		}
 	}
 
 	if len(tnt.Parent) == 0 {

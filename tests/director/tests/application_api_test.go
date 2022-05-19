@@ -784,7 +784,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		require.NoError(t, err)
 		updateReq := fixtures.FixUpdateWebhookRequest(actualWebhook.ID, webhookInStr)
-		saveExampleInCustomDir(t, updateReq.Query(), updateWebhookCategory, "update application webhook")
+		saveExampleInCustomDir(t, updateReq.Query(), updateWebhookCategory, "update webhook")
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateReq, &actualWebhook)
 		require.NoError(t, err)
 		assert.NotNil(t, actualWebhook.URL)
@@ -794,7 +794,7 @@ func TestUpdateApplicationParts(t *testing.T) {
 
 		//GIVEN
 		deleteReq := fixtures.FixDeleteWebhookRequest(actualWebhook.ID)
-		saveExampleInCustomDir(t, deleteReq.Query(), deleteWebhookCategory, "delete application webhook")
+		saveExampleInCustomDir(t, deleteReq.Query(), deleteWebhookCategory, "delete webhook")
 
 		//WHEN
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteReq, &actualWebhook)

@@ -314,6 +314,9 @@ func TestResolver_AddWebhook(t *testing.T) {
 			if testCase.AppTemplateServiceFn != nil {
 				appTemplateSvc.AssertExpectations(t)
 			}
+			if testCase.RuntimeServiceFn != nil {
+				runtimeSvc.AssertExpectations(t)
+			}
 			converter.AssertExpectations(t)
 			persistTxMock.AssertExpectations(t)
 			transactionerMock.AssertExpectations(t)

@@ -23,7 +23,7 @@ func FixRuntimeRegisterInputWithWebhooks(placeholder string) graphql.RuntimeRegi
 		Description: ptr.String(fmt.Sprintf("%s-description", placeholder)),
 		Labels:      graphql.Labels{"placeholder": []interface{}{"placeholder"}},
 		Webhooks: []*graphql.WebhookInput{{
-			Type: graphql.WebhookTypeOpenResourceDiscovery,
+			Type: graphql.WebhookTypeConfigurationChanged,
 			URL:  ptr.String(webhookURL),
 		}},
 	}

@@ -1405,14 +1405,12 @@ type Mutation {
 	addWebhook(applicationID: ID, applicationTemplateID: ID, runtimeID: ID, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
 	"""
 	**Examples**
-	- [update application webhook](examples/update-webhook/update-application-webhook.graphql)
-	- [update runtime webhook](examples/update-webhook/update-runtime-webhook.graphql)
+	- [update webhook](examples/update-webhook/update-webhook.graphql)
 	"""
 	updateWebhook(webhookID: ID!, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.updateWebhook")
 	"""
 	**Examples**
-	- [delete application webhook](examples/delete-webhook/delete-application-webhook.graphql)
-	- [delete runtime webhook](examples/delete-webhook/delete-runtime-webhook.graphql)
+	- [delete webhook](examples/delete-webhook/delete-webhook.graphql)
 	"""
 	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "graphql.mutation.deleteWebhook")
 	"""

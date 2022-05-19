@@ -186,12 +186,14 @@ func (c *DirectorClient) DeleteApplicationLabel(applicationID, key string) error
 
 func (c *DirectorClient) CreateRuntime(in schema.RuntimeRegisterInput) (string, error) {
 	runtimeGraphQL, err := c.graphqulizer.RuntimeRegisterInputToGQL(in)
+	if err != nil {
+		return "", err
+	}
 
 	var result RuntimeResponse
 	query := fixtures.FixRegisterRuntimeRequest(runtimeGraphQL)
 
-	err = c.executeWithDefaultRetries(query.Query(), &result)
-	if err != nil {
+	if err = c.executeWithDefaultRetries(query.Query(), &result); err != nil {
 		return "", err
 	}
 

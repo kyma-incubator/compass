@@ -164,7 +164,7 @@ func TestRuntimeRegisterWithWebhooks(t *testing.T) {
 func TestModifyRuntimeWebhooks(t *testing.T) {
 	ctx := context.Background()
 	placeholder := "runtime"
-	in := fixtures.FixRuntimeRegisterInputWithWebhooks(placeholder)
+	in := fixtures.FixRuntimeRegisterInput(placeholder)
 
 	runtimeInputGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(in)
 	require.NoError(t, err)
@@ -206,7 +206,7 @@ func TestModifyRuntimeWebhooks(t *testing.T) {
 
 	// get all webhooks
 	updatedRuntime := fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, tenantId, actualRuntime.ID)
-	assert.Len(t, updatedRuntime.Webhooks, 2)
+	assert.Len(t, updatedRuntime.Webhooks, 1)
 
 	// update
 	webhookInStr, err = testctx.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
@@ -214,7 +214,7 @@ func TestModifyRuntimeWebhooks(t *testing.T) {
 
 	require.NoError(t, err)
 	updateReq := fixtures.FixUpdateWebhookRequest(actualWebhook.ID, webhookInStr)
-	saveExampleInCustomDir(t, updateReq.Query(), updateWebhookCategory, "update runtime webhook")
+	saveExampleInCustomDir(t, updateReq.Query(), updateWebhookCategory, "update webhook")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateReq, &actualWebhook)
 	require.NoError(t, err)
 	assert.NotNil(t, actualWebhook.URL)
@@ -224,7 +224,7 @@ func TestModifyRuntimeWebhooks(t *testing.T) {
 
 	//GIVEN
 	deleteReq := fixtures.FixDeleteWebhookRequest(actualWebhook.ID)
-	saveExampleInCustomDir(t, deleteReq.Query(), deleteWebhookCategory, "delete runtime webhook")
+	saveExampleInCustomDir(t, deleteReq.Query(), deleteWebhookCategory, "delete webhook")
 
 	//WHEN
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteReq, &actualWebhook)
