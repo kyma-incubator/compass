@@ -8,8 +8,6 @@ import (
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
 
-	testing "testing"
-
 	uuid "github.com/google/uuid"
 )
 
@@ -39,14 +37,4 @@ func (_m *EventingService) GetForRuntime(ctx context.Context, runtimeID uuid.UUI
 	}
 
 	return r0, r1
-}
-
-// NewEventingService creates a new instance of EventingService. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewEventingService(t testing.TB) *EventingService {
-	mock := &EventingService{}
-	mock.Mock.Test(t)
-
-	t.Cleanup(func() { mock.AssertExpectations(t) })
-
-	return mock
 }

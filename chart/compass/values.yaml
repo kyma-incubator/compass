@@ -142,7 +142,7 @@ global:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2302"
+      version: "PR-2368"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -838,6 +838,8 @@ global:
         - "application:read"
         - "runtime.auths:read"
         - "bundle.instance_auths:read"
+        - "runtime.webhooks:read"
+        - "webhook:write"
       application:
         - "application:read"
         - "application:write"
@@ -848,6 +850,7 @@ global:
         - "event_spec.fetch_request:read"
         - "api_spec.fetch_request:read"
         - "fetch-request.auth:read"
+        - "webhook:write"
       integration_system:
         - "application:read"
         - "application:write"
@@ -865,6 +868,7 @@ global:
         - "formation:write"
         - "internal_visibility:read"
         - "application.auths:read"
+        - "webhook:write"
       super_admin:
         - "application:read"
         - "application:write"
@@ -893,6 +897,8 @@ global:
         - "webhooks.auth:read"
         - "formation:write"
         - "internal_visibility:read"
+        - "runtime.webhooks:read"
+        - "webhook:write"
       default:
         - "runtime:read"
         - "runtime:write"

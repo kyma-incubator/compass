@@ -38,10 +38,10 @@ type OauthConfig struct {
 }
 
 const (
-	RuntimeScopes                                    = "runtime:read runtime:write application:read runtime.auths:read bundle.instance_auths:read"
-	ApplicationScopes                                = "application:read application:write application.auths:read application.webhooks:read bundle.instance_auths:read document.fetch_request:read event_spec.fetch_request:read api_spec.fetch_request:read fetch-request.auth:read"
-	IntegrationSystemScopes                          = "application:read application:write application_template:read application_template:write runtime:read runtime:write integration_system:read label_definition:read label_definition:write automatic_scenario_assignment:read automatic_scenario_assignment:write integration_system.auths:read application_template.webhooks:read internal_visibility:read application.auths:read"
-	IntegrationSystemScopesWithoutInternalVisibility = "application:read application:write application_template:read application_template:write runtime:read runtime:write integration_system:read label_definition:read label_definition:write automatic_scenario_assignment:read automatic_scenario_assignment:write integration_system.auths:read application_template.webhooks:read"
+	RuntimeScopes                                    = "webhook:write runtime:read runtime:write application:read runtime.auths:read bundle.instance_auths:read"
+	ApplicationScopes                                = "webhook:write application:read application:write application.auths:read application.webhooks:read bundle.instance_auths:read document.fetch_request:read event_spec.fetch_request:read api_spec.fetch_request:read fetch-request.auth:read"
+	IntegrationSystemScopes                          = "webhook:write application:read application:write application_template:read application_template:write runtime:read runtime:write integration_system:read label_definition:read label_definition:write automatic_scenario_assignment:read automatic_scenario_assignment:write integration_system.auths:read application_template.webhooks:read internal_visibility:read application.auths:read"
+	IntegrationSystemScopesWithoutInternalVisibility = "webhook:write application:read application:write application_template:read application_template:write runtime:read runtime:write integration_system:read label_definition:read label_definition:write automatic_scenario_assignment:read automatic_scenario_assignment:write integration_system.auths:read application_template.webhooks:read"
 
 	contentTypeHeader                = "Content-Type"
 	contentTypeApplicationURLEncoded = "application/x-www-form-urlencoded"

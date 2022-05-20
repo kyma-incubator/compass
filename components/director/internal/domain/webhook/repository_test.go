@@ -232,8 +232,8 @@ func TestRepositoryUpdate(t *testing.T) {
 		Name: "Update Application webhook",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`UPDATE public.webhooks SET type = ?, url = ?, auth = ?, mode = ?, retry_interval = ?, timeout = ?, url_template = ?, input_template = ?, header_template = ?, output_template = ?, status_template = ? WHERE id = ? AND app_id = ? AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = ? AND owner = true))`),
-				Args:          []driver.Value{string(model.WebhookTypeConfigurationChanged), "http://kyma.io", fixAuthAsAString(t), model.WebhookModeSync, nil, nil, "{}", "{}", "{}", "{}", nil, givenID(), givenApplicationID(), givenTenant()},
+				Query:         regexp.QuoteMeta(`UPDATE public.webhooks SET type = ?, url = ?, auth = ?, mode = ?, retry_interval = ?, timeout = ?, url_template = ?, input_template = ?, header_template = ?, output_template = ?, status_template = ? WHERE id = ? AND (id IN (SELECT id FROM application_webhooks_tenants WHERE tenant_id = ? AND owner = true))`),
+				Args:          []driver.Value{string(model.WebhookTypeConfigurationChanged), "http://kyma.io", fixAuthAsAString(t), model.WebhookModeSync, nil, nil, "{}", "{}", "{}", "{}", nil, givenID(), givenTenant()},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
@@ -331,14 +331,61 @@ func TestRepositoryDeleteAllByApplicationID(t *testing.T) {
 }
 
 func TestRepositoryListByApplicationID(t *testing.T) {
-	testListByApplicationID(t, "ListByApplicationID", repo.NoLock)
+	testListByObjectID(t, "ListByReferenceObjectID", repo.NoLock, []interface{}{givenTenant(), givenApplicationID(), model.ApplicationWebhookReference})
 }
 
 func TestRepositoryListByApplicationIDWithSelectForUpdate(t *testing.T) {
-	testListByApplicationID(t, "ListByApplicationIDWithSelectForUpdate", " "+repo.ForUpdateLock)
+	testListByObjectID(t, "ListByApplicationIDWithSelectForUpdate", " "+repo.ForUpdateLock, []interface{}{givenTenant(), givenApplicationID()})
 }
 
-func testListByApplicationID(t *testing.T, methodName string, lockClause string) {
+func TestRepositoryListByRuntimeID(t *testing.T) {
+	whID1 := "whID1"
+	whID2 := "whID2"
+	whModel1 := fixRuntimeModelWebhook(whID1, givenRuntimeID(), "http://kyma.io")
+	whEntity1 := fixRuntimeWebhookEntityWithID(t, whID1)
+
+	whModel2 := fixRuntimeModelWebhook(whID2, givenRuntimeID(), "http://kyma.io")
+	whEntity2 := fixRuntimeWebhookEntityWithID(t, whID2)
+
+	suite := testdb.RepoListTestSuite{
+		Name: "List Webhooks by Runtime ID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, app_id, app_template_id, type, url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template FROM public.webhooks WHERE runtime_id = $1 AND (id IN (SELECT id FROM runtime_webhooks_tenants WHERE tenant_id = $2))`),
+				Args:     []driver.Value{givenRuntimeID(), givenTenant()},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
+						AddRow(whModel1.ID, nil, nil, whModel1.Type, whModel1.URL, fixAuthAsAString(t), givenRuntimeID(), nil, whModel1.Mode, whModel1.CorrelationIDKey, whModel1.RetryInterval, whModel1.Timeout, whModel1.URLTemplate, whModel1.InputTemplate, whModel1.HeaderTemplate, whModel1.OutputTemplate, whModel1.StatusTemplate).
+						AddRow(whModel2.ID, nil, nil, whModel2.Type, whModel2.URL, fixAuthAsAString(t), givenRuntimeID(), nil, whModel2.Mode, whModel2.CorrelationIDKey, whModel2.RetryInterval, whModel2.Timeout, whModel2.URLTemplate, whModel2.InputTemplate, whModel2.HeaderTemplate, whModel2.OutputTemplate, whModel2.StatusTemplate),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   webhook.NewRepository,
+		ExpectedModelEntities: []interface{}{whModel1, whModel2},
+		ExpectedDBEntities:    []interface{}{whEntity1, whEntity2},
+		MethodArgs:            []interface{}{givenTenant(), givenRuntimeID(), model.RuntimeWebhookReference},
+		MethodName:            "ListByReferenceObjectID",
+	}
+
+	suite.Run(t)
+
+	t.Run("Error when webhookReferenceObjectType is not supported", func(t *testing.T) {
+		repository := webhook.NewRepository(nil)
+		_, err := repository.ListByReferenceObjectID(context.TODO(), "", "", model.IntegrationSystemWebhookReference)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "referenced object should be one of application and runtime")
+	})
+}
+
+func testListByObjectID(t *testing.T, methodName string, lockClause string, args []interface{}) {
 	whID1 := "whID1"
 	whID2 := "whID2"
 	whModel1 := fixApplicationModelWebhook(whID1, givenApplicationID(), givenTenant(), "http://kyma.io")
@@ -371,7 +418,7 @@ func testListByApplicationID(t *testing.T, methodName string, lockClause string)
 		RepoConstructorFunc:   webhook.NewRepository,
 		ExpectedModelEntities: []interface{}{whModel1, whModel2},
 		ExpectedDBEntities:    []interface{}{whEntity1, whEntity2},
-		MethodArgs:            []interface{}{givenTenant(), givenApplicationID()},
+		MethodArgs:            args,
 		MethodName:            methodName,
 	}
 
