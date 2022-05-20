@@ -38,12 +38,29 @@ type BusinessTenantMappingConverter interface {
 	ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant
 }
 
+// TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
+//go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
+type TenantFetcher interface {
+	FetchOnDemand(tenant string) error
+}
+
 // Resolver is the resolver responsible for tenant-related GraphQL requests.
 type Resolver struct {
 	transact persistence.Transactioner
 
-	srv  BusinessTenantMappingService
-	conv BusinessTenantMappingConverter
+	srv     BusinessTenantMappingService
+	conv    BusinessTenantMappingConverter
+	fetcher TenantFetcher
+}
+
+// NewResolver returns the GraphQL resolver for tenants.
+func NewResolver(transact persistence.Transactioner, srv BusinessTenantMappingService, conv BusinessTenantMappingConverter, fetcher TenantFetcher) *Resolver {
+	return &Resolver{
+		transact: transact,
+		srv:      srv,
+		conv:     conv,
+		fetcher:  fetcher,
+	}
 }
 
 // Tenants transactionally retrieves a page of tenants present in the Compass storage by a search term. If the search term is missing it will be ignored in the resulting tenant subset.
@@ -88,7 +105,10 @@ func (r *Resolver) Tenants(ctx context.Context, first *int, after *graphql.PageC
 	}, nil
 }
 
-// Tenant retrieves a tenant with the provided external ID from the Compass storage.
+// Tenant first checks whether a tenant with the provided external ID exists in the Compass DB.
+// If it doesn't, it calls an API which fetches details for the given tenant from an external tenancy service,
+// stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
+// Finally, it retrieves a tenant with the provided external ID from the Compass storage.
 func (r *Resolver) Tenant(ctx context.Context, externalID string) (*graphql.Tenant, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -98,16 +118,25 @@ func (r *Resolver) Tenant(ctx context.Context, externalID string) (*graphql.Tena
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	t, err := r.srv.GetTenantByExternalID(ctx, externalID)
+	tenant, err := r.srv.GetTenantByExternalID(ctx, externalID)
+	if err != nil && apperrors.IsNotFoundError(err) {
+		tx, err = r.fetchTenant(tx, externalID)
+		if err != nil {
+			log.C(ctx).Error(err)
+			return nil, apperrors.NewNotFoundError(resource.Tenant, externalID)
+		}
+		ctx = persistence.SaveToContext(ctx, tx)
+		tenant, err = r.srv.GetTenantByExternalID(ctx, externalID)
+	}
 	if err != nil {
 		return nil, err
 	}
+
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
-	gqlTenant := r.conv.MultipleToGraphQL([]*model.BusinessTenantMapping{t})
-	return gqlTenant[0], nil
+	return r.conv.ToGraphQL(tenant), nil
 }
 
 // TenantByID retrieves a tenant with the provided internal ID from the Compass storage.
@@ -262,11 +291,16 @@ func (r *Resolver) Update(ctx context.Context, id string, in graphql.BusinessTen
 	return r.conv.ToGraphQL(tenant), nil
 }
 
-// NewResolver returns the GraphQL resolver for tenants.
-func NewResolver(transact persistence.Transactioner, srv BusinessTenantMappingService, conv BusinessTenantMappingConverter) *Resolver {
-	return &Resolver{
-		transact: transact,
-		srv:      srv,
-		conv:     conv,
+func (r *Resolver) fetchTenant(tx persistence.PersistenceTx, externalID string) (persistence.PersistenceTx, error) {
+	if err := tx.Commit(); err != nil {
+		return nil, err
 	}
+	if err := r.fetcher.FetchOnDemand(externalID); err != nil {
+		return nil, errors.Wrapf(err, "while trying to create if not exists tenant %s", externalID)
+	}
+	tr, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	return tr, nil
 }
