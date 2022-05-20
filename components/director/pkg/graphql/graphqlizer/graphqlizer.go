@@ -425,8 +425,30 @@ func (g *Graphqlizer) VersionInputToGQL(in graphql.VersionInput) (string, error)
 	}`)
 }
 
-// RuntimeInputToGQL missing godoc
-func (g *Graphqlizer) RuntimeInputToGQL(in graphql.RuntimeInput) (string, error) {
+// RuntimeRegisterInputToGQL missing godoc
+func (g *Graphqlizer) RuntimeRegisterInputToGQL(in graphql.RuntimeRegisterInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{.Name}}",
+		{{- if .Description }}
+		description: "{{.Description}}",
+		{{- end }}
+		{{- if .Labels }}
+		labels: {{ LabelsToGQL .Labels}},
+		{{- end }}
+		{{- if .Webhooks }}
+		webhooks: [
+			{{- range $i, $e := .Webhooks }} 
+				{{- if $i}}, {{- end}} {{ WebhookInputToGQL $e }}
+			{{- end }} ],
+		{{- end}}
+		{{- if .StatusCondition }}
+		statusCondition: {{ .StatusCondition }},
+		{{- end }}
+	}`)
+}
+
+// RuntimeUpdateInputToGQL missing godoc
+func (g *Graphqlizer) RuntimeUpdateInputToGQL(in graphql.RuntimeUpdateInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}",
 		{{- if .Description }}

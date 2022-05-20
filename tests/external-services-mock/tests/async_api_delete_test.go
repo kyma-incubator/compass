@@ -192,7 +192,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 		appWebhookInputGQL, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication))
 		require.NoError(t, err)
 
-		registerAppWebhookRequest := fixtures.FixAddWebhookRequest(app.ID, appWebhookInputGQL)
+		registerAppWebhookRequest := fixtures.FixAddWebhookToApplicationRequest(app.ID, appWebhookInputGQL)
 		webhookResult := graphql.Webhook{}
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, registerAppWebhookRequest, &webhookResult)
 		require.NoError(t, err)

@@ -7,7 +7,7 @@ import (
 	gcli "github.com/machinebox/graphql"
 )
 
-func FixAddWebhookRequest(applicationID, webhookInGQL string) *gcli.Request {
+func FixAddWebhookToApplicationRequest(applicationID, webhookInGQL string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 			result: addWebhook(applicationID: "%s", in: %s) {
@@ -15,6 +15,16 @@ func FixAddWebhookRequest(applicationID, webhookInGQL string) *gcli.Request {
 				}
 			}`,
 			applicationID, webhookInGQL, testctx.Tc.GQLFieldsProvider.ForWebhooks()))
+}
+
+func FixAddWebhookToRuntimeRequest(runtimeID, webhookInGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+			result: addWebhook(runtimeID: "%s", in: %s) {
+					%s
+				}
+			}`,
+			runtimeID, webhookInGQL, testctx.Tc.GQLFieldsProvider.ForWebhooks()))
 }
 
 func FixDeleteWebhookRequest(webhookID string) *gcli.Request {

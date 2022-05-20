@@ -45,9 +45,9 @@ graphql:
     registerIntegrationSystem: ["integration_system:write"]
     updateIntegrationSystem: ["integration_system:write"]
     unregisterIntegrationSystem: ["integration_system:write"]
-    addWebhook: ["application:write"]
-    updateWebhook: ["application:write"]
-    deleteWebhook: ["application:write"]
+    addWebhook: ["webhook:write"]
+    updateWebhook: ["webhook:write"]
+    deleteWebhook: ["webhook:write"]
     addAPIDefinitionToBundle: ["application:write"]
     updateAPIDefinition: ["application:write"]
     deleteAPIDefinition: ["application:write"]
@@ -118,6 +118,7 @@ graphql:
       fetch_request: ["api_spec.fetch_request:read"]
     runtime:
       auths: ["runtime.auths:read"]
+      webhooks: ["runtime.webhooks:read"]
     integration_system:
       auths: ["integration_system.auths:read"]
 

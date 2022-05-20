@@ -234,7 +234,14 @@ func AssertEventsAPI(t *testing.T, in []*graphql.EventDefinitionInput, actual []
 	}
 }
 
-func AssertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.RuntimeExt, defaultScenarioEnabled, isSubaccountTenant bool) {
+func AssertRuntime(t *testing.T, in graphql.RuntimeRegisterInput, actualRuntime graphql.RuntimeExt, defaultScenarioEnabled, isSubaccountTenant bool) {
+	assert.Equal(t, in.Name, actualRuntime.Name)
+	assert.Equal(t, in.Description, actualRuntime.Description)
+	AssertWebhooks(t, in.Webhooks, actualRuntime.Webhooks)
+	AssertRuntimeLabels(t, &in.Labels, actualRuntime.Labels, defaultScenarioEnabled, isSubaccountTenant)
+}
+
+func AssertUpdatedRuntime(t *testing.T, in graphql.RuntimeUpdateInput, actualRuntime graphql.RuntimeExt, defaultScenarioEnabled, isSubaccountTenant bool) {
 	assert.Equal(t, in.Name, actualRuntime.Name)
 	assert.Equal(t, in.Description, actualRuntime.Description)
 	AssertRuntimeLabels(t, &in.Labels, actualRuntime.Labels, defaultScenarioEnabled, isSubaccountTenant)
