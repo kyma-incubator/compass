@@ -170,36 +170,35 @@ func TestResolver_Tenant(t *testing.T) {
 	tenantParent := ""
 	tenantInternalID := "internal"
 
-	expectedTenantsModel := []*model.BusinessTenantMapping{
-		{
-			ID:             testExternal,
-			Name:           testName,
-			ExternalTenant: testExternal,
-			Parent:         tenantParent,
-			Type:           tnt.Account,
-			Provider:       testProvider,
-			Status:         tnt.Active,
-			Initialized:    nil,
-		},
+	tenantNotFoundError := apperrors.NewNotFoundError(resource.Tenant, testExternal)
+
+	expectedTenantModel := &model.BusinessTenantMapping{
+		ID:             testExternal,
+		Name:           testName,
+		ExternalTenant: testExternal,
+		Parent:         tenantParent,
+		Type:           tnt.Account,
+		Provider:       testProvider,
+		Status:         tnt.Active,
+		Initialized:    nil,
 	}
 
-	expectedTenantsGQL := []*graphql.Tenant{
-		{
-			ID:          testExternal,
-			InternalID:  tenantInternalID,
-			Name:        str.Ptr(testName),
-			Type:        string(tnt.Account),
-			ParentID:    tenantParent,
-			Initialized: nil,
-			Labels:      nil,
-		},
+	expectedTenantGQL := &graphql.Tenant{
+		ID:          testExternal,
+		InternalID:  tenantInternalID,
+		Name:        str.Ptr(testName),
+		Type:        string(tnt.Account),
+		ParentID:    tenantParent,
+		Initialized: nil,
+		Labels:      nil,
 	}
 
 	testCases := []struct {
 		Name           string
-		TxFn           func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		TxFn           func() ([]*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		TenantSvcFn    func() *automock.BusinessTenantMappingService
 		TenantConvFn   func() *automock.BusinessTenantMappingConverter
+		TenantFetcher  func() *automock.TenantFetcher
 		TenantInput    graphql.BusinessTenantMappingInput
 		IDInput        string
 		ExpectedError  error
@@ -207,52 +206,128 @@ func TestResolver_Tenant(t *testing.T) {
 	}{
 		{
 			Name: "Success",
-			TxFn: txGen.ThatSucceeds,
+			TxFn: func() ([]*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistenceTx, transact := txGen.ThatSucceeds()
+				return []*persistenceautomock.PersistenceTx{persistenceTx, {}}, transact
+			},
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), testExternal).Return(expectedTenantsModel[0], nil).Once()
+				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), testExternal).Return(expectedTenantModel, nil).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				conv := &automock.BusinessTenantMappingConverter{}
-				conv.On("MultipleToGraphQL", expectedTenantsModel).Return(expectedTenantsGQL)
+				conv.On("ToGraphQL", expectedTenantModel).Return(expectedTenantGQL)
 				return conv
+			},
+			TenantFetcher:  unusedFetcherService,
+			IDInput:        testExternal,
+			ExpectedError:  nil,
+			ExpectedResult: expectedTenantGQL,
+		},
+		{
+			Name: "Success when tenant has to be fetched",
+			TxFn: func() ([]*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				secondPersistTx := &persistenceautomock.PersistenceTx{}
+				secondPersistTx.On("Commit").Return(nil).Once()
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("Begin").Return(secondPersistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+
+				return []*persistenceautomock.PersistenceTx{persistTx, secondPersistTx}, transact
+			},
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), testExternal).Return(nil, tenantNotFoundError).Once()
+				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), testExternal).Return(expectedTenantModel, nil).Once()
+				return TenantSvc
+			},
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("ToGraphQL", expectedTenantModel).Return(expectedTenantGQL)
+				return conv
+			},
+			TenantFetcher: func() *automock.TenantFetcher {
+				fetcher := &automock.TenantFetcher{}
+				fetcher.On("FetchOnDemand", testExternal).Return(nil)
+				return fetcher
 			},
 			IDInput:        testExternal,
 			ExpectedError:  nil,
-			ExpectedResult: expectedTenantsGQL[0],
+			ExpectedResult: expectedTenantGQL,
 		},
 		{
-			Name:           "That returns error when can not start transaction",
-			TxFn:           txGen.ThatFailsOnBegin,
+			Name: "That returns error when can not start transaction",
+			TxFn: func() ([]*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistenceTx, transact := txGen.ThatFailsOnBegin()
+				return []*persistenceautomock.PersistenceTx{persistenceTx, {}}, transact
+			},
 			TenantSvcFn:    unusedTenantService,
 			TenantConvFn:   unusedTenantConverter,
+			TenantFetcher:  unusedFetcherService,
 			IDInput:        testExternal,
 			ExpectedError:  testError,
 			ExpectedResult: nil,
 		},
 		{
 			Name: "That returns error when can not get tenant by external ID",
-			TxFn: txGen.ThatDoesntExpectCommit,
+			TxFn: func() ([]*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+
+				return []*persistenceautomock.PersistenceTx{persistTx, {}}, transact
+			},
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				TenantSvc := &automock.BusinessTenantMappingService{}
+				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), testExternal).Return(nil, tenantNotFoundError).Once()
+				return TenantSvc
+			},
+			TenantConvFn: unusedTenantConverter,
+			TenantFetcher: func() *automock.TenantFetcher {
+				fetcher := &automock.TenantFetcher{}
+				fetcher.On("FetchOnDemand", testExternal).Return(tenantNotFoundError)
+				return fetcher
+			},
+			IDInput:        testExternal,
+			ExpectedError:  tenantNotFoundError,
+			ExpectedResult: expectedTenantGQL,
+		},
+		{
+			Name: "That returns error when can not fetch tenant",
+			TxFn: func() ([]*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistenceTx, transact := txGen.ThatDoesntExpectCommit()
+				return []*persistenceautomock.PersistenceTx{persistenceTx, {}}, transact
+			},
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
 				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), testExternal).Return(nil, testError).Once()
 				return TenantSvc
 			},
 			TenantConvFn:   unusedTenantConverter,
+			TenantFetcher:  unusedFetcherService,
 			IDInput:        testExternal,
 			ExpectedError:  testError,
 			ExpectedResult: nil,
 		},
 		{
 			Name: "That returns error when cannot commit",
-			TxFn: txGen.ThatFailsOnCommit,
+			TxFn: func() ([]*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistenceTx, transact := txGen.ThatFailsOnCommit()
+				return []*persistenceautomock.PersistenceTx{persistenceTx, {}}, transact
+			},
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), testExternal).Return(expectedTenantsModel[0], nil).Once()
+				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), testExternal).Return(expectedTenantModel, nil).Once()
 				return TenantSvc
 			},
 			TenantConvFn:   unusedTenantConverter,
+			TenantFetcher:  unusedFetcherService,
 			IDInput:        testExternal,
 			ExpectedError:  testError,
 			ExpectedResult: nil,
@@ -263,8 +338,12 @@ func TestResolver_Tenant(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
-			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+			fetcherSvc := testCase.TenantFetcher()
+			persistencesTx, transact := testCase.TxFn()
+
+			defer mock.AssertExpectationsForObjects(t, transact, tenantSvc, tenantConv, fetcherSvc, persistencesTx[0], persistencesTx[1])
+
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, fetcherSvc)
 
 			// WHEN
 			result, err := resolver.Tenant(ctx, testCase.IDInput)
@@ -277,8 +356,6 @@ func TestResolver_Tenant(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, testCase.ExpectedResult, result)
 			}
-
-			mock.AssertExpectationsForObjects(t, persist, transact, tenantSvc, tenantConv)
 		})
 	}
 }
@@ -1013,4 +1090,8 @@ func unusedTenantConverter() *automock.BusinessTenantMappingConverter {
 
 func unusedTenantService() *automock.BusinessTenantMappingService {
 	return &automock.BusinessTenantMappingService{}
+}
+
+func unusedFetcherService() *automock.TenantFetcher {
+	return &automock.TenantFetcher{}
 }

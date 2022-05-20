@@ -39,7 +39,7 @@ type BusinessTenantMappingConverter interface {
 }
 
 // TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
-//go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantFetcher interface {
 	FetchOnDemand(tenant string) error
 }
@@ -123,7 +123,7 @@ func (r *Resolver) Tenant(ctx context.Context, externalID string) (*graphql.Tena
 		tx, err = r.fetchTenant(tx, externalID)
 		if err != nil {
 			log.C(ctx).Error(err)
-			return nil, apperrors.NewNotFoundError(resource.API, externalID)
+			return nil, apperrors.NewNotFoundError(resource.Tenant, externalID)
 		}
 		ctx = persistence.SaveToContext(ctx, tx)
 		tenant, err = r.srv.GetTenantByExternalID(ctx, externalID)
