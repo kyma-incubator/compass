@@ -403,15 +403,17 @@ func (s *SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	_, err = s.tenantStorageService.GetTenantByExternalID(ctx, subaccountID)
-	if err == nil {
+	if _, err = s.tenantStorageService.GetTenantByExternalID(ctx, subaccountID); err == nil {
 		log.C(ctx).Infof("Subbaccount %s alredy exists in the database", subaccountID)
+		if err := tx.Commit(); err != nil {
+			log.C(ctx).Warnf("Failed to commit empty transaction: %v", err)
+		}
 		return nil
 	} else if err != nil && !apperrors.IsNotFoundError(err) {
-		return err
+		return errors.Wrapf(err, "while fetching subaccount with ID %s from Director", subaccountID)
 	}
 
-	tenantToCreate, err := s.getSubaccountToCreate(subaccountID)
+	tenantToCreate, err := s.getSubaccountToCreate(ctx, subaccountID)
 	if err != nil {
 		return err
 	}
@@ -419,20 +421,19 @@ func (s *SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID
 
 	parentTenantDetails, err := s.getParentDetailsForSubaccount(ctx, tenantToCreate)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "while getting parent details for subaccount with ID %s", subaccountID)
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.C(ctx).Warnf("Failed to commit empty transaction: %v", err)
 	}
 
 	var tenantsToCreate = []model.BusinessTenantMappingInput{*tenantToCreate}
 	if err := createTenants(ctx, s.gqlClient, parentTenantDetails, tenantsToCreate, tenantToCreate.Region, s.providerName, chunkSizeForTenantOnDemand, s.tenantConverter); err != nil {
-		return err
+		return errors.Wrapf(err, "while creating missing tenants from tenant hierarchy of subaccount tenant with ID %s", subaccountID)
 	}
 
 	log.C(ctx).Infof("Provided subaccount %s stored successfully", subaccountID)
-
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -574,6 +575,7 @@ func (s *SubaccountOnDemandService) getParentDetailsForSubaccount(ctx context.Co
 		parentTenantDetails[parent.ExternalTenant] = parent.ID
 		return parentTenantDetails, nil
 	} else if err != nil && apperrors.IsNotFoundError(err) {
+		log.C(ctx).Infof("Parent tenant with external ID %s does not exist", subaccount.Parent)
 		return parentTenantDetails, nil
 	}
 	return nil, err
@@ -711,7 +713,7 @@ func (s SubaccountService) getSubaccountsToCreateForRegion(fromTimestamp string,
 	return fetchedTenants, nil
 }
 
-func (s SubaccountOnDemandService) getSubaccountToCreate(subaccountID string) (*model.BusinessTenantMappingInput, error) {
+func (s SubaccountOnDemandService) getSubaccountToCreate(ctx context.Context, subaccountID string) (*model.BusinessTenantMappingInput, error) {
 	configProvider := func() (QueryParams, PageConfig) {
 		return QueryParams{
 				s.queryConfig.PageNumField:    s.queryConfig.PageStartValue,
@@ -732,7 +734,7 @@ func (s SubaccountOnDemandService) getSubaccountToCreate(subaccountID string) (*
 		return nil, fmt.Errorf("no create events for subaccount with ID %s were found", subaccountID)
 	}
 	if len(fetchedTenants) > 1 {
-		return nil, fmt.Errorf("expected one create event for tenant with ID %s, found %d", subaccountID, len(fetchedTenants))
+		log.C(ctx).Warnf("expected one create event for tenant with ID %s, found %d", subaccountID, len(fetchedTenants))
 	}
 
 	return &fetchedTenants[0], nil

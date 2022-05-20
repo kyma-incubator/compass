@@ -220,10 +220,10 @@ func constructSubaccountTenant(jsonPayload, name, subdomain, externalTenant stri
 func determineTenantID(jsonPayload string, mapping TenantFieldMapping) (string, error) {
 	if gjson.Get(jsonPayload, mapping.IDField).Exists() {
 		return gjson.Get(jsonPayload, mapping.IDField).String(), nil
-	} else if gjson.Get(jsonPayload, mapping.GlobalAccountGUIDField).Exists() {
-		return gjson.Get(jsonPayload, mapping.GlobalAccountGUIDField).String(), nil
 	} else if gjson.Get(jsonPayload, mapping.SubaccountIDField).Exists() {
 		return gjson.Get(jsonPayload, mapping.SubaccountIDField).String(), nil
+	} else if gjson.Get(jsonPayload, mapping.GlobalAccountGUIDField).Exists() {
+		return gjson.Get(jsonPayload, mapping.GlobalAccountGUIDField).String(), nil
 	} else if gjson.Get(jsonPayload, mapping.SubaccountGUIDField).Exists() {
 		return gjson.Get(jsonPayload, mapping.SubaccountGUIDField).String(), nil
 	}

@@ -42,7 +42,7 @@ func TestFetcher_FetchTenantOnDemand(t *testing.T) {
 	}{
 		{
 			Name:            "Success when tenant exists",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: txGen.ThatSucceeds,
 			TenantStorageSvcFn: func() *tfautomock.TenantStorageService {
 				svc := &tfautomock.TenantStorageService{}
 				svc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), businessSubaccount1BusinessMapping.ExternalTenant).Return(&businessSubaccount1BusinessMapping, nil).Once()
