@@ -45,7 +45,7 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 	defer certs.Cleanup(t, configmapCleaner, certResult)
 
 	// Register Runtime
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, &graphql.RuntimeInput{
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, &graphql.RuntimeRegisterInput{
 		Name:   "test-runtime",
 		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}},
 	})

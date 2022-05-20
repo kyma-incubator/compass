@@ -35,7 +35,7 @@ type EntityConverter interface {
 type repository struct {
 	singleGetter       repo.SingleGetter
 	singleGetterGlobal repo.SingleGetterGlobal
-	updater            repo.Updater
+	webhookUpdater     repo.Updater
 	updaterGlobal      repo.UpdaterGlobal
 	creator            repo.Creator
 	globalCreator      repo.CreatorGlobal
@@ -53,7 +53,7 @@ func NewRepository(conv EntityConverter) *repository {
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Webhook, tableName, webhookColumns),
 		creator:            repo.NewCreator(tableName, webhookColumns),
 		globalCreator:      repo.NewCreatorGlobal(resource.Webhook, tableName, webhookColumns),
-		updater:            repo.NewUpdater(tableName, updatableColumns, []string{"id", "app_id"}),
+		webhookUpdater:     repo.NewUpdater(tableName, updatableColumns, []string{"id"}),
 		updaterGlobal:      repo.NewUpdaterGlobal(resource.Webhook, tableName, updatableColumns, []string{"id", "app_template_id"}),
 		deleterGlobal:      repo.NewDeleterGlobal(resource.Webhook, tableName),
 		deleter:            repo.NewDeleter(tableName),
@@ -89,15 +89,20 @@ func (r *repository) GetByIDGlobal(ctx context.Context, id string) (*model.Webho
 	return m, nil
 }
 
-// ListByApplicationID missing godoc
-func (r *repository) ListByApplicationID(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error) {
+// ListByReferenceObjectID missing godoc
+func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error) {
 	var entities Collection
 
-	conditions := repo.Conditions{
-		repo.NewEqualCondition("app_id", applicationID),
+	refColumn, err := getReferenceColumnForListByReferenceObjectType(objType)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := r.lister.List(ctx, resource.AppWebhook, tenant, &entities, conditions...); err != nil {
+	conditions := repo.Conditions{
+		repo.NewEqualCondition(refColumn, objID),
+	}
+
+	if err := r.lister.List(ctx, objType.GetResourceType(), tenant, &entities, conditions...); err != nil {
 		return nil, err
 	}
 
@@ -118,19 +123,6 @@ func (r *repository) ListByApplicationIDWithSelectForUpdate(ctx context.Context,
 	return convertToWebhooks(entities, r)
 }
 
-func convertToWebhooks(entities Collection, r *repository) ([]*model.Webhook, error) {
-	out := make([]*model.Webhook, 0, len(entities))
-	for _, ent := range entities {
-		w, err := r.conv.FromEntity(&ent)
-		if err != nil {
-			return nil, errors.Wrap(err, "while converting Webhook to model")
-		}
-		out = append(out, w)
-	}
-
-	return out, nil
-}
-
 // ListByApplicationTemplateID missing godoc
 func (r *repository) ListByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error) {
 	var entities Collection
@@ -143,16 +135,7 @@ func (r *repository) ListByApplicationTemplateID(ctx context.Context, applicatio
 		return nil, err
 	}
 
-	out := make([]*model.Webhook, 0, len(entities))
-	for _, ent := range entities {
-		w, err := r.conv.FromEntity(&ent)
-		if err != nil {
-			return nil, errors.Wrap(err, "while converting Webhook to model")
-		}
-		out = append(out, w)
-	}
-
-	return out, nil
+	return convertToWebhooks(entities, r)
 }
 
 // Create missing godoc
@@ -195,7 +178,7 @@ func (r *repository) Update(ctx context.Context, tenant string, item *model.Webh
 	if item.ObjectType.GetResourceType() == resource.Webhook { // Global resource webhook
 		return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 	}
-	return r.updater.UpdateSingle(ctx, item.ObjectType.GetResourceType(), tenant, entity)
+	return r.webhookUpdater.UpdateSingle(ctx, item.ObjectType.GetResourceType(), tenant, entity)
 }
 
 // Delete missing godoc
@@ -206,4 +189,28 @@ func (r *repository) Delete(ctx context.Context, id string) error {
 // DeleteAllByApplicationID missing godoc
 func (r *repository) DeleteAllByApplicationID(ctx context.Context, tenant, applicationID string) error {
 	return r.deleter.DeleteMany(ctx, resource.AppWebhook, tenant, repo.Conditions{repo.NewEqualCondition("app_id", applicationID)})
+}
+
+func convertToWebhooks(entities Collection, r *repository) ([]*model.Webhook, error) {
+	out := make([]*model.Webhook, 0, len(entities))
+	for _, ent := range entities {
+		w, err := r.conv.FromEntity(&ent)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting Webhook to model")
+		}
+		out = append(out, w)
+	}
+
+	return out, nil
+}
+
+func getReferenceColumnForListByReferenceObjectType(objType model.WebhookReferenceObjectType) (string, error) {
+	switch objType {
+	case model.ApplicationWebhookReference:
+		return "app_id", nil
+	case model.RuntimeWebhookReference:
+		return "runtime_id", nil
+	default:
+		return "", errors.New("referenced object should be one of application and runtime")
+	}
 }

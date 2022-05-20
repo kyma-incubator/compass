@@ -33,7 +33,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 	require.NotEmpty(t, appTemplate.ID)
 
 	t.Log(fmt.Sprintf("Registering runtime %q", runtimeName))
-	runtimeRegInput := fixtures.FixRuntimeInput(runtimeName)
+	runtimeRegInput := fixtures.FixRuntimeRegisterInput(runtimeName)
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &runtimeRegInput)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 	require.NoError(t, err)

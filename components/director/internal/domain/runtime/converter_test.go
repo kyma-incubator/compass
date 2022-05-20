@@ -3,13 +3,15 @@ package runtime_test
 import (
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/repo/testdb"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestConverter_ToGraphQL(t *testing.T) {
@@ -49,7 +51,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// WHEN
-			converter := runtime.NewConverter()
+
+			converter := runtime.NewConverter(nil)
 			res := converter.ToGraphQL(testCase.Input)
 
 			// then
@@ -80,37 +83,192 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	}
 
 	// WHEN
-	converter := runtime.NewConverter()
+	converter := runtime.NewConverter(nil)
 	res := converter.MultipleToGraphQL(input)
 
 	// then
 	assert.Equal(t, expected, res)
 }
 
-func TestConverter_InputFromGraphQL(t *testing.T) {
+func TestConverter_RegisterInputFromGraphQL(t *testing.T) {
 	// GIVEN
+	gqlWebhooks := []*graphql.WebhookInput{{Type: "type"}}
+	modelWebhooks := []*model.WebhookInput{{Type: "type"}}
+	var emptyGqlWebhooks []*graphql.WebhookInput
+	var emptyModelWebhooks []*model.WebhookInput
+
+	testErr := errors.New("test error")
+
 	testCases := []struct {
-		Name     string
-		Input    graphql.RuntimeInput
-		Expected model.RuntimeInput
+		Name          string
+		Input         graphql.RuntimeRegisterInput
+		Expected      model.RuntimeRegisterInput
+		ConverterFn   func() *automock.WebhookConverter
+		ExpectedError string
 	}{
 		{
 			Name:     "All properties given",
-			Input:    fixGQLRuntimeInput("foo", "Lorem ipsum"),
-			Expected: fixModelRuntimeInput("foo", "Lorem ipsum"),
+			Input:    fixGQLRuntimeRegisterInput("foo", "Lorem ipsum", gqlWebhooks),
+			Expected: fixModelRuntimeRegisterInput("foo", "Lorem ipsum", modelWebhooks),
+			ConverterFn: func() *automock.WebhookConverter {
+				converter := &automock.WebhookConverter{}
+				converter.Mock.On("MultipleInputFromGraphQL", gqlWebhooks).Return(modelWebhooks, nil)
+				return converter
+			},
+			ExpectedError: "",
 		},
 		{
 			Name:     "Empty",
-			Input:    graphql.RuntimeInput{},
-			Expected: model.RuntimeInput{},
+			Input:    graphql.RuntimeRegisterInput{},
+			Expected: model.RuntimeRegisterInput{},
+			ConverterFn: func() *automock.WebhookConverter {
+				converter := &automock.WebhookConverter{}
+				converter.Mock.On("MultipleInputFromGraphQL", emptyGqlWebhooks).Return(emptyModelWebhooks, nil)
+				return converter
+			},
+			ExpectedError: "",
+		},
+		{
+			Name:     "Error While converting webhooks",
+			Input:    fixGQLRuntimeRegisterInput("foo", "Lorem ipsum", gqlWebhooks),
+			Expected: model.RuntimeRegisterInput{},
+			ConverterFn: func() *automock.WebhookConverter {
+				converter := &automock.WebhookConverter{}
+				converter.Mock.On("MultipleInputFromGraphQL", gqlWebhooks).Return(nil, testErr)
+				return converter
+			},
+			ExpectedError: "test error",
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// WHEN
-			converter := runtime.NewConverter()
-			res := converter.InputFromGraphQL(testCase.Input)
+			converter := runtime.NewConverter(testCase.ConverterFn())
+			res, err := converter.RegisterInputFromGraphQL(testCase.Input)
+			if testCase.ExpectedError == "" {
+				assert.NoError(t, err)
+
+				// then
+				assert.Equal(t, testCase.Expected, res)
+			} else {
+				assert.Equal(t, testCase.ExpectedError, err.Error())
+			}
+		})
+	}
+}
+
+func TestConverter_RegisterInputFromGraphQL_StatusCondition(t *testing.T) {
+	testErr := errors.New("test error")
+	var emptyGqlWebhooks []*graphql.WebhookInput
+	var emptyModelWebhooks []*model.WebhookInput
+
+	testCases := []struct {
+		Name           string
+		CondtionGQL    graphql.RuntimeStatusCondition
+		ConditionModel model.RuntimeStatusCondition
+		ConverterFn    func() *automock.WebhookConverter
+		ExpectedError  string
+	}{
+		{
+			Name:           "When status condition is FAILED",
+			CondtionGQL:    graphql.RuntimeStatusConditionFailed,
+			ConditionModel: model.RuntimeStatusConditionFailed,
+			ConverterFn: func() *automock.WebhookConverter {
+				converter := &automock.WebhookConverter{}
+				converter.Mock.On("MultipleInputFromGraphQL", emptyGqlWebhooks).Return(emptyModelWebhooks, nil)
+				return converter
+			},
+			ExpectedError: "",
+		},
+		{
+			Name:           "When status condition is CONNECTED",
+			CondtionGQL:    graphql.RuntimeStatusConditionConnected,
+			ConditionModel: model.RuntimeStatusConditionConnected,
+			ConverterFn: func() *automock.WebhookConverter {
+				converter := &automock.WebhookConverter{}
+				converter.Mock.On("MultipleInputFromGraphQL", emptyGqlWebhooks).Return(emptyModelWebhooks, nil)
+				return converter
+			},
+			ExpectedError: "",
+		},
+		{
+			Name:           "When status condition is INITIAL",
+			CondtionGQL:    graphql.RuntimeStatusConditionInitial,
+			ConditionModel: model.RuntimeStatusConditionInitial,
+			ConverterFn: func() *automock.WebhookConverter {
+				converter := &automock.WebhookConverter{}
+				converter.Mock.On("MultipleInputFromGraphQL", emptyGqlWebhooks).Return(emptyModelWebhooks, nil)
+				return converter
+			},
+			ExpectedError: "",
+		},
+		{
+			Name:           "When status condition is PROVISIONING",
+			CondtionGQL:    graphql.RuntimeStatusConditionProvisioning,
+			ConditionModel: model.RuntimeStatusConditionProvisioning,
+			ConverterFn: func() *automock.WebhookConverter {
+				converter := &automock.WebhookConverter{}
+				converter.Mock.On("MultipleInputFromGraphQL", emptyGqlWebhooks).Return(emptyModelWebhooks, nil)
+				return converter
+			},
+			ExpectedError: "",
+		},
+		{
+			Name:           "When status condition is PROVISIONING",
+			CondtionGQL:    graphql.RuntimeStatusConditionProvisioning,
+			ConditionModel: model.RuntimeStatusConditionProvisioning,
+			ConverterFn: func() *automock.WebhookConverter {
+				converter := &automock.WebhookConverter{}
+				converter.Mock.On("MultipleInputFromGraphQL", emptyGqlWebhooks).Return(emptyModelWebhooks, testErr)
+				return converter
+			},
+			ExpectedError: "test error",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			gqlApp := graphql.RuntimeRegisterInput{StatusCondition: &testCase.CondtionGQL}
+
+			converter := runtime.NewConverter(testCase.ConverterFn())
+			modelApp, err := converter.RegisterInputFromGraphQL(gqlApp)
+			if testCase.ExpectedError == "" {
+				assert.NoError(t, err)
+
+				// then
+				require.Equal(t, &testCase.ConditionModel, modelApp.StatusCondition)
+			} else {
+				assert.Equal(t, testCase.ExpectedError, err.Error())
+			}
+		})
+	}
+}
+
+func TestConverter_UpdateInputFromGraphQL(t *testing.T) {
+	// GIVEN
+	testCases := []struct {
+		Name     string
+		Input    graphql.RuntimeUpdateInput
+		Expected model.RuntimeUpdateInput
+	}{
+		{
+			Name:     "All properties given",
+			Input:    fixGQLRuntimeUpdateInput("foo", "Lorem ipsum"),
+			Expected: fixModelRuntimeUpdateInput("foo", "Lorem ipsum"),
+		},
+		{
+			Name:     "Empty",
+			Input:    graphql.RuntimeUpdateInput{},
+			Expected: model.RuntimeUpdateInput{},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// WHEN
+			converter := runtime.NewConverter(nil)
+			res := converter.UpdateInputFromGraphQL(testCase.Input)
 
 			// then
 			assert.Equal(t, testCase.Expected, res)
@@ -118,7 +276,7 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 	}
 }
 
-func TestConverter_InputFromGraphQL_StatusCondition(t *testing.T) {
+func TestConverter_UpdateInputFromGraphQL_StatusCondition(t *testing.T) {
 	testCases := []struct {
 		Name           string
 		CondtionGQL    graphql.RuntimeStatusCondition
@@ -148,10 +306,10 @@ func TestConverter_InputFromGraphQL_StatusCondition(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			gqlApp := graphql.RuntimeInput{StatusCondition: &testCase.CondtionGQL}
+			gqlApp := graphql.RuntimeUpdateInput{StatusCondition: &testCase.CondtionGQL}
 
-			converter := runtime.NewConverter()
-			modelApp := converter.InputFromGraphQL(gqlApp)
+			converter := runtime.NewConverter(nil)
+			modelApp := converter.UpdateInputFromGraphQL(gqlApp)
 
 			require.Equal(t, &testCase.ConditionModel, modelApp.StatusCondition)
 		})
@@ -159,7 +317,7 @@ func TestConverter_InputFromGraphQL_StatusCondition(t *testing.T) {
 }
 
 func TestConverter_ToEntity(t *testing.T) {
-	conv := runtime.NewConverter()
+	conv := runtime.NewConverter(nil)
 
 	t.Run("All properties given", func(t *testing.T) {
 		// GIVEN
@@ -199,7 +357,7 @@ func TestConverter_ToEntity(t *testing.T) {
 }
 
 func TestConverter_FromEntity(t *testing.T) {
-	conv := runtime.NewConverter()
+	conv := runtime.NewConverter(nil)
 
 	t.Run("All properties given", func(t *testing.T) {
 		// GIVEN

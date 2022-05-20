@@ -650,7 +650,24 @@ input RuntimeContextInput {
 	value: String!
 }
 
-input RuntimeInput {
+input RuntimeRegisterInput {
+	"""
+	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	"""
+	name: String!
+	"""
+	**Validation:**  max=2000
+	"""
+	description: String
+	"""
+	**Validation:** key: required, alphanumeric with underscore
+	"""
+	labels: Labels
+	webhooks: [WebhookInput!]
+	statusCondition: RuntimeStatusCondition
+}
+
+input RuntimeUpdateInput {
 	"""
 	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
 	"""
@@ -1083,6 +1100,7 @@ type Runtime {
 	name: String!
 	description: String
 	labels(key: String): Labels
+	webhooks: [Webhook!] @sanitize(path: "graphql.field.runtime.webhooks")
 	status: RuntimeStatus!
 	"""
 	Returns array of authentication details for Runtime. For now at most one element in array will be returned.
@@ -1338,14 +1356,15 @@ type Mutation {
 	mergeApplications(destinationID: ID!, sourceID: ID!): Application! @hasScopes(path: "graphql.mutation.mergeApplications")
 	"""
 	**Examples**
+	- [register runtime with webhooks](examples/register-runtime/register-runtime-with-webhooks.graphql)
 	- [register runtime](examples/register-runtime/register-runtime.graphql)
 	"""
-	registerRuntime(in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.registerRuntime")
+	registerRuntime(in: RuntimeRegisterInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.registerRuntime")
 	"""
 	**Examples**
 	- [update runtime](examples/update-runtime/update-runtime.graphql)
 	"""
-	updateRuntime(id: ID!, in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
+	updateRuntime(id: ID!, in: RuntimeUpdateInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
 	"""
 	**Examples**
 	- [unregister runtime](examples/unregister-runtime/unregister-runtime.graphql)
@@ -1381,16 +1400,17 @@ type Mutation {
 	**Examples**
 	- [add application template webhook](examples/add-webhook/add-application-template-webhook.graphql)
 	- [add application webhook](examples/add-webhook/add-application-webhook.graphql)
+	- [add runtime webhook](examples/add-webhook/add-runtime-webhook.graphql)
 	"""
-	addWebhook(applicationID: ID, applicationTemplateID: ID, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
+	addWebhook(applicationID: ID, applicationTemplateID: ID, runtimeID: ID, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
 	"""
 	**Examples**
-	- [update application webhook](examples/update-webhook/update-application-webhook.graphql)
+	- [update webhook](examples/update-webhook/update-webhook.graphql)
 	"""
 	updateWebhook(webhookID: ID!, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.updateWebhook")
 	"""
 	**Examples**
-	- [delete application webhook](examples/delete-webhook/delete-application-webhook.graphql)
+	- [delete webhook](examples/delete-webhook/delete-webhook.graphql)
 	"""
 	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "graphql.mutation.deleteWebhook")
 	"""

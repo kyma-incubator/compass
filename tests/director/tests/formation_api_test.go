@@ -162,7 +162,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 
 	rtmName := "rt"
 	rtmDesc := "rt-description"
-	rtmInput := graphql.RuntimeInput{
+	rtmInput := graphql.RuntimeRegisterInput{
 		Name:        rtmName,
 		Description: &rtmDesc,
 		Labels: graphql.Labels{
