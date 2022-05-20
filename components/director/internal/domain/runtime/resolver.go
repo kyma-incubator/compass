@@ -54,7 +54,11 @@ type RuntimeService interface {
 //go:generate mockery --name=ScenarioAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ScenarioAssignmentService interface {
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
-	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
+}
+
+//go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationService interface {
+	DeleteAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
 // RuntimeConverter missing godoc
@@ -136,13 +140,14 @@ type Resolver struct {
 	fetcher                   TenantFetcher
 	runtimeContextService     RuntimeContextService
 	runtimeContextConverter   RuntimeContextConverter
+	formationSvc              formationService
 }
 
 // NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService,
 	sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService, selfRegManager SelfRegisterManager,
-	uidService uidService, subscriptionSvc SubscriptionService, runtimeContextService RuntimeContextService, runtimeContextConverter RuntimeContextConverter, fetcher TenantFetcher) *Resolver {
+	uidService uidService, subscriptionSvc SubscriptionService, runtimeContextService RuntimeContextService, runtimeContextConverter RuntimeContextConverter, fetcher TenantFetcher, formationSvc formationService) *Resolver {
 	return &Resolver{
 		transact:                  transact,
 		runtimeService:            runtimeService,
@@ -159,6 +164,7 @@ func NewResolver(transact persistence.Transactioner, runtimeService RuntimeServi
 		fetcher:                   fetcher,
 		runtimeContextService:     runtimeContextService,
 		runtimeContextConverter:   runtimeContextConverter,
+		formationSvc:              formationSvc,
 	}
 }
 
@@ -811,7 +817,7 @@ func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runt
 			continue
 		}
 
-		if err := r.scenarioAssignmentService.Delete(ctx, scenarioAssignment); err != nil {
+		if err := r.formationSvc.DeleteAutomaticScenarioAssignment(ctx, scenarioAssignment); err != nil {
 			return err
 		}
 	}

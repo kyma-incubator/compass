@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -26,11 +30,19 @@ type labelRepository interface {
 	Delete(context.Context, string, model.LabelableObject, string, string) error
 }
 
+//go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type runtimeRepository interface {
+	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
+	Exists(ctx context.Context, tenant, id string) (bool, error)
+}
+
 //go:generate mockery --exported --name=labelDefService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type labelDefService interface {
 	CreateWithFormations(ctx context.Context, tnt string, formations []string) error
 	ValidateExistingLabelsAgainstSchema(ctx context.Context, schema interface{}, tenant, key string) error
 	ValidateAutomaticScenarioAssignmentAgainstSchema(ctx context.Context, schema interface{}, tenantID, key string) error
+	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenantID string) error
+	GetAvailableScenarios(ctx context.Context, tenantID string) ([]string, error)
 }
 
 //go:generate mockery --exported --name=labelService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -47,9 +59,18 @@ type uidService interface {
 
 //go:generate mockery --exported --name=automaticFormationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type automaticFormationAssignmentService interface {
-	Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
-	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
+}
+
+//go:generate mockery --exported --name=automaticFormationAssignmentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type automaticFormationAssignmentRepository interface {
+	Create(ctx context.Context, model model.AutomaticScenarioAssignment) error
+	ListForTargetTenant(ctx context.Context, tenantID string, targetTenantID string) ([]*model.AutomaticScenarioAssignment, error)
+	GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error)
+	ListAll(ctx context.Context, tenantID string) ([]*model.AutomaticScenarioAssignment, error)
+	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
+	DeleteForTargetTenant(ctx context.Context, tenantID string, targetTenantID string) error
+	DeleteForScenarioName(ctx context.Context, tenantID string, scenarioName string) error
 }
 
 //go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -72,10 +93,12 @@ type service struct {
 	uuidService        uidService
 	tenantSvc          tenantService
 	engine             scenarioAssignmentEngine
+	repo               automaticFormationAssignmentRepository
+	runtimeRepo        runtimeRepository
 }
 
 // NewService creates formation service
-func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, labelService labelService, uuidService uidService, labelDefService labelDefService, asaService automaticFormationAssignmentService, tenantSvc tenantService, engine scenarioAssignmentEngine) *service {
+func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, labelService labelService, uuidService uidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, engine scenarioAssignmentEngine) *service {
 	return &service{
 		labelDefRepository: labelDefRepository,
 		labelRepository:    labelRepository,
@@ -84,6 +107,8 @@ func NewService(labelDefRepository labelDefRepository, labelRepository labelRepo
 		asaService:         asaService,
 		uuidService:        uuidService,
 		tenantSvc:          tenantSvc,
+		repo:               asaRepo,
+		runtimeRepo:        runtimeRepo,
 		engine:             engine,
 	}
 }
@@ -137,7 +162,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, err
 		}
 
-		if _, err = s.asaService.Create(ctx, newAutomaticScenarioAssignmentModel(formation.Name, tnt, tenantID)); err != nil {
+		if _, err = s.CreateAutomaticScenarioAssignment(ctx, newAutomaticScenarioAssignmentModel(formation.Name, tnt, tenantID)); err != nil {
 			return nil, err
 		}
 		return &formation, err
@@ -171,13 +196,167 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		if err != nil {
 			return nil, err
 		}
-		if err = s.asaService.Delete(ctx, asa); err != nil {
+		if err = s.DeleteAutomaticScenarioAssignment(ctx, asa); err != nil {
 			return nil, err
 		}
 		return &formation, nil
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
+}
+
+// CreateAutomaticScenarioAssignment missing godoc
+func (s *service) CreateAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error) {
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return model.AutomaticScenarioAssignment{}, err
+	}
+
+	in.Tenant = tenantID
+	if err := s.validateThatScenarioExists(ctx, in); err != nil {
+		return model.AutomaticScenarioAssignment{}, err
+	}
+	err = s.repo.Create(ctx, in)
+	if err != nil {
+		if apperrors.IsNotUniqueError(err) {
+			return model.AutomaticScenarioAssignment{}, apperrors.NewInvalidOperationError("a given scenario already has an assignment")
+		}
+
+		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while persisting Assignment")
+	}
+
+	err = s.EnsureScenarioAssigned(ctx, in)
+	if err != nil {
+		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while assigning scenario to runtimes matching selector")
+	}
+
+	return in, nil
+}
+
+func (s *service) validateThatScenarioExists(ctx context.Context, in model.AutomaticScenarioAssignment) error {
+	availableScenarios, err := s.getAvailableScenarios(ctx, in.Tenant)
+	if err != nil {
+		return err
+	}
+
+	for _, av := range availableScenarios {
+		if av == in.ScenarioName {
+			return nil
+		}
+	}
+
+	return apperrors.NewNotFoundError(resource.AutomaticScenarioAssigment, in.ScenarioName)
+}
+
+func (s *service) getAvailableScenarios(ctx context.Context, tenantID string) ([]string, error) {
+	if err := s.labelDefService.EnsureScenariosLabelDefinitionExists(ctx, tenantID); err != nil {
+		return nil, errors.Wrap(err, "while ensuring that `scenarios` label definition exist")
+	}
+
+	out, err := s.labelDefService.GetAvailableScenarios(ctx, tenantID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting available scenarios")
+	}
+	return out, nil
+}
+
+// DeleteAutomaticScenarioAssignment deletes the assignment for a given scenario in a scope of a tenant
+func (s *service) DeleteAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) error {
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrap(err, "while loading tenant from context")
+	}
+
+	if err = s.repo.DeleteForScenarioName(ctx, tenantID, in.ScenarioName); err != nil {
+		return errors.Wrap(err, "while deleting the Assignment")
+	}
+
+	if err = s.RemoveAssignedScenario(ctx, in); err != nil {
+		return errors.Wrap(err, "while unassigning scenario from runtimes")
+	}
+
+	return nil
+}
+
+func (s *service) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error {
+	runtimes, err := s.runtimeRepo.ListAll(ctx, in.TargetTenantID, nil)
+
+	if err != nil {
+		return errors.Wrapf(err, "while fetching runtimes in target tenant: %s", in.TargetTenantID)
+	}
+	for _, runtime := range runtimes {
+		_, err = s.AssignFormation(ctx, in.Tenant, runtime.ID, graphql.FormationObjectTypeRuntime, model.Formation{Name: in.ScenarioName})
+		if err != nil && !apperrors.IsNotUniqueError(err) {
+			return errors.Wrapf(err, "while assigning formation")
+		}
+	}
+	return nil
+}
+
+// RemoveAssignedScenario removes all the scenarios that are coming from the provided ASA
+func (s *service) RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment) error {
+	runtimes, err := s.runtimeRepo.ListAll(ctx, in.TargetTenantID, nil)
+	if err != nil {
+		return errors.Wrapf(err, "while fetching runtimes in target tenant: %s", in.TargetTenantID)
+	}
+
+	for _, runtime := range runtimes {
+		_, err = s.UnassignFormation(ctx, in.Tenant, runtime.ID, graphql.FormationObjectTypeRuntime, model.Formation{Name: in.ScenarioName})
+		if err != nil && !apperrors.IsNotFoundError(err) {
+			return errors.Wrapf(err, "while unassigning formation")
+		}
+	}
+	return nil
+}
+
+// RemoveAssignedScenarios removes all the scenarios that are coming from any of the provided ASAs
+func (s *service) RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
+	for _, asa := range in {
+		err := s.RemoveAssignedScenario(ctx, *asa)
+		if err != nil {
+			return errors.Wrapf(err, "while deleting automatic scenario assigment: %s", asa.ScenarioName)
+		}
+	}
+	return nil
+}
+
+func (s *service) ensureSameTargetTenant(in []*model.AutomaticScenarioAssignment) (string, error) {
+	if len(in) == 0 || in[0] == nil {
+		return "", apperrors.NewInternalError("expected at least one item in Assignments slice")
+	}
+
+	targetTenant := in[0].TargetTenantID
+
+	for _, item := range in {
+		if item != nil && item.TargetTenantID != targetTenant {
+			return "", apperrors.NewInternalError("all input items have to have the same target tenant")
+		}
+	}
+
+	return targetTenant, nil
+}
+
+// DeleteManyForSameTargetTenant missing godoc
+func (s *service) DeleteManyForSameTargetTenant(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	targetTenant, err := s.ensureSameTargetTenant(in)
+	if err != nil {
+		return errors.Wrap(err, "while ensuring input is valid")
+	}
+
+	if err = s.repo.DeleteForTargetTenant(ctx, tenantID, targetTenant); err != nil {
+		return errors.Wrap(err, "while deleting the Assignments")
+	}
+
+	if err = s.RemoveAssignedScenarios(ctx, in); err != nil {
+		return errors.Wrap(err, "while unassigning scenario from runtimes")
+	}
+
+	return nil
 }
 
 func (s *service) isFormationComingFromASA(ctx context.Context, runtimeID, formation string) (bool, error) {

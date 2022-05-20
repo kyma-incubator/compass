@@ -6,11 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment/automock"
-
-	"github.com/stretchr/testify/require"
 
 	"github.com/DATA-DOG/go-sqlmock"
 
@@ -135,14 +132,6 @@ func fixSQLRows(rows []sqlRow) *sqlmock.Rows {
 	return out
 }
 
-func fixAutomaticScenarioAssigment(selectorScenario string) model.AutomaticScenarioAssignment {
-	return model.AutomaticScenarioAssignment{
-		ScenarioName:   selectorScenario,
-		Tenant:         tenantID,
-		TargetTenantID: targetTenantID,
-	}
-}
-
 func fixAutomaticScenarioAssignmentRow(scenarioName, tenantID, targetTenantID string) []driver.Value {
 	return []driver.Value{scenarioName, tenantID, targetTenantID}
 }
@@ -169,18 +158,6 @@ func fixTenantIsolationSubqueryWithArg(i int) string {
 
 func fixUnescapedTenantIsolationSubqueryWithArg(i int) string {
 	return fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i)
-}
-
-func matchExpectedScenarios(t *testing.T, expected map[string][]string) func(label *model.LabelInput) bool {
-	return func(actual *model.LabelInput) bool {
-		actualArray, ok := actual.Value.([]string)
-		require.True(t, ok)
-
-		expectedArray, ok := expected[actual.ObjectID]
-		require.True(t, ok)
-		require.ElementsMatch(t, expectedArray, actualArray)
-		return true
-	}
 }
 
 func unusedLabelService() *automock.LabelUpsertService {

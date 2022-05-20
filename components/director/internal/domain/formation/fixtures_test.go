@@ -14,6 +14,18 @@ func UnusedASAService() *automock.AutomaticFormationAssignmentService {
 	return &automock.AutomaticFormationAssignmentService{}
 }
 
+func UnusedLabelDefServiceFn() *automock.LabelDefService {
+	return &automock.LabelDefService{}
+}
+
+func UnusedASARepo() *automock.AutomaticFormationAssignmentRepository {
+	return &automock.AutomaticFormationAssignmentRepository{}
+}
+
+func UnusedRuntimeRepo() *automock.RuntimeRepository {
+	return &automock.RuntimeRepository{}
+}
+
 func UnusedEngine() *automock.ScenarioAssignmentEngine {
 	return &automock.ScenarioAssignmentEngine{}
 }
