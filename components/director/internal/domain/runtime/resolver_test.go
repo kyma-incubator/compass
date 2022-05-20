@@ -2259,7 +2259,7 @@ func TestResolver_Webhooks(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter, nil)
+			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter, nil, nil)
 
 			// WHEN
 			result, err := resolver.Webhooks(context.TODO(), gqlRuntime)
@@ -2272,7 +2272,7 @@ func TestResolver_Webhooks(t *testing.T) {
 		})
 	}
 	t.Run("Returns error when Runtime object is missing", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := resolver.Webhooks(context.TODO(), nil)
 		// THEN
