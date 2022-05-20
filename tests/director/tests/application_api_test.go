@@ -340,10 +340,8 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 			require.NotEmpty(t, actualAppWithPackage.Package.ID)
 		})
 
-		runtimeInput := fixtures.FixRuntimeInput("test-runtime")
-		(runtimeInput.Labels)[ScenariosLabel] = []string{"DEFAULT"}
-		runtimeInput.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-		runtimeInput.Labels[RegionLabel] = conf.SelfRegRegion
+		runtimeInput := fixRuntimeInput("test-runtime")
+		runtimeInput.Labels[ScenariosLabel] = []string{"DEFAULT"}
 		runtimeInputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInput)
 
 		require.NoError(t, err)
@@ -555,12 +553,10 @@ func TestDeleteApplication(t *testing.T) {
 		ctx := context.Background()
 		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInScenario")
 
-		runtimeInput := fixtures.FixRuntimeInput("one-runtime")
+		runtimeInput := fixRuntimeInput("one-runtime")
 		defaultValue := "DEFAULT"
 		scenarios := []string{defaultValue, "test-scenario"}
 		runtimeInput.Labels[ScenariosLabel] = scenarios
-		runtimeInput.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-		runtimeInput.Labels[RegionLabel] = conf.SelfRegRegion
 		runtimeInputWithNormalizationGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInput)
 		require.NoError(t, err)
 		registerRuntimeRequest := fixtures.FixRegisterRuntimeRequest(runtimeInputWithNormalizationGQL)
@@ -663,12 +659,10 @@ func TestUnpairApplication(t *testing.T) {
 		ctx := context.Background()
 		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInScenario")
 
-		runtimeInput := fixtures.FixRuntimeInput("one-runtime")
+		runtimeInput := fixRuntimeInput("one-runtime")
 		defaultValue := "DEFAULT"
 		scenarios := []string{defaultValue, "test-scenario"}
 		runtimeInput.Labels[ScenariosLabel] = scenarios
-		runtimeInput.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-		runtimeInput.Labels[RegionLabel] = conf.SelfRegRegion
 		runtimeInputWithNormalizationGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInput)
 		require.NoError(t, err)
 		registerRuntimeRequest := fixtures.FixRegisterRuntimeRequest(runtimeInputWithNormalizationGQL)
@@ -941,9 +935,7 @@ func TestQuerySpecificApplication(t *testing.T) {
 
 	ctx := context.Background()
 
-	input := fixtures.FixRuntimeInput("runtime-test")
-	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input.Labels[RegionLabel] = conf.SelfRegRegion
+	input := fixRuntimeInput("runtime-test")
 
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
@@ -1113,11 +1105,9 @@ func TestApplicationsForRuntime(t *testing.T) {
 	}
 
 	//create runtime without normalization
-	runtimeInputWithoutNormalization := fixtures.FixRuntimeInput("unnormalized-runtime")
-	(runtimeInputWithoutNormalization.Labels)[ScenariosLabel] = scenarios
-	(runtimeInputWithoutNormalization.Labels)[IsNormalizedLabel] = "false"
-	runtimeInputWithoutNormalization.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	runtimeInputWithoutNormalization.Labels[RegionLabel] = conf.SelfRegRegion
+	runtimeInputWithoutNormalization := fixRuntimeInput("unnormalized-runtime")
+	runtimeInputWithoutNormalization.Labels[ScenariosLabel] = scenarios
+	runtimeInputWithoutNormalization.Labels[IsNormalizedLabel] = "false"
 	runtimeInputWithoutNormalizationGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInputWithoutNormalization)
 	require.NoError(t, err)
 	registerRuntimeWithNormalizationRequest := fixtures.FixRegisterRuntimeRequest(runtimeInputWithoutNormalizationGQL)
@@ -1145,11 +1135,9 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 	t.Run("Applications For Runtime Query without normalization due to missing label", func(t *testing.T) {
 		//create runtime without normalization
-		unlabeledRuntimeInput := fixtures.FixRuntimeInput("unlabeled-runtime")
-		(unlabeledRuntimeInput.Labels)[ScenariosLabel] = scenarios
-		(unlabeledRuntimeInput.Labels)[IsNormalizedLabel] = "false"
-		(unlabeledRuntimeInput.Labels)[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-		(unlabeledRuntimeInput.Labels)[RegionLabel] = conf.SelfRegRegion
+		unlabeledRuntimeInput := fixRuntimeInput("unlabeled-runtime")
+		unlabeledRuntimeInput.Labels[ScenariosLabel] = scenarios
+		unlabeledRuntimeInput.Labels[IsNormalizedLabel] = "false"
 		unlabeledRuntimeGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(unlabeledRuntimeInput)
 		require.NoError(t, err)
 		registerUnlabeledRuntimeRequest := fixtures.FixRegisterRuntimeRequest(unlabeledRuntimeGQL)
@@ -1180,11 +1168,9 @@ func TestApplicationsForRuntime(t *testing.T) {
 
 	t.Run("Applications For Runtime Query with normalization", func(t *testing.T) {
 		//create runtime without normalization
-		runtimeInputWithNormalization := fixtures.FixRuntimeInput("normalized-runtime")
-		(runtimeInputWithNormalization.Labels)[ScenariosLabel] = scenarios
-		(runtimeInputWithNormalization.Labels)[IsNormalizedLabel] = "true"
-		(runtimeInputWithNormalization.Labels)[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-		(runtimeInputWithNormalization.Labels)[RegionLabel] = conf.SelfRegRegion
+		runtimeInputWithNormalization := fixRuntimeInput("normalized-runtime")
+		runtimeInputWithNormalization.Labels[ScenariosLabel] = scenarios
+		runtimeInputWithNormalization.Labels[IsNormalizedLabel] = "true"
 		runtimeInputWithNormalizationGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInputWithNormalization)
 		require.NoError(t, err)
 		registerRuntimeWithNormalizationRequest := fixtures.FixRegisterRuntimeRequest(runtimeInputWithNormalizationGQL)
@@ -1317,11 +1303,9 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 	}
 
 	//create runtime without normalization
-	runtimeWithoutNormalizationInput := fixtures.FixRuntimeInput("unnormalized-runtime")
-	(runtimeWithoutNormalizationInput.Labels)[ScenariosLabel] = scenarios
-	(runtimeWithoutNormalizationInput.Labels)[IsNormalizedLabel] = "false"
-	(runtimeWithoutNormalizationInput.Labels)[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	(runtimeWithoutNormalizationInput.Labels)[RegionLabel] = conf.SelfRegRegion
+	runtimeWithoutNormalizationInput := fixRuntimeInput("unnormalized-runtime")
+	runtimeWithoutNormalizationInput.Labels[ScenariosLabel] = scenarios
+	runtimeWithoutNormalizationInput.Labels[IsNormalizedLabel] = "false"
 	runtimeWithoutNormalizationInputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeWithoutNormalizationInput)
 	require.NoError(t, err)
 
@@ -1348,11 +1332,9 @@ func TestApplicationsForRuntimeWithHiddenApps(t *testing.T) {
 
 	t.Run("Applications For Runtime Query with normalization", func(t *testing.T) {
 		//create runtime with normalization
-		runtimeWithNormalizationInput := fixtures.FixRuntimeInput("normalized-runtime")
-		(runtimeWithNormalizationInput.Labels)[ScenariosLabel] = scenarios
-		(runtimeWithNormalizationInput.Labels)[IsNormalizedLabel] = "true"
-		(runtimeWithNormalizationInput.Labels)[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-		(runtimeWithNormalizationInput.Labels)[RegionLabel] = conf.SelfRegRegion
+		runtimeWithNormalizationInput := fixRuntimeInput("normalized-runtime")
+		runtimeWithNormalizationInput.Labels[ScenariosLabel] = scenarios
+		runtimeWithNormalizationInput.Labels[IsNormalizedLabel] = "true"
 		runtimeWithNormalizationInputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeWithNormalizationInput)
 		require.NoError(t, err)
 
@@ -1478,14 +1460,9 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &actualApp)
 	require.NoError(t, err)
 
-	inRuntime := graphql.RuntimeInput{
-		Name: "test-runtime",
-		Labels: graphql.Labels{
-			"scenarios":                     scenarios,
-			conf.SelfRegDistinguishLabelKey: []interface{}{conf.SelfRegDistinguishLabelValue},
-			RegionLabel:                     conf.SelfRegRegion,
-		},
-	}
+	inRuntime := fixRuntimeInput("test-runtime")
+	inRuntime.Labels[ScenariosLabel] = scenarios
+	inRuntime.Description = nil
 	runtimeInputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(inRuntime)
 	require.NoError(t, err)
 	request = fixtures.FixRegisterRuntimeRequest(runtimeInputGQL)
@@ -1524,7 +1501,7 @@ func TestMergeApplications(t *testing.T) {
 	newFormation := "formation-merge-applications-e2e"
 	destScenariosValue := []interface{}{"DEFAULT", newFormation}
 
-	appTmplInput := fixtures.FixApplicationTemplate(expectedProductType)
+	appTmplInput := fixAppTemplateInput(expectedProductType)
 	appTmplInput.ApplicationInput.Name = "{{name}}"
 	appTmplInput.ApplicationInput.BaseURL = baseURL
 	appTmplInput.ApplicationInput.ProviderName = nil
@@ -1536,8 +1513,6 @@ func TestMergeApplications(t *testing.T) {
 			Description: ptr.String("description"),
 		},
 	}
-	appTmplInput.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	appTmplInput.Labels[RegionLabel] = conf.SelfRegRegion
 
 	// Create Application Template
 	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)

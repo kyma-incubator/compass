@@ -17,9 +17,7 @@ func TestAddRuntimeContext(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	in := fixtures.FixRuntimeInput("addRuntimeContext")
-	in.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	in.Labels[RegionLabel] = conf.SelfRegRegion
+	in := fixRuntimeInput("addRuntimeContext")
 
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
@@ -60,9 +58,7 @@ func TestQueryRuntimeContexts(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	in := fixtures.FixRuntimeInput("addRuntimeContext")
-	in.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	in.Labels[RegionLabel] = conf.SelfRegRegion
+	in := fixRuntimeInput("addRuntimeContext")
 
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
@@ -91,9 +87,7 @@ func TestUpdateRuntimeContext(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	in := fixtures.FixRuntimeInput("addRuntimeContext")
-	in.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	in.Labels[RegionLabel] = conf.SelfRegRegion
+	in := fixRuntimeInput("addRuntimeContext")
 
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
@@ -127,9 +121,7 @@ func TestDeleteRuntimeContext(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	in := fixtures.FixRuntimeInput("addRuntimeContext")
-	in.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	in.Labels[RegionLabel] = conf.SelfRegRegion
+	in := fixRuntimeInput("addRuntimeContext")
 
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)

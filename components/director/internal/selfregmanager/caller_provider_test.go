@@ -1,9 +1,10 @@
 package selfregmanager_test
 
 import (
-	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 
 	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"

@@ -54,6 +54,12 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: APP_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY # This variable get its value from tenant fetcher configuration(in productive charts too) because we need "self register" flow to be executed as part of the consumer-provider test, locally and on real environment as well
+              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscriptionProviderIdValue | quote }}
+            - name: APP_SELF_REG_REGION
+              value: {{ .Values.global.tests.selfRegistration.region }}
       restartPolicy: Never
 ---
 apiVersion: v1

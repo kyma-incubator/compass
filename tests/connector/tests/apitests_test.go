@@ -13,9 +13,9 @@ import (
 )
 
 func TestTokens(t *testing.T) {
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &graphql.RuntimeInput{
-		Name: "test-tokens-runtime",
-	})
+	input := fixRuntimeInput("test-tokens-runtime")
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &input)
+
 	defer fixtures.CleanupRuntime(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
@@ -337,4 +337,12 @@ func TestFullConnectorFlow(t *testing.T) {
 	require.Nil(t, configWithRevokedCert.Token)
 	require.Nil(t, configWithRevokedCert.CertificateSigningRequestInfo)
 	require.Nil(t, configWithRevokedCert.ManagementPlaneInfo)
+}
+
+func fixRuntimeInput(name string) graphql.RuntimeInput {
+	input := fixtures.FixRuntimeInput(name)
+	input.Labels[cfg.SelfRegDistinguishLabelKey] = []interface{}{cfg.SelfRegDistinguishLabelValue}
+	input.Labels[RegionLabel] = cfg.SelfRegRegion
+
+	return input
 }

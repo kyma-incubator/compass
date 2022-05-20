@@ -97,10 +97,7 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 
 	rtms := make([]*graphql.RuntimeExt, 3)
 	for i := 0; i < 2; i++ {
-		rmtInput := fixtures.FixRuntimeInput(fmt.Sprintf("runtime%d", i))
-		rmtInput.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-		rmtInput.Labels[RegionLabel] = conf.SelfRegRegion
-
+		rmtInput := fixRuntimeInput(fmt.Sprintf("runtime%d", i))
 		rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, subaccount, &rmtInput)
 		rtms[i] = &rtm
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccount, &rtm)
@@ -108,10 +105,7 @@ func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
 		require.NotEmpty(t, rtm.ID)
 	}
 
-	rtmInput := fixtures.FixRuntimeInput(fmt.Sprintf("runtime%d", 2))
-	rtmInput.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	rtmInput.Labels[RegionLabel] = conf.SelfRegRegion
-
+	rtmInput := fixRuntimeInput(fmt.Sprintf("runtime%d", 2))
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, &rtmInput)
 	rtms[2] = &rtm
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &rtm)
@@ -195,13 +189,7 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation, subaccountID, tenantID)
 	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation, subaccountID, tenantID)
 
-	rtmInput := graphql.RuntimeInput{
-		Name: "test-name",
-		Labels: graphql.Labels{
-			conf.SelfRegDistinguishLabelKey: []interface{}{conf.SelfRegDistinguishLabelValue},
-			RegionLabel:                     conf.SelfRegRegion,
-		},
-	}
+	rtmInput := fixRuntimeInput("test-name")
 
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, subaccountID, &rtmInput)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, &rtm)

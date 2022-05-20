@@ -3,9 +3,10 @@ package domain
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"net/http"
 	"net/url"
+
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 
 	pkgadapters "github.com/kyma-incubator/compass/components/director/pkg/adapters"
 

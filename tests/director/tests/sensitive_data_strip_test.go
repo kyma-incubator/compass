@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
@@ -26,9 +28,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Creating application template")
-	appTmpInput := fixtures.FixApplicationTemplateWithWebhook("app-template-test")
-	appTmpInput.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	appTmpInput.Labels[RegionLabel] = conf.SelfRegRegion
+	appTmpInput := fixAppTemplateWithWebhookInput("app-template-test")
 
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmpInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate)
@@ -36,9 +36,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 	require.NotEmpty(t, appTemplate.ID)
 
 	t.Log(fmt.Sprintf("Registering runtime %q", runtimeName))
-	runtimeRegInput := fixtures.FixRuntimeInput(runtimeName)
-	runtimeRegInput.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	runtimeRegInput.Labels[RegionLabel] = conf.SelfRegRegion
+	runtimeRegInput := fixRuntimeInput(runtimeName)
 
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &runtimeRegInput)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
@@ -306,4 +304,12 @@ func appWithAPIsAndEvents(name string) graphql.ApplicationRegisterInput {
 			OutputTemplate: &webhookOutputTemplate,
 		}},
 	}
+}
+
+func fixAppTemplateWithWebhookInput(name string) graphql.ApplicationTemplateInput {
+	input := fixtures.FixApplicationTemplateWithWebhook(name)
+	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
+	input.Labels[tenantfetcher.RegionKey] = conf.SelfRegRegion
+
+	return input
 }

@@ -39,13 +39,7 @@ func TestConnector(t *testing.T) {
 	}
 
 	descr := "test"
-	runtimeInput := directorSchema.RuntimeInput{
-		Name:        TestRuntime,
-		Description: &descr,
-		Labels: directorSchema.Labels{
-			"scenarios": []interface{}{"DEFAULT"},
-		},
-	}
+	runtimeInput := fixRuntimeInput(descr)
 
 	appID, err := directorClient.CreateApplication(appInput)
 	defer func() {

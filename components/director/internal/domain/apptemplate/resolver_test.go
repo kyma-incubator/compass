@@ -3,10 +3,11 @@ package apptemplate_test
 import (
 	"context"
 	"errors"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate/apptmpltest"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/mock"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -27,7 +28,7 @@ import (
 )
 
 const (
-	RegionKey  = "region"
+	RegionKey = "region"
 )
 
 func TestResolver_ApplicationTemplate(t *testing.T) {
@@ -538,7 +539,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
-			ExpectedOutput: gqlAppTemplate,
+			ExpectedOutput:   gqlAppTemplate,
 		},
 		{
 			Name: "Returns error when can't convert input from graphql",
@@ -562,7 +563,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.NoopSelfRegManager,
-			ExpectedError: testError,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when creating application template failed",
@@ -595,7 +596,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
-			ExpectedError: testError,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when getting application template failed",
@@ -628,7 +629,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
-			ExpectedError: testError,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when beginning transaction",
@@ -652,7 +653,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.NoopSelfRegManager,
-			ExpectedError: testError,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when committing transaction",
@@ -685,7 +686,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
-			ExpectedError: testError,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when can't convert application template to graphql",
@@ -718,7 +719,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
-			ExpectedError: testError,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Success when  labels are nil after converting gql AppTemplateInput",
@@ -753,7 +754,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
-			ExpectedOutput: gqlAppTemplate,
+			ExpectedOutput:   gqlAppTemplate,
 		},
 		{
 			Name: "Returns error when app template self registration fails",
@@ -777,7 +778,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatReturnsErrorOnPrep,
-			ExpectedError: errors.New(apptmpltest.SelfRegErrorMsg),
+			ExpectedError:    errors.New(apptmpltest.SelfRegErrorMsg),
 		},
 		{
 			Name: "Returns error when app template self registration fails",
@@ -813,7 +814,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatReturnsNoErrors(labels),
-			ExpectedError: testError,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Success but couldn't cast region label value to string",
@@ -847,8 +848,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labels),
-			ExpectedOutput: gqlAppTemplate,
-
+			ExpectedOutput:   gqlAppTemplate,
 		},
 	}
 
@@ -1654,7 +1654,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
-			ExpectedOutput: gqlAppTemplate,
+			ExpectedOutput:   gqlAppTemplate,
 		},
 		{
 			Name: "Returns error when getting application template failed",
@@ -1687,7 +1687,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.NoopSelfRegManager,
-			ExpectedError: testError,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when deleting application template failed",
@@ -1721,7 +1721,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
-			ExpectedError: testError,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when beginning transaction",
@@ -1745,7 +1745,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.NoopSelfRegManager,
-			ExpectedError: testError,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when committing transaction for first time",
@@ -1770,7 +1770,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.SelfRegManagerReturnsDistinguishingLabel,
-			ExpectedError: testError,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when committing transaction for second time",
@@ -1805,7 +1805,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
-			ExpectedError: testError,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when can't convert application template to graphql",
@@ -1839,7 +1839,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
-			ExpectedError: testError,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when getting label for first time",
@@ -1864,7 +1864,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.SelfRegManagerReturnsDistinguishingLabel,
-			ExpectedError: testError,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when getting label for second time",
@@ -1889,7 +1889,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.SelfRegManagerReturnsDistinguishingLabel,
-			ExpectedError: testError,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Success but couldn't cast region label value to string",
@@ -1925,7 +1925,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.SelfRegManagerReturnsDistinguishingLabel,
-			ExpectedOutput: nil,
+			ExpectedOutput:   nil,
 		},
 		{
 			Name: "Returns error when CleanUpSelfRegistration fails",
@@ -1961,7 +1961,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatReturnsErrorOnCleanup,
-			ExpectedError: errors.New(apptmpltest.SelfRegErrorMsg),
+			ExpectedError:    errors.New(apptmpltest.SelfRegErrorMsg),
 		},
 		{
 			Name: "Returns error when beginning transaction for second time",
@@ -1997,7 +1997,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				return &automock.WebhookService{}
 			},
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
-			ExpectedError: testError,
+			ExpectedError:    testError,
 		},
 	}
 

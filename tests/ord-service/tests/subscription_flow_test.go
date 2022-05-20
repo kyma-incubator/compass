@@ -88,11 +88,7 @@ func TestSelfRegisterFlow(t *testing.T) {
 	}()
 
 	// Self register runtime
-	runtimeInput := graphql.RuntimeInput{
-		Name:        "selfRegisterRuntime",
-		Description: ptr.String("selfRegisterRuntime-description"),
-		Labels:      graphql.Labels{testConfig.ProviderLabelKey: testConfig.ProviderID, tenantfetcher.RegionKey: testConfig.Region},
-	}
+	runtimeInput := fixRuntimeInput("selfRegisterRuntime", ptr.String("selfRegisterRuntime-description"))
 	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtimeInput)
 	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtime)
 	require.NotEmpty(t, runtime.ID)
@@ -132,12 +128,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, testConfig.ExternalCertProviderConfig)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
 
-		runtimeInput := graphql.RuntimeInput{
-			Name:        "providerRuntime",
-			Description: ptr.String("providerRuntime-description"),
-			Labels:      graphql.Labels{testConfig.ProviderLabelKey: testConfig.ProviderID, tenantfetcher.RegionKey: testConfig.Region},
-		}
-
+		runtimeInput := fixRuntimeInput("providerRuntime", ptr.String("providerRuntime-description"))
 		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
 		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
 		require.NotEmpty(t, runtime.ID)
@@ -336,4 +327,16 @@ func executeGQLRequest(t *testing.T, ctx context.Context, gqlRequest *gcli.Reque
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, gqlRequest, &formation)
 	require.NoError(t, err)
 	require.Equal(t, formationName, formation.Name)
+}
+
+func fixRuntimeInput(name string, description *string) graphql.RuntimeInput {
+	return graphql.RuntimeInput{
+		Name:        name,
+		Description: description,
+		Labels: graphql.Labels{
+			testConfig.ProviderLabelKey:           testConfig.ProviderID,
+			tenantfetcher.RegionKey:               testConfig.Region,
+			testConfig.SelfRegDistinguishLabelKey: []interface{}{testConfig.SelfRegDistinguishLabelValue},
+		},
+	}
 }

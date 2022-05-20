@@ -332,18 +332,14 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	labelKeyFoo := "foo"
 	labelKeyBar := "bar"
 
-	inputFirst := fixtures.FixRuntimeInput("first")
-	inputFirst.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	inputFirst.Labels[RegionLabel] = conf.SelfRegRegion
+	inputFirst := fixRuntimeInput("first")
 	firstRuntime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &inputFirst)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &firstRuntime)
 	require.NoError(t, err)
 	require.NotEmpty(t, firstRuntime.ID)
 
 	//Create second runtime
-	inputSecond := fixtures.FixRuntimeInput("second")
-	inputSecond.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	inputSecond.Labels[RegionLabel] = conf.SelfRegRegion
+	inputSecond := fixRuntimeInput("second")
 	secondRuntime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &inputSecond)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &secondRuntime)
 	require.NoError(t, err)

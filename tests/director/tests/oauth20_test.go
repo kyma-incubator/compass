@@ -60,9 +60,7 @@ func TestGenerateClientCredentialsToRuntime(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	name := "runtime"
-	input := fixtures.FixRuntimeInput(name)
-	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input.Labels[RegionLabel] = conf.SelfRegRegion
+	input := fixRuntimeInput(name)
 
 	t.Log("Create runtime")
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
@@ -225,9 +223,7 @@ func TestDeleteSystemAuthFromRuntime(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	name := "rtm"
-	input := fixtures.FixRuntimeInput(name)
-	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input.Labels[RegionLabel] = conf.SelfRegRegion
+	input := fixRuntimeInput(name)
 
 	t.Log("Create runtime")
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
@@ -261,9 +257,7 @@ func TestDeleteSystemAuthFromRuntimeUsingApplicationMutationShouldReportError(t 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	name := "rtm"
-	input := fixtures.FixRuntimeInput(name)
-	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input.Labels[RegionLabel] = conf.SelfRegRegion
+	input := fixRuntimeInput(name)
 
 	t.Log("Create runtime")
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
@@ -294,9 +288,7 @@ func TestDeleteSystemAuthFromRuntimeUsingIntegrationSystemMutationShouldReportEr
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	name := "rtm"
-	input := fixtures.FixRuntimeInput(name)
-	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input.Labels[RegionLabel] = conf.SelfRegRegion
+	input := fixRuntimeInput(name)
 
 	t.Log("Create runtime")
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)

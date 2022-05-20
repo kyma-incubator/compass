@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager/selfregmngrtest"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"net/http"
-	"testing"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"

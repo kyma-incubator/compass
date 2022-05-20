@@ -3,9 +3,10 @@ package apptemplate
 import (
 	"context"
 	"encoding/json"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 

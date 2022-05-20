@@ -22,6 +22,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"net/http"
 	urlpkg "net/url"
 	"testing"
@@ -689,6 +690,8 @@ func TestORDService(t *testing.T) {
 				Description: ptr.String("description"),
 			},
 		}
+		appTmplInput.Labels[testConfig.SelfRegDistinguishLabelKey] = []interface{}{testConfig.SelfRegDistinguishLabelValue}
+		appTmplInput.Labels[tenantfetcher.RegionKey] = testConfig.SelfRegRegion
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTmplInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, &appTmpl)

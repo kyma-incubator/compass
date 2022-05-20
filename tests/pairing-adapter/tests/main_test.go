@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"os"
 	"testing"
 
@@ -24,6 +25,9 @@ func TestMain(m *testing.M) {
 	config.ReadConfig(conf)
 
 	ctx := context.Background()
+
+	tenant.TestTenants.Init()
+	defer tenant.TestTenants.Cleanup()
 
 	cc, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	if err != nil {

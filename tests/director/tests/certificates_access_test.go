@@ -68,14 +68,8 @@ func TestIntegrationSystemAccess(t *testing.T) {
 			}
 
 			t.Log(fmt.Sprintf("Trying to register runtime in account tenant %s", test.tenant))
-			rtmInput := &graphql.RuntimeInput{
-				Labels: graphql.Labels{
-					conf.SelfRegDistinguishLabelKey: []interface{}{conf.SelfRegDistinguishLabelValue},
-					RegionLabel:                     conf.SelfRegRegion,
-				},
-				Name: fmt.Sprintf("runtime-%s", test.resourceSuffix),
-			}
-			rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, test.tenant, rtmInput)
+			rtmInput := fixRuntimeInput(fmt.Sprintf("runtime-%s", test.resourceSuffix))
+			rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, test.tenant, &rtmInput)
 			defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, test.tenant, &rt)
 			if test.expectErr {
 				require.Error(t, err)
@@ -86,9 +80,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 
 			t.Log(fmt.Sprintf("Trying to create application template in account tenant %s via client certificate", test.tenant))
 
-			appTmplInput := fixtures.FixApplicationTemplate(fmt.Sprintf("app-template-%s", test.resourceSuffix))
-			appTmplInput.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-			appTmplInput.Labels[RegionLabel] = conf.SelfRegRegion
+			appTmplInput := fixAppTemplateInput(fmt.Sprintf("app-template-%s", test.resourceSuffix))
 			at, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, test.tenant, appTmplInput)
 			defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, test.tenant, &at)
 			if test.expectErr {

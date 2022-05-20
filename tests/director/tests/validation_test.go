@@ -23,13 +23,7 @@ func TestCreateRuntime_ValidationSuccess(t *testing.T) {
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	runtimeIn := graphql.RuntimeInput{
-		Name: "012345Myaccount_Runtime",
-		Labels: graphql.Labels{
-			conf.SelfRegDistinguishLabelKey: []interface{}{conf.SelfRegDistinguishLabelValue},
-			RegionLabel:                     conf.SelfRegRegion,
-		},
-	}
+	runtimeIn := fixRuntimeInput("012345Myaccount_Runtime")
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
@@ -47,9 +41,7 @@ func TestCreateRuntime_ValidationFailure(t *testing.T) {
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	runtimeIn := graphql.RuntimeInput{
-		Name: "my runtime",
-	}
+	runtimeIn := fixRuntimeInput("my runtime")
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
@@ -69,18 +61,14 @@ func TestUpdateRuntime_ValidationSuccess(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixtures.FixRuntimeInput("validation-test-rtm")
-	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input.Labels[RegionLabel] = conf.SelfRegRegion
+	input := fixRuntimeInput("validation-test-rtm")
 
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 
-	runtimeIn := graphql.RuntimeInput{
-		Name: "012345Myaccount_Runtime",
-	}
+	runtimeIn := fixRuntimeInput("012345Myaccount_Runtime")
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
@@ -99,18 +87,14 @@ func TestUpdateRuntime_ValidationFailure(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixtures.FixRuntimeInput("validation-test-rtm")
-	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input.Labels[RegionLabel] = conf.SelfRegRegion
+	input := fixRuntimeInput("validation-test-rtm")
 
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 
-	runtimeIn := graphql.RuntimeInput{
-		Name: "my runtime",
-	}
+	runtimeIn := fixRuntimeInput("my runtime")
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
@@ -201,9 +185,7 @@ func TestSetRuntimeLabel_Validation(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixtures.FixRuntimeInput("validation-test-rtm")
-	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input.Labels[RegionLabel] = conf.SelfRegRegion
+	input := fixRuntimeInput("validation-test-rtm")
 
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
@@ -466,12 +448,10 @@ func TestCreateApplicationTemplate_Validation(t *testing.T) {
 	ctx := context.Background()
 
 	appCreateInput := fixtures.FixSampleApplicationRegisterInputWithWebhooks("placeholder")
-	invalidInput := graphql.ApplicationTemplateInput{
-		Name:             "",
-		Placeholders:     []*graphql.PlaceholderDefinitionInput{},
-		ApplicationInput: &appCreateInput,
-		AccessLevel:      graphql.ApplicationTemplateAccessLevelGlobal,
-	}
+	invalidInput := fixAppTemplateInput("")
+	invalidInput.Placeholders = []*graphql.PlaceholderDefinitionInput{}
+	invalidInput.ApplicationInput = &appCreateInput
+	invalidInput.AccessLevel = graphql.ApplicationTemplateAccessLevelGlobal
 	inputString, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(invalidInput)
 	require.NoError(t, err)
 	var result graphql.ApplicationTemplate
@@ -491,9 +471,7 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixtures.FixApplicationTemplate("validation-test-app-tpl")
-	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input.Labels[RegionLabel] = conf.SelfRegRegion
+	input := fixAppTemplateInput("validation-test-app-tpl")
 
 	appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, input)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTpl)
@@ -526,9 +504,7 @@ func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixtures.FixApplicationTemplate("validation-app")
-	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input.Labels[RegionLabel] = conf.SelfRegRegion
+	input := fixAppTemplateInput("validation-app")
 
 	tmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, input)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &tmpl)

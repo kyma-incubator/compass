@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
@@ -24,9 +26,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "app-template-name"
-	appTemplateInput := fixtures.FixApplicationTemplate(name)
-	appTemplateInput.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	appTemplateInput.Labels[RegionLabel] = conf.SelfRegRegion
+	appTemplateInput := fixAppTemplateInput(name)
 	appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
 	require.NoError(t, err)
 
@@ -75,9 +75,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
-	appTmplInput := fixtures.FixApplicationTemplate(name)
-	appTmplInput.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	appTmplInput.Labels[RegionLabel] = conf.SelfRegRegion
+	appTmplInput := fixAppTemplateInput(name)
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate)
 	require.NoError(t, err)
@@ -110,9 +108,7 @@ func TestDeleteApplicationTemplate(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
-	appTmplInput := fixtures.FixApplicationTemplate(name)
-	appTmplInput.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	appTmplInput.Labels[RegionLabel] = conf.SelfRegRegion
+	appTmplInput := fixAppTemplateInput(name)
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate)
 	require.NoError(t, err)
@@ -143,9 +139,7 @@ func TestQueryApplicationTemplate(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
-	appTmplInput := fixtures.FixApplicationTemplate(name)
-	appTmplInput.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	appTmplInput.Labels[RegionLabel] = conf.SelfRegRegion
+	appTmplInput := fixAppTemplateInput(name)
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate)
 
@@ -172,15 +166,11 @@ func TestQueryApplicationTemplates(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application templates")
-	appTmplInput1 := fixtures.FixApplicationTemplate(name1)
-	appTmplInput1.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	appTmplInput1.Labels[RegionLabel] = conf.SelfRegRegion
+	appTmplInput1 := fixAppTemplateInput(name1)
 	appTemplate1, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput1)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate1)
 
-	appTmplInput2 := fixtures.FixApplicationTemplate(name2)
-	appTmplInput2.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	appTmplInput2.Labels[RegionLabel] = conf.SelfRegRegion
+	appTmplInput2 := fixAppTemplateInput(name2)
 	appTemplate2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate2)
 
@@ -206,7 +196,7 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 	ctx := context.TODO()
 	tmplName := "template"
 	placeholderKey := "new-placeholder"
-	appTmplInput := fixtures.FixApplicationTemplate(tmplName)
+	appTmplInput := fixAppTemplateInput(tmplName)
 	appTmplInput.ApplicationInput.Description = ptr.String("test {{new-placeholder}}")
 	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
 		{
@@ -214,8 +204,6 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 			Description: ptr.String("description"),
 		},
 	}
-	appTmplInput.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	appTmplInput.Labels[RegionLabel] = conf.SelfRegRegion
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -269,9 +257,7 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 	t.Log("Create application template")
-	appTmplInput := fixtures.FixApplicationTemplate(name)
-	appTmplInput.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	appTmplInput.Labels[RegionLabel] = conf.SelfRegRegion
+	appTmplInput := fixAppTemplateInput(name)
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, &appTemplate)
 	require.NoError(t, err)
@@ -342,4 +328,12 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, actualWebhook.URL)
 	assert.Equal(t, urlUpdated, *actualWebhook.URL)
+}
+
+func fixAppTemplateInput(name string) graphql.ApplicationTemplateInput {
+	input := fixtures.FixApplicationTemplate(name)
+	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
+	input.Labels[tenantfetcher.RegionKey] = conf.SelfRegRegion
+
+	return input
 }

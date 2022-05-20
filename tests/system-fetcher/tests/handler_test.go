@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -816,6 +817,10 @@ func fixApplicationTemplate(name string) directorSchema.ApplicationTemplateInput
 			},
 		},
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
+		Labels: directorSchema.Labels{
+			cfg.SelfRegDistinguishLabelKey: []interface{}{cfg.SelfRegDistinguishLabelValue},
+			tenantfetcher.RegionKey:        cfg.SelfRegRegion,
+		},
 	}
 
 	return appTemplateInput

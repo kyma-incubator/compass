@@ -2,9 +2,10 @@ package runtime
 
 import (
 	"context"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"strings"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"

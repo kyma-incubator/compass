@@ -3,12 +3,13 @@ package selfregmanager
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"io"
 	"net/http"
 	urlpkg "net/url"
 	"path"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 

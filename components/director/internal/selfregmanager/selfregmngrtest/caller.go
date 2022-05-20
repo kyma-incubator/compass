@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager/automock"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager/automock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/config"
 

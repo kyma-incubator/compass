@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -106,6 +107,10 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
 			ApplicationInput: &graphql.ApplicationRegisterInput{
 				Name: appName,
 			},
+			Labels: graphql.Labels{
+				testConfig.AppSelfRegDistinguishLabelKey: []interface{}{testConfig.AppSelfRegDistinguishLabelValue},
+				tenantfetcher.RegionKey:                  testConfig.AppSelfRegRegion,
+			},
 			AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
 			Webhooks:    []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication)},
 		}
@@ -154,6 +159,10 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 			Name: appTemplateName,
 			ApplicationInput: &graphql.ApplicationRegisterInput{
 				Name: appName,
+			},
+			Labels: graphql.Labels{
+				testConfig.AppSelfRegDistinguishLabelKey: []interface{}{testConfig.AppSelfRegDistinguishLabelValue},
+				tenantfetcher.RegionKey:                  testConfig.AppSelfRegRegion,
 			},
 			AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
 			Webhooks:    []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication)},

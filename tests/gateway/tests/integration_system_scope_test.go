@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -62,6 +63,10 @@ func TestIntegrationSystemScenario(t *testing.T) {
 			ApplicationInput: &graphql.ApplicationRegisterInput{
 				Name:         "test",
 				ProviderName: ptr.String("test"),
+			},
+			Labels: graphql.Labels{
+				testConfig.AppSelfRegDistinguishLabelKey: []interface{}{testConfig.AppSelfRegDistinguishLabelValue},
+				tenantfetcher.RegionKey:                  testConfig.AppSelfRegRegion,
 			},
 			Placeholders: nil,
 			AccessLevel:  "GLOBAL",

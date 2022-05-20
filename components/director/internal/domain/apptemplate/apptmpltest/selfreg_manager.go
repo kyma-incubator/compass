@@ -14,7 +14,6 @@ const (
 	SelfRegErrorMsg = "error during self-reg prep"
 )
 
-
 // NoopSelfRegManager missing godoc
 func NoopSelfRegManager() *automock.SelfRegisterManager {
 	return &automock.SelfRegisterManager{}

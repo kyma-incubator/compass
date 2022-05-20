@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -193,7 +194,7 @@ func TestService_CreateWithLabels(t *testing.T) {
 				labelUpsertService.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, "foo", map[string]interface{}{"createWithLabels": "OK", "test": "test"}).Return(nil).Once()
 				return labelUpsertService
 			},
-			ExpectedError: nil,
+			ExpectedError:  nil,
 			ExpectedOutput: testID,
 		},
 		{
@@ -438,7 +439,7 @@ func TestService_GetLabel(t *testing.T) {
 
 	testCases := []struct {
 		Name              string
-		Key				  string
+		Key               string
 		AppTemplateRepoFn func() *automock.ApplicationTemplateRepository
 		LabelRepoFn       func() *automock.LabelRepository
 		ExpectedError     error
@@ -458,7 +459,7 @@ func TestService_GetLabel(t *testing.T) {
 				return labelRepo
 			},
 			ExpectedOutput: labels["abc"],
-			ExpectedError: nil,
+			ExpectedError:  nil,
 		},
 		{
 			Name: "Error when listing labels",
@@ -474,7 +475,7 @@ func TestService_GetLabel(t *testing.T) {
 				return labelRepo
 			},
 			ExpectedOutput: nil,
-			ExpectedError: testError,
+			ExpectedError:  testError,
 		},
 		{
 			Name: "Error when checking label with key",
@@ -490,7 +491,7 @@ func TestService_GetLabel(t *testing.T) {
 				return labelRepo
 			},
 			ExpectedOutput: nil,
-			ExpectedError: fmt.Errorf("label fake-key for application template with ID %s doesn't exist", testID),
+			ExpectedError:  fmt.Errorf("label fake-key for application template with ID %s doesn't exist", testID),
 		},
 	}
 

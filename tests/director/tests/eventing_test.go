@@ -41,10 +41,7 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 
 	fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, application.ID, ScenariosLabel, defaultScenarios)
 
-	input1 := fixtures.FixRuntimeInput("runtime-1-eventing")
-	input1.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input1.Labels[RegionLabel] = conf.SelfRegRegion
-
+	input1 := fixRuntimeInput("runtime-1-eventing")
 	runtime1, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input1)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime1)
 	require.NoError(t, err)
@@ -54,10 +51,7 @@ func TestGetDefaultRuntimeForEventingForApplication_DefaultBehaviourWhenNoEventi
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime1.ID, IsNormalizedLabel, "false")
 
-	input2 := fixtures.FixRuntimeInput("runtime-2-eventing")
-	input2.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input2.Labels[RegionLabel] = conf.SelfRegRegion
-
+	input2 := fixRuntimeInput("runtime-2-eventing")
 	runtime2, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input2)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime2)
 	require.NoError(t, err)
@@ -82,9 +76,7 @@ func TestGetEventingConfigurationForRuntime(t *testing.T) {
 	runtimeEventingURLLabelKey := "runtime_eventServiceUrl"
 	runtimeEventingURL := "http://eventing.runtime.local"
 
-	input := fixtures.FixRuntimeInput("runtime-eventing")
-	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input.Labels[RegionLabel] = conf.SelfRegRegion
+	input := fixRuntimeInput("runtime-eventing")
 
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
@@ -121,9 +113,7 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 
 	fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, application.ID, ScenariosLabel, defaultScenarios)
 
-	input1 := fixtures.FixRuntimeInput("runtime-1-eventing")
-	input1.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input1.Labels[RegionLabel] = conf.SelfRegRegion
+	input1 := fixRuntimeInput("runtime-1-eventing")
 
 	runtime1, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input1)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime1)
@@ -134,9 +124,7 @@ func TestSetDefaultEventingForApplication(t *testing.T) {
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime1.ID, IsNormalizedLabel, "false")
 
-	input2 := fixtures.FixRuntimeInput("runtime-2-eventing")
-	input2.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input2.Labels[RegionLabel] = conf.SelfRegRegion
+	input2 := fixRuntimeInput("runtime-2-eventing")
 
 	runtime2, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input2)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime2)
@@ -177,9 +165,7 @@ func TestEmptyEventConfigurationForApp(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 
-	input1 := fixtures.FixRuntimeInput("runtime-1-eventing")
-	input1.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input1.Labels[RegionLabel] = conf.SelfRegRegion
+	input1 := fixRuntimeInput("runtime-1-eventing")
 
 	runtime1, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input1)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime1)
@@ -214,9 +200,7 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 
 	fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, application.ID, ScenariosLabel, defaultScenarios)
 
-	input1 := fixtures.FixRuntimeInput("runtime-1-eventing")
-	input1.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input1.Labels[RegionLabel] = conf.SelfRegRegion
+	input1 := fixRuntimeInput("runtime-1-eventing")
 
 	runtime1, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input1)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime1)
@@ -227,9 +211,7 @@ func TestDeleteDefaultEventingForApplication(t *testing.T) {
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime1.ID, runtimeEventingURLLabelKey, runtime1EventingURL)
 	fixtures.SetRuntimeLabel(t, ctx, certSecuredGraphQLClient, tenantId, runtime1.ID, IsNormalizedLabel, "false")
 
-	input2 := fixtures.FixRuntimeInput("runtime-2-eventing")
-	input2.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input2.Labels[RegionLabel] = conf.SelfRegRegion
+	input2 := fixRuntimeInput("runtime-2-eventing")
 
 	runtime2, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input2)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime2)
