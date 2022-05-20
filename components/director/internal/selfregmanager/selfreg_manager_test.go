@@ -30,6 +30,7 @@ const (
 	testUUID                        = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
 	testRegion                      = "test-region"
 	fakeRegion                      = "fake-region"
+	consumerID                      = "test-consumer-id"
 )
 
 var testConfig = config.SelfRegConfig{
@@ -71,7 +72,6 @@ var testConfig = config.SelfRegConfig{
 }
 
 func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
-	consumerID := "test-consumer-id"
 	tokenConsumer := consumer.Consumer{
 		ConsumerID: consumerID,
 		Flow:       oathkeeper.OAuth2Flow,
@@ -81,39 +81,6 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 		Flow:       oathkeeper.CertificateFlow,
 	}
 	var emptyLabels map[string]interface{}
-
-	lblInput := model.RuntimeInput{
-		Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: testRegion},
-	}
-	lblInputWithoutRegion := model.RuntimeInput{
-		Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal},
-	}
-	lblInputAfterPrep := map[string]interface{}{
-		testConfig.SelfRegisterLabelKey: selfregmngrtest.ResponseLabelValue,
-		selfregmanager.RegionLabel:      testRegion,
-		selfRegisterDistinguishLabelKey: distinguishLblVal,
-	}
-	lblInputAfterPrepWithSubaccount := map[string]interface{}{
-		testConfig.SelfRegisterLabelKey:    selfregmngrtest.ResponseLabelValue,
-		scenarioassignment.SubaccountIDKey: consumerID,
-		selfregmanager.RegionLabel:         testRegion,
-		selfRegisterDistinguishLabelKey:    distinguishLblVal,
-	}
-	lblWithDistinguish := map[string]interface{}{
-		selfRegisterDistinguishLabelKey: distinguishLblVal,
-	}
-	lblWithDistinguishAndFakeRegion := map[string]interface{}{
-		selfRegisterDistinguishLabelKey: "invalid value",
-		selfregmanager.RegionLabel:      fakeRegion,
-	}
-	lblWithDistinguishAndStructRegion := map[string]interface{}{
-		selfRegisterDistinguishLabelKey: distinguishLblVal,
-		selfregmanager.RegionLabel:      struct{}{},
-	}
-	lblWithDistinguishAndInvalidRegion := map[string]interface{}{
-		selfRegisterDistinguishLabelKey: distinguishLblVal,
-		selfregmanager.RegionLabel:      "not-valid",
-	}
 
 	ctxWithTokenConsumer := consumer.SaveToContext(context.TODO(), tokenConsumer)
 	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
@@ -132,46 +99,46 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 		{
 			Name:           "Success",
 			Config:         testConfig,
-			Input:          lblInput,
+			Input:          fixLblInput(),
 			CallerProvider: selfregmngrtest.CallerThatGetsCalledOnce(http.StatusCreated),
 			Region:         testRegion,
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
 			ExpectedErr:    nil,
-			ExpectedOutput: lblInputAfterPrep,
+			ExpectedOutput: fixLblInputAfterPrep(),
 		},
 		{
 			Name:           "Success with subaccount label for application templates",
 			Config:         testConfig,
-			Input:          lblInput,
+			Input:          fixLblInput(),
 			CallerProvider: selfregmngrtest.CallerThatGetsCalledOnce(http.StatusCreated),
 			Region:         testRegion,
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.ApplicationTemplate,
 			ExpectedErr:    nil,
-			ExpectedOutput: lblInputAfterPrepWithSubaccount,
+			ExpectedOutput: fixLblInputAfterPrepWithSubaccount(),
 		},
 		{
 			Name:           "Success for non-matching consumer",
 			Config:         testConfig,
 			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:         testRegion,
-			Input:          lblInputWithoutRegion,
+			Input:          fixLblWithoutRegion(),
 			Context:        ctxWithTokenConsumer,
 			ResourceType:   resource.Runtime,
 			ExpectedErr:    nil,
-			ExpectedOutput: lblWithDistinguish,
+			ExpectedOutput: fixLblWithDistinguish(),
 		},
 		{
 			Name:           "Error when region label is missing",
 			Config:         testConfig,
 			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:         testRegion,
-			Input:          lblInputWithoutRegion,
+			Input:          fixLblWithoutRegion(),
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
 			ExpectedErr:    fmt.Errorf("missing %q label", selfregmanager.RegionLabel),
-			ExpectedOutput: lblWithDistinguish,
+			ExpectedOutput: fixLblWithDistinguish(),
 		},
 		{
 			Name:           "Error when region label is not string",
@@ -184,7 +151,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
 			ExpectedErr:    fmt.Errorf("region value should be of type %q", "string"),
-			ExpectedOutput: lblWithDistinguishAndStructRegion,
+			ExpectedOutput: fixLblWithDistinguishAndStructRegion(),
 		},
 		{
 			Name:           "Error when region doesn't exist",
@@ -195,18 +162,18 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
 			ExpectedErr:    errors.New("missing configuration for region"),
-			ExpectedOutput: lblWithDistinguishAndInvalidRegion,
+			ExpectedOutput: fixLblWithDistinguishAndInvalidRegion(),
 		},
 		{
 			Name:           "Error when caller provider fails",
 			Config:         testConfig,
 			CallerProvider: selfregmngrtest.CallerProviderThatFails,
 			Region:         testRegion,
-			Input:          lblInput,
+			Input:          fixLblInput(),
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
 			ExpectedErr:    errors.New("while getting caller"),
-			ExpectedOutput: lblInputAfterPrep,
+			ExpectedOutput: fixLblInputBeforePrep(),
 		},
 		{
 			Name:           "Error when context does not contain consumer",
@@ -228,29 +195,29 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
 			ExpectedErr:    errors.New("while creating url for preparation of self-registered resource"),
-			ExpectedOutput: lblWithDistinguishAndFakeRegion,
+			ExpectedOutput: fixLblWithDistinguishAndFakeRegion(),
 		},
 		{
 			Name:           "Error when Call doesn't succeed",
 			Config:         testConfig,
 			CallerProvider: selfregmngrtest.CallerThatDoesNotSucceed,
 			Region:         testRegion,
-			Input:          lblInput,
+			Input:          fixLblInput(),
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
 			ExpectedErr:    selfregmngrtest.TestError,
-			ExpectedOutput: lblInputAfterPrep,
+			ExpectedOutput: fixLblInputBeforePrep(),
 		},
 		{
 			Name:           "Error when status code is unexpected",
 			Config:         testConfig,
 			CallerProvider: selfregmngrtest.CallerThatReturnsBadStatus,
 			Region:         testRegion,
-			Input:          lblInput,
+			Input:          fixLblInput(),
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
 			ExpectedErr:    errors.New("received unexpected status"),
-			ExpectedOutput: lblInputAfterPrep,
+			ExpectedOutput: fixLblInputBeforePrep(),
 		},
 	}
 
@@ -376,4 +343,67 @@ func TestNewSelfRegisterManager(t *testing.T) {
 		require.Contains(t, err.Error(), "self registration secret path cannot be empty")
 		require.Nil(t, manager)
 	})
+}
+
+func fixLblInputAfterPrep() map[string]interface{} {
+	return map[string]interface{}{
+		testConfig.SelfRegisterLabelKey: selfregmngrtest.ResponseLabelValue,
+		selfregmanager.RegionLabel:      testRegion,
+		selfRegisterDistinguishLabelKey: distinguishLblVal,
+	}
+}
+
+func fixLblInputBeforePrep() map[string]interface{} {
+	return map[string]interface{}{
+		selfregmanager.RegionLabel:      testRegion,
+		selfRegisterDistinguishLabelKey: distinguishLblVal,
+	}
+}
+
+func fixLblInputAfterPrepWithSubaccount() map[string]interface{} {
+	return map[string]interface{}{
+		testConfig.SelfRegisterLabelKey:    selfregmngrtest.ResponseLabelValue,
+		scenarioassignment.SubaccountIDKey: consumerID,
+		selfregmanager.RegionLabel:         testRegion,
+		selfRegisterDistinguishLabelKey:    distinguishLblVal,
+	}
+}
+
+func fixLblWithDistinguishAndFakeRegion() map[string]interface{} {
+	return map[string]interface{}{
+		selfRegisterDistinguishLabelKey: "invalid value",
+		selfregmanager.RegionLabel:      fakeRegion,
+	}
+}
+
+func fixLblWithDistinguishAndStructRegion() map[string]interface{} {
+	return map[string]interface{}{
+		selfRegisterDistinguishLabelKey: distinguishLblVal,
+		selfregmanager.RegionLabel:      struct{}{},
+	}
+}
+
+func fixLblWithDistinguishAndInvalidRegion() map[string]interface{} {
+	return map[string]interface{}{
+		selfRegisterDistinguishLabelKey: distinguishLblVal,
+		selfregmanager.RegionLabel:      "not-valid",
+	}
+}
+
+func fixLblWithDistinguish() map[string]interface{} {
+	return map[string]interface{}{
+		selfRegisterDistinguishLabelKey: distinguishLblVal,
+	}
+}
+
+func fixLblInput() model.RuntimeInput {
+	return model.RuntimeInput{
+		Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: testRegion},
+	}
+}
+
+func fixLblWithoutRegion() model.RuntimeInput {
+	return model.RuntimeInput{
+		Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal},
+	}
 }
