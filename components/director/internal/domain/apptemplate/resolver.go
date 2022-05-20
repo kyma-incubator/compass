@@ -220,7 +220,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		if didRollback {
 			labelVal := str.CastOrEmpty(convertedIn.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
 			if labelVal != "" {
-				label, ok := in.Labels["region"].(string)
+				label, ok := in.Labels[selfregmanager.RegionLabel].(string)
 				if !ok {
 					log.C(ctx).Errorf("An error occurred while casting region label value to string")
 				} else {
