@@ -218,6 +218,7 @@ if [[ ! ${SKIP_K3D_START} ]]; then
   sudo sh -c "echo \"\n127.0.0.1 k3d-kyma-registry\" >> /etc/hosts"
 fi
 
+usek3d
 
 echo "Label k3d node for benchmark execution..."
 NODE=$(kubectl get nodes | grep agent | tail -n 1 | cut -d ' ' -f 1)

@@ -108,3 +108,17 @@ function checkInputParameterValue() {
         exit 1
     fi
 }
+
+function usek3d() {
+    CURRENT_CONTEXT=$(kubectl config current-context)
+    if [ $CURRENT_CONTEXT != "k3d-kyma"  ]; then
+        echo "Current context is not 'k3d-kyma', switching to it..."
+        kubectl config use-context k3d-kyma
+        if [ $? -ne 0 ]; then
+            echo "Failed to update context to 'k3d-kyma'. Local installation requires k3d running. To list all available contexts execute: 'kubectl config get-contexts'"
+            return 1
+        fi
+    fi
+
+    echo "Using 'k3d-kyma' kubectl context"
+}

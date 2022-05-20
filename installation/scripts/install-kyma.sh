@@ -11,6 +11,8 @@ SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
 OVERRIDES_DIR="${CURRENT_DIR}/../resources/kyma"
 source $SCRIPTS_DIR/utils.sh
 
+usek3d
+
 POSITIONAL=()
 while [[ $# -gt 0 ]]
 do
