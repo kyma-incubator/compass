@@ -105,7 +105,10 @@ func (r *Resolver) Tenants(ctx context.Context, first *int, after *graphql.PageC
 	}, nil
 }
 
-// Tenant retrieves a tenant with the provided external ID from the Compass storage.
+// Tenant first checks whether a tenant with the provided external ID exists in the Compass DB.
+// If it doesn't, it calls an API which fetches details for the given tenant from an external tenancy service,
+// stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
+// Finally, it retrieves a tenant with the provided external ID from the Compass storage.
 func (r *Resolver) Tenant(ctx context.Context, externalID string) (*graphql.Tenant, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -133,8 +136,7 @@ func (r *Resolver) Tenant(ctx context.Context, externalID string) (*graphql.Tena
 		return nil, err
 	}
 
-	gqlTenant := r.conv.MultipleToGraphQL([]*model.BusinessTenantMapping{tenant})
-	return gqlTenant[0], nil
+	return r.conv.ToGraphQL(tenant), nil
 }
 
 // TenantByID retrieves a tenant with the provided internal ID from the Compass storage.
