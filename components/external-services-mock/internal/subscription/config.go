@@ -23,6 +23,7 @@ type Config struct {
 	TestConsumerSubaccountID           string
 	TestConsumerTenantID               string
 	PropagatedProviderSubaccountHeader string
+	TestTenantOnDemandID               string
 }
 
 // ProviderConfig includes the configuration for tenant providers - the tenant ID json property names - account, subaccount, customer. The subdomain property name and subscription provider ID property.
