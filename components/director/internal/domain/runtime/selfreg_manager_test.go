@@ -77,10 +77,10 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 		ConsumerID: "test-consumer-id",
 		Flow:       oathkeeper.CertificateFlow,
 	}
-	lblInput := model.RuntimeInput{
+	lblInput := model.RuntimeRegisterInput{
 		Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal, regionLabelKey: testRegion},
 	}
-	lblInputWithoutRegion := model.RuntimeInput{
+	lblInputWithoutRegion := model.RuntimeRegisterInput{
 		Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal},
 	}
 	lblInputAfterPrep := map[string]interface{}{
@@ -96,7 +96,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 		Config         config.SelfRegConfig
 		CallerProvider func(*testing.T, config.SelfRegConfig, string) *automock.ExternalSvcCallerProvider
 		Region         string
-		Input          model.RuntimeInput
+		Input          model.RuntimeRegisterInput
 		Context        context.Context
 		ExpectedErr    error
 		ExpectedOutput map[string]interface{}
@@ -136,7 +136,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Config:         testConfig,
 			CallerProvider: rtmtest.CallerThatDoesNotGetCalled,
 			Region:         testRegion,
-			Input: model.RuntimeInput{
+			Input: model.RuntimeRegisterInput{
 				Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal, regionLabelKey: struct{}{}},
 			},
 			Context:        ctxWithCertConsumer,
@@ -148,7 +148,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Config:         testConfig,
 			CallerProvider: rtmtest.CallerThatDoesNotGetCalled,
 			Region:         testRegion,
-			Input:          model.RuntimeInput{Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal, regionLabelKey: "not-valid"}},
+			Input:          model.RuntimeRegisterInput{Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal, regionLabelKey: "not-valid"}},
 			Context:        ctxWithCertConsumer,
 			ExpectedErr:    errors.New("missing configuration for region"),
 			ExpectedOutput: emptyLabels,
@@ -168,7 +168,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Config:         testConfig,
 			CallerProvider: rtmtest.CallerThatDoesNotGetCalled,
 			Region:         testRegion,
-			Input:          model.RuntimeInput{},
+			Input:          model.RuntimeRegisterInput{},
 			Context:        context.TODO(),
 			ExpectedErr:    consumer.NoConsumerError,
 			ExpectedOutput: emptyLabels,
@@ -178,7 +178,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Config:         testConfig,
 			CallerProvider: rtmtest.CallerThatDoesNotGetCalled,
 			Region:         fakeRegion,
-			Input:          model.RuntimeInput{Labels: graphql.Labels{selfRegisterDistinguishLabelKey: "invalid value", regionLabelKey: fakeRegion}},
+			Input:          model.RuntimeRegisterInput{Labels: graphql.Labels{selfRegisterDistinguishLabelKey: "invalid value", regionLabelKey: fakeRegion}},
 			Context:        ctxWithCertConsumer,
 			ExpectedErr:    errors.New("while creating url for preparation of self-registered runtime"),
 			ExpectedOutput: emptyLabels,

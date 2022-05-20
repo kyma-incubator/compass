@@ -29,12 +29,12 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	givenInput := graphql.RuntimeInput{
+	givenInput := graphql.RuntimeRegisterInput{
 		Name:        "runtime-create-update-delete",
 		Description: ptr.String("runtime-1-description"),
 		Labels:      graphql.Labels{"ggg": []interface{}{"hhh"}},
 	}
-	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(givenInput)
+	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(givenInput)
 	require.NoError(t, err)
 	actualRuntime := graphql.RuntimeExt{}
 
@@ -91,17 +91,19 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 
 	// update runtime, check if only simple values are updated
 	//GIVEN
-	givenInput.Name = "updated-name"
-	givenInput.Description = ptr.String("updated-description")
-	givenInput.Labels = graphql.Labels{
-		"key": []interface{}{"values", "aabbcc"},
+	givenUpdateInput := graphql.RuntimeUpdateInput{
+		Name:        "updated-name",
+		Description: ptr.String("updated-description"),
+		Labels: graphql.Labels{
+			"key": []interface{}{"values", "aabbcc"},
+		},
 	}
 	runtimeStatusCond := graphql.RuntimeStatusConditionConnected
-	givenInput.StatusCondition = &runtimeStatusCond
+	givenUpdateInput.StatusCondition = &runtimeStatusCond
 
-	runtimeInGQL, err = testctx.Tc.Graphqlizer.RuntimeInputToGQL(givenInput)
+	runtimeUpdateInGQL, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(givenUpdateInput)
 	require.NoError(t, err)
-	updateRuntimeReq := fixtures.FixUpdateRuntimeRequest(actualRuntime.ID, runtimeInGQL)
+	updateRuntimeReq := fixtures.FixUpdateRuntimeRequest(actualRuntime.ID, runtimeUpdateInGQL)
 	saveExample(t, updateRuntimeReq.Query(), "update runtime")
 	//WHEN
 	actualRuntime = graphql.RuntimeExt{}
@@ -109,8 +111,8 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-	assert.Equal(t, givenInput.Name, actualRuntime.Name)
-	assert.Equal(t, *givenInput.Description, *actualRuntime.Description)
+	assert.Equal(t, givenUpdateInput.Name, actualRuntime.Name)
+	assert.Equal(t, *givenUpdateInput.Description, *actualRuntime.Description)
 	assert.Equal(t, len(actualRuntime.Labels), 2)
 	assert.Equal(t, runtimeStatusCond, actualRuntime.Status.Condition)
 
@@ -125,6 +127,114 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestRuntimeRegisterWithWebhooks(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	url := "http://mywordpress.com/webhooks1"
+
+	in := graphql.RuntimeRegisterInput{
+		Name:        "runtime-with-webhooks",
+		Description: ptr.String("runtime-1-description"),
+		Labels:      graphql.Labels{"ggg": []interface{}{"hhh"}},
+		Webhooks: []*graphql.WebhookInput{
+			{
+				Type: graphql.WebhookTypeConfigurationChanged,
+				Auth: fixtures.FixBasicAuth(t),
+				URL:  &url,
+			},
+		},
+	}
+
+	runtimeInputGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(in)
+	require.NoError(t, err)
+	actualRuntime := graphql.RuntimeExt{}
+
+	// WHEN
+	request := fixtures.FixRegisterRuntimeRequest(runtimeInputGQL)
+	saveExampleInCustomDir(t, request.Query(), RegisterRuntimeCategory, "register Runtime with webhooks")
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &actualRuntime)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualRuntime)
+
+	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, actualRuntime.ID)
+	assertions.AssertRuntime(t, in, actualRuntime, conf.DefaultScenarioEnabled, false)
+}
+
+func TestModifyRuntimeWebhooks(t *testing.T) {
+	ctx := context.Background()
+	placeholder := "runtime"
+	in := fixtures.FixRuntimeRegisterInput(placeholder)
+
+	runtimeInputGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(in)
+	require.NoError(t, err)
+
+	createReq := fixtures.FixRegisterRuntimeRequest(runtimeInputGQL)
+	actualRuntime := graphql.RuntimeExt{}
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createReq, &actualRuntime)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &actualRuntime)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, actualRuntime.ID)
+
+	// add
+	outputTemplate := "{\\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"success_status_code\\\": 202,\\\"error\\\": \\\"{{.Body.error}}\\\"}"
+	url := "http://new-webhook.url"
+	urlUpdated := "http://updated-webhook.url"
+	webhookInStr, err := testctx.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
+		URL:            &url,
+		Type:           graphql.WebhookTypeConfigurationChanged,
+		OutputTemplate: &outputTemplate,
+	})
+
+	require.NoError(t, err)
+	addReq := fixtures.FixAddWebhookToRuntimeRequest(actualRuntime.ID, webhookInStr)
+	saveExampleInCustomDir(t, addReq.Query(), addWebhookCategory, "add runtime webhook")
+
+	actualWebhook := graphql.Webhook{}
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addReq, &actualWebhook)
+	require.NoError(t, err)
+
+	assert.NotNil(t, actualWebhook.URL)
+	assert.Equal(t, "http://new-webhook.url", *actualWebhook.URL)
+	assert.Equal(t, graphql.WebhookTypeConfigurationChanged, actualWebhook.Type)
+	id := actualWebhook.ID
+	require.NotNil(t, id)
+
+	// get all webhooks
+	updatedRuntime := fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, tenantId, actualRuntime.ID)
+	assert.Len(t, updatedRuntime.Webhooks, 1)
+
+	// update
+	webhookInStr, err = testctx.Tc.Graphqlizer.WebhookInputToGQL(&graphql.WebhookInput{
+		URL: &urlUpdated, Type: graphql.WebhookTypeConfigurationChanged, OutputTemplate: &outputTemplate})
+
+	require.NoError(t, err)
+	updateReq := fixtures.FixUpdateWebhookRequest(actualWebhook.ID, webhookInStr)
+	saveExampleInCustomDir(t, updateReq.Query(), updateWebhookCategory, "update webhook")
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateReq, &actualWebhook)
+	require.NoError(t, err)
+	assert.NotNil(t, actualWebhook.URL)
+	assert.Equal(t, urlUpdated, *actualWebhook.URL)
+
+	// delete
+
+	//GIVEN
+	deleteReq := fixtures.FixDeleteWebhookRequest(actualWebhook.ID)
+	saveExampleInCustomDir(t, deleteReq.Query(), deleteWebhookCategory, "delete webhook")
+
+	//WHEN
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteReq, &actualWebhook)
+
+	//THEN
+	require.NoError(t, err)
+	assert.NotNil(t, actualWebhook.URL)
+	assert.Equal(t, urlUpdated, *actualWebhook.URL)
+}
+
 func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	const (
 		testFormation = "test-scenario"
@@ -134,12 +244,12 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	subaccount := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 	tenantID := tenant.TestTenants.GetDefaultTenantID()
 
-	givenInput := graphql.RuntimeInput{
+	givenInput := graphql.RuntimeRegisterInput{
 		Name:        "runtime-with-scenario-assignments",
 		Description: ptr.String("runtime-1-description"),
 		Labels:      graphql.Labels{"global_subaccount_id": []interface{}{subaccount}},
 	}
-	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(givenInput)
+	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(givenInput)
 	require.NoError(t, err)
 	actualRuntime := graphql.RuntimeExt{}
 
@@ -219,11 +329,11 @@ func TestQueryRuntimes(t *testing.T) {
 	}
 
 	for _, rtm := range inputRuntimes {
-		givenInput := graphql.RuntimeInput{
+		givenInput := graphql.RuntimeRegisterInput{
 			Name:        rtm.Name,
 			Description: rtm.Description,
 		}
-		runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(givenInput)
+		runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(givenInput)
 		require.NoError(t, err)
 		createReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
 		actualRuntime := graphql.Runtime{}
@@ -265,10 +375,10 @@ func TestQuerySpecificRuntime(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	givenInput := graphql.RuntimeInput{
+	givenInput := graphql.RuntimeRegisterInput{
 		Name: "runtime-specific-runtime",
 	}
-	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(givenInput)
+	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(givenInput)
 	require.NoError(t, err)
 	registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
 	createdRuntime := graphql.RuntimeExt{}
@@ -300,10 +410,10 @@ func TestQueryRuntimesWithPagination(t *testing.T) {
 	runtimes := make(map[string]*graphql.Runtime)
 	runtimesAmount := 10
 	for i := 0; i < runtimesAmount; i++ {
-		runtimeInput := graphql.RuntimeInput{
+		runtimeInput := graphql.RuntimeRegisterInput{
 			Name: fmt.Sprintf("runtime-%d", i),
 		}
-		runtimeInputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInput)
+		runtimeInputGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(runtimeInput)
 		require.NoError(t, err)
 
 		registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInputGQL)
@@ -364,7 +474,7 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	name := "test-create-runtime-without-labels"
-	runtimeInput := graphql.RuntimeInput{Name: name}
+	runtimeInput := graphql.RuntimeRegisterInput{Name: name}
 
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &runtimeInput)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
@@ -380,12 +490,12 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 
 	//GIVEN
 	secondRuntime := graphql.RuntimeExt{}
-	secondInput := graphql.RuntimeInput{
+	secondInput := graphql.RuntimeUpdateInput{
 		Name:        name,
 		Description: ptr.String("runtime-1-description"),
 		Labels:      graphql.Labels{ScenariosLabel: []interface{}{"DEFAULT"}},
 	}
-	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(secondInput)
+	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(secondInput)
 	require.NoError(t, err)
 	updateReq := fixtures.FixUpdateRuntimeRequest(fetchedRuntime.ID, runtimeInGQL)
 
@@ -394,7 +504,7 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-	assertions.AssertRuntime(t, secondInput, secondRuntime, conf.DefaultScenarioEnabled, false)
+	assertions.AssertUpdatedRuntime(t, secondInput, secondRuntime, conf.DefaultScenarioEnabled, false)
 }
 
 func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
@@ -404,7 +514,7 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	name := "test-create-runtime-without-labels"
-	runtimeInput := graphql.RuntimeInput{
+	runtimeInput := graphql.RuntimeRegisterInput{
 		Name:   name,
 		Labels: graphql.Labels{IsNormalizedLabel: "false"},
 	}
@@ -423,12 +533,12 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 
 	//GIVEN
 	secondRuntime := graphql.RuntimeExt{}
-	secondInput := graphql.RuntimeInput{
+	secondInput := graphql.RuntimeUpdateInput{
 		Name:        name,
 		Description: ptr.String("runtime-1-description"),
 		Labels:      graphql.Labels{IsNormalizedLabel: "true", ScenariosLabel: []interface{}{"DEFAULT"}},
 	}
-	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(secondInput)
+	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(secondInput)
 	require.NoError(t, err)
 	updateReq := fixtures.FixUpdateRuntimeRequest(fetchedRuntime.ID, runtimeInGQL)
 
@@ -437,7 +547,7 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 
 	//THEN
 	require.NoError(t, err)
-	assertions.AssertRuntime(t, secondInput, secondRuntime, conf.DefaultScenarioEnabled, false)
+	assertions.AssertUpdatedRuntime(t, secondInput, secondRuntime, conf.DefaultScenarioEnabled, false)
 }
 
 func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
@@ -448,7 +558,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		protectedConsumerSubaccountIdsLabel := "consumer_subaccount_ids"
 
-		runtimeInput := &graphql.RuntimeInput{
+		runtimeInput := &graphql.RuntimeRegisterInput{
 			Name:        "register-runtime-with-protected-labels",
 			Description: ptr.String("register-runtime-with-protected-labels-description"),
 			Labels:      graphql.Labels{protectedConsumerSubaccountIdsLabel: []string{"subaccountID-1", "subaccountID-2"}},
@@ -466,7 +576,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		t.Log("Successfully register runtime with certificate")
 		// GIVEN
-		runtimeInput = &graphql.RuntimeInput{
+		runtimeInput = &graphql.RuntimeRegisterInput{
 			Name:        "runtime-create-update-delete",
 			Description: ptr.String("runtime-create-update-delete-description"),
 			Labels:      graphql.Labels{conf.SelfRegDistinguishLabelKey: []interface{}{distinguishLabelValue}, RegionLabel: conf.SelfRegRegion},
@@ -515,15 +625,18 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		t.Log("Successfully update runtime and validate the protected labels are excluded")
 		//GIVEN
-		runtimeInput.Name = "updated-runtime"
-		runtimeInput.Description = ptr.String("updated-runtime-description")
-		runtimeInput.Labels = graphql.Labels{
-			conf.SelfRegDistinguishLabelKey: []interface{}{distinguishLabelValue}, RegionLabel: conf.SelfRegRegion, protectedConsumerSubaccountIdsLabel: []interface{}{"subaccountID-1", "subaccountID-2"},
+		runtimeUpdateInput := graphql.RuntimeUpdateInput{
+			Name:        "updated-runtime",
+			Description: ptr.String("updated-runtime-description"),
+			Labels: graphql.Labels{
+				conf.SelfRegDistinguishLabelKey: []interface{}{distinguishLabelValue}, RegionLabel: conf.SelfRegRegion, protectedConsumerSubaccountIdsLabel: []interface{}{"subaccountID-1", "subaccountID-2"},
+			},
 		}
-		runtimeStatusCond := graphql.RuntimeStatusConditionConnected
-		runtimeInput.StatusCondition = &runtimeStatusCond
 
-		runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(*runtimeInput)
+		runtimeStatusCond := graphql.RuntimeStatusConditionConnected
+		runtimeUpdateInput.StatusCondition = &runtimeStatusCond
+
+		runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(runtimeUpdateInput)
 		require.NoError(t, err)
 		updateRuntimeReq := fixtures.FixUpdateRuntimeRequest(actualRuntime.ID, runtimeInGQL)
 
@@ -533,8 +646,8 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		//THEN
 		require.NoError(t, err)
-		require.Equal(t, runtimeInput.Name, actualRuntime.Name)
-		require.Equal(t, *runtimeInput.Description, *actualRuntime.Description)
+		require.Equal(t, runtimeUpdateInput.Name, actualRuntime.Name)
+		require.Equal(t, *runtimeUpdateInput.Description, *actualRuntime.Description)
 		require.Equal(t, runtimeStatusCond, actualRuntime.Status.Condition)
 		require.Equal(t, len(actualRuntime.Labels), 3) // two labels from the runtime input plus one additional label, added during runtime update(isNormalized)
 		labelValues, ok := actualRuntime.Labels[protectedConsumerSubaccountIdsLabel]
@@ -572,11 +685,11 @@ func TestQueryRuntimesWithCertificate(t *testing.T) {
 		}
 
 		for _, rtm := range inputRuntimes {
-			givenInput := graphql.RuntimeInput{
+			givenInput := graphql.RuntimeRegisterInput{
 				Name:        rtm.Name,
 				Description: rtm.Description,
 			}
-			runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(givenInput)
+			runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(givenInput)
 			require.NoError(t, err)
 			createReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
 			actualRuntime := graphql.Runtime{}
@@ -617,10 +730,10 @@ func TestQuerySpecificRuntimeWithCertificate(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
-		runtimeInput := graphql.RuntimeInput{
+		runtimeInput := graphql.RuntimeRegisterInput{
 			Name: "runtime-specific-runtime",
 		}
-		runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeInput)
+		runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(runtimeInput)
 		require.NoError(t, err)
 		registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
 		createdRuntime := graphql.RuntimeExt{}

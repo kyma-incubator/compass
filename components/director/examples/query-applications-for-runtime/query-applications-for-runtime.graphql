@@ -27,6 +27,7 @@ query {
         id
         applicationID
         applicationTemplateID
+        runtimeID
         type
         mode
         correlationIdKey

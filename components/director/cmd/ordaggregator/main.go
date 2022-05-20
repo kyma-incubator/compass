@@ -123,7 +123,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	productConverter := product.NewConverter()
 	vendorConverter := ordvendor.NewConverter()
 	tombstoneConverter := tombstone.NewConverter()
-	runtimeConverter := runtime.NewConverter()
+	runtimeConverter := runtime.NewConverter(webhookConverter)
 	bundleReferenceConv := bundlereferences.NewConverter()
 
 	runtimeRepo := runtime.NewRepository(runtimeConverter)

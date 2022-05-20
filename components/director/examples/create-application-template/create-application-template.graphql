@@ -16,6 +16,7 @@ mutation {
         { name: "new-placeholder", description: "new-placeholder-desc" }
       ]
       accessLevel: GLOBAL
+      labels: { test: ["test"] }
     }
   ) {
     id
@@ -30,6 +31,7 @@ mutation {
       id
       applicationID
       applicationTemplateID
+      runtimeID
       type
       mode
       correlationIdKey
@@ -83,6 +85,7 @@ mutation {
         }
       }
     }
+    labels
     accessLevel
   }
 }

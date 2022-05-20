@@ -352,7 +352,7 @@ type ComplexityRoot struct {
 		AddBundle                                     func(childComplexity int, applicationID string, in BundleCreateInput) int
 		AddDocumentToBundle                           func(childComplexity int, bundleID string, in DocumentInput) int
 		AddEventDefinitionToBundle                    func(childComplexity int, bundleID string, in EventDefinitionInput) int
-		AddWebhook                                    func(childComplexity int, applicationID *string, applicationTemplateID *string, in WebhookInput) int
+		AddWebhook                                    func(childComplexity int, applicationID *string, applicationTemplateID *string, runtimeID *string, in WebhookInput) int
 		AssignFormation                               func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
 		CreateApplicationTemplate                     func(childComplexity int, in ApplicationTemplateInput) int
 		CreateAutomaticScenarioAssignment             func(childComplexity int, in AutomaticScenarioAssignmentSetInput) int
@@ -382,7 +382,7 @@ type ComplexityRoot struct {
 		RegisterApplication                           func(childComplexity int, in ApplicationRegisterInput, mode *OperationMode) int
 		RegisterApplicationFromTemplate               func(childComplexity int, in ApplicationFromTemplateInput) int
 		RegisterIntegrationSystem                     func(childComplexity int, in IntegrationSystemInput) int
-		RegisterRuntime                               func(childComplexity int, in RuntimeInput) int
+		RegisterRuntime                               func(childComplexity int, in RuntimeRegisterInput) int
 		RegisterRuntimeContext                        func(childComplexity int, runtimeID string, in RuntimeContextInput) int
 		RequestBundleInstanceAuthCreation             func(childComplexity int, bundleID string, in BundleInstanceAuthRequestInput) int
 		RequestBundleInstanceAuthDeletion             func(childComplexity int, authID string) int
@@ -410,7 +410,7 @@ type ComplexityRoot struct {
 		UpdateEventDefinition                         func(childComplexity int, id string, in EventDefinitionInput) int
 		UpdateIntegrationSystem                       func(childComplexity int, id string, in IntegrationSystemInput) int
 		UpdateLabelDefinition                         func(childComplexity int, in LabelDefinitionInput) int
-		UpdateRuntime                                 func(childComplexity int, id string, in RuntimeInput) int
+		UpdateRuntime                                 func(childComplexity int, id string, in RuntimeUpdateInput) int
 		UpdateRuntimeContext                          func(childComplexity int, id string, in RuntimeContextInput) int
 		UpdateSystemAuth                              func(childComplexity int, authID string, in AuthInput) int
 		UpdateTenant                                  func(childComplexity int, id string, in BusinessTenantMappingInput) int
@@ -499,6 +499,7 @@ type ComplexityRoot struct {
 		RuntimeContext        func(childComplexity int, id string) int
 		RuntimeContexts       func(childComplexity int, first *int, after *PageCursor) int
 		Status                func(childComplexity int) int
+		Webhooks              func(childComplexity int) int
 	}
 
 	RuntimeContext struct {
@@ -638,8 +639,8 @@ type MutationResolver interface {
 	UpdateApplicationTemplate(ctx context.Context, id string, in ApplicationTemplateUpdateInput) (*ApplicationTemplate, error)
 	DeleteApplicationTemplate(ctx context.Context, id string) (*ApplicationTemplate, error)
 	MergeApplications(ctx context.Context, destinationID string, sourceID string) (*Application, error)
-	RegisterRuntime(ctx context.Context, in RuntimeInput) (*Runtime, error)
-	UpdateRuntime(ctx context.Context, id string, in RuntimeInput) (*Runtime, error)
+	RegisterRuntime(ctx context.Context, in RuntimeRegisterInput) (*Runtime, error)
+	UpdateRuntime(ctx context.Context, id string, in RuntimeUpdateInput) (*Runtime, error)
 	UnregisterRuntime(ctx context.Context, id string) (*Runtime, error)
 	RegisterRuntimeContext(ctx context.Context, runtimeID string, in RuntimeContextInput) (*RuntimeContext, error)
 	UpdateRuntimeContext(ctx context.Context, id string, in RuntimeContextInput) (*RuntimeContext, error)
@@ -647,7 +648,7 @@ type MutationResolver interface {
 	RegisterIntegrationSystem(ctx context.Context, in IntegrationSystemInput) (*IntegrationSystem, error)
 	UpdateIntegrationSystem(ctx context.Context, id string, in IntegrationSystemInput) (*IntegrationSystem, error)
 	UnregisterIntegrationSystem(ctx context.Context, id string) (*IntegrationSystem, error)
-	AddWebhook(ctx context.Context, applicationID *string, applicationTemplateID *string, in WebhookInput) (*Webhook, error)
+	AddWebhook(ctx context.Context, applicationID *string, applicationTemplateID *string, runtimeID *string, in WebhookInput) (*Webhook, error)
 	UpdateWebhook(ctx context.Context, webhookID string, in WebhookInput) (*Webhook, error)
 	DeleteWebhook(ctx context.Context, webhookID string) (*Webhook, error)
 	AddAPIDefinitionToBundle(ctx context.Context, bundleID string, in APIDefinitionInput) (*APIDefinition, error)
@@ -735,6 +736,7 @@ type QueryResolver interface {
 }
 type RuntimeResolver interface {
 	Labels(ctx context.Context, obj *Runtime, key *string) (Labels, error)
+	Webhooks(ctx context.Context, obj *Runtime) ([]*Webhook, error)
 
 	Auths(ctx context.Context, obj *Runtime) ([]*RuntimeSystemAuth, error)
 	EventingConfiguration(ctx context.Context, obj *Runtime) (*RuntimeEventingConfiguration, error)
@@ -2150,7 +2152,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddWebhook(childComplexity, args["applicationID"].(*string), args["applicationTemplateID"].(*string), args["in"].(WebhookInput)), true
+		return e.complexity.Mutation.AddWebhook(childComplexity, args["applicationID"].(*string), args["applicationTemplateID"].(*string), args["runtimeID"].(*string), args["in"].(WebhookInput)), true
 
 	case "Mutation.assignFormation":
 		if e.complexity.Mutation.AssignFormation == nil {
@@ -2510,7 +2512,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RegisterRuntime(childComplexity, args["in"].(RuntimeInput)), true
+		return e.complexity.Mutation.RegisterRuntime(childComplexity, args["in"].(RuntimeRegisterInput)), true
 
 	case "Mutation.registerRuntimeContext":
 		if e.complexity.Mutation.RegisterRuntimeContext == nil {
@@ -2846,7 +2848,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateRuntime(childComplexity, args["id"].(string), args["in"].(RuntimeInput)), true
+		return e.complexity.Mutation.UpdateRuntime(childComplexity, args["id"].(string), args["in"].(RuntimeUpdateInput)), true
 
 	case "Mutation.updateRuntimeContext":
 		if e.complexity.Mutation.UpdateRuntimeContext == nil {
@@ -3471,6 +3473,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Runtime.Status(childComplexity), true
+
+	case "Runtime.webhooks":
+		if e.complexity.Runtime.Webhooks == nil {
+			break
+		}
+
+		return e.complexity.Runtime.Webhooks(childComplexity), true
 
 	case "RuntimeContext.id":
 		if e.complexity.RuntimeContext.ID == nil {
@@ -4562,7 +4571,24 @@ input RuntimeContextInput {
 	value: String!
 }
 
-input RuntimeInput {
+input RuntimeRegisterInput {
+	"""
+	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	"""
+	name: String!
+	"""
+	**Validation:**  max=2000
+	"""
+	description: String
+	"""
+	**Validation:** key: required, alphanumeric with underscore
+	"""
+	labels: Labels
+	webhooks: [WebhookInput!]
+	statusCondition: RuntimeStatusCondition
+}
+
+input RuntimeUpdateInput {
 	"""
 	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
 	"""
@@ -4995,6 +5021,7 @@ type Runtime {
 	name: String!
 	description: String
 	labels(key: String): Labels
+	webhooks: [Webhook!] @sanitize(path: "graphql.field.runtime.webhooks")
 	status: RuntimeStatus!
 	"""
 	Returns array of authentication details for Runtime. For now at most one element in array will be returned.
@@ -5250,14 +5277,15 @@ type Mutation {
 	mergeApplications(destinationID: ID!, sourceID: ID!): Application! @hasScopes(path: "graphql.mutation.mergeApplications")
 	"""
 	**Examples**
+	- [register runtime with webhooks](examples/register-runtime/register-runtime-with-webhooks.graphql)
 	- [register runtime](examples/register-runtime/register-runtime.graphql)
 	"""
-	registerRuntime(in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.registerRuntime")
+	registerRuntime(in: RuntimeRegisterInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.registerRuntime")
 	"""
 	**Examples**
 	- [update runtime](examples/update-runtime/update-runtime.graphql)
 	"""
-	updateRuntime(id: ID!, in: RuntimeInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
+	updateRuntime(id: ID!, in: RuntimeUpdateInput! @validate): Runtime! @hasScopes(path: "graphql.mutation.updateRuntime")
 	"""
 	**Examples**
 	- [unregister runtime](examples/unregister-runtime/unregister-runtime.graphql)
@@ -5293,16 +5321,17 @@ type Mutation {
 	**Examples**
 	- [add application template webhook](examples/add-webhook/add-application-template-webhook.graphql)
 	- [add application webhook](examples/add-webhook/add-application-webhook.graphql)
+	- [add runtime webhook](examples/add-webhook/add-runtime-webhook.graphql)
 	"""
-	addWebhook(applicationID: ID, applicationTemplateID: ID, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
+	addWebhook(applicationID: ID, applicationTemplateID: ID, runtimeID: ID, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.addWebhook")
 	"""
 	**Examples**
-	- [update application webhook](examples/update-webhook/update-application-webhook.graphql)
+	- [update webhook](examples/update-webhook/update-webhook.graphql)
 	"""
 	updateWebhook(webhookID: ID!, in: WebhookInput! @validate): Webhook! @hasScopes(path: "graphql.mutation.updateWebhook")
 	"""
 	**Examples**
-	- [delete application webhook](examples/delete-webhook/delete-application-webhook.graphql)
+	- [delete webhook](examples/delete-webhook/delete-webhook.graphql)
 	"""
 	deleteWebhook(webhookID: ID!): Webhook! @hasScopes(path: "graphql.mutation.deleteWebhook")
 	"""
@@ -5941,7 +5970,15 @@ func (ec *executionContext) field_Mutation_addWebhook_args(ctx context.Context, 
 		}
 	}
 	args["applicationTemplateID"] = arg1
-	var arg2 WebhookInput
+	var arg2 *string
+	if tmp, ok := rawArgs["runtimeID"]; ok {
+		arg2, err = ec.unmarshalOID2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["runtimeID"] = arg2
+	var arg3 WebhookInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
 			return ec.unmarshalNWebhookInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInput(ctx, tmp)
@@ -5958,12 +5995,12 @@ func (ec *executionContext) field_Mutation_addWebhook_args(ctx context.Context, 
 			return nil, err
 		}
 		if data, ok := tmp.(WebhookInput); ok {
-			arg2 = data
+			arg3 = data
 		} else {
 			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.WebhookInput`, tmp)
 		}
 	}
-	args["in"] = arg2
+	args["in"] = arg3
 	return args, nil
 }
 
@@ -6566,10 +6603,10 @@ func (ec *executionContext) field_Mutation_registerRuntimeContext_args(ctx conte
 func (ec *executionContext) field_Mutation_registerRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 RuntimeInput
+	var arg0 RuntimeRegisterInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeInput(ctx, tmp)
+			return ec.unmarshalNRuntimeRegisterInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeRegisterInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.Validate == nil {
@@ -6582,10 +6619,10 @@ func (ec *executionContext) field_Mutation_registerRuntime_args(ctx context.Cont
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(RuntimeInput); ok {
+		if data, ok := tmp.(RuntimeRegisterInput); ok {
 			arg0 = data
 		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.RuntimeInput`, tmp)
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.RuntimeRegisterInput`, tmp)
 		}
 	}
 	args["in"] = arg0
@@ -7339,10 +7376,10 @@ func (ec *executionContext) field_Mutation_updateRuntime_args(ctx context.Contex
 		}
 	}
 	args["id"] = arg0
-	var arg1 RuntimeInput
+	var arg1 RuntimeUpdateInput
 	if tmp, ok := rawArgs["in"]; ok {
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeInput(ctx, tmp)
+			return ec.unmarshalNRuntimeUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeUpdateInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.Validate == nil {
@@ -7355,10 +7392,10 @@ func (ec *executionContext) field_Mutation_updateRuntime_args(ctx context.Contex
 		if err != nil {
 			return nil, err
 		}
-		if data, ok := tmp.(RuntimeInput); ok {
+		if data, ok := tmp.(RuntimeUpdateInput); ok {
 			arg1 = data
 		} else {
-			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.RuntimeInput`, tmp)
+			return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.RuntimeUpdateInput`, tmp)
 		}
 	}
 	args["in"] = arg1
@@ -14951,7 +14988,7 @@ func (ec *executionContext) _Mutation_registerRuntime(ctx context.Context, field
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().RegisterRuntime(rctx, args["in"].(RuntimeInput))
+			return ec.resolvers.Mutation().RegisterRuntime(rctx, args["in"].(RuntimeRegisterInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.registerRuntime")
@@ -15016,7 +15053,7 @@ func (ec *executionContext) _Mutation_updateRuntime(ctx context.Context, field g
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateRuntime(rctx, args["id"].(string), args["in"].(RuntimeInput))
+			return ec.resolvers.Mutation().UpdateRuntime(rctx, args["id"].(string), args["in"].(RuntimeUpdateInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.updateRuntime")
@@ -15536,7 +15573,7 @@ func (ec *executionContext) _Mutation_addWebhook(ctx context.Context, field grap
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().AddWebhook(rctx, args["applicationID"].(*string), args["applicationTemplateID"].(*string), args["in"].(WebhookInput))
+			return ec.resolvers.Mutation().AddWebhook(rctx, args["applicationID"].(*string), args["applicationTemplateID"].(*string), args["runtimeID"].(*string), args["in"].(WebhookInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.addWebhook")
@@ -21467,6 +21504,61 @@ func (ec *executionContext) _Runtime_labels(ctx context.Context, field graphql.C
 	return ec.marshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Runtime_webhooks(ctx context.Context, field graphql.CollectedField, obj *Runtime) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Runtime",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Runtime().Webhooks(rctx, obj)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.runtime.webhooks")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.Sanitize == nil {
+				return nil, errors.New("directive sanitize is not implemented")
+			}
+			return ec.directives.Sanitize(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*Webhook); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.Webhook`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*Webhook)
+	fc.Result = res
+	return ec.marshalOWebhook2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Runtime_status(ctx context.Context, field graphql.CollectedField, obj *Runtime) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -25654,8 +25746,50 @@ func (ec *executionContext) unmarshalInputRuntimeContextInput(ctx context.Contex
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputRuntimeInput(ctx context.Context, obj interface{}) (RuntimeInput, error) {
-	var it RuntimeInput
+func (ec *executionContext) unmarshalInputRuntimeRegisterInput(ctx context.Context, obj interface{}) (RuntimeRegisterInput, error) {
+	var it RuntimeRegisterInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "labels":
+			var err error
+			it.Labels, err = ec.unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "webhooks":
+			var err error
+			it.Webhooks, err = ec.unmarshalOWebhookInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐWebhookInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "statusCondition":
+			var err error
+			it.StatusCondition, err = ec.unmarshalORuntimeStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatusCondition(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputRuntimeUpdateInput(ctx context.Context, obj interface{}) (RuntimeUpdateInput, error) {
+	var it RuntimeUpdateInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -28573,6 +28707,17 @@ func (ec *executionContext) _Runtime(ctx context.Context, sel ast.SelectionSet, 
 				res = ec._Runtime_labels(ctx, field, obj)
 				return res
 			})
+		case "webhooks":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Runtime_webhooks(ctx, field, obj)
+				return res
+			})
 		case "status":
 			out.Values[i] = ec._Runtime_status(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -30602,10 +30747,6 @@ func (ec *executionContext) unmarshalNRuntimeContextInput2githubᚗcomᚋkymaᚑ
 	return ec.unmarshalInputRuntimeContextInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNRuntimeInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeInput(ctx context.Context, v interface{}) (RuntimeInput, error) {
-	return ec.unmarshalInputRuntimeInput(ctx, v)
-}
-
 func (ec *executionContext) marshalNRuntimeMetadata2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeMetadata(ctx context.Context, sel ast.SelectionSet, v RuntimeMetadata) graphql.Marshaler {
 	return ec._RuntimeMetadata(ctx, sel, &v)
 }
@@ -30632,6 +30773,10 @@ func (ec *executionContext) marshalNRuntimePage2ᚖgithubᚗcomᚋkymaᚑincubat
 		return graphql.Null
 	}
 	return ec._RuntimePage(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNRuntimeRegisterInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeRegisterInput(ctx context.Context, v interface{}) (RuntimeRegisterInput, error) {
+	return ec.unmarshalInputRuntimeRegisterInput(ctx, v)
 }
 
 func (ec *executionContext) marshalNRuntimeStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeStatus(ctx context.Context, sel ast.SelectionSet, v RuntimeStatus) graphql.Marshaler {
@@ -30669,6 +30814,10 @@ func (ec *executionContext) marshalNRuntimeSystemAuth2ᚖgithubᚗcomᚋkymaᚑi
 		return graphql.Null
 	}
 	return ec._RuntimeSystemAuth(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNRuntimeUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeUpdateInput(ctx context.Context, v interface{}) (RuntimeUpdateInput, error) {
+	return ec.unmarshalInputRuntimeUpdateInput(ctx, v)
 }
 
 func (ec *executionContext) unmarshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx context.Context, v interface{}) (SpecFormat, error) {
