@@ -2,7 +2,6 @@ package tenantfetchersvc
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -106,16 +105,16 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 
 	vars := mux.Vars(request)
 	tenantID, ok := vars[h.config.TenantPathParam]
-	if !ok {
-		log.C(ctx).WithError(errors.New("tenant path parameter is missing from request")).Error()
+	if !ok || len(tenantID) <= 0 {
+		log.C(ctx).Error("Tenant path parameter is missing from request")
 		http.Error(writer, "Tenant path parameter is missing from request", http.StatusBadRequest)
 		return
 	}
 
 	parentTenantID, ok := vars[h.config.ParentTenantPathParam]
-	if !ok {
-		log.C(ctx).WithError(errors.New("tenant path parameter is missing from request")).Error()
-		http.Error(writer, "Tenant path parameter is missing from request", http.StatusBadRequest)
+	if !ok || len(parentTenantID) <= 0 {
+		log.C(ctx).Error("Parent tenant path parameter is missing from request")
+		http.Error(writer, "Parent tenant ID path parameter is missing from request", http.StatusBadRequest)
 		return
 	}
 
