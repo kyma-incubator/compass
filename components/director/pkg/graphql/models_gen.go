@@ -569,16 +569,6 @@ type RuntimeEventingConfiguration struct {
 	DefaultURL string `json:"defaultURL"`
 }
 
-type RuntimeInput struct {
-	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
-	Name string `json:"name"`
-	// **Validation:**  max=2000
-	Description *string `json:"description"`
-	// **Validation:** key: required, alphanumeric with underscore
-	Labels          Labels                  `json:"labels"`
-	StatusCondition *RuntimeStatusCondition `json:"statusCondition"`
-}
-
 type RuntimeMetadata struct {
 	CreationTimestamp Timestamp `json:"creationTimestamp"`
 }
@@ -590,6 +580,17 @@ type RuntimePage struct {
 }
 
 func (RuntimePage) IsPageable() {}
+
+type RuntimeRegisterInput struct {
+	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	Name string `json:"name"`
+	// **Validation:**  max=2000
+	Description *string `json:"description"`
+	// **Validation:** key: required, alphanumeric with underscore
+	Labels          Labels                  `json:"labels"`
+	Webhooks        []*WebhookInput         `json:"webhooks"`
+	StatusCondition *RuntimeStatusCondition `json:"statusCondition"`
+}
 
 type RuntimeStatus struct {
 	Condition RuntimeStatusCondition `json:"condition"`
@@ -605,6 +606,16 @@ type RuntimeSystemAuth struct {
 }
 
 func (RuntimeSystemAuth) IsSystemAuth() {}
+
+type RuntimeUpdateInput struct {
+	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
+	Name string `json:"name"`
+	// **Validation:**  max=2000
+	Description *string `json:"description"`
+	// **Validation:** key: required, alphanumeric with underscore
+	Labels          Labels                  `json:"labels"`
+	StatusCondition *RuntimeStatusCondition `json:"statusCondition"`
+}
 
 type SystemAuthUpdateInput struct {
 	Auth *AuthInput `json:"auth"`

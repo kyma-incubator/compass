@@ -203,7 +203,7 @@ func TestService_ListForApplication(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByApplicationID", ctx, givenTenant(), applicationID).Return(modelWebhooks, nil).Once()
+				repo.On("ListByReferenceObjectID", ctx, givenTenant(), applicationID, model.ApplicationWebhookReference).Return(modelWebhooks, nil).Once()
 				return repo
 			},
 			ExpectedResult:     modelWebhooks,
@@ -213,7 +213,7 @@ func TestService_ListForApplication(t *testing.T) {
 			Name: "Returns error when webhook listing failed",
 			RepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByApplicationID", ctx, givenTenant(), applicationID).Return(nil, testErr).Once()
+				repo.On("ListByReferenceObjectID", ctx, givenTenant(), applicationID, model.ApplicationWebhookReference).Return(nil, testErr).Once()
 				return repo
 			},
 			ExpectedResult:     nil,
@@ -245,6 +245,75 @@ func TestService_ListForApplication(t *testing.T) {
 		svc := webhook.NewService(nil, nil, nil)
 		// WHEN
 		_, err := svc.ListForApplication(context.TODO(), givenApplicationID())
+		assert.True(t, apperrors.IsCannotReadTenant(err))
+	})
+}
+
+func TestService_ListForRuntime(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	modelWebhooks := []*model.Webhook{
+		fixRuntimeModelWebhook("1", "foo", "Foo"),
+		fixRuntimeModelWebhook("2", "bar", "Bar"),
+	}
+	runtimeID := "foo"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, givenTenant(), givenExternalTenant())
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.WebhookRepository
+		ExpectedResult     []*model.Webhook
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("ListByReferenceObjectID", ctx, givenTenant(), runtimeID, model.RuntimeWebhookReference).Return(modelWebhooks, nil).Once()
+				return repo
+			},
+			ExpectedResult:     modelWebhooks,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when webhook listing failed",
+			RepositoryFn: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("ListByReferenceObjectID", ctx, givenTenant(), runtimeID, model.RuntimeWebhookReference).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			svc := webhook.NewService(repo, nil, nil)
+
+			// WHEN
+			webhooks, err := svc.ListForRuntime(ctx, runtimeID)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, webhooks)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+
+	t.Run("Returns error on loading tenant", func(t *testing.T) {
+		svc := webhook.NewService(nil, nil, nil)
+		// WHEN
+		_, err := svc.ListForRuntime(context.TODO(), givenApplicationID())
 		assert.True(t, apperrors.IsCannotReadTenant(err))
 	})
 }
@@ -360,7 +429,7 @@ func TestService_ListAllApplicationWebhooks(t *testing.T) {
 			},
 			WebhookRepositoryFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("ListByApplicationID", ctx, givenTenant(), application.ID).Return(appModelWebhooks, nil).Once()
+				webhookRepo.On("ListByReferenceObjectID", ctx, givenTenant(), application.ID, model.ApplicationWebhookReference).Return(appModelWebhooks, nil).Once()
 				return webhookRepo
 			},
 			ExpectedResult:     appModelWebhooks,
@@ -375,7 +444,7 @@ func TestService_ListAllApplicationWebhooks(t *testing.T) {
 			},
 			WebhookRepositoryFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("ListByApplicationID", ctx, givenTenant(), applicationFromTemplate.ID).Return(nil, nil).Once()
+				webhookRepo.On("ListByReferenceObjectID", ctx, givenTenant(), applicationFromTemplate.ID, model.ApplicationWebhookReference).Return(nil, nil).Once()
 				webhookRepo.On("ListByApplicationTemplateID", ctx, *applicationFromTemplate.ApplicationTemplateID).Return(appTemplateModelWebhooks, nil).Once()
 				return webhookRepo
 			},
@@ -391,7 +460,7 @@ func TestService_ListAllApplicationWebhooks(t *testing.T) {
 			},
 			WebhookRepositoryFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("ListByApplicationID", ctx, givenTenant(), applicationFromTemplate.ID).Return(appModelWebhooks, nil).Once()
+				webhookRepo.On("ListByReferenceObjectID", ctx, givenTenant(), applicationFromTemplate.ID, model.ApplicationWebhookReference).Return(appModelWebhooks, nil).Once()
 				webhookRepo.On("ListByApplicationTemplateID", ctx, *applicationFromTemplate.ApplicationTemplateID).Return(appTemplateModelWebhooks, nil).Once()
 				return webhookRepo
 			},
@@ -407,7 +476,7 @@ func TestService_ListAllApplicationWebhooks(t *testing.T) {
 			},
 			WebhookRepositoryFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("ListByApplicationID", ctx, givenTenant(), applicationFromTemplate.ID).Return([]*model.Webhook{appModelWebhooks[0]}, nil).Once()
+				webhookRepo.On("ListByReferenceObjectID", ctx, givenTenant(), applicationFromTemplate.ID, model.ApplicationWebhookReference).Return([]*model.Webhook{appModelWebhooks[0]}, nil).Once()
 				webhookRepo.On("ListByApplicationTemplateID", ctx, *applicationFromTemplate.ApplicationTemplateID).Return([]*model.Webhook{appTemplateModelWebhooks[1]}, nil).Once()
 				return webhookRepo
 			},
@@ -423,7 +492,7 @@ func TestService_ListAllApplicationWebhooks(t *testing.T) {
 			},
 			WebhookRepositoryFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByApplicationID", ctx, givenTenant(), application.ID).Return(nil, testErr).Once()
+				repo.On("ListByReferenceObjectID", ctx, givenTenant(), application.ID, model.ApplicationWebhookReference).Return(nil, testErr).Once()
 				return repo
 			},
 			ExpectedResult:     nil,
@@ -438,7 +507,7 @@ func TestService_ListAllApplicationWebhooks(t *testing.T) {
 			},
 			WebhookRepositoryFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("ListByApplicationID", ctx, givenTenant(), applicationFromTemplate.ID).Return(appModelWebhooks, nil).Once()
+				webhookRepo.On("ListByReferenceObjectID", ctx, givenTenant(), applicationFromTemplate.ID, model.ApplicationWebhookReference).Return(appModelWebhooks, nil).Once()
 				webhookRepo.On("ListByApplicationTemplateID", ctx, *applicationFromTemplate.ApplicationTemplateID).Return(nil, testErr).Once()
 
 				return webhookRepo
@@ -575,7 +644,7 @@ func TestService_Update(t *testing.T) {
 				repo.On("GetByID", tenantCtx, givenTenant(), id, model.ApplicationWebhookReference).Return(noIDWebhookModel, nil).Once()
 				return repo
 			},
-			ExpectedErrMessage: "webhook doesn't have neither of application_id and application_template_id",
+			ExpectedErrMessage: "webhook doesn't have neither of application_id, application_template_id and runtime_id",
 			WebhookType:        model.ApplicationWebhookReference,
 			Context:            tenantCtx,
 		},
@@ -599,6 +668,12 @@ func TestService_Update(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
+	t.Run("Returns error on loading tenant", func(t *testing.T) {
+		svc := webhook.NewService(nil, nil, nil)
+		// WHEN
+		err := svc.Update(context.TODO(), givenApplicationID(), model.WebhookInput{}, model.ApplicationWebhookReference)
+		assert.True(t, apperrors.IsCannotReadTenant(err))
+	})
 }
 
 func TestService_Delete(t *testing.T) {

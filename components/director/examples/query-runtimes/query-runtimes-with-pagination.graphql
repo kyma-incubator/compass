@@ -71,6 +71,64 @@ query {
         }
         totalCount
       }
+      webhooks {
+        id
+        applicationID
+        applicationTemplateID
+        runtimeID
+        type
+        mode
+        correlationIdKey
+        retryInterval
+        timeout
+        url
+        urlTemplate
+        inputTemplate
+        headerTemplate
+        outputTemplate
+        statusTemplate
+        auth {
+          credential {
+            ... on BasicCredentialData {
+              username
+              password
+            }
+            ... on OAuthCredentialData {
+              clientId
+              clientSecret
+              url
+            }
+          }
+          oneTimeToken {
+            __typename
+            token
+            used
+            expiresAt
+          }
+          certCommonName
+          accessStrategy
+          additionalHeaders
+          additionalQueryParams
+          requestAuth {
+            csrf {
+              tokenEndpointURL
+              credential {
+                ... on BasicCredentialData {
+                  username
+                  password
+                }
+                ... on OAuthCredentialData {
+                  clientId
+                  clientSecret
+                  url
+                }
+              }
+              additionalHeaders
+              additionalQueryParams
+            }
+          }
+        }
+      }
       eventingConfiguration {
         defaultURL
       }

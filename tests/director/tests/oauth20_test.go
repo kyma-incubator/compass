@@ -60,7 +60,7 @@ func TestGenerateClientCredentialsToRuntime(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	name := "runtime"
-	input := fixtures.FixRuntimeInput(name)
+	input := fixtures.FixRuntimeRegisterInput(name)
 
 	t.Log("Create runtime")
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
@@ -223,7 +223,7 @@ func TestDeleteSystemAuthFromRuntime(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	name := "rtm"
-	input := fixtures.FixRuntimeInput(name)
+	input := fixtures.FixRuntimeRegisterInput(name)
 
 	t.Log("Create runtime")
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
@@ -257,7 +257,7 @@ func TestDeleteSystemAuthFromRuntimeUsingApplicationMutationShouldReportError(t 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	name := "rtm"
-	input := fixtures.FixRuntimeInput(name)
+	input := fixtures.FixRuntimeRegisterInput(name)
 	t.Log("Create runtime")
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
@@ -287,7 +287,7 @@ func TestDeleteSystemAuthFromRuntimeUsingIntegrationSystemMutationShouldReportEr
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	name := "rtm"
-	input := fixtures.FixRuntimeInput(name)
+	input := fixtures.FixRuntimeRegisterInput(name)
 	t.Log("Create runtime")
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)

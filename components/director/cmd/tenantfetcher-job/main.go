@@ -6,6 +6,17 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
+	bundleutil "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 
 	graphqlclient "github.com/kyma-incubator/compass/components/director/pkg/graphql_client"
@@ -106,27 +117,37 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	uidSvc := uid.NewService()
 
 	labelDefConverter := labeldef.NewConverter()
-	labelDefRepository := labeldef.NewRepository(labelDefConverter)
-
+	tenantStorageConverter := tenant.NewConverter()
 	labelConverter := label.NewConverter()
-	labelRepository := label.NewRepository(labelConverter)
-	labelService := label.NewLabelService(labelRepository, labelDefRepository, uidSvc)
+	authConverter := auth.NewConverter()
+	webhookConverter := webhook.NewConverter(authConverter)
+	frConverter := fetchrequest.NewConverter(authConverter)
+	versionConverter := version.NewConverter()
+	specConverter := spec.NewConverter(frConverter)
+	docConverter := document.NewConverter(frConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	appConverter := application.NewConverter(webhookConverter, bundleConverter)
+	runtimeConverter := runtime.NewConverter(webhookConverter)
+	scenarioAssignConverter := scenarioassignment.NewConverter()
 
-	tenantStorageConv := tenant.NewConverter()
-	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
-	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepository, labelService)
+	webhookRepo := webhook.NewRepository(webhookConverter)
+	labelDefRepo := labeldef.NewRepository(labelDefConverter)
+	labelRepo := label.NewRepository(labelConverter)
+	tenantStorageRepo := tenant.NewRepository(tenantStorageConverter)
+	applicationRepo := application.NewRepository(appConverter)
+	runtimeRepo := runtime.NewRepository(runtimeConverter)
+	scenarioAssignRepo := scenarioassignment.NewRepository(scenarioAssignConverter)
+	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignConverter)
 
-	runtimeConverter := runtime.NewConverter()
-	runtimeRepository := runtime.NewRepository(runtimeConverter)
+	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
+	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepo, labelSvc)
+	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc)
+	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantStorageRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 
-	scenarioAssignConv := scenarioassignment.NewConverter()
-	scenarioAssignRepo := scenarioassignment.NewRepository(scenarioAssignConv)
-	scenarioAssignEngine := scenarioassignment.NewEngine(labelService, labelRepository, scenarioAssignRepo, runtimeRepository)
-
-	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignConv)
-	labelDefService := labeldef.NewService(labelDefRepository, labelRepository, scenarioAssignmentRepo, tenantStorageRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
-
-	runtimeService := runtime.NewService(runtimeRepository, labelRepository, labelDefService, labelService, uidSvc, scenarioAssignEngine, tenantStorageSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
+	scenarioAssignEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignRepo, runtimeRepo)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, scenarioAssignEngine, tenantStorageSvc, webhookSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
 
 	eventAPIClient, err := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.AuthMode, cfg.APIConfig, cfg.ClientTimeout)
 	if nil != err {
@@ -144,9 +165,9 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	directorClient := graphqlclient.NewDirector(gqlClient)
 
 	if cfg.ShouldSyncSubaccounts {
-		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedSubaccountFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeService, labelRepository, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize, tenantStorageConv), nil
+		return tenantfetcher.NewSubaccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.MovedSubaccountFieldMapping, cfg.TenantProvider, cfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeSvc, labelRepo, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize, tenantStorageConverter), nil
 	}
-	return tenantfetcher.NewGlobalAccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.AccountsRegion, eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize, tenantStorageConv), nil
+	return tenantfetcher.NewGlobalAccountService(cfg.QueryConfig, transact, kubeClient, cfg.TenantFieldMapping, cfg.TenantProvider, cfg.AccountsRegion, eventAPIClient, tenantStorageSvc, cfg.FullResyncInterval, directorClient, cfg.TenantInsertChunkSize, tenantStorageConverter), nil
 }
 
 func newInternalGraphQLClient(url string, timeout time.Duration, skipSSLValidation bool) *gcli.Client {
