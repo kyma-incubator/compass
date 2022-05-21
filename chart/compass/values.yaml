@@ -492,8 +492,8 @@ global:
     auth:
       allowedConnectSrc: "https://*.ondemand.com"
       secretName: "cockpit-auth-secret"
-      idpHost: ""
-      clientID: ""
+      idpHost: "https://as5rzk3dn.accounts400.ondemand.com"
+      clientID: "996db76f-1660-4c53-8a12-8117b343ccca"
       scopes: "openid profile email"
       path: "/oauth2/certs"
   tenantFetcher:
@@ -516,6 +516,7 @@ global:
     server:
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
       dependenciesEndpoint: "/v1/dependencies"
+      tenantPathParam: "tenantId"
       regionPathParam: "region"
       subscriptionProviderLabelKey: "subscriptionProviderId"
       consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
