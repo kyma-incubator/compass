@@ -18,6 +18,6 @@ func NewTenantFetcher(svc tenantfetcher.SubaccountOnDemandService) *fetcher {
 }
 
 // FetchTenantOnDemand fetches creation events for a subaccount and creates a tenant for the subaccount in case it doesn't exist
-func (f *fetcher) FetchTenantOnDemand(ctx context.Context, tenantID string) error {
-	return f.svc.SyncTenant(ctx, tenantID)
+func (f *fetcher) FetchTenantOnDemand(ctx context.Context, tenantID string, parentTenantID string) error {
+	return f.svc.SyncTenant(ctx, tenantID, parentTenantID)
 }

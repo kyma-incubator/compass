@@ -17,9 +17,12 @@ import (
 )
 
 func TestFetchOnDemand(t *testing.T) {
-	fetchTenantURL := "https://compass-tenant-fetcher.kyma.local/tenants/v1/fetch"
-	tenantID := "b91b59f7-2563-40b2-aba9-fef726037aa3"
-	testErr := errors.New("error")
+	var (
+		fetchTenantURL = "https://compass-tenant-fetcher.kyma.local/tenants/v1/fetch"
+		tenantID       = "b91b59f7-2563-40b2-aba9-fef726037aa3"
+		parentTenantID = "8d4842ed-0307-4808-85d5-6bbed114c4ff"
+		testErr        = errors.New("error")
+	)
 
 	testCases := []struct {
 		Name             string
@@ -64,7 +67,7 @@ func TestFetchOnDemand(t *testing.T) {
 			svc := tenant.NewFetchOnDemandService(httpClient, fetchTenantURL)
 
 			// WHEN
-			err := svc.FetchOnDemand(tenantID)
+			err := svc.FetchOnDemand(tenantID, parentTenantID)
 
 			// THEN
 			if len(testCase.ExpectedErrorMsg) > 0 {

@@ -27,8 +27,8 @@ func NewFetchOnDemandService(client Client, url string) *fetchOnDemandService {
 }
 
 // FetchOnDemand calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
-func (s *fetchOnDemandService) FetchOnDemand(tenant string) error {
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/%s", s.tenantFetcherURL, tenant), nil)
+func (s *fetchOnDemandService) FetchOnDemand(tenant, parentTenant string) error {
+	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/%s/%s", s.tenantFetcherURL, parentTenant, tenant), nil)
 	if err != nil {
 		return err
 	}
