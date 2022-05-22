@@ -8,7 +8,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220225101454-1e11cf2f8a9b
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20220225101454-1e11cf2f8a9b
-	github.com/kyma-incubator/compass/components/director v0.0.0-20220511105836-a17f2a6f0104
+	github.com/kyma-incubator/compass/components/director v0.0.0-20220517151221-fee3ac416dc2
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20220225101454-1e11cf2f8a9b
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20220225101454-1e11cf2f8a9b
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220225101454-1e11cf2f8a9b
@@ -45,7 +45,7 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
-	github.com/imdario/mergo v0.3.11 // indirect
+	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459-11b81bddcce9 // indirect

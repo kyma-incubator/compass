@@ -39,7 +39,7 @@ func TestConnector(t *testing.T) {
 	}
 
 	descr := "test"
-	runtimeInput := directorSchema.RuntimeInput{
+	runtimeInput := directorSchema.RuntimeRegisterInput{
 		Name:        TestRuntime,
 		Description: &descr,
 		Labels: directorSchema.Labels{

@@ -92,6 +92,10 @@ global:
       id: 1f538f34-30bf-4d3d-aeaa-02e69eef84ae
       type: subaccount
       parent: 5984a414-1eed-4972-af2c-b2b6a415c7d7
+    - name: TestTenantsOnDemandAPI
+      id: 8d42d818-d4c4-4036-b82f-b199db7ffeb5
+      type: subaccount
+      parent: 5984a414-1eed-4972-af2c-b2b6a415c7d7
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
@@ -106,7 +110,7 @@ global:
       version: "PR-2358"
     director:
       dir:
-      version: "PR-2302"
+      version: "PR-2359"
     hydrator:
       dir:
       version: "PR-2358"
@@ -132,7 +136,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2332"
+      version: "PR-2359"
     console:
       dir:
       version: "PR-68"
@@ -754,6 +758,8 @@ global:
       externalClientCertTestSecretNamespace: "compass-system"
       externalCertIntSystemCN: "integration-system-test"
       externalCertTestJobName: "external-client-certificate-integration-system-test-job"
+    tenantFetcher:
+      tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
     ordService:
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
       consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
@@ -832,6 +838,8 @@ global:
         - "application:read"
         - "runtime.auths:read"
         - "bundle.instance_auths:read"
+        - "runtime.webhooks:read"
+        - "webhook:write"
       application:
         - "application:read"
         - "application:write"
@@ -842,6 +850,7 @@ global:
         - "event_spec.fetch_request:read"
         - "api_spec.fetch_request:read"
         - "fetch-request.auth:read"
+        - "webhook:write"
       integration_system:
         - "application:read"
         - "application:write"
@@ -859,6 +868,7 @@ global:
         - "formation:write"
         - "internal_visibility:read"
         - "application.auths:read"
+        - "webhook:write"
       super_admin:
         - "application:read"
         - "application:write"
@@ -887,6 +897,8 @@ global:
         - "webhooks.auth:read"
         - "formation:write"
         - "internal_visibility:read"
+        - "runtime.webhooks:read"
+        - "webhook:write"
       default:
         - "runtime:read"
         - "runtime:write"

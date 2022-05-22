@@ -185,7 +185,7 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	intSysConverter := integrationsystem.NewConverter()
 	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
-	runtimeConverter := runtime.NewConverter()
+	runtimeConverter := runtime.NewConverter(webhookConverter)
 	bundleReferenceConv := bundlereferences.NewConverter()
 
 	runtimeRepo := runtime.NewRepository(runtimeConverter)

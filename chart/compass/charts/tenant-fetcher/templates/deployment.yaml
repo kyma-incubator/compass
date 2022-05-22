@@ -42,6 +42,7 @@ spec:
           hostnames:
             # Used for calls to Director
             - "{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}"
+            - "{{ .Values.global.externalServicesMock.certSecuredHost }}.{{ .Values.global.ingress.domainName }}"
       {{ end }}
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:

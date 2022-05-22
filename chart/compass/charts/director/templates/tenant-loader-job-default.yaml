@@ -14,7 +14,7 @@ spec:
     template:
         metadata:
             labels:
-                app: {{ .Chart.Name }}
+                app: {{ .Chart.Name }}-tenant-loader
                 release: {{ .Release.Name }}
         spec:
             serviceAccountName: {{ template "fullname" . }}

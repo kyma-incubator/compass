@@ -20,7 +20,7 @@ import (
 type WebhookRepository interface {
 	GetByID(ctx context.Context, tenant, id string, objectType model.WebhookReferenceObjectType) (*model.Webhook, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.Webhook, error)
-	ListByApplicationID(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error)
+	ListByReferenceObjectID(ctx context.Context, tenant, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error)
 	ListByApplicationIDWithSelectForUpdate(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error)
 	ListByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 	Create(ctx context.Context, tenant string, item *model.Webhook) error
@@ -79,7 +79,7 @@ func (s *service) ListForApplication(ctx context.Context, applicationID string) 
 	if err != nil {
 		return nil, err
 	}
-	return s.webhookRepo.ListByApplicationID(ctx, tnt, applicationID)
+	return s.webhookRepo.ListByReferenceObjectID(ctx, tnt, applicationID, model.ApplicationWebhookReference)
 }
 
 // ListForApplicationWithSelectForUpdate missing godoc
@@ -104,6 +104,15 @@ func (s *service) ListAllApplicationWebhooks(ctx context.Context, applicationID 
 	}
 
 	return s.retrieveWebhooks(ctx, application)
+}
+
+// ListForRuntime missing godoc
+func (s *service) ListForRuntime(ctx context.Context, runtimeID string) ([]*model.Webhook, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return s.webhookRepo.ListByReferenceObjectID(ctx, tnt, runtimeID, model.RuntimeWebhookReference)
 }
 
 // Create missing godoc
@@ -136,8 +145,8 @@ func (s *service) Update(ctx context.Context, id string, in model.WebhookInput, 
 		return errors.Wrap(err, "while getting Webhook")
 	}
 
-	if len(webhook.ObjectID) == 0 || (webhook.ObjectType != model.ApplicationWebhookReference && webhook.ObjectType != model.ApplicationTemplateWebhookReference) {
-		return errors.New("while updating Webhook: webhook doesn't have neither of application_id and application_template_id")
+	if len(webhook.ObjectID) == 0 || (webhook.ObjectType != model.ApplicationWebhookReference && webhook.ObjectType != model.ApplicationTemplateWebhookReference && webhook.ObjectType != model.RuntimeWebhookReference) {
+		return errors.New("while updating Webhook: webhook doesn't have neither of application_id, application_template_id and runtime_id")
 	}
 
 	webhook = in.ToWebhook(id, webhook.ObjectID, webhook.ObjectType)

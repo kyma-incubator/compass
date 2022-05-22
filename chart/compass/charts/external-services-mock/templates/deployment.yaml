@@ -126,6 +126,8 @@ spec:
                 value: {{ .Values.global.tests.ordService.consumerSubaccountID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_TENANT_ID
                 value: {{ .Values.global.tests.ordService.consumerTenantID }}
+              - name: APP_TENANT_CONFIG_TEST_TENANT_ON_DEMAND_ID
+                value: {{ .Values.global.tests.tenantFetcher.tenantOnDemandID }}
               - name: APP_TENANT_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
                 value: {{ .Values.global.tests.ordService.propagatedProviderSubaccountHeader }}
               ports:
