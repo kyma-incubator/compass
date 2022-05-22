@@ -24,7 +24,7 @@ func TestCreateRuntime_ValidationSuccess(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	runtimeIn := fixRuntimeInput("012345Myaccount_Runtime")
-	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
+	inputString, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
 	request := fixtures.FixRegisterRuntimeRequest(inputString)
@@ -42,7 +42,7 @@ func TestCreateRuntime_ValidationFailure(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	runtimeIn := fixRuntimeInput("my runtime")
-	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
+	inputString, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
 	request := fixtures.FixRegisterRuntimeRequest(inputString)
@@ -52,7 +52,7 @@ func TestCreateRuntime_ValidationFailure(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=must be in a valid format]")
+	assert.EqualError(t, err, "graphql: Invalid data RuntimeRegisterInput [name=must be in a valid format]")
 }
 
 func TestUpdateRuntime_ValidationSuccess(t *testing.T) {
@@ -68,8 +68,8 @@ func TestUpdateRuntime_ValidationSuccess(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 
-	runtimeIn := fixRuntimeInput("012345Myaccount_Runtime")
-	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
+	runtimeIn := fixRuntimeUpdateInput("012345Myaccount_Runtime")
+	inputString, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
 	request := fixtures.FixUpdateRuntimeRequest(rtm.ID, inputString)
@@ -94,8 +94,8 @@ func TestUpdateRuntime_ValidationFailure(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 
-	runtimeIn := fixRuntimeInput("my runtime")
-	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
+	runtimeIn := fixRuntimeUpdateInput("my runtime")
+	inputString, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
 	request := fixtures.FixUpdateRuntimeRequest(rtm.ID, inputString)
@@ -105,7 +105,7 @@ func TestUpdateRuntime_ValidationFailure(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=must be in a valid format]")
+	assert.EqualError(t, err, "graphql: Invalid data RuntimeUpdateInput [name=must be in a valid format]")
 }
 
 // Label Definition Validation

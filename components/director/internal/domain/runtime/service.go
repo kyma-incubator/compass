@@ -84,6 +84,7 @@ type service struct {
 	scenariosService         scenariosService
 	scenarioAssignmentEngine scenarioAssignmentEngine
 	tenantSvc                tenantService
+	webhookService           WebhookService
 
 	protectedLabelPattern string
 	immutableLabelPattern string
@@ -97,6 +98,7 @@ func NewService(repo runtimeRepository,
 	uidService uidService,
 	scenarioAssignmentEngine scenarioAssignmentEngine,
 	tenantService tenantService,
+	webhookService WebhookService,
 	protectedLabelPattern string,
 	immutableLabelPattern string) *service {
 	return &service{
@@ -107,6 +109,7 @@ func NewService(repo runtimeRepository,
 		uidService:               uidService,
 		scenarioAssignmentEngine: scenarioAssignmentEngine,
 		tenantSvc:                tenantService,
+		webhookService:           webhookService,
 		protectedLabelPattern:    protectedLabelPattern,
 		immutableLabelPattern:    immutableLabelPattern,
 	}
@@ -212,14 +215,14 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 // Create creates a runtime in a given tenant.
 // If the runtime has a global_subaccount_id label which value is a valid external subaccount from our DB and a child of the caller tenant. The subaccount is used to register the runtime.
 // After successful registration, the ASAs in the parent of the caller tenant are processed to add all matching scenarios for the runtime in the parent tenant.
-func (s *service) Create(ctx context.Context, in model.RuntimeInput) (string, error) {
+func (s *service) Create(ctx context.Context, in model.RuntimeRegisterInput) (string, error) {
 	labels := make(map[string]interface{})
 	id := s.uidService.Generate()
 	return id, s.CreateWithMandatoryLabels(ctx, in, id, labels)
 }
 
 // CreateWithMandatoryLabels creates a runtime in a given tenant and also adds mandatory labels to it.
-func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeInput, id string, mandatoryLabels map[string]interface{}) error {
+func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeRegisterInput, id string, mandatoryLabels map[string]interface{}) error {
 	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok { // TODO: <backwards-compatibility>: Should be deleted once the provisioner start creating runtimes in a subaccount
 		tnt, err := s.extractTenantFromSubaccountLabel(ctx, saVal)
 		if err != nil {
@@ -262,6 +265,12 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 		return errors.Wrapf(err, "while creating multiple labels for Runtime")
 	}
 
+	for _, w := range in.Webhooks {
+		if _, err = s.webhookService.Create(ctx, rtm.ID, *w, model.RuntimeWebhookReference); err != nil {
+			return errors.Wrap(err, "while Creating Webhook for Runtime")
+		}
+	}
+
 	// The runtime is created successfully, however there can be ASAs in the parent that should be processed.
 	tnt, err := s.tenantSvc.GetTenantByID(ctx, rtmTenant)
 	if err != nil {
@@ -294,7 +303,7 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 }
 
 // Update missing godoc
-func (s *service) Update(ctx context.Context, id string, in model.RuntimeInput) error {
+func (s *service) Update(ctx context.Context, id string, in model.RuntimeUpdateInput) error {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")

@@ -125,6 +125,8 @@ models:
         resolver: true
       runtimeContexts:
         resolver: true
+      webhooks:
+        resolver: true
 
   RuntimeContext:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.RuntimeContext"

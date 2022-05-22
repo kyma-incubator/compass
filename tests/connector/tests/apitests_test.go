@@ -339,8 +339,8 @@ func TestFullConnectorFlow(t *testing.T) {
 	require.Nil(t, configWithRevokedCert.ManagementPlaneInfo)
 }
 
-func fixRuntimeInput(name string) graphql.RuntimeInput {
-	input := fixtures.FixRuntimeInput(name)
+func fixRuntimeInput(name string) graphql.RuntimeRegisterInput {
+	input := fixtures.FixRuntimeRegisterInput(name)
 	input.Labels[cfg.SelfRegDistinguishLabelKey] = []interface{}{cfg.SelfRegDistinguishLabelValue}
 	input.Labels[RegionLabel] = cfg.SelfRegRegion
 

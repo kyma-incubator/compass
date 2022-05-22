@@ -92,6 +92,10 @@ global:
       id: 1f538f34-30bf-4d3d-aeaa-02e69eef84ae
       type: subaccount
       parent: 5984a414-1eed-4972-af2c-b2b6a415c7d7
+    - name: TestTenantsOnDemandAPI
+      id: 8d42d818-d4c4-4036-b82f-b199db7ffeb5
+      type: subaccount
+      parent: 5984a414-1eed-4972-af2c-b2b6a415c7d7
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
@@ -112,7 +116,7 @@ global:
       version: "PR-2358"
     gateway:
       dir:
-      version: "PR-2358"
+      version: "PR-2302"
     operations_controller:
       dir:
       version: "PR-2358"
@@ -132,13 +136,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2332"
+      version: "PR-2359"
     console:
       dir:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2332"
+      version: "PR-2368"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -400,6 +404,7 @@ global:
     host: ory-oathkeeper-proxy.kyma-system.svc.cluster.local
     port: 4455
     timeout_ms: 120000
+    ns_adapter_timeout_ms: 3600000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
       internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
@@ -753,6 +758,8 @@ global:
       externalClientCertTestSecretNamespace: "compass-system"
       externalCertIntSystemCN: "integration-system-test"
       externalCertTestJobName: "external-client-certificate-integration-system-test-job"
+    tenantFetcher:
+      tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
     ordService:
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
       consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
@@ -831,6 +838,8 @@ global:
         - "application:read"
         - "runtime.auths:read"
         - "bundle.instance_auths:read"
+        - "runtime.webhooks:read"
+        - "webhook:write"
       application:
         - "application:read"
         - "application:write"
@@ -841,6 +850,7 @@ global:
         - "event_spec.fetch_request:read"
         - "api_spec.fetch_request:read"
         - "fetch-request.auth:read"
+        - "webhook:write"
       integration_system:
         - "application:read"
         - "application:write"
@@ -858,6 +868,7 @@ global:
         - "formation:write"
         - "internal_visibility:read"
         - "application.auths:read"
+        - "webhook:write"
       super_admin:
         - "application:read"
         - "application:write"
@@ -886,6 +897,8 @@ global:
         - "webhooks.auth:read"
         - "formation:write"
         - "internal_visibility:read"
+        - "runtime.webhooks:read"
+        - "webhook:write"
       default:
         - "runtime:read"
         - "runtime:write"

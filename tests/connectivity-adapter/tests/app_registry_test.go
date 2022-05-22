@@ -147,8 +147,8 @@ func ptrSpecResponse(in model.SpecResponse) *model.SpecResponse {
 	return &in
 }
 
-func fixRuntimeInput(descr string) directorSchema.RuntimeInput {
-	return directorSchema.RuntimeInput{
+func fixRuntimeInput(descr string) directorSchema.RuntimeRegisterInput {
+	return directorSchema.RuntimeRegisterInput{
 		Name:        TestRuntime,
 		Description: &descr,
 		Labels: directorSchema.Labels{

@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -31,7 +32,7 @@ func TestCallingCompassGateways(t *testing.T) {
 		ctx          = context.TODO()
 		err          error
 		tenant       = conf.DefaultTenant
-		runtimeInput = &graphql.RuntimeInput{
+		runtimeInput = &graphql.RuntimeRegisterInput{
 			Name: "test-runtime",
 			Labels: graphql.Labels{
 				conf.SelfRegDistinguishLabelKey: []interface{}{conf.SelfRegDistinguishLabelValue},

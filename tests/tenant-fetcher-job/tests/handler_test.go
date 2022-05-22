@@ -490,7 +490,7 @@ func cleanupTenants(t require.TestingT, ctx context.Context, gqlClient *gcli.Cli
 }
 
 func registerRuntime(t require.TestingT, ctx context.Context, runtimeName, subaccountInternalID string) graphql.RuntimeExt {
-	input := &graphql.RuntimeInput{
+	input := &graphql.RuntimeRegisterInput{
 		Name: runtimeName,
 		Labels: graphql.Labels{
 			cfg.SelfRegDistinguishLabelKey: []interface{}{cfg.SelfRegDistinguishLabelValue},

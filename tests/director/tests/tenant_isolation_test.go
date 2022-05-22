@@ -122,12 +122,12 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 	assertions.AssertRuntimePageContainOnlyIDs(t, customerRuntimes, customerRuntime.ID, accountRuntime.ID)
 
 	// Assert customer can update his own runtime
-	customerRuntimeUpdateInput := fixRuntimeInput("customerRuntimeUpdated")
+	customerRuntimeUpdateInput := fixRuntimeUpdateInput("customerRuntimeUpdated")
 	customerRuntime, err = fixtures.UpdateRuntimeWithinTenant(t, ctx, certSecuredGraphQLClient, customerTenant, customerRuntime.ID, customerRuntimeUpdateInput)
 	require.NoError(t, err)
 
 	// Assert customer can update his child account's runtime
-	accountRuntimeUpdateInput := fixRuntimeInput("accountRuntimeUpdated")
+	accountRuntimeUpdateInput := fixRuntimeUpdateInput("accountRuntimeUpdated")
 	accountRuntime, err = fixtures.UpdateRuntimeWithinTenant(t, ctx, certSecuredGraphQLClient, customerTenant, accountRuntime.ID, accountRuntimeUpdateInput)
 	require.NoError(t, err)
 

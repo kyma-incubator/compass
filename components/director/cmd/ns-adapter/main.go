@@ -98,7 +98,7 @@ func main() {
 	intSysConverter := integrationsystem.NewConverter()
 	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
-	runtimeConverter := runtime.NewConverter()
+	runtimeConverter := runtime.NewConverter(webhookConverter)
 	bundleReferenceConv := bundlereferences.NewConverter()
 
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
@@ -169,7 +169,7 @@ func main() {
 	server := &http.Server{
 		Addr:              conf.Address,
 		Handler:           router,
-		ReadHeaderTimeout: conf.ServerTimeout,
+		ReadHeaderTimeout: conf.ReadHeadersTimeout,
 	}
 	ctx, err = log.Configure(ctx, conf.Log)
 	exitOnError(err, "while configuring logger")

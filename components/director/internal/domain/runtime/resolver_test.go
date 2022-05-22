@@ -56,29 +56,44 @@ func TestResolver_CreateRuntime(t *testing.T) {
 
 	extSubaccountID := "extSubaccountID"
 	desc := "Lorem ipsum"
-	gqlInput := graphql.RuntimeInput{
+	gqlInput := graphql.RuntimeRegisterInput{
 		Name:        "Foo",
 		Description: &desc,
 		Labels:      graphql.Labels{RegionKey: "region"},
+		Webhooks: []*graphql.WebhookInput{{
+			Type: "test webhook",
+		}},
 	}
-	gqlInputWithSubaccountLabel := graphql.RuntimeInput{
+	gqlInputWithSubaccountLabel := graphql.RuntimeRegisterInput{
 		Name:        "Foo",
 		Description: &desc,
 		Labels:      graphql.Labels{RegionKey: "region", scenarioassignment.SubaccountIDKey: extSubaccountID},
+		Webhooks: []*graphql.WebhookInput{{
+			Type: "test webhook",
+		}},
 	}
-	gqlInputWithInvalidLabel := graphql.RuntimeInput{
+	gqlInputWithInvalidLabel := graphql.RuntimeRegisterInput{
 		Name:        "Foo",
 		Description: &desc,
 		Labels:      graphql.Labels{RegionKey: "region", scenarioassignment.SubaccountIDKey: []string{"firstValue", "secondValue"}},
+		Webhooks: []*graphql.WebhookInput{{
+			Type: "test webhook",
+		}},
 	}
-	modelInput := model.RuntimeInput{
+	modelInput := model.RuntimeRegisterInput{
 		Name:        "Foo",
 		Description: &desc,
+		Webhooks: []*model.WebhookInput{{
+			Type: "test webhook",
+		}},
 	}
-	selfRegModelInput := model.RuntimeInput{
+	selfRegModelInput := model.RuntimeRegisterInput{
 		Name:        "Foo",
 		Description: &desc,
 		Labels:      graphql.Labels{rtmtest.TestDistinguishLabel: "selfRegVal", RegionKey: "region"},
+		Webhooks: []*model.WebhookInput{{
+			Type: "test webhook",
+		}},
 	}
 	labels := map[string]interface{}{"xsappnameCMPClone": "clone"}
 
@@ -92,7 +107,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 		UUIDSvcFn        func() *automock.UidService
 		TenantFetcherFn  func() *automock.TenantFetcher
 
-		Input           graphql.RuntimeInput
+		Input           graphql.RuntimeRegisterInput
 		ExpectedRuntime *graphql.Runtime
 		ExpectedErr     error
 	}{
@@ -112,7 +127,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("RegisterInputFromGraphQL", gqlInput).Return(modelInput, nil).Once()
 				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
 				return conv
 			},
@@ -145,7 +160,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
-				conv.On("InputFromGraphQL", gqlInputWithSubaccountLabel).Return(modelInput).Once()
+				conv.On("RegisterInputFromGraphQL", gqlInputWithSubaccountLabel).Return(modelInput, nil).Once()
 				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
 				return conv
 			},
@@ -165,6 +180,33 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			ExpectedErr:      nil,
 		},
 		{
+			Name: "Returns error when runtime converting fails",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				return &persistenceautomock.PersistenceTx{}
+			},
+			TransactionerFn: txtest.NoopTransactioner,
+			ServiceFn: func() *automock.RuntimeService {
+				return &automock.RuntimeService{}
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				conv.On("RegisterInputFromGraphQL", gqlInputWithInvalidLabel).Return(model.RuntimeRegisterInput{}, testErr).Once()
+				return conv
+			},
+			UUIDSvcFn: func() *automock.UidService {
+				return &automock.UidService{}
+			},
+			TenantFetcherFn: func() *automock.TenantFetcher {
+				return &automock.TenantFetcher{}
+			},
+			SelfRegManagerFn: func() *automock.SelfRegisterManager {
+				return &automock.SelfRegisterManager{}
+			},
+			Input:           gqlInputWithInvalidLabel,
+			ExpectedRuntime: nil,
+			ExpectedErr:     testErr,
+		},
+		{
 			Name: "Returns error when subaccount id label has invalid value",
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				persistTx := &persistenceautomock.PersistenceTx{}
@@ -176,7 +218,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
-				conv.On("InputFromGraphQL", gqlInputWithInvalidLabel).Return(modelInput).Once()
+				conv.On("RegisterInputFromGraphQL", gqlInputWithInvalidLabel).Return(modelInput, nil).Once()
 				return conv
 			},
 			UUIDSvcFn: func() *automock.UidService {
@@ -204,7 +246,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
-				conv.On("InputFromGraphQL", gqlInputWithSubaccountLabel).Return(modelInput).Once()
+				conv.On("RegisterInputFromGraphQL", gqlInputWithSubaccountLabel).Return(modelInput, nil).Once()
 				return conv
 			},
 			UUIDSvcFn: func() *automock.UidService {
@@ -235,7 +277,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("RegisterInputFromGraphQL", gqlInput).Return(modelInput, nil).Once()
 				return conv
 			},
 			UUIDSvcFn: func() *automock.UidService {
@@ -265,7 +307,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(selfRegModelInput).Once()
+				conv.On("RegisterInputFromGraphQL", gqlInput).Return(selfRegModelInput, nil).Once()
 				return conv
 			},
 			UUIDSvcFn: func() *automock.UidService {
@@ -296,7 +338,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(selfRegModelInput).Once()
+				conv.On("RegisterInputFromGraphQL", gqlInput).Return(selfRegModelInput, nil).Once()
 				return conv
 			},
 			UUIDSvcFn: func() *automock.UidService {
@@ -327,7 +369,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("RegisterInputFromGraphQL", gqlInput).Return(modelInput, nil).Once()
 				return conv
 			},
 			UUIDSvcFn: func() *automock.UidService {
@@ -358,7 +400,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(selfRegModelInput).Once()
+				conv.On("RegisterInputFromGraphQL", gqlInput).Return(selfRegModelInput, nil).Once()
 				return conv
 			},
 			UUIDSvcFn: func() *automock.UidService {
@@ -385,7 +427,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("RegisterInputFromGraphQL", gqlInput).Return(modelInput, nil).Once()
 				return conv
 			},
 			UUIDSvcFn: func() *automock.UidService {
@@ -415,7 +457,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 
 			defer mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx, selfRegManager, fetcher)
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, fetcher)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, fetcher)
 
 			// WHEN
 			result, err := resolver.RegisterRuntime(context.TODO(), testCase.Input)
@@ -438,11 +480,11 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	desc := "Lorem ipsum"
-	gqlInput := graphql.RuntimeInput{
+	gqlInput := graphql.RuntimeUpdateInput{
 		Name:        "Foo",
 		Description: &desc,
 	}
-	modelInput := model.RuntimeInput{
+	modelInput := model.RuntimeUpdateInput{
 		Name:        "Foo",
 		Description: &desc,
 	}
@@ -457,7 +499,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 		ConverterFn      func() *automock.RuntimeConverter
 		SelfRegManagerFn func() *automock.SelfRegisterManager
 		RuntimeID        string
-		Input            graphql.RuntimeInput
+		Input            graphql.RuntimeUpdateInput
 		ExpectedRuntime  *graphql.Runtime
 		ExpectedErr      error
 	}{
@@ -477,7 +519,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("UpdateInputFromGraphQL", gqlInput).Return(modelInput).Once()
 				conv.On("ToGraphQL", modelRuntime).Return(gqlRuntime).Once()
 				return conv
 			},
@@ -501,7 +543,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("UpdateInputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(emptyLabels),
@@ -525,7 +567,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
-				conv.On("InputFromGraphQL", gqlInput).Return(modelInput).Once()
+				conv.On("UpdateInputFromGraphQL", gqlInput).Return(modelInput).Once()
 				return conv
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(emptyLabels),
@@ -545,7 +587,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			selfRegMng := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegMng, uuidSvc, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegMng, uuidSvc, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.UpdateRuntime(context.TODO(), testCase.RuntimeID, testCase.Input)
@@ -1505,7 +1547,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			selfRegisterManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, scenarioAssignmentSvc, sysAuthSvc, oAuth20Svc, converter, nil, nil, bundleInstanceAuthSvc, selfRegisterManager, uuidSvc, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, scenarioAssignmentSvc, sysAuthSvc, oAuth20Svc, converter, nil, nil, bundleInstanceAuthSvc, selfRegisterManager, uuidSvc, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.DeleteRuntime(context.TODO(), testCase.InputID)
@@ -1614,7 +1656,7 @@ func TestResolver_Runtime(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.Runtime(context.TODO(), testCase.InputID)
@@ -1716,7 +1758,7 @@ func TestResolver_Runtimes(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.Runtimes(context.TODO(), testCase.InputLabelFilters, testCase.InputFirst, testCase.InputAfter)
@@ -1821,7 +1863,7 @@ func TestResolver_RuntimeByTokenIssuer(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.RuntimeByTokenIssuer(context.TODO(), testCase.InputID)
@@ -1927,7 +1969,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.SetRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey, testCase.InputValue)
@@ -1941,7 +1983,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 	}
 
 	t.Run("Returns error when Label input validation failed", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.SetRuntimeLabel(context.TODO(), "", "", "")
@@ -2052,7 +2094,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.DeleteRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey)
@@ -2064,6 +2106,128 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx)
 		})
 	}
+}
+
+func TestResolver_Webhooks(t *testing.T) {
+	// GIVEN
+	id := "foo"
+
+	gqlRuntime := fixGQLRuntime(t, id, "name", "desc")
+
+	modelWebhooks := []*model.Webhook{{Type: "test webhook"}}
+	gqlWebhooks := []*graphql.Webhook{{Type: "test webhook"}}
+
+	testErr := errors.New("Test error")
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	testCases := []struct {
+		Name            string
+		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn       func() *automock.WebhookService
+		ConverterFn     func() *automock.WebhookConverter
+		ExpectedResult  []*graphql.Webhook
+		ExpectedErr     error
+	}{
+		{
+			Name:            "Success",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.WebhookService {
+				svc := &automock.WebhookService{}
+				svc.On("ListForRuntime", contextParam, gqlRuntime.ID).Return(modelWebhooks, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.WebhookConverter {
+				converter := &automock.WebhookConverter{}
+				converter.Mock.On("MultipleToGraphQL", modelWebhooks).Return(gqlWebhooks, nil).Once()
+				return converter
+			},
+			ExpectedResult: gqlWebhooks,
+			ExpectedErr:    nil,
+		},
+		{
+			Name:            "Returns error when transaction begin failed",
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			ServiceFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
+			ConverterFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+		{
+			Name:            "Returns error when listing webhooks failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.WebhookService {
+				svc := &automock.WebhookService{}
+				svc.On("ListForRuntime", contextParam, gqlRuntime.ID).Return([]*model.Webhook{}, testErr).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+		{
+			Name:            "Returns error when transaction commit failed",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			ServiceFn: func() *automock.WebhookService {
+				svc := &automock.WebhookService{}
+				svc.On("ListForRuntime", contextParam, gqlRuntime.ID).Return(modelWebhooks, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+		{
+			Name:            "Returns error when webhook conversion failed",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.WebhookService {
+				svc := &automock.WebhookService{}
+				svc.On("ListForRuntime", contextParam, gqlRuntime.ID).Return(modelWebhooks, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.WebhookConverter {
+				converter := &automock.WebhookConverter{}
+				converter.Mock.On("MultipleToGraphQL", modelWebhooks).Return(nil, testErr).Once()
+				return converter
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persist, transact := testCase.TransactionerFn()
+			svc := testCase.ServiceFn()
+			converter := testCase.ConverterFn()
+
+			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter, nil)
+
+			// WHEN
+			result, err := resolver.Webhooks(context.TODO(), gqlRuntime)
+
+			// then
+			assert.Equal(t, testCase.ExpectedResult, result)
+			assert.Equal(t, testCase.ExpectedErr, err)
+
+			mock.AssertExpectationsForObjects(t, svc, transact, persist, converter)
+		})
+	}
+	t.Run("Returns error when Runtime object is missing", func(t *testing.T) {
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		// WHEN
+		_, err := resolver.Webhooks(context.TODO(), nil)
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Runtime cannot be empty")
+	})
 }
 
 func TestResolver_Labels(t *testing.T) {
@@ -2196,7 +2360,7 @@ func TestResolver_Labels(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.Labels(context.TODO(), gqlRuntime, testCase.InputKey)
@@ -2304,7 +2468,7 @@ func TestResolver_GetLabel(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.GetLabel(context.TODO(), runtimeID, labelKey)
@@ -2438,7 +2602,7 @@ func TestResolver_RuntimeContext(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter, nil)
+			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.RuntimeContext(context.TODO(), testCase.Runtime, testCase.InputID)
@@ -2451,7 +2615,7 @@ func TestResolver_RuntimeContext(t *testing.T) {
 		})
 	}
 	t.Run("Returns error when Runtime object is missing", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := resolver.RuntimeContext(context.TODO(), nil, "foo")
 		// THEN
@@ -2577,7 +2741,7 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter, nil)
+			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter, nil, nil, nil)
 			firstRuntimeParams := dataloader.ParamRuntimeContext{ID: firstRuntimeID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
 			secondRuntimeParams := dataloader.ParamRuntimeContext{ID: secondRuntimeID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
 			keys := []dataloader.ParamRuntimeContext{firstRuntimeParams, secondRuntimeParams}
@@ -2594,7 +2758,7 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 	}
 
 	t.Run("Returns error when there are no Runtimes", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := resolver.RuntimeContextsDataLoader([]dataloader.ParamRuntimeContext{})
 		// THEN
@@ -2606,7 +2770,7 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 		firstRuntimeParams := dataloader.ParamRuntimeContext{ID: firstRuntimeID, Ctx: context.TODO(), First: nil, After: &gqlAfter}
 		keys := []dataloader.ParamRuntimeContext{firstRuntimeParams}
 
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := resolver.RuntimeContextsDataLoader(keys)
 		// THEN
@@ -2724,7 +2888,7 @@ func TestResolver_Auths(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, nil, nil, sysAuthSvc, nil, nil, sysAuthConv, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, nil, nil, sysAuthSvc, nil, nil, sysAuthConv, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.Auths(ctx, parentRuntime)
@@ -2743,7 +2907,7 @@ func TestResolver_Auths(t *testing.T) {
 	}
 
 	t.Run("Error when parent object is nil", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.Auths(context.TODO(), nil)
@@ -2836,7 +3000,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, eventingSvc, nil, selfRegManager, uuidSvc, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, eventingSvc, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.EventingConfiguration(ctx, gqlRuntime)
@@ -2856,7 +3020,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 	t.Run("Error when parent object ID is not a valid UUID", func(t *testing.T) {
 		// GIVEN
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.EventingConfiguration(ctx, &graphql.Runtime{ID: "abc"})
@@ -2869,7 +3033,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 	t.Run("Error when parent object is nil", func(t *testing.T) {
 		// GIVEN
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.EventingConfiguration(context.TODO(), nil)
@@ -2950,7 +3114,7 @@ func TestResolver_SubscribeTenant(t *testing.T) {
 			subscriptionSvc := testCase.SubscriptionSvcFn()
 			defer mock.AssertExpectationsForObjects(t, persist, transact, subscriptionSvc)
 
-			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, subscriptionSvc, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, subscriptionSvc, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.SubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, region)
@@ -3036,7 +3200,7 @@ func TestResolver_UnsubscribeTenant(t *testing.T) {
 			subscriptionSvc := testCase.SubscriptionSvcFn()
 			defer mock.AssertExpectationsForObjects(t, persist, transact, subscriptionSvc)
 
-			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, subscriptionSvc, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, subscriptionSvc, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.UnsubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, region)

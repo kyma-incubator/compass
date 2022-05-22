@@ -88,7 +88,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 
 	t.Run("Test runtime scopes", func(t *testing.T) {
 		t.Log("Register runtime")
-		runtimeInput := graphql.RuntimeInput{
+		runtimeInput := graphql.RuntimeRegisterInput{
 			Name: "test",
 		}
 		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, &runtimeInput)

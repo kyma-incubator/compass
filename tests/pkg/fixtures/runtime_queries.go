@@ -11,12 +11,12 @@ import (
 )
 
 func RegisterRuntime(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, name, tenant string) (graphql.RuntimeExt, error) {
-	in := FixRuntimeInput(name)
+	in := FixRuntimeRegisterInput(name)
 	return RegisterRuntimeFromInputWithinTenant(t, ctx, gqlClient, tenant, &in)
 }
 
-func RegisterRuntimeFromInputWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, input *graphql.RuntimeInput) (graphql.RuntimeExt, error) {
-	inputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(*input)
+func RegisterRuntimeFromInputWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, input *graphql.RuntimeRegisterInput) (graphql.RuntimeExt, error) {
+	inputGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(*input)
 	require.NoError(t, err)
 
 	registerRuntimeRequest := FixRegisterRuntimeRequest(inputGQL)
@@ -26,8 +26,8 @@ func RegisterRuntimeFromInputWithinTenant(t require.TestingT, ctx context.Contex
 	return runtime, err
 }
 
-func RegisterRuntimeFromInputWithoutTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, input *graphql.RuntimeInput) graphql.RuntimeExt {
-	inputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(*input)
+func RegisterRuntimeFromInputWithoutTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, input *graphql.RuntimeRegisterInput) graphql.RuntimeExt {
+	inputGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(*input)
 	require.NoError(t, err)
 
 	registerRuntimeRequest := FixRegisterRuntimeRequest(inputGQL)
@@ -38,8 +38,8 @@ func RegisterRuntimeFromInputWithoutTenant(t require.TestingT, ctx context.Conte
 	return runtime
 }
 
-func UpdateRuntimeWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string, in graphql.RuntimeInput) (graphql.RuntimeExt, error) {
-	inputGQL, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(in)
+func UpdateRuntimeWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string, in graphql.RuntimeUpdateInput) (graphql.RuntimeExt, error) {
+	inputGQL, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(in)
 	require.NoError(t, err)
 
 	updateRequest := FixUpdateRuntimeRequest(id, inputGQL)

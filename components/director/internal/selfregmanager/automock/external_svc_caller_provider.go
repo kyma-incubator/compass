@@ -38,13 +38,3 @@ func (_m *ExternalSvcCallerProvider) GetCaller(_a0 config.SelfRegConfig, _a1 str
 
 	return r0, r1
 }
-
-// NewExternalSvcCallerProvider creates a new instance of ExternalSvcCallerProvider. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewExternalSvcCallerProvider(t testing.TB) *ExternalSvcCallerProvider {
-	mock := &ExternalSvcCallerProvider{}
-	mock.Mock.Test(t)
-
-	t.Cleanup(func() { mock.AssertExpectations(t) })
-
-	return mock
-}

@@ -84,7 +84,7 @@ func TestViewerQuery(t *testing.T) {
 	})
 
 	t.Run("Test viewer as Runtime", func(t *testing.T) {
-		runtimeInput := graphql.RuntimeInput{
+		runtimeInput := graphql.RuntimeRegisterInput{
 			Name: "test-runtime",
 			Labels: graphql.Labels{
 				"scenarios":                              []interface{}{"DEFAULT"},

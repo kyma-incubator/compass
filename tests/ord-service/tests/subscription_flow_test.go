@@ -329,8 +329,8 @@ func executeGQLRequest(t *testing.T, ctx context.Context, gqlRequest *gcli.Reque
 	require.Equal(t, formationName, formation.Name)
 }
 
-func fixRuntimeInput(name string, description *string) graphql.RuntimeInput {
-	return graphql.RuntimeInput{
+func fixRuntimeInput(name string, description *string) graphql.RuntimeRegisterInput {
+	return graphql.RuntimeRegisterInput{
 		Name:        name,
 		Description: description,
 		Labels: graphql.Labels{

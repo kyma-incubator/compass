@@ -120,7 +120,6 @@ func NewRootResolver(
 
 	tokenConverter := onetimetoken.NewConverter(oneTimeTokenCfg.LegacyConnectorURL)
 	authConverter := auth.NewConverterWithOTT(tokenConverter)
-	runtimeConverter := runtime.NewConverter()
 	runtimeContextConverter := runtimectx.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -141,6 +140,7 @@ func NewRootResolver(
 	assignmentConv := scenarioassignment.NewConverter()
 	bundleReferenceConv := bundlereferences.NewConverter()
 	formationConv := formation.NewConverter()
+	runtimeConverter := runtime.NewConverter(webhookConverter)
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
@@ -181,7 +181,7 @@ func NewRootResolver(
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, scenarioAssignmentEngine, tenantSvc, featuresConfig.ProtectedLabelPattern, featuresConfig.ImmutableLabelPattern)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, scenarioAssignmentEngine, tenantSvc, webhookSvc, featuresConfig.ProtectedLabelPattern, featuresConfig.ImmutableLabelPattern)
 	oAuth20Svc := oauth20.NewService(cfgProvider, uidSvc, oAuth20Cfg.PublicAccessTokenEndpoint, hydra.Admin)
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(appNameNormalizer, runtimeRepo, labelRepo)
@@ -203,17 +203,17 @@ func NewRootResolver(
 		eventing:           eventing.NewResolver(transact, eventingSvc, appSvc),
 		doc:                document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
 		formation:          formation.NewResolver(transact, formationSvc, formationConv, tenantOnDemandSvc),
-		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc, subscriptionSvc, runtimeContextSvc, runtimeContextConverter, tenantOnDemandSvc),
+		runtime:            runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc, subscriptionSvc, runtimeContextSvc, runtimeContextConverter, webhookSvc, webhookConverter, tenantOnDemandSvc),
 		runtimeContext:     runtimectx.NewResolver(transact, runtimeContextSvc, runtimeContextConverter),
 		healthCheck:        healthcheck.NewResolver(healthCheckSvc),
-		webhook:            webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, webhookConverter),
-		labelDef:           labeldef.NewResolver(transact, labelDefSvc, labelDefConverter),
+		webhook:            webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, runtimeSvc, webhookConverter),
+		labelDef:           labeldef.NewResolver(transact, labelDefSvc, formationSvc, labelDefConverter),
 		token:              onetimetoken.NewTokenResolver(transact, tokenSvc, tokenConverter, oneTimeTokenCfg.SuggestTokenHeaderKey),
 		systemAuth:         systemauth.NewResolver(transact, systemAuthSvc, oAuth20Svc, tokenSvc, systemAuthConverter, authConverter),
 		oAuth20:            oauth20.NewResolver(transact, oAuth20Svc, appSvc, runtimeSvc, intSysSvc, systemAuthSvc, systemAuthConverter),
 		intSys:             integrationsystem.NewResolver(transact, intSysSvc, systemAuthSvc, oAuth20Svc, intSysConverter, systemAuthConverter),
 		viewer:             viewer.NewViewerResolver(),
-		tenant:             tenant.NewResolver(transact, tenantSvc, tenantConverter),
+		tenant:             tenant.NewResolver(transact, tenantSvc, tenantConverter, tenantOnDemandSvc),
 		mpBundle:           bundleutil.NewResolver(transact, bundleSvc, bundleInstanceAuthSvc, bundleReferenceSvc, apiSvc, eventAPISvc, docSvc, bundleConverter, bundleInstanceAuthConv, apiConverter, eventAPIConverter, docConverter, specSvc),
 		bundleInstanceAuth: bundleinstanceauth.NewResolver(transact, bundleInstanceAuthSvc, bundleSvc, bundleInstanceAuthConv, bundleConverter),
 		scenarioAssignment: scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv, tenantSvc, tenantOnDemandSvc),
@@ -548,8 +548,8 @@ func (r *mutationResolver) DeleteApplicationTemplate(ctx context.Context, id str
 }
 
 // AddWebhook missing godoc
-func (r *mutationResolver) AddWebhook(ctx context.Context, applicationID *string, applicationTemplateID *string, in graphql.WebhookInput) (*graphql.Webhook, error) {
-	return r.webhook.AddWebhook(ctx, applicationID, applicationTemplateID, in)
+func (r *mutationResolver) AddWebhook(ctx context.Context, applicationID *string, applicationTemplateID *string, runtimeID *string, in graphql.WebhookInput) (*graphql.Webhook, error) {
+	return r.webhook.AddWebhook(ctx, applicationID, applicationTemplateID, runtimeID, in)
 }
 
 // UpdateWebhook missing godoc
@@ -593,12 +593,12 @@ func (r *mutationResolver) RefetchEventDefinitionSpec(ctx context.Context, event
 }
 
 // RegisterRuntime missing godoc
-func (r *mutationResolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput) (*graphql.Runtime, error) {
+func (r *mutationResolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegisterInput) (*graphql.Runtime, error) {
 	return r.runtime.RegisterRuntime(ctx, in)
 }
 
 // UpdateRuntime missing godoc
-func (r *mutationResolver) UpdateRuntime(ctx context.Context, id string, in graphql.RuntimeInput) (*graphql.Runtime, error) {
+func (r *mutationResolver) UpdateRuntime(ctx context.Context, id string, in graphql.RuntimeUpdateInput) (*graphql.Runtime, error) {
 	return r.runtime.UpdateRuntime(ctx, id, in)
 }
 
@@ -635,11 +635,6 @@ func (r *mutationResolver) CreateLabelDefinition(ctx context.Context, in graphql
 // UpdateLabelDefinition missing godoc
 func (r *mutationResolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDefinitionInput) (*graphql.LabelDefinition, error) {
 	return r.labelDef.UpdateLabelDefinition(ctx, in)
-}
-
-// DeleteLabelDefinition missing godoc
-func (r *mutationResolver) DeleteLabelDefinition(ctx context.Context, key string, deleteRelatedLabels *bool) (*graphql.LabelDefinition, error) {
-	return r.labelDef.DeleteLabelDefinition(ctx, key, deleteRelatedLabels)
 }
 
 // SetApplicationLabel missing godoc
@@ -879,6 +874,10 @@ func (r applicationTemplateResolver) Labels(ctx context.Context, obj *graphql.Ap
 
 type runtimeResolver struct {
 	*RootResolver
+}
+
+func (r *runtimeResolver) Webhooks(ctx context.Context, obj *graphql.Runtime) ([]*graphql.Webhook, error) {
+	return r.runtime.Webhooks(ctx, obj)
 }
 
 // Labels missing godoc

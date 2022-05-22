@@ -90,7 +90,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 		Config         config.SelfRegConfig
 		CallerProvider func(*testing.T, config.SelfRegConfig, string) *automock.ExternalSvcCallerProvider
 		Region         string
-		Input          model.RuntimeInput
+		Input          model.RuntimeRegisterInput
 		Context        context.Context
 		ResourceType   resource.Type
 		ExpectedErr    error
@@ -145,7 +145,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Config:         testConfig,
 			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:         testRegion,
-			Input: model.RuntimeInput{
+			Input: model.RuntimeRegisterInput{
 				Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: struct{}{}},
 			},
 			Context:        ctxWithCertConsumer,
@@ -158,7 +158,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Config:         testConfig,
 			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:         testRegion,
-			Input:          model.RuntimeInput{Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: "not-valid"}},
+			Input:          model.RuntimeRegisterInput{Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: "not-valid"}},
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
 			ExpectedErr:    errors.New("missing configuration for region"),
@@ -180,7 +180,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Config:         testConfig,
 			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:         testRegion,
-			Input:          model.RuntimeInput{},
+			Input:          model.RuntimeRegisterInput{},
 			Context:        context.TODO(),
 			ResourceType:   resource.Runtime,
 			ExpectedErr:    consumer.NoConsumerError,
@@ -191,7 +191,7 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			Config:         testConfig,
 			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:         fakeRegion,
-			Input:          model.RuntimeInput{Labels: graphql.Labels{selfRegisterDistinguishLabelKey: "invalid value", selfregmanager.RegionLabel: fakeRegion}},
+			Input:          model.RuntimeRegisterInput{Labels: graphql.Labels{selfRegisterDistinguishLabelKey: "invalid value", selfregmanager.RegionLabel: fakeRegion}},
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
 			ExpectedErr:    errors.New("while creating url for preparation of self-registered resource"),
@@ -396,14 +396,14 @@ func fixLblWithDistinguish() map[string]interface{} {
 	}
 }
 
-func fixLblInput() model.RuntimeInput {
-	return model.RuntimeInput{
+func fixLblInput() model.RuntimeRegisterInput {
+	return model.RuntimeRegisterInput{
 		Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: testRegion},
 	}
 }
 
-func fixLblWithoutRegion() model.RuntimeInput {
-	return model.RuntimeInput{
+func fixLblWithoutRegion() model.RuntimeRegisterInput {
+	return model.RuntimeRegisterInput{
 		Labels: graphql.Labels{selfRegisterDistinguishLabelKey: distinguishLblVal},
 	}
 }

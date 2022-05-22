@@ -38,3 +38,12 @@ rateLimit:
 
 metrics:
   port: 3001
+
+auditLog:
+  maxBodySizeBytes: 998000
+
+timeouts:
+  metricsServer: "114s"
+  nsAdapter: "3600s"
+  handlers: "114s"
+  requestHeaders: "114s"
