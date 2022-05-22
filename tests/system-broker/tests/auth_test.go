@@ -53,7 +53,7 @@ var (
 )
 
 func TestSystemBrokerAuthentication(t *testing.T) {
-	runtimeInput = &graphql.RuntimeInput{
+	runtimeInput = &graphql.RuntimeRegisterInput{
 		Name: testRuntimeName,
 		Labels: graphql.Labels{
 			cfg.SelfRegDistinguishLabelKey: []interface{}{cfg.SelfRegDistinguishLabelValue},
