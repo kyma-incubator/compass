@@ -73,14 +73,14 @@ spec:
               value: "{{ $.Values.global.pairingAdapter.configMap.integrationSystemID }}"
             - name: APP_LOCAL_ADAPTER_FQDN
               value: "{{ $.Values.global.pairingAdapter.configMap.localAdapterFQDN }}"
-            - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY # This variable get its value from tenant fetcher configuration(in productive charts too) because we need "self register" flow to be executed as part of the consumer-provider test, locally and on real environment as well
-              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
+              value: {{ $.Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
-              value: {{ .Values.global.tests.subscriptionProviderIdValue | quote }}
+              value: {{ $.Values.global.tests.subscriptionProviderIdValue | quote }}
             - name: APP_SELF_REG_REGION
-              value: {{ .Values.global.tests.selfRegistration.region }}
+              value: {{ $.Values.global.tests.selfRegistration.region }}
             - name: APP_SELF_REG_LABEL_KEY
-              value: {{ .Values.global.director.selfRegister.label }}
+              value: {{ $.Values.global.director.selfRegister.label }}
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
