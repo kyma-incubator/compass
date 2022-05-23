@@ -12,6 +12,8 @@ type ConsumerType string
 const (
 	// Runtime missing godoc
 	Runtime ConsumerType = "Runtime"
+	// ExternalCertificate missing godoc
+	ExternalCertificate ConsumerType = "External Certificate"
 	// Application missing godoc
 	Application ConsumerType = "Application"
 	// IntegrationSystem missing godoc
