@@ -30,8 +30,8 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 	runtime := fixtures.FixRuntimeRegisterInput("runtime")
 	(runtime.Labels)["scenarios"] = []string{conf.DefaultScenario}
 	(runtime.Labels)["isNormalized"] = "false"
-	(runtime.Labels)[conf.AppSelfRegDistinguishLabelKey] = conf.AppSelfRegDistinguishLabelValue
-	(runtime.Labels)[tenantfetcher.RegionKey] = conf.AppSelfRegRegion
+	(runtime.Labels)[conf.SelfRegDistinguishLabelKey] = conf.SelfRegDistinguishLabelValue
+	(runtime.Labels)[tenantfetcher.RegionKey] = conf.SelfRegRegion
 
 	rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(b, ctx, certSecuredGraphQLClient, tenantID, &runtime)
 	defer fixtures.CleanupRuntime(b, ctx, certSecuredGraphQLClient, tenantID, &rt)
