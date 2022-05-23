@@ -1,6 +1,6 @@
 APP_NAME = compass-connector
 APP_PATH = components/connector
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.17.0
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
 ENTRYPOINT = cmd/main.go
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 export GO111MODULE = on

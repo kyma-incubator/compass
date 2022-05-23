@@ -25,7 +25,7 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 	}
 
 	//create runtime without normalization
-	runtime := fixtures.FixRuntimeInput("runtime")
+	runtime := fixtures.FixRuntimeRegisterInput("runtime")
 	(runtime.Labels)["scenarios"] = []string{conf.DefaultScenario}
 	(runtime.Labels)["isNormalized"] = "false"
 

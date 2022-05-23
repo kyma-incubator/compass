@@ -90,29 +90,6 @@ func (_m *WebhookRepository) GetByIDGlobal(ctx context.Context, id string) (*mod
 	return r0, r1
 }
 
-// ListByApplicationID provides a mock function with given fields: ctx, tenant, applicationID
-func (_m *WebhookRepository) ListByApplicationID(ctx context.Context, tenant string, applicationID string) ([]*model.Webhook, error) {
-	ret := _m.Called(ctx, tenant, applicationID)
-
-	var r0 []*model.Webhook
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.Webhook); ok {
-		r0 = rf(ctx, tenant, applicationID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Webhook)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, tenant, applicationID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // ListByApplicationIDWithSelectForUpdate provides a mock function with given fields: ctx, tenant, applicationID
 func (_m *WebhookRepository) ListByApplicationIDWithSelectForUpdate(ctx context.Context, tenant string, applicationID string) ([]*model.Webhook, error) {
 	ret := _m.Called(ctx, tenant, applicationID)
@@ -152,6 +129,29 @@ func (_m *WebhookRepository) ListByApplicationTemplateID(ctx context.Context, ap
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, applicationTemplateID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListByReferenceObjectID provides a mock function with given fields: ctx, tenant, objID, objType
+func (_m *WebhookRepository) ListByReferenceObjectID(ctx context.Context, tenant string, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error) {
+	ret := _m.Called(ctx, tenant, objID, objType)
+
+	var r0 []*model.Webhook
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.WebhookReferenceObjectType) []*model.Webhook); ok {
+		r0 = rf(ctx, tenant, objID, objType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Webhook)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, model.WebhookReferenceObjectType) error); ok {
+		r1 = rf(ctx, tenant, objID, objType)
 	} else {
 		r1 = ret.Error(1)
 	}

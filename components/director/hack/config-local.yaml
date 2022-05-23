@@ -41,9 +41,9 @@ graphql:
     registerIntegrationSystem: ["integration_system:write"]
     updateIntegrationSystem: ["integration_system:write"]
     unregisterIntegrationSystem: ["integration_system:write"]
-    addWebhook: ["application:write"]
-    updateWebhook: ["application:write"]
-    deleteWebhook: ["application:write"]
+    addWebhook: ["webhook:write"]
+    updateWebhook: ["webhook:write"]
+    deleteWebhook: ["webhook:write"]
     addAPIDefinitionToBundle: ["application:write"]
     updateAPIDefinition: ["application:write"]
     deleteAPIDefinition: ["application:write"]
@@ -60,7 +60,6 @@ graphql:
     unassignFormation: ["formation:write"]
     createLabelDefinition: ["label_definition:write"]
     updateLabelDefinition: ["label_definition:write"]
-    deleteLabelDefinition: ["label_definition:write"]
     setApplicationLabel: ["application:write"]
     deleteApplicationLabel: ["application:write"]
     setRuntimeLabel: ["runtime:write"]
@@ -113,6 +112,7 @@ graphql:
       fetch_request: ["api_spec.fetch_request:read"]
     runtime:
       auths: ["runtime.auths:read"]
+      webhooks: ["runtime.webhooks:read"]
     integration_system:
       auths: ["integration_system.auths:read"]
 
@@ -124,12 +124,15 @@ clientCredentialsRegistrationScopes:
     - "application:read"
     - "runtime.auths:read"
     - "bundle.instance_auths:read"
+    - "runtime.webhooks:read"
+    - "webhook:write"
   application:
     - "application:read"
     - "application:write"
     - "application.auths:read"
     - "application.webhooks:read"
     - "bundle.instance_auths:read"
+    - "webhook:write"
   integration_system:
     - "application:read"
     - "application:write"
@@ -148,6 +151,7 @@ clientCredentialsRegistrationScopes:
     - "formation:write"
     - "internal_visibility:read"
     - "application.auths:read"
+    - "webhook:write"
   super_admin:
     - "application:read"
     - "application:write"
@@ -176,6 +180,8 @@ clientCredentialsRegistrationScopes:
     - "webhooks.auth:read"
     - "formation:write"
     - "internal_visibility:read"
+    - "runtime.webhooks:read"
+    - "webhook:write"
 applicationHideSelectors:
   applicationHideSelectorKey:
     - "applicationHideSelectorValue"

@@ -45,11 +45,11 @@ func (_m *SelfRegisterManager) GetSelfRegDistinguishingLabelKey() string {
 }
 
 // PrepareRuntimeForSelfRegistration provides a mock function with given fields: ctx, in, id
-func (_m *SelfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeInput, id string) (map[string]interface{}, error) {
+func (_m *SelfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeRegisterInput, id string) (map[string]interface{}, error) {
 	ret := _m.Called(ctx, in, id)
 
 	var r0 map[string]interface{}
-	if rf, ok := ret.Get(0).(func(context.Context, model.RuntimeInput, string) map[string]interface{}); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, model.RuntimeRegisterInput, string) map[string]interface{}); ok {
 		r0 = rf(ctx, in, id)
 	} else {
 		if ret.Get(0) != nil {
@@ -58,7 +58,7 @@ func (_m *SelfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Con
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, model.RuntimeInput, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, model.RuntimeRegisterInput, string) error); ok {
 		r1 = rf(ctx, in, id)
 	} else {
 		r1 = ret.Error(1)

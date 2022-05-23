@@ -35,8 +35,35 @@ const (
 	RuntimeStatusConditionFailed RuntimeStatusCondition = "FAILED"
 )
 
-// RuntimeInput missing godoc
-type RuntimeInput struct {
+// RuntimeRegisterInput missing godoc
+type RuntimeRegisterInput struct {
+	Name            string
+	Description     *string
+	Labels          map[string]interface{}
+	Webhooks        []*WebhookInput
+	StatusCondition *RuntimeStatusCondition
+}
+
+// ToRuntime missing godoc
+func (i *RuntimeRegisterInput) ToRuntime(id string, creationTimestamp, conditionTimestamp time.Time) *Runtime {
+	if i == nil {
+		return nil
+	}
+
+	return &Runtime{
+		ID:          id,
+		Name:        i.Name,
+		Description: i.Description,
+		Status: &RuntimeStatus{
+			Condition: getRuntimeStatusConditionOrDefault(i.StatusCondition),
+			Timestamp: conditionTimestamp,
+		},
+		CreationTimestamp: creationTimestamp,
+	}
+}
+
+// RuntimeUpdateInput missing godoc
+type RuntimeUpdateInput struct {
 	Name            string
 	Description     *string
 	Labels          map[string]interface{}
@@ -44,7 +71,7 @@ type RuntimeInput struct {
 }
 
 // ToRuntime missing godoc
-func (i *RuntimeInput) ToRuntime(id string, creationTimestamp, conditionTimestamp time.Time) *Runtime {
+func (i *RuntimeUpdateInput) ToRuntime(id string, creationTimestamp, conditionTimestamp time.Time) *Runtime {
 	if i == nil {
 		return nil
 	}

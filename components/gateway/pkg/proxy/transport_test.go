@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/gateway/pkg/auditlog/model"
@@ -198,6 +199,13 @@ func fixGraphQLResponse() model.GraphqlResponse {
 	return model.GraphqlResponse{
 		Errors: nil,
 		Data:   "payload",
+	}
+}
+
+func fixGraphQLResponseWithLength(length int) model.GraphqlResponse {
+	return model.GraphqlResponse{
+		Errors: nil,
+		Data:   strings.Repeat("a", length),
 	}
 }
 

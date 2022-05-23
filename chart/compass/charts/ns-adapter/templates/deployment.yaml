@@ -121,6 +121,12 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: APP_JWKS_ENDPOINT
               value: http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json
+            - name: APP_READ_REQUEST_HEADERS_TIMEOUT
+              value: {{ .Values.timeouts.requestHeaders }}
+            - name: APP_SERVER_TIMEOUT
+              value: {{ .Values.timeouts.server }}
+            - name: APP_CLIENT_TIMEOUT
+              value: {{ .Values.timeouts.client }}
           livenessProbe:
             httpGet:
               port: {{ .Values.global.nsAdapter.external.port }}

@@ -25,5 +25,10 @@ spec:
             "@type": "type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua"
             inlineCode: |
               function envoy_on_request(request_handle)
-                request_handle:headers():add("x-envoy-upstream-rq-timeout-ms", "{{ .Values.global.oathkeeper.timeout_ms }}")
+                local uri = request_handle:headers():get(":path")
+                if string.match(uri, "nsadapter") then
+                  request_handle:headers():add("x-envoy-upstream-rq-timeout-ms", "{{ .Values.global.oathkeeper.ns_adapter_timeout_ms }}")
+                else
+                  request_handle:headers():add("x-envoy-upstream-rq-timeout-ms", "{{ .Values.global.oathkeeper.timeout_ms }}")
+                end
               end
