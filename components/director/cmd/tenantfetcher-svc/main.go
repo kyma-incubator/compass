@@ -128,7 +128,8 @@ func main() {
 			stopJobChannels = append(stopJobChannels, stopJob)
 
 			jobConfig := readJobConfig(ctx, job, envVars)
-			closeFn := runTenantFetcherJob(ctx, jobConfig, stopJob)
+			metricsReporter := createMetricsReporter(jobConfig)
+			closeFn := runTenantFetcherJob(ctx, jobConfig, metricsReporter, stopJob)
 			dbCloseFunctions = append(dbCloseFunctions, closeFn)
 		}
 	}()
@@ -160,7 +161,7 @@ func readJobConfig(ctx context.Context, jobName string, environmentVars map[stri
 	return tenantfetcher.NewTenantFetcherJobEnvironment(ctx, jobName, environmentVars).ReadJobConfig()
 }
 
-func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig, stopJob chan bool) func() error {
+func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig, metricsReporter *metrics.MetricsReporter, stopJob chan bool) func() error {
 	jobInterval := jobConfig.GetHandlerCgf().TenantFetcherJobIntervalMins
 	ticker := time.NewTicker(jobInterval)
 	jobName := jobConfig.JobName
@@ -174,7 +175,7 @@ func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig,
 			select {
 			case <-ticker.C:
 				log.C(ctx).Infof("Scheduled tenant fetcher job %s will be executed, job interval is %s", jobName, jobInterval)
-				syncTenants(ctx, jobConfig, transact)
+				syncTenants(ctx, jobConfig, metricsReporter, transact)
 			case <-ctx.Done():
 				log.C(ctx).Errorf("Context is canceled and scheduled tenant fetcher job %s will be stopped", jobName)
 				stopTenantFetcherJobTicker(ctx, ticker, jobName)
@@ -187,26 +188,25 @@ func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig,
 	return closeFunc
 }
 
-func syncTenants(ctx context.Context, jobConfig tenantfetcher.JobConfig, transact persistence.Transactioner) {
+func syncTenants(ctx context.Context, jobConfig tenantfetcher.JobConfig, metricsReporter *metrics.MetricsReporter, transact persistence.Transactioner) {
 	tenantsFetcherSvc, err := createTenantsFetcherSvc(ctx, jobConfig, transact)
 	exitOnError(err, "failed to create tenants fetcher service")
-
-	metricsReporter := createMetricsReporter(jobConfig)
 
 	err = tenantsFetcherSvc.SyncTenants()
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Error while running tenant fetcher job %s: %v", jobConfig.JobName, err)
+
 		if metricsReporter != nil {
-			metricsReporter.ReportFailedSync(err)
+			metricsReporter.ReportFailedSync(err, ctx)
 		}
 	}
 }
 
 func createMetricsReporter(jobConfig tenantfetcher.JobConfig) *metrics.MetricsReporter {
 	var metricsPusher *metrics.Pusher
-	eventsCfg := jobConfig.GetEventsCgf()
-	if eventsCfg.MetricsPushEndpoint != "" {
-		metricsPusher = metrics.NewPusherPerJob(jobConfig.JobName, eventsCfg.MetricsPushEndpoint, jobConfig.GetHandlerCgf().ClientTimeout)
+	pushEndpoint := jobConfig.GetEventsCgf().MetricsPushEndpoint
+	if pushEndpoint != "" {
+		metricsPusher = metrics.NewPusherPerJob(jobConfig.JobName, pushEndpoint, jobConfig.GetHandlerCgf().ClientTimeout)
 	}
 
 	var metricsReporter metrics.MetricsReporter

@@ -3,6 +3,7 @@ package metrics
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -60,17 +61,10 @@ func (p *Pusher) RecordEventingRequest(method string, statusCode int, desc strin
 
 // NewPusherPerJob missing godoc
 func NewPusherPerJob(jobName string, endpoint string, timeout time.Duration) *Pusher {
-	eventingRequestTotal := prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: Namespace,
-		Subsystem: TenantFetcherSubsystem,
-		Name:      "eventing_requests_total",
-		Help:      "Total Eventing Requests",
-	}, []string{"method", "code", "desc"})
-
 	failedTenantsSyncJob := prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: Namespace,
 		Subsystem: TenantFetcherSubsystem,
-		Name:      jobName + "_job_sync_failure_number",
+		Name:      strings.ReplaceAll(jobName, "-", "_") + "_job_sync_failure_number",
 		Help:      jobName + " job sync failure number",
 	}, []string{"method", "code", "desc"})
 
@@ -78,14 +72,12 @@ func NewPusherPerJob(jobName string, endpoint string, timeout time.Duration) *Pu
 	log.D().WithField(InstanceIDKeyName, instanceID).Infof("Initializing Metrics Pusher...")
 
 	registry := prometheus.NewRegistry()
-	registry.MustRegister(eventingRequestTotal)
 	registry.MustRegister(failedTenantsSyncJob)
 	pusher := push.New(endpoint, TenantFetcherJobName).Gatherer(registry).Client(&http.Client{
 		Timeout: timeout,
 	})
 
 	return &Pusher{
-		eventingRequestTotal: eventingRequestTotal,
 		failedTenantsSyncJob: failedTenantsSyncJob,
 		pusher:               pusher,
 		instanceID:           instanceID,

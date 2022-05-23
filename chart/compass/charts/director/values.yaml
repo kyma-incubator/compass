@@ -45,4 +45,4 @@ readinessProbe:
   initialDelaySeconds: 5
   timeoutSeconds: 2
   periodSeconds: 5
-adminGroupNames: "null"
+adminGroupNames: "mps-superadmin, runtimeAdmin, runtimeNamespaceAdmin"
