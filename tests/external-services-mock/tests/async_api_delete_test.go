@@ -3,12 +3,13 @@ package tests
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 

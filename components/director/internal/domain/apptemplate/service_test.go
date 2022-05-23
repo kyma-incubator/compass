@@ -517,7 +517,6 @@ func TestService_GetLabel(t *testing.T) {
 			labelRepo.AssertExpectations(t)
 		})
 	}
-
 }
 
 func TestService_GetByName(t *testing.T) {

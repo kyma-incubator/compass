@@ -20,11 +20,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	testPkg "github.com/kyma-incubator/compass/tests/pkg/webhook"

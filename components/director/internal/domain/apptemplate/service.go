@@ -109,12 +109,12 @@ func (s *service) CreateWithLabels(ctx context.Context, in model.ApplicationTemp
 		in.Labels[key] = val
 	}
 
-	appTemplateId, err := s.Create(ctx, in)
+	appTemplateID, err := s.Create(ctx, in)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating Application Template")
 	}
 
-	return appTemplateId, nil
+	return appTemplateID, nil
 }
 
 // Get missing godoc

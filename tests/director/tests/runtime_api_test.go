@@ -141,7 +141,7 @@ func TestRuntimeRegisterWithWebhooks(t *testing.T) {
 	//		},
 	//	},
 	//}
-	in := fixRuntimeInput( "runtime-with-webhooks")
+	in := fixRuntimeInput("runtime-with-webhooks")
 	in.Description = ptr.String("runtime-1-description")
 	in.Webhooks = []*graphql.WebhookInput{
 		{

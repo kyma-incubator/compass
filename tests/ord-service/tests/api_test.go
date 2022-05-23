@@ -22,11 +22,12 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"net/http"
 	urlpkg "net/url"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
