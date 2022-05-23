@@ -1,6 +1,6 @@
 APP_NAME = tenant-fetcher-job-tests
 APP_PATH = tests/tenant-fetcher-job
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.17.0
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 INSTALLATION_SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/installation/scripts
 export GO111MODULE = on
