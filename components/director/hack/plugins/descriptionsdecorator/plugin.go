@@ -93,7 +93,7 @@ func (p *descriptionsDecoratorPlugin) ensureDescription(f *ast.FieldDefinition, 
 	dirs, err := ioutil.ReadDir(p.examplesDirectory)
 	if err != nil {
 		log.D().Infof("no examples under %s directory, skipping adding description", p.examplesDirectory)
-		return nil //nolint:nilerr
+		return nil
 	}
 	for _, dir := range dirs {
 		if !dir.IsDir() {
