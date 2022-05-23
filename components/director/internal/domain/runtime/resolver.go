@@ -6,6 +6,7 @@ import (
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
@@ -102,7 +103,7 @@ type SubscriptionService interface {
 // TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
 //go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore
 type TenantFetcher interface {
-	FetchOnDemand(tenant string) error
+	FetchOnDemand(tenant, parentTenant string) error
 }
 
 // RuntimeContextService missing godoc
@@ -270,7 +271,12 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeInput)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while converting %s label", scenarioassignment.SubaccountIDKey)
 		}
-		if err := r.fetcher.FetchOnDemand(sa); err != nil {
+
+		parentTenant, err := tenant.LoadFromContext(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if err := r.fetcher.FetchOnDemand(sa, parentTenant); err != nil {
 			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", sa)
 		}
 	}

@@ -2,7 +2,6 @@ package tenantfetchersvc
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -28,7 +27,7 @@ const (
 // TenantFetcher is used to fectch tenants for creation;
 //go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore
 type TenantFetcher interface {
-	FetchTenantOnDemand(ctx context.Context, tenantID string) error
+	FetchTenantOnDemand(ctx context.Context, tenantID, parentTenantID string) error
 }
 
 // TenantSubscriber is used to apply subscription changes for tenants;
@@ -41,10 +40,11 @@ type TenantSubscriber interface {
 // HandlerConfig is the configuration required by the tenant handler.
 // It includes configurable parameters for incoming requests, including different tenant IDs json properties, and path parameters.
 type HandlerConfig struct {
-	TenantOnDemandHandlerEndpoint string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{tenantId}"`
+	TenantOnDemandHandlerEndpoint string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{parentTenantId}/{tenantId}"`
 	RegionalHandlerEndpoint       string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
 	DependenciesEndpoint          string `envconfig:"APP_DEPENDENCIES_ENDPOINT,default=/v1/dependencies"`
 	TenantPathParam               string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
+	ParentTenantPathParam         string `envconfig:"APP_PARENT_TENANT_PATH_PARAM,default=parentTenantId"`
 	RegionPathParam               string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
 
 	DirectorGraphQLEndpoint     string        `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
@@ -104,15 +104,22 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 
 	vars := mux.Vars(request)
 	tenantID, ok := vars[h.config.TenantPathParam]
-	if !ok {
-		log.C(ctx).WithError(errors.New("tenant path parameter is missing from request")).Error()
+	if !ok || len(tenantID) == 0 {
+		log.C(ctx).Error("Tenant path parameter is missing from request")
 		http.Error(writer, "Tenant path parameter is missing from request", http.StatusBadRequest)
+		return
+	}
+
+	parentTenantID, ok := vars[h.config.ParentTenantPathParam]
+	if !ok || len(parentTenantID) == 0 {
+		log.C(ctx).Error("Parent tenant path parameter is missing from request")
+		http.Error(writer, "Parent tenant ID path parameter is missing from request", http.StatusBadRequest)
 		return
 	}
 
 	log.C(ctx).Infof("Fetching create event for tenant with ID %s", tenantID)
 
-	err := h.fetcher.FetchTenantOnDemand(ctx, tenantID)
+	err := h.fetcher.FetchTenantOnDemand(ctx, tenantID, parentTenantID)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Error while processing request for creation of tenant %s: %v", tenantID, err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)

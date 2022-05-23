@@ -29,7 +29,7 @@ type Converter interface {
 // TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
 //go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore
 type TenantFetcher interface {
-	FetchOnDemand(tenant string) error
+	FetchOnDemand(tenant, parentTenant string) error
 }
 
 // Resolver is the formation resolver
@@ -112,7 +112,7 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 	}
 
 	if objectType == graphql.FormationObjectTypeTenant {
-		if err := r.fetcher.FetchOnDemand(objectID); err != nil {
+		if err := r.fetcher.FetchOnDemand(objectID, tnt); err != nil {
 			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", objectID)
 		}
 	}
