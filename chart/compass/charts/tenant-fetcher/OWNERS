@@ -3,6 +3,6 @@ reviewers:
 approvers:
   - team-dragon
 labels:
-  - ":dragon: team-dragon"
+  - "team-dragon"
 options:
   no_parent_owners: true
