@@ -17,6 +17,7 @@
 package tests
 
 import (
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
@@ -154,7 +155,7 @@ func fixRuntimeInput(descr string) directorSchema.RuntimeRegisterInput {
 		Labels: directorSchema.Labels{
 			"scenarios":                           []interface{}{"DEFAULT"},
 			testConfig.SelfRegDistinguishLabelKey: []interface{}{testConfig.SelfRegDistinguishLabelValue},
-			RegionLabel:                           testConfig.SelfRegRegion,
+			tenantfetcher.RegionKey:               testConfig.SelfRegRegion,
 		},
 	}
 }

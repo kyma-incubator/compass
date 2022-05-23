@@ -34,8 +34,6 @@ var (
 	appsForRuntimeTenantID       string
 )
 
-const RegionLabel = "region"
-
 func TestMain(m *testing.M) {
 	log.D().Info("Starting Connector Test")
 	cfg = config.ConnectorTestConfig{}

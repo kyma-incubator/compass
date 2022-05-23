@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"net/url"
 	"testing"
 
@@ -342,7 +343,7 @@ func TestFullConnectorFlow(t *testing.T) {
 func fixRuntimeInput(name string) graphql.RuntimeRegisterInput {
 	input := fixtures.FixRuntimeRegisterInput(name)
 	input.Labels[cfg.SelfRegDistinguishLabelKey] = []interface{}{cfg.SelfRegDistinguishLabelValue}
-	input.Labels[RegionLabel] = cfg.SelfRegRegion
+	input.Labels[tenantfetcher.RegionKey] = cfg.SelfRegRegion
 
 	return input
 }

@@ -19,8 +19,6 @@ var (
 	directorClient clients.Client
 )
 
-const RegionLabel = "region"
-
 type config struct {
 	ConnectivityAdapterMtlsUrl     string `envconfig:"default=https://adapter-gateway-mtls.kyma.local"`
 	DirectorExternalCertSecuredURL string `envconfig:"default=http://compass-director-external-mtls.compass-system.svc.cluster.local:3000/graphql"`
