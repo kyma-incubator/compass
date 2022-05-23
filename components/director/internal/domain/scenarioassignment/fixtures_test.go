@@ -21,15 +21,11 @@ import (
 
 const (
 	tenantID               = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	tenantID2              = "cccccccc-cccc-cccc-cccc-cccccccccccc"
 	externalTargetTenantID = "extTargetTenantID"
 	targetTenantID         = "targetTenantID"
-	targetTenantID2        = "targetTenantID2"
 	externalTenantID       = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
 	scenarioName           = "scenario-A"
-	scenarioName2          = "scenario-B"
 	errMsg                 = "some error"
-	runtimeID              = "rt-id"
 )
 
 func fixModel() model.AutomaticScenarioAssignment {

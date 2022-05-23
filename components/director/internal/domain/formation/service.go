@@ -33,6 +33,7 @@ type labelRepository interface {
 //go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeRepository interface {
 	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
+	Exists(ctx context.Context, tenant, id string) (bool, error)
 }
 
 //go:generate mockery --exported --name=labelDefService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -66,17 +67,13 @@ type automaticFormationAssignmentRepository interface {
 	Create(ctx context.Context, model model.AutomaticScenarioAssignment) error
 	DeleteForTargetTenant(ctx context.Context, tenantID string, targetTenantID string) error
 	DeleteForScenarioName(ctx context.Context, tenantID string, scenarioName string) error
+	ListAll(ctx context.Context, tenantID string) ([]*model.AutomaticScenarioAssignment, error)
 }
 
 //go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantService interface {
 	CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
-}
-
-//go:generate mockery --exported --name=scenarioAssignmentEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
-type scenarioAssignmentEngine interface {
-	GetScenariosFromMatchingASAs(ctx context.Context, runtimeID string) ([]string, error)
 }
 
 type service struct {
@@ -87,13 +84,12 @@ type service struct {
 	asaService         automaticFormationAssignmentService
 	uuidService        uidService
 	tenantSvc          tenantService
-	engine             scenarioAssignmentEngine
 	repo               automaticFormationAssignmentRepository
 	runtimeRepo        runtimeRepository
 }
 
 // NewService creates formation service
-func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, labelService labelService, uuidService uidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, engine scenarioAssignmentEngine) *service {
+func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, labelService labelService, uuidService uidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository) *service {
 	return &service{
 		labelDefRepository: labelDefRepository,
 		labelRepository:    labelRepository,
@@ -104,7 +100,6 @@ func NewService(labelDefRepository labelDefRepository, labelRepository labelRepo
 		tenantSvc:          tenantSvc,
 		repo:               asaRepo,
 		runtimeRepo:        runtimeRepo,
-		engine:             engine,
 	}
 }
 
@@ -355,8 +350,84 @@ func (s *service) DeleteManyASAForSameTargetTenant(ctx context.Context, in []*mo
 	return nil
 }
 
+// MergeScenariosFromInputLabelsAndAssignments merges all the scenarios that are part of the resource labels (already added + to be added with the current operation)
+// with all the scenarios that should be assigned based on ASAs.
+func (s *service) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error) {
+	scenariosSet := make(map[string]struct{})
+
+	scenariosFromAssignments, err := s.GetScenariosFromMatchingASAs(ctx, runtimeID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting scenarios for selector labels")
+	}
+
+	for _, scenario := range scenariosFromAssignments {
+		scenariosSet[scenario] = struct{}{}
+	}
+
+	scenariosFromInput, isScenarioLabelInInput := inputLabels[model.ScenariosKey]
+
+	if isScenarioLabelInInput {
+		scenariosFromInputInterfaceSlice, ok := scenariosFromInput.([]interface{})
+		if !ok {
+			return nil, apperrors.NewInternalError("while converting scenarios label to an interface slice")
+		}
+
+		for _, scenario := range scenariosFromInputInterfaceSlice {
+			scenariosSet[fmt.Sprint(scenario)] = struct{}{}
+		}
+	}
+
+	scenarios := make([]interface{}, 0)
+	for k := range scenariosSet {
+		scenarios = append(scenarios, k)
+	}
+	return scenarios, nil
+}
+
+// GetScenariosFromMatchingASAs gets all the scenarios that should be added to the runtime based on the matching Automatic Scenario Assignments
+// In order to do that, the ASAs should be searched in the caller tenant as this is the tenant that modifies the runtime and this is the tenant that the ASA
+// produced labels should be added to.
+func (s *service) GetScenariosFromMatchingASAs(ctx context.Context, runtimeID string) ([]string, error) {
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	scenariosSet := make(map[string]struct{})
+
+	scenarioAssignments, err := s.repo.ListAll(ctx, tenantID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listinng Automatic Scenario Assignments in tenant: %s", tenantID)
+	}
+
+	matchingASAs := make([]*model.AutomaticScenarioAssignment, 0, len(scenarioAssignments))
+	for _, scenarioAssignment := range scenarioAssignments {
+		matches, err := s.isASAMatchingRuntime(ctx, scenarioAssignment, runtimeID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while checkig if asa matches runtime with ID %s", runtimeID)
+		}
+		if matches {
+			matchingASAs = append(matchingASAs, scenarioAssignment)
+		}
+	}
+
+	for _, sa := range matchingASAs {
+		scenariosSet[sa.ScenarioName] = struct{}{}
+	}
+
+	scenarios := make([]string, 0)
+	for k := range scenariosSet {
+		scenarios = append(scenarios, k)
+	}
+	return scenarios, nil
+}
+
+func (s *service) isASAMatchingRuntime(ctx context.Context, asa *model.AutomaticScenarioAssignment, runtimeID string) (bool, error) {
+	return s.runtimeRepo.Exists(ctx, asa.TargetTenantID, runtimeID)
+}
+
 func (s *service) isFormationComingFromASA(ctx context.Context, runtimeID, formation string) (bool, error) {
-	formationsFromASA, err := s.engine.GetScenariosFromMatchingASAs(ctx, runtimeID)
+	formationsFromASA, err := s.GetScenariosFromMatchingASAs(ctx, runtimeID)
 	if err != nil {
 		return false, errors.Wrapf(err, "while getting formations from ASAs for runtime with id: %q", runtimeID)
 	}

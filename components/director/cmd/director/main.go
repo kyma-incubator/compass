@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
+
 	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -601,9 +603,11 @@ func runtimeSvc(cfg config) claims.RuntimeService {
 
 	labelSvc := label.NewLabelService(lblRepo, labelDefRepo, uidSvc)
 
-	scenarioAssignmentEngine := scenarioassignment.NewEngine(scenarioAssignmentRepo, rtRepo)
+	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
 
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, lblRepo, labelSvc)
+
+	scenarioAssignmentEngine := formation.NewService(labelDefRepo, lblRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, rtRepo)
 
 	return runtime.NewService(rtRepo, lblRepo, labelDefSvc, labelSvc, uidSvc, scenarioAssignmentEngine, tenantSvc, webhookService(), cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
 }

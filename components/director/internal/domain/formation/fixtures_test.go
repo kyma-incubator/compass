@@ -15,12 +15,16 @@ var TenantID = uuid.New()
 var ExternalTenantID = uuid.New()
 
 const (
-	TargetTenantID = "targetTenantID"
-	ScenarioName   = "scenario-A"
-	ErrMsg         = "some error"
-	Tnt            = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-	TargetTenant   = "targetTenant"
-	ExternalTnt    = "external-tnt"
+	TargetTenantID  = "targetTenantID"
+	ScenarioName    = "scenario-A"
+	ScenarioName2   = "scenario-B"
+	ErrMsg          = "some error"
+	Tnt             = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+	TargetTenant    = "targetTenant"
+	ExternalTnt     = "external-tnt"
+	TenantID2       = "cccccccc-cccc-cccc-cccc-cccccccccccc"
+	TargetTenantID2 = "targetTenantID2"
+	RuntimeID       = "rt-id"
 )
 
 func UnusedLabelService() *automock.LabelService {
@@ -45,10 +49,6 @@ func UnusedASARepo() *automock.AutomaticFormationAssignmentRepository {
 
 func UnusedRuntimeRepo() *automock.RuntimeRepository {
 	return &automock.RuntimeRepository{}
-}
-
-func UnusedEngine() *automock.ScenarioAssignmentEngine {
-	return &automock.ScenarioAssignmentEngine{}
 }
 
 func UnusedLabelDefService() *automock.LabelDefService {
