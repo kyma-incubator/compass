@@ -1,9 +1,10 @@
 package tests
 
 import (
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"net/url"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"

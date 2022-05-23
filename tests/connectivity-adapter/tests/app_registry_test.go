@@ -17,8 +17,9 @@
 package tests
 
 import (
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
