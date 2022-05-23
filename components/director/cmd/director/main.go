@@ -601,7 +601,7 @@ func runtimeSvc(cfg config) claims.RuntimeService {
 
 	labelSvc := label.NewLabelService(lblRepo, labelDefRepo, uidSvc)
 
-	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, lblRepo, scenarioAssignmentRepo, rtRepo)
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(scenarioAssignmentRepo, rtRepo)
 
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, lblRepo, labelSvc)
 

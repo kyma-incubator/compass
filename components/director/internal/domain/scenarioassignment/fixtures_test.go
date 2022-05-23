@@ -160,14 +160,6 @@ func fixUnescapedTenantIsolationSubqueryWithArg(i int) string {
 	return fmt.Sprintf(`tenant_id IN ( with recursive children AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = $%d UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN children t on t.id = t2.parent) SELECT id from children )`, i)
 }
 
-func unusedLabelService() *automock.LabelUpsertService {
-	return &automock.LabelUpsertService{}
-}
-
-func unusedLabelRepo() *automock.LabelRepository {
-	return &automock.LabelRepository{}
-}
-
 func unusedRuntimeRepo() *automock.RuntimeRepository {
 	return &automock.RuntimeRepository{}
 }

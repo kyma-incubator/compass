@@ -1611,7 +1611,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, svc, scenarioAssignmentSvc, converter, transact, persistTx, sysAuthSvc, oAuth20Svc, selfRegisterManager)
+			mock.AssertExpectationsForObjects(t, svc, scenarioAssignmentSvc, converter, transact, persistTx, sysAuthSvc, oAuth20Svc, selfRegisterManager, formationSvc)
 		})
 	}
 }

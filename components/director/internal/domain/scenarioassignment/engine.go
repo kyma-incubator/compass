@@ -5,8 +5,6 @@ import (
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/pkg/errors"
@@ -14,36 +12,20 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-//go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
-type labelRepository interface {
-	GetScenarioLabelsForRuntimes(ctx context.Context, tenantID string, runtimesIDs []string) ([]model.Label, error)
-	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
-}
-
 //go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeRepository interface {
-	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 }
 
-//go:generate mockery --exported --name=labelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type labelUpsertService interface {
-	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
-}
-
 type engine struct {
-	labelRepo              labelRepository
 	scenarioAssignmentRepo Repository
-	labelService           labelUpsertService
 	runtimeRepo            runtimeRepository
 }
 
 // NewEngine missing godoc
-func NewEngine(labelService labelUpsertService, labelRepo labelRepository, scenarioAssignmentRepo Repository, runtimeRepo runtimeRepository) *engine {
+func NewEngine(scenarioAssignmentRepo Repository, runtimeRepo runtimeRepository) *engine {
 	return &engine{
-		labelRepo:              labelRepo,
 		scenarioAssignmentRepo: scenarioAssignmentRepo,
-		labelService:           labelService,
 		runtimeRepo:            runtimeRepo,
 	}
 }

@@ -44,7 +44,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_Success(t *testing.T
 	runtimeRepo.On("Exists", fixCtxWithTenant(), targetTenantID, runtimeID).Return(true, nil).Once()
 	runtimeRepo.On("Exists", fixCtxWithTenant(), differentTargetTenant, runtimeID).Return(false, nil).Once()
 
-	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo, runtimeRepo)
+	engineSvc := scenarioassignment.NewEngine(mockRepo, runtimeRepo)
 
 	// WHEN
 	actualScenarios, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels, runtimeID)
@@ -85,7 +85,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_SuccessIfScenariosLa
 	runtimeRepo := &automock.RuntimeRepository{}
 	runtimeRepo.On("Exists", fixCtxWithTenant(), targetTenantID, runtimeID).Return(true, nil).Once()
 
-	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo, runtimeRepo)
+	engineSvc := scenarioassignment.NewEngine(mockRepo, runtimeRepo)
 
 	// WHEN
 	actualScenarios, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels, runtimeID)
@@ -109,7 +109,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfListAl
 
 	mockRepo := &automock.Repository{}
 	mockRepo.On("ListAll", fixCtxWithTenant(), tenantID).Return(nil, testErr)
-	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo, nil)
+	engineSvc := scenarioassignment.NewEngine(mockRepo, nil)
 
 	// WHEN
 	_, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels, "runtimeID")
@@ -145,7 +145,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfExists
 	runtimeRepo := &automock.RuntimeRepository{}
 	runtimeRepo.On("Exists", fixCtxWithTenant(), targetTenantID, runtimeID).Return(false, testErr).Once()
 
-	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo, runtimeRepo)
+	engineSvc := scenarioassignment.NewEngine(mockRepo, runtimeRepo)
 	// WHEN
 	_, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels, runtimeID)
 
@@ -181,7 +181,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfScenar
 	runtimeRepo := &automock.RuntimeRepository{}
 	runtimeRepo.On("Exists", fixCtxWithTenant(), targetTenantID, runtimeID).Return(true, nil).Once()
 
-	engineSvc := scenarioassignment.NewEngine(nil, nil, mockRepo, runtimeRepo)
+	engineSvc := scenarioassignment.NewEngine(mockRepo, runtimeRepo)
 
 	// WHEN
 	_, err := engineSvc.MergeScenariosFromInputLabelsAndAssignments(fixCtxWithTenant(), inputLabels, runtimeID)
@@ -210,8 +210,6 @@ func Test_engine_GetScenariosFromMatchingASAs(t *testing.T) {
 
 	testCases := []struct {
 		Name                     string
-		LabelServiceFn           func() *automock.LabelUpsertService
-		LabelRepoFn              func() *automock.LabelRepository
 		ScenarioAssignmentRepoFn func() *automock.Repository
 		RuntimeRepoFn            func() *automock.RuntimeRepository
 		RuntimeID                string
@@ -219,9 +217,7 @@ func Test_engine_GetScenariosFromMatchingASAs(t *testing.T) {
 		ExpectedScenarios        []string
 	}{
 		{
-			Name:           "Success",
-			LabelServiceFn: unusedLabelService,
-			LabelRepoFn:    unusedLabelRepo,
+			Name: "Success",
 			ScenarioAssignmentRepoFn: func() *automock.Repository {
 				repo := &automock.Repository{}
 				repo.On("ListAll", ctx, tenantID).Return(testScenarios, nil)
@@ -238,9 +234,7 @@ func Test_engine_GetScenariosFromMatchingASAs(t *testing.T) {
 			ExpectedScenarios: []string{scenarioName},
 		},
 		{
-			Name:           "Returns error when can't list ASAs",
-			LabelServiceFn: unusedLabelService,
-			LabelRepoFn:    unusedLabelRepo,
+			Name: "Returns error when can't list ASAs",
 			ScenarioAssignmentRepoFn: func() *automock.Repository {
 				repo := &automock.Repository{}
 				repo.On("ListAll", ctx, tenantID).Return(nil, testErr)
@@ -252,9 +246,7 @@ func Test_engine_GetScenariosFromMatchingASAs(t *testing.T) {
 			ExpectedScenarios: nil,
 		},
 		{
-			Name:           "Returns error when checking if asa matches runtime",
-			LabelServiceFn: unusedLabelService,
-			LabelRepoFn:    unusedLabelRepo,
+			Name: "Returns error when checking if asa matches runtime",
 			ScenarioAssignmentRepoFn: func() *automock.Repository {
 				repo := &automock.Repository{}
 				repo.On("ListAll", ctx, tenantID).Return(testScenarios, nil)
@@ -273,7 +265,7 @@ func Test_engine_GetScenariosFromMatchingASAs(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
-			engine := scenarioassignment.NewEngine(testCase.LabelServiceFn(), testCase.LabelRepoFn(), testCase.ScenarioAssignmentRepoFn(), testCase.RuntimeRepoFn())
+			engine := scenarioassignment.NewEngine(testCase.ScenarioAssignmentRepoFn(), testCase.RuntimeRepoFn())
 
 			// WHEN
 			scenarios, err := engine.GetScenariosFromMatchingASAs(ctx, testCase.RuntimeID)

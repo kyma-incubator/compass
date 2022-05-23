@@ -33,7 +33,6 @@ type labelRepository interface {
 //go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeRepository interface {
 	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
-	Exists(ctx context.Context, tenant, id string) (bool, error)
 }
 
 //go:generate mockery --exported --name=labelDefService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -65,10 +64,6 @@ type automaticFormationAssignmentService interface {
 //go:generate mockery --exported --name=automaticFormationAssignmentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type automaticFormationAssignmentRepository interface {
 	Create(ctx context.Context, model model.AutomaticScenarioAssignment) error
-	ListForTargetTenant(ctx context.Context, tenantID string, targetTenantID string) ([]*model.AutomaticScenarioAssignment, error)
-	GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error)
-	ListAll(ctx context.Context, tenantID string) ([]*model.AutomaticScenarioAssignment, error)
-	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
 	DeleteForTargetTenant(ctx context.Context, tenantID string, targetTenantID string) error
 	DeleteForScenarioName(ctx context.Context, tenantID string, scenarioName string) error
 }
@@ -278,6 +273,7 @@ func (s *service) DeleteAutomaticScenarioAssignment(ctx context.Context, in mode
 	return nil
 }
 
+// EnsureScenarioAssigned ensures that the scenario is assigned to all the runtimes that are in the ASAs target_tenant_id
 func (s *service) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error {
 	runtimes, err := s.runtimeRepo.ListAll(ctx, in.TargetTenantID, nil)
 
@@ -286,8 +282,8 @@ func (s *service) EnsureScenarioAssigned(ctx context.Context, in model.Automatic
 	}
 	for _, runtime := range runtimes {
 		_, err = s.AssignFormation(ctx, in.Tenant, runtime.ID, graphql.FormationObjectTypeRuntime, model.Formation{Name: in.ScenarioName})
-		if err != nil && !apperrors.IsNotUniqueError(err) {
-			return errors.Wrapf(err, "while assigning formation")
+		if err != nil {
+			return errors.Wrapf(err, "while assigning runtime with id %s to formation %s coming from ASA", runtime.ID, in.ScenarioName)
 		}
 	}
 	return nil
@@ -302,8 +298,8 @@ func (s *service) RemoveAssignedScenario(ctx context.Context, in model.Automatic
 
 	for _, runtime := range runtimes {
 		_, err = s.UnassignFormation(ctx, in.Tenant, runtime.ID, graphql.FormationObjectTypeRuntime, model.Formation{Name: in.ScenarioName})
-		if err != nil && !apperrors.IsNotFoundError(err) {
-			return errors.Wrapf(err, "while unassigning formation")
+		if err != nil {
+			return errors.Wrapf(err, "while unassigning runtime with id %s from formation %s coming from ASA", runtime.ID, in.ScenarioName)
 		}
 	}
 	return nil
@@ -336,8 +332,8 @@ func (s *service) ensureSameTargetTenant(in []*model.AutomaticScenarioAssignment
 	return targetTenant, nil
 }
 
-// DeleteManyForSameTargetTenant missing godoc
-func (s *service) DeleteManyForSameTargetTenant(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
+// DeleteManyASAForSameTargetTenant missing godoc
+func (s *service) DeleteManyASAForSameTargetTenant(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err

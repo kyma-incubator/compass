@@ -40,7 +40,7 @@ type tenantFetcher interface {
 //go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationService interface {
 	CreateAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
-	DeleteManyForSameTargetTenant(ctx context.Context, in []*model.AutomaticScenarioAssignment) error
+	DeleteManyASAForSameTargetTenant(ctx context.Context, in []*model.AutomaticScenarioAssignment) error
 	DeleteAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
@@ -236,7 +236,7 @@ func (r *Resolver) DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Con
 		return nil, errors.Wrapf(err, "while getting the Assignments for target tenant [%v]", targetTenant)
 	}
 
-	err = r.formationSvc.DeleteManyForSameTargetTenant(ctx, assignments)
+	err = r.formationSvc.DeleteManyASAForSameTargetTenant(ctx, assignments)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while deleting the Assignments for target tenant [%v]", targetTenant)
 	}

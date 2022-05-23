@@ -173,7 +173,7 @@ func NewRootResolver(
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
-	scenarioAssignmentEngine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo, runtimeRepo)
+	scenarioAssignmentEngine := scenarioassignment.NewEngine(scenarioAssignmentRepo, runtimeRepo)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, uidSvc)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)

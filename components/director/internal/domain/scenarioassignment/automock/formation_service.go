@@ -51,8 +51,8 @@ func (_m *FormationService) DeleteAutomaticScenarioAssignment(ctx context.Contex
 	return r0
 }
 
-// DeleteManyForSameTargetTenant provides a mock function with given fields: ctx, in
-func (_m *FormationService) DeleteManyForSameTargetTenant(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
+// DeleteManyASAForSameTargetTenant provides a mock function with given fields: ctx, in
+func (_m *FormationService) DeleteManyASAForSameTargetTenant(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
 	ret := _m.Called(ctx, in)
 
 	var r0 error
