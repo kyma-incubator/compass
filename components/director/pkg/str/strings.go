@@ -6,7 +6,10 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/text/language"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"golang.org/x/text/cases"
 )
 
 // Unique missing godoc
@@ -61,7 +64,7 @@ func PrefixStrings(in []string, prefix string) []string {
 
 // Title missing godoc
 func Title(s string) string {
-	return strings.Title(strings.ToLower(s))
+	return cases.Title(language.Und).String(strings.ToLower(s))
 }
 
 // PtrStrToStr missing godoc

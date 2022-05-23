@@ -1,6 +1,6 @@
 APP_NAME = compass-director-tests
 APP_PATH = tests/director-tests
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.17.0
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 INSTALLATION_SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/installation/scripts
 DIRECTOR_GRAPHQL_API = "http://compass-dev-director:3000"

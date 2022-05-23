@@ -1,4 +1,4 @@
-FROM golang:1.17.8-alpine3.15 as builder
+FROM golang:1.18.2-alpine3.15 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/director
 WORKDIR ${BASE_APP_DIR}

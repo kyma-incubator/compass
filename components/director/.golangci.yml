@@ -205,6 +205,14 @@ issues:
         - stylecheck
       text: "ST1012"
 
+    - linters:
+        - forcetypeassert
+      text: "type assertion must be checked"
+
+    - linters:
+        - ifshort
+      text: "variable 'errs' is only used in the if-statement"
+
 #    # Exclude known linters from partially hard-vendored code,
 #    # which is impossible to exclude via "nolint" comments.
 #    - path: internal/hmac/
