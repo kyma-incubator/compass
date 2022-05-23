@@ -47,7 +47,7 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 		mockConverter.On("ToGraphQL", fixModel(), externalTargetTenantID).Return(expectedOutput).Once()
 
 		fetcherSvc := &automock.TenantFetcher{}
-		fetcherSvc.On("FetchOnDemand", givenInput.Selector.Value).Return(nil).Once()
+		fetcherSvc.On("FetchOnDemand", givenInput.Selector.Value, tenantID).Return(nil).Once()
 
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetInternalTenant", mock.Anything, externalTargetTenantID).Return(targetTenantID, nil).Once()
@@ -70,7 +70,7 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 		tx, transact := txGen.ThatDoesntStartTransaction()
 
 		fetcherSvc := &automock.TenantFetcher{}
-		fetcherSvc.On("FetchOnDemand", mock.Anything).Return(testErr).Once()
+		fetcherSvc.On("FetchOnDemand", externalTargetTenantID, tenantID).Return(testErr).Once()
 
 		sut := scenarioassignment.NewResolver(transact, nil, nil, nil, fetcherSvc, nil)
 
@@ -87,7 +87,7 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 		tx, transact := txGen.ThatDoesntExpectCommit()
 
 		fetcherSvc := &automock.TenantFetcher{}
-		fetcherSvc.On("FetchOnDemand", mock.Anything).Return(nil).Once()
+		fetcherSvc.On("FetchOnDemand", externalTargetTenantID, tenantID).Return(nil).Once()
 
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetInternalTenant", mock.Anything, externalTargetTenantID).Return("", testErr).Once()
@@ -104,8 +104,9 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 	})
 
 	t.Run("error on starting transaction", func(t *testing.T) {
+		subaccountID := "subaccountID"
 		fetcherSvc := &automock.TenantFetcher{}
-		fetcherSvc.On("FetchOnDemand", "subaccountID").Return(nil).Once()
+		fetcherSvc.On("FetchOnDemand", subaccountID, tenantID).Return(nil).Once()
 
 		tx, transact := txGen.ThatFailsOnBegin()
 		defer mock.AssertExpectationsForObjects(t, tx, transact, fetcherSvc)
@@ -113,10 +114,10 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 		sut := scenarioassignment.NewResolver(transact, nil, nil, nil, fetcherSvc, nil)
 
 		// WHEN
-		_, err := sut.CreateAutomaticScenarioAssignment(context.TODO(),
+		_, err := sut.CreateAutomaticScenarioAssignment(ctx,
 			graphql.AutomaticScenarioAssignmentSetInput{Selector: &graphql.LabelSelectorInput{
 				Key:   "key",
-				Value: "subaccountID",
+				Value: subaccountID,
 			}})
 
 		// THEN
@@ -129,7 +130,7 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 		mockConverter.On("FromInputGraphQL", givenInput, targetTenantID).Return(fixModel()).Once()
 
 		fetcherSvc := &automock.TenantFetcher{}
-		fetcherSvc.On("FetchOnDemand", mock.Anything).Return(nil).Once()
+		fetcherSvc.On("FetchOnDemand", externalTargetTenantID, tenantID).Return(nil).Once()
 
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetInternalTenant", mock.Anything, externalTargetTenantID).Return(targetTenantID, nil).Once()
@@ -153,7 +154,7 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 		mockConverter.On("FromInputGraphQL", givenInput, targetTenantID).Return(fixModel()).Once()
 
 		fetcherSvc := &automock.TenantFetcher{}
-		fetcherSvc.On("FetchOnDemand", mock.Anything).Return(nil).Once()
+		fetcherSvc.On("FetchOnDemand", externalTargetTenantID, tenantID).Return(nil).Once()
 
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetInternalTenant", mock.Anything, externalTargetTenantID).Return(targetTenantID, nil).Once()

@@ -3,6 +3,7 @@ package scenarioassignment
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -34,7 +35,7 @@ type tenantService interface {
 
 //go:generate mockery --exported --name=tenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantFetcher interface {
-	FetchOnDemand(tenant string) error
+	FetchOnDemand(tenant, parentTenant string) error
 }
 
 //go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -68,7 +69,11 @@ type Resolver struct {
 
 // CreateAutomaticScenarioAssignment missing godoc
 func (r *Resolver) CreateAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {
-	if err := r.fetcher.FetchOnDemand(in.Selector.Value); err != nil {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.fetcher.FetchOnDemand(in.Selector.Value, tnt); err != nil {
 		return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", in.Selector.Value)
 	}
 
