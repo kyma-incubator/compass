@@ -47,15 +47,22 @@ var contextParam = mock.MatchedBy(func(ctx context.Context) bool {
 
 func TestResolver_CreateRuntime(t *testing.T) {
 	// GIVEN
+	const (
+		accountTenantID   = "c6dea850-ce93-4d65-8e10-432d85f0a244"
+		accountExternalID = "aa02436e-c2f1-44b8-8bf0-2e8519c27e40"
+		extSubaccountID   = "extSubaccountID"
+		desc              = "Lorem ipsum"
+	)
+
+	ctx := tenant.SaveToContext(context.TODO(), accountTenantID, accountExternalID)
+
 	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem ipsum")
 	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Lorem ipsum")
 	testErr := errors.New("Test error")
 
-	extSubaccountID := "extSubaccountID"
-	desc := "Lorem ipsum"
 	gqlInput := graphql.RuntimeRegisterInput{
 		Name:        "Foo",
-		Description: &desc,
+		Description: str.Ptr(desc),
 		Labels:      graphql.Labels{RegionKey: "region"},
 		Webhooks: []*graphql.WebhookInput{{
 			Type: "test webhook",
@@ -63,7 +70,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 	}
 	gqlInputWithSubaccountLabel := graphql.RuntimeRegisterInput{
 		Name:        "Foo",
-		Description: &desc,
+		Description: str.Ptr(desc),
 		Labels:      graphql.Labels{RegionKey: "region", scenarioassignment.SubaccountIDKey: extSubaccountID},
 		Webhooks: []*graphql.WebhookInput{{
 			Type: "test webhook",
@@ -71,7 +78,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 	}
 	gqlInputWithInvalidLabel := graphql.RuntimeRegisterInput{
 		Name:        "Foo",
-		Description: &desc,
+		Description: str.Ptr(desc),
 		Labels:      graphql.Labels{RegionKey: "region", scenarioassignment.SubaccountIDKey: []string{"firstValue", "secondValue"}},
 		Webhooks: []*graphql.WebhookInput{{
 			Type: "test webhook",
@@ -79,14 +86,14 @@ func TestResolver_CreateRuntime(t *testing.T) {
 	}
 	modelInput := model.RuntimeRegisterInput{
 		Name:        "Foo",
-		Description: &desc,
+		Description: str.Ptr(desc),
 		Webhooks: []*model.WebhookInput{{
 			Type: "test webhook",
 		}},
 	}
 	selfRegModelInput := model.RuntimeRegisterInput{
 		Name:        "Foo",
-		Description: &desc,
+		Description: str.Ptr(desc),
 		Labels:      graphql.Labels{rtmtest.TestDistinguishLabel: "selfRegVal", RegionKey: "region"},
 		Webhooks: []*model.WebhookInput{{
 			Type: "test webhook",
@@ -168,7 +175,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			TenantFetcherFn: func() *automock.TenantFetcher {
 				svc := &automock.TenantFetcher{}
-				svc.On("FetchOnDemand", extSubaccountID).Return(nil).Once()
+				svc.On("FetchOnDemand", extSubaccountID, accountTenantID).Return(nil).Once()
 				return svc
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
@@ -253,7 +260,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			TenantFetcherFn: func() *automock.TenantFetcher {
 				svc := &automock.TenantFetcher{}
-				svc.On("FetchOnDemand", extSubaccountID).Return(testErr).Once()
+				svc.On("FetchOnDemand", extSubaccountID, accountTenantID).Return(testErr).Once()
 				return svc
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
@@ -457,7 +464,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, fetcher)
 
 			// WHEN
-			result, err := resolver.RegisterRuntime(context.TODO(), testCase.Input)
+			result, err := resolver.RegisterRuntime(ctx, testCase.Input)
 
 			// then
 			assert.Equal(t, testCase.ExpectedRuntime, result)
@@ -479,11 +486,11 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 	desc := "Lorem ipsum"
 	gqlInput := graphql.RuntimeUpdateInput{
 		Name:        "Foo",
-		Description: &desc,
+		Description: str.Ptr(desc),
 	}
 	modelInput := model.RuntimeUpdateInput{
 		Name:        "Foo",
-		Description: &desc,
+		Description: str.Ptr(desc),
 	}
 	runtimeID := "foo"
 	emptyLabels := make(map[string]interface{})

@@ -110,7 +110,7 @@ global:
       version: "PR-2373"
     director:
       dir:
-      version: "PR-2373"
+      version: "PR-2376"
     hydrator:
       dir:
       version: "PR-2373"
@@ -514,7 +514,7 @@ global:
       subscriptionProviderIdProperty: "subscriptionProviderIdProperty"
       providerSubaccountIdProperty: "providerSubaccountIdProperty"
     server:
-      fetchTenantEndpoint: "/v1/fetch/{tenantId}"
+      fetchTenantEndpoint: "/v1/fetch/{parentTenantId}/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
       dependenciesEndpoint: "/v1/dependencies"
       tenantPathParam: "tenantId"
