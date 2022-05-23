@@ -26,7 +26,7 @@ const (
 )
 
 var (
-	runtimeInput = &graphql.RuntimeInput{
+	runtimeInput = &graphql.RuntimeRegisterInput{
 		Name: "test-runtime",
 	}
 )

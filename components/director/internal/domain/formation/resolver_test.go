@@ -247,7 +247,7 @@ func TestAssignFormation(t *testing.T) {
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 		mockConverter.On("ToGraphQL", &model.Formation{Name: testFormation}).Return(&graphql.Formation{Name: testFormation})
 
-		fetcherSvc.On("FetchOnDemand", "").Return(nil)
+		fetcherSvc.On("FetchOnDemand", "", tnt).Return(nil)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := formation.NewResolver(transact, mockService, mockConverter, fetcherSvc)
@@ -268,7 +268,7 @@ func TestAssignFormation(t *testing.T) {
 		mockConverter := &automock.Converter{}
 		fetcherSvc := &automock.TenantFetcher{}
 
-		fetcherSvc.On("FetchOnDemand", "").Return(testErr)
+		fetcherSvc.On("FetchOnDemand", "", tnt).Return(testErr)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := formation.NewResolver(transact, mockService, mockConverter, fetcherSvc)
@@ -299,7 +299,7 @@ func TestAssignFormation(t *testing.T) {
 		persist, transact := txGen.ThatFailsOnBegin()
 
 		fetcherSvc := &automock.TenantFetcher{}
-		fetcherSvc.On("FetchOnDemand", "").Return(nil)
+		fetcherSvc.On("FetchOnDemand", "", tnt).Return(nil)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := formation.NewResolver(transact, nil, nil, fetcherSvc)
@@ -323,7 +323,7 @@ func TestAssignFormation(t *testing.T) {
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		fetcherSvc := &automock.TenantFetcher{}
-		fetcherSvc.On("FetchOnDemand", "").Return(nil)
+		fetcherSvc.On("FetchOnDemand", "", tnt).Return(nil)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := formation.NewResolver(transact, mockService, mockConverter, fetcherSvc)
@@ -347,7 +347,7 @@ func TestAssignFormation(t *testing.T) {
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		fetcherSvc := &automock.TenantFetcher{}
-		fetcherSvc.On("FetchOnDemand", "").Return(nil)
+		fetcherSvc.On("FetchOnDemand", "", tnt).Return(nil)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := formation.NewResolver(transact, mockService, mockConverter, fetcherSvc)

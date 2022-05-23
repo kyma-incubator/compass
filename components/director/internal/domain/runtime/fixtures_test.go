@@ -127,8 +127,32 @@ func fixDetailedGQLRuntime(t *testing.T, id, name, description string) *graphql.
 	}
 }
 
-func fixModelRuntimeInput(name, description string) model.RuntimeInput {
-	return model.RuntimeInput{
+func fixModelRuntimeRegisterInput(name, description string, webhooks []*model.WebhookInput) model.RuntimeRegisterInput {
+	return model.RuntimeRegisterInput{
+		Name:        name,
+		Description: &description,
+		Labels: map[string]interface{}{
+			"test": []string{"val", "val2"},
+		},
+		Webhooks: webhooks,
+	}
+}
+
+func fixGQLRuntimeRegisterInput(name, description string, webhooks []*graphql.WebhookInput) graphql.RuntimeRegisterInput {
+	labels := graphql.Labels{
+		"test": []string{"val", "val2"},
+	}
+
+	return graphql.RuntimeRegisterInput{
+		Name:        name,
+		Description: &description,
+		Labels:      labels,
+		Webhooks:    webhooks,
+	}
+}
+
+func fixModelRuntimeUpdateInput(name, description string) model.RuntimeUpdateInput {
+	return model.RuntimeUpdateInput{
 		Name:        name,
 		Description: &description,
 		Labels: map[string]interface{}{
@@ -137,12 +161,12 @@ func fixModelRuntimeInput(name, description string) model.RuntimeInput {
 	}
 }
 
-func fixGQLRuntimeInput(name, description string) graphql.RuntimeInput {
+func fixGQLRuntimeUpdateInput(name, description string) graphql.RuntimeUpdateInput {
 	labels := graphql.Labels{
 		"test": []string{"val", "val2"},
 	}
 
-	return graphql.RuntimeInput{
+	return graphql.RuntimeUpdateInput{
 		Name:        name,
 		Description: &description,
 		Labels:      labels,

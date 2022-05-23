@@ -54,7 +54,7 @@ func NewSelfRegisterManager(cfg config.SelfRegConfig, provider ExternalSvcCaller
 
 // PrepareRuntimeForSelfRegistration executes the prerequisite calls for self-registration in case the runtime
 // is being self-registered
-func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeInput, id string) (map[string]interface{}, error) {
+func (s *selfRegisterManager) PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeRegisterInput, id string) (map[string]interface{}, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	labels := make(map[string]interface{})
 	if err != nil {

@@ -92,30 +92,34 @@ global:
       id: 1f538f34-30bf-4d3d-aeaa-02e69eef84ae
       type: subaccount
       parent: 5984a414-1eed-4972-af2c-b2b6a415c7d7
+    - name: TestTenantsOnDemandAPI
+      id: 8d42d818-d4c4-4036-b82f-b199db7ffeb5
+      type: subaccount
+      parent: 5984a414-1eed-4972-af2c-b2b6a415c7d7
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2358"
+      version: "PR-2373"
     connectivity_adapter:
       dir:
-      version: "PR-2358"
+      version: "PR-2373"
     pairing_adapter:
       dir:
-      version: "PR-2358"
+      version: "PR-2373"
     director:
       dir:
       version: "PR-2322"
     hydrator:
       dir:
-      version: "PR-2358"
+      version: "PR-2373"
     gateway:
       dir:
-      version: "PR-2302"
+      version: "PR-2373"
     operations_controller:
       dir:
-      version: "PR-2358"
+      version: "PR-2373"
     ord_service:
       dir:
       version: "PR-67"
@@ -124,7 +128,7 @@ global:
       version: "PR-2335"
     system_broker:
       dir:
-      version: "PR-2358"
+      version: "PR-2373"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -510,7 +514,7 @@ global:
       subscriptionProviderIdProperty: "subscriptionProviderIdProperty"
       providerSubaccountIdProperty: "providerSubaccountIdProperty"
     server:
-      fetchTenantEndpoint: "/v1/fetch/{tenantId}"
+      fetchTenantEndpoint: "/v1/fetch/{parentTenantId}/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
       dependenciesEndpoint: "/v1/dependencies"
       tenantPathParam: "tenantId"
@@ -758,6 +762,8 @@ global:
       externalClientCertTestSecretNamespace: "compass-system"
       externalCertIntSystemCN: "integration-system-test"
       externalCertTestJobName: "external-client-certificate-integration-system-test-job"
+    tenantFetcher:
+      tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
     ordService:
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
       consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
@@ -836,6 +842,8 @@ global:
         - "application:read"
         - "runtime.auths:read"
         - "bundle.instance_auths:read"
+        - "runtime.webhooks:read"
+        - "webhook:write"
       application:
         - "application:read"
         - "application:write"
@@ -846,6 +854,7 @@ global:
         - "event_spec.fetch_request:read"
         - "api_spec.fetch_request:read"
         - "fetch-request.auth:read"
+        - "webhook:write"
       integration_system:
         - "application:read"
         - "application:write"
@@ -863,6 +872,7 @@ global:
         - "formation:write"
         - "internal_visibility:read"
         - "application.auths:read"
+        - "webhook:write"
       super_admin:
         - "application:read"
         - "application:write"
@@ -891,6 +901,8 @@ global:
         - "webhooks.auth:read"
         - "formation:write"
         - "internal_visibility:read"
+        - "runtime.webhooks:read"
+        - "webhook:write"
       default:
         - "runtime:read"
         - "runtime:write"

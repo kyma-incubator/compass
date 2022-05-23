@@ -68,7 +68,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 			}
 
 			t.Log(fmt.Sprintf("Trying to register runtime in account tenant %s", test.tenant))
-			rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, test.tenant, &graphql.RuntimeInput{Name: fmt.Sprintf("runtime-%s", test.resourceSuffix)})
+			rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, test.tenant, &graphql.RuntimeRegisterInput{Name: fmt.Sprintf("runtime-%s", test.resourceSuffix)})
 			defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, test.tenant, &rt)
 			if test.expectErr {
 				require.Error(t, err)

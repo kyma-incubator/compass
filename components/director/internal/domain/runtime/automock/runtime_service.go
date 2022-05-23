@@ -19,11 +19,11 @@ type RuntimeService struct {
 }
 
 // CreateWithMandatoryLabels provides a mock function with given fields: ctx, in, id, mandatoryLabels
-func (_m *RuntimeService) CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeInput, id string, mandatoryLabels map[string]interface{}) error {
+func (_m *RuntimeService) CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeRegisterInput, id string, mandatoryLabels map[string]interface{}) error {
 	ret := _m.Called(ctx, in, id, mandatoryLabels)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.RuntimeInput, string, map[string]interface{}) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, model.RuntimeRegisterInput, string, map[string]interface{}) error); ok {
 		r0 = rf(ctx, in, id, mandatoryLabels)
 	} else {
 		r0 = ret.Error(0)
@@ -190,11 +190,11 @@ func (_m *RuntimeService) SetLabel(ctx context.Context, label *model.LabelInput)
 }
 
 // Update provides a mock function with given fields: ctx, id, in
-func (_m *RuntimeService) Update(ctx context.Context, id string, in model.RuntimeInput) error {
+func (_m *RuntimeService) Update(ctx context.Context, id string, in model.RuntimeUpdateInput) error {
 	ret := _m.Called(ctx, id, in)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.RuntimeInput) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.RuntimeUpdateInput) error); ok {
 		r0 = rf(ctx, id, in)
 	} else {
 		r0 = ret.Error(0)

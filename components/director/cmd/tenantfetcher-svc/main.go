@@ -97,10 +97,6 @@ func main() {
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Failed to configure Logger")
 
-	if cfg.Handler.TenantPathParam == "" {
-		exitOnError(errors.New("missing tenant path parameter"), "Error while loading app handler config")
-	}
-
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Handler.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 

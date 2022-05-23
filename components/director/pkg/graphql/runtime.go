@@ -22,6 +22,7 @@ type RuntimeExt struct {
 	Labels Labels `json:"labels"`
 	// Returns array of authentication details for Runtime. For now at most one element in array will be returned.
 	Auths           []*RuntimeSystemAuth  `json:"auths"`
+	Webhooks        []Webhook             `json:"webhooks"`
 	RuntimeContext  RuntimeContextExt     `json:"runtimeContext"`
 	RuntimeContexts RuntimeContextPageExt `json:"runtimeContexts"`
 }

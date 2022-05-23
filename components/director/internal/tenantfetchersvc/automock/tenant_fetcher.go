@@ -15,13 +15,13 @@ type TenantFetcher struct {
 	mock.Mock
 }
 
-// FetchTenantOnDemand provides a mock function with given fields: ctx, tenantID
-func (_m *TenantFetcher) FetchTenantOnDemand(ctx context.Context, tenantID string) error {
-	ret := _m.Called(ctx, tenantID)
+// FetchTenantOnDemand provides a mock function with given fields: ctx, tenantID, parentTenantID
+func (_m *TenantFetcher) FetchTenantOnDemand(ctx context.Context, tenantID string, parentTenantID string) error {
+	ret := _m.Called(ctx, tenantID, parentTenantID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, tenantID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, tenantID, parentTenantID)
 	} else {
 		r0 = ret.Error(0)
 	}
