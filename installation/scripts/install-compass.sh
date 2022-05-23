@@ -10,6 +10,12 @@ TIMEOUT=30m0s
 
 COMPASS_CHARTS="${CURRENT_DIR}/../../chart/compass"
 
+function cleanup_trap() {
+  if [[ -f mergedOverrides.yaml ]]; then
+    rm -f mergedOverrides.yaml
+  fi
+}
+
 touch mergedOverrides.yaml # target file where all overrides .yaml files will be merged into. This is needed because if several override files with the same key/s are passed to helm, it applies the value/s from the last file for that key overriding everything else.
 yq eval-all --inplace '. as $item ireduce ({}; . * $item )' mergedOverrides.yaml "${COMPASS_CHARTS}"/values.yaml
 
@@ -46,4 +52,4 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 CRDS_FOLDER="${CURRENT_DIR}/../resources/crds"
 kubectl apply -f "${CRDS_FOLDER}"
 helm upgrade --install --wait --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace compass-system compass "${COMPASS_CHARTS}"
-rm mergedOverrides.yaml
+trap "cleanup_trap" RETURN EXIT INT TERM

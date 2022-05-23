@@ -1,6 +1,3 @@
-config:
-  oidc:
-    caFile: "/etc/dex-tls-cert/tls.crt"
 connector:
   http:
     client:
