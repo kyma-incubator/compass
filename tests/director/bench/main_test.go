@@ -23,9 +23,9 @@ type config struct {
 	SkipSSLValidation              bool `envconfig:"default=false"`
 	CertLoaderConfig               certloader.Config
 
-	AppSelfRegDistinguishLabelKey   string
-	AppSelfRegDistinguishLabelValue string
-	AppSelfRegRegion                string
+	SelfRegDistinguishLabelKey   string
+	SelfRegDistinguishLabelValue string
+	SelfRegRegion                string
 }
 
 var (
