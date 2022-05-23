@@ -291,7 +291,7 @@ func writeOrderByPart(builder *strings.Builder, orderByParams OrderByParams) err
 		return apperrors.NewInternalError("builder cannot be nil")
 	}
 
-	if orderByParams == nil || len(orderByParams) == 0 {
+	if len(orderByParams) == 0 {
 		return nil
 	}
 
@@ -314,7 +314,7 @@ func writeGroupByPart(builder *strings.Builder, groupByParams GroupByParams) err
 		return apperrors.NewInternalError("builder cannot be nil")
 	}
 
-	if groupByParams == nil || len(groupByParams) == 0 {
+	if len(groupByParams) == 0 {
 		return nil
 	}
 
