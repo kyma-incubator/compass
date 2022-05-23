@@ -13,13 +13,10 @@ import (
 // Repository missing godoc
 //go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Repository interface {
-	Create(ctx context.Context, model model.AutomaticScenarioAssignment) error
 	ListForTargetTenant(ctx context.Context, tenantID string, targetTenantID string) ([]*model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error)
 	ListAll(ctx context.Context, tenantID string) ([]*model.AutomaticScenarioAssignment, error)
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
-	DeleteForTargetTenant(ctx context.Context, tenantID string, targetTenantID string) error
-	DeleteForScenarioName(ctx context.Context, tenantID string, scenarioName string) error
 }
 
 // ScenariosDefService missing godoc
