@@ -126,14 +126,14 @@ type RuntimeContextConverter interface {
 }
 
 // WebhookService missing godoc
-//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookService interface {
 	ListForRuntime(ctx context.Context, runtimeID string) ([]*model.Webhook, error)
 	Create(ctx context.Context, owningResourceID string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) (string, error)
 }
 
 // WebhookConverter missing godoc
-//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookConverter interface {
 	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
 	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
