@@ -35,6 +35,8 @@ func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (Co
 	switch refObj {
 	case model.ApplicationReference:
 		return Application, nil
+	case model.ExternalCertificateReference:
+		return ExternalCertificate, nil
 	case model.RuntimeReference:
 		return Runtime, nil
 	case model.IntegrationSystemReference:
