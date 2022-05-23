@@ -1851,7 +1851,7 @@ func TestService_DeleteForScenarioName(t *testing.T) {
 	})
 }
 
-func TestEngine_EnsureScenarioAssigned(t *testing.T) {
+func TestService_EnsureScenarioAssigned(t *testing.T) {
 	selectorScenario := "SELECTOR_SCENARIO"
 	in := formation.FixAutomaticScenarioAssigment(selectorScenario)
 	testErr := errors.New("test err")
@@ -2003,7 +2003,7 @@ func TestEngine_EnsureScenarioAssigned(t *testing.T) {
 	})
 }
 
-func TestEngine_RemoveAssignedScenario(t *testing.T) {
+func TestService_RemoveAssignedScenario(t *testing.T) {
 	selectorScenario := "SELECTOR_SCENARIO"
 	rtmID := "8c4de4d8-dcfa-47a9-95c9-3c8b1f5b907c"
 	in := formation.FixAutomaticScenarioAssigment(selectorScenario)
@@ -2121,7 +2121,7 @@ func TestEngine_RemoveAssignedScenario(t *testing.T) {
 	})
 }
 
-func TestEngine_RemoveAssignedScenarios(t *testing.T) {
+func TestService_RemoveAssignedScenarios(t *testing.T) {
 	selectorScenario := "SCENARIO1"
 	in := []*model.AutomaticScenarioAssignment{
 		{
@@ -2223,7 +2223,7 @@ func TestEngine_RemoveAssignedScenarios(t *testing.T) {
 	})
 }
 
-func TestEngine_MergeScenariosFromInputLabelsAndAssignments_Success(t *testing.T) {
+func TestService_MergeScenariosFromInputLabelsAndAssignments_Success(t *testing.T) {
 	// GIVEN
 	ctx := formation.FixCtxWithTenant()
 	differentTargetTenant := "differentTargetTenant"
@@ -2270,7 +2270,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_Success(t *testing.T
 	mock.AssertExpectationsForObjects(t, asaRepo, runtimeRepo)
 }
 
-func TestEngine_MergeScenariosFromInputLabelsAndAssignments_SuccessIfScenariosLabelIsInInput(t *testing.T) {
+func TestService_MergeScenariosFromInputLabelsAndAssignments_SuccessIfScenariosLabelIsInInput(t *testing.T) {
 	// GIVEN
 	ctx := formation.FixCtxWithTenant()
 	runtimeID := "runtimeID"
@@ -2311,7 +2311,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_SuccessIfScenariosLa
 	mock.AssertExpectationsForObjects(t, asaRepo, runtimeRepo)
 }
 
-func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfListAllFailed(t *testing.T) {
+func TestService_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfListAllFailed(t *testing.T) {
 	// GIVEN
 	ctx := formation.FixCtxWithTenant()
 	testErr := errors.New("testErr")
@@ -2336,7 +2336,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfListAl
 	asaRepo.AssertExpectations(t)
 }
 
-func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfExistsFailed(t *testing.T) {
+func TestService_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfExistsFailed(t *testing.T) {
 	// GIVEN
 	ctx := formation.FixCtxWithTenant()
 	runtimeID := "runtimeID"
@@ -2373,7 +2373,7 @@ func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfExists
 	mock.AssertExpectationsForObjects(t, asaRepo, runtimeRepo)
 }
 
-func TestEngine_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfScenariosFromInputWereNotInterfaceSlice(t *testing.T) {
+func TestService_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfScenariosFromInputWereNotInterfaceSlice(t *testing.T) {
 	//  GIVEN
 	ctx := formation.FixCtxWithTenant()
 	runtimeID := "runtimeID"
