@@ -1,4 +1,4 @@
-package tenantfetchersvc
+package tenantfetchersvc_test
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	domainTenant "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
+	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/stretchr/testify/require"
@@ -24,8 +25,11 @@ var (
 
 func TestFetcher_FetchTenantOnDemand(t *testing.T) {
 	// GIVEN
-	provider := "default"
-	tenantID := "tenantID"
+	var (
+		provider       = "default"
+		tenantID       = "tenantID"
+		parentTenantID = "parentID"
+	)
 	businessSubaccount1BusinessMapping := model.BusinessTenantMapping{ExternalTenant: tenantID}
 
 	testErr := errors.New("test error")
@@ -42,7 +46,7 @@ func TestFetcher_FetchTenantOnDemand(t *testing.T) {
 	}{
 		{
 			Name:            "Success when tenant exists",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: txGen.ThatSucceeds,
 			TenantStorageSvcFn: func() *tfautomock.TenantStorageService {
 				svc := &tfautomock.TenantStorageService{}
 				svc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), businessSubaccount1BusinessMapping.ExternalTenant).Return(&businessSubaccount1BusinessMapping, nil).Once()
@@ -73,10 +77,10 @@ func TestFetcher_FetchTenantOnDemand(t *testing.T) {
 
 			onDemandSvc := tenantfetcher.NewSubaccountOnDemandService(tenantfetcher.QueryConfig{}, tenantfetcher.TenantFieldMapping{}, apiClient, transact, tenantStorageSvc, gqlClient, provider, tenantConverter)
 
-			subscriber := NewTenantFetcher(*onDemandSvc)
+			tf := tenantfetchersvc.NewTenantFetcher(*onDemandSvc)
 
 			// WHEN
-			err := subscriber.FetchTenantOnDemand(context.TODO(), tenantID)
+			err := tf.FetchTenantOnDemand(context.TODO(), tenantID, parentTenantID)
 
 			// THEN
 			if testCase.ExpectedErrorMsg != nil {
