@@ -1,4 +1,4 @@
-FROM alpine:3.15.3
+FROM alpine:3.16.0
 
 ARG MIGRATE_VER=4.15.1
 
