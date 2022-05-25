@@ -1580,6 +1580,16 @@ func TestMergeApplications(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, formation.Name)
 
+	defer func() {
+		t.Logf("Cleaning up formation: %s", newFormation)
+
+		var response graphql.Formation
+		deleteFormationReq := fixtures.FixDeleteFormationRequest(newFormation)
+		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteFormationReq, &response)
+
+		t.Logf("Deleted formation: %v", response)
+	}()
+
 	t.Logf("Assign application to formation %s", newFormation)
 	assignReq := fixtures.FixAssignFormationRequest(outputSrcApp.ID, "APPLICATION", newFormation)
 	var assignFormation graphql.Formation
