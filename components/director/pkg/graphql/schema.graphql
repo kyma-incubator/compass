@@ -1235,7 +1235,7 @@ type Query {
 	**Examples**
 	- [query application templates](examples/query-application-templates/query-application-templates.graphql)
 	"""
-	applicationTemplates(first: Int = 200, after: PageCursor): ApplicationTemplatePage! @hasScopes(path: "graphql.query.applicationTemplates")
+	applicationTemplates(filter: [LabelFilter!], first: Int = 200, after: PageCursor): ApplicationTemplatePage! @hasScopes(path: "graphql.query.applicationTemplates")
 	"""
 	**Examples**
 	- [query application template](examples/query-application-template/query-application-template.graphql)

@@ -3,6 +3,7 @@ package apptemplate
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -23,7 +24,7 @@ type ApplicationTemplateRepository interface {
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 	GetByName(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 	Exists(ctx context.Context, id string) (bool, error)
-	List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
+	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 	Update(ctx context.Context, model model.ApplicationTemplate) error
 	Delete(ctx context.Context, id string) error
 }
@@ -158,12 +159,12 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 // List missing godoc
-func (s *service) List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error) {
+func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error) {
 	if pageSize < 1 || pageSize > 200 {
 		return model.ApplicationTemplatePage{}, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	return s.appTemplateRepo.List(ctx, pageSize, cursor)
+	return s.appTemplateRepo.List(ctx, filter, pageSize, cursor)
 }
 
 // Update missing godoc

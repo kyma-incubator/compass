@@ -51,6 +51,8 @@ type HandlerConfig struct {
 	ClientTimeout               time.Duration `envconfig:"default=60s"`
 	HTTPClientSkipSslValidation bool          `envconfig:"APP_HTTP_CLIENT_SKIP_SSL_VALIDATION,default=false"`
 
+	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
+
 	TenantProviderConfig
 	features.Config
 
@@ -66,6 +68,7 @@ type TenantProviderConfig struct {
 	TenantProvider                 string `envconfig:"APP_TENANT_PROVIDER,default=external-provider"`
 	SubscriptionProviderIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY,default=subscriptionProviderId"`
 	ProviderSubaccountIDProperty   string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY,default=providerSubaccountId"`
+	SubscriptionAppNameProperty    string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_APP_NAME_PROPERTY,default=subscriptionAppName"`
 }
 
 // EventsConfig contains configuration for Events API requests
@@ -199,6 +202,7 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		h.config.CustomerIDProperty:             false,
 		h.config.SubscriptionProviderIDProperty: true,
 		h.config.ProviderSubaccountIDProperty:   true,
+		h.config.SubscriptionAppNameProperty:    true,
 	})
 	if err != nil {
 		return nil, err
@@ -211,6 +215,7 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		Subdomain:              properties[h.config.SubdomainProperty],
 		SubscriptionProviderID: properties[h.config.SubscriptionProviderIDProperty],
 		ProviderSubaccountID:   properties[h.config.ProviderSubaccountIDProperty],
+		SubscriptionAppName:    properties[h.config.SubscriptionAppNameProperty],
 		Region:                 region,
 	}
 

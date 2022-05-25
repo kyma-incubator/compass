@@ -358,8 +358,8 @@ func (r *queryResolver) Application(ctx context.Context, id string) (*graphql.Ap
 }
 
 // ApplicationTemplates missing godoc
-func (r *queryResolver) ApplicationTemplates(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.ApplicationTemplatePage, error) {
-	return r.appTemplate.ApplicationTemplates(ctx, first, after)
+func (r *queryResolver) ApplicationTemplates(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationTemplatePage, error) {
+	return r.appTemplate.ApplicationTemplates(ctx, filter, first, after)
 }
 
 // ApplicationTemplate missing godoc

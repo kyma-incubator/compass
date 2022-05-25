@@ -17,6 +17,9 @@ type DirectorGraphQLClient interface {
 	WriteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
 	SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountID, providerSubaccountID, region string) error
 	UnsubscribeTenantFromRuntime(ctx context.Context, providerID, subaccountID, providerSubaccountID, region string) error
+	GetRuntimes(ctx context.Context, region, selfRegisterDistinguishLabelKey, selfRegisterDistinguishLabelValue string) (graphql.RuntimePage, error)
+	GetApplicationTemplates(ctx context.Context, region, selfRegisterDistinguishLabelKey, selfRegisterDistinguishLabelValue string) (graphql.ApplicationTemplatePage, error)
+	RegisterApplicationFromTemplate(ctx context.Context, appTemplateName, subaccountTenantID, subscriptionAppName string) error
 }
 
 // TenantConverter expects tenant converter implementation
@@ -35,6 +38,7 @@ type TenantSubscriptionRequest struct {
 	Region                 string
 	SubscriptionProviderID string
 	ProviderSubaccountID   string
+	SubscriptionAppName    string
 }
 
 // MainTenantID is used to determine the external tenant ID of the tenant for which the provisioning request was triggered.

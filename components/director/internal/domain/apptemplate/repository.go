@@ -2,6 +2,8 @@ package apptemplate
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -98,9 +100,22 @@ func (r *repository) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 // List missing godoc
-func (r *repository) List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error) {
+func (r *repository) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error) {
 	var entityCollection EntityCollection
-	page, totalCount, err := r.pageableQuerierGlobal.ListGlobal(ctx, pageSize, cursor, "id", &entityCollection)
+
+	filterSubquery, args, err := label.FilterQueryGlobal(model.AppTemplateLabelableObject, label.IntersectSet, filter)
+	if err != nil {
+		return model.ApplicationTemplatePage{}, errors.Wrap(err, "while building filter query")
+	}
+
+	var conditions repo.Conditions
+	if filterSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	conditionsTree := repo.And(repo.ConditionTreesFromConditions(conditions)...)
+
+	page, totalCount, err := r.pageableQuerierGlobal.ListGlobalWithAdditionalConditions(ctx, pageSize, cursor, "id", &entityCollection, conditionsTree)
 	if err != nil {
 		return model.ApplicationTemplatePage{}, err
 	}
