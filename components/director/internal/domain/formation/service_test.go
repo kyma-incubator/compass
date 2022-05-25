@@ -1553,13 +1553,17 @@ func TestServiceUnassignFormation(t *testing.T) {
 		})
 	}
 }
+
 func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// GIVEN
 		ctx := formation.FixCtxWithTenant()
+
 		mockRepo := &automock.AutomaticFormationAssignmentRepository{}
 		mockRepo.On("Create", ctx, formation.FixModel()).Return(nil)
+
 		mockScenarioDefSvc := formation.MockScenarioDefServiceThatReturns([]string{formation.ScenarioName})
+
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(make([]*model.Runtime, 0), nil)
 		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo, mockScenarioDefSvc)
@@ -1577,9 +1581,12 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 	t.Run("return error when ensuring scenarios for runtimes fails", func(t *testing.T) {
 		// GIVEN
 		ctx := formation.FixCtxWithTenant()
+
 		mockRepo := &automock.AutomaticFormationAssignmentRepository{}
 		mockRepo.On("Create", ctx, formation.FixModel()).Return(nil)
+
 		mockScenarioDefSvc := formation.MockScenarioDefServiceThatReturns([]string{formation.ScenarioName})
+
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(nil, formation.FixError())
 		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo, mockScenarioDefSvc)
@@ -1608,16 +1615,17 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 	t.Run("returns error when scenario already has an assignment", func(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.AutomaticFormationAssignmentRepository{}
-
 		mockRepo.On("Create", mock.Anything, formation.FixModel()).Return(apperrors.NewNotUniqueError(""))
-		mockScenarioDefSvc := formation.MockScenarioDefServiceThatReturns([]string{formation.ScenarioName})
-		runtimeRepo := &automock.RuntimeRepository{}
-		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo, mockScenarioDefSvc)
 
-		svc := formation.NewService(nil, nil, nil, nil, mockScenarioDefSvc, mockRepo, nil, nil, runtimeRepo)
+		mockScenarioDefSvc := formation.MockScenarioDefServiceThatReturns([]string{formation.ScenarioName})
+
+		defer mock.AssertExpectationsForObjects(t, mockRepo, mockScenarioDefSvc)
+
+		svc := formation.NewService(nil, nil, nil, nil, mockScenarioDefSvc, mockRepo, nil, nil, nil)
 
 		// WHEN
 		_, err := svc.CreateAutomaticScenarioAssignment(formation.FixCtxWithTenant(), formation.FixModel())
+
 		// THEN
 		require.NotNil(t, err)
 		require.Contains(t, err.Error(), "a given scenario already has an assignment")
@@ -1626,10 +1634,9 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 	t.Run("returns error when given scenario does not exist", func(t *testing.T) {
 		// GIVEN
 		mockScenarioDefSvc := formation.MockScenarioDefServiceThatReturns([]string{"completely-different-scenario"})
-		runtimeRepo := &automock.RuntimeRepository{}
-		defer mock.AssertExpectationsForObjects(t, runtimeRepo, mockScenarioDefSvc)
+		defer mock.AssertExpectationsForObjects(t, mockScenarioDefSvc)
 
-		svc := formation.NewService(nil, nil, nil, nil, mockScenarioDefSvc, nil, nil, nil, runtimeRepo)
+		svc := formation.NewService(nil, nil, nil, nil, mockScenarioDefSvc, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.CreateAutomaticScenarioAssignment(formation.FixCtxWithTenant(), formation.FixModel())
 
@@ -1642,11 +1649,9 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 		mockRepo := &automock.AutomaticFormationAssignmentRepository{}
 		mockRepo.On("Create", mock.Anything, formation.FixModel()).Return(formation.FixError())
 		mockScenarioDefSvc := formation.MockScenarioDefServiceThatReturns([]string{formation.ScenarioName})
+		defer mock.AssertExpectationsForObjects(t, mockRepo, mockScenarioDefSvc)
 
-		runtimeRepo := &automock.RuntimeRepository{}
-		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo, mockScenarioDefSvc)
-
-		svc := formation.NewService(nil, nil, nil, nil, mockScenarioDefSvc, mockRepo, nil, nil, runtimeRepo)
+		svc := formation.NewService(nil, nil, nil, nil, mockScenarioDefSvc, mockRepo, nil, nil, nil)
 
 		// WHEN
 		_, err := svc.CreateAutomaticScenarioAssignment(formation.FixCtxWithTenant(), formation.FixModel())
@@ -1659,12 +1664,13 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 		// GIVEN
 		mockScenarioDefSvc := &automock.LabelDefService{}
 		mockScenarioDefSvc.On("EnsureScenariosLabelDefinitionExists", mock.Anything, mock.Anything).Return(formation.FixError())
-		runtimeRepo := &automock.RuntimeRepository{}
-		defer mock.AssertExpectationsForObjects(t, runtimeRepo, mockScenarioDefSvc)
+		defer mock.AssertExpectationsForObjects(t, mockScenarioDefSvc)
 
-		svc := formation.NewService(nil, nil, nil, nil, mockScenarioDefSvc, nil, nil, nil, runtimeRepo)
+		svc := formation.NewService(nil, nil, nil, nil, mockScenarioDefSvc, nil, nil, nil, nil)
+
 		// WHEN
 		_, err := svc.CreateAutomaticScenarioAssignment(formation.FixCtxWithTenant(), formation.FixModel())
+
 		// THEN
 		require.EqualError(t, err, "while ensuring that `scenarios` label definition exist: some error")
 	})
@@ -1675,12 +1681,13 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 		defer mock.AssertExpectationsForObjects(t, mockScenarioDefSvc)
 		mockScenarioDefSvc.On("EnsureScenariosLabelDefinitionExists", mock.Anything, mock.Anything).Return(nil)
 		mockScenarioDefSvc.On("GetAvailableScenarios", mock.Anything, formation.TenantID.String()).Return(nil, formation.FixError())
-		runtimeRepo := &automock.RuntimeRepository{}
-		defer mock.AssertExpectationsForObjects(t, runtimeRepo, mockScenarioDefSvc)
+		defer mock.AssertExpectationsForObjects(t, mockScenarioDefSvc)
 
-		svc := formation.NewService(nil, nil, nil, nil, mockScenarioDefSvc, nil, nil, nil, runtimeRepo)
+		svc := formation.NewService(nil, nil, nil, nil, mockScenarioDefSvc, nil, nil, nil, nil)
+
 		// WHEN
 		_, err := svc.CreateAutomaticScenarioAssignment(formation.FixCtxWithTenant(), formation.FixModel())
+
 		// THEN
 		require.EqualError(t, err, "while getting available scenarios: some error")
 	})
@@ -1706,27 +1713,34 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.AutomaticFormationAssignmentRepository{}
 		mockRepo.On("DeleteForTargetTenant", ctx, formation.TenantID.String(), formation.TargetTenantID).Return(nil).Once()
+
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(make([]*model.Runtime, 0), nil)
 		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo)
 
 		svc := formation.NewService(nil, nil, nil, nil, nil, mockRepo, nil, nil, runtimeRepo)
+
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, models)
+
 		// THEN
 		require.NoError(t, err)
 	})
 
 	t.Run("return error when unassigning scenarios from runtimes fails", func(t *testing.T) {
+		// GIVEN
 		mockRepo := &automock.AutomaticFormationAssignmentRepository{}
 		mockRepo.On("DeleteForTargetTenant", ctx, formation.TenantID.String(), formation.TargetTenantID).Return(nil).Once()
+
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(nil, formation.FixError())
 		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo)
-		// GIVEN
+
 		svc := formation.NewService(nil, nil, nil, nil, nil, mockRepo, nil, nil, runtimeRepo)
+
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, models)
+
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), formation.FixError().Error())
@@ -1734,10 +1748,11 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 
 	t.Run("return error when input slice is empty", func(t *testing.T) {
 		// GIVEN
-
 		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil)
+
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, []*model.AutomaticScenarioAssignment{})
+
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "expected at least one item in Assignments slice")
@@ -1759,12 +1774,14 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, modelsWithDifferentSelectors)
+
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "all input items have to have the same target tenant")
 	})
 
 	t.Run("returns error on error from repository", func(t *testing.T) {
+		// GIVEN
 		mockRepo := &automock.AutomaticFormationAssignmentRepository{}
 
 		mockRepo.On("DeleteForTargetTenant", ctx, formation.TenantID.String(), formation.TargetTenantID).Return(formation.FixError()).Once()
@@ -1774,6 +1791,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 		svc := formation.NewService(nil, nil, nil, nil, nil, mockRepo, nil, nil, nil)
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, models)
+
 		// THEN
 		require.EqualError(t, err, fmt.Sprintf("while deleting the Assignments: %s", formation.ErrMsg))
 	})
@@ -1791,6 +1809,7 @@ func TestService_DeleteForScenarioName(t *testing.T) {
 		ctx := formation.FixCtxWithTenant()
 		mockRepo := &automock.AutomaticFormationAssignmentRepository{}
 		mockRepo.On("DeleteForScenarioName", ctx, formation.TenantID.String(), formation.ScenarioName).Return(nil)
+
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(make([]*model.Runtime, 0), nil)
 		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo)
@@ -1809,6 +1828,7 @@ func TestService_DeleteForScenarioName(t *testing.T) {
 		ctx := formation.FixCtxWithTenant()
 		mockRepo := &automock.AutomaticFormationAssignmentRepository{}
 		mockRepo.On("DeleteForScenarioName", ctx, formation.TenantID.String(), formation.ScenarioName).Return(nil)
+
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(nil, formation.FixError())
 		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo)
@@ -1891,9 +1911,11 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 	}
 
 	t.Run("Success", func(t *testing.T) {
+		// GIVEN
 		ctx := context.TODO()
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(runtimes, nil).Once()
+
 		upsertSvc := &automock.LabelService{}
 		upsertSvc.On("GetLabel", ctx, formation.TenantID.String(), &labelInputWithoutScenario).Return(&labelWithoutScenario, nil).Once()
 		upsertSvc.On("GetLabel", ctx, formation.TenantID.String(), &labelInputWithScenario).Return(&labelWithScenario, nil).Once()
@@ -1911,22 +1933,23 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 			ObjectType: model.RuntimeLabelableObject,
 		}).Return(nil).Once()
 
-		tenantSvc := &automock.TenantService{}
-
-		svc := formation.NewService(nil, nil, upsertSvc, nil, nil, nil, nil, tenantSvc, runtimeRepo)
+		svc := formation.NewService(nil, nil, upsertSvc, nil, nil, nil, nil, nil, runtimeRepo)
 
 		// WHEN
 		err := svc.EnsureScenarioAssigned(ctx, in)
 
 		// THEN
 		require.NoError(t, err)
-		mock.AssertExpectationsForObjects(t, runtimeRepo, tenantSvc, upsertSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, upsertSvc)
 	})
 
 	t.Run("Failed when insert new Label on upsert failed ", func(t *testing.T) {
+		// GIVEN
 		ctx := context.TODO()
+
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return([]*model.Runtime{{ID: rtmIDWithoutScenario}}, nil).Once()
+
 		upsertSvc := &automock.LabelService{}
 		upsertSvc.On("GetLabel", ctx, formation.TenantID.String(), &labelInputWithoutScenario).Return(&labelWithoutScenario, nil).Once()
 		upsertSvc.On("UpdateLabel", ctx, formation.TenantID.String(), rtmIDWithoutScenario, &model.LabelInput{
@@ -1948,6 +1971,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 	})
 
 	t.Run("Failed when GetScenarioLabelsForRuntimes returns error", func(t *testing.T) {
+		// GIVEN
 		ctx := context.TODO()
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(runtimes, nil).Once()
@@ -1967,6 +1991,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 	})
 
 	t.Run("Failed when ListAll returns error", func(t *testing.T) {
+		// GIVEN
 		ctx := context.TODO()
 
 		runtimeRepo := &automock.RuntimeRepository{}
@@ -1984,22 +2009,20 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 	})
 
 	t.Run("Success, no runtimes found", func(t *testing.T) {
+		// GIVEN
 		ctx := context.TODO()
-		labelRepo := &automock.LabelRepository{}
 
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(nil, nil).Once()
 
-		labelService := &automock.LabelService{}
-
-		svc := formation.NewService(nil, labelRepo, labelService, nil, nil, nil, nil, nil, runtimeRepo)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, runtimeRepo)
 
 		// WHEN
 		err := svc.EnsureScenarioAssigned(ctx, in)
 
 		// THEN
 		require.NoError(t, err)
-		mock.AssertExpectationsForObjects(t, labelRepo, runtimeRepo)
+		mock.AssertExpectationsForObjects(t, runtimeRepo)
 	})
 }
 
@@ -2028,10 +2051,12 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 	}
 
 	t.Run("Success", func(t *testing.T) {
+		// GIVEN
 		ctx := formation.FixCtxWithTenant()
 
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(runtimes, nil).Once()
+
 		asaRepo := &automock.AutomaticFormationAssignmentRepository{}
 		asaRepo.On("ListAll", ctx, formation.TenantID.String()).Return(nil, nil)
 
@@ -2055,10 +2080,12 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 	})
 
 	t.Run("Failed when Label Upsert failed ", func(t *testing.T) {
+		// GIVEN
 		ctx := formation.FixCtxWithTenant()
 
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(runtimes, nil).Once()
+
 		asaRepo := &automock.AutomaticFormationAssignmentRepository{}
 		asaRepo.On("ListAll", ctx, formation.TenantID.String()).Return(nil, nil)
 
@@ -2079,10 +2106,11 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.Contains(t, err.Error(), testErr.Error())
-		mock.AssertExpectationsForObjects(t, labelService, runtimeRepo)
+		mock.AssertExpectationsForObjects(t, labelService, runtimeRepo, asaRepo)
 	})
 
 	t.Run("Failed when ListAll returns error", func(t *testing.T) {
+		// GIVEN
 		ctx := formation.FixCtxWithTenant()
 
 		runtimeRepo := &automock.RuntimeRepository{}
@@ -2100,10 +2128,12 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 	})
 
 	t.Run("Failed when GetScenarioLabelsForRuntimes failed", func(t *testing.T) {
+		// GIVEN
 		ctx := formation.FixCtxWithTenant()
 
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(runtimes, nil).Once()
+
 		asaRepo := &automock.AutomaticFormationAssignmentRepository{}
 		asaRepo.On("ListAll", ctx, formation.TenantID.String()).Return(nil, nil)
 
@@ -2117,7 +2147,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 
 		// THEN
 		require.Error(t, err)
-		mock.AssertExpectationsForObjects(t, labelService, runtimeRepo)
+		mock.AssertExpectationsForObjects(t, labelService, runtimeRepo, asaRepo)
 	})
 }
 
@@ -2151,10 +2181,12 @@ func TestService_RemoveAssignedScenarios(t *testing.T) {
 	}
 
 	t.Run("Success", func(t *testing.T) {
+		// GIVEN
 		ctx := formation.FixCtxWithTenant()
 
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(runtimes, nil).Once()
+
 		asaRepo := &automock.AutomaticFormationAssignmentRepository{}
 		asaRepo.On("ListAll", ctx, formation.TenantID.String()).Return(nil, nil)
 
@@ -2166,7 +2198,6 @@ func TestService_RemoveAssignedScenarios(t *testing.T) {
 			ObjectID:   rtmID,
 			ObjectType: model.RuntimeLabelableObject,
 		}).Return(nil).Once()
-		// GIVEN
 
 		svc := formation.NewService(nil, nil, labelService, nil, nil, asaRepo, nil, nil, runtimeRepo)
 
@@ -2175,7 +2206,7 @@ func TestService_RemoveAssignedScenarios(t *testing.T) {
 
 		// THEN
 		require.NoError(t, err)
-		mock.AssertExpectationsForObjects(t, labelService, runtimeRepo)
+		mock.AssertExpectationsForObjects(t, labelService, runtimeRepo, asaRepo)
 	})
 
 	t.Run("Error, while removing scenario - ListAll fail", func(t *testing.T) {
@@ -2263,7 +2294,6 @@ func TestService_MergeScenariosFromInputLabelsAndAssignments_Success(t *testing.
 	actualScenarios, err := svc.MergeScenariosFromInputLabelsAndAssignments(ctx, inputLabels, runtimeID)
 
 	// THEN
-
 	require.NoError(t, err)
 	require.ElementsMatch(t, expectedScenarios, actualScenarios)
 
