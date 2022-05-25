@@ -107,7 +107,7 @@ global:
       version: "PR-2373"
     pairing_adapter:
       dir:
-      version: "PR-2379"
+      version: "PR-2373"
     director:
       dir:
       version: "PR-2376"
