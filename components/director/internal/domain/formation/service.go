@@ -215,39 +215,11 @@ func (s *service) CreateAutomaticScenarioAssignment(ctx context.Context, in mode
 		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while persisting Assignment")
 	}
 
-	err = s.EnsureScenarioAssigned(ctx, in)
-	if err != nil {
+	if err = s.EnsureScenarioAssigned(ctx, in); err != nil {
 		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while assigning scenario to runtimes matching selector")
 	}
 
 	return in, nil
-}
-
-func (s *service) validateThatScenarioExists(ctx context.Context, in model.AutomaticScenarioAssignment) error {
-	availableScenarios, err := s.getAvailableScenarios(ctx, in.Tenant)
-	if err != nil {
-		return err
-	}
-
-	for _, av := range availableScenarios {
-		if av == in.ScenarioName {
-			return nil
-		}
-	}
-
-	return apperrors.NewNotFoundError(resource.AutomaticScenarioAssigment, in.ScenarioName)
-}
-
-func (s *service) getAvailableScenarios(ctx context.Context, tenantID string) ([]string, error) {
-	if err := s.labelDefService.EnsureScenariosLabelDefinitionExists(ctx, tenantID); err != nil {
-		return nil, errors.Wrap(err, "while ensuring that `scenarios` label definition exist")
-	}
-
-	out, err := s.labelDefService.GetAvailableScenarios(ctx, tenantID)
-	if err != nil {
-		return nil, errors.Wrap(err, "while getting available scenarios")
-	}
-	return out, nil
 }
 
 // DeleteAutomaticScenarioAssignment deletes the assignment for a given scenario in a scope of a tenant
@@ -276,8 +248,7 @@ func (s *service) EnsureScenarioAssigned(ctx context.Context, in model.Automatic
 		return errors.Wrapf(err, "while fetching runtimes in target tenant: %s", in.TargetTenantID)
 	}
 	for _, runtime := range runtimes {
-		_, err = s.AssignFormation(ctx, in.Tenant, runtime.ID, graphql.FormationObjectTypeRuntime, model.Formation{Name: in.ScenarioName})
-		if err != nil {
+		if _, err = s.AssignFormation(ctx, in.Tenant, runtime.ID, graphql.FormationObjectTypeRuntime, model.Formation{Name: in.ScenarioName}); err != nil {
 			return errors.Wrapf(err, "while assigning runtime with id %s to formation %s coming from ASA", runtime.ID, in.ScenarioName)
 		}
 	}
@@ -292,8 +263,7 @@ func (s *service) RemoveAssignedScenario(ctx context.Context, in model.Automatic
 	}
 
 	for _, runtime := range runtimes {
-		_, err = s.UnassignFormation(ctx, in.Tenant, runtime.ID, graphql.FormationObjectTypeRuntime, model.Formation{Name: in.ScenarioName})
-		if err != nil {
+		if _, err = s.UnassignFormation(ctx, in.Tenant, runtime.ID, graphql.FormationObjectTypeRuntime, model.Formation{Name: in.ScenarioName}); err != nil {
 			return errors.Wrapf(err, "while unassigning runtime with id %s from formation %s coming from ASA", runtime.ID, in.ScenarioName)
 		}
 	}
@@ -303,28 +273,11 @@ func (s *service) RemoveAssignedScenario(ctx context.Context, in model.Automatic
 // RemoveAssignedScenarios removes all the scenarios that are coming from any of the provided ASAs
 func (s *service) RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
 	for _, asa := range in {
-		err := s.RemoveAssignedScenario(ctx, *asa)
-		if err != nil {
+		if err := s.RemoveAssignedScenario(ctx, *asa); err != nil {
 			return errors.Wrapf(err, "while deleting automatic scenario assigment: %s", asa.ScenarioName)
 		}
 	}
 	return nil
-}
-
-func (s *service) ensureSameTargetTenant(in []*model.AutomaticScenarioAssignment) (string, error) {
-	if len(in) == 0 || in[0] == nil {
-		return "", apperrors.NewInternalError("expected at least one item in Assignments slice")
-	}
-
-	targetTenant := in[0].TargetTenantID
-
-	for _, item := range in {
-		if item != nil && item.TargetTenantID != targetTenant {
-			return "", apperrors.NewInternalError("all input items have to have the same target tenant")
-		}
-	}
-
-	return targetTenant, nil
 }
 
 // DeleteManyASAForSameTargetTenant missing godoc
@@ -393,8 +346,6 @@ func (s *service) GetScenariosFromMatchingASAs(ctx context.Context, runtimeID st
 		return nil, err
 	}
 
-	scenariosSet := make(map[string]struct{})
-
 	scenarioAssignments, err := s.repo.ListAll(ctx, tenantID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listinng Automatic Scenario Assignments in tenant: %s", tenantID)
@@ -411,13 +362,9 @@ func (s *service) GetScenariosFromMatchingASAs(ctx context.Context, runtimeID st
 		}
 	}
 
-	for _, sa := range matchingASAs {
-		scenariosSet[sa.ScenarioName] = struct{}{}
-	}
-
 	scenarios := make([]string, 0)
-	for k := range scenariosSet {
-		scenarios = append(scenarios, k)
+	for _, sa := range matchingASAs {
+		scenarios = append(scenarios, sa.ScenarioName)
 	}
 	return scenarios, nil
 }
@@ -562,4 +509,47 @@ func objectTypeToLabelableObject(objectType graphql.FormationObjectType) (labela
 		labelableObj = model.TenantLabelableObject
 	}
 	return labelableObj
+}
+
+func (s *service) ensureSameTargetTenant(in []*model.AutomaticScenarioAssignment) (string, error) {
+	if len(in) == 0 || in[0] == nil {
+		return "", apperrors.NewInternalError("expected at least one item in Assignments slice")
+	}
+
+	targetTenant := in[0].TargetTenantID
+
+	for _, item := range in {
+		if item != nil && item.TargetTenantID != targetTenant {
+			return "", apperrors.NewInternalError("all input items have to have the same target tenant")
+		}
+	}
+
+	return targetTenant, nil
+}
+
+func (s *service) validateThatScenarioExists(ctx context.Context, in model.AutomaticScenarioAssignment) error {
+	availableScenarios, err := s.getAvailableScenarios(ctx, in.Tenant)
+	if err != nil {
+		return err
+	}
+
+	for _, av := range availableScenarios {
+		if av == in.ScenarioName {
+			return nil
+		}
+	}
+
+	return apperrors.NewNotFoundError(resource.AutomaticScenarioAssigment, in.ScenarioName)
+}
+
+func (s *service) getAvailableScenarios(ctx context.Context, tenantID string) ([]string, error) {
+	if err := s.labelDefService.EnsureScenariosLabelDefinitionExists(ctx, tenantID); err != nil {
+		return nil, errors.Wrap(err, "while ensuring that `scenarios` label definition exist")
+	}
+
+	out, err := s.labelDefService.GetAvailableScenarios(ctx, tenantID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting available scenarios")
+	}
+	return out, nil
 }
