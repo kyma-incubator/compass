@@ -195,7 +195,8 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	}
 }
 
-// CreateAutomaticScenarioAssignment missing godoc
+// CreateAutomaticScenarioAssignment creates a new AutomaticScenarioAssignment for a given ScenarioName, Tenant and TargetTenantID
+// It also ensures that all runtimes with given scenarios are assigned for the TargetTenantID
 func (s *service) CreateAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -206,8 +207,8 @@ func (s *service) CreateAutomaticScenarioAssignment(ctx context.Context, in mode
 	if err := s.validateThatScenarioExists(ctx, in); err != nil {
 		return model.AutomaticScenarioAssignment{}, err
 	}
-	err = s.repo.Create(ctx, in)
-	if err != nil {
+
+	if err = s.repo.Create(ctx, in); err != nil {
 		if apperrors.IsNotUniqueError(err) {
 			return model.AutomaticScenarioAssignment{}, apperrors.NewInvalidOperationError("a given scenario already has an assignment")
 		}
@@ -223,6 +224,7 @@ func (s *service) CreateAutomaticScenarioAssignment(ctx context.Context, in mode
 }
 
 // DeleteAutomaticScenarioAssignment deletes the assignment for a given scenario in a scope of a tenant
+// It also removes corresponding assigned scenarios for the ASA
 func (s *service) DeleteAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) error {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -280,7 +282,8 @@ func (s *service) RemoveAssignedScenarios(ctx context.Context, in []*model.Autom
 	return nil
 }
 
-// DeleteManyASAForSameTargetTenant missing godoc
+// DeleteManyASAForSameTargetTenant deletes a list of ASAs for the same targetTenant
+// It also removes corresponding scenario assignments coming from the ASAs
 func (s *service) DeleteManyASAForSameTargetTenant(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
