@@ -761,7 +761,7 @@ func TestService_Create(t *testing.T) {
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
 			bndlSvc := testCase.BundleServiceFn()
-			svc := application.NewService(appNameNormalizer, nil, "", appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, bndlSvc, uidSvc)
+			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, bndlSvc, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// WHEN
@@ -786,7 +786,7 @@ func TestService_Create(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := application.NewService(nil, nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -1523,7 +1523,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
 			bndlSvc := testCase.BundleServiceFn()
-			svc := application.NewService(appNameNormalizer, nil, "", appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, bndlSvc, uidSvc)
+			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, bndlSvc, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// WHEN
@@ -1548,7 +1548,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := application.NewService(nil, nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -1903,7 +1903,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
-			svc := application.NewService(appNameNormalizer, nil, "", appRepo, nil, nil, nil, intSysRepo, labelSvc, scenariosSvc, nil, uidSvc)
+			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, labelSvc, scenariosSvc, nil, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -1930,7 +1930,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
-			svc := application.NewService(appNameNormalizer, nil, "", appRepo, nil, nil, nil, intSysRepo, labelSvc, scenariosSvc, nil, uidSvc)
+			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, labelSvc, scenariosSvc, nil, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -1952,7 +1952,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := application.NewService(nil, nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// when
 		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -2308,7 +2308,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
-			svc := application.NewService(appNameNormalizer, nil, "", appRepo, nil, nil, nil, intSysRepo, labelSvc, scenariosSvc, nil, uidSvc)
+			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, labelSvc, scenariosSvc, nil, uidSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -2330,7 +2330,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := application.NewService(nil, nil, "", nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// when
 		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -2596,7 +2596,7 @@ func TestService_Update(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
 			intSysRepo := testCase.IntSysRepoFn()
 			lblUpsrtSvc := testCase.LabelUpsertSvcFn()
-			svc := application.NewService(appNameNormalizer, nil, "", appRepo, nil, nil, nil, intSysRepo, lblUpsrtSvc, nil, nil, nil)
+			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, lblUpsrtSvc, nil, nil, nil)
 			svc.SetTimestampGen(timestampGenFunc)
 
 			// WHEN
@@ -2727,7 +2727,7 @@ func TestService_UpdateBaseURL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			resetModels()
 			appRepo := testCase.AppRepoFn()
-			svc := application.NewService(nil, nil, "", appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.UpdateBaseURL(testCase.Context, testCase.InputID, testCase.TargetURL)
@@ -2882,7 +2882,7 @@ func TestService_Delete(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
 			labelRepo := testCase.LabelRepoFn()
 			runtimeRepo := testCase.RuntimeRepoFn()
-			svc := application.NewService(nil, nil, "", appRepo, nil, runtimeRepo, labelRepo, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.Delete(ctx, testCase.InputID)
@@ -3156,7 +3156,7 @@ func TestService_Unpair(t *testing.T) {
 			runtimeRepo := testCase.RuntimeRepoFn()
 			ctx := testCase.ContextFn()
 			ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-			svc := application.NewService(nil, nil, "", appRepo, nil, runtimeRepo, labelRepo, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, nil, nil, nil, nil)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 			// WHEN
 			err := svc.Unpair(ctx, testCase.InputID)
@@ -3189,7 +3189,6 @@ func TestService_Merge(t *testing.T) {
 	destName := "dest app"
 	srcName := "src app"
 	srcDescription := "Long src description"
-	selfRegDistLabelKey := "subscriptionProviderId"
 
 	scenarios := []interface{}{"Easter"}
 	scenarioLabel := &model.Label{
@@ -3200,6 +3199,7 @@ func TestService_Merge(t *testing.T) {
 
 	labelKey1 := model.ScenariosKey
 	labelKey2 := "managed"
+	labelKey3 := "xsappname"
 	labelValue1 := []interface{}{"Easter", "Egg"}
 	labelValue2 := []interface{}{"Easter", "Bunny"}
 
@@ -3214,16 +3214,8 @@ func TestService_Merge(t *testing.T) {
 	srcAppLabels := fixApplicationLabels(srcID, labelKey1, labelKey2, labelValue1, "true")
 	destAppLabels := fixApplicationLabels(destID, labelKey1, labelKey2, labelValue2, "false")
 	srcAppLabelsWithFalseManaged := fixApplicationLabels(srcID, labelKey1, labelKey2, labelValue1, "false")
-	appTemplateLabelsWithSelfRegDistLabelKey := map[string]*model.Label{
-		selfRegDistLabelKey: {
-			ID:         "abc",
-			Tenant:     str.Ptr(tnt),
-			Key:        selfRegDistLabelKey,
-			Value:      labelValue1,
-			ObjectID:   templateID,
-			ObjectType: model.AppTemplateLabelableObject,
-		},
-	}
+	srcAppLabelsWithXsappname := fixApplicationLabels(srcID,labelKey3, labelKey2, labelValue1, "true" )
+	destAppLabelsWithXsappname := fixApplicationLabels(destID,labelKey3, labelKey2, labelValue2, "false" )
 
 	srcModel := fixDetailedModelApplication(t, srcID, tnt, srcName, srcDescription)
 	srcModel.ApplicationTemplateID = &templateID
@@ -3288,7 +3280,6 @@ func TestService_Merge(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
-				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
 				return repo
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
@@ -3324,7 +3315,6 @@ func TestService_Merge(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabelsWithFalseManaged, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
-				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
 				return repo
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
@@ -3453,7 +3443,6 @@ func TestService_Merge(t *testing.T) {
 				repo.AssertNotCalled(t, "GetByKey")
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
-				repo.AssertNotCalled(t, "ListForObject")
 				return repo
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
@@ -3487,7 +3476,6 @@ func TestService_Merge(t *testing.T) {
 				repo.AssertNotCalled(t, "GetByKey")
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
-				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
 				return repo
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
@@ -3521,7 +3509,6 @@ func TestService_Merge(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
-				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
 				return repo
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
@@ -3555,7 +3542,6 @@ func TestService_Merge(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
-				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
 				return repo
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
@@ -3569,41 +3555,40 @@ func TestService_Merge(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Error when update labels fails",
+			Name: "Error when source application has label xsappname",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
-				repo.On("Update", ctx, tnt, mergedDestModel).Return(nil)
-				repo.On("Delete", ctx, tnt, srcModel.ID).Return(nil).Once()
+				repo.AssertNotCalled(t, "Exists")
+				repo.AssertNotCalled(t, "Update")
+				repo.AssertNotCalled(t, "Delete")
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListAll", ctx, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				repo.AssertNotCalled(t, "ListAll")
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
-				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
+				repo.AssertNotCalled(t, "GetByKey")
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabelsWithXsappname, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
-				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
 				return repo
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, destModel.ID, upsertLabelValues).Return(testErr)
+				svc.AssertNotCalled(t,"UpsertMultipleLabels")
 				return svc
 			},
 			Ctx:                ctx,
 			DestinationID:      destID,
 			SourceID:           srcID,
-			ExpectedErrMessage: testErr.Error(),
+			ExpectedErrMessage: "Source app template: 12346789 has label xsappname",
 		},
 		{
-			Name: "Error when app template has label subscriptionProviderId",
+			Name: "Error when destination application has label xsappname",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
@@ -3622,20 +3607,18 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.LabelRepository{}
 				repo.AssertNotCalled(t, "GetByKey")
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
-				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
-				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(appTemplateLabelsWithSelfRegDistLabelKey, nil)
-
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabelsWithXsappname, nil)
 				return repo
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
-				svc.AssertNotCalled(t, "UpsertMultipleLabels")
+				svc.AssertNotCalled(t,"UpsertMultipleLabels")
 				return svc
 			},
 			Ctx:                ctx,
 			DestinationID:      destID,
 			SourceID:           srcID,
-			ExpectedErrMessage: "app template: 12346789 has label subscriptionProviderId",
+			ExpectedErrMessage: "Destination app template: 12346789 has label xsappname",
 		},
 	}
 
@@ -3645,7 +3628,7 @@ func TestService_Merge(t *testing.T) {
 			runtimeRepo := testCase.RuntimeRepoFn()
 			labelRepo := testCase.LabelRepoFn()
 			labelUpserSvc := testCase.LabelUpsertSvcFn()
-			svc := application.NewService(nil, nil, selfRegDistLabelKey, appRepo, nil, runtimeRepo, labelRepo, nil, labelUpserSvc, nil, nil, nil)
+			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, labelUpserSvc, nil, nil, nil)
 
 			// WHEN
 			destApp, err := svc.Merge(testCase.Ctx, testCase.DestinationID, testCase.SourceID)
@@ -3725,7 +3708,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(nil, nil, "", repo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			app, err := svc.Get(ctx, testCase.InputID)
@@ -3808,7 +3791,7 @@ func TestService_GetSystem(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(nil, nil, "", repo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			app, err := svc.GetSccSystem(testCase.Ctx, "id", locationID, virtualHost)
@@ -3915,7 +3898,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(nil, nil, "", repo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			app, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, after)
@@ -4022,7 +4005,7 @@ func TestService_ListGlobal(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(nil, nil, "", repo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			app, err := svc.ListGlobal(ctx, testCase.InputPageSize, after)
@@ -4303,7 +4286,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			labelRepository := testCase.LabelRepositoryFn()
 			appRepository := testCase.AppRepositoryFn()
 			cfgProvider := testCase.ConfigProviderFn()
-			svc := application.NewService(nil, cfgProvider, "", appRepository, nil, runtimeRepository, labelRepository, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, cfgProvider, appRepository, nil, runtimeRepository, labelRepository, nil, nil, nil, nil, nil)
 
 			// WHEN
 			results, err := svc.ListByRuntimeID(ctx, testCase.Input, first, cursor)
@@ -4462,7 +4445,7 @@ func TestService_ListBySCC(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appRepo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(nil, nil, "", appRepo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, appRepo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			app, err := svc.ListBySCC(testCase.Ctx, filter)
@@ -4558,7 +4541,7 @@ func TestService_ListSCCs(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(nil, nil, "", nil, nil, nil, repo, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, nil, nil, nil, repo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			app, err := svc.ListSCCs(testCase.Ctx)
@@ -4633,7 +4616,7 @@ func TestService_Exist(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
 			appRepo := testCase.RepositoryFn()
-			svc := application.NewService(nil, nil, "", appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			value, err := svc.Exist(ctx, testCase.InputApplicationID)
@@ -4735,7 +4718,7 @@ func TestService_SetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelSvc := testCase.LabelServiceFn()
-			svc := application.NewService(nil, nil, "", repo, nil, nil, nil, nil, labelSvc, nil, nil, nil)
+			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, labelSvc, nil, nil, nil)
 
 			// WHEN
 			err := svc.SetLabel(ctx, testCase.InputLabel)
@@ -4849,7 +4832,7 @@ func TestService_GetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(nil, nil, "", repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			l, err := svc.GetLabel(ctx, testCase.InputApplicationID, testCase.InputLabel.Key)
@@ -4965,7 +4948,7 @@ func TestService_ListLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(nil, nil, "", repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			l, err := svc.ListLabels(ctx, testCase.InputApplicationID)
@@ -5059,7 +5042,7 @@ func TestService_DeleteLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(nil, nil, "", repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey)
@@ -5127,7 +5110,7 @@ func TestService_GetByNameAndSystemNumber(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
 			appRepo := testCase.RepositoryFn()
-			svc := application.NewService(nil, nil, "", appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			value, err := svc.GetByNameAndSystemNumber(ctx, testCase.InputApplicationName, testCase.InputSystemNumber)
