@@ -3363,6 +3363,39 @@ func TestService_Merge(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
+			Name: "Error when update labels fails",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
+				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
+				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
+				repo.On("Update", ctx, tnt, mergedDestModel).Return(nil)
+				repo.On("Delete", ctx, tnt, srcModel.ID).Return(nil).Once()
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("ListAll", ctx, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, destModel.ID, upsertLabelValues).Return(testErr)
+				return svc
+			},
+			Ctx:                ctx,
+			DestinationID:      destID,
+			SourceID:           srcID,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
 			Name: "Error when source application has label xsappname",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
