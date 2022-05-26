@@ -1587,6 +1587,7 @@ func TestMergeApplications(t *testing.T) {
 		deleteFormationReq := fixtures.FixDeleteFormationRequest(newFormation)
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteFormationReq, &response)
 		require.NoError(t, err)
+		require.Equal(t, newFormation, response.Name)
 
 		t.Logf("Deleted formation with name: %s", response.Name)
 	}()
