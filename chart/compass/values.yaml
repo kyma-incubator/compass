@@ -110,10 +110,10 @@ global:
       version: "PR-2373"
     director:
       dir:
-      version: "PR-2376"
+      version: "PR-2385"
     hydrator:
       dir:
-      version: "PR-2373"
+      version: "PR-2385"
     gateway:
       dir:
       version: "PR-2373"
@@ -142,7 +142,7 @@ global:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2373"
+      version: "PR-2385"
   isLocalEnv: false
   isForTesting: false
   oauth2:
