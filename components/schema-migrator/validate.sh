@@ -17,7 +17,7 @@ COMPONENT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 IMG_NAME="compass-schema-migrator"
 NETWORK="migration-test-network"
 POSTGRES_CONTAINER="test-postgres"
-POSTGRES_VERSION="14"
+POSTGRES_VERSION="11"
 
 PROJECT="sap-cp-cmp"
 ENV="dev"
