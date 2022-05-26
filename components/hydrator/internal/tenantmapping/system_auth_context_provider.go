@@ -76,7 +76,7 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 	switch refObjectType {
 	case model.IntegrationSystemReference:
 		tenantCtx, scopes, err = m.getTenantAndScopesForIntegrationSystem(ctx, reqData)
-	case model.ApplicationReference, model.RuntimeReference:
+	case model.ApplicationReference, model.RuntimeReference, model.ExternalCertificateReference:
 		tenantCtx, scopes, err = m.getTenantAndScopesForApplicationOrRuntime(ctx, sysAuth.TenantID, refObjectType, reqData, authDetails.AuthFlow)
 	default:
 		return ObjectContext{}, errors.Errorf("unsupported reference object type (%s)", refObjectType)
