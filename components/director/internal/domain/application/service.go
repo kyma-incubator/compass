@@ -735,7 +735,7 @@ func (s *service) ListLabels(ctx context.Context, applicationID string) (map[str
 	}
 
 	if !appExists {
-		return nil, fmt.Errorf("application with ID %s doesn't exist", applicationID)
+		return nil, errors.Errorf("application with ID %s doesn't exist", applicationID)
 	}
 
 	labels, err := s.labelRepo.ListForObject(ctx, appTenant, model.ApplicationLabelableObject, applicationID)
@@ -758,22 +758,14 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 		return errors.Wrap(err, "while checking Application existence")
 	}
 	if !appExists {
-		return fmt.Errorf("application with ID %s doesn't exist", applicationID)
+		return errors.Errorf("application with ID %s doesn't exist", applicationID)
 	}
 
 	if key == model.ScenariosKey {
-		scenarios, ok := labelValue.([]interface{})
-		if !ok {
-			return fmt.Errorf("while converting scenarios %s", labelValue)
-		}
+		scenarios, err := ParseFormationsFromLabelValue(labelValue)
 		for _, scenario := range scenarios {
-			scenarioString, ok := scenario.(string)
-			if !ok {
-				return errors.New("Label value for scenarios key is not of type string")
-			}
-
-			if _, err = s.formationService.UnassignFormation(ctx, appTenant, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: scenarioString}); err != nil {
-				return errors.Wrapf(err, "while unassigning formation %s from application with id %s", scenarioString, applicationID)
+			if _, err = s.formationService.UnassignFormation(ctx, appTenant, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: scenario}); err != nil {
+				return errors.Wrapf(err, "while unassigning formation %s from application with id %s", scenario, applicationID)
 			}
 		}
 		return nil
@@ -1034,17 +1026,13 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	in.Labels[nameKey] = normalizedName
 
 	if scenarioLabel, ok := in.Labels[model.ScenariosKey]; ok {
-		scenariosAsInterfaces, ok := scenarioLabel.([]interface{})
-		if !ok {
-			return "", errors.New("Label value for scenarios key is not of type []interface{}")
+		scenarios, err := ParseFormationsFromLabelValue(scenarioLabel)
+		if err != nil {
+			return "", errors.Wrapf(err, "while parsing formations from scenario label")
 		}
-		for _, scenario := range scenariosAsInterfaces {
-			scenarioString, ok := scenario.(string)
-			if !ok {
-				return "", errors.New("Label value for scenarios key is not of type string")
-			}
-			if _, err := s.formationService.AssignFormation(ctx, appTenant, id, graphql.FormationObjectTypeApplication, model.Formation{Name: scenarioString}); err != nil {
-				return "", errors.Wrapf(err, "while assigning formation %s to application with ID %s", scenarioString, id)
+		for _, scenario := range scenarios {
+			if _, err := s.formationService.AssignFormation(ctx, appTenant, id, graphql.FormationObjectTypeApplication, model.Formation{Name: scenario}); err != nil {
+				return "", errors.Wrapf(err, "while assigning formation %s to application with ID %s", scenario, id)
 			}
 		}
 		delete(in.Labels, model.ScenariosKey)
@@ -1249,7 +1237,7 @@ func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.
 	return nil
 }
 
-// ParseFormationsFromLabelValue returns available scenarios from the provided schema
+// ParseFormationsFromLabelValue returns available scenarios from the provided scenario label value
 func ParseFormationsFromLabelValue(label interface{}) ([]string, error) {
 	b, err := json.Marshal(label)
 	if err != nil {
