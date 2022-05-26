@@ -183,6 +183,7 @@ func TestConfigChangeHandler_SearchByTimestamp_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	startTime := time.Now()
+	time.Sleep(10 * time.Millisecond)
 	input = fixConfigurationChangeWithAttributes("4020af04-7c7c-4b90-a410-967571e38bec")
 	_, err = svc.Save(input)
 	require.NoError(t, err)
