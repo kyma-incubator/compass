@@ -3007,6 +3007,7 @@ func TestService_Merge(t *testing.T) {
 
 	labelKey1 := model.ScenariosKey
 	labelKey2 := "managed"
+	labelKey3 := "xsappname"
 	labelValue1 := []interface{}{"Easter", "Egg"}
 	labelValue2 := []interface{}{"Easter", "Bunny"}
 
@@ -3019,8 +3020,10 @@ func TestService_Merge(t *testing.T) {
 	upsertLabelValuesWithManagedFalse[labelKey2] = "false"
 
 	srcAppLabels := fixApplicationLabels(srcID, labelKey1, labelKey2, labelValue1, "true")
-	destAppLabels := fixApplicationLabels(srcID, labelKey1, labelKey2, labelValue2, "false")
+	destAppLabels := fixApplicationLabels(destID, labelKey1, labelKey2, labelValue2, "false")
 	srcAppLabelsWithFalseManaged := fixApplicationLabels(srcID, labelKey1, labelKey2, labelValue1, "false")
+	srcAppLabelsWithXsappname := fixApplicationLabels(srcID,labelKey3, labelKey2, labelValue1, "true" )
+	destAppLabelsWithXsappname := fixApplicationLabels(destID,labelKey3, labelKey2, labelValue2, "false" )
 
 	srcModel := fixDetailedModelApplication(t, srcID, tnt, srcName, srcDescription)
 	srcModel.ApplicationTemplateID = &templateID
@@ -3360,37 +3363,70 @@ func TestService_Merge(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Error when update labels fails",
+			Name: "Error when source application has label xsappname",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
-				repo.On("Update", ctx, tnt, mergedDestModel).Return(nil)
-				repo.On("Delete", ctx, tnt, srcModel.ID).Return(nil).Once()
+				repo.AssertNotCalled(t, "Exists")
+				repo.AssertNotCalled(t, "Update")
+				repo.AssertNotCalled(t, "Delete")
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListAll", ctx, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
+				repo.AssertNotCalled(t, "ListAll")
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
-				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
+				repo.AssertNotCalled(t, "GetByKey")
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabelsWithXsappname, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				return repo
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, destModel.ID, upsertLabelValues).Return(testErr)
+				svc.AssertNotCalled(t,"UpsertMultipleLabels")
 				return svc
 			},
 			Ctx:                ctx,
 			DestinationID:      destID,
 			SourceID:           srcID,
-			ExpectedErrMessage: testErr.Error(),
+			ExpectedErrMessage: "Source app template: 12346789 has label xsappname",
+		},
+		{
+			Name: "Error when destination application has label xsappname",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
+				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
+				repo.AssertNotCalled(t, "Exists")
+				repo.AssertNotCalled(t, "Update")
+				repo.AssertNotCalled(t, "Delete")
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.AssertNotCalled(t, "ListAll")
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.AssertNotCalled(t, "GetByKey")
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabelsWithXsappname, nil)
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.AssertNotCalled(t,"UpsertMultipleLabels")
+				return svc
+			},
+			Ctx:                ctx,
+			DestinationID:      destID,
+			SourceID:           srcID,
+			ExpectedErrMessage: "Destination app template: 12346789 has label xsappname",
 		},
 	}
 

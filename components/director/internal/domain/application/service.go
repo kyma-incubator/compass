@@ -40,6 +40,7 @@ const (
 	managedKey           = "managed"
 	subaccountKey        = "Subaccount"
 	locationIDKey        = "LocationID"
+	xsappnameKey 		 = "xsappname"
 	urlSuffixToBeTrimmed = "/"
 )
 
@@ -792,6 +793,15 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 	destTemplateID := str.PtrStrToStr(destApp.ApplicationTemplateID)
 	if len(srcTemplateID) == 0 || len(destTemplateID) == 0 || srcTemplateID != destTemplateID {
 		return nil, errors.Errorf("Application templates are not the same. Destination app template: %s. Source app template: %s", destTemplateID, srcTemplateID)
+	}
+
+	_, ok := srcAppLabels[xsappnameKey]
+	if ok {
+		return nil, errors.Errorf("Source app template: %s has label xsappname", srcTemplateID)
+	}
+	_, ok = destAppLabels[xsappnameKey]
+	if ok {
+		return nil, errors.Errorf("Destination app template: %s has label xsappname", destTemplateID)
 	}
 
 	if srcApp.Status == nil {
