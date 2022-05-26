@@ -5073,8 +5073,10 @@ func TestService_DeleteLabel(t *testing.T) {
 		Name               string
 		RepositoryFn       func() *automock.ApplicationRepository
 		LabelRepositoryFn  func() *automock.LabelRepository
+		FormationServiceFn func() *automock.FormationService
 		InputApplicationID string
 		InputKey           string
+		LabelValue         interface{}
 		ExpectedErrMessage string
 	}{
 		{
@@ -5088,6 +5090,10 @@ func TestService_DeleteLabel(t *testing.T) {
 				repo := &automock.LabelRepository{}
 				repo.On("Delete", ctx, tnt, model.ApplicationLabelableObject, applicationID, labelKey).Return(nil).Once()
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				service := &automock.FormationService{}
+				return service
 			},
 			InputApplicationID: applicationID,
 			InputKey:           labelKey,
@@ -5105,6 +5111,10 @@ func TestService_DeleteLabel(t *testing.T) {
 				repo.On("Delete", ctx, tnt, model.ApplicationLabelableObject, applicationID, labelKey).Return(testErr).Once()
 				return repo
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				service := &automock.FormationService{}
+				return service
+			},
 			InputApplicationID: applicationID,
 			InputKey:           labelKey,
 			ExpectedErrMessage: testErr.Error(),
@@ -5120,21 +5130,86 @@ func TestService_DeleteLabel(t *testing.T) {
 				repo := &automock.LabelRepository{}
 				return repo
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				service := &automock.FormationService{}
+				return service
+			},
 			InputApplicationID: applicationID,
 			InputKey:           labelKey,
 			ExpectedErrMessage: testErr.Error(),
 		},
+		{
+			Name: "Returns error when application succeeds but application does not exist",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exists", ctx, tnt, applicationID).Return(false, nil).Once()
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				service := &automock.FormationService{}
+				return service
+			},
+			InputApplicationID: applicationID,
+			InputKey:           labelKey,
+			ExpectedErrMessage: fmt.Sprintf("application with ID %s doesn't exist", applicationID),
+		},
+		{
+			Name: "Success when deleting formations from scenario label",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				service := &automock.FormationService{}
+				service.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: "DEFAULT"}).Return(nil, nil).Once()
+				return service
+			},
+			LabelValue:         model.ScenariosDefaultValue,
+			InputApplicationID: applicationID,
+			InputKey:           model.ScenariosKey,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when UnassignFormation fails",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				service := &automock.FormationService{}
+				service.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: "DEFAULT"}).Return(nil, testErr).Once()
+				return service
+			},
+			LabelValue:         model.ScenariosDefaultValue,
+			InputApplicationID: applicationID,
+			InputKey:           model.ScenariosKey,
+			ExpectedErrMessage: testErr.Error(),
+		},
 	}
 
-	// TODO Write tests for deleting scenario label
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil, nil)
+			formationSvc := testCase.FormationServiceFn()
+			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil, formationSvc)
 
 			// WHEN
-			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey, nil) // TODO
+			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey, testCase.LabelValue) // TODO
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
