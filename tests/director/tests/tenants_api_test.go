@@ -24,14 +24,17 @@ func TestQueryTenantsPage(t *testing.T) {
 	actualTenantPage := graphql.TenantPage{}
 
 	// WHEN
-	t.Log("List tenants with page size")
+	t.Logf("List tenants with page size: %d", tenantLen)
 	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getTenantsRequest, &actualTenantPage)
 	require.NoError(t, err)
 
 	//THEN
-	assert.Len(t, actualTenantPage.Data, tenantLen)
-	assert.True(t, actualTenantPage.PageInfo.HasNextPage)
-	assert.NotEmpty(t, actualTenantPage.PageInfo.EndCursor)
+	require.NotNil(t, actualTenantPage)
+	require.NotNil(t, actualTenantPage.Data)
+	require.NotNil(t, actualTenantPage.PageInfo)
+	require.Len(t, actualTenantPage.Data, tenantLen)
+	require.True(t, actualTenantPage.PageInfo.HasNextPage)
+	require.NotEmpty(t, actualTenantPage.PageInfo.EndCursor)
 }
 
 func TestQueryTenantsSearch(t *testing.T) {
