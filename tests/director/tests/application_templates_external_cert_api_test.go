@@ -2,14 +2,15 @@ package tests
 
 import (
 	"context"
+	"strings"
+	"testing"
+
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/stretchr/testify/require"
-	"strings"
-	"testing"
 )
 
 func TestApplicationTemplateWithExternalCertificate(t *testing.T) {
