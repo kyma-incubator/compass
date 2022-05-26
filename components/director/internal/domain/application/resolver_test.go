@@ -1315,7 +1315,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("GetLabel", contextParam, applicationID, labelKey).Return(modelLabel, nil).Once()
-				svc.On("DeleteLabel", contextParam, applicationID, labelKey).Return(nil).Once()
+				svc.On("DeleteLabel", contextParam, applicationID, labelKey, gqlLabel.Value).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
@@ -1352,7 +1352,7 @@ func TestResolver_DeleteApplicationLabel(t *testing.T) {
 			ServiceFn: func() *automock.ApplicationService {
 				svc := &automock.ApplicationService{}
 				svc.On("GetLabel", contextParam, applicationID, labelKey).Return(modelLabel, nil).Once()
-				svc.On("DeleteLabel", contextParam, applicationID, labelKey).Return(testErr).Once()
+				svc.On("DeleteLabel", contextParam, applicationID, labelKey, gqlLabel.Value).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.ApplicationConverter {

@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
@@ -158,7 +160,11 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc)
+	engine := scenarioassignment.NewEngine(labelSvc, labelRepo, scenarioAssignmentRepo, runtimeRepo)
+	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc, engine)
+	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentSvc, tntSvc, engine)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc, formationSvc)
 	packageSvc := ordpackage.NewService(pkgRepo, uidSvc)
 	productSvc := product.NewService(productRepo, uidSvc)
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)

@@ -103,19 +103,16 @@ func TestService_Create(t *testing.T) {
 	normalizedModelInput.Bundles = bundles
 
 	defaultLabels := map[string]interface{}{
-		model.ScenariosKey:    model.ScenariosDefaultValue,
 		"integrationSystemID": intSysID,
 		"label":               "value",
 		"name":                "mp-foo-bar-not",
 	}
 	defaultNormalizedLabels := map[string]interface{}{
-		model.ScenariosKey:    model.ScenariosDefaultValue,
 		"integrationSystemID": intSysID,
 		"label":               "value",
 		"name":                "mp-foo-bar-not",
 	}
 	defaultLabelsWithoutIntSys := map[string]interface{}{
-		model.ScenariosKey:    model.ScenariosDefaultValue,
 		"integrationSystemID": "",
 		"name":                "mp-test",
 	}
@@ -153,6 +150,7 @@ func TestService_Create(t *testing.T) {
 		LabelServiceFn     func() *automock.LabelUpsertService
 		BundleServiceFn    func() *automock.BundleService
 		UIDServiceFn       func() *automock.UIDService
+		FormationServiceFn func() *automock.FormationService
 		Input              model.ApplicationRegisterInput
 		ExpectedErr        error
 	}{
@@ -202,6 +200,11 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: "DEFAULT"}).Return(nil, nil).Once()
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: nil,
 		},
@@ -235,6 +238,11 @@ func TestService_Create(t *testing.T) {
 					}
 				}).Once()
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: "DEFAULT"}).Return(nil, nil).Once()
+				return svc
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
@@ -284,6 +292,11 @@ func TestService_Create(t *testing.T) {
 					}
 				}).Once()
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: "DEFAULT"}).Return(nil, nil).Once()
+				return svc
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
@@ -335,6 +348,10 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.UIDService{}
 				return svc
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: apperrors.NewNotUniqueNameError(resource.Application),
 		},
@@ -384,6 +401,11 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: "DEFAULT"}).Return(nil, nil).Once()
+				return svc
+			},
 			Input:       normalizedModelInput,
 			ExpectedErr: nil,
 		},
@@ -419,6 +441,10 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.UIDService{}
 				return svc
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				return svc
+			},
 			Input:       normalizedModelInput,
 			ExpectedErr: apperrors.NewNotUniqueNameError(resource.Application),
 		},
@@ -444,6 +470,10 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.ScenariosService{}
 				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &nilLabels).Once()
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				return svc
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
@@ -507,6 +537,11 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: "DEFAULT"}).Return(nil, nil).Once()
+				return svc
+			},
 			Input:       model.ApplicationRegisterInput{Name: "test", Labels: nilLabels},
 			ExpectedErr: nil,
 		},
@@ -532,6 +567,10 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.ScenariosService{}
 				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &defaultLabelsWithoutIntSys).Once()
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				return svc
 			},
 			LabelServiceFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
@@ -590,6 +629,10 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id).Once()
 				return svc
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -623,6 +666,10 @@ func TestService_Create(t *testing.T) {
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
+				return svc
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
 				return svc
 			},
 			Input:       modelInput,
@@ -661,6 +708,10 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.UIDService{}
 				return svc
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: errors.New("Object not found"),
 		},
@@ -695,6 +746,10 @@ func TestService_Create(t *testing.T) {
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
+				return svc
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
 				return svc
 			},
 			Input:       modelInput,
@@ -746,6 +801,11 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: "DEFAULT"}).Return(nil, nil).Once()
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -761,7 +821,8 @@ func TestService_Create(t *testing.T) {
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
 			bndlSvc := testCase.BundleServiceFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, bndlSvc, uidSvc)
+			formationSvc := testCase.FormationServiceFn()
+			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, bndlSvc, uidSvc, formationSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// WHEN
@@ -782,11 +843,12 @@ func TestService_Create(t *testing.T) {
 			scenariosSvc.AssertExpectations(t)
 			uidSvc.AssertExpectations(t)
 			bndlSvc.AssertExpectations(t)
+			formationSvc.AssertExpectations(t)
 		})
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -865,19 +927,16 @@ func TestService_CreateFromTemplate(t *testing.T) {
 	normalizedModelInput.Bundles = bundles
 
 	defaultLabels := map[string]interface{}{
-		model.ScenariosKey:    model.ScenariosDefaultValue,
 		"integrationSystemID": intSysID,
 		"label":               "value",
 		"name":                "mp-foo-bar-not",
 	}
 	defaultNormalizedLabels := map[string]interface{}{
-		model.ScenariosKey:    model.ScenariosDefaultValue,
 		"integrationSystemID": intSysID,
 		"label":               "value",
 		"name":                "mp-foo-bar-not",
 	}
 	defaultLabelsWithoutIntSys := map[string]interface{}{
-		model.ScenariosKey:    model.ScenariosDefaultValue,
 		"integrationSystemID": "",
 		"name":                "mp-test",
 	}
@@ -915,6 +974,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 		LabelServiceFn     func() *automock.LabelUpsertService
 		BundleServiceFn    func() *automock.BundleService
 		UIDServiceFn       func() *automock.UIDService
+		FormationServiceFn func() *automock.FormationService
 		Input              model.ApplicationRegisterInput
 		ExpectedErr        error
 	}{
@@ -962,6 +1022,11 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id)
+				return svc
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: "DEFAULT"}).Return(nil, nil).Once()
 				return svc
 			},
 			Input:       modelInput,
@@ -1013,6 +1078,11 @@ func TestService_CreateFromTemplate(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: "DEFAULT"}).Return(nil, nil).Once()
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: nil,
 		},
@@ -1062,6 +1132,11 @@ func TestService_CreateFromTemplate(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: "DEFAULT"}).Return(nil, nil).Once()
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: nil,
 		},
@@ -1095,6 +1170,10 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
+				return svc
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
 				return svc
 			},
 			Input:       modelInput,
@@ -1146,6 +1225,11 @@ func TestService_CreateFromTemplate(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: "DEFAULT"}).Return(nil, nil).Once()
+				return svc
+			},
 			Input:       normalizedModelInput,
 			ExpectedErr: nil,
 		},
@@ -1181,6 +1265,10 @@ func TestService_CreateFromTemplate(t *testing.T) {
 				svc := &automock.UIDService{}
 				return svc
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				return svc
+			},
 			Input:       normalizedModelInput,
 			ExpectedErr: apperrors.NewNotUniqueNameError(resource.Application),
 		},
@@ -1211,6 +1299,10 @@ func TestService_CreateFromTemplate(t *testing.T) {
 				svc := &automock.LabelUpsertService{}
 				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labelsWithoutIntSys).Return(nil).Once()
 				svc.On("UpsertLabel", ctx, tnt, labelScenarios).Return(nil).Once()
+				return svc
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
 				return svc
 			},
 			BundleServiceFn: func() *automock.BundleService {
@@ -1269,6 +1361,11 @@ func TestService_CreateFromTemplate(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: "DEFAULT"}).Return(nil, nil).Once()
+				return svc
+			},
 			Input:       model.ApplicationRegisterInput{Name: "test", Labels: nilLabels},
 			ExpectedErr: nil,
 		},
@@ -1308,6 +1405,10 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id)
+				return svc
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
 				return svc
 			},
 			Input: model.ApplicationRegisterInput{
@@ -1352,6 +1453,10 @@ func TestService_CreateFromTemplate(t *testing.T) {
 				svc.On("Generate").Return(id).Once()
 				return svc
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -1385,6 +1490,10 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
+				return svc
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
 				return svc
 			},
 			Input:       modelInput,
@@ -1423,6 +1532,10 @@ func TestService_CreateFromTemplate(t *testing.T) {
 				svc := &automock.UIDService{}
 				return svc
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: errors.New("Object not found"),
 		},
@@ -1457,6 +1570,10 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			UIDServiceFn: func() *automock.UIDService {
 				svc := &automock.UIDService{}
+				return svc
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
 				return svc
 			},
 			Input:       modelInput,
@@ -1508,6 +1625,11 @@ func TestService_CreateFromTemplate(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("AssignFormation", ctx, tnt, id, graphql.FormationObjectTypeApplication, model.Formation{Name: "DEFAULT"}).Return(nil, nil).Once()
+				return svc
+			},
 			Input:       modelInput,
 			ExpectedErr: testErr,
 		},
@@ -1523,7 +1645,8 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
 			bndlSvc := testCase.BundleServiceFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, bndlSvc, uidSvc)
+			formationSvc := testCase.FormationServiceFn()
+			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, scenariosSvc, bndlSvc, uidSvc, formationSvc)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// WHEN
@@ -1544,11 +1667,12 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			scenariosSvc.AssertExpectations(t)
 			uidSvc.AssertExpectations(t)
 			bndlSvc.AssertExpectations(t)
+			formationSvc.AssertExpectations(t)
 		})
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -1903,7 +2027,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, labelSvc, scenariosSvc, nil, uidSvc)
+			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, labelSvc, scenariosSvc, nil, uidSvc, nil)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -1930,7 +2054,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, labelSvc, scenariosSvc, nil, uidSvc)
+			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, labelSvc, scenariosSvc, nil, uidSvc, nil)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -1952,7 +2076,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// when
 		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -2308,7 +2432,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 			labelSvc := testCase.LabelServiceFn()
 			uidSvc := testCase.UIDServiceFn()
 			intSysRepo := testCase.IntSysRepoFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, labelSvc, scenariosSvc, nil, uidSvc)
+			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, labelSvc, scenariosSvc, nil, uidSvc, nil)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -2330,7 +2454,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// when
 		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -2596,7 +2720,7 @@ func TestService_Update(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
 			intSysRepo := testCase.IntSysRepoFn()
 			lblUpsrtSvc := testCase.LabelUpsertSvcFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, lblUpsrtSvc, nil, nil, nil)
+			svc := application.NewService(appNameNormalizer, nil, appRepo, nil, nil, nil, intSysRepo, lblUpsrtSvc, nil, nil, nil, nil)
 			svc.SetTimestampGen(timestampGenFunc)
 
 			// WHEN
@@ -2727,7 +2851,7 @@ func TestService_UpdateBaseURL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			resetModels()
 			appRepo := testCase.AppRepoFn()
-			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.UpdateBaseURL(testCase.Context, testCase.InputID, testCase.TargetURL)
@@ -2882,7 +3006,7 @@ func TestService_Delete(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
 			labelRepo := testCase.LabelRepoFn()
 			runtimeRepo := testCase.RuntimeRepoFn()
-			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.Delete(ctx, testCase.InputID)
@@ -3156,7 +3280,7 @@ func TestService_Unpair(t *testing.T) {
 			runtimeRepo := testCase.RuntimeRepoFn()
 			ctx := testCase.ContextFn()
 			ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, nil, nil, nil, nil, nil)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 			// WHEN
 			err := svc.Unpair(ctx, testCase.InputID)
@@ -3592,7 +3716,7 @@ func TestService_Merge(t *testing.T) {
 			runtimeRepo := testCase.RuntimeRepoFn()
 			labelRepo := testCase.LabelRepoFn()
 			labelUpserSvc := testCase.LabelUpsertSvcFn()
-			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, labelUpserSvc, nil, nil, nil)
+			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, labelUpserSvc, nil, nil, nil, nil)
 
 			// WHEN
 			destApp, err := svc.Merge(testCase.Ctx, testCase.DestinationID, testCase.SourceID)
@@ -3672,7 +3796,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			app, err := svc.Get(ctx, testCase.InputID)
@@ -3755,7 +3879,7 @@ func TestService_GetSystem(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			app, err := svc.GetSccSystem(testCase.Ctx, "id", locationID, virtualHost)
@@ -3862,7 +3986,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			app, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, after)
@@ -3969,7 +4093,7 @@ func TestService_ListGlobal(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			app, err := svc.ListGlobal(ctx, testCase.InputPageSize, after)
@@ -4250,7 +4374,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			labelRepository := testCase.LabelRepositoryFn()
 			appRepository := testCase.AppRepositoryFn()
 			cfgProvider := testCase.ConfigProviderFn()
-			svc := application.NewService(nil, cfgProvider, appRepository, nil, runtimeRepository, labelRepository, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, cfgProvider, appRepository, nil, runtimeRepository, labelRepository, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			results, err := svc.ListByRuntimeID(ctx, testCase.Input, first, cursor)
@@ -4409,7 +4533,7 @@ func TestService_ListBySCC(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appRepo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(nil, nil, appRepo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, appRepo, nil, nil, labelRepo, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			app, err := svc.ListBySCC(testCase.Ctx, filter)
@@ -4505,7 +4629,7 @@ func TestService_ListSCCs(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(nil, nil, nil, nil, nil, repo, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, nil, nil, nil, repo, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			app, err := svc.ListSCCs(testCase.Ctx)
@@ -4580,7 +4704,7 @@ func TestService_Exist(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
 			appRepo := testCase.RepositoryFn()
-			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			value, err := svc.Exist(ctx, testCase.InputApplicationID)
@@ -4682,7 +4806,7 @@ func TestService_SetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelSvc := testCase.LabelServiceFn()
-			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, labelSvc, nil, nil, nil)
+			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, labelSvc, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.SetLabel(ctx, testCase.InputLabel)
@@ -4796,7 +4920,7 @@ func TestService_GetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			l, err := svc.GetLabel(ctx, testCase.InputApplicationID, testCase.InputLabel.Key)
@@ -4912,7 +5036,7 @@ func TestService_ListLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			l, err := svc.ListLabels(ctx, testCase.InputApplicationID)
@@ -5002,14 +5126,15 @@ func TestService_DeleteLabel(t *testing.T) {
 		},
 	}
 
+	// TODO Write tests for deleting scenario label
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
-			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey)
+			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey, nil) // TODO
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -5074,7 +5199,7 @@ func TestService_GetByNameAndSystemNumber(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
 			appRepo := testCase.RepositoryFn()
-			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			value, err := svc.GetByNameAndSystemNumber(ctx, testCase.InputApplicationName, testCase.InputSystemNumber)

@@ -86,6 +86,13 @@ type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
 }
 
+// FormationService missing godoc
+//go:generate mockery --name=FormationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationService interface {
+	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
+	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
+}
+
 // RuntimeRepository missing godoc
 //go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeRepository interface {
@@ -140,10 +147,11 @@ type service struct {
 	uidService         UIDService
 	bndlService        BundleService
 	timestampGen       timestamp.Generator
+	formationService   FormationService
 }
 
 // NewService missing godoc
-func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, bndlService BundleService, uidService UIDService) *service {
+func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, bndlService BundleService, uidService UIDService, formationService FormationService) *service {
 	return &service{
 		appNameNormalizer:  appNameNormalizer,
 		appHideCfgProvider: appHideCfgProvider,
@@ -157,6 +165,7 @@ func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider Ap
 		bndlService:        bndlService,
 		uidService:         uidService,
 		timestampGen:       timestamp.DefaultGenerator,
+		formationService:   formationService,
 	}
 }
 
@@ -638,6 +647,57 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		return apperrors.NewNotFoundError(resource.Application, labelInput.ObjectID)
 	}
 
+	if labelInput.Key == model.ScenariosKey && labelInput.ObjectType == model.ApplicationLabelableObject {
+		inputLabelValue, ok := labelInput.Value.([]interface{})
+		if !ok {
+			return errors.New("Label value for scenarios key is not of type []interface{}")
+		}
+		inputLabels := make([]string, 0, len(inputLabelValue))
+		for _, labelAsInterface := range inputLabelValue {
+			labelAsString, ok := labelAsInterface.(string)
+			if !ok {
+				return errors.New("Label value for scenarios key is not of type []interface{}")
+			}
+			inputLabels = append(inputLabels, labelAsString)
+		}
+		inputFormationsMap := make(map[string]struct{}, len(inputLabels))
+		for _, f := range inputLabels {
+			inputFormationsMap[f] = struct{}{}
+		}
+
+		storedLabel, err := s.labelRepo.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, labelInput.ObjectID, model.ScenariosKey)
+		storedLabels := make([]string, 0)
+		if err != nil && apperrors.ErrorCode(err) != apperrors.NotFound {
+			return errors.Wrapf(err, "while getting label with id %s", labelInput.ObjectID)
+		} else if err == nil {
+			storedLabels, err = ParseFormationsFromLabelValue(storedLabel.Value)
+			if err != nil {
+				return errors.Wrapf(err, "while getting label with id %s", labelInput.ObjectID)
+			}
+		}
+
+		storedFormationsMap := make(map[string]struct{}, len(storedLabels))
+		for _, f := range storedLabels {
+			storedFormationsMap[f] = struct{}{}
+		}
+		for _, f := range inputLabels {
+			if _, ok := storedFormationsMap[f]; !ok {
+				if _, err := s.formationService.AssignFormation(ctx, appTenant, labelInput.ObjectID, graphql.FormationObjectTypeApplication, model.Formation{Name: f}); err != nil {
+					return errors.Wrapf(err, "while assigning formation with name %s", f)
+				}
+			}
+		}
+
+		for _, f := range storedLabels {
+			if _, ok := inputFormationsMap[f]; !ok {
+				if _, err := s.formationService.UnassignFormation(ctx, appTenant, labelInput.ObjectID, graphql.FormationObjectTypeApplication, model.Formation{Name: f}); err != nil {
+					return errors.Wrapf(err, "while deleting formation with name %s", f)
+				}
+			}
+		}
+		return nil
+	}
+
 	err = s.labelUpsertService.UpsertLabel(ctx, appTenant, labelInput)
 	if err != nil {
 		return errors.Wrapf(err, "while creating label for Application")
@@ -694,7 +754,7 @@ func (s *service) ListLabels(ctx context.Context, applicationID string) (map[str
 }
 
 // DeleteLabel missing godoc
-func (s *service) DeleteLabel(ctx context.Context, applicationID string, key string) error {
+func (s *service) DeleteLabel(ctx context.Context, applicationID string, key string, labelValue interface{}) error {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
@@ -706,6 +766,24 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	}
 	if !appExists {
 		return fmt.Errorf("application with ID %s doesn't exist", applicationID)
+	}
+
+	if key == model.ScenariosKey {
+		scenarios, ok := labelValue.([]interface{})
+		if !ok {
+			return fmt.Errorf("while converting scenarios %s", labelValue)
+		}
+		for _, scenario := range scenarios {
+			scenarioString, ok := scenario.(string)
+			if !ok {
+				return errors.New("Label value for scenarios key is not of type string")
+			}
+
+			if _, err = s.formationService.UnassignFormation(ctx, appTenant, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: scenarioString}); err != nil {
+				return errors.Wrapf(err, "while unassigning formation %s from application with id %s", scenarioString, applicationID)
+			}
+		}
+		return nil
 	}
 
 	err = s.labelRepo.Delete(ctx, appTenant, model.ApplicationLabelableObject, applicationID, key)
@@ -962,6 +1040,23 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	}
 	in.Labels[nameKey] = normalizedName
 
+	if scenarioLabel, ok := in.Labels[model.ScenariosKey]; ok {
+		scenariosAsInterfaces, ok := scenarioLabel.([]interface{})
+		if !ok {
+			return "", errors.New("Label value for scenarios key is not of type []interface{}")
+		}
+		for _, scenario := range scenariosAsInterfaces {
+			scenarioString, ok := scenario.(string)
+			if !ok {
+				return "", errors.New("Label value for scenarios key is not of type string")
+			}
+			if _, err := s.formationService.AssignFormation(ctx, appTenant, id, graphql.FormationObjectTypeApplication, model.Formation{Name: scenarioString}); err != nil {
+				return "", err
+			}
+		}
+		delete(in.Labels, model.ScenariosKey)
+	}
+
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
 	if err != nil {
 		return id, errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
@@ -1159,4 +1254,17 @@ func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.
 	}
 
 	return nil
+}
+
+// ParseFormationsFromLabelValue returns available scenarios from the provided schema
+func ParseFormationsFromLabelValue(label interface{}) ([]string, error) {
+	b, err := json.Marshal(label)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while marshaling schema")
+	}
+	var f []string
+	if err = json.Unmarshal(b, &f); err != nil {
+		return nil, errors.Wrapf(err, "while unmarshaling schema to %T", f)
+	}
+	return f, nil
 }

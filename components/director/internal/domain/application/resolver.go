@@ -39,7 +39,7 @@ type ApplicationService interface {
 	SetLabel(ctx context.Context, label *model.LabelInput) error
 	GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
 	ListLabels(ctx context.Context, applicationID string) (map[string]*model.Label, error)
-	DeleteLabel(ctx context.Context, applicationID string, key string) error
+	DeleteLabel(ctx context.Context, applicationID string, key string, labelValue interface{}) error
 	Unpair(ctx context.Context, id string) error
 	Merge(ctx context.Context, destID, sourceID string) (*model.Application, error)
 }
@@ -487,7 +487,7 @@ func (r *Resolver) DeleteApplicationLabel(ctx context.Context, applicationID str
 		return nil, err
 	}
 
-	err = r.appSvc.DeleteLabel(ctx, applicationID, key)
+	err = r.appSvc.DeleteLabel(ctx, applicationID, key, label.Value)
 	if err != nil {
 		return nil, err
 	}
