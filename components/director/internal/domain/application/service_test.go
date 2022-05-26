@@ -3214,8 +3214,8 @@ func TestService_Merge(t *testing.T) {
 	srcAppLabels := fixApplicationLabels(srcID, labelKey1, labelKey2, labelValue1, "true")
 	destAppLabels := fixApplicationLabels(destID, labelKey1, labelKey2, labelValue2, "false")
 	srcAppLabelsWithFalseManaged := fixApplicationLabels(srcID, labelKey1, labelKey2, labelValue1, "false")
-	srcAppLabelsWithXsappname := fixApplicationLabels(srcID,labelKey3, labelKey2, labelValue1, "true" )
-	destAppLabelsWithXsappname := fixApplicationLabels(destID,labelKey3, labelKey2, labelValue2, "false" )
+	srcAppLabelsWithXsappname := fixApplicationLabels(srcID, labelKey3, labelKey2, labelValue1, "true")
+	destAppLabelsWithXsappname := fixApplicationLabels(destID, labelKey3, labelKey2, labelValue2, "false")
 
 	srcModel := fixDetailedModelApplication(t, srcID, tnt, srcName, srcDescription)
 	srcModel.ApplicationTemplateID = &templateID
@@ -3612,7 +3612,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
-				svc.AssertNotCalled(t,"UpsertMultipleLabels")
+				svc.AssertNotCalled(t, "UpsertMultipleLabels")
 				return svc
 			},
 			Ctx:                ctx,
@@ -3645,7 +3645,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
 				svc := &automock.LabelUpsertService{}
-				svc.AssertNotCalled(t,"UpsertMultipleLabels")
+				svc.AssertNotCalled(t, "UpsertMultipleLabels")
 				return svc
 			},
 			Ctx:                ctx,

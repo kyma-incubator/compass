@@ -40,7 +40,7 @@ const (
 	managedKey           = "managed"
 	subaccountKey        = "Subaccount"
 	locationIDKey        = "LocationID"
-	xsappnameKey 		 = "xsappname"
+	xsappnameKey         = "xsappname"
 	urlSuffixToBeTrimmed = "/"
 )
 
