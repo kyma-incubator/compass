@@ -648,7 +648,7 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 	}
 
 	if labelInput.Key == model.ScenariosKey {
-		inputLabels, err := ParseFormationsFromLabelValue(labelInput.Value)
+		inputLabels, err := label.ValueToStringsSlice(labelInput.Value)
 		if err != nil {
 			return errors.Wrapf(err, "while parsing formations from input label value")
 		}
@@ -663,7 +663,7 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		if err != nil && apperrors.ErrorCode(err) != apperrors.NotFound {
 			return errors.Wrapf(err, "while getting label with id %s", labelInput.ObjectID)
 		} else if err == nil {
-			storedLabels, err = ParseFormationsFromLabelValue(storedLabel.Value)
+			storedLabels, err = label.ValueToStringsSlice(storedLabel.Value)
 			if err != nil {
 				return errors.Wrapf(err, "while getting label with id %s", labelInput.ObjectID)
 			}
@@ -762,7 +762,7 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	}
 
 	if key == model.ScenariosKey {
-		scenarios, err := ParseFormationsFromLabelValue(labelValue)
+		scenarios, err := label.ValueToStringsSlice(labelValue)
 		for _, scenario := range scenarios {
 			if _, err = s.formationService.UnassignFormation(ctx, appTenant, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: scenario}); err != nil {
 				return errors.Wrapf(err, "while unassigning formation %s from application with id %s", scenario, applicationID)
@@ -1026,7 +1026,7 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	in.Labels[nameKey] = normalizedName
 
 	if scenarioLabel, ok := in.Labels[model.ScenariosKey]; ok {
-		scenarios, err := ParseFormationsFromLabelValue(scenarioLabel)
+		scenarios, err := label.ValueToStringsSlice(scenarioLabel)
 		if err != nil {
 			return "", errors.Wrapf(err, "while parsing formations from scenario label")
 		}
@@ -1235,17 +1235,4 @@ func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.
 	}
 
 	return nil
-}
-
-// ParseFormationsFromLabelValue returns available scenarios from the provided scenario label value
-func ParseFormationsFromLabelValue(label interface{}) ([]string, error) {
-	b, err := json.Marshal(label)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while label value schema")
-	}
-	var f []string
-	if err = json.Unmarshal(b, &f); err != nil {
-		return nil, errors.Wrapf(err, "while label value schema to %T", f)
-	}
-	return f, nil
 }

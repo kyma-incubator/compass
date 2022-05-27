@@ -4454,7 +4454,7 @@ func TestService_SetLabel(t *testing.T) {
 	extraScenario := "unnecessary-scenario"
 	scenarioLabel := &model.LabelInput{
 		Key:        model.ScenariosKey,
-		Value:      []string{"DEFAULT", newScenario},
+		Value:      []interface{}{"DEFAULT", newScenario},
 		ObjectID:   applicationID,
 		ObjectType: model.ApplicationLabelableObject,
 	}
@@ -4544,7 +4544,7 @@ func TestService_SetLabel(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(&model.Label{
 					Tenant:     &tnt,
 					Key:        model.ScenariosKey,
-					Value:      []string{"DEFAULT", extraScenario},
+					Value:      []interface{}{"DEFAULT", extraScenario},
 					ObjectID:   applicationID,
 					ObjectType: model.ApplicationLabelableObject,
 					Version:    0,
@@ -4575,7 +4575,7 @@ func TestService_SetLabel(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(&model.Label{
 					Tenant:     &tnt,
 					Key:        model.ScenariosKey,
-					Value:      []string{"DEFAULT", extraScenario},
+					Value:      []interface{}{"DEFAULT", extraScenario},
 					ObjectID:   applicationID,
 					ObjectType: model.ApplicationLabelableObject,
 					Version:    0,
@@ -4605,7 +4605,7 @@ func TestService_SetLabel(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(&model.Label{
 					Tenant:     &tnt,
 					Key:        model.ScenariosKey,
-					Value:      []string{"DEFAULT", extraScenario},
+					Value:      []interface{}{"DEFAULT", extraScenario},
 					ObjectID:   applicationID,
 					ObjectType: model.ApplicationLabelableObject,
 					Version:    0,
