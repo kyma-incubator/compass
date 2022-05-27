@@ -2280,10 +2280,7 @@ func TestService_Update(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				return svc
-			},
+			LabelUpsertSvcFn:   UnusedLabelUpsertService,
 			InputID:            "foo",
 			Input:              updateInput,
 			ExpectedErrMessage: testErr.Error(),
@@ -2301,10 +2298,7 @@ func TestService_Update(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				return svc
-			},
+			LabelUpsertSvcFn:   UnusedLabelUpsertService,
 			InputID:            "foo",
 			Input:              updateInput,
 			ExpectedErrMessage: testErr.Error(),
@@ -2312,19 +2306,13 @@ func TestService_Update(t *testing.T) {
 		{
 			Name:              "Returns error when Integration System does not exist",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				return repo
-			},
+			AppRepoFn:         UnusedApplicationRepository,
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
 				repo := &automock.IntegrationSystemRepository{}
 				repo.On("Exists", ctx, intSysID).Return(false, nil).Once()
 				return repo
 			},
-			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				return svc
-			},
+			LabelUpsertSvcFn:   UnusedLabelUpsertService,
 			InputID:            "foo",
 			Input:              updateInput,
 			ExpectedErrMessage: errors.New("Object not found").Error(),
@@ -2332,19 +2320,13 @@ func TestService_Update(t *testing.T) {
 		{
 			Name:              "Returns error ensuring Integration System existence failed",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				return repo
-			},
+			AppRepoFn:         UnusedApplicationRepository,
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
 				repo := &automock.IntegrationSystemRepository{}
 				repo.On("Exists", ctx, intSysID).Return(false, testErr).Once()
 				return repo
 			},
-			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				return svc
-			},
+			LabelUpsertSvcFn:   UnusedLabelUpsertService,
 			InputID:            "foo",
 			Input:              updateInput,
 			ExpectedErrMessage: testErr.Error(),
@@ -2388,10 +2370,7 @@ func TestService_Update(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				return svc
-			},
+			LabelUpsertSvcFn:   UnusedLabelUpsertService,
 			InputID:            "foo",
 			Input:              updateInput,
 			ExpectedErrMessage: "Object not found",
@@ -2411,10 +2390,7 @@ func TestService_Update(t *testing.T) {
 				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
 				return repo
 			},
-			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				return svc
-			},
+			LabelUpsertSvcFn:   UnusedLabelUpsertService,
 			InputID:            "foo",
 			Input:              updateInput,
 			ExpectedErrMessage: testErr.Error(),
@@ -3573,12 +3549,9 @@ func TestService_GetSystem(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Returns error when extracting tenant from context",
-			Ctx:  context.TODO(),
-			RepositoryFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				return repo
-			},
+			Name:               "Returns error when extracting tenant from context",
+			Ctx:                context.TODO(),
+			RepositoryFn:       UnusedApplicationRepository,
 			ExpectedErrMessage: "while loading tenant from context:",
 		},
 	}
@@ -3667,22 +3640,18 @@ func TestService_List(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Returns error when page size is less than 1",
-			RepositoryFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				return repo
-			},
+			Name:         "Returns error when page size is less than 1",
+			RepositoryFn: UnusedApplicationRepository,
+
 			InputPageSize:      0,
 			InputLabelFilters:  filter,
 			ExpectedResult:     nil,
 			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
-			Name: "Returns error when page size is bigger than 200",
-			RepositoryFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				return repo
-			},
+			Name:         "Returns error when page size is bigger than 200",
+			RepositoryFn: UnusedApplicationRepository,
+
 			InputPageSize:      201,
 			InputLabelFilters:  filter,
 			ExpectedResult:     nil,
@@ -3774,22 +3743,18 @@ func TestService_ListGlobal(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Returns error when page size is less than 1",
-			RepositoryFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				return repo
-			},
+			Name:         "Returns error when page size is less than 1",
+			RepositoryFn: UnusedApplicationRepository,
+
 			InputPageSize:      0,
 			InputLabelFilters:  filter,
 			ExpectedResult:     nil,
 			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
-			Name: "Returns error when page size is bigger than 200",
-			RepositoryFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				return repo
-			},
+			Name:         "Returns error when page size is bigger than 200",
+			RepositoryFn: UnusedApplicationRepository,
+
 			InputPageSize:      201,
 			InputLabelFilters:  filter,
 			ExpectedResult:     nil,
@@ -3902,10 +3867,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 					Return(nil, apperrors.NewNotFoundError(resource.Application, "")).Once()
 				return labelRepository
 			},
-			AppRepositoryFn: func() *automock.ApplicationRepository {
-				appRepository := &automock.ApplicationRepository{}
-				return appRepository
-			},
+			AppRepositoryFn: UnusedApplicationRepository,
 			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
 				cfgProvider := &automock.ApplicationHideCfgProvider{}
 				return cfgProvider
@@ -3930,10 +3892,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 				labelRepository := &automock.LabelRepository{}
 				return labelRepository
 			},
-			AppRepositoryFn: func() *automock.ApplicationRepository {
-				appRepository := &automock.ApplicationRepository{}
-				return appRepository
-			},
+			AppRepositoryFn: UnusedApplicationRepository,
 			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
 				cfgProvider := &automock.ApplicationHideCfgProvider{}
 				return cfgProvider
@@ -3954,10 +3913,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 				labelRepository := &automock.LabelRepository{}
 				return labelRepository
 			},
-			AppRepositoryFn: func() *automock.ApplicationRepository {
-				appRepository := &automock.ApplicationRepository{}
-				return appRepository
-			},
+			AppRepositoryFn: UnusedApplicationRepository,
 			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
 				cfgProvider := &automock.ApplicationHideCfgProvider{}
 				return cfgProvider
@@ -3980,10 +3936,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 					Return(nil, testError).Once()
 				return labelRepository
 			},
-			AppRepositoryFn: func() *automock.ApplicationRepository {
-				appRepository := &automock.ApplicationRepository{}
-				return appRepository
-			},
+			AppRepositoryFn: UnusedApplicationRepository,
 			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
 				cfgProvider := &automock.ApplicationHideCfgProvider{}
 				return cfgProvider
@@ -4035,10 +3988,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 					Return(&model.Label{ID: uuid.New().String(), Key: model.ScenariosKey, Value: []interface{}{}}, nil).Once()
 				return labelRepository
 			},
-			AppRepositoryFn: func() *automock.ApplicationRepository {
-				appRepository := &automock.ApplicationRepository{}
-				return appRepository
-			},
+			AppRepositoryFn: UnusedApplicationRepository,
 			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
 				cfgProvider := &automock.ApplicationHideCfgProvider{}
 				return cfgProvider
@@ -4061,10 +4011,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 					Return(&scenarioLabel, nil).Once()
 				return labelRepository
 			},
-			AppRepositoryFn: func() *automock.ApplicationRepository {
-				appRepository := &automock.ApplicationRepository{}
-				return appRepository
-			},
+			AppRepositoryFn: UnusedApplicationRepository,
 			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
 				cfgProvider := &automock.ApplicationHideCfgProvider{}
 				cfgProvider.On("GetApplicationHideSelectors").Return(nil, testError).Once()
@@ -4181,10 +4128,7 @@ func TestService_ListBySCC(t *testing.T) {
 				repo.On("ListAllByFilter", ctx, tnt, []*labelfilter.LabelFilter{filter}).Return([]*model.Application{}, nil).Once()
 				return repo
 			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
+			LabelRepositoryFn:  UnusedLabelRepository,
 			InputLabelFilter:   filter,
 			ExpectedResult:     []*model.ApplicationWithLabel{},
 			ExpectedErrMessage: "",
@@ -4214,25 +4158,17 @@ func TestService_ListBySCC(t *testing.T) {
 				repo.On("ListAllByFilter", ctx, tnt, []*labelfilter.LabelFilter{filter}).Return(nil, testErr).Once()
 				return repo
 			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
+			LabelRepositoryFn:  UnusedLabelRepository,
 			InputLabelFilter:   filter,
 			ExpectedResult:     nil,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Returns error when extracting tenant from context",
-			Ctx:  context.TODO(),
-			RepositoryFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				return repo
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
+			Name:         "Returns error when extracting tenant from context",
+			Ctx:          context.TODO(),
+			RepositoryFn: UnusedApplicationRepository,
+
+			LabelRepositoryFn:  UnusedLabelRepository,
 			ExpectedErrMessage: "while loading tenant from context:",
 		},
 	}
@@ -4777,10 +4713,7 @@ func TestService_GetLabel(t *testing.T) {
 
 				return repo
 			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
+			LabelRepositoryFn:  UnusedLabelRepository,
 			InputApplicationID: applicationID,
 			InputLabel:         label,
 			ExpectedErrMessage: testErr.Error(),
@@ -4893,10 +4826,7 @@ func TestService_ListLabel(t *testing.T) {
 
 				return repo
 			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
+			LabelRepositoryFn:  UnusedLabelRepository,
 			InputApplicationID: applicationID,
 			InputLabel:         label,
 			ExpectedErrMessage: testErr.Error(),
@@ -4991,10 +4921,7 @@ func TestService_DeleteLabel(t *testing.T) {
 				repo.On("Exists", ctx, tnt, applicationID).Return(false, testErr).Once()
 				return repo
 			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
+			LabelRepositoryFn:  UnusedLabelRepository,
 			FormationServiceFn: UnusedFormationService,
 			InputApplicationID: applicationID,
 			InputKey:           labelKey,
@@ -5007,10 +4934,7 @@ func TestService_DeleteLabel(t *testing.T) {
 				repo.On("Exists", ctx, tnt, applicationID).Return(false, nil).Once()
 				return repo
 			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
+			LabelRepositoryFn:  UnusedLabelRepository,
 			FormationServiceFn: UnusedFormationService,
 			InputApplicationID: applicationID,
 			InputKey:           labelKey,
@@ -5023,10 +4947,7 @@ func TestService_DeleteLabel(t *testing.T) {
 				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
 				return repo
 			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
+			LabelRepositoryFn: UnusedLabelRepository,
 			FormationServiceFn: func() *automock.FormationService {
 				service := &automock.FormationService{}
 				service.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: "DEFAULT"}).Return(nil, nil).Once()
@@ -5044,10 +4965,7 @@ func TestService_DeleteLabel(t *testing.T) {
 				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
 				return repo
 			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				return repo
-			},
+			LabelRepositoryFn: UnusedLabelRepository,
 			FormationServiceFn: func() *automock.FormationService {
 				service := &automock.FormationService{}
 				service.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: "DEFAULT"}).Return(nil, testErr).Once()
@@ -5220,4 +5138,16 @@ func UnusedWebhookRepository() *automock.WebhookRepository {
 
 func UnusedIntegrationSystemRepository() *automock.IntegrationSystemRepository {
 	return &automock.IntegrationSystemRepository{}
+}
+
+func UnusedLabelRepository() *automock.LabelRepository {
+	return &automock.LabelRepository{}
+}
+
+func UnusedApplicationRepository() *automock.ApplicationRepository {
+	return &automock.ApplicationRepository{}
+}
+
+func UnusedLabelUpsertService() *automock.LabelUpsertService {
+	return &automock.LabelUpsertService{}
 }
