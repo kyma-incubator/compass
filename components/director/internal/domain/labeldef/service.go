@@ -221,7 +221,7 @@ func (s *service) ValidateExistingLabelsAgainstSchema(ctx context.Context, schem
 		}
 
 		if !result.Valid {
-			return apperrors.NewInvalidDataError(fmt.Sprintf(`label with key="%s" is not valid against new schema for %s with ID="%s": %s`, label.Key, label.ObjectType, label.ObjectID, result.Error))
+			return apperrors.NewInvalidDataError(fmt.Sprintf(`label with key="%s" and value="%s" is not valid against new schema for %s with ID="%s": %s`, label.Key, label.Value, label.ObjectType, label.ObjectID, result.Error))
 		}
 	}
 	return nil
