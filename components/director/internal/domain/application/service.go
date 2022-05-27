@@ -673,20 +673,20 @@ func (s *service) setScenarioLabel(ctx context.Context, appTenant string, labelI
 	}
 
 	storedFormationsMap := createMapFromFormationsSlice(storedLabels)
-	addCriteria := func(formation string) bool {
+	assignFormationCriteria := func(formation string) bool {
 		_, ok := storedFormationsMap[formation]
 		return !ok
 	}
-	if err = s.assignFormations(ctx, appTenant, labelInput.ObjectID, inputFormations, addCriteria); err != nil {
+	if err = s.assignFormations(ctx, appTenant, labelInput.ObjectID, inputFormations, assignFormationCriteria); err != nil {
 		return errors.Wrapf(err, "while assigning formations")
 	}
 
-	removeCriteria := func(formation string) bool {
+	unassignFormationCriteria := func(formation string) bool {
 		_, ok := inputFormationsMap[formation]
 		return !ok
 	}
 
-	if err = s.unassignFormations(ctx, appTenant, labelInput.ObjectID, storedLabels, removeCriteria); err != nil {
+	if err = s.unassignFormations(ctx, appTenant, labelInput.ObjectID, storedLabels, unassignFormationCriteria); err != nil {
 		return errors.Wrapf(err, "while unnasigning formations")
 	}
 
