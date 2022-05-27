@@ -119,7 +119,7 @@ func (s *service) ListForRuntime(ctx context.Context, runtimeID string) ([]*mode
 func (s *service) Create(ctx context.Context, owningResourceID string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if apperrors.IsTenantRequired(err) {
-		log.C(ctx).Debugf("Creating Webhook with type %s without tenant", in.Type)
+		log.C(ctx).Debugf("Creating Webhook with type: %q without tenant", in.Type)
 	} else if err != nil {
 		return "", err
 	}
@@ -127,9 +127,9 @@ func (s *service) Create(ctx context.Context, owningResourceID string, in model.
 	webhook := in.ToWebhook(id, owningResourceID, objectType)
 
 	if err = s.webhookRepo.Create(ctx, tnt, webhook); err != nil {
-		return "", errors.Wrapf(err, "while creating Webhook with type %s and id %s for Application with id %s", id, webhook.Type, owningResourceID)
+		return "", errors.Wrapf(err, "while creating Webhook with type: %q and ID: %q for Application with ID: %q", webhook.Type, id, owningResourceID)
 	}
-	log.C(ctx).Infof("Successfully created Webhook with type %s and id %s for Application with id %s", id, webhook.Type, owningResourceID)
+	log.C(ctx).Infof("Successfully created Webhook with type: %q and ID: %q for Application with ID: %q", webhook.Type, id, owningResourceID)
 
 	return webhook.ID, nil
 }
