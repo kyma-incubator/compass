@@ -126,8 +126,8 @@ type ApplicationHideCfgProvider interface {
 }
 
 type service struct {
-	appNameNormalizer  normalizer.Normalizator
-	appHideCfgProvider ApplicationHideCfgProvider
+	appNameNormalizer               normalizer.Normalizator
+	appHideCfgProvider              ApplicationHideCfgProvider
 	selfRegisterDistinguishLabelKey string
 
 	appRepo       ApplicationRepository
@@ -146,8 +146,8 @@ type service struct {
 // NewService missing godoc
 func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, selfRegisterDistinguishLabelKey string, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, bndlService BundleService, uidService UIDService) *service {
 	return &service{
-		appNameNormalizer:  			 appNameNormalizer,
-		appHideCfgProvider: 			 appHideCfgProvider,
+		appNameNormalizer:               appNameNormalizer,
+		appHideCfgProvider:              appHideCfgProvider,
 		selfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
 
 		appRepo:            app,

@@ -3191,7 +3191,6 @@ func TestService_Merge(t *testing.T) {
 	srcDescription := "Long src description"
 	selfRegDistLabelKey := "subscriptionProviderId"
 
-
 	scenarios := []interface{}{"Easter"}
 	scenarioLabel := &model.Label{
 		ID:    uuid.New().String(),
