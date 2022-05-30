@@ -123,8 +123,8 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 }
 
 // CleanupSelfRegistration executes cleanup calls for self-registered runtimes
-func (s *selfRegisterManager) CleanupSelfRegistration(ctx context.Context, runtimeID, region string) error {
-	if runtimeID == "" {
+func (s *selfRegisterManager) CleanupSelfRegistration(ctx context.Context, resourceID, region string) error {
+	if resourceID == "" {
 		return nil
 	}
 
@@ -133,7 +133,7 @@ func (s *selfRegisterManager) CleanupSelfRegistration(ctx context.Context, runti
 		return errors.Errorf("missing configuration for region: %s", region)
 	}
 
-	request, err := s.createSelfRegDelRequest(runtimeID, instanceConfig.URL)
+	request, err := s.createSelfRegDelRequest(resourceID, instanceConfig.URL)
 	if err != nil {
 		return err
 	}
@@ -144,14 +144,14 @@ func (s *selfRegisterManager) CleanupSelfRegistration(ctx context.Context, runti
 	}
 	resp, err := caller.Call(request)
 	if err != nil {
-		return errors.Wrapf(err, "while executing cleanup of self-registered resource with id %q", runtimeID)
+		return errors.Wrapf(err, "while executing cleanup of self-registered resource with id %q", resourceID)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.Errorf("received unexpected status code %d while cleaning up self-registered resource with id %q", resp.StatusCode, runtimeID)
+		return errors.Errorf("received unexpected status code %d while cleaning up self-registered resource with id %q", resp.StatusCode, resourceID)
 	}
 
-	log.C(ctx).Infof("Successfully executed clean-up self-registered resource with id %q", runtimeID)
+	log.C(ctx).Infof("Successfully executed clean-up self-registered resource with id %q", resourceID)
 	return nil
 }
 
@@ -182,8 +182,8 @@ func (s *selfRegisterManager) createSelfRegPrepRequest(id, tenant, targetURL str
 	return request, nil
 }
 
-func (s *selfRegisterManager) createSelfRegDelRequest(runtimeID, targetURL string) (*http.Request, error) {
-	selfRegLabelVal := s.cfg.SelfRegisterLabelValuePrefix + runtimeID
+func (s *selfRegisterManager) createSelfRegDelRequest(resourceID, targetURL string) (*http.Request, error) {
+	selfRegLabelVal := s.cfg.SelfRegisterLabelValuePrefix + resourceID
 	url, err := urlpkg.Parse(targetURL)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating url for cleanup of self-registered resource")
