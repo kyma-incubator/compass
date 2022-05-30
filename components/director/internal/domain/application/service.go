@@ -632,7 +632,9 @@ func (s *service) Unpair(ctx context.Context, id string) error {
 	return nil
 }
 
-// SetLabel missing godoc
+// SetLabel updates application label with given input label
+// In the case of a scenario label, it assigns the newly added formations from the input and
+// unassigns old formations that are not present in the input label, but are stored in the database
 func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) error {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -697,7 +699,7 @@ func (s *service) assignFormations(ctx context.Context, appTenant, objectID stri
 	for _, f := range formations {
 		if shouldAssignCriteria(f) {
 			if _, err := s.formationService.AssignFormation(ctx, appTenant, objectID, graphql.FormationObjectTypeApplication, model.Formation{Name: f}); err != nil {
-				return errors.Wrapf(err, "while unassigning formation with name %q from application with id %q", f, objectID)
+				return errors.Wrapf(err, "while aassigning formation with name %q from application with id %q", f, objectID)
 			}
 		}
 	}
@@ -708,7 +710,7 @@ func (s *service) unassignFormations(ctx context.Context, appTenant, objectID st
 	for _, f := range formations {
 		if shouldUnassignCriteria(f) {
 			if _, err := s.formationService.UnassignFormation(ctx, appTenant, objectID, graphql.FormationObjectTypeApplication, model.Formation{Name: f}); err != nil {
-				return errors.Wrapf(err, "while assigning formation with name %q from application with id %q", f, objectID)
+				return errors.Wrapf(err, "while unassigning formation with name %q from application with id %q", f, objectID)
 			}
 		}
 	}
