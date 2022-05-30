@@ -40,7 +40,6 @@ const (
 	managedKey           = "managed"
 	subaccountKey        = "Subaccount"
 	locationIDKey        = "LocationID"
-	xsappnameKey         = "xsappname"
 	urlSuffixToBeTrimmed = "/"
 )
 
@@ -129,6 +128,7 @@ type ApplicationHideCfgProvider interface {
 type service struct {
 	appNameNormalizer  normalizer.Normalizator
 	appHideCfgProvider ApplicationHideCfgProvider
+	selfRegisterDistinguishLabelKey string
 
 	appRepo       ApplicationRepository
 	webhookRepo   WebhookRepository
@@ -144,10 +144,12 @@ type service struct {
 }
 
 // NewService missing godoc
-func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, bndlService BundleService, uidService UIDService) *service {
+func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, selfRegisterDistinguishLabelKey string, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, bndlService BundleService, uidService UIDService) *service {
 	return &service{
-		appNameNormalizer:  appNameNormalizer,
-		appHideCfgProvider: appHideCfgProvider,
+		appNameNormalizer:  			 appNameNormalizer,
+		appHideCfgProvider: 			 appHideCfgProvider,
+		selfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
+
 		appRepo:            app,
 		webhookRepo:        webhook,
 		runtimeRepo:        runtimeRepo,
@@ -765,13 +767,11 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 		return nil, errors.Errorf("Application templates are not the same. Destination app template: %s. Source app template: %s", destTemplateID, srcTemplateID)
 	}
 
-	_, ok := srcAppLabels[xsappnameKey]
-	if ok {
-		return nil, errors.Errorf("Source app template: %s has label xsappname", srcTemplateID)
+	if _, ok := srcAppLabels[s.selfRegisterDistinguishLabelKey]; ok {
+		return nil, errors.Errorf("Source app template: %s has label %s", srcTemplateID, s.selfRegisterDistinguishLabelKey)
 	}
-	_, ok = destAppLabels[xsappnameKey]
-	if ok {
-		return nil, errors.Errorf("Destination app template: %s has label xsappname", destTemplateID)
+	if _, ok := destAppLabels[s.selfRegisterDistinguishLabelKey]; ok {
+		return nil, errors.Errorf("Destination app template: %s has label %s", destTemplateID, s.selfRegisterDistinguishLabelKey)
 	}
 
 	if srcApp.Status == nil {
