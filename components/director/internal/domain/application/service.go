@@ -661,62 +661,6 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 	return nil
 }
 
-func (s *service) setScenarioLabel(ctx context.Context, appTenant string, labelInput *model.LabelInput) error {
-	inputFormations, err := label.ValueToStringsSlice(labelInput.Value)
-	if err != nil {
-		return errors.Wrapf(err, "while parsing formations from input label value")
-	}
-
-	inputFormationsMap := createMapFromFormationsSlice(inputFormations)
-
-	storedLabels, err := s.getStoredLabels(ctx, appTenant, labelInput.ObjectID)
-	if err != nil {
-		return errors.Wrapf(err, "while getting stored labels for label with id %s", labelInput.ObjectID)
-	}
-
-	storedFormationsMap := createMapFromFormationsSlice(storedLabels)
-	assignFormationCriteria := func(formation string) bool {
-		_, ok := storedFormationsMap[formation]
-		return !ok
-	}
-	if err = s.assignFormations(ctx, appTenant, labelInput.ObjectID, inputFormations, assignFormationCriteria); err != nil {
-		return errors.Wrapf(err, "while assigning formations")
-	}
-
-	unassignFormationCriteria := func(formation string) bool {
-		_, ok := inputFormationsMap[formation]
-		return !ok
-	}
-
-	if err = s.unassignFormations(ctx, appTenant, labelInput.ObjectID, storedLabels, unassignFormationCriteria); err != nil {
-		return errors.Wrapf(err, "while unnasigning formations")
-	}
-
-	return nil
-}
-
-func (s *service) assignFormations(ctx context.Context, appTenant, objectID string, formations []string, shouldAssignCriteria func(string) bool) error {
-	for _, f := range formations {
-		if shouldAssignCriteria(f) {
-			if _, err := s.formationService.AssignFormation(ctx, appTenant, objectID, graphql.FormationObjectTypeApplication, model.Formation{Name: f}); err != nil {
-				return errors.Wrapf(err, "while aassigning formation with name %q from application with id %q", f, objectID)
-			}
-		}
-	}
-	return nil
-}
-
-func (s *service) unassignFormations(ctx context.Context, appTenant, objectID string, formations []string, shouldUnassignCriteria func(string) bool) error {
-	for _, f := range formations {
-		if shouldUnassignCriteria(f) {
-			if _, err := s.formationService.UnassignFormation(ctx, appTenant, objectID, graphql.FormationObjectTypeApplication, model.Formation{Name: f}); err != nil {
-				return errors.Wrapf(err, "while unassigning formation with name %q from application with id %q", f, objectID)
-			}
-		}
-	}
-	return nil
-}
-
 // GetLabel missing godoc
 func (s *service) GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
@@ -1051,6 +995,8 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 			return "", errors.Wrapf(err, "while assigning formations")
 		}
 
+		// In order for the scenario label not to be attempted
+		// to be created during upsert later
 		delete(in.Labels, model.ScenariosKey)
 	}
 
@@ -1264,6 +1210,62 @@ func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.
 		return errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
 	}
 
+	return nil
+}
+
+func (s *service) setScenarioLabel(ctx context.Context, appTenant string, labelInput *model.LabelInput) error {
+	inputFormations, err := label.ValueToStringsSlice(labelInput.Value)
+	if err != nil {
+		return errors.Wrapf(err, "while parsing formations from input label value")
+	}
+
+	inputFormationsMap := createMapFromFormationsSlice(inputFormations)
+
+	storedLabels, err := s.getStoredLabels(ctx, appTenant, labelInput.ObjectID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting stored labels for label with id %s", labelInput.ObjectID)
+	}
+
+	storedFormationsMap := createMapFromFormationsSlice(storedLabels)
+	assignFormationCriteria := func(formation string) bool {
+		_, ok := storedFormationsMap[formation]
+		return !ok
+	}
+	if err = s.assignFormations(ctx, appTenant, labelInput.ObjectID, inputFormations, assignFormationCriteria); err != nil {
+		return errors.Wrapf(err, "while assigning formations")
+	}
+
+	unassignFormationCriteria := func(formation string) bool {
+		_, ok := inputFormationsMap[formation]
+		return !ok
+	}
+
+	if err = s.unassignFormations(ctx, appTenant, labelInput.ObjectID, storedLabels, unassignFormationCriteria); err != nil {
+		return errors.Wrapf(err, "while unnasigning formations")
+	}
+
+	return nil
+}
+
+func (s *service) assignFormations(ctx context.Context, appTenant, objectID string, formations []string, shouldAssignCriteria func(string) bool) error {
+	for _, f := range formations {
+		if shouldAssignCriteria(f) {
+			if _, err := s.formationService.AssignFormation(ctx, appTenant, objectID, graphql.FormationObjectTypeApplication, model.Formation{Name: f}); err != nil {
+				return errors.Wrapf(err, "while aassigning formation with name %q from application with id %q", f, objectID)
+			}
+		}
+	}
+	return nil
+}
+
+func (s *service) unassignFormations(ctx context.Context, appTenant, objectID string, formations []string, shouldUnassignCriteria func(string) bool) error {
+	for _, f := range formations {
+		if shouldUnassignCriteria(f) {
+			if _, err := s.formationService.UnassignFormation(ctx, appTenant, objectID, graphql.FormationObjectTypeApplication, model.Formation{Name: f}); err != nil {
+				return errors.Wrapf(err, "while unassigning formation with name %q from application with id %q", f, objectID)
+			}
+		}
+	}
 	return nil
 }
 
