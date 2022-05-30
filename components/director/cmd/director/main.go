@@ -607,9 +607,9 @@ func runtimeSvc(cfg config) claims.RuntimeService {
 
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, lblRepo, labelSvc)
 
-	scenarioAssignmentEngine := formation.NewService(labelDefRepo, lblRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, rtRepo)
+	formationSvc := formation.NewService(labelDefRepo, lblRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, rtRepo)
 
-	return runtime.NewService(rtRepo, lblRepo, labelDefSvc, labelSvc, uidSvc, scenarioAssignmentEngine, tenantSvc, webhookService(), cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
+	return runtime.NewService(rtRepo, lblRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantSvc, webhookService(), cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
 }
 
 func intSystemSvc() claims.IntegrationSystemService {

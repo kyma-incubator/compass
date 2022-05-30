@@ -309,9 +309,9 @@ func (s *service) DeleteManyASAForSameTargetTenant(ctx context.Context, in []*mo
 // MergeScenariosFromInputLabelsAndAssignments merges all the scenarios that are part of the resource labels (already added + to be added with the current operation)
 // with all the scenarios that should be assigned based on ASAs.
 func (s *service) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error) {
-	scenariosSet := make(map[string]struct{})
-
 	scenariosFromAssignments, err := s.GetScenariosFromMatchingASAs(ctx, runtimeID)
+	scenariosSet := make(map[string]struct{}, len(scenariosFromAssignments))
+
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting scenarios for selector labels")
 	}
@@ -323,17 +323,17 @@ func (s *service) MergeScenariosFromInputLabelsAndAssignments(ctx context.Contex
 	scenariosFromInput, isScenarioLabelInInput := inputLabels[model.ScenariosKey]
 
 	if isScenarioLabelInInput {
-		scenariosFromInputInterfaceSlice, ok := scenariosFromInput.([]interface{})
-		if !ok {
-			return nil, apperrors.NewInternalError("while converting scenarios label to an interface slice")
+		scenarioLabels, err := label.ValueToStringsSlice(scenariosFromInput)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting scenarios label to a string slice")
 		}
 
-		for _, scenario := range scenariosFromInputInterfaceSlice {
-			scenariosSet[fmt.Sprint(scenario)] = struct{}{}
+		for _, scenario := range scenarioLabels {
+			scenariosSet[scenario] = struct{}{}
 		}
 	}
 
-	scenarios := make([]interface{}, 0)
+	scenarios := make([]interface{}, 0, len(scenariosSet))
 	for k := range scenariosSet {
 		scenarios = append(scenarios, k)
 	}
@@ -356,11 +356,9 @@ func (s *service) GetScenariosFromMatchingASAs(ctx context.Context, runtimeID st
 
 	matchingASAs := make([]*model.AutomaticScenarioAssignment, 0, len(scenarioAssignments))
 	for _, scenarioAssignment := range scenarioAssignments {
-		matches, err := s.isASAMatchingRuntime(ctx, scenarioAssignment, runtimeID)
-		if err != nil {
+		if matches, err := s.isASAMatchingRuntime(ctx, scenarioAssignment, runtimeID); err != nil {
 			return nil, errors.Wrapf(err, "while checkig if asa matches runtime with ID %s", runtimeID)
-		}
-		if matches {
+		} else if matches {
 			matchingASAs = append(matchingASAs, scenarioAssignment)
 		}
 	}
