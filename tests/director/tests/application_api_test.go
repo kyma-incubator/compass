@@ -1603,8 +1603,6 @@ func TestMergeApplications(t *testing.T) {
 		request := fixtures.FixUnassignFormationRequest(outputSrcApp.ID, "APPLICATION", newFormation)
 		var response graphql.Formation
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &response)
-		// require.NoError(t, err)
-		// require.Equal(t, newFormation, response.Name)
 		if nil == err {
 			t.Logf("Src-app was unassigned from formation %s", newFormation)
 		} else {
