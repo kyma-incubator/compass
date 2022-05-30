@@ -39,14 +39,17 @@ func TestGettingTokenWithMTLSWorks(t *testing.T) {
 
 	if conf.IsLocalEnv {
 		newIntSys = createIntSystem(t, ctx, defaultTestTenant)
-		updateAdaptersConfigmap(t, ctx, newIntSys.ID, conf)
-		appTemplate = createAppTemplate(t, ctx, defaultTestTenant, newIntSys.ID, templateName, namePlaceholderKey, displayNamePlaceholderKey)
-	}
+		defer func() {
+			fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, newIntSys)
+		}()
 
-	defer func() {
-		fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTemplate)
-		fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, newIntSys)
-	}()
+		updateAdaptersConfigmap(t, ctx, newIntSys.ID, conf)
+
+		appTemplate = createAppTemplate(t, ctx, defaultTestTenant, newIntSys.ID, templateName, namePlaceholderKey, displayNamePlaceholderKey)
+		defer func() {
+			fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTemplate)
+		}()
+	}
 
 	appTmplInput := directorSchema.ApplicationFromTemplateInput{
 		TemplateName: templateName,
