@@ -1583,13 +1583,11 @@ func TestMergeApplications(t *testing.T) {
 
 	defer func() {
 		t.Logf("Cleaning up formation: %s", newFormation)
-
 		var response graphql.Formation
 		deleteFormationReq := fixtures.FixDeleteFormationRequest(newFormation)
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteFormationReq, &response)
 		require.NoError(t, err)
 		require.Equal(t, newFormation, response.Name)
-
 		t.Logf("Deleted formation with name: %s", response.Name)
 	}()
 
@@ -1600,12 +1598,38 @@ func TestMergeApplications(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, assignFormation.Name)
 
+	defer func() {
+		t.Logf("Unassigning src-app from formation %s", newFormation)
+		request := fixtures.FixUnassignFormationRequest(outputSrcApp.ID, "APPLICATION", newFormation)
+		var response graphql.Formation
+		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &response)
+		// require.NoError(t, err)
+		// require.Equal(t, newFormation, response.Name)
+		if nil == err {
+			t.Logf("Src-app was unassigned from formation %s", newFormation)
+		} else {
+			t.Logf("Src-app was not removed from formation %s: %v", newFormation, err)
+		}
+	}()
+
 	// WHEN
 	t.Logf("Should be able to merge application %s into %s", outputSrcApp.Name, outputDestApp.Name)
 	destApp := graphql.ApplicationExt{}
 	mergeRequest := fixtures.FixMergeApplicationsRequest(outputSrcApp.ID, outputDestApp.ID)
 	saveExample(t, mergeRequest.Query(), "merge applications")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, mergeRequest, &destApp)
+
+	defer func() {
+		t.Logf("Unassigning dst-app from formation %s", newFormation)
+		request := fixtures.FixUnassignFormationRequest(destApp.ID, "APPLICATION", newFormation)
+		var response graphql.Formation
+		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &response)
+		if nil == err {
+			t.Logf("Dst-app was unassigned from formation %s", newFormation)
+		} else {
+			t.Logf("Dst-app was not removed from formation %s: %v", newFormation, err)
+		}
+	}()
 
 	// THEN
 	require.NoError(t, err)
