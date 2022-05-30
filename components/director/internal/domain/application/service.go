@@ -995,8 +995,7 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 			return "", errors.Wrapf(err, "while assigning formations")
 		}
 
-		// In order for the scenario label not to be attempted
-		// to be created during upsert later
+		// In order for the scenario label not to be attempted to be created during upsert later
 		delete(in.Labels, model.ScenariosKey)
 	}
 
