@@ -17,7 +17,7 @@ COMPONENT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 IMG_NAME="compass-schema-migrator"
 NETWORK="migration-test-network"
 POSTGRES_CONTAINER="test-postgres"
-POSTGRES_VERSION="9.6"
+POSTGRES_VERSION="11"
 
 PROJECT="sap-cp-cmp"
 ENV="dev"
@@ -81,6 +81,7 @@ docker run -d --name ${POSTGRES_CONTAINER} \
             -e POSTGRES_USER=${DB_USER} \
             -e POSTGRES_PASSWORD=${DB_PWD} \
             -e POSTGRES_MULTIPLE_DATABASES="${POSTGRES_MULTIPLE_DATABASES}" \
+            -p 5432:5432 \
             -v $(pwd)/multiple-postgresql-databases.sh:/docker-entrypoint-initdb.d/multiple-postgresql-databases.sh \
             postgres:${POSTGRES_VERSION}
 
