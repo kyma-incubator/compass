@@ -46,16 +46,16 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 		mockConverter.On("FromInputGraphQL", givenInput, targetTenantID).Return(fixModel()).Once()
 		mockConverter.On("ToGraphQL", fixModel(), externalTargetTenantID).Return(expectedOutput).Once()
 
-		mockSvc := &automock.AsaService{}
-		mockSvc.On("Create", mock.Anything, fixModel()).Return(fixModel(), nil).Once()
-
 		fetcherSvc := &automock.TenantFetcher{}
 		fetcherSvc.On("FetchOnDemand", givenInput.Selector.Value, tenantID).Return(nil).Once()
 
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetInternalTenant", mock.Anything, externalTargetTenantID).Return(targetTenantID, nil).Once()
 
-		sut := scenarioassignment.NewResolver(transact, mockSvc, mockConverter, tenantSvc, fetcherSvc)
+		formationSvc := &automock.FormationService{}
+		formationSvc.On("CreateAutomaticScenarioAssignment", mock.Anything, fixModel()).Return(fixModel(), nil).Once()
+
+		sut := scenarioassignment.NewResolver(transact, nil, mockConverter, tenantSvc, fetcherSvc, formationSvc)
 
 		// WHEN
 		actual, err := sut.CreateAutomaticScenarioAssignment(ctx, givenInput)
@@ -63,7 +63,7 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, &expectedOutput, actual)
-		mock.AssertExpectationsForObjects(t, tx, transact, mockSvc, mockConverter, tenantSvc, fetcherSvc)
+		mock.AssertExpectationsForObjects(t, tx, transact, mockConverter, tenantSvc, fetcherSvc, formationSvc)
 	})
 
 	t.Run("error when tenant creation fail", func(t *testing.T) {
@@ -72,7 +72,7 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 		fetcherSvc := &automock.TenantFetcher{}
 		fetcherSvc.On("FetchOnDemand", externalTargetTenantID, tenantID).Return(testErr).Once()
 
-		sut := scenarioassignment.NewResolver(transact, nil, nil, nil, fetcherSvc)
+		sut := scenarioassignment.NewResolver(transact, nil, nil, nil, fetcherSvc, nil)
 
 		// WHEN
 		_, err := sut.CreateAutomaticScenarioAssignment(ctx, givenInput)
@@ -92,7 +92,7 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetInternalTenant", mock.Anything, externalTargetTenantID).Return("", testErr).Once()
 
-		sut := scenarioassignment.NewResolver(transact, nil, nil, tenantSvc, fetcherSvc)
+		sut := scenarioassignment.NewResolver(transact, nil, nil, tenantSvc, fetcherSvc, nil)
 
 		// WHEN
 		_, err := sut.CreateAutomaticScenarioAssignment(ctx, givenInput)
@@ -110,7 +110,8 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 
 		tx, transact := txGen.ThatFailsOnBegin()
 		defer mock.AssertExpectationsForObjects(t, tx, transact, fetcherSvc)
-		sut := scenarioassignment.NewResolver(transact, nil, nil, nil, fetcherSvc)
+
+		sut := scenarioassignment.NewResolver(transact, nil, nil, nil, fetcherSvc, nil)
 
 		// WHEN
 		_, err := sut.CreateAutomaticScenarioAssignment(ctx,
@@ -134,17 +135,17 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetInternalTenant", mock.Anything, externalTargetTenantID).Return(targetTenantID, nil).Once()
 
-		mockSvc := &automock.AsaService{}
-		mockSvc.On("Create", mock.Anything, fixModel()).Return(model.AutomaticScenarioAssignment{}, fixError()).Once()
+		formationSvc := &automock.FormationService{}
+		formationSvc.On("CreateAutomaticScenarioAssignment", mock.Anything, fixModel()).Return(model.AutomaticScenarioAssignment{}, fixError()).Once()
 
-		sut := scenarioassignment.NewResolver(transact, mockSvc, mockConverter, tenantSvc, fetcherSvc)
+		sut := scenarioassignment.NewResolver(transact, nil, mockConverter, tenantSvc, fetcherSvc, formationSvc)
 
 		// WHEN
 		_, err := sut.CreateAutomaticScenarioAssignment(ctx, givenInput)
 
 		// THEN
 		assert.EqualError(t, err, fmt.Sprintf("while creating Assignment: %s", errMsg))
-		mock.AssertExpectationsForObjects(t, tx, transact, mockSvc, mockConverter, tenantSvc)
+		mock.AssertExpectationsForObjects(t, tx, transact, formationSvc, mockConverter, tenantSvc)
 	})
 
 	t.Run("error on committing transaction", func(t *testing.T) {
@@ -152,23 +153,23 @@ func TestResolverCreateAutomaticScenarioAssignment(t *testing.T) {
 		mockConverter := &automock.GqlConverter{}
 		mockConverter.On("FromInputGraphQL", givenInput, targetTenantID).Return(fixModel()).Once()
 
-		mockSvc := &automock.AsaService{}
-		mockSvc.On("Create", mock.Anything, fixModel()).Return(fixModel(), nil).Once()
-
 		fetcherSvc := &automock.TenantFetcher{}
 		fetcherSvc.On("FetchOnDemand", externalTargetTenantID, tenantID).Return(nil).Once()
 
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetInternalTenant", mock.Anything, externalTargetTenantID).Return(targetTenantID, nil).Once()
 
-		sut := scenarioassignment.NewResolver(transact, mockSvc, mockConverter, tenantSvc, fetcherSvc)
+		formationSvc := &automock.FormationService{}
+		formationSvc.On("CreateAutomaticScenarioAssignment", mock.Anything, fixModel()).Return(fixModel(), nil).Once()
+
+		sut := scenarioassignment.NewResolver(transact, nil, mockConverter, tenantSvc, fetcherSvc, formationSvc)
 
 		// WHEN
 		_, err := sut.CreateAutomaticScenarioAssignment(ctx, givenInput)
 
 		// THEN
 		assert.EqualError(t, err, "while committing transaction: some persistence error")
-		mock.AssertExpectationsForObjects(t, tx, transact, mockSvc, mockConverter, tenantSvc)
+		mock.AssertExpectationsForObjects(t, tx, transact, formationSvc, mockConverter, tenantSvc)
 	})
 }
 
@@ -188,7 +189,7 @@ func TestResolver_GetAutomaticScenarioAssignmentByScenario(t *testing.T) {
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetExternalTenant", mock.Anything, targetTenantID).Return(externalTargetTenantID, nil).Once()
 
-		sut := scenarioassignment.NewResolver(transact, mockSvc, mockConverter, tenantSvc, nil)
+		sut := scenarioassignment.NewResolver(transact, mockSvc, mockConverter, tenantSvc, nil, nil)
 
 		// WHEN
 		actual, err := sut.GetAutomaticScenarioAssignmentForScenarioName(context.TODO(), scenarioName)
@@ -208,7 +209,7 @@ func TestResolver_GetAutomaticScenarioAssignmentByScenario(t *testing.T) {
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetExternalTenant", mock.Anything, targetTenantID).Return("", fixError()).Once()
 
-		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, tenantSvc, nil)
+		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, tenantSvc, nil, nil)
 
 		// WHEN
 		_, err := sut.GetAutomaticScenarioAssignmentForScenarioName(context.TODO(), scenarioName)
@@ -222,7 +223,8 @@ func TestResolver_GetAutomaticScenarioAssignmentByScenario(t *testing.T) {
 	t.Run("error on starting transaction", func(t *testing.T) {
 		tx, transact := txGen.ThatFailsOnBegin()
 		defer mock.AssertExpectationsForObjects(t, tx, transact)
-		sut := scenarioassignment.NewResolver(transact, nil, nil, nil, nil)
+
+		sut := scenarioassignment.NewResolver(transact, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.GetAutomaticScenarioAssignmentForScenarioName(context.TODO(), scenarioName)
@@ -236,7 +238,8 @@ func TestResolver_GetAutomaticScenarioAssignmentByScenario(t *testing.T) {
 		mockSvc := &automock.AsaService{}
 		mockSvc.On("GetForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(model.AutomaticScenarioAssignment{}, fixError()).Once()
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockSvc)
-		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, nil, nil)
+
+		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.GetAutomaticScenarioAssignmentForScenarioName(context.TODO(), scenarioName)
@@ -253,7 +256,7 @@ func TestResolver_GetAutomaticScenarioAssignmentByScenario(t *testing.T) {
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetExternalTenant", mock.Anything, targetTenantID).Return(externalTargetTenantID, nil).Once()
 
-		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, tenantSvc, nil)
+		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, tenantSvc, nil, nil)
 
 		// WHEN
 		_, err := sut.GetAutomaticScenarioAssignmentForScenarioName(context.TODO(), scenarioName)
@@ -313,7 +316,7 @@ func TestResolver_AutomaticScenarioAssignmentsForSelector(t *testing.T) {
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetInternalTenant", mock.Anything, externalTargetTenantID).Return(targetTenantID, nil).Once()
 
-		sut := scenarioassignment.NewResolver(transact, mockSvc, mockConverter, tenantSvc, nil)
+		sut := scenarioassignment.NewResolver(transact, mockSvc, mockConverter, tenantSvc, nil, nil)
 
 		// WHEN
 		actual, err := sut.AutomaticScenarioAssignmentsForSelector(fixCtxWithTenant(), givenInput)
@@ -327,7 +330,8 @@ func TestResolver_AutomaticScenarioAssignmentsForSelector(t *testing.T) {
 	t.Run("error on starting transaction", func(t *testing.T) {
 		tx, transact := txGen.ThatFailsOnBegin()
 		defer mock.AssertExpectationsForObjects(t, tx, transact)
-		sut := scenarioassignment.NewResolver(transact, nil, nil, nil, nil)
+
+		sut := scenarioassignment.NewResolver(transact, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.AutomaticScenarioAssignmentsForSelector(context.TODO(), graphql.LabelSelectorInput{})
@@ -345,7 +349,7 @@ func TestResolver_AutomaticScenarioAssignmentsForSelector(t *testing.T) {
 		mockSvc := &automock.AsaService{}
 		mockSvc.On("ListForTargetTenant", mock.Anything, targetTenantID).Return(nil, fixError()).Once()
 
-		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, tenantSvc, nil)
+		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, tenantSvc, nil, nil)
 
 		// WHEN
 		actual, err := sut.AutomaticScenarioAssignmentsForSelector(fixCtxWithTenant(), givenInput)
@@ -362,7 +366,7 @@ func TestResolver_AutomaticScenarioAssignmentsForSelector(t *testing.T) {
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetInternalTenant", mock.Anything, externalTargetTenantID).Return("", fixError()).Once()
 
-		sut := scenarioassignment.NewResolver(transact, nil, nil, tenantSvc, nil)
+		sut := scenarioassignment.NewResolver(transact, nil, nil, tenantSvc, nil, nil)
 
 		// WHEN
 		actual, err := sut.AutomaticScenarioAssignmentsForSelector(fixCtxWithTenant(), givenInput)
@@ -382,7 +386,7 @@ func TestResolver_AutomaticScenarioAssignmentsForSelector(t *testing.T) {
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetInternalTenant", mock.Anything, externalTargetTenantID).Return(targetTenantID, nil).Once()
 
-		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, tenantSvc, nil)
+		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, tenantSvc, nil, nil)
 
 		// WHEN
 		actual, err := sut.AutomaticScenarioAssignmentsForSelector(fixCtxWithTenant(), givenInput)
@@ -539,7 +543,7 @@ func TestResolver_AutomaticScenarioAssignments(t *testing.T) {
 			converter := testCase.ConverterFn()
 			tenantSvc := testCase.TenantSvcFn()
 
-			resolver := scenarioassignment.NewResolver(transact, svc, converter, tenantSvc, nil)
+			resolver := scenarioassignment.NewResolver(transact, svc, converter, tenantSvc, nil, nil)
 
 			// WHEN
 			result, err := resolver.AutomaticScenarioAssignments(context.TODO(), &first, &gqlAfter)
@@ -607,9 +611,11 @@ func TestResolver_DeleteAutomaticScenarioAssignmentsForSelector(t *testing.T) {
 
 		mockSvc := &automock.AsaService{}
 		mockSvc.On("ListForTargetTenant", txtest.CtxWithDBMatcher(), targetTenantID).Return(expectedModels, nil).Once()
-		mockSvc.On("DeleteManyForSameTargetTenant", txtest.CtxWithDBMatcher(), expectedModels).Return(nil).Once()
 
-		sut := scenarioassignment.NewResolver(transact, mockSvc, mockConverter, tenantSvc, nil)
+		formationSvc := &automock.FormationService{}
+		formationSvc.On("DeleteManyASAForSameTargetTenant", txtest.CtxWithDBMatcher(), expectedModels).Return(nil).Once()
+
+		sut := scenarioassignment.NewResolver(transact, mockSvc, mockConverter, tenantSvc, nil, formationSvc)
 
 		// WHEN
 		actual, err := sut.DeleteAutomaticScenarioAssignmentsForSelector(fixCtxWithTenant(), givenInput)
@@ -617,13 +623,14 @@ func TestResolver_DeleteAutomaticScenarioAssignmentsForSelector(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, expectedOutput, actual)
-		mock.AssertExpectationsForObjects(t, tx, transact, mockSvc, mockConverter, tenantSvc)
+		mock.AssertExpectationsForObjects(t, tx, transact, mockSvc, mockConverter, tenantSvc, formationSvc)
 	})
 
 	t.Run("error on starting transaction", func(t *testing.T) {
 		tx, transact := txGen.ThatFailsOnBegin()
 		defer mock.AssertExpectationsForObjects(t, tx, transact)
-		sut := scenarioassignment.NewResolver(transact, nil, nil, nil, nil)
+
+		sut := scenarioassignment.NewResolver(transact, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.DeleteAutomaticScenarioAssignmentsForSelector(context.TODO(), graphql.LabelSelectorInput{})
@@ -639,7 +646,7 @@ func TestResolver_DeleteAutomaticScenarioAssignmentsForSelector(t *testing.T) {
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetInternalTenant", mock.Anything, externalTargetTenantID).Return("", fixError()).Once()
 
-		sut := scenarioassignment.NewResolver(transact, nil, nil, tenantSvc, nil)
+		sut := scenarioassignment.NewResolver(transact, nil, nil, tenantSvc, nil, nil)
 
 		// WHEN
 		actual, err := sut.DeleteAutomaticScenarioAssignmentsForSelector(fixCtxWithTenant(), givenInput)
@@ -660,7 +667,7 @@ func TestResolver_DeleteAutomaticScenarioAssignmentsForSelector(t *testing.T) {
 		mockSvc := &automock.AsaService{}
 		mockSvc.On("ListForTargetTenant", txtest.CtxWithDBMatcher(), targetTenantID).Return(nil, fixError()).Once()
 
-		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, tenantSvc, nil)
+		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, tenantSvc, nil, nil)
 
 		// WHEN
 		actual, err := sut.DeleteAutomaticScenarioAssignmentsForSelector(fixCtxWithTenant(), givenInput)
@@ -680,9 +687,11 @@ func TestResolver_DeleteAutomaticScenarioAssignmentsForSelector(t *testing.T) {
 
 		mockSvc := &automock.AsaService{}
 		mockSvc.On("ListForTargetTenant", txtest.CtxWithDBMatcher(), targetTenantID).Return(expectedModels, nil).Once()
-		mockSvc.On("DeleteManyForSameTargetTenant", txtest.CtxWithDBMatcher(), expectedModels).Return(fixError()).Once()
 
-		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, tenantSvc, nil)
+		formationSvc := &automock.FormationService{}
+		formationSvc.On("DeleteManyASAForSameTargetTenant", txtest.CtxWithDBMatcher(), expectedModels).Return(fixError()).Once()
+
+		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, tenantSvc, nil, formationSvc)
 
 		// WHEN
 		actual, err := sut.DeleteAutomaticScenarioAssignmentsForSelector(fixCtxWithTenant(), givenInput)
@@ -690,7 +699,7 @@ func TestResolver_DeleteAutomaticScenarioAssignmentsForSelector(t *testing.T) {
 		// THEN
 		require.Nil(t, actual)
 		require.EqualError(t, err, fmt.Sprintf("while deleting the Assignments for target tenant [targetTenantID]: %s", errMsg))
-		mock.AssertExpectationsForObjects(t, tx, transact, mockSvc, tenantSvc)
+		mock.AssertExpectationsForObjects(t, tx, transact, mockSvc, tenantSvc, formationSvc)
 	})
 
 	t.Run("error on committing transaction", func(t *testing.T) {
@@ -702,9 +711,11 @@ func TestResolver_DeleteAutomaticScenarioAssignmentsForSelector(t *testing.T) {
 
 		mockSvc := &automock.AsaService{}
 		mockSvc.On("ListForTargetTenant", txtest.CtxWithDBMatcher(), targetTenantID).Return(expectedModels, nil).Once()
-		mockSvc.On("DeleteManyForSameTargetTenant", txtest.CtxWithDBMatcher(), expectedModels).Return(nil).Once()
 
-		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, tenantSvc, nil)
+		formationSvc := &automock.FormationService{}
+		formationSvc.On("DeleteManyASAForSameTargetTenant", txtest.CtxWithDBMatcher(), expectedModels).Return(nil).Once()
+
+		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, tenantSvc, nil, formationSvc)
 
 		// WHEN
 		actual, err := sut.DeleteAutomaticScenarioAssignmentsForSelector(fixCtxWithTenant(), givenInput)
@@ -712,7 +723,7 @@ func TestResolver_DeleteAutomaticScenarioAssignmentsForSelector(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, "while committing transaction: some persistence error")
 		require.Nil(t, actual)
-		mock.AssertExpectationsForObjects(t, tx, transact, mockSvc, tenantSvc)
+		mock.AssertExpectationsForObjects(t, tx, transact, mockSvc, tenantSvc, formationSvc)
 	})
 }
 
@@ -731,12 +742,14 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 
 		mockSvc := &automock.AsaService{}
 		mockSvc.On("GetForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(expectedModel, nil).Once()
-		mockSvc.On("Delete", txtest.CtxWithDBMatcher(), expectedModel).Return(nil).Once()
 
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetExternalTenant", mock.Anything, targetTenantID).Return(externalTargetTenantID, nil).Once()
 
-		sut := scenarioassignment.NewResolver(transact, mockSvc, mockConverter, tenantSvc, nil)
+		formationSvc := &automock.FormationService{}
+		formationSvc.On("DeleteAutomaticScenarioAssignment", txtest.CtxWithDBMatcher(), expectedModel).Return(nil).Once()
+
+		sut := scenarioassignment.NewResolver(transact, mockSvc, mockConverter, tenantSvc, nil, formationSvc)
 
 		// WHEN
 		actual, err := sut.DeleteAutomaticScenarioAssignmentForScenario(fixCtxWithTenant(), scenarioName)
@@ -744,13 +757,14 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, &expectedOutput, actual)
-		mock.AssertExpectationsForObjects(t, tx, transact, mockSvc, mockConverter, tenantSvc)
+		mock.AssertExpectationsForObjects(t, tx, transact, mockSvc, mockConverter, tenantSvc, formationSvc)
 	})
 
 	t.Run("error on starting transaction", func(t *testing.T) {
 		// GIVEN
 		tx, transact := txGen.ThatFailsOnBegin()
-		sut := scenarioassignment.NewResolver(transact, nil, nil, nil, nil)
+
+		sut := scenarioassignment.NewResolver(transact, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.DeleteAutomaticScenarioAssignmentForScenario(context.TODO(), scenarioName)
@@ -767,7 +781,7 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 		mockSvc := &automock.AsaService{}
 		mockSvc.On("GetForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(model.AutomaticScenarioAssignment{}, fixError()).Once()
 
-		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, nil, nil)
+		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.DeleteAutomaticScenarioAssignmentForScenario(fixCtxWithTenant(), scenarioName)
@@ -783,16 +797,18 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 
 		mockSvc := &automock.AsaService{}
 		mockSvc.On("GetForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(expectedModel, nil).Once()
-		mockSvc.On("Delete", txtest.CtxWithDBMatcher(), expectedModel).Return(fixError()).Once()
 
-		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, nil, nil)
+		formationSvc := &automock.FormationService{}
+		formationSvc.On("DeleteAutomaticScenarioAssignment", txtest.CtxWithDBMatcher(), expectedModel).Return(fixError()).Once()
+
+		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, nil, nil, formationSvc)
 
 		// WHEN
 		_, err := sut.DeleteAutomaticScenarioAssignmentForScenario(fixCtxWithTenant(), scenarioName)
 
 		// THEN
 		require.EqualError(t, err, fmt.Sprintf("while deleting the Assignment for scenario [name=%s]: %s", scenarioName, errMsg))
-		mock.AssertExpectationsForObjects(t, tx, transact, mockSvc)
+		mock.AssertExpectationsForObjects(t, tx, transact, mockSvc, formationSvc)
 	})
 
 	t.Run("error when converting tenant", func(t *testing.T) {
@@ -801,19 +817,21 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 
 		mockSvc := &automock.AsaService{}
 		mockSvc.On("GetForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(expectedModel, nil).Once()
-		mockSvc.On("Delete", txtest.CtxWithDBMatcher(), expectedModel).Return(nil).Once()
 
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetExternalTenant", mock.Anything, targetTenantID).Return("", fixError()).Once()
 
-		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, tenantSvc, nil)
+		formationSvc := &automock.FormationService{}
+		formationSvc.On("DeleteAutomaticScenarioAssignment", txtest.CtxWithDBMatcher(), expectedModel).Return(nil).Once()
+
+		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, tenantSvc, nil, formationSvc)
 
 		// WHEN
 		_, err := sut.DeleteAutomaticScenarioAssignmentForScenario(fixCtxWithTenant(), scenarioName)
 
 		// THEN
 		require.EqualError(t, err, fmt.Sprintf("while converting tenant: %s", errMsg))
-		mock.AssertExpectationsForObjects(t, tx, transact, mockSvc, tenantSvc)
+		mock.AssertExpectationsForObjects(t, tx, transact, mockSvc, tenantSvc, formationSvc)
 	})
 
 	t.Run("error on committing transaction", func(t *testing.T) {
@@ -822,18 +840,20 @@ func TestResolver_DeleteAutomaticScenarioAssignmentForScenario(t *testing.T) {
 
 		mockSvc := &automock.AsaService{}
 		mockSvc.On("GetForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(expectedModel, nil).Once()
-		mockSvc.On("Delete", txtest.CtxWithDBMatcher(), expectedModel).Return(nil).Once()
 
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetExternalTenant", mock.Anything, targetTenantID).Return(externalTargetTenantID, nil).Once()
 
-		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, tenantSvc, nil)
+		formationSvc := &automock.FormationService{}
+		formationSvc.On("DeleteAutomaticScenarioAssignment", txtest.CtxWithDBMatcher(), expectedModel).Return(nil).Once()
+
+		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, tenantSvc, nil, formationSvc)
 
 		// WHEN
 		_, err := sut.DeleteAutomaticScenarioAssignmentForScenario(fixCtxWithTenant(), scenarioName)
 
 		// THEN
 		require.EqualError(t, err, "while committing transaction: some persistence error")
-		mock.AssertExpectationsForObjects(t, tx, transact, mockSvc, tenantSvc)
+		mock.AssertExpectationsForObjects(t, tx, transact, mockSvc, tenantSvc, formationSvc)
 	})
 }
