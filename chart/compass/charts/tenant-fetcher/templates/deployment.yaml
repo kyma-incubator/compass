@@ -198,7 +198,8 @@ spec:
             - name: APP_GLOBAL_ACCOUNT_KEY
               value: {{ default "gaID" .Values.global.tenantFetcher.fieldMapping.globalAccountID }}
             # Tenant fetchers job configurations
-            {{- range $tenantFetcherJobName, $config := .Values.global.tenantFetchers }}
+            {{- range $tenantFetcher, $config := .Values.global.tenantFetchers }}
+            {{- $tenantFetcherJobName := $tenantFetcher | upper }}}
             {{- if eq $config.enabled true }}
             - name: APP_{{ $tenantFetcherJobName }}_JOB_NAME
               value: {{ $tenantFetcherJobName | quote }}
