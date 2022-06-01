@@ -117,10 +117,10 @@ func main() {
 	}()
 
 	envVars := tenantfetcher.ReadFromEnvironment(os.Environ())
-	jobsNames := tenantfetcher.GetJobsNames(envVars)
-	log.C(ctx).Infof("Tenant fetcher jobs are: %s", jobsNames)
+	jobNames := tenantfetcher.GetJobNames(envVars)
+	log.C(ctx).Infof("Tenant fetcher jobs are: %s", jobNames)
 
-	dbCloseFunctions := make([]func() error, 0, len(jobsNames))
+	dbCloseFunctions := make([]func() error, 0, len(jobNames))
 	defer func() {
 		for _, fn := range dbCloseFunctions {
 			err := fn()
@@ -128,9 +128,9 @@ func main() {
 		}
 	}()
 
-	stopJobChannels := make([]chan bool, 0, len(jobsNames))
+	stopJobChannels := make([]chan bool, 0, len(jobNames))
 	go func() {
-		for _, job := range jobsNames {
+		for _, job := range jobNames {
 			stopJob := make(chan bool, 1)
 			stopJobChannels = append(stopJobChannels, stopJob)
 
@@ -225,6 +225,9 @@ func createTenantsFetcherSvc(ctx context.Context, jobConfig tenantfetcher.JobCon
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
 	runtimeConverter := runtime.NewConverter(webhookConverter)
 	scenarioAssignConverter := scenarioassignment.NewConverter()
+
+	//tenantRepo := tenant.NewRepository(tenant.NewConverter())
+	//tntSvc := tenant.NewService(tenantRepo, uidSvc)
 
 	webhookRepo := webhook.NewRepository(webhookConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
