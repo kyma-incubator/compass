@@ -728,7 +728,7 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 		if err != nil {
 			return errors.Wrapf(err, "while converting label to string slice")
 		}
-		if err = s.unassignFormations(ctx, appTenant, applicationID, scenarios, allowAll); err != nil {
+		if err = s.unassignFormations(ctx, appTenant, applicationID, scenarios, allowAllCriteria); err != nil {
 			return errors.Wrapf(err, "while unassigning formations")
 		}
 		return nil
@@ -994,7 +994,7 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 			return "", errors.Wrapf(err, "while parsing formations from scenario label")
 		}
 
-		if err = s.assignFormations(ctx, appTenant, id, scenarios, allowAll); err != nil {
+		if err = s.assignFormations(ctx, appTenant, id, scenarios, allowAllCriteria); err != nil {
 			return "", errors.Wrapf(err, "while assigning formations")
 		}
 
@@ -1278,6 +1278,6 @@ func createMapFromFormationsSlice(formations []string) map[string]struct{} {
 	return resultMap
 }
 
-func allowAll(_ string) bool {
+func allowAllCriteria(_ string) bool {
 	return true
 }
