@@ -31,7 +31,6 @@ func TestFetcherJobConfig_ReadEnvVars(t *testing.T) {
 			assert.Equal(t, v, envVars[k], fmt.Sprintf("Value of environment variable %s should be %s", k, v))
 		}
 	})
-
 }
 
 func TestFetcherJobConfig_GetJobsNames(t *testing.T) {
