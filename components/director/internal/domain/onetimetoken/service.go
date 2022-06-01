@@ -242,17 +242,17 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 	var tnt *model.BusinessTenantMapping
 	if len(extTenant) == 0 {
 		if tnt, err = s.extTenantsSvc.GetTenantByID(ctx, tntCtx.InternalID); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while getting tenant with internal ID %q", tntCtx.InternalID)
 		}
 	} else {
 		if tnt, err = s.extTenantsSvc.GetTenantByExternalID(ctx, tntCtx.ExternalID); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while getting tenant with external ID %q", tntCtx.ExternalID)
 		}
 	}
 
 	if tnt.Type == tenantpkg.Subaccount {
 		if extTenant, err = s.extTenantsSvc.GetExternalTenant(ctx, tnt.Parent); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while getting parent external tenant for internal tenant %q", tnt.Parent)
 		}
 	} else {
 		extTenant = tnt.ExternalTenant

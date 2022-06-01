@@ -7,12 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"testing"
 	"time"
+
+	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	pkgadapters "github.com/kyma-incubator/compass/components/director/pkg/adapters"
 
