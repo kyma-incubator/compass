@@ -13,6 +13,7 @@ import (
 	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/client"
@@ -51,6 +52,8 @@ type ApplicationService interface {
 //go:generate mockery --name=ExternalTenantsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ExternalTenantsService interface {
 	GetExternalTenant(ctx context.Context, id string) (string, error)
+	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // HTTPDoer missing godoc
@@ -236,11 +239,23 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 	}
 
 	extTenant := tntCtx.ExternalID
+	var tnt *model.BusinessTenantMapping
 	if len(extTenant) == 0 {
-		extTenant, err = s.extTenantsSvc.GetExternalTenant(ctx, tntCtx.InternalID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while getting external tenant for internal tenant [%s]", tntCtx.InternalID)
+		if tnt, err = s.extTenantsSvc.GetTenantByID(ctx, tntCtx.InternalID); err != nil {
+			return nil, err
 		}
+	} else {
+		if tnt, err = s.extTenantsSvc.GetTenantByExternalID(ctx, tntCtx.ExternalID); err != nil {
+			return nil, err
+		}
+	}
+
+	if tnt.Type == tenantpkg.Subaccount {
+		if extTenant, err = s.extTenantsSvc.GetExternalTenant(ctx, tnt.Parent); err != nil {
+			return nil, err
+		}
+	} else {
+		extTenant = tnt.ExternalTenant
 	}
 
 	clientUser, err := client.LoadFromContext(ctx)
