@@ -725,6 +725,9 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 
 	if key == model.ScenariosKey {
 		scenarios, err := label.ValueToStringsSlice(labelValue)
+		if err != nil {
+			return errors.Wrapf(err, "while converting label to string slice")
+		}
 		if err = s.unassignFormations(ctx, appTenant, applicationID, scenarios, allowAll); err != nil {
 			return errors.Wrapf(err, "while unassigning formations")
 		}
@@ -1148,8 +1151,7 @@ func (s *service) getStoredLabels(ctx context.Context, tenantID, objectID string
 	if err != nil && apperrors.ErrorCode(err) != apperrors.NotFound {
 		return nil, errors.Wrapf(err, "while getting label with id %s", objectID)
 	} else if err == nil {
-		storedLabels, err = label.ValueToStringsSlice(storedLabel.Value)
-		if err != nil {
+		if storedLabels, err = label.ValueToStringsSlice(storedLabel.Value); err != nil {
 			return nil, errors.Wrapf(err, "while getting label with id %s", objectID)
 		}
 	}
@@ -1250,7 +1252,7 @@ func (s *service) assignFormations(ctx context.Context, appTenant, objectID stri
 	for _, f := range formations {
 		if shouldAssignCriteria(f) {
 			if _, err := s.formationService.AssignFormation(ctx, appTenant, objectID, graphql.FormationObjectTypeApplication, model.Formation{Name: f}); err != nil {
-				return errors.Wrapf(err, "while aassigning formation with name %q from application with id %q", f, objectID)
+				return errors.Wrapf(err, "while assigning formation with name %q from application with id %q", f, objectID)
 			}
 		}
 	}
