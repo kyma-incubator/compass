@@ -3,8 +3,9 @@ package apptemplate
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
@@ -23,6 +24,7 @@ type ApplicationTemplateRepository interface {
 	Create(ctx context.Context, item model.ApplicationTemplate) error
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 	GetByName(ctx context.Context, id string) (*model.ApplicationTemplate, error)
+	GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 	Update(ctx context.Context, model model.ApplicationTemplate) error
@@ -109,6 +111,16 @@ func (s *service) Get(ctx context.Context, id string) (*model.ApplicationTemplat
 	appTemplate, err := s.appTemplateRepo.Get(ctx, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting Application Template with id %s", id)
+	}
+
+	return appTemplate, nil
+}
+
+// TODO missing godoc
+func (s *service) GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error) {
+	appTemplate, err := s.appTemplateRepo.GetByFilters(ctx, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting Application Template by filters")
 	}
 
 	return appTemplate, nil

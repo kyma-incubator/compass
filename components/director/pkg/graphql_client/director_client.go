@@ -3,9 +3,6 @@ package graphqlclient
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"reflect"
-	"unsafe"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 
@@ -24,18 +21,6 @@ type GraphQLClient interface {
 // Director is an GraphQLClient implementation
 type Director struct {
 	client GraphQLClient
-}
-
-type RuntimeResponse struct {
-	Result graphql.RuntimePage `json:"result"`
-}
-
-type AppTemplateResponse struct {
-	Result graphql.ApplicationTemplatePage `json:"result"`
-}
-
-type ApplicationResponse struct {
-	Result graphql.Application `json:"result"`
 }
 
 // NewDirector creates new director with given client
@@ -98,10 +83,10 @@ func (d *Director) UpdateTenant(ctx context.Context, id string, tenant graphql.B
 }
 
 // SubscribeTenantToRuntime makes graphql query tenant-runtime subscription
-func (d *Director) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) error {
+func (d *Director) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region, appName string) error {
 	var res map[string]interface{}
 
-	subscriptionMutation := fmt.Sprintf(`mutation { subscribeTenantToRuntime(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", region: "%s")}`, providerID, subaccountID, providerSubaccountID, region)
+	subscriptionMutation := fmt.Sprintf(`mutation { subscribeTenant(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", region: "%s", subscribedAppName: "%s")}`, providerID, subaccountID, providerSubaccountID, region, appName)
 	gRequest := gcli.NewRequest(subscriptionMutation)
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql mutation")
@@ -113,80 +98,10 @@ func (d *Director) SubscribeTenantToRuntime(ctx context.Context, providerID stri
 func (d *Director) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) error {
 	var res map[string]interface{}
 
-	unsubscriptionMutation := fmt.Sprintf(`mutation { unsubscribeTenantFromRuntime(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", region: "%s")}`, providerID, subaccountID, providerSubaccountID, region)
+	unsubscriptionMutation := fmt.Sprintf(`mutation { unsubscribeTenant(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", region: "%s")}`, providerID, subaccountID, providerSubaccountID, region)
 	gRequest := gcli.NewRequest(unsubscriptionMutation)
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql mutation")
 	}
 	return nil
-}
-
-// RegisterApplicationFromTemplate makes graphql mutation for registering application from a template
-func (d *Director) RegisterApplicationFromTemplate(ctx context.Context, appTemplateName, subaccountTenantID, subscriptionAppName string) error {
-	var res map[string]interface{}
-
-	applicationFromTemplateMutation := fmt.Sprintf(`mutation { registerApplicationFromTemplate( in: { templateName: "%s" values: [{ placeholder:"name", value:"%s" }, { placeholder:"display-name", value:"%s" }] } ) { id name labels } }`, appTemplateName, subscriptionAppName, subscriptionAppName)
-
-	gRequest := gcli.NewRequest(applicationFromTemplateMutation)
-	gRequest.Header.Set("tenant", subaccountTenantID)
-	if err := d.client.Run(ctx, gRequest, &res); err != nil {
-		return errors.Wrap(err, "while executing gql mutation")
-	}
-	return nil
-}
-
-// GetRuntimes makes a graphql query for fetching runtimes by labels
-func (d *Director) GetRuntimes(ctx context.Context, region, selfRegisterDistinguishLabelKey, selfRegisterDistinguishLabelValue string) (graphql.RuntimePage, error) {
-	var res RuntimeResponse
-
-	printContextInternals(ctx, false)
-
-	applicationFromTemplateMutation := fmt.Sprintf(`query { result: runtimes(filter:[{key:"%s", query:"\"%s\""}, { key: "%s", query: "\"%s\""}]) { data { id name labels } totalCount } }`, tenant.RegionLabelKey, region, selfRegisterDistinguishLabelKey, selfRegisterDistinguishLabelValue)
-	gRequest := gcli.NewRequest(applicationFromTemplateMutation)
-	gRequest.Header.Set("tenant", "c7ebc4a9-01a6-4d77-82db-de0bae7a645a")
-	if err := d.client.Run(ctx, gRequest, &res); err != nil {
-		return graphql.RuntimePage{}, errors.Wrap(err, "while executing gql query")
-	}
-	return res.Result, nil
-}
-
-// GetApplicationTemplates makes a graphql query for fetching application templates by labels
-func (d *Director) GetApplicationTemplates(ctx context.Context, region, selfRegisterDistinguishLabelKey, selfRegisterDistinguishLabelValue string) (graphql.ApplicationTemplatePage, error) {
-	var res AppTemplateResponse
-
-	applicationFromTemplateMutation := fmt.Sprintf(`query { result: applicationTemplates(filter:[{key: "%s", query: "\"%s\""}, { key: "%s", query: "\"%s\""}]) { data { id name labels } totalCount } }`, tenant.RegionLabelKey, region, selfRegisterDistinguishLabelKey, selfRegisterDistinguishLabelValue)
-
-	gRequest := gcli.NewRequest(applicationFromTemplateMutation)
-	gRequest.Header.Set("tenant", "c7ebc4a9-01a6-4d77-82db-de0bae7a645a")
-	if err := d.client.Run(ctx, gRequest, &res); err != nil {
-		return graphql.ApplicationTemplatePage{}, errors.Wrap(err, "while executing gql query")
-	}
-	return res.Result, nil
-}
-
-func printContextInternals(ctx interface{}, inner bool) {
-	contextValues := reflect.ValueOf(ctx).Elem()
-	contextKeys := reflect.TypeOf(ctx).Elem()
-
-	if !inner {
-		fmt.Printf("\nFields for %s.%s\n", contextKeys.PkgPath(), contextKeys.Name())
-	}
-
-	if contextKeys.Kind() == reflect.Struct {
-		for i := 0; i < contextValues.NumField(); i++ {
-			reflectValue := contextValues.Field(i)
-			reflectValue = reflect.NewAt(reflectValue.Type(), unsafe.Pointer(reflectValue.UnsafeAddr())).Elem()
-
-			reflectField := contextKeys.Field(i)
-
-			if reflectField.Name == "Context" {
-				printContextInternals(reflectValue.Interface(), true)
-			} else {
-				fmt.Printf("field name: %+v\n", reflectField.Name)
-				fmt.Printf("value: %+v\n", reflectValue.Interface())
-			}
-		}
-	} else {
-		fmt.Printf("context is empty (int)\n")
-	}
 }

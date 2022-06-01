@@ -5,6 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/avast/retry-go"
 	labelPkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -25,6 +31,7 @@ type Config struct {
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	ListByFilters(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
+	GetByFiltersGlobal(ctx context.Context, filters []*labelfilter.LabelFilter) (*model.Runtime, error)
 }
 
 // TenantService provides functionality for retrieving, and creating tenants.
@@ -47,6 +54,28 @@ type uidService interface {
 	Generate() string
 }
 
+// ApplicationTemplateService missing godoc
+//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationTemplateService interface {
+	Exists(ctx context.Context, id string) (bool, error)
+	GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)
+	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
+}
+
+// ApplicationConverter missing godoc
+//go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationConverter interface {
+	ToGraphQL(in *model.Application) *graphql.Application
+	CreateInputJSONToGQL(in string) (graphql.ApplicationRegisterInput, error)
+	CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
+}
+
+// ApplicationService missing godoc
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationService interface {
+	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error)
+}
+
 const (
 	retryAttempts          = 2
 	retryDelayMilliseconds = 100
@@ -56,36 +85,38 @@ type service struct {
 	runtimeSvc                    RuntimeService
 	tenantSvc                     TenantService
 	labelSvc                      LabelService
+	appTemplateSvc                ApplicationTemplateService
+	appConv                       ApplicationConverter
+	appSvc                        ApplicationService
 	uidSvc                        uidService
 	subscriptionProviderLabelKey  string
 	consumerSubaccountIDsLabelKey string
 }
 
 // NewService missing godoc
-func NewService(runtimeSvc RuntimeService, tenantSvc TenantService, labelSvc LabelService, uidService uidService,
+func NewService(runtimeSvc RuntimeService, tenantSvc TenantService, labelSvc LabelService, appTemplateSvc ApplicationTemplateService, appConv ApplicationConverter, appSvc ApplicationService, uidService uidService,
 	subscriptionProviderLabelKey string, consumerSubaccountIDsLabelKey string) *service {
 	return &service{
 		runtimeSvc:                    runtimeSvc,
 		tenantSvc:                     tenantSvc,
 		labelSvc:                      labelSvc,
+		appTemplateSvc:                appTemplateSvc,
+		appConv:                       appConv,
+		appSvc:                        appSvc,
 		uidSvc:                        uidService,
 		subscriptionProviderLabelKey:  subscriptionProviderLabelKey,
 		consumerSubaccountIDsLabelKey: consumerSubaccountIDsLabelKey,
 	}
 }
 
-func (s *service) SubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
-	filters := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(s.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", providerID)),
-		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
-	}
-
+func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, region string) (bool, error) {
 	providerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, providerSubaccountID)
 	if err != nil {
 		return false, errors.Wrap(err, "while getting provider subaccount internal ID")
 	}
 	ctx = tenant.SaveToContext(ctx, providerInternalTenant, providerSubaccountID)
 
+	filters := s.buildLabelFilters(providerID, region)
 	runtimes, err := s.runtimeSvc.ListByFilters(ctx, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
@@ -129,18 +160,14 @@ func (s *service) SubscribeTenant(ctx context.Context, providerID string, subacc
 	return true, nil
 }
 
-func (s *service) UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
-	filters := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(s.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", providerID)),
-		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
-	}
-
+func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
 	providerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, providerSubaccountID)
 	if err != nil {
 		return false, errors.Wrap(err, "while getting provider subaccount internal ID")
 	}
 	ctx = tenant.SaveToContext(ctx, providerInternalTenant, providerSubaccountID)
 
+	filters := s.buildLabelFilters(providerID, region)
 	runtimes, err := s.runtimeSvc.ListByFilters(ctx, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
@@ -181,6 +208,104 @@ func (s *service) UnsubscribeTenant(ctx context.Context, providerID string, suba
 	}
 
 	return true, nil
+}
+
+func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, region, subscribedSubaccountID, subscribedAppName string) (bool, error) {
+	filters := s.buildLabelFilters(providerID, region)
+	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)
+	if err != nil {
+		return false, errors.Wrapf(err, "while getting application template with filter labels %q and %q", providerID, region)
+	}
+
+	if err := s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, subscribedAppName); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (s *service) DetermineSubscriptionFlow(ctx context.Context, providerID, region string) (resource.Type, error) {
+	filters := s.buildLabelFilters(providerID, region)
+	runtime, err := s.runtimeSvc.GetByFiltersGlobal(ctx, filters)
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			return "", errors.Wrapf(err, "while getting runtime with filter labels %q and %q", providerID, region)
+		}
+	}
+
+	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			return "", errors.Wrapf(err, "while getting app template with filter labels %q and %q", providerID, region)
+		}
+	}
+
+	if runtime != nil && appTemplate == nil {
+		return resource.Runtime, nil
+	}
+
+	if runtime == nil && appTemplate != nil {
+		return resource.ApplicationTemplate, nil
+	}
+
+	if runtime == nil && appTemplate == nil {
+		return "", errors.Errorf("no runtime or application template exists with filter labels %q and %q", providerID, region)
+	}
+
+	if runtime != nil && appTemplate != nil {
+		return "", errors.Errorf("both a runtime and application template exist with filter labels %q and %q", providerID, region)
+	}
+
+	return "", errors.Errorf("could not determine flow")
+}
+
+func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, subscribedAppName string) error {
+	values := []*model.ApplicationTemplateValueInput{
+		{Placeholder: "name", Value: subscribedAppName},
+		{Placeholder: "display-name", Value: subscribedAppName},
+	}
+	log.C(ctx).Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %q", appTemplate.Name)
+	appCreateInputJSON, err := s.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, values)
+	if err != nil {
+		return errors.Wrapf(err, "while preparing ApplicationCreateInput JSON from Application Template with name %q", appTemplate.Name)
+	}
+
+	log.C(ctx).Debugf("Converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %q", appTemplate.Name)
+	appCreateInputGQL, err := s.appConv.CreateInputJSONToGQL(appCreateInputJSON)
+	if err != nil {
+		return errors.Wrapf(err, "while converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %q", appTemplate.Name)
+	}
+
+	log.C(ctx).Infof("Validating GraphQL ApplicationRegistrationInput from Application Template with name %q", appTemplate.Name)
+	if err := inputvalidation.Validate(appCreateInputGQL); err != nil {
+		return errors.Wrapf(err, "while validating application input from Application Template with name %q", appTemplate.Name)
+	}
+
+	appCreateInputModel, err := s.appConv.CreateInputFromGraphQL(ctx, appCreateInputGQL)
+	if err != nil {
+		return errors.Wrap(err, "while converting ApplicationFromTemplate input")
+	}
+
+	if appCreateInputModel.Labels == nil {
+		appCreateInputModel.Labels = make(map[string]interface{})
+	}
+	appCreateInputModel.Labels["managed"] = "false"
+	appCreateInputModel.Labels[scenarioassignment.SubaccountIDKey] = subscribedSubaccountID
+
+	log.C(ctx).Infof("Creating an Application with name %q from Application Template with name %q", subscribedAppName, appTemplate.Name)
+	_, err = s.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID)
+	if err != nil {
+		return errors.Wrapf(err, "while creating an Application with name %s from Application Template with name %s", subscribedAppName, appTemplate.Name)
+	}
+
+	return nil
+}
+
+func (s *service) buildLabelFilters(subscriptionLabelValue, region string) []*labelfilter.LabelFilter {
+	return []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(s.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", subscriptionLabelValue)),
+		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
+	}
 }
 
 func (s *service) createLabel(ctx context.Context, tenant string, runtime *model.Runtime, subaccountTenantID string) error {

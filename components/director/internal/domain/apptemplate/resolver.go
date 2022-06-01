@@ -3,8 +3,9 @@ package apptemplate
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 

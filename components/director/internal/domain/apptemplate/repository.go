@@ -2,6 +2,7 @@ package apptemplate
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
@@ -77,6 +78,31 @@ func (r *repository) Get(ctx context.Context, id string) (*model.ApplicationTemp
 	}
 
 	return result, nil
+}
+
+// TODO missing godoc
+func (r *repository) GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error) {
+	filterSubquery, args, err := label.FilterQueryGlobal(model.AppTemplateLabelableObject, label.IntersectSet, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
+	var additionalConditions repo.Conditions
+	if filterSubquery != "" {
+		additionalConditions = append(additionalConditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	var entity Entity
+	if err := r.singleGetterGlobal.GetGlobal(ctx, additionalConditions, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
+	}
+
+	model, err := r.conv.FromEntity(&entity)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting Application Template with ID %s", entity.ID)
+	}
+
+	return model, nil
 }
 
 // GetByName missing godoc
