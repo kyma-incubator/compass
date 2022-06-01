@@ -205,7 +205,7 @@ func TestFetcherJobConfig_ReadDefaultHandlerConfig(t *testing.T) {
 }
 
 func getEnvironment(envVars map[string]string, jobName string) []string {
-	environ := make([]string, len(envVars))
+	environ := make([]string, 0, len(envVars))
 	for nameFormat, value := range envVars {
 		varName := fmt.Sprintf(nameFormat, jobName)
 		environ = append(environ, varName+"="+value)
