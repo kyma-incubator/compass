@@ -386,7 +386,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			tenantSvc: func() onetimetoken.ExternalTenantsService {
 				tenantSvc := &automock.ExternalTenantsService{}
-				tenantSvc.On("GetTenantByExternalID", ctxWithGlobalAccount, gaExternalID).Return(gaMapping, nil)
+				tenantSvc.On("GetTenantByID", ctxWithGlobalAccount, gaInternalID).Return(gaMapping, nil)
 				return tenantSvc
 			},
 			httpClient: func() onetimetoken.HTTPDoer {
@@ -458,7 +458,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			tenantSvc: func() onetimetoken.ExternalTenantsService {
 				tenantSvc := &automock.ExternalTenantsService{}
-				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccount, subaccountExternalID).Return(subaccountMapping, nil)
+				tenantSvc.On("GetTenantByID", ctxWithSubaccount, subaccountInternalID).Return(subaccountMapping, nil)
 				tenantSvc.On("GetExternalTenant", ctxWithSubaccount, gaInternalID).Return(gaExternalID, nil)
 				return tenantSvc
 			},
@@ -602,7 +602,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			tenantSvc: func() onetimetoken.ExternalTenantsService {
 				tenantSvc := &automock.ExternalTenantsService{}
-				tenantSvc.On("GetTenantByExternalID", contextGlobalAccountWithEnabledSuggestion, gaExternalID).Return(gaMapping, nil)
+				tenantSvc.On("GetTenantByID", contextGlobalAccountWithEnabledSuggestion, gaInternalID).Return(gaMapping, nil)
 				return tenantSvc
 			},
 			httpClient: func() onetimetoken.HTTPDoer {
@@ -711,7 +711,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			tenantSvc: func() onetimetoken.ExternalTenantsService {
 				tenantSvc := &automock.ExternalTenantsService{}
-				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccount, subaccountExternalID).Return(subaccountMapping, nil)
+				tenantSvc.On("GetTenantByID", ctxWithSubaccount, subaccountInternalID).Return(subaccountMapping, nil)
 				tenantSvc.On("GetExternalTenant", ctxWithSubaccount, gaInternalID).Return(gaExternalID, nil)
 				return tenantSvc
 			},
@@ -824,43 +824,6 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			pairingAdapters: &pairingAdaptersWithMapping,
 		},
 		{
-			description: "Generate Application token, with int system, should fail when can't get global account tenant by external ID",
-			ctx:         ctxWithGlobalAccount,
-			systemAuthSvc: func() onetimetoken.SystemAuthService {
-				return &automock.SystemAuthService{}
-			},
-			appSvc: func() onetimetoken.ApplicationService {
-				app := &model.Application{}
-				app.IntegrationSystemID = str.Ptr(integrationSystemID)
-				app.BaseEntity = &model.BaseEntity{
-					ID: appID,
-				}
-				appSvc := &automock.ApplicationService{}
-				appSvc.On("Get", ctxWithGlobalAccount, appID).Return(app, nil)
-				return appSvc
-			},
-			appConverter: func() onetimetoken.ApplicationConverter {
-				return &automock.ApplicationConverter{}
-			},
-			tenantSvc: func() onetimetoken.ExternalTenantsService {
-				tenantSvc := &automock.ExternalTenantsService{}
-				tenantSvc.On("GetTenantByExternalID", ctxWithGlobalAccount, gaExternalID).Return(nil, errors.New("some-error"))
-				return tenantSvc
-			},
-			httpClient: func() onetimetoken.HTTPDoer {
-				return &automock.HTTPDoer{}
-			},
-			tokenGenerator: func() onetimetoken.TokenGenerator {
-				return &automock.TokenGenerator{}
-			},
-			shouldHaveError: true,
-			objectID:        appID,
-			tokenType:       pkgmodel.ApplicationReference,
-			errorMsg:        "some-error",
-			connectorURL:    connectorURL,
-			pairingAdapters: &pairingAdaptersWithMapping,
-		},
-		{
 			description: "Generate Application token, with int system, should fail when can't get global account external ID",
 			ctx:         ctxWithSubaccount,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
@@ -881,7 +844,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			},
 			tenantSvc: func() onetimetoken.ExternalTenantsService {
 				tenantSvc := &automock.ExternalTenantsService{}
-				tenantSvc.On("GetTenantByExternalID", ctxWithSubaccount, subaccountExternalID).Return(subaccountMapping, nil)
+				tenantSvc.On("GetTenantByID", ctxWithSubaccount, subaccountInternalID).Return(subaccountMapping, nil)
 				tenantSvc.On("GetExternalTenant", ctxWithSubaccount, gaInternalID).Return("", errors.New("some-error"))
 				return tenantSvc
 			},

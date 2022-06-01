@@ -52,7 +52,6 @@ type ApplicationService interface {
 //go:generate mockery --name=ExternalTenantsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ExternalTenantsService interface {
 	GetExternalTenant(ctx context.Context, id string) (string, error)
-	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
@@ -238,19 +237,12 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 		return nil, err
 	}
 
-	extTenant := tntCtx.ExternalID
-	var tnt *model.BusinessTenantMapping
-	if len(extTenant) == 0 {
-		if tnt, err = s.extTenantsSvc.GetTenantByID(ctx, tntCtx.InternalID); err != nil {
-			return nil, errors.Wrapf(err, "while getting tenant with internal ID %q", tntCtx.InternalID)
-		}
-	} else {
-		if tnt, err = s.extTenantsSvc.GetTenantByExternalID(ctx, tntCtx.ExternalID); err != nil {
-			return nil, errors.Wrapf(err, "while getting tenant with external ID %q", tntCtx.ExternalID)
-		}
+	tnt, err := s.extTenantsSvc.GetTenantByID(ctx, tntCtx.InternalID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting tenant with internal ID %q", tntCtx.InternalID)
 	}
 
-	extTenant = tnt.ExternalTenant
+	extTenant := tnt.ExternalTenant
 	if tnt.Type == tenantpkg.Subaccount {
 		if extTenant, err = s.extTenantsSvc.GetExternalTenant(ctx, tnt.Parent); err != nil {
 			return nil, errors.Wrapf(err, "while getting parent external tenant for internal tenant %q", tnt.Parent)
