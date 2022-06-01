@@ -560,7 +560,7 @@ func (s *service) updateScenariosLabel(ctx context.Context, rtmTenant, rtmId str
 		return errors.Wrapf(err, "while converting current runtime scenarios: %+v to slice of strings", currentScenarios)
 	}
 
-	// Calculate thediff between current scenarios and merged scenarios.
+	// Calculate the diff between current scenarios and merged scenarios.
 	// This modifyScenarios maps scenario to bool
 	// if scenario should be assigned we map it to 'true'
 	// if it should be unassigned we map it to 'false'
