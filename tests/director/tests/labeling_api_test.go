@@ -411,6 +411,8 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 func TestListLabelDefinitions(t *testing.T) {
 	//GIVEN
 	tenantID := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
+	defer tenant.TestTenants.CleanupTenant(tenantID)
+
 	ctx := context.TODO()
 
 	jsonSchema := map[string]interface{}{
@@ -439,7 +441,6 @@ func TestListLabelDefinitions(t *testing.T) {
 	require.NoError(t, err)
 
 	firstLabelDefinition := &output
-	defer tenant.TestTenants.CleanupTenant(tenantID)
 
 	//WHEN
 	labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID)
