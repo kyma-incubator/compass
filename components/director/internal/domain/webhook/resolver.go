@@ -37,7 +37,7 @@ type ApplicationTemplateService interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
-//go:generate mockery --exported --name=runtimeService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=runtimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
