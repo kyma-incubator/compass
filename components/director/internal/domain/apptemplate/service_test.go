@@ -224,6 +224,8 @@ func TestService_CreateWithLabels(t *testing.T) {
 			idSvc := uidSvcFn()
 			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, idSvc, labelUpsertSvc, nil)
 
+			defer mock.AssertExpectationsForObjects(t, appTemplateRepo, labelUpsertSvc, idSvc)
+
 			// WHEN
 			result, err := svc.CreateWithLabels(ctx, *testCase.Input, map[string]interface{}{"createWithLabels": "OK"})
 
@@ -235,10 +237,6 @@ func TestService_CreateWithLabels(t *testing.T) {
 				assert.NoError(t, err)
 			}
 			assert.Equal(t, testCase.ExpectedOutput, result)
-
-			appTemplateRepo.AssertExpectations(t)
-			labelUpsertSvc.AssertExpectations(t)
-			idSvc.AssertExpectations(t)
 		})
 	}
 }
