@@ -16,33 +16,22 @@ func TestFetcherJobConfig_ReadEnvVars(t *testing.T) {
 	envValues["k2"] = "v2"
 	envValues["k3"] = "v3"
 
-	testCases := []struct {
-		Name      string
-		EnvValues map[string]string
-	}{
-		{
-			Name:      "Read environment variables",
-			EnvValues: envValues,
-		},
-	}
+	t.Run("Read environment variables", func(t *testing.T) {
+		var environ []string
+		for k, v := range envValues {
+			environ = append(environ, k+"="+v)
+		}
 
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			var environ []string
-			for k, v := range testCase.EnvValues {
-				environ = append(environ, k+"="+v)
-			}
+		// WHEN
+		envVars := ReadFromEnvironment(environ)
 
-			// WHEN
-			envVars := ReadFromEnvironment(environ)
+		// THEN
+		for k, v := range envValues {
+			assert.NotNil(t, envVars[k], "Environment variables should contain: "+k)
+			assert.Equal(t, v, envVars[k], fmt.Sprintf("Value of environment variable %s should be %s", k, v))
+		}
+	})
 
-			// THEN
-			for k, v := range testCase.EnvValues {
-				assert.NotNil(t, envVars[k], "Environment variables should contain: "+k)
-				assert.Equal(t, v, envVars[k], fmt.Sprintf("Value of environment variable %s should be %s", k, v))
-			}
-		})
-	}
 }
 
 func TestFetcherJobConfig_GetJobsNames(t *testing.T) {
@@ -77,7 +66,7 @@ func TestFetcherJobConfig_GetJobsNames(t *testing.T) {
 			}
 
 			// WHEN
-			jobNamesFromEnv := GetJobsNames(ReadFromEnvironment(environ))
+			jobNamesFromEnv := GetJobNames(ReadFromEnvironment(environ))
 
 			// THEN
 			if testCase.ReadSuccess == true {
@@ -96,6 +85,26 @@ func TestFetcherJobConfig_GetJobsNames(t *testing.T) {
 func TestFetcherJobConfig_ReadEventsConfig(t *testing.T) {
 	// GIVEN
 	jobName := "testJob"
+	accountRegion := "testRegion"
+	tenantCreatedEndpoint := "create"
+	envVars := map[string]string{"APP_%s_ACCOUNT_REGION": accountRegion, "APP_%s_ENDPOINT_TENANT_CREATED": tenantCreatedEndpoint}
+
+	t.Run("Read events configuration from environment", func(t *testing.T) {
+		environ := getEnvironment(envVars, jobName)
+
+		// WHEN
+		jobConfig := NewTenantFetcherJobEnvironment(context.TODO(), jobName, ReadFromEnvironment(environ)).ReadJobConfig()
+		eventsCfg := jobConfig.GetEventsCgf()
+
+		// THEN
+		assert.Equal(t, accountRegion, eventsCfg.AccountsRegion, fmt.Sprintf("Account region should be %s", accountRegion))
+		assert.Equal(t, tenantCreatedEndpoint, eventsCfg.APIConfig.EndpointTenantCreated, fmt.Sprintf("Tenant created endpint should be %s", tenantCreatedEndpoint))
+	})
+}
+
+func TestFetcherJobConfig_ReadDefaultEventsConfig(t *testing.T) {
+	// GIVEN
+	jobName := "testJob"
 
 	accountRegion := "testRegion"
 	defaultAccountRegion := "central"
@@ -104,53 +113,57 @@ func TestFetcherJobConfig_ReadEventsConfig(t *testing.T) {
 	defaultTenantCreatedEndpoint := ""
 
 	testCases := []struct {
-		Name        string
-		JobName     string
-		EnvVars     map[string]string
-		ReadFailure bool
+		Name    string
+		JobName string
+		EnvVars map[string]string
 	}{
-		{
-			Name:    "Read events configuration from environment",
-			JobName: jobName,
-			EnvVars: map[string]string{"APP_%s_ACCOUNT_REGION": accountRegion, "APP_%s_ENDPOINT_TENANT_CREATED": tenantCreatedEndpoint},
-		},
 		{
 			Name:    "Get default events configurations when no environment variables",
 			JobName: jobName,
 			EnvVars: nil,
 		}, {
-			Name:        "Get default events configurations when environment variables not match",
-			JobName:     jobName,
-			EnvVars:     map[string]string{"APP2_%s_ACCOUNT_REGION": accountRegion, "APP2_%s_ENDPOINT_TENANT_CREATED": tenantCreatedEndpoint},
-			ReadFailure: true,
+			Name:    "Get default events configurations when environment variables don't match configuration",
+			JobName: jobName,
+			EnvVars: map[string]string{"APP2_%s_ACCOUNT_REGION": accountRegion, "APP2_%s_ENDPOINT_TENANT_CREATED": tenantCreatedEndpoint},
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			var environ []string
-			for k, v := range testCase.EnvVars {
-				varName := fmt.Sprintf(k, testCase.JobName)
-				environ = append(environ, varName+"="+v)
-			}
+			environ := getEnvironment(testCase.EnvVars, testCase.JobName)
 
 			// WHEN
 			jobConfig := NewTenantFetcherJobEnvironment(context.TODO(), testCase.JobName, ReadFromEnvironment(environ)).ReadJobConfig()
 			eventsCfg := jobConfig.GetEventsCgf()
 
 			// THEN
-			if testCase.EnvVars == nil || testCase.ReadFailure {
-				assert.Equal(t, defaultAccountRegion, eventsCfg.AccountsRegion, fmt.Sprintf("Default account region should be %s", defaultAccountRegion))
-				assert.Equal(t, defaultTenantCreatedEndpoint, eventsCfg.APIConfig.EndpointTenantCreated, fmt.Sprintf("Default tenant created endpint should be %s", defaultTenantCreatedEndpoint))
-			} else {
-				assert.Equal(t, accountRegion, eventsCfg.AccountsRegion, fmt.Sprintf("Account region should be %s", accountRegion))
-				assert.Equal(t, tenantCreatedEndpoint, eventsCfg.APIConfig.EndpointTenantCreated, fmt.Sprintf(" Tenant created endpint should be %s", tenantCreatedEndpoint))
-			}
+			assert.Equal(t, defaultAccountRegion, eventsCfg.AccountsRegion, fmt.Sprintf("Default account region should be %s", defaultAccountRegion))
+			assert.Equal(t, defaultTenantCreatedEndpoint, eventsCfg.APIConfig.EndpointTenantCreated, fmt.Sprintf("Default tenant created endpint should be %s", defaultTenantCreatedEndpoint))
 		})
 	}
 }
 
 func TestFetcherJobConfig_ReadHandlerConfig(t *testing.T) {
+	// GIVEN
+	jobName := "testJob"
+	jobIntervalMins := 3 * time.Minute
+	tenantProvider := "testProvider"
+	еnvVars := map[string]string{"APP_%s_TENANT_FETCHER_JOB_INTERVAL": jobIntervalMins.String(), "APP_%s_TENANT_PROVIDER": tenantProvider}
+
+	t.Run("Read handler configuration from environment", func(t *testing.T) {
+		environ := getEnvironment(еnvVars, jobName)
+
+		// WHEN
+		jobConfig := NewTenantFetcherJobEnvironment(context.TODO(), jobName, ReadFromEnvironment(environ)).ReadJobConfig()
+		handlerCfg := jobConfig.GetHandlerCgf()
+
+		// THEN
+		assert.Equal(t, jobIntervalMins, handlerCfg.TenantFetcherJobIntervalMins, fmt.Sprintf("Job interval should be %s", jobIntervalMins))
+		assert.Equal(t, tenantProvider, handlerCfg.TenantProviderConfig.TenantProvider, fmt.Sprintf("Tenant provider should be %s", tenantProvider))
+	})
+}
+
+func TestFetcherJobConfig_ReadDefaultHandlerConfig(t *testing.T) {
 	// GIVEN
 	jobName := "testJob"
 
@@ -161,48 +174,41 @@ func TestFetcherJobConfig_ReadHandlerConfig(t *testing.T) {
 	defaultTenantProvider := "external-provider"
 
 	testCases := []struct {
-		Name        string
-		JobName     string
-		EnvVars     map[string]string
-		ReadFailure bool
+		Name    string
+		JobName string
+		EnvVars map[string]string
 	}{
-		{
-			Name:    "Read handler configuration from environment",
-			JobName: jobName,
-			EnvVars: map[string]string{"APP_%s_TENANT_FETCHER_JOB_INTERVAL": jobIntervalMins.String(), "APP_%s_TENANT_PROVIDER": tenantProvider},
-		},
 		{
 			Name:    "Get default handler configurations when no environment variables",
 			JobName: jobName,
 			EnvVars: nil,
 		}, {
-			Name:        "Get default handler configurations when environment variables not match",
-			JobName:     jobName,
-			EnvVars:     map[string]string{"APP2_%s_TENANT_FETCHER_JOB_INTERVAL": jobIntervalMins.String(), "APP2_%s_TENANT_PROVIDER": tenantProvider},
-			ReadFailure: true,
+			Name:    "Get default handler configurations when environment variables don't match configuration",
+			JobName: jobName,
+			EnvVars: map[string]string{"APP2_%s_TENANT_FETCHER_JOB_INTERVAL": jobIntervalMins.String(), "APP2_%s_TENANT_PROVIDER": tenantProvider},
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			var environ []string
-			for k, v := range testCase.EnvVars {
-				varName := fmt.Sprintf(k, testCase.JobName)
-				environ = append(environ, varName+"="+v)
-			}
+			environ := getEnvironment(testCase.EnvVars, testCase.JobName)
 
 			// WHEN
 			jobConfig := NewTenantFetcherJobEnvironment(context.TODO(), testCase.JobName, ReadFromEnvironment(environ)).ReadJobConfig()
 			handlerCfg := jobConfig.GetHandlerCgf()
 
 			// THEN
-			if testCase.EnvVars == nil || testCase.ReadFailure {
-				assert.Equal(t, defaultJobIntervalMins, handlerCfg.TenantFetcherJobIntervalMins, fmt.Sprintf("Default job interval should be %s", defaultJobIntervalMins))
-				assert.Equal(t, defaultTenantProvider, handlerCfg.TenantProviderConfig.TenantProvider, fmt.Sprintf("Default tenant provider should be %s", defaultTenantProvider))
-			} else {
-				assert.Equal(t, jobIntervalMins, handlerCfg.TenantFetcherJobIntervalMins, fmt.Sprintf("Job interval should be %s", jobIntervalMins))
-				assert.Equal(t, tenantProvider, handlerCfg.TenantProviderConfig.TenantProvider, fmt.Sprintf("Tenant provider should be %s", tenantProvider))
-			}
+			assert.Equal(t, defaultJobIntervalMins, handlerCfg.TenantFetcherJobIntervalMins, fmt.Sprintf("Default job interval should be %s", defaultJobIntervalMins))
+			assert.Equal(t, defaultTenantProvider, handlerCfg.TenantProviderConfig.TenantProvider, fmt.Sprintf("Default tenant provider should be %s", defaultTenantProvider))
 		})
 	}
+}
+
+func getEnvironment(envVars map[string]string, jobName string) []string {
+	var environ []string
+	for nameFormat, value := range envVars {
+		varName := fmt.Sprintf(nameFormat, jobName)
+		environ = append(environ, varName+"="+value)
+	}
+	return environ
 }

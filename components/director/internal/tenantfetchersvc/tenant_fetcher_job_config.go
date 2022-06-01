@@ -272,8 +272,8 @@ func ReadFromEnvironment(environ []string) map[string]string {
 	return vars
 }
 
-// GetJobsNames retrieves the names of tenant fetchers jobs
-func GetJobsNames(envVars map[string]string) []string {
+// GetJobNames retrieves the names of tenant fetchers jobs
+func GetJobNames(envVars map[string]string) []string {
 	searchPattern := regexp.MustCompile(jobNamePattern)
 	var jobNames []string
 
