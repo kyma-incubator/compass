@@ -988,20 +988,6 @@ func getCurrentTenants(ctx context.Context, tenantStorage TenantStorageService, 
 	return currentTenantsMap, nil
 }
 
-func getTenantsByIDs(ctx context.Context, tenantStorage TenantStorageService) (map[string]string, error) {
-	currentTenants, listErr := tenantStorage.List(ctx)
-	if listErr != nil {
-		return nil, errors.Wrap(listErr, "while listing tenants")
-	}
-
-	currentTenantsMap := make(map[string]string)
-	for _, ct := range currentTenants {
-		currentTenantsMap[ct.ExternalTenant] = ct.ID
-	}
-
-	return currentTenantsMap, nil
-}
-
 func shouldFullResync(lastFullResyncTimestamp string, fullResyncInterval time.Duration) (bool, error) {
 	i, err := strconv.ParseInt(lastFullResyncTimestamp, 10, 64)
 	if err != nil {
