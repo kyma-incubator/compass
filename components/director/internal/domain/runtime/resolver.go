@@ -58,7 +58,11 @@ type RuntimeService interface {
 //go:generate mockery --name=ScenarioAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ScenarioAssignmentService interface {
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
-	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
+}
+
+//go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationService interface {
+	DeleteAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
 // RuntimeConverter missing godoc
@@ -125,14 +129,14 @@ type RuntimeContextConverter interface {
 }
 
 // WebhookService missing godoc
-//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookService interface {
 	ListForRuntime(ctx context.Context, runtimeID string) ([]*model.Webhook, error)
 	Create(ctx context.Context, owningResourceID string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) (string, error)
 }
 
 // WebhookConverter missing godoc
-//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookConverter interface {
 	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
 	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
@@ -157,13 +161,14 @@ type Resolver struct {
 	webhookService            WebhookService
 	webhookConverter          WebhookConverter
 	fetcher                   TenantFetcher
+	formationSvc              formationService
 }
 
 // NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService,
 	sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService, selfRegManager SelfRegisterManager,
-	uidService uidService, subscriptionSvc SubscriptionService, runtimeContextService RuntimeContextService, runtimeContextConverter RuntimeContextConverter, webhookService WebhookService, webhookConverter WebhookConverter, fetcher TenantFetcher) *Resolver {
+	uidService uidService, subscriptionSvc SubscriptionService, runtimeContextService RuntimeContextService, runtimeContextConverter RuntimeContextConverter, webhookService WebhookService, webhookConverter WebhookConverter, fetcher TenantFetcher, formationSvc formationService) *Resolver {
 	return &Resolver{
 		transact:                  transact,
 		runtimeService:            runtimeService,
@@ -182,6 +187,7 @@ func NewResolver(transact persistence.Transactioner, runtimeService RuntimeServi
 		webhookService:            webhookService,
 		webhookConverter:          webhookConverter,
 		fetcher:                   fetcher,
+		formationSvc:              formationSvc,
 	}
 }
 
@@ -873,7 +879,7 @@ func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runt
 			continue
 		}
 
-		if err := r.scenarioAssignmentService.Delete(ctx, scenarioAssignment); err != nil {
+		if err := r.formationSvc.DeleteAutomaticScenarioAssignment(ctx, scenarioAssignment); err != nil {
 			return err
 		}
 	}

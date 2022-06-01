@@ -16,20 +16,6 @@ type ScenarioAssignmentService struct {
 	mock.Mock
 }
 
-// Delete provides a mock function with given fields: ctx, in
-func (_m *ScenarioAssignmentService) Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error {
-	ret := _m.Called(ctx, in)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.AutomaticScenarioAssignment) error); ok {
-		r0 = rf(ctx, in)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // GetForScenarioName provides a mock function with given fields: ctx, scenarioName
 func (_m *ScenarioAssignmentService) GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error) {
 	ret := _m.Called(ctx, scenarioName)
