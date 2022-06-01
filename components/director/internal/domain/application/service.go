@@ -708,7 +708,8 @@ func (s *service) ListLabels(ctx context.Context, applicationID string) (map[str
 	return labels, nil
 }
 
-// DeleteLabel missing godoc
+// DeleteLabel delete label given application ID, label key and label value.
+// Label value is only used in the case of ScenariosKey and should match the label value in the database
 func (s *service) DeleteLabel(ctx context.Context, applicationID string, key string, labelValue interface{}) error {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
