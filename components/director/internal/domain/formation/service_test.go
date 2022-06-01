@@ -2441,7 +2441,7 @@ func TestService_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfScena
 	mock.AssertExpectationsForObjects(t, asaRepo, runtimeRepo)
 }
 
-func Test_engine_GetScenariosFromMatchingASAs(t *testing.T) {
+func TestService_GetScenariosFromMatchingASAs(t *testing.T) {
 	ctx := formation.FixCtxWithTenant()
 	testErr := errors.New(formation.ErrMsg)
 	testScenarios := []*model.AutomaticScenarioAssignment{

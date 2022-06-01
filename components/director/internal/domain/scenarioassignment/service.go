@@ -15,7 +15,6 @@ import (
 type Repository interface {
 	ListForTargetTenant(ctx context.Context, tenantID string, targetTenantID string) ([]*model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error)
-	ListAll(ctx context.Context, tenantID string) ([]*model.AutomaticScenarioAssignment, error)
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
 }
 

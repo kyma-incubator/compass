@@ -148,8 +148,8 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantStorageRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
 
-	scenarioAssignEngine := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantStorageSvc, runtimeRepo)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, scenarioAssignEngine, tenantStorageSvc, webhookSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantStorageSvc, runtimeRepo)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantStorageSvc, webhookSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
 
 	eventAPIClient, err := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.AuthMode, cfg.APIConfig, cfg.ClientTimeout)
 	if nil != err {
