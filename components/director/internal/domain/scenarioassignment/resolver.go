@@ -21,12 +21,9 @@ type gqlConverter interface {
 
 //go:generate mockery --exported --name=asaService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type asaService interface {
-	Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
 	ListForTargetTenant(ctx context.Context, targetTenantInternalID string) ([]*model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
-	DeleteManyForSameTargetTenant(ctx context.Context, in []*model.AutomaticScenarioAssignment) error
-	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
 //go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -41,14 +38,22 @@ type tenantFetcher interface {
 	FetchOnDemand(tenant, parentTenant string) error
 }
 
+//go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationService interface {
+	CreateAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
+	DeleteManyASAForSameTargetTenant(ctx context.Context, in []*model.AutomaticScenarioAssignment) error
+	DeleteAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) error
+}
+
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, svc asaService, converter gqlConverter, tenantService tenantService, fetcher tenantFetcher) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc asaService, converter gqlConverter, tenantService tenantService, fetcher tenantFetcher, formationSvc formationService) *Resolver {
 	return &Resolver{
 		transact:      transact,
 		svc:           svc,
 		converter:     converter,
 		tenantService: tenantService,
 		fetcher:       fetcher,
+		formationSvc:  formationSvc,
 	}
 }
 
@@ -59,6 +64,7 @@ type Resolver struct {
 	svc           asaService
 	tenantService tenantService
 	fetcher       tenantFetcher
+	formationSvc  formationService
 }
 
 // CreateAutomaticScenarioAssignment missing godoc
@@ -85,7 +91,7 @@ func (r *Resolver) CreateAutomaticScenarioAssignment(ctx context.Context, in gra
 
 	convertedIn := r.converter.FromInputGraphQL(in, targetTenant)
 
-	out, err := r.svc.Create(ctx, convertedIn)
+	out, err := r.formationSvc.CreateAutomaticScenarioAssignment(ctx, convertedIn)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating Assignment")
 	}
@@ -235,7 +241,7 @@ func (r *Resolver) DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Con
 		return nil, errors.Wrapf(err, "while getting the Assignments for target tenant [%v]", targetTenant)
 	}
 
-	err = r.svc.DeleteManyForSameTargetTenant(ctx, assignments)
+	err = r.formationSvc.DeleteManyASAForSameTargetTenant(ctx, assignments)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while deleting the Assignments for target tenant [%v]", targetTenant)
 	}
@@ -270,7 +276,7 @@ func (r *Resolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Cont
 		return nil, errors.Wrapf(err, "while getting the Assignment for scenario [name=%s]", scenarioName)
 	}
 
-	err = r.svc.Delete(ctx, assignment)
+	err = r.formationSvc.DeleteAutomaticScenarioAssignment(ctx, assignment)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while deleting the Assignment for scenario [name=%s]", scenarioName)
 	}
