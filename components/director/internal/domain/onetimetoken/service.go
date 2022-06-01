@@ -250,12 +250,11 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 		}
 	}
 
+	extTenant = tnt.ExternalTenant
 	if tnt.Type == tenantpkg.Subaccount {
 		if extTenant, err = s.extTenantsSvc.GetExternalTenant(ctx, tnt.Parent); err != nil {
 			return nil, errors.Wrapf(err, "while getting parent external tenant for internal tenant %q", tnt.Parent)
 		}
-	} else {
-		extTenant = tnt.ExternalTenant
 	}
 
 	clientUser, err := client.LoadFromContext(ctx)
