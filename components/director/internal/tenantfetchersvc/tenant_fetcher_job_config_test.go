@@ -148,10 +148,10 @@ func TestFetcherJobConfig_ReadHandlerConfig(t *testing.T) {
 	jobName := "testJob"
 	jobIntervalMins := 3 * time.Minute
 	tenantProvider := "testProvider"
-	еnvVars := map[string]string{"APP_%s_TENANT_FETCHER_JOB_INTERVAL": jobIntervalMins.String(), "APP_%s_TENANT_PROVIDER": tenantProvider}
+	envVars := map[string]string{"APP_%s_TENANT_FETCHER_JOB_INTERVAL": jobIntervalMins.String(), "APP_%s_TENANT_PROVIDER": tenantProvider}
 
 	t.Run("Read handler configuration from environment", func(t *testing.T) {
-		environ := getEnvironment(еnvVars, jobName)
+		environ := getEnvironment(envVars, jobName)
 
 		// WHEN
 		jobConfig := NewTenantFetcherJobEnvironment(context.TODO(), jobName, ReadFromEnvironment(environ)).ReadJobConfig()
@@ -205,7 +205,7 @@ func TestFetcherJobConfig_ReadDefaultHandlerConfig(t *testing.T) {
 }
 
 func getEnvironment(envVars map[string]string, jobName string) []string {
-	var environ []string
+	environ := make([]string, len(envVars))
 	for nameFormat, value := range envVars {
 		varName := fmt.Sprintf(nameFormat, jobName)
 		environ = append(environ, varName+"="+value)
