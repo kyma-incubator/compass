@@ -179,9 +179,13 @@ spec:
             - name: APP_DATALOADER_WAIT
               value: {{ .Values.deployment.dataloaders.wait | quote }}
             - name: APP_SUBSCRIPTION_PROVIDER_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
-            - name: APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.consumerSubaccountIdsLabelKey }}
+              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
+            - name: APP_CONSUMER_SUBACCOUNT_LABEL_KEY
+              value: {{ .Values.global.director.subscription.consumerSubaccountLabelKey }}
+            - name: APP_SUBSCRIPTION_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionLabelKey }}
+            - name: APP_SUBSCRIPTION_PROVIDER_APP_NAME_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionProviderAppNameLabelKey }}
             - name: APP_SELF_REGISTER_INSTANCE_CLIENT_ID_PATH
               value: {{ .Values.global.director.selfRegister.clientIdPath }}
             - name: APP_SELF_REGISTER_INSTANCE_CLIENT_SECRET_PATH
@@ -196,8 +200,8 @@ spec:
               value: {{ .Values.global.director.selfRegister.clientKeyPath }}
             - name: APP_SELF_REGISTER_OAUTH_TOKEN_PATH
               value: {{ .Values.global.director.selfRegister.oauthTokenPath }}
-            - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY # This variable get its value from tenant fetcher configuration(in tests charts too) because we need "self register" flow to be executed as part of the consumer-provider test, locally and on real environment as well
-              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+            - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_SELF_REGISTER_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.label }}
             - name: APP_SELF_REGISTER_LABEL_KEY_PATTERN

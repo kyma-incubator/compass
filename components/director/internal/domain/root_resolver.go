@@ -188,7 +188,7 @@ func NewRootResolver(
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
 	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantSvc, webhookSvc, featuresConfig.ProtectedLabelPattern, featuresConfig.ImmutableLabelPattern)
-	subscriptionSvc := subscription.NewService(runtimeSvc, tenantSvc, labelSvc, uidSvc, subscriptionConfig.ProviderLabelKey, subscriptionConfig.ConsumerSubaccountIDsLabelKey)
+	subscriptionSvc := subscription.NewService(runtimeSvc, runtimeContextSvc, tenantSvc, labelSvc, uidSvc, subscriptionConfig.ConsumerSubaccountLabelKey, subscriptionConfig.SubscriptionLabelKey, subscriptionConfig.SubscriptionProviderAppNameLabelKey, subscriptionConfig.ProviderLabelKey)
 	tenantOnDemandSvc := tenant.NewFetchOnDemandService(internalGatewayHTTPClient, tenantOnDemandURL)
 
 	return &RootResolver{
@@ -808,13 +808,13 @@ func (r *mutationResolver) DeleteTenants(ctx context.Context, in []string) (int,
 }
 
 // SubscribeTenantToRuntime subscribes given tenant to runtime
-func (r *mutationResolver) SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountID, providerSubaccountID, region string) (bool, error) {
-	return r.runtime.SubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, region)
+func (r *mutationResolver) SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, appName string) (bool, error) {
+	return r.runtime.SubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, appName)
 }
 
 // UnsubscribeTenantFromRuntime unsubscribes given tenant from runtime
-func (r *mutationResolver) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, subaccountID, providerSubaccountID, region string) (bool, error) {
-	return r.runtime.UnsubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, region)
+func (r *mutationResolver) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region string) (bool, error) {
+	return r.runtime.UnsubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region)
 }
 
 func (r *mutationResolver) UpdateTenant(ctx context.Context, id string, in graphql.BusinessTenantMappingInput) (*graphql.Tenant, error) {

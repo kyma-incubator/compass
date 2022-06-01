@@ -47,6 +47,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/oauth20"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/onetimetoken"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/schema"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
@@ -258,7 +259,7 @@ func main() {
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
-	claimsValidator := claims.NewValidator(runtimeSvc(cfg), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountIDsLabelKey)
+	claimsValidator := claims.NewValidator(runtimeSvc(cfg), runtimeCtxSvc(), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
 	authMiddleware := mp_authenticator.New(httpClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claimsValidator)
@@ -610,6 +611,16 @@ func runtimeSvc(cfg config) claims.RuntimeService {
 	formationSvc := formation.NewService(labelDefRepo, lblRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, rtRepo)
 
 	return runtime.NewService(rtRepo, lblRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantSvc, webhookService(), cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
+}
+
+func runtimeCtxSvc() claims.RuntimeCtxService {
+	runtimeContextRepo := runtimectx.NewRepository(runtimectx.NewConverter())
+	labelRepo := label.NewRepository(label.NewConverter())
+	labelDefRepo := labeldef.NewRepository(labeldef.NewConverter())
+	uidSvc := uid.NewService()
+	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
+
+	return runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, uidSvc)
 }
 
 func intSystemSvc() claims.IntegrationSystemService {

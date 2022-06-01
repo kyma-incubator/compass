@@ -18,7 +18,6 @@ type RuntimeContextRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
 	GetForRuntime(ctx context.Context, tenant, id, runtimeID string) (*model.RuntimeContext, error)
-	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.RuntimeContext, error)
 	List(ctx context.Context, runtimeID string, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error)
 	ListByRuntimeIDs(ctx context.Context, tenantID string, runtimeIDs []string, pageSize int, cursor string) ([]*model.RuntimeContextPage, error)
 	Create(ctx context.Context, tenant string, item *model.RuntimeContext) error
@@ -29,10 +28,7 @@ type RuntimeContextRepository interface {
 // LabelRepository missing godoc
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
-	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
-	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
-	DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error
 }
 
 // LabelUpsertService missing godoc

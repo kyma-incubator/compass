@@ -83,10 +83,10 @@ func (d *Director) UpdateTenant(ctx context.Context, id string, tenant graphql.B
 }
 
 // SubscribeTenantToRuntime makes graphql query tenant-runtime subscription
-func (d *Director) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) error {
+func (d *Director) SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, appName string) error {
 	var res map[string]interface{}
 
-	subscriptionMutation := fmt.Sprintf(`mutation { subscribeTenantToRuntime(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", region: "%s")}`, providerID, subaccountID, providerSubaccountID, region)
+	subscriptionMutation := fmt.Sprintf(`mutation { subscribeTenantToRuntime(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", consumerTenantID: "%s", region: "%s", appName: "%s")}`, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, appName)
 	gRequest := gcli.NewRequest(subscriptionMutation)
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql mutation")
@@ -95,10 +95,10 @@ func (d *Director) SubscribeTenantToRuntime(ctx context.Context, providerID stri
 }
 
 // UnsubscribeTenantFromRuntime makes graphql query tenant-runtime unsubscription
-func (d *Director) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) error {
+func (d *Director) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region string) error {
 	var res map[string]interface{}
 
-	unsubscriptionMutation := fmt.Sprintf(`mutation { unsubscribeTenantFromRuntime(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", region: "%s")}`, providerID, subaccountID, providerSubaccountID, region)
+	unsubscriptionMutation := fmt.Sprintf(`mutation { unsubscribeTenantFromRuntime(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", consumerTenantID: "%s", region: "%s")}`, providerID, subaccountID, providerSubaccountID, consumerTenantID, region)
 	gRequest := gcli.NewRequest(unsubscriptionMutation)
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql mutation")

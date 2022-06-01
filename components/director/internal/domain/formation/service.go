@@ -32,7 +32,7 @@ type labelRepository interface {
 
 //go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeRepository interface {
-	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
+	ListOwnedRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 }
 
@@ -244,7 +244,7 @@ func (s *service) DeleteAutomaticScenarioAssignment(ctx context.Context, in mode
 
 // EnsureScenarioAssigned ensures that the scenario is assigned to all the runtimes that are in the ASAs target_tenant_id
 func (s *service) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error {
-	runtimes, err := s.runtimeRepo.ListAll(ctx, in.TargetTenantID, nil)
+	runtimes, err := s.runtimeRepo.ListOwnedRuntimes(ctx, in.TargetTenantID, nil)
 
 	if err != nil {
 		return errors.Wrapf(err, "while fetching runtimes in target tenant: %s", in.TargetTenantID)
@@ -259,7 +259,7 @@ func (s *service) EnsureScenarioAssigned(ctx context.Context, in model.Automatic
 
 // RemoveAssignedScenario removes all the scenarios that are coming from the provided ASA
 func (s *service) RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment) error {
-	runtimes, err := s.runtimeRepo.ListAll(ctx, in.TargetTenantID, nil)
+	runtimes, err := s.runtimeRepo.ListOwnedRuntimes(ctx, in.TargetTenantID, nil)
 	if err != nil {
 		return errors.Wrapf(err, "while fetching runtimes in target tenant: %s", in.TargetTenantID)
 	}

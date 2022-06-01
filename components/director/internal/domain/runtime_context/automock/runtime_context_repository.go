@@ -67,29 +67,6 @@ func (_m *RuntimeContextRepository) Exists(ctx context.Context, tenant string, i
 	return r0, r1
 }
 
-// GetByFiltersGlobal provides a mock function with given fields: ctx, filter
-func (_m *RuntimeContextRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.RuntimeContext, error) {
-	ret := _m.Called(ctx, filter)
-
-	var r0 *model.RuntimeContext
-	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) *model.RuntimeContext); ok {
-		r0 = rf(ctx, filter)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.RuntimeContext)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter) error); ok {
-		r1 = rf(ctx, filter)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetByID provides a mock function with given fields: ctx, tenant, id
 func (_m *RuntimeContextRepository) GetByID(ctx context.Context, tenant string, id string) (*model.RuntimeContext, error) {
 	ret := _m.Called(ctx, tenant, id)

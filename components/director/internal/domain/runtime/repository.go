@@ -35,6 +35,7 @@ type pgRepository struct {
 	deleter            repo.Deleter
 	pageableQuerier    repo.PageableQuerier
 	lister             repo.Lister
+	ownerLister        repo.Lister
 	listerGlobal       repo.ListerGlobal
 	creator            repo.Creator
 	updater            repo.Updater
@@ -50,6 +51,7 @@ func NewRepository(conv EntityConverter) *pgRepository {
 		deleter:            repo.NewDeleter(runtimeTable),
 		pageableQuerier:    repo.NewPageableQuerier(runtimeTable, runtimeColumns),
 		lister:             repo.NewLister(runtimeTable, runtimeColumns),
+		ownerLister:        repo.NewOwnerLister(runtimeTable, runtimeColumns, true),
 		listerGlobal:       repo.NewListerGlobal(resource.Runtime, runtimeTable, runtimeColumns),
 		creator:            repo.NewCreator(runtimeTable, runtimeColumns),
 		updater:            repo.NewUpdater(runtimeTable, []string{"name", "description", "status_condition", "status_timestamp"}, []string{"id"}),
@@ -148,31 +150,14 @@ func (r *pgRepository) ListByFiltersGlobal(ctx context.Context, filters []*label
 	return r.multipleFromEntities(entities), nil
 }
 
-// ListAll missing godoc
+// ListAll returns all runtimes in a tenant that match given label filter and owner check to false
 func (r *pgRepository) ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
-	var entities RuntimeCollection
+	return r.listRuntimes(ctx, tenant, filter, false)
+}
 
-	tenantID, err := uuid.Parse(tenant)
-	if err != nil {
-		return nil, errors.Wrap(err, "while parsing tenant as UUID")
-	}
-
-	filterSubquery, args, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
-	if err != nil {
-		return nil, errors.Wrap(err, "while building filter query")
-	}
-
-	var conditions repo.Conditions
-	if filterSubquery != "" {
-		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
-	}
-
-	err = r.lister.List(ctx, resource.Runtime, tenant, &entities, conditions...)
-	if err != nil {
-		return nil, err
-	}
-
-	return r.multipleFromEntities(entities), nil
+// ListOwnedRuntimes returns all runtimes in a tenant that match given label filter and owner check to true
+func (r *pgRepository) ListOwnedRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
+	return r.listRuntimes(ctx, tenant, filter, true)
 }
 
 // RuntimeCollection missing godoc
@@ -266,6 +251,39 @@ func (r *pgRepository) GetOldestForFilters(ctx context.Context, tenant string, f
 	runtimeModel := r.conv.FromEntity(&runtimeEnt)
 
 	return runtimeModel, nil
+}
+
+func (r *pgRepository) listRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, ownerCheck bool) ([]*model.Runtime, error) {
+	var entities RuntimeCollection
+
+	tenantID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing tenant as UUID")
+	}
+
+	filterSubquery, args, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
+	var conditions repo.Conditions
+	if filterSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	if ownerCheck {
+		err = r.ownerLister.List(ctx, resource.Runtime, tenant, &entities, conditions...)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		err = r.lister.List(ctx, resource.Runtime, tenant, &entities, conditions...)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return r.multipleFromEntities(entities), nil
 }
 
 func (r *pgRepository) multipleFromEntities(entities RuntimeCollection) []*model.Runtime {

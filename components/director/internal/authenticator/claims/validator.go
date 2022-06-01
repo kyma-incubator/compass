@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	labelutils "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -22,6 +21,12 @@ type RuntimeService interface {
 	ListByFilters(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
+// RuntimeCtxService missing godoc
+//go:generate mockery --name=RuntimeCtxService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type RuntimeCtxService interface {
+	ListByFilter(ctx context.Context, runtimeID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error)
+}
+
 // IntegrationSystemService is used to check if integration system with a given ID exists.
 //go:generate mockery --name=IntegrationSystemService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationSystemService interface {
@@ -29,19 +34,21 @@ type IntegrationSystemService interface {
 }
 
 type validator struct {
-	runtimesSvc                   RuntimeService
-	intSystemSvc                  IntegrationSystemService
-	subscriptionProviderLabelKey  string
-	consumerSubaccountIDsLabelKey string
+	runtimesSvc                  RuntimeService
+	runtimeCtxSvc                RuntimeCtxService
+	intSystemSvc                 IntegrationSystemService
+	subscriptionProviderLabelKey string
+	consumerSubaccountLabelKey   string
 }
 
 // NewValidator creates new claims validator
-func NewValidator(runtimesSvc RuntimeService, intSystemSvc IntegrationSystemService, subscriptionProviderLabelKey, consumerSubaccountIDsLabelKey string) *validator {
+func NewValidator(runtimesSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, intSystemSvc IntegrationSystemService, subscriptionProviderLabelKey, consumerSubaccountLabelKey string) *validator {
 	return &validator{
-		runtimesSvc:                   runtimesSvc,
-		intSystemSvc:                  intSystemSvc,
-		subscriptionProviderLabelKey:  subscriptionProviderLabelKey,
-		consumerSubaccountIDsLabelKey: consumerSubaccountIDsLabelKey,
+		runtimesSvc:                  runtimesSvc,
+		runtimeCtxSvc:                runtimeCtxSvc,
+		intSystemSvc:                 intSystemSvc,
+		subscriptionProviderLabelKey: subscriptionProviderLabelKey,
+		consumerSubaccountLabelKey:   consumerSubaccountLabelKey,
 	}
 }
 
@@ -85,49 +92,46 @@ func (v *validator) validateRuntimeConsumer(ctx context.Context, claims Claims) 
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", claims.Region)),
 	}
 
-	ctxWithProviderTenant := tenant.SaveToContext(ctx, claims.Tenant[tenantmapping.ProviderTenantKey], claims.Tenant[tenantmapping.ProviderExternalTenantKey])
+	providerInternalTenantID := claims.Tenant[tenantmapping.ProviderTenantKey]
+	providerExternalTenantID := claims.Tenant[tenantmapping.ProviderExternalTenantKey]
 
-	log.C(ctx).Infof("Listing runtimes in provider tenant %s for labels %s: %s and %s: %s", claims.Tenant[tenantmapping.ProviderTenantKey], tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, claims.TokenClientID)
+	ctxWithProviderTenant := tenant.SaveToContext(ctx, providerInternalTenantID, providerExternalTenantID)
+
+	log.C(ctx).Infof("Listing runtimes in provider tenant %s for labels %s: %s and %s: %s", providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, claims.TokenClientID)
 
 	runtimes, err := v.runtimesSvc.ListByFilters(ctxWithProviderTenant, filters)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Error while listing runtimes in provider tenant %s for labels %s: %s and %s: %s: %v", claims.Tenant[tenantmapping.ProviderTenantKey], tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, claims.TokenClientID, err)
-		return errors.Wrapf(err, "failed to get runtimes in tenant %s for labels %s: %s and %s: %s", claims.Tenant[tenantmapping.ProviderTenantKey], tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, claims.TokenClientID)
+		log.C(ctx).WithError(err).Errorf("Error while listing runtimes in provider tenant %s for labels %s: %s and %s: %s: %v", providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, claims.TokenClientID, err)
+		return errors.Wrapf(err, "failed to get runtimes in tenant %s for labels %s: %s and %s: %s", providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, claims.TokenClientID)
+	}
+	log.C(ctx).Infof("Found %d runtimes in provider tenant %s for labels %s: %s and %s: %s", len(runtimes), providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, claims.TokenClientID)
+
+	consumerInternalTenantID := claims.Tenant[tenantmapping.ConsumerTenantKey]
+	consumerExternalTenantID := claims.Tenant[tenantmapping.ExternalTenantKey]
+	ctxWithConsumerTenant := tenant.SaveToContext(ctx, consumerInternalTenantID, consumerExternalTenantID)
+
+	rtmCtxFilter := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(v.consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", consumerExternalTenantID)),
 	}
 
-	log.C(ctx).Infof("Found %d runtimes in provider tenant %s for labels %s: %s and %s: %s", len(runtimes), claims.Tenant[tenantmapping.ProviderTenantKey], tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, claims.TokenClientID)
-
-	expectedConsumerTenant := claims.Tenant[tenantmapping.ExternalTenantKey]
 	found := false
 	for _, runtime := range runtimes {
-		label, err := v.runtimesSvc.GetLabel(ctxWithProviderTenant, runtime.ID, v.consumerSubaccountIDsLabelKey)
+		rtmCtxPage, err := v.runtimeCtxSvc.ListByFilter(ctxWithConsumerTenant, runtime.ID, rtmCtxFilter, 100, "")
 		if err != nil {
-			if apperrors.IsNotFoundError(err) {
-				continue
-			}
-			return errors.Wrapf(err, "failed to get label %s for runtime with ID %s", v.consumerSubaccountIDsLabelKey, runtime.ID)
+			log.C(ctx).Errorf("An error occurred while listing runtime context for runtime with ID: %q and filter with key: %q and value: %q", runtime.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
+			return errors.Wrapf(err, "while listing runtime context for runtime with ID: %q and filter with key: %q and value: %q", runtime.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
 		}
-		labelValues, err := labelutils.ValueToStringsSlice(label.Value)
-		if err != nil {
-			return err
-		}
-
-		for _, val := range labelValues {
-			if val == expectedConsumerTenant {
-				found = true
-				break
-			}
-		}
-
-		if found {
+		if len(rtmCtxPage.Data) > 0 {
+			found = true
 			break
 		}
 	}
 
 	if !found {
-		log.C(ctx).Errorf("Consumer's external tenant %s was not found in the %s label of any runtime in the provider tenant %s", expectedConsumerTenant, v.consumerSubaccountIDsLabelKey, claims.Tenant[tenantmapping.ProviderTenantKey])
-		return apperrors.NewUnauthorizedError(fmt.Sprintf("Consumer's external tenant %s was not found in the %s label of any runtime in the provider tenant %s", expectedConsumerTenant, v.consumerSubaccountIDsLabelKey, claims.Tenant[tenantmapping.ProviderTenantKey]))
+		log.C(ctx).Errorf("Consumer's external tenant %s was not found as subscription record in the runtime context table for any runtime in the provider tenant %s", consumerExternalTenantID, providerInternalTenantID)
+		return apperrors.NewUnauthorizedError(fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the runtime context table for any runtime in the provider tenant %s", consumerExternalTenantID, providerInternalTenantID))
 	}
+
 	return nil
 }
 

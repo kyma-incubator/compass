@@ -30,36 +30,13 @@ func (_m *LabelService) CreateLabel(ctx context.Context, tenant string, id strin
 	return r0
 }
 
-// GetLabel provides a mock function with given fields: ctx, tenant, labelInput
-func (_m *LabelService) GetLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) (*model.Label, error) {
+// UpsertLabel provides a mock function with given fields: ctx, tenant, labelInput
+func (_m *LabelService) UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error {
 	ret := _m.Called(ctx, tenant, labelInput)
 
-	var r0 *model.Label
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.LabelInput) *model.Label); ok {
-		r0 = rf(ctx, tenant, labelInput)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Label)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, *model.LabelInput) error); ok {
-		r1 = rf(ctx, tenant, labelInput)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// UpdateLabel provides a mock function with given fields: ctx, tenant, id, labelInput
-func (_m *LabelService) UpdateLabel(ctx context.Context, tenant string, id string, labelInput *model.LabelInput) error {
-	ret := _m.Called(ctx, tenant, id, labelInput)
-
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.LabelInput) error); ok {
-		r0 = rf(ctx, tenant, id, labelInput)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.LabelInput) error); ok {
+		r0 = rf(ctx, tenant, labelInput)
 	} else {
 		r0 = ret.Error(0)
 	}

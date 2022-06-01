@@ -16,13 +16,13 @@ type DirectorGraphQLClient struct {
 	mock.Mock
 }
 
-// SubscribeTenantToRuntime provides a mock function with given fields: ctx, providerID, subaccountID, providerSubaccountID, region
-func (_m *DirectorGraphQLClient) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) error {
-	ret := _m.Called(ctx, providerID, subaccountID, providerSubaccountID, region)
+// SubscribeTenantToRuntime provides a mock function with given fields: ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, appName
+func (_m *DirectorGraphQLClient) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, appName string) error {
+	ret := _m.Called(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, appName)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) error); ok {
-		r0 = rf(ctx, providerID, subaccountID, providerSubaccountID, region)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string) error); ok {
+		r0 = rf(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, appName)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -30,13 +30,13 @@ func (_m *DirectorGraphQLClient) SubscribeTenantToRuntime(ctx context.Context, p
 	return r0
 }
 
-// UnsubscribeTenantFromRuntime provides a mock function with given fields: ctx, providerID, subaccountID, providerSubaccountID, region
-func (_m *DirectorGraphQLClient) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) error {
-	ret := _m.Called(ctx, providerID, subaccountID, providerSubaccountID, region)
+// UnsubscribeTenantFromRuntime provides a mock function with given fields: ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region
+func (_m *DirectorGraphQLClient) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string) error {
+	ret := _m.Called(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) error); ok {
-		r0 = rf(ctx, providerID, subaccountID, providerSubaccountID, region)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string) error); ok {
+		r0 = rf(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region)
 	} else {
 		r0 = ret.Error(0)
 	}

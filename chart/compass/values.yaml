@@ -203,6 +203,11 @@ global:
       lastOperationPath: "/last_operation"
     info:
       path: "/v1/info"
+    subscription:
+      subscriptionProviderLabelKey: "subscriptionProviderId"
+      consumerSubaccountLabelKey: "consumer_subaccount_id"
+      subscriptionLabelKey: "subscription"
+      subscriptionProviderAppNameLabelKey: "runtimeType"
     selfRegister:
       secret:
         name: "region-instances-credentials"
@@ -513,14 +518,14 @@ global:
       name: "provider"
       subscriptionProviderIdProperty: "subscriptionProviderIdProperty"
       providerSubaccountIdProperty: "providerSubaccountIdProperty"
+      consumerTenantIdProperty: "consumerTenantIdProperty"
+      subscriptionProviderAppNameProperty: "subscriptionProviderAppNameProperty"
     server:
       fetchTenantEndpoint: "/v1/fetch/{parentTenantId}/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
       dependenciesEndpoint: "/v1/dependencies"
       tenantPathParam: "tenantId"
       regionPathParam: "region"
-      subscriptionProviderLabelKey: "subscriptionProviderId"
-      consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
     containerName: "tenant-fetcher"
     oauth:
       client: "client_id"

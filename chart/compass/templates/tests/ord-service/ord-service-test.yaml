@@ -81,7 +81,7 @@ spec:
                   name: {{ .Values.global.tests.ordService.subscriptionOauthSecret.name }}
                   key: {{ .Values.global.tests.ordService.subscriptionOauthSecret.clientSecretKey }}
             - name: SUBSCRIPTION_CONFIG_PROVIDER_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: SUBSCRIPTION_CONFIG_PROVIDER_ID
               value: "{{ .Values.global.tests.subscriptionProviderIdValue }}"
             - name: TENANT_CONFIG_TENANT_FETCHER_URL
