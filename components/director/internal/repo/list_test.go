@@ -212,16 +212,6 @@ func mockListDBSelect(mock testdb.DBMock, m2mTable string, db *sqlx.DB, lockClau
 	return ctx
 }
 
-//func mockListDBSelectWithOwnerCheck(mock testdb.DBMock, m2mTable string, db *sqlx.DB, lockClause string) context.Context {
-//	rows := sqlmock.NewRows(appColumns).
-//		AddRow(appID, appName, appDescription).
-//		AddRow(appID2, appName2, appDescription2)
-//	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id, name, description FROM %s WHERE %s%s", appTableName, fmt.Sprintf(tenantIsolationConditionWithOwnerCheckFmt, m2mTable, "$1"), PrepareLockClause(lockClause)))).
-//		WithArgs(tenantID).WillReturnRows(rows)
-//	ctx := persistence.SaveToContext(context.TODO(), db)
-//	return ctx
-//}
-
 func mockListDBSelectWithAdditionalParameters(mock testdb.DBMock, m2mTable string, db *sqlx.DB, lockClause string, ownerCheck bool) context.Context {
 	rows := sqlmock.NewRows(appColumns).
 		AddRow(appID, appName, appDescription)
