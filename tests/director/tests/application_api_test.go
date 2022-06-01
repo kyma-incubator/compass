@@ -1747,7 +1747,7 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	t.Logf("Should not be able to merge application %s into %s", outputSrcApp.Name, outputDestApp.Name)
 	destApp := graphql.ApplicationExt{}
 	mergeRequest := fixtures.FixMergeApplicationsRequest(outputSrcApp.ID, outputDestApp.ID)
-	saveExample(t, mergeRequest.Query(), "merge applications")
+	saveExample(t, mergeRequest.Query(), "merge applications with self register distinguish label key")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, mergeRequest, &destApp)
 
 	// THEN
