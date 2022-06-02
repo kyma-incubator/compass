@@ -257,7 +257,7 @@ spec:
               value: {{ $config.kubernetes.configMapNamespace }}
               {{ $configmapName := printf "%s-%s-config" $.Chart.Name $tenantFetcherJobName }}
             - name: APP_{{ $tenantFetcherJobName }}_LAST_EXECUTION_TIME_CONFIG_MAP_NAME
-              value: {{ $configmapName }}
+              value: {{ $configmapName | lower }}
             - name: APP_{{ $tenantFetcherJobName }}_CONFIGMAP_TIMESTAMP_FIELD
               value: "lastConsumedTenantTimestamp"
             - name: APP_{{ $tenantFetcherJobName }}_CONFIGMAP_RESYNC_TIMESTAMP_FIELD
