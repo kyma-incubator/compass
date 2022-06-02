@@ -4877,7 +4877,6 @@ func TestService_DeleteLabel(t *testing.T) {
 		FormationServiceFn func() *automock.FormationService
 		InputApplicationID string
 		InputKey           string
-		LabelValue         interface{}
 		ExpectedErrMessage string
 	}{
 		{
@@ -4947,13 +4946,16 @@ func TestService_DeleteLabel(t *testing.T) {
 				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
 				return repo
 			},
-			LabelRepositoryFn: UnusedLabelRepository,
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(&model.Label{Value: model.ScenariosDefaultValue}, nil).Once()
+				return repo
+			},
 			FormationServiceFn: func() *automock.FormationService {
 				service := &automock.FormationService{}
 				service.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: "DEFAULT"}).Return(nil, nil).Once()
 				return service
 			},
-			LabelValue:         model.ScenariosDefaultValue,
 			InputApplicationID: applicationID,
 			InputKey:           model.ScenariosKey,
 			ExpectedErrMessage: "",
@@ -4965,13 +4967,16 @@ func TestService_DeleteLabel(t *testing.T) {
 				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
 				return repo
 			},
-			LabelRepositoryFn: UnusedLabelRepository,
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, applicationID, model.ScenariosKey).Return(&model.Label{Value: model.ScenariosDefaultValue}, nil).Once()
+				return repo
+			},
 			FormationServiceFn: func() *automock.FormationService {
 				service := &automock.FormationService{}
 				service.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: "DEFAULT"}).Return(nil, testErr).Once()
 				return service
 			},
-			LabelValue:         model.ScenariosDefaultValue,
 			InputApplicationID: applicationID,
 			InputKey:           model.ScenariosKey,
 			ExpectedErrMessage: testErr.Error(),
@@ -4986,7 +4991,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil, formationSvc)
 
 			// WHEN
-			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey, testCase.LabelValue) // TODO
+			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey) // TODO
 
 			// then
 			if testCase.ExpectedErrMessage == "" {

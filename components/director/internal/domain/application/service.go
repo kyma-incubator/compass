@@ -709,8 +709,7 @@ func (s *service) ListLabels(ctx context.Context, applicationID string) (map[str
 }
 
 // DeleteLabel delete label given application ID, label key and label value.
-// Label value is only used in the case of ScenariosKey and should match the label value in the database
-func (s *service) DeleteLabel(ctx context.Context, applicationID string, key string, labelValue interface{}) error {
+func (s *service) DeleteLabel(ctx context.Context, applicationID string, key string) error {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
@@ -725,7 +724,11 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	}
 
 	if key == model.ScenariosKey {
-		scenarios, err := label.ValueToStringsSlice(labelValue)
+		storedLabel, err := s.labelRepo.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, applicationID, key)
+		if err != nil {
+			return errors.Wrapf(err, "while getting scenario label for %s", applicationID)
+		}
+		scenarios, err := label.ValueToStringsSlice(storedLabel.Value)
 		if err != nil {
 			return errors.Wrapf(err, "while converting label to string slice")
 		}

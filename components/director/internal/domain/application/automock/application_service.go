@@ -55,13 +55,13 @@ func (_m *ApplicationService) Delete(ctx context.Context, id string) error {
 	return r0
 }
 
-// DeleteLabel provides a mock function with given fields: ctx, applicationID, key, labelValue
-func (_m *ApplicationService) DeleteLabel(ctx context.Context, applicationID string, key string, labelValue interface{}) error {
-	ret := _m.Called(ctx, applicationID, key, labelValue)
+// DeleteLabel provides a mock function with given fields: ctx, applicationID, key
+func (_m *ApplicationService) DeleteLabel(ctx context.Context, applicationID string, key string) error {
+	ret := _m.Called(ctx, applicationID, key)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, interface{}) error); ok {
-		r0 = rf(ctx, applicationID, key, labelValue)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, applicationID, key)
 	} else {
 		r0 = ret.Error(0)
 	}
