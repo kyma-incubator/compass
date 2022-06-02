@@ -298,9 +298,9 @@ ory:
           proxy:
             port: 4455
             timeout:
-              idle: 120s
-              read: 120s
-              write: 120s
+              idle: 3600s
+              read: 3600s
+              write: 3600s
     oathkeeper-maester:
       deployment:
         resources:

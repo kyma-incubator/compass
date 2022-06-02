@@ -73,6 +73,8 @@ global:
       entityTypeField: "type"
     endpoints:
       subaccountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-create"
+    server:
+      subscriptionProviderLabelKey: "subscriptionProviderId"
   systemFetcher:
     enabled: true
     http:

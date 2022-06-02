@@ -19,6 +19,8 @@ package tests
 import (
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+
 	"github.com/kyma-incubator/compass/components/connectivity-adapter/pkg/model"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
@@ -39,13 +41,7 @@ func TestAppRegistry(t *testing.T) {
 	}
 
 	descr := "test"
-	runtimeInput := directorSchema.RuntimeRegisterInput{
-		Name:        TestRuntime,
-		Description: &descr,
-		Labels: directorSchema.Labels{
-			"scenarios": []interface{}{"DEFAULT"},
-		},
-	}
+	runtimeInput := fixRuntimeInput(descr)
 
 	appID, err := directorClient.CreateApplication(appInput)
 	defer func() {
@@ -151,4 +147,16 @@ func TestAppRegistry(t *testing.T) {
 
 func ptrSpecResponse(in model.SpecResponse) *model.SpecResponse {
 	return &in
+}
+
+func fixRuntimeInput(descr string) directorSchema.RuntimeRegisterInput {
+	return directorSchema.RuntimeRegisterInput{
+		Name:        TestRuntime,
+		Description: &descr,
+		Labels: directorSchema.Labels{
+			"scenarios":                           []interface{}{"DEFAULT"},
+			testConfig.SelfRegDistinguishLabelKey: []interface{}{testConfig.SelfRegDistinguishLabelValue},
+			tenantfetcher.RegionKey:               testConfig.SelfRegRegion,
+		},
+	}
 }

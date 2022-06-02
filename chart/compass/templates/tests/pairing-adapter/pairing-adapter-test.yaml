@@ -67,6 +67,44 @@ spec:
               value: "{{ $.Values.global.pairingAdapter.configMap.integrationSystemID }}"
             - name: APP_LOCAL_ADAPTER_FQDN
               value: "{{ $.Values.global.pairingAdapter.configMap.localAdapterFQDN }}"
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
+              value: {{ $.Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
+              value: {{ $.Values.global.tests.subscriptionProviderIdValue | quote }}
+            - name: APP_SELF_REG_REGION
+              value: {{ $.Values.global.tests.selfRegistration.region }}
+            - name: APP_SELF_REG_LABEL_KEY
+              value: {{ $.Values.global.director.selfRegister.label }}
+            - name: APP_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-username
+            - name: APP_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-password
+            - name: APP_DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-serviceName
+            - name: APP_DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-servicePort
+            - name: APP_DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-director-db-name
+            - name: APP_DB_SSL
+              valueFrom:
+                secretKeyRef:
+                  name: compass-postgresql
+                  key: postgresql-sslMode
             {{ end }}
 {{ $shouldAdd = false }}
 {{ end }}

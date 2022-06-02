@@ -22,6 +22,10 @@ type config struct {
 	SkipSSLValidation              bool `envconfig:"default=false"`
 	CertLoaderConfig               certloader.Config
 
+	AppSelfRegDistinguishLabelKey   string
+	AppSelfRegDistinguishLabelValue string
+	AppSelfRegRegion                string
+
 	DirectorURL string `envconfig:"-"`
 }
 
