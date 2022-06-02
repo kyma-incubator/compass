@@ -10,4 +10,7 @@ type SystemBrokerTestConfig struct {
 	ORDServiceURL                  string
 	SkipSSLValidation              bool
 	CertLoaderConfig               certloader.Config
+	SelfRegDistinguishLabelKey     string
+	SelfRegDistinguishLabelValue   string
+	SelfRegRegion                  string
 }

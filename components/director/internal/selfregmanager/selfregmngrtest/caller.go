@@ -1,4 +1,4 @@
-package rtmtest
+package selfregmngrtest
 
 import (
 	"bytes"
@@ -8,9 +8,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager/automock"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/config"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/stretchr/testify/mock"
 )
 
