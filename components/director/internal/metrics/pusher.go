@@ -64,7 +64,7 @@ func NewPusherPerJob(jobName string, endpoint string, timeout time.Duration) *Pu
 	failedTenantsSyncJob := prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: Namespace,
 		Subsystem: TenantFetcherSubsystem,
-		Name:      strings.ReplaceAll(jobName, "-", "_") + "_job_sync_failure_number",
+		Name:      strings.ReplaceAll(strings.ToLower(jobName), "-", "_") + "_job_sync_failure_number",
 		Help:      jobName + " job sync failure number",
 	}, []string{"method", "code", "desc"})
 
