@@ -308,6 +308,93 @@ func TestPgRepository_ListByRuntimeIDs(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestPgRepository_ListAll(t *testing.T) {
+	runtimeCtx1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
+	runtimeCtx2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
+	runtimeCtxEntity1 := fixEntityRuntimeCtxWithID(runtimeCtx1ID)
+	runtimeCtxEntity2 := fixEntityRuntimeCtxWithID(runtimeCtx2ID)
+
+	runtimeCtxModel1 := fixModelRuntimeCtxWithID(runtimeCtx1ID)
+	runtimeCtxModel2 := fixModelRuntimeCtxWithID(runtimeCtx2ID)
+
+	suite := testdb.RepoListTestSuite{
+		Name: "List Runtime Contexts",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				//'SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE runtime_id = $1 AND (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $2))', arguments do not match: expected 5, but got 2 arguments" component="persistence/sql_error_mapper.go:35:persistence.MapSQLError" error="Query 'SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE runtime_id = $1 AND (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $2))', arguments do not match: expected 5, but got 2 arguments" error_source="check component log field" x-request-id=bootstrap
+				//
+				Query:    regexp.QuoteMeta(`SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $1))`),
+				Args:     []driver.Value{tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
+						AddRow(runtimeCtxEntity1.ID, runtimeCtxEntity1.RuntimeID, runtimeCtxEntity1.Key, runtimeCtxEntity1.Value).
+						AddRow(runtimeCtxEntity2.ID, runtimeCtxEntity2.RuntimeID, runtimeCtxEntity2.Key, runtimeCtxEntity2.Value),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		ExpectedDBEntities:        []interface{}{runtimeCtxEntity1, runtimeCtxEntity2},
+		ExpectedModelEntities:     []interface{}{runtimeCtxModel1, runtimeCtxModel2},
+		RepoConstructorFunc:       runtimectx.NewRepository,
+		MethodArgs:                []interface{}{tenantID},
+		MethodName:                "ListAll",
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
+func TestPgRepository_ListAllForRuntime(t *testing.T) {
+	runtimeCtx1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
+	runtimeCtx2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
+	runtimeCtxEntity1 := fixEntityRuntimeCtxWithID(runtimeCtx1ID)
+	runtimeCtxEntity2 := fixEntityRuntimeCtxWithID(runtimeCtx2ID)
+
+	runtimeCtxModel1 := fixModelRuntimeCtxWithID(runtimeCtx1ID)
+	runtimeCtxModel2 := fixModelRuntimeCtxWithID(runtimeCtx2ID)
+
+	suite := testdb.RepoListTestSuite{
+		Name: "List Runtime Contexts",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				//'SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE runtime_id = $1 AND (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $2))', arguments do not match: expected 5, but got 2 arguments" component="persistence/sql_error_mapper.go:35:persistence.MapSQLError" error="Query 'SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE runtime_id = $1 AND (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $2))', arguments do not match: expected 5, but got 2 arguments" error_source="check component log field" x-request-id=bootstrap
+				//
+				Query: regexp.QuoteMeta(`SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE runtime_id = $1 AND
+												(id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $2))`),
+				Args:     []driver.Value{runtimeID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
+						AddRow(runtimeCtxEntity1.ID, runtimeCtxEntity1.RuntimeID, runtimeCtxEntity1.Key, runtimeCtxEntity1.Value).
+						AddRow(runtimeCtxEntity2.ID, runtimeCtxEntity2.RuntimeID, runtimeCtxEntity2.Key, runtimeCtxEntity2.Value),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		ExpectedDBEntities:        []interface{}{runtimeCtxEntity1, runtimeCtxEntity2},
+		ExpectedModelEntities:     []interface{}{runtimeCtxModel1, runtimeCtxModel2},
+		RepoConstructorFunc:       runtimectx.NewRepository,
+		MethodArgs:                []interface{}{tenantID, runtimeID},
+		MethodName:                "ListAllForRuntime",
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
 func TestPgRepository_Create(t *testing.T) {
 	var nilRuntimeCtxModel *model.RuntimeContext
 	runtimeCtxModel := fixModelRuntimeCtx()

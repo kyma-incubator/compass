@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -20,6 +22,7 @@ type RuntimeContextRepository interface {
 	GetForRuntime(ctx context.Context, tenant, id, runtimeID string) (*model.RuntimeContext, error)
 	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.RuntimeContext, error)
 	List(ctx context.Context, runtimeID string, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error)
+	ListAllForRuntime(ctx context.Context, tenant, runtimeID string) ([]*model.RuntimeContext, error)
 	ListByRuntimeIDs(ctx context.Context, tenantID string, runtimeIDs []string, pageSize int, cursor string) ([]*model.RuntimeContextPage, error)
 	Create(ctx context.Context, tenant string, item *model.RuntimeContext) error
 	Update(ctx context.Context, tenant string, item *model.RuntimeContext) error
@@ -42,6 +45,21 @@ type LabelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
+//go:generate mockery --exported --name=scenarioAssignmentEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
+type scenarioAssignmentEngine interface {
+	GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error)
+	GetFormationsForObject(ctx context.Context, tnt string, objType model.LabelableObject, objID string) ([]string, error)
+	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
+	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
+}
+
+//go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type tenantService interface {
+	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+	CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
+	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+}
+
 // UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
@@ -49,23 +67,28 @@ type UIDService interface {
 }
 
 type service struct {
-	repo      RuntimeContextRepository
-	labelRepo LabelRepository
-
-	labelUpsertService LabelUpsertService
-	uidService         UIDService
+	repo                     RuntimeContextRepository
+	labelRepo                LabelRepository
+	scenarioAssignmentEngine scenarioAssignmentEngine
+	tenantService            tenantService
+	labelUpsertService       LabelUpsertService
+	uidService               UIDService
 }
 
 // NewService missing godoc
 func NewService(repo RuntimeContextRepository,
 	labelRepo LabelRepository,
 	labelUpsertService LabelUpsertService,
+	scenarioAssignmentEngine scenarioAssignmentEngine,
+	tenantService tenantService,
 	uidService UIDService) *service {
 	return &service{
-		repo:               repo,
-		labelRepo:          labelRepo,
-		labelUpsertService: labelUpsertService,
-		uidService:         uidService,
+		repo:                     repo,
+		labelRepo:                labelRepo,
+		scenarioAssignmentEngine: scenarioAssignmentEngine,
+		tenantService:            tenantService,
+		labelUpsertService:       labelUpsertService,
+		uidService:               uidService,
 	}
 }
 
@@ -84,7 +107,8 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 	return exist, nil
 }
 
-// Create creates RuntimeContext using `in`
+// Create creates RuntimeContext using `in`. Retrieves all formations from ASAs matching the RuntimeContext
+// and assigns it to each formation
 func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (string, error) {
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -97,6 +121,24 @@ func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (str
 		return "", errors.Wrapf(err, "while creating Runtime Context")
 	}
 
+	tnt, err := s.tenantService.GetTenantByID(ctx, rtmCtxTenant)
+	if err != nil {
+		return "", errors.Wrapf(err, "while getting tenant with id %s", rtmCtxTenant)
+	}
+
+	if len(tnt.Parent) != 0 {
+		ctxWithParentTenant := tenant.SaveToContext(ctx, tnt.Parent, "")
+		scenariosFromAssignments, err := s.scenarioAssignmentEngine.GetScenariosFromMatchingASAs(ctxWithParentTenant, id, graphql.FormationObjectTypeRuntimeContext)
+		if err != nil {
+			return "", errors.Wrapf(err, "while getting formations from automatic scenario assignments")
+		}
+
+		for _, scenario := range scenariosFromAssignments {
+			if _, err := s.scenarioAssignmentEngine.AssignFormation(ctxWithParentTenant, tnt.Parent, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}); err != nil {
+				return "", errors.Wrapf(err, "while assigning formation with name %q for runtime context", scenario)
+			}
+		}
+	}
 	return id, nil
 }
 
@@ -120,19 +162,28 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeContext
 	return nil
 }
 
-// Delete deletes RuntimeContext with ID `id`
+// Delete unassigns the RuntimeContext from each formation that it is part of and then deletes it
 func (s *service) Delete(ctx context.Context, id string) error {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
+	formations, err := s.scenarioAssignmentEngine.GetFormationsForObject(ctx, rtmTenant, model.RuntimeContextLabelableObject, id)
+	if err != nil && !apperrors.IsNotFoundError(err) {
+		return errors.Wrapf(err, "while listing formations for runtime context with id %q", id)
+	}
+
+	for _, f := range formations {
+		if _, err := s.scenarioAssignmentEngine.UnassignFormation(ctx, rtmTenant, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: f}); err != nil {
+			return errors.Wrapf(err, "while unassigning formation with name %q for runtime context", f)
+		}
+	}
+
 	err = s.repo.Delete(ctx, rtmTenant, id)
 	if err != nil {
 		return errors.Wrapf(err, "while deleting Runtime Context with id %s", id)
 	}
-
-	// All labels are deleted (cascade delete)
 
 	return nil
 }
@@ -165,6 +216,21 @@ func (s *service) GetForRuntime(ctx context.Context, id, runtimeID string) (*mod
 	}
 
 	return runtimeCtx, nil
+}
+
+// ListAllForRuntime retrieves all RuntimeContexts for Runtime with id `runtimeID`
+func (s *service) ListAllForRuntime(ctx context.Context, runtimeID string) ([]*model.RuntimeContext, error) {
+	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	runtimeCtxs, err := s.repo.ListAllForRuntime(ctx, rtmCtxTenant, runtimeID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing Runtime Contexts fot Runtime with ID %s", runtimeID)
+	}
+
+	return runtimeCtxs, nil
 }
 
 // ListByFilter retrieves a page of RuntimeContext objects associated to Runtime with id `runtimeID` that are matching the provided filters
