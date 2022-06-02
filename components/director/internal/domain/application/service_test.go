@@ -3214,8 +3214,16 @@ func TestService_Merge(t *testing.T) {
 	srcAppLabels := fixApplicationLabels(srcID, labelKey1, labelKey2, labelValue1, "true")
 	destAppLabels := fixApplicationLabels(destID, labelKey1, labelKey2, labelValue2, "false")
 	srcAppLabelsWithFalseManaged := fixApplicationLabels(srcID, labelKey1, labelKey2, labelValue1, "false")
-	srcAppLabelsWithSelfRegDistLabelKey := fixApplicationLabels(srcID, selfRegDistLabelKey, labelKey2, labelValue1, "true")
-	destAppLabelsWithSelfRegDistLabelKey := fixApplicationLabels(destID, selfRegDistLabelKey, labelKey2, labelValue2, "false")
+	appTemplateLabelsWithSelfRegDistLabelKey := map[string]*model.Label{
+		selfRegDistLabelKey: {
+			ID:         "abc",
+			Tenant:     str.Ptr(tnt),
+			Key:        selfRegDistLabelKey,
+			Value:      labelValue1,
+			ObjectID:   templateID,
+			ObjectType: model.AppTemplateLabelableObject,
+		},
+	}
 
 	srcModel := fixDetailedModelApplication(t, srcID, tnt, srcName, srcDescription)
 	srcModel.ApplicationTemplateID = &templateID
@@ -3280,6 +3288,7 @@ func TestService_Merge(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
 				return repo
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
@@ -3315,6 +3324,7 @@ func TestService_Merge(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabelsWithFalseManaged, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
 				return repo
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
@@ -3443,6 +3453,7 @@ func TestService_Merge(t *testing.T) {
 				repo.AssertNotCalled(t, "GetByKey")
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				repo.AssertNotCalled(t, "ListForObject")
 				return repo
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
@@ -3476,6 +3487,7 @@ func TestService_Merge(t *testing.T) {
 				repo.AssertNotCalled(t, "GetByKey")
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
 				return repo
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
@@ -3509,6 +3521,7 @@ func TestService_Merge(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
 				return repo
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
@@ -3542,6 +3555,7 @@ func TestService_Merge(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
 				return repo
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
@@ -3575,6 +3589,7 @@ func TestService_Merge(t *testing.T) {
 				repo.On("GetByKey", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID, model.ScenariosKey).Return(scenarioLabel, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
 				return repo
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
@@ -3588,40 +3603,7 @@ func TestService_Merge(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Error when source application has label subscriptionProviderId",
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
-				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.AssertNotCalled(t, "Exists")
-				repo.AssertNotCalled(t, "Update")
-				repo.AssertNotCalled(t, "Delete")
-				return repo
-			},
-			RuntimeRepoFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.AssertNotCalled(t, "ListAll")
-				return repo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.AssertNotCalled(t, "GetByKey")
-				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabelsWithSelfRegDistLabelKey, nil)
-				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
-				return repo
-			},
-			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
-				svc := &automock.LabelUpsertService{}
-				svc.AssertNotCalled(t, "UpsertMultipleLabels")
-				return svc
-			},
-			Ctx:                ctx,
-			DestinationID:      destID,
-			SourceID:           srcID,
-			ExpectedErrMessage: "Source app template: 12346789 has label subscriptionProviderId",
-		},
-		{
-			Name: "Error when destination application has label subscriptionProviderId",
+			Name: "Error when app template has label subscriptionProviderId",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
@@ -3640,7 +3622,9 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.LabelRepository{}
 				repo.AssertNotCalled(t, "GetByKey")
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
-				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabelsWithSelfRegDistLabelKey, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(appTemplateLabelsWithSelfRegDistLabelKey, nil)
+
 				return repo
 			},
 			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
@@ -3651,7 +3635,7 @@ func TestService_Merge(t *testing.T) {
 			Ctx:                ctx,
 			DestinationID:      destID,
 			SourceID:           srcID,
-			ExpectedErrMessage: "Destination app template: 12346789 has label subscriptionProviderId",
+			ExpectedErrMessage: "app template: 12346789 has label subscriptionProviderId",
 		},
 	}
 
