@@ -9,15 +9,17 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/testctx/broker"
 )
 
-var testCtx *broker.SystemBrokerTestContext
+var (
+	cfg     = &config.SystemBrokerTestConfig{}
+	testCtx *broker.SystemBrokerTestContext
+)
 
 func TestMain(m *testing.M) {
 	log.D().Info("Starting System Broker Tests")
 
-	cfg := config.SystemBrokerTestConfig{}
 	config.ReadConfig(&cfg)
 
-	ctx, err := broker.NewSystemBrokerTestContext(cfg)
+	ctx, err := broker.NewSystemBrokerTestContext(*cfg)
 	if err != nil {
 		log.D().Errorf("Failed to create test context: %s", err.Error())
 		os.Exit(1)

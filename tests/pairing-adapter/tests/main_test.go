@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
@@ -24,6 +26,9 @@ func TestMain(m *testing.M) {
 	config.ReadConfig(conf)
 
 	ctx := context.Background()
+
+	tenant.TestTenants.Init()
+	defer tenant.TestTenants.Cleanup()
 
 	cc, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	if err != nil {

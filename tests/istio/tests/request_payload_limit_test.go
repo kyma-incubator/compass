@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/authentication"
@@ -25,17 +27,18 @@ const (
 	connectorPath = "/connector/graphql"
 )
 
-var (
-	runtimeInput = &graphql.RuntimeRegisterInput{
-		Name: "test-runtime",
-	}
-)
-
 func TestCallingCompassGateways(t *testing.T) {
 	var (
-		ctx    = context.TODO()
-		err    error
-		tenant = conf.DefaultTenant
+		ctx          = context.TODO()
+		err          error
+		tenant       = conf.DefaultTenant
+		runtimeInput = &graphql.RuntimeRegisterInput{
+			Name: "test-runtime",
+			Labels: graphql.Labels{
+				conf.SelfRegDistinguishLabelKey: []interface{}{conf.SelfRegDistinguishLabelValue},
+				tenantfetcher.RegionKey:         conf.SelfRegRegion,
+			},
+		}
 	)
 
 	authorizedClient := gql.NewCertAuthorizedHTTPClient(certCache.Get().PrivateKey, certCache.Get().Certificate, conf.SkipSSLValidation)

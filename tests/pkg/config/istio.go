@@ -10,4 +10,8 @@ type IstioConfig struct {
 	SkipSSLValidation              bool   `envconfig:"default=false"`
 	CertLoaderConfig               certloader.Config
 	DefaultTenant                  string
+
+	SelfRegDistinguishLabelKey   string
+	SelfRegDistinguishLabelValue string
+	SelfRegRegion                string
 }

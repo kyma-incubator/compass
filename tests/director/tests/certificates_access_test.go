@@ -68,7 +68,8 @@ func TestIntegrationSystemAccess(t *testing.T) {
 			}
 
 			t.Log(fmt.Sprintf("Trying to register runtime in account tenant %s", test.tenant))
-			rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, test.tenant, &graphql.RuntimeRegisterInput{Name: fmt.Sprintf("runtime-%s", test.resourceSuffix)})
+			rtmInput := fixRuntimeInput(fmt.Sprintf("runtime-%s", test.resourceSuffix))
+			rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, test.tenant, &rtmInput)
 			defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, test.tenant, &rt)
 			if test.expectErr {
 				require.Error(t, err)
@@ -78,7 +79,9 @@ func TestIntegrationSystemAccess(t *testing.T) {
 			}
 
 			t.Log(fmt.Sprintf("Trying to create application template in account tenant %s via client certificate", test.tenant))
-			at, err := fixtures.CreateApplicationTemplate(t, ctx, directorCertSecuredClient, test.tenant, fmt.Sprintf("app-template-%s", test.resourceSuffix))
+
+			appTmplInput := fixAppTemplateInput(fmt.Sprintf("app-template-%s", test.resourceSuffix))
+			at, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, test.tenant, appTmplInput)
 			defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, test.tenant, &at)
 			if test.expectErr {
 				require.Error(t, err)
