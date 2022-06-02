@@ -60,13 +60,6 @@ type scenariosService interface {
 	AddDefaultScenarioIfEnabled(ctx context.Context, tenant string, labels *map[string]interface{})
 }
 
-//go:generate mockery --exported --name=scenarioAssignmentEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
-type scenarioAssignmentEngine interface {
-	MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error)
-	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
-	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
-}
-
 //go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantService interface {
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
@@ -83,12 +76,12 @@ type service struct {
 	repo      runtimeRepository
 	labelRepo labelRepository
 
-	labelUpsertService       labelUpsertService
-	uidService               uidService
-	scenariosService         scenariosService
-	scenarioAssignmentEngine scenarioAssignmentEngine
-	tenantSvc                tenantService
-	webhookService           WebhookService
+	labelUpsertService labelUpsertService
+	uidService         uidService
+	scenariosService   scenariosService
+	formationService   formationService
+	tenantSvc          tenantService
+	webhookService     WebhookService
 
 	protectedLabelPattern string
 	immutableLabelPattern string
@@ -100,22 +93,22 @@ func NewService(repo runtimeRepository,
 	scenariosService scenariosService,
 	labelUpsertService labelUpsertService,
 	uidService uidService,
-	scenarioAssignmentEngine scenarioAssignmentEngine,
+	formationService formationService,
 	tenantService tenantService,
 	webhookService WebhookService,
 	protectedLabelPattern string,
 	immutableLabelPattern string) *service {
 	return &service{
-		repo:                     repo,
-		labelRepo:                labelRepo,
-		scenariosService:         scenariosService,
-		labelUpsertService:       labelUpsertService,
-		uidService:               uidService,
-		scenarioAssignmentEngine: scenarioAssignmentEngine,
-		tenantSvc:                tenantService,
-		webhookService:           webhookService,
-		protectedLabelPattern:    protectedLabelPattern,
-		immutableLabelPattern:    immutableLabelPattern,
+		repo:                  repo,
+		labelRepo:             labelRepo,
+		scenariosService:      scenariosService,
+		labelUpsertService:    labelUpsertService,
+		uidService:            uidService,
+		formationService:      formationService,
+		tenantSvc:             tenantService,
+		webhookService:        webhookService,
+		protectedLabelPattern: protectedLabelPattern,
+		immutableLabelPattern: immutableLabelPattern,
 	}
 }
 
@@ -295,7 +288,7 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 
 	ctxWithParentTenant := tenant.SaveToContext(ctx, tnt.Parent, "")
 
-	mergedScenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctxWithParentTenant, map[string]interface{}{}, id)
+	mergedScenarios, err := s.formationService.MergeScenariosFromInputLabelsAndAssignments(ctxWithParentTenant, map[string]interface{}{}, id)
 	if err != nil {
 		return errors.Wrap(err, "while merging scenarios from input and assignments")
 	}
@@ -504,7 +497,7 @@ func (s *service) assignRuntimeScenarios(ctx context.Context, rtmTenant, id stri
 	}
 
 	for _, scenario := range scenariosStr {
-		if _, err = s.scenarioAssignmentEngine.AssignFormation(ctx, rtmTenant, id, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
+		if _, err = s.formationService.AssignFormation(ctx, rtmTenant, id, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
 			return errors.Wrapf(err, "while assigning formation %q from runtime with ID %q", scenario, id)
 		}
 	}
@@ -525,7 +518,7 @@ func (s *service) unassignRuntimeScenarios(ctx context.Context, rtmTenant, runti
 		}
 
 		for _, scenario := range scenariosStr {
-			if _, err = s.scenarioAssignmentEngine.UnassignFormation(ctx, rtmTenant, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
+			if _, err = s.formationService.UnassignFormation(ctx, rtmTenant, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
 				return errors.Wrapf(err, "while unassigning formation %q from runtime with ID %q", scenario, runtimeID)
 			}
 		}
@@ -535,7 +528,7 @@ func (s *service) unassignRuntimeScenarios(ctx context.Context, rtmTenant, runti
 }
 
 func (s *service) updateScenariosLabel(ctx context.Context, rtmTenant, rtmId string, inputLabels map[string]interface{}) error {
-	mergedScenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctx, inputLabels, rtmId)
+	mergedScenarios, err := s.formationService.MergeScenariosFromInputLabelsAndAssignments(ctx, inputLabels, rtmId)
 	if err != nil {
 		return errors.Wrap(err, "while merging scenarios from input and assignments")
 	}
@@ -564,7 +557,7 @@ func (s *service) updateScenariosLabel(ctx context.Context, rtmTenant, rtmId str
 	// This modifyScenarios maps scenario to bool
 	// if scenario should be assigned we map it to 'true'
 	// if it should be unassigned we map it to 'false'
-	modifyScenarios := make(map[string]bool, 0)
+	modifyScenarios := make(map[string]bool, len(mergedScenariosSlice))
 
 	for _, scenario := range mergedScenariosSlice {
 		modifyScenarios[scenario] = true
@@ -579,12 +572,12 @@ func (s *service) updateScenariosLabel(ctx context.Context, rtmTenant, rtmId str
 	}
 
 	for scenario, modify := range modifyScenarios {
-		if modify == true {
-			if _, err = s.scenarioAssignmentEngine.AssignFormation(ctx, rtmTenant, rtmId, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
-				return errors.Wrapf(err, "while unassigning formation %q from runtime with ID %q", scenario, rtmId)
+		if modify {
+			if _, err = s.formationService.AssignFormation(ctx, rtmTenant, rtmId, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
+				return errors.Wrapf(err, "while assigning formation %q from runtime with ID %q", scenario, rtmId)
 			}
 		} else {
-			if _, err = s.scenarioAssignmentEngine.UnassignFormation(ctx, rtmTenant, rtmId, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
+			if _, err = s.formationService.UnassignFormation(ctx, rtmTenant, rtmId, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
 				return errors.Wrapf(err, "while unassigning formation %q from runtime with ID %q", scenario, rtmId)
 			}
 		}
