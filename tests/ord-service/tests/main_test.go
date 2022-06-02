@@ -86,6 +86,9 @@ type config struct {
 	TestProviderSubaccountID         string
 	TestConsumerSubaccountID         string
 	TestConsumerTenantID             string
+	SelfRegDistinguishLabelKey       string
+	SelfRegDistinguishLabelValue     string
+	SelfRegRegion                    string
 }
 
 var testConfig config

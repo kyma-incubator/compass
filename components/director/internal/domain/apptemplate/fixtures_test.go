@@ -23,6 +23,7 @@ const (
 	testTenant         = "tnt"
 	testExternalTenant = "external-tnt"
 	testID             = "foo"
+	testUUID           = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
 	testWebhookID      = "webhook-id-1"
 	testName           = "bar"
 	testPageSize       = 3
