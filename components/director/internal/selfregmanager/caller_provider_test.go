@@ -1,10 +1,11 @@
-package runtime_test
+package selfregmanager_test
 
 import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
+
 	"github.com/kyma-incubator/compass/components/director/internal/securehttp"
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/config"
@@ -71,7 +72,7 @@ func TestCallerProvider_GetCaller(t *testing.T) {
 		Name                      string
 		Config                    config.SelfRegConfig
 		Region                    string
-		ExpectedExternalSvcCaller runtime.ExternalSvcCaller
+		ExpectedExternalSvcCaller selfregmanager.ExternalSvcCaller
 		ExpectedErr               error
 	}{
 		{
@@ -91,7 +92,7 @@ func TestCallerProvider_GetCaller(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			c := &runtime.CallerProvider{}
+			c := &selfregmanager.CallerProvider{}
 			actualCaller, err := c.GetCaller(testCase.Config, testCase.Region)
 
 			if testCase.ExpectedErr != nil {
