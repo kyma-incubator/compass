@@ -76,7 +76,7 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixtures.FixRuntimeRegisterInput("runtime-test")
+	input := fixRuntimeInput("runtime-test")
 
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
@@ -181,7 +181,8 @@ func TestRuntimeIdInBundleInstanceAuthIsSetToNullWhenDeletingRuntime(t *testing.
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixtures.FixRuntimeRegisterInput("runtime-test")
+	input := fixRuntimeInput("runtime-test")
+
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 	require.NoError(t, err)
@@ -375,7 +376,7 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixtures.FixRuntimeRegisterInput("runtime-test")
+	input := fixRuntimeInput("runtime-test")
 
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)

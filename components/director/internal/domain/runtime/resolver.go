@@ -4,6 +4,9 @@ import (
 	"context"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -93,8 +96,8 @@ type BundleInstanceAuthService interface {
 // SelfRegisterManager missing godoc
 //go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SelfRegisterManager interface {
-	PrepareRuntimeForSelfRegistration(ctx context.Context, in model.RuntimeRegisterInput, id string) (map[string]interface{}, error)
-	CleanupSelfRegisteredRuntime(ctx context.Context, selfRegisterLabelValue, region string) error
+	PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string) (map[string]interface{}, error)
+	CleanupSelfRegistration(ctx context.Context, selfRegisterLabelValue, region string) error
 	GetSelfRegDistinguishingLabelKey() string
 }
 
@@ -292,7 +295,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 
 	id := r.uidService.Generate()
 
-	labels, err := r.selfRegManager.PrepareRuntimeForSelfRegistration(ctx, convertedIn, id)
+	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.Runtime, convertedIn.Labels, id)
 	if err != nil {
 		return nil, err
 	}
@@ -322,7 +325,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 		if didRollback {
 			labelVal := str.CastOrEmpty(convertedIn.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
 			if labelVal != "" {
-				label, ok := in.Labels["region"].(string)
+				label, ok := in.Labels[selfregmanager.RegionLabel].(string)
 				if !ok {
 					log.C(ctx).Errorf("An error occurred while casting region label value to string")
 				} else {
@@ -402,13 +405,12 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 	}
 
 	_, err = r.runtimeService.GetLabel(ctx, runtime.ID, r.selfRegManager.GetSelfRegDistinguishingLabelKey())
-
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
 			return nil, errors.Wrapf(err, "while getting self register info label")
 		}
 	} else {
-		regionLabel, err := r.runtimeService.GetLabel(ctx, runtime.ID, "region")
+		regionLabel, err := r.runtimeService.GetLabel(ctx, runtime.ID, selfregmanager.RegionLabel)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting region label")
 		}
@@ -424,7 +426,7 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 		}
 
 		log.C(ctx).Infof("Executing clean-up for self-registered runtime with id %q", runtime.ID)
-		if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, runtime.ID, regionValue); err != nil {
+		if err := r.selfRegManager.CleanupSelfRegistration(ctx, runtime.ID, regionValue); err != nil {
 			return nil, errors.Wrap(err, "An error occurred during cleanup of self-registered runtime: ")
 		}
 
@@ -888,7 +890,7 @@ func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runt
 }
 
 func (r *Resolver) cleanupAndLogOnError(ctx context.Context, runtimeID, region string) {
-	if err := r.selfRegManager.CleanupSelfRegisteredRuntime(ctx, runtimeID, region); err != nil {
+	if err := r.selfRegManager.CleanupSelfRegistration(ctx, runtimeID, region); err != nil {
 		log.C(ctx).Errorf("An error occurred during cleanup of self-registered runtime: %v", err)
 	}
 }

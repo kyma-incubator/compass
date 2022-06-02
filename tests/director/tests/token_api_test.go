@@ -24,7 +24,8 @@ func TestTokenGeneration(t *testing.T) {
 
 		tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-		input := fixtures.FixRuntimeRegisterInput("test")
+		input := fixRuntimeInput("test")
+
 		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 		require.NoError(t, err)

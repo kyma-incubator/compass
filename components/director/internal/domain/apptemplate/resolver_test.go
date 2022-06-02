@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate/apptmpltest"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -19,11 +19,16 @@ import (
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate/automock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	RegionKey = "region"
 )
 
 func TestResolver_ApplicationTemplate(t *testing.T) {
@@ -176,7 +181,7 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 			webhookSvc := testCase.WebhookSvcFn()
 			webhookConverter := testCase.WebhookConvFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, nil)
 
 			// WHEN
 			result, err := resolver.ApplicationTemplate(ctx, testID)
@@ -337,7 +342,7 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 			webhookSvc := testCase.WebhookSvcFn()
 			webhookConverter := testCase.WebhookConvFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, nil)
 
 			// WHEN
 			result, err := resolver.ApplicationTemplates(ctx, &first, &gqlAfter)
@@ -453,7 +458,7 @@ func TestResolver_Webhooks(t *testing.T) {
 			mockPersistence := testCase.PersistenceFn()
 			mockTransactioner := testCase.TransactionerFn(mockPersistence)
 
-			resolver := apptemplate.NewResolver(mockTransactioner, nil, nil, nil, nil, webhookSvc, converter)
+			resolver := apptemplate.NewResolver(mockTransactioner, nil, nil, nil, nil, webhookSvc, converter, nil, nil)
 
 			// WHEN
 			result, err := resolver.Webhooks(context.TODO(), appTemplate)
@@ -476,10 +481,21 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
+	uidSvcFn := func() *automock.UIDService {
+		uidSvc := &automock.UIDService{}
+		uidSvc.On("Generate").Return(testUUID)
+		return uidSvc
+	}
+
 	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationWebhooks(testWebhookID, testID))
 	modelAppTemplateInput := fixModelAppTemplateInput(testName, appInputJSONString)
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
 	gqlAppTemplateInput := fixGQLAppTemplateInputWithPlaceholder(testName)
+
+	labels := map[string]interface{}{"xsappnameCMPClone": "clone"}
+	distinguishLabel := map[string]interface{}{apptmpltest.TestDistinguishLabel: "selfRegVal"}
+	regionLabel := map[string]interface{}{RegionKey: "region"}
+	badValueLabel := map[string]interface{}{RegionKey: 1}
 
 	testCases := []struct {
 		Name              string
@@ -488,15 +504,25 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 		AppTemplateConvFn func() *automock.ApplicationTemplateConverter
 		WebhookSvcFn      func() *automock.WebhookService
 		WebhookConvFn     func() *automock.WebhookConverter
+		SelfRegManagerFn  func() *automock.SelfRegisterManager
 		ExpectedOutput    *graphql.ApplicationTemplate
 		ExpectedError     error
 	}{
 		{
 			Name: "Success",
-			TxFn: txGen.ThatSucceeds,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(2)
+
+				return persistTx, transact
+			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInput).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, labels).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
 			},
@@ -512,18 +538,22 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			WebhookSvcFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
-			ExpectedOutput: gqlAppTemplate,
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
+			ExpectedOutput:   gqlAppTemplate,
 		},
 		{
 			Name: "Returns error when can't convert input from graphql",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Get")
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(model.ApplicationTemplateInput{}, testError).Once()
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
 			WebhookConvFn: func() *automock.WebhookConverter {
@@ -532,19 +562,31 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			WebhookSvcFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
-			ExpectedError: testError,
+			SelfRegManagerFn: apptmpltest.NoopSelfRegManager,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when creating application template failed",
-			TxFn: txGen.ThatDoesntExpectCommit,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.AssertNotCalled(t, "Commit")
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(2)
+
+				return persistTx, transact
+			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInput).Return("", testError).Once()
+				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, labels).Return("", testError).Once()
+				appTemplateSvc.AssertNotCalled(t, "Get")
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
 			WebhookConvFn: func() *automock.WebhookConverter {
@@ -553,20 +595,31 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			WebhookSvcFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
-			ExpectedError: testError,
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when getting application template failed",
-			TxFn: txGen.ThatDoesntExpectCommit,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.AssertNotCalled(t, "Commit")
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(2)
+
+				return persistTx, transact
+			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInput).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, labels).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, testError).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
 			WebhookConvFn: func() *automock.WebhookConverter {
@@ -575,17 +628,22 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			WebhookSvcFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
-			ExpectedError: testError,
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when beginning transaction",
 			TxFn: txGen.ThatFailsOnBegin,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Get")
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.AssertNotCalled(t, "InputFromGraphQL")
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
 			WebhookConvFn: func() *automock.WebhookConverter {
@@ -594,20 +652,31 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			WebhookSvcFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
-			ExpectedError: testError,
+			SelfRegManagerFn: apptmpltest.NoopSelfRegManager,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when committing transaction",
-			TxFn: txGen.ThatFailsOnCommit,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(testError).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(2)
+
+				return persistTx, transact
+			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInput).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, labels).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
 			WebhookConvFn: func() *automock.WebhookConverter {
@@ -616,14 +685,24 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			WebhookSvcFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
-			ExpectedError: testError,
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when can't convert application template to graphql",
-			TxFn: txGen.ThatSucceeds,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(2)
+
+				return persistTx, transact
+			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInput).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, labels).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
 			},
@@ -639,7 +718,137 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			WebhookSvcFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
-			ExpectedError: testError,
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
+			ExpectedError:    testError,
+		},
+		{
+			Name: "Success when  labels are nil after converting gql AppTemplateInput",
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(2)
+
+				return persistTx, transact
+			},
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				modelAppTemplateInput.Labels = map[string]interface{}{}
+				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, labels).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				modelAppTemplateInput.Labels = nil
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
+				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
+			ExpectedOutput:   gqlAppTemplate,
+		},
+		{
+			Name: "Returns error when app template self registration fails",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Get")
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
+				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatReturnsErrorOnPrep,
+			ExpectedError:    errors.New(apptmpltest.SelfRegErrorMsg),
+		},
+		{
+			Name: "Returns error when app template self registration fails",
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.AssertNotCalled(t, "Commit")
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Times(2)
+
+				return persistTx, transact
+			},
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				modelAppTemplateInput.Labels = distinguishLabel
+				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, labels).Return("", testError).Once()
+				appTemplateSvc.AssertNotCalled(t, "Get")
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				gqlAppTemplateInput.Labels = regionLabel
+				modelAppTemplateInput.Labels = distinguishLabel
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
+				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatReturnsNoErrors(labels),
+			ExpectedError:    testError,
+		},
+		{
+			Name: "Success but couldn't cast region label value to string",
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Times(2)
+
+				return persistTx, transact
+			},
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, labels).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				gqlAppTemplateInput.Labels = badValueLabel
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
+				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labels),
+			ExpectedOutput:   gqlAppTemplate,
 		},
 	}
 
@@ -650,8 +859,10 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			appTemplateConv := testCase.AppTemplateConvFn()
 			webhookSvc := testCase.WebhookSvcFn()
 			webhookConverter := testCase.WebhookConvFn()
+			selfRegManager := testCase.SelfRegManagerFn()
+			uuidSvc := uidSvcFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, selfRegManager, uuidSvc)
 
 			// WHEN
 			result, err := resolver.CreateApplicationTemplate(ctx, *gqlAppTemplateInput)
@@ -669,6 +880,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			transact.AssertExpectations(t)
 			appTemplateSvc.AssertExpectations(t)
 			appTemplateConv.AssertExpectations(t)
+			selfRegManager.AssertExpectations(t)
 		})
 	}
 	t.Run("Returns error when application template inputs url template has invalid method", func(t *testing.T) {
@@ -676,7 +888,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 		expectedError := errors.New("failed to parse webhook url template")
 		_, transact := txGen.ThatSucceeds()
 
-		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil)
+		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := resolver.CreateApplicationTemplate(ctx, *gqlAppTemplateInputInvalid)
@@ -787,7 +999,7 @@ func TestResolver_Labels(t *testing.T) {
 			//persist, transact := testCase.TxFn()
 			appTemplateSvc := testCase.AppTemplateSvcFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, nil, nil, nil)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.Labels(context.TODO(), gqlAppTemplate, testCase.InputKey)
@@ -1140,7 +1352,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			appSvc := testCase.AppSvcFn()
 			appConv := testCase.AppConvFn()
 
-			resolver := apptemplate.NewResolver(transact, appSvc, appConv, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter)
+			resolver := apptemplate.NewResolver(transact, appSvc, appConv, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, nil)
 
 			// WHEN
 			result, err := resolver.RegisterApplicationFromTemplate(ctx, gqlAppFromTemplateInput)
@@ -1345,7 +1557,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			webhookSvc := testCase.WebhookSvcFn()
 			webhookConverter := testCase.WebhookConvFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, nil)
 
 			// WHEN
 			result, err := resolver.UpdateApplicationTemplate(ctx, testID, *gqlAppTemplateUpdateInput)
@@ -1371,7 +1583,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 		expectedError := errors.New("failed to parse webhook url template")
 		_, transact := txGen.ThatSucceeds()
 
-		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil)
+		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := resolver.UpdateApplicationTemplate(ctx, testID, *gqlAppTemplateUpdateInputInvalid)
@@ -1388,8 +1600,16 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
+	uidSvcFn := func() *automock.UIDService {
+		uidSvc := &automock.UIDService{}
+		uidSvc.On("Generate").Return(testUUID)
+		return uidSvc
+	}
 	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
+
+	label := &model.Label{Key: RegionKey, Value: "region-0"}
+	badValueLabel := &model.Label{Key: RegionKey, Value: 1}
 
 	testCases := []struct {
 		Name              string
@@ -1398,15 +1618,27 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 		AppTemplateConvFn func() *automock.ApplicationTemplateConverter
 		WebhookSvcFn      func() *automock.WebhookService
 		WebhookConvFn     func() *automock.WebhookConverter
+		SelfRegManagerFn  func() *automock.SelfRegisterManager
 		ExpectedOutput    *graphql.ApplicationTemplate
 		ExpectedError     error
 	}{
 		{
 			Name: "Success",
-			TxFn: txGen.ThatSucceeds,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Times(2)
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Times(2)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+
+				return persistTx, transact
+			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, apptmpltest.TestDistinguishLabel).Return(label, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, RegionKey).Return(label, nil).Once()
 				appTemplateSvc.On("Delete", txtest.CtxWithDBMatcher(), testID).Return(nil).Once()
 				return appTemplateSvc
 			},
@@ -1421,18 +1653,31 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 			WebhookSvcFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
-			ExpectedOutput: gqlAppTemplate,
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
+			ExpectedOutput:   gqlAppTemplate,
 		},
 		{
 			Name: "Returns error when getting application template failed",
-			TxFn: txGen.ThatDoesntExpectCommit,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.AssertNotCalled(t, "Commit")
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+
+				return persistTx, transact
+			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, testError).Once()
+				appTemplateSvc.AssertNotCalled(t, "GetLabel")
+				appTemplateSvc.AssertNotCalled(t, "Delete")
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
 			WebhookConvFn: func() *automock.WebhookConverter {
@@ -1441,19 +1686,32 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 			WebhookSvcFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
-			ExpectedError: testError,
+			SelfRegManagerFn: apptmpltest.NoopSelfRegManager,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when deleting application template failed",
-			TxFn: txGen.ThatDoesntExpectCommit,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Times(2)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+
+				return persistTx, transact
+			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, apptmpltest.TestDistinguishLabel).Return(label, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, RegionKey).Return(label, nil).Once()
 				appTemplateSvc.On("Delete", txtest.CtxWithDBMatcher(), testID).Return(testError).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
 			WebhookConvFn: func() *automock.WebhookConverter {
@@ -1462,17 +1720,22 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 			WebhookSvcFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
-			ExpectedError: testError,
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when beginning transaction",
 			TxFn: txGen.ThatFailsOnBegin,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.AssertNotCalled(t, "Get")
+				appTemplateSvc.AssertNotCalled(t, "GetLabel")
+				appTemplateSvc.AssertNotCalled(t, "Delete")
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
 			WebhookConvFn: func() *automock.WebhookConverter {
@@ -1481,19 +1744,58 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 			WebhookSvcFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
-			ExpectedError: testError,
+			SelfRegManagerFn: apptmpltest.NoopSelfRegManager,
+			ExpectedError:    testError,
 		},
 		{
-			Name: "Returns error when committing transaction",
+			Name: "Returns error when committing transaction for first time",
 			TxFn: txGen.ThatFailsOnCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, apptmpltest.TestDistinguishLabel).Return(label, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, RegionKey).Return(label, nil).Once()
+				appTemplateSvc.AssertNotCalled(t, "Delete")
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
+				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
+			SelfRegManagerFn: apptmpltest.SelfRegManagerReturnsDistinguishingLabel,
+			ExpectedError:    testError,
+		},
+		{
+			Name: "Returns error when committing transaction for second time",
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				persistTx.On("Commit").Return(testError).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Times(2)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+
+				return persistTx, transact
+			},
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, apptmpltest.TestDistinguishLabel).Return(label, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, RegionKey).Return(label, nil).Once()
 				appTemplateSvc.On("Delete", txtest.CtxWithDBMatcher(), testID).Return(nil).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
 			WebhookConvFn: func() *automock.WebhookConverter {
@@ -1502,14 +1804,26 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 			WebhookSvcFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
-			ExpectedError: testError,
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when can't convert application template to graphql",
-			TxFn: txGen.ThatSucceeds,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Times(2)
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Times(2)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+
+				return persistTx, transact
+			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, apptmpltest.TestDistinguishLabel).Return(label, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, RegionKey).Return(label, nil).Once()
 				appTemplateSvc.On("Delete", txtest.CtxWithDBMatcher(), testID).Return(nil).Once()
 				return appTemplateSvc
 			},
@@ -1524,7 +1838,166 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 			WebhookSvcFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
-			ExpectedError: testError,
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
+			ExpectedError:    testError,
+		},
+		{
+			Name: "Returns error when getting label for first time",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, apptmpltest.TestDistinguishLabel).Return(nil, testError).Once()
+				appTemplateSvc.AssertNotCalled(t, "GetLabel")
+				appTemplateSvc.AssertNotCalled(t, "Delete")
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
+				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
+			SelfRegManagerFn: apptmpltest.SelfRegManagerReturnsDistinguishingLabel,
+			ExpectedError:    testError,
+		},
+		{
+			Name: "Returns error when getting label for second time",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, apptmpltest.TestDistinguishLabel).Return(label, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, RegionKey).Return(nil, testError).Once()
+				appTemplateSvc.AssertNotCalled(t, "Delete")
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
+				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
+			SelfRegManagerFn: apptmpltest.SelfRegManagerReturnsDistinguishingLabel,
+			ExpectedError:    testError,
+		},
+		{
+			Name: "Success but couldn't cast region label value to string",
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				persistTx.AssertNotCalled(t, "Commit")
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.AssertNotCalled(t, "Begin")
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+
+				return persistTx, transact
+			},
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, apptmpltest.TestDistinguishLabel).Return(label, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, RegionKey).Return(badValueLabel, nil).Once()
+				appTemplateSvc.AssertNotCalled(t, "Delete")
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
+				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
+			SelfRegManagerFn: apptmpltest.SelfRegManagerReturnsDistinguishingLabel,
+			ExpectedOutput:   nil,
+		},
+		{
+			Name: "Returns error when CleanUpSelfRegistration fails",
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				persistTx.AssertNotCalled(t, "Commit")
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.AssertNotCalled(t, "Begin")
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+
+				return persistTx, transact
+			},
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, apptmpltest.TestDistinguishLabel).Return(label, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, RegionKey).Return(label, nil).Once()
+				appTemplateSvc.AssertNotCalled(t, "Delete")
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
+				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatReturnsErrorOnCleanup,
+			ExpectedError:    errors.New(apptmpltest.SelfRegErrorMsg),
+		},
+		{
+			Name: "Returns error when beginning transaction for second time",
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				persistTx.AssertNotCalled(t, "Commit")
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("Begin").Return(persistTx, testError).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+
+				return persistTx, transact
+			},
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, apptmpltest.TestDistinguishLabel).Return(label, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, RegionKey).Return(label, nil).Once()
+				appTemplateSvc.AssertNotCalled(t, "Delete")
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
+				return appTemplateConv
+			},
+			WebhookConvFn: func() *automock.WebhookConverter {
+				return &automock.WebhookConverter{}
+			},
+			WebhookSvcFn: func() *automock.WebhookService {
+				return &automock.WebhookService{}
+			},
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
+			ExpectedError:    testError,
 		},
 	}
 
@@ -1535,7 +2008,10 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 			appTemplateConv := testCase.AppTemplateConvFn()
 			webhookSvc := testCase.WebhookSvcFn()
 			webhookConverter := testCase.WebhookConvFn()
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter)
+			selfRegManager := testCase.SelfRegManagerFn()
+			uuidSvc := uidSvcFn()
+
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, selfRegManager, uuidSvc)
 
 			// WHEN
 			result, err := resolver.DeleteApplicationTemplate(ctx, testID)
@@ -1553,6 +2029,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 			transact.AssertExpectations(t)
 			appTemplateSvc.AssertExpectations(t)
 			appTemplateConv.AssertExpectations(t)
+			selfRegManager.AssertExpectations(t)
 		})
 	}
 }

@@ -163,13 +163,9 @@ func TestRuntimeFormationFlow(t *testing.T) {
 
 	rtmName := "rt"
 	rtmDesc := "rt-description"
-	rtmInput := graphql.RuntimeRegisterInput{
-		Name:        rtmName,
-		Description: &rtmDesc,
-		Labels: graphql.Labels{
-			selectorKey: subaccountID,
-		},
-	}
+	rtmInput := fixRuntimeInput(rtmName)
+	rtmInput.Description = &rtmDesc
+	rtmInput.Labels[selectorKey] = subaccountID
 
 	t.Log("Create runtime")
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, subaccountID, &rtmInput)
