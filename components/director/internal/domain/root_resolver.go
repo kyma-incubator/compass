@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
+
 	pkgadapters "github.com/kyma-incubator/compass/components/director/pkg/adapters"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/model"
@@ -111,7 +113,7 @@ func NewRootResolver(
 	hydra := hydraClient.New(transport, nil)
 
 	metricsCollector.InstrumentOAuth20HTTPClient(oAuth20HTTPClient)
-	selfRegisterManager, err := runtime.NewSelfRegisterManager(selfRegConfig, &runtime.CallerProvider{})
+	selfRegisterManager, err := selfregmanager.NewSelfRegisterManager(selfRegConfig, &selfregmanager.CallerProvider{})
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +196,7 @@ func NewRootResolver(
 	return &RootResolver{
 		appNameNormalizer:  appNameNormalizer,
 		app:                application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter),
-		appTemplate:        apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter),
+		appTemplate:        apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, selfRegisterManager, uidSvc),
 		api:                api.NewResolver(transact, apiSvc, runtimeSvc, bundleSvc, bundleReferenceSvc, apiConverter, frConverter, specSvc, specConverter, appSvc),
 		eventAPI:           eventdef.NewResolver(transact, eventAPISvc, bundleSvc, bundleReferenceSvc, eventAPIConverter, frConverter, specSvc, specConverter),
 		eventing:           eventing.NewResolver(transact, eventingSvc, appSvc),

@@ -37,6 +37,27 @@ func (_m *ApplicationTemplateService) Create(ctx context.Context, in model.Appli
 	return r0, r1
 }
 
+// CreateWithLabels provides a mock function with given fields: ctx, in, labels
+func (_m *ApplicationTemplateService) CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error) {
+	ret := _m.Called(ctx, in, labels)
+
+	var r0 string
+	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationTemplateInput, map[string]interface{}) string); ok {
+		r0 = rf(ctx, in, labels)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationTemplateInput, map[string]interface{}) error); ok {
+		r1 = rf(ctx, in, labels)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Delete provides a mock function with given fields: ctx, id
 func (_m *ApplicationTemplateService) Delete(ctx context.Context, id string) error {
 	ret := _m.Called(ctx, id)
@@ -90,6 +111,29 @@ func (_m *ApplicationTemplateService) GetByName(ctx context.Context, name string
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetLabel provides a mock function with given fields: ctx, appTemplateID, key
+func (_m *ApplicationTemplateService) GetLabel(ctx context.Context, appTemplateID string, key string) (*model.Label, error) {
+	ret := _m.Called(ctx, appTemplateID, key)
+
+	var r0 *model.Label
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Label); ok {
+		r0 = rf(ctx, appTemplateID, key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Label)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, appTemplateID, key)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -98,6 +98,8 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
             - name: APP_EXTERNAL_CLIENT_KEY_KEY
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+            - name: APP_SELF_REGISTER_LABEL_KEY
+              value: {{ .Values.global.director.selfRegister.label }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE

@@ -28,6 +28,9 @@ type config struct {
 	SkipSSLValidation                  bool
 	CertLoaderConfig                   certloader.Config
 	ConsumerID                         string
+	AppSelfRegDistinguishLabelKey      string
+	AppSelfRegDistinguishLabelValue    string
+	AppSelfRegRegion                   string
 }
 
 var (

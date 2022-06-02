@@ -5,6 +5,8 @@ import (
 	"crypto/x509"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+
 	"github.com/kyma-incubator/compass/components/connector/pkg/graphql/externalschema"
 
 	"github.com/kyma-incubator/compass/tests/pkg/authentication"
@@ -52,6 +54,14 @@ var (
 )
 
 func TestSystemBrokerAuthentication(t *testing.T) {
+	runtimeInput = &graphql.RuntimeRegisterInput{
+		Name: testRuntimeName,
+		Labels: graphql.Labels{
+			cfg.SelfRegDistinguishLabelKey: []interface{}{cfg.SelfRegDistinguishLabelValue},
+			tenantfetcher.RegionKey:        cfg.SelfRegRegion,
+		},
+	}
+
 	logrus.Infof("registering runtime with name: %s, within tenant: %s", runtimeInput.Name, testCtx.Tenant)
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, runtimeInput)
 	defer fixtures.CleanupRuntime(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, &runtime)
