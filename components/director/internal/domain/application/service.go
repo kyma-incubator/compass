@@ -767,11 +767,13 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 		return nil, errors.Errorf("Application templates are not the same. Destination app template: %s. Source app template: %s", destTemplateID, srcTemplateID)
 	}
 
-	if _, exists := srcAppLabels[s.selfRegisterDistinguishLabelKey]; exists {
-		return nil, errors.Errorf("Source app template: %s has label %s", srcTemplateID, s.selfRegisterDistinguishLabelKey)
+	appTemplateLabels, err := s.labelRepo.ListForObject(ctx, appTenant, model.AppTemplateLabelableObject, srcTemplateID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting labels for app template with id %s", srcTemplateID)
 	}
-	if _, exists := destAppLabels[s.selfRegisterDistinguishLabelKey]; exists {
-		return nil, errors.Errorf("Destination app template: %s has label %s", destTemplateID, s.selfRegisterDistinguishLabelKey)
+
+	if _, exists := appTemplateLabels[s.selfRegisterDistinguishLabelKey]; exists {
+		return nil, errors.Errorf("app template: %s has label %s", srcTemplateID, s.selfRegisterDistinguishLabelKey)
 	}
 
 	if srcApp.Status == nil {

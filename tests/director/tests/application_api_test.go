@@ -1656,6 +1656,8 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	description := ptr.String("app description")
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 	namePlaceholder := "name"
+	managedLabelValue := "true"
+	sccLabelValue := "cloud connector"
 	expectedProductType := "MergeTemplate"
 	newFormation := "formation-merge-applications-e2e"
 
@@ -1670,6 +1672,9 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 			Name:        namePlaceholder,
 			Description: ptr.String("description"),
 		},
+	}
+	appTmplInput.Labels = graphql.Labels{
+		conf.SelfRegDistinguishLabelKey: []interface{}{conf.SelfRegDistinguishLabelValue},
 	}
 
 	// Create Application Template
@@ -1726,8 +1731,8 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateRequest, &updatedApp)
 	require.NoError(t, err)
 
-	fixtures.SetApplicationLabelWithTenant(t, ctx, certSecuredGraphQLClient, tenantId, outputSrcApp.ID, conf.SelfRegDistinguishLabelKey, conf.SelfRegDistinguishLabelValue)
-	fixtures.SetApplicationLabelWithTenant(t, ctx, certSecuredGraphQLClient, tenantId, outputDestApp.ID, conf.SelfRegDistinguishLabelKey, conf.SelfRegDistinguishLabelValue)
+	fixtures.SetApplicationLabelWithTenant(t, ctx, certSecuredGraphQLClient, tenantId, outputSrcApp.ID, managedLabel, managedLabelValue)
+	fixtures.SetApplicationLabelWithTenant(t, ctx, certSecuredGraphQLClient, tenantId, outputSrcApp.ID, sccLabel, sccLabelValue)
 
 	t.Logf("Should create formation: %s", newFormation)
 	var formation graphql.Formation
@@ -1775,7 +1780,7 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	// THEN
 	require.Error(t, err)
 	require.NotNil(t, err.Error())
-	require.Contains(t, err.Error(), fmt.Sprintf("Source app template: %s has label %s", *outputSrcApp.ApplicationTemplateID, conf.SelfRegDistinguishLabelKey))
+	require.Contains(t, err.Error(), fmt.Sprintf("app template: %s has label %s", *outputSrcApp.ApplicationTemplateID, conf.SelfRegDistinguishLabelKey))
 
 	srcApp := graphql.ApplicationExt{}
 	getSrcAppReq := fixtures.FixGetApplicationRequest(outputSrcApp.ID)
