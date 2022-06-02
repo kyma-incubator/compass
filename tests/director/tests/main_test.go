@@ -32,6 +32,7 @@ type DirectorConfig struct {
 	SkipSSLValidation              bool `envconfig:"default=false"`
 	CertLoaderConfig               certloader.Config
 	certprovider.ExternalCertProviderConfig
+	SelfRegLabelKey              string `envconfig:"APP_SELF_REGISTER_LABEL_KEY"`
 	SelfRegDistinguishLabelKey   string
 	SelfRegDistinguishLabelValue string
 	SelfRegRegion                string

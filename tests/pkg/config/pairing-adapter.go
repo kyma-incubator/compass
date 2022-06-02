@@ -19,4 +19,8 @@ type PairingAdapterConfig struct {
 	ConfigMapKey                   string `envconfig:"optional"`
 	IntegrationSystemID            string `envconfig:"optional"`
 	LocalAdapterFQDN               string `envconfig:"optional"`
+	SelfRegDistinguishLabelKey     string
+	SelfRegDistinguishLabelValue   string
+	SelfRegRegion                  string
+	SelfRegLabelKey                string
 }

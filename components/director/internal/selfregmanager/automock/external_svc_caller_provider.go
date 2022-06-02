@@ -6,7 +6,7 @@ import (
 	config "github.com/kyma-incubator/compass/components/director/pkg/config"
 	mock "github.com/stretchr/testify/mock"
 
-	runtime "github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	selfregmanager "github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 
 	testing "testing"
 )
@@ -17,15 +17,15 @@ type ExternalSvcCallerProvider struct {
 }
 
 // GetCaller provides a mock function with given fields: _a0, _a1
-func (_m *ExternalSvcCallerProvider) GetCaller(_a0 config.SelfRegConfig, _a1 string) (runtime.ExternalSvcCaller, error) {
+func (_m *ExternalSvcCallerProvider) GetCaller(_a0 config.SelfRegConfig, _a1 string) (selfregmanager.ExternalSvcCaller, error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 runtime.ExternalSvcCaller
-	if rf, ok := ret.Get(0).(func(config.SelfRegConfig, string) runtime.ExternalSvcCaller); ok {
+	var r0 selfregmanager.ExternalSvcCaller
+	if rf, ok := ret.Get(0).(func(config.SelfRegConfig, string) selfregmanager.ExternalSvcCaller); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(runtime.ExternalSvcCaller)
+			r0 = ret.Get(0).(selfregmanager.ExternalSvcCaller)
 		}
 	}
 

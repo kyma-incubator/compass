@@ -89,7 +89,9 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 	accountTenant := tenant.TestTenants.GetDefaultTenantID()
 
 	// Register runtime in customer's tenant
-	customerRuntime, err := fixtures.RegisterRuntime(t, ctx, certSecuredGraphQLClient, "customerRuntime", customerTenant)
+	input := fixRuntimeInput("customerRuntime")
+
+	customerRuntime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, customerTenant, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, customerTenant, &customerRuntime)
 	require.NoError(t, err)
 	require.NotEmpty(t, customerRuntime.ID)
@@ -104,7 +106,8 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 	require.Len(t, accountRuntimes.Data, 0)
 
 	// Register runtime in account's tenant
-	accountRuntime, err := fixtures.RegisterRuntime(t, ctx, certSecuredGraphQLClient, "accountRuntime", accountTenant)
+	accountRuntimeInput := fixRuntimeInput("accountRuntime")
+	accountRuntime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, accountTenant, &accountRuntimeInput)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, accountTenant, &accountRuntime)
 	require.NoError(t, err)
 	require.NotEmpty(t, accountRuntime.ID)
@@ -119,12 +122,12 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 	assertions.AssertRuntimePageContainOnlyIDs(t, customerRuntimes, customerRuntime.ID, accountRuntime.ID)
 
 	// Assert customer can update his own runtime
-	customerRuntimeUpdateInput := fixtures.FixRuntimeUpdateInput("customerRuntimeUpdated")
+	customerRuntimeUpdateInput := fixRuntimeUpdateInput("customerRuntimeUpdated")
 	customerRuntime, err = fixtures.UpdateRuntimeWithinTenant(t, ctx, certSecuredGraphQLClient, customerTenant, customerRuntime.ID, customerRuntimeUpdateInput)
 	require.NoError(t, err)
 
 	// Assert customer can update his child account's runtime
-	accountRuntimeUpdateInput := fixtures.FixRuntimeUpdateInput("accountRuntimeUpdated")
+	accountRuntimeUpdateInput := fixRuntimeUpdateInput("accountRuntimeUpdated")
 	accountRuntime, err = fixtures.UpdateRuntimeWithinTenant(t, ctx, certSecuredGraphQLClient, customerTenant, accountRuntime.ID, accountRuntimeUpdateInput)
 	require.NoError(t, err)
 
