@@ -116,6 +116,8 @@ type TenantFetcher interface {
 type RuntimeContextService interface {
 	GetForRuntime(ctx context.Context, id, runtimeID string) (*model.RuntimeContext, error)
 	ListByRuntimeIDs(ctx context.Context, runtimeIDs []string, pageSize int, cursor string) ([]*model.RuntimeContextPage, error)
+	ListAllForRuntime(ctx context.Context, runtimeID string) ([]*model.RuntimeContext, error)
+	Delete(ctx context.Context, id string) error
 }
 
 // RuntimeContextConverter missing godoc
