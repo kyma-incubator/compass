@@ -2,9 +2,10 @@ package metrics
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"net/http"
 )
 
 type MetricsReporter struct {

@@ -202,10 +202,10 @@ spec:
                 value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
               - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
                 value: "{{ $.Values.global.http.client.skipSSLValidation }}"
-  { { if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) } }
-  - name: APP_METRICS_PUSH_ENDPOINT
-    value: { { $.Values.global.metrics.pushEndpoint } }
-  { { end } }
+              {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
+              - name: APP_METRICS_PUSH_ENDPOINT
+                value: {{ $.Values.global.metrics.pushEndpoint }}
+              {{ end }}
             command:
               - "/bin/sh"
             args:
