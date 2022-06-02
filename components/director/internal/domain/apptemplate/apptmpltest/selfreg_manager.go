@@ -1,11 +1,11 @@
-package rtmtest
+package apptmpltest
 
 import (
 	"errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate/automock"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -16,9 +16,6 @@ const (
 	SelfRegErrorMsg = "error during self-reg prep"
 )
 
-// TestError is a testing error
-var TestError = errors.New("test-error")
-
 // NoopSelfRegManager missing godoc
 func NoopSelfRegManager() *automock.SelfRegisterManager {
 	return &automock.SelfRegisterManager{}
@@ -28,7 +25,7 @@ func NoopSelfRegManager() *automock.SelfRegisterManager {
 func SelfRegManagerThatDoesPrepWithNoErrors(res map[string]interface{}) func() *automock.SelfRegisterManager {
 	return func() *automock.SelfRegisterManager {
 		srm := &automock.SelfRegisterManager{}
-		srm.On("PrepareForSelfRegistration", mock.Anything, resource.Runtime, mock.Anything, mock.AnythingOfType("string")).Return(res, nil).Once()
+		srm.On("PrepareForSelfRegistration", mock.Anything, resource.ApplicationTemplate, mock.Anything, mock.AnythingOfType("string")).Return(res, nil).Once()
 		return srm
 	}
 }
@@ -37,7 +34,7 @@ func SelfRegManagerThatDoesPrepWithNoErrors(res map[string]interface{}) func() *
 func SelfRegManagerThatReturnsErrorOnPrep() *automock.SelfRegisterManager {
 	srm := &automock.SelfRegisterManager{}
 	labels := make(map[string]interface{})
-	srm.On("PrepareForSelfRegistration", mock.Anything, resource.Runtime, mock.Anything, mock.AnythingOfType("string")).Return(labels, errors.New(SelfRegErrorMsg)).Once()
+	srm.On("PrepareForSelfRegistration", mock.Anything, resource.ApplicationTemplate, mock.Anything, mock.AnythingOfType("string")).Return(labels, errors.New(SelfRegErrorMsg)).Once()
 	return srm
 }
 
@@ -46,13 +43,6 @@ func SelfRegManagerThatDoesCleanupWithNoErrors() *automock.SelfRegisterManager {
 	srm := &automock.SelfRegisterManager{}
 	srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
 	srm.On("CleanupSelfRegistration", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil).Once()
-	return srm
-}
-
-// SelfRegManagerThatDoesNotCleanup missing godoc
-func SelfRegManagerThatDoesNotCleanup() *automock.SelfRegisterManager {
-	srm := &automock.SelfRegisterManager{}
-	srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
 	return srm
 }
 
@@ -86,16 +76,6 @@ func SelfRegManagerThatDoesNotCleanupFunc(res map[string]interface{}) func() *au
 	return func() *automock.SelfRegisterManager {
 		srm := SelfRegManagerThatDoesPrepWithNoErrors(res)()
 		srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
-		return srm
-	}
-}
-
-// SelfRegManagerThatFailsOnCleanup missing godoc
-func SelfRegManagerThatFailsOnCleanup(res map[string]interface{}) func() *automock.SelfRegisterManager {
-	return func() *automock.SelfRegisterManager {
-		srm := SelfRegManagerThatDoesPrepWithNoErrors(res)()
-		srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
-		srm.On("CleanupSelfRegistration", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(TestError).Once()
 		return srm
 	}
 }

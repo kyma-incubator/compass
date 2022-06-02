@@ -22,6 +22,10 @@ type config struct {
 	DirectorExternalCertSecuredURL string
 	SkipSSLValidation              bool `envconfig:"default=false"`
 	CertLoaderConfig               certloader.Config
+
+	SelfRegDistinguishLabelKey   string
+	SelfRegDistinguishLabelValue string
+	SelfRegRegion                string
 }
 
 var (

@@ -26,6 +26,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+
 	gcli "github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -523,6 +525,10 @@ func cleanupTenants(t require.TestingT, ctx context.Context, gqlClient *gcli.Cli
 func registerRuntime(t require.TestingT, ctx context.Context, runtimeName, subaccountInternalID string) graphql.RuntimeExt {
 	input := &graphql.RuntimeRegisterInput{
 		Name: runtimeName,
+		Labels: graphql.Labels{
+			cfg.SelfRegDistinguishLabelKey: []interface{}{cfg.SelfRegDistinguishLabelValue},
+			tenantfetcher.RegionKey:        cfg.SelfRegRegion,
+		},
 	}
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorInternalGQLClient, subaccountInternalID, input)
 	assert.NoError(t, err)

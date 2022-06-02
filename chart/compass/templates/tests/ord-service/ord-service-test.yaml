@@ -176,6 +176,12 @@ spec:
               value: {{ .Values.global.tests.ordService.consumerTenantID }}
             - name: SKIP_TESTS_REGEX
               value: {{ .Values.global.tests.ordService.skipPattern }}
+            - name: SELF_REG_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+            - name: SELF_REG_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscriptionProviderIdValue | quote }}
+            - name: SELF_REG_REGION
+              value: {{ .Values.global.tests.selfRegistration.region }}
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
