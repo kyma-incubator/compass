@@ -4035,6 +4035,7 @@ enum FormationObjectType {
 	APPLICATION
 	TENANT
 	RUNTIME
+	RUNTIME_CONTEXT
 }
 
 enum HealthCheckStatusCondition {
