@@ -8,17 +8,19 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
+// MetricsReporter for tenant fetcher execution metrics
 type MetricsReporter struct {
 	pusher tenantfetcher.MetricsPusher
 }
 
-// NewMetricsReporter missing godoc
+// NewMetricsReporter for tenant fetcher execution metrics
 func NewMetricsReporter(pusher tenantfetcher.MetricsPusher) MetricsReporter {
 	return MetricsReporter{
 		pusher: pusher,
 	}
 }
 
+// ReportFailedSync reports failed tenant fetcher job
 func (r *MetricsReporter) ReportFailedSync(err error, ctx context.Context) {
 	log.C(ctx).WithError(err).Errorf("Report failed job sync: %v", err)
 	if err != nil {

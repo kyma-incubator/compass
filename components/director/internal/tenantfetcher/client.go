@@ -224,6 +224,7 @@ func (c *Client) failedRequestDesc(err error) string {
 	return GetErrorDesc(err)
 }
 
+// GetErrorDesc retrieve description from error
 func GetErrorDesc(err error) string {
 	var e *net.OpError
 	if errors.As(err, &e) && e.Err != nil {
