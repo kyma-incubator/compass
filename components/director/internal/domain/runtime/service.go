@@ -553,32 +553,28 @@ func (s *service) updateScenariosLabel(ctx context.Context, rtmTenant, rtmId str
 		return errors.Wrapf(err, "while converting current runtime scenarios: %+v to slice of strings", currentScenarios)
 	}
 
-	// Calculate the diff between current scenarios and merged scenarios.
-	// This modifyScenarios maps scenario to bool
-	// if scenario should be assigned we map it to 'true'
-	// if it should be unassigned we map it to 'false'
-	modifyScenarios := make(map[string]bool, len(mergedScenariosSlice))
-
-	for _, scenario := range mergedScenariosSlice {
-		modifyScenarios[scenario] = true
+	currentScenariosMap := make(map[string]struct{}, len(currentScenariosSlice))
+	for _, s := range currentScenariosSlice {
+		currentScenariosMap[s] = struct{}{}
 	}
 
-	for _, scenario := range currentScenariosSlice {
-		if _, exists := modifyScenarios[scenario]; !exists {
-			modifyScenarios[scenario] = false
-		} else {
-			delete(modifyScenarios, scenario)
+	mergedScenariosMap := make(map[string]struct{}, len(mergedScenariosSlice))
+	for _, s := range mergedScenariosSlice {
+		mergedScenariosMap[s] = struct{}{}
+	}
+
+	for scenario := range currentScenariosMap {
+		if _, found := mergedScenariosMap[scenario]; !found {
+			if _, err = s.formationService.UnassignFormation(ctx, rtmTenant, rtmId, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
+				return errors.Wrapf(err, "while unassigning formation %q from runtime with ID %q", scenario, rtmId)
+			}
 		}
 	}
 
-	for scenario, modify := range modifyScenarios {
-		if modify {
+	for scenario := range mergedScenariosMap {
+		if _, found := currentScenariosMap[scenario]; !found {
 			if _, err = s.formationService.AssignFormation(ctx, rtmTenant, rtmId, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
 				return errors.Wrapf(err, "while assigning formation %q from runtime with ID %q", scenario, rtmId)
-			}
-		} else {
-			if _, err = s.formationService.UnassignFormation(ctx, rtmTenant, rtmId, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
-				return errors.Wrapf(err, "while unassigning formation %q from runtime with ID %q", scenario, rtmId)
 			}
 		}
 	}
