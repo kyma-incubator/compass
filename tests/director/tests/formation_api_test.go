@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
@@ -262,6 +263,160 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	assert.Equal(t, unusedFormationName, deleteUnusedFormation.Name)
 }
 
+func TestRuntimeContextFormationFlow(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	labelKey := "scenarios"
+	newFormation := "ADDITIONAL"
+	asaFormation := "ASA"
+	asaFormation2 := "ASA2"
+	selectorKey := "global_subaccount_id"
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+	subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
+	fmt.Println(tenantId, " l ", subaccountID)
+
+	t.Logf("Should create formation: %s", asaFormation)
+	createAsaFormationReq := fixtures.FixCreateFormationRequest(asaFormation)
+	var asaGqlFormation graphql.Formation
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAsaFormationReq, &asaGqlFormation)
+	require.NoError(t, err)
+	require.Equal(t, asaFormation, asaGqlFormation.Name)
+
+	defer func() {
+		t.Log("Should be able to delete ASA formation")
+		deleteASAFormationRequest := fixtures.FixDeleteFormationRequest(asaFormation)
+		var deleteASAFormation graphql.Formation
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, deleteASAFormationRequest, &deleteASAFormation)
+		assert.NoError(t, err)
+		assert.Equal(t, asaFormation, deleteASAFormation.Name)
+	}()
+
+	formationInput := graphql.FormationInput{Name: asaFormation}
+	t.Log("Creating ASA")
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountID, tenantId)
+	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountID, tenantId)
+
+	rtmName := "rt"
+	rtmDesc := "rt-description"
+	rtmInput := graphql.RuntimeRegisterInput{
+		Name:        rtmName,
+		Description: &rtmDesc,
+		Labels: graphql.Labels{
+			selectorKey: subaccountID,
+		},
+	}
+
+	t.Log("Create runtime")
+	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, subaccountID, &rtmInput)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, &rtm)
+	require.NoError(t, err)
+	require.NotEmpty(t, rtm.ID)
+
+	t.Log("Create runtimeContext")
+	runtimeContext := fixtures.CreateRuntimeContext(t, ctx, certSecuredGraphQLClient, subaccountID, rtm.ID, "ASATest", "ASATest")
+	defer fixtures.DeleteRuntimeContext(t, ctx, certSecuredGraphQLClient, tenantId, runtimeContext.ID)
+
+	t.Log("RuntimeContext should be assigned to formation coming from ASA")
+	checkRuntimeContextFormationLabels(t, ctx, rtm.ID, runtimeContext.ID, labelKey, []string{asaFormation})
+
+	t.Logf("Should create formation: %s", asaFormation2)
+	createAsaFormationReq2 := fixtures.FixCreateFormationRequest(asaFormation2)
+	var asaGqlFormation2 graphql.Formation
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createAsaFormationReq2, &asaGqlFormation2)
+	require.NoError(t, err)
+	require.Equal(t, asaFormation2, asaGqlFormation2.Name)
+
+	defer func() {
+		t.Log("Should be able to delete ASA formation")
+		deleteASAFormationRequest2 := fixtures.FixDeleteFormationRequest(asaFormation2)
+		var deleteASAFormation2 graphql.Formation
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, deleteASAFormationRequest2, &deleteASAFormation2)
+		assert.NoError(t, err)
+		assert.Equal(t, asaFormation2, deleteASAFormation2.Name)
+	}()
+
+	formationInput2 := graphql.FormationInput{Name: asaFormation2}
+	t.Log("Creating second ASA")
+	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput2, subaccountID, tenantId)
+	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput2, subaccountID, tenantId)
+
+	t.Log("RuntimeContext should be assigned to the new formation coming from ASA as well")
+	checkRuntimeContextFormationLabels(t, ctx, rtm.ID, runtimeContext.ID, labelKey, []string{asaFormation, asaFormation2})
+
+	t.Logf("Should create formation: %s", newFormation)
+	var formation graphql.Formation
+	createReq := fixtures.FixCreateFormationRequest(newFormation)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createReq, &formation)
+	require.NoError(t, err)
+	require.Equal(t, newFormation, formation.Name)
+
+	nonExistingFormation := "nonExistingFormation"
+	t.Logf("Shoud not assign runtime context to formation %s, as it is not in the label definition", nonExistingFormation)
+	failAssignReq := fixtures.FixAssignFormationRequest(rtm.ID, "RUNTIME_CONTEXT", nonExistingFormation)
+	var failAssignFormation *graphql.Formation
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, failAssignReq, failAssignFormation)
+	require.Error(t, err)
+	require.Nil(t, failAssignFormation)
+
+	t.Logf("Assign runtime context to formation %s", newFormation)
+	assignReq := fixtures.FixAssignFormationRequest(runtimeContext.ID, "RUNTIME_CONTEXT", newFormation)
+	var assignFormation graphql.Formation
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
+	require.NoError(t, err)
+	require.Equal(t, newFormation, assignFormation.Name)
+
+	saveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign runtime context to formation")
+
+	t.Log("Check if new scenario label value was set correctly")
+	checkRuntimeContextFormationLabels(t, ctx, rtm.ID, runtimeContext.ID, labelKey, []string{asaFormation, asaFormation2, newFormation})
+
+	t.Logf("Assign runtime context to formation %s which was already assigned by ASA", asaFormation)
+	assignReq = fixtures.FixAssignFormationRequest(runtimeContext.ID, "RUNTIME_CONTEXT", asaFormation)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
+	require.NoError(t, err)
+	require.Equal(t, asaFormation, assignFormation.Name)
+
+	t.Log("Check if the formation label value is still assigned")
+	checkRuntimeContextFormationLabels(t, ctx, rtm.ID, runtimeContext.ID, labelKey, []string{asaFormation, asaFormation2, newFormation})
+
+	t.Logf("Try to unassign runtime context from formation %q which was assigned by ASA", asaFormation)
+	unassignReq := fixtures.FixUnassignFormationRequest(runtimeContext.ID, "RUNTIME_CONTEXT", asaFormation)
+	var unassignFormation graphql.Formation
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unassignReq, &unassignFormation)
+	require.NoError(t, err)
+	require.Equal(t, asaFormation, unassignFormation.Name)
+
+	t.Log("Check that the formation label value is still assigned")
+	checkRuntimeContextFormationLabels(t, ctx, rtm.ID, runtimeContext.ID, labelKey, []string{asaFormation, asaFormation2, newFormation})
+
+	t.Log("Should not delete formation while runtime context is assigned")
+	deleteRequest := fixtures.FixDeleteFormationRequest(newFormation)
+	var nilFormation *graphql.Formation
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, deleteRequest, nilFormation)
+	assert.Error(t, err)
+	assert.Nil(t, nilFormation)
+
+	t.Logf("Unassign Runtime Context from formation %s", newFormation)
+	unassignReq = fixtures.FixUnassignFormationRequest(runtimeContext.ID, "RUNTIME_CONTEXT", newFormation)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unassignReq, &unassignFormation)
+	require.NoError(t, err)
+	require.Equal(t, newFormation, unassignFormation.Name)
+
+	saveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign runtime context from formation")
+
+	t.Log("Check that the formation label value is unassigned")
+	checkRuntimeContextFormationLabels(t, ctx, rtm.ID, runtimeContext.ID, labelKey, []string{asaFormation, asaFormation2})
+
+	t.Log("Should be able to delete formation after runtime is unassigned")
+	deleteRequest = fixtures.FixDeleteFormationRequest(newFormation)
+	var deleteFormation graphql.Formation
+	deleteRequest.Header.Add("x-request-id", "TURSISE")
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, deleteRequest, &deleteFormation)
+	assert.NoError(t, err)
+	assert.Equal(t, newFormation, deleteFormation.Name)
+}
+
 func TestTenantFormationFlow(t *testing.T) {
 	// GIVEN
 	const (
@@ -350,6 +505,22 @@ func checkRuntimeFormationLabels(t *testing.T, ctx context.Context, rtmID, forma
 	require.NoError(t, err)
 
 	scenariosLabel, ok := rtm.Labels[formationLabelKey].([]interface{})
+	require.True(t, ok)
+
+	var actualScenariosEnum []string
+	for _, v := range scenariosLabel {
+		actualScenariosEnum = append(actualScenariosEnum, v.(string))
+	}
+	assert.ElementsMatch(t, expectedFormations, actualScenariosEnum)
+}
+
+func checkRuntimeContextFormationLabels(t *testing.T, ctx context.Context, rtmID, rtmCtxID, formationLabelKey string, expectedFormations []string) {
+	rtmRequest := fixtures.FixRuntimeContextRequest(rtmID, rtmCtxID)
+	rtm := graphql.RuntimeExt{}
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, rtmRequest, &rtm)
+	require.NoError(t, err)
+
+	scenariosLabel, ok := rtm.RuntimeContext.Labels[formationLabelKey].([]interface{})
 	require.True(t, ok)
 
 	var actualScenariosEnum []string

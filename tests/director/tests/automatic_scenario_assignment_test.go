@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_AutomaticScenarioAssignmentQueries(t *testing.T) {
+func TestAutomaticScenarioAssignmentQueries(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	tenantID := tenant.TestTenants.GetDefaultTenantID()
@@ -80,7 +80,7 @@ func Test_AutomaticScenarioAssignmentQueries(t *testing.T) {
 		actualAssignmentsForSelector)
 }
 
-func Test_AutomaticScenarioAssigmentForRuntime(t *testing.T) {
+func TestAutomaticScenarioAssignmentForRuntime(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 
