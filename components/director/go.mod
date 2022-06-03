@@ -48,7 +48,10 @@ require (
 	sigs.k8s.io/controller-runtime v0.8.3 // DO NOT BUMP
 )
 
-require github.com/imdario/mergo v0.3.12
+require (
+	github.com/imdario/mergo v0.3.12
+	golang.org/x/text v0.3.7
+)
 
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
@@ -115,7 +118,6 @@ require (
 	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
 	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654 // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
-	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	golang.org/x/tools v0.1.11-0.20220429025301-c862641ee9b6 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.1.0 // indirect
