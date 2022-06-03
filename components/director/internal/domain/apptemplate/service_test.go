@@ -28,6 +28,8 @@ func TestService_Create(t *testing.T) {
 		return uidSvc
 	}
 
+	predefinedID := "123-465-789"
+
 	modelAppTemplate := fixModelApplicationTemplate(testID, testName, []*model.Webhook{})
 
 	appTemplateInputWithWebhooks := fixModelAppTemplateInput(testName, appInputJSONString)
@@ -45,6 +47,7 @@ func TestService_Create(t *testing.T) {
 	testCases := []struct {
 		Name              string
 		Input             *model.ApplicationTemplateInput
+		AppTemplateID     *string
 		AppTemplateRepoFn func() *automock.ApplicationTemplateRepository
 		WebhookRepoFn     func() *automock.WebhookRepository
 		LabelUpsertSvcFn  func() *automock.LabelUpsertService
@@ -70,6 +73,29 @@ func TestService_Create(t *testing.T) {
 				return labelUpsertService
 			},
 			ExpectedOutput: testID,
+		},
+		{
+			Name:  "Success when ID is already generated",
+			Input: fixModelAppTemplateInput(testName, appInputJSONString),
+			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				modelAppTemplateWithPredefinedID := *modelAppTemplate
+				modelAppTemplateWithPredefinedID.ID = predefinedID
+				appTemplateRepo.On("Create", ctx, modelAppTemplateWithPredefinedID).Return(nil).Once()
+				return appTemplateRepo
+			},
+			AppTemplateID: &predefinedID,
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("CreateMany", ctx, "", []*model.Webhook{}).Return(nil).Once()
+				return webhookRepo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				labelUpsertService := &automock.LabelUpsertService{}
+				labelUpsertService.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, predefinedID, map[string]interface{}{"test": "test"}).Return(nil).Once()
+				return labelUpsertService
+			},
+			ExpectedOutput: predefinedID,
 		},
 		{
 			Name:  "Success for Application Template with webhooks",
@@ -137,7 +163,7 @@ func TestService_Create(t *testing.T) {
 			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, idSvc, labelUpsertSvc, nil)
 
 			// WHEN
-			result, err := svc.Create(ctx, *testCase.Input)
+			result, err := svc.Create(ctx, *testCase.Input, testCase.AppTemplateID)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -170,6 +196,7 @@ func TestService_CreateWithLabels(t *testing.T) {
 	testCases := []struct {
 		Name              string
 		Input             *model.ApplicationTemplateInput
+		AppTemplateID     string
 		AppTemplateRepoFn func() *automock.ApplicationTemplateRepository
 		WebhookRepoFn     func() *automock.WebhookRepository
 		LabelUpsertSvcFn  func() *automock.LabelUpsertService
@@ -227,7 +254,7 @@ func TestService_CreateWithLabels(t *testing.T) {
 			defer mock.AssertExpectationsForObjects(t, appTemplateRepo, labelUpsertSvc, idSvc)
 
 			// WHEN
-			result, err := svc.CreateWithLabels(ctx, *testCase.Input, map[string]interface{}{"createWithLabels": "OK"})
+			result, err := svc.CreateWithLabels(ctx, *testCase.Input, map[string]interface{}{"createWithLabels": "OK"}, testCase.AppTemplateID)
 
 			// THEN
 			if testCase.ExpectedError != nil {

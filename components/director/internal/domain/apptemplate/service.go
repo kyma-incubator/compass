@@ -3,6 +3,7 @@ package apptemplate
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -72,8 +73,12 @@ func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo Webho
 }
 
 // Create missing godoc
-func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error) {
+func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput, selfRegID *string) (string, error) {
 	appTemplateID := s.uidService.Generate()
+	if len(str.PtrStrToStr(selfRegID)) > 0 {
+		appTemplateID = *selfRegID
+	}
+
 	log.C(ctx).Debugf("ID %s generated for Application Template with name %s", appTemplateID, in.Name)
 
 	appTemplate := in.ToApplicationTemplate(appTemplateID)
@@ -104,12 +109,12 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 }
 
 // CreateWithLabels Creates an AppTemplate with provided labels
-func (s *service) CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error) {
+func (s *service) CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}, selfRegID string) (string, error) {
 	for key, val := range labels {
 		in.Labels[key] = val
 	}
 
-	appTemplateID, err := s.Create(ctx, in)
+	appTemplateID, err := s.Create(ctx, in, &selfRegID)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating Application Template")
 	}
