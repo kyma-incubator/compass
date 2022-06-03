@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -74,6 +76,10 @@ func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo Webho
 // Create missing godoc
 func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error) {
 	appTemplateID := s.uidService.Generate()
+	if len(str.PtrStrToStr(in.ID)) > 0 {
+		appTemplateID = *in.ID
+	}
+
 	log.C(ctx).Debugf("ID %s generated for Application Template with name %s", appTemplateID, in.Name)
 
 	appTemplate := in.ToApplicationTemplate(appTemplateID)
