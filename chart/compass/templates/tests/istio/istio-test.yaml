@@ -57,7 +57,7 @@ spec:
             - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
               value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
-              value: {{ .Values.global.tests.subscriptionProviderIdValue | quote }}
+              value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
             - name: APP_SELF_REG_REGION
               value: {{ .Values.global.tests.selfRegistration.region }}
       restartPolicy: Never

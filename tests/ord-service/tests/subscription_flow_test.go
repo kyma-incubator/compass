@@ -23,9 +23,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 
@@ -43,20 +44,9 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-const (
-	authorizationHeader = "Authorization"
-	contentTypeHeader   = "Content-Type"
-	locationHeader      = "Location"
-	jobSucceededStatus  = "SUCCEEDED"
-	eventuallyTimeout   = 15 * time.Second
-	eventuallyTick      = 2 * time.Second
-
-	contentTypeApplicationJson = "application/json"
-)
-
 func TestSelfRegisterFlow(t *testing.T) {
 	ctx := context.Background()
-	accountTenantID := testConfig.AccountTenantID // accountTenantID is parent of the tenant/subaccountID of the configured certificate client's tenant below
+	accountTenantID := conf.AccountTenantID // accountTenantID is parent of the tenant/subaccountID of the configured certificate client's tenant below
 
 	// Register application
 	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "testingApp", accountTenantID)
@@ -88,20 +78,24 @@ func TestSelfRegisterFlow(t *testing.T) {
 	}()
 
 	// Self register runtime
-	runtimeInput := fixRuntimeInput("selfRegisterRuntime", ptr.String("selfRegisterRuntime-description"))
+	runtimeInput := graphql.RuntimeRegisterInput{
+		Name:        "selfRegisterRuntime",
+		Description: ptr.String("selfRegisterRuntime-description"),
+		Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue, tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
+	}
 	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtimeInput)
 	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtime)
 	require.NotEmpty(t, runtime.ID)
-	strLbl, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
+	strLbl, ok := runtime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
 	require.True(t, ok)
 	require.Contains(t, strLbl, runtime.ID)
 
 	// Verify that the label returned cannot be modified
-	setLabelRequest := fixtures.FixSetRuntimeLabelRequest(runtime.ID, testConfig.SelfRegisterLabelKey, "value")
+	setLabelRequest := fixtures.FixSetRuntimeLabelRequest(runtime.ID, conf.SubscriptionConfig.SelfRegisterLabelKey, "value")
 	label := graphql.Label{}
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, setLabelRequest, &label)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), fmt.Sprintf("could not set unmodifiable label with key %s", testConfig.SelfRegisterLabelKey))
+	require.Contains(t, err.Error(), fmt.Sprintf("could not set unmodifiable label with key %s", conf.SubscriptionConfig.SelfRegisterLabelKey))
 
 	labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, certSecuredGraphQLClient, accountTenantID)
 	require.NoError(t, err)
@@ -119,16 +113,21 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 	t := testingx.NewT(stdT)
 	t.Run("ConsumerProvider flow", func(t *testing.T) {
 		ctx := context.Background()
-		secondaryTenant := testConfig.TestConsumerAccountID
-		subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
-		subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
-		subscriptionConsumerTenantID := testConfig.TestConsumerTenantID
+		secondaryTenant := conf.TestConsumerAccountID
+		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID
+		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID
+		subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
 		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
-		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, testConfig.ExternalCertProviderConfig)
-		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
+		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
+		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
-		runtimeInput := fixRuntimeInput("providerRuntime", ptr.String("providerRuntime-description"))
+		runtimeInput := graphql.RuntimeRegisterInput{
+			Name:        "providerRuntime",
+			Description: ptr.String("providerRuntime-description"),
+			Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue, tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
+		}
+
 		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
 		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
 		require.NotEmpty(t, runtime.ID)
@@ -179,18 +178,18 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			t.Logf("Successfully unassigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
 		}()
 
+		selfRegLabelValue, ok := runtime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
+		require.True(t, ok)
+		require.Contains(t, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+runtime.ID)
+
 		httpClient := &http.Client{
 			Timeout: 10 * time.Second,
 			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: testConfig.SkipSSLValidation},
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation},
 			},
 		}
 
-		selfRegLabelValue, ok := runtime.Labels[testConfig.SelfRegisterLabelKey].(string)
-		require.True(t, ok)
-		require.Contains(t, selfRegLabelValue, testConfig.SelfRegisterLabelValuePrefix+runtime.ID)
-
-		depConfigureReq, err := http.NewRequest(http.MethodPost, testConfig.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(t, err)
 		response, err := httpClient.Do(depConfigureReq)
 		require.NoError(t, err)
@@ -202,16 +201,16 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
 		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
-		subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
+		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(t, err)
-		subscriptionToken := token.GetClientCredentialsToken(t, ctx, testConfig.SubscriptionConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, "tenantFetcherClaims")
-		subscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
-		subscribeReq.Header.Add(contentTypeHeader, contentTypeApplicationJson)
-		subscribeReq.Header.Add(testConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
+		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+		subscribeReq.Header.Add(subscription.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
+		subscribeReq.Header.Add(subscription.ContentTypeHeader, subscription.ContentTypeApplicationJson)
+		subscribeReq.Header.Add(conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
 
 		// unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
 		// In case there isn't subscription it will fail-safe without error
-		buildAndExecuteUnsubscribeRequest(t, runtime, httpClient, apiPath, subscriptionToken, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+		subscription.BuildAndExecuteUnsubscribeRequest(t, runtime, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
 		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
@@ -225,91 +224,36 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
 
-		defer buildAndExecuteUnsubscribeRequest(t, runtime, httpClient, apiPath, subscriptionToken, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+		defer subscription.BuildAndExecuteUnsubscribeRequest(t, runtime, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
-		subJobStatusPath := resp.Header.Get(locationHeader)
+		subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
 		require.NotEmpty(t, subJobStatusPath)
-		subJobStatusURL := testConfig.SubscriptionConfig.URL + subJobStatusPath
+		subJobStatusURL := conf.SubscriptionConfig.URL + subJobStatusPath
 		require.Eventually(t, func() bool {
-			return getSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == jobSucceededStatus
-		}, eventuallyTimeout, eventuallyTick)
+			return subscription.GetSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == subscription.JobSucceededStatus
+		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
 		t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
-		certHttpClient := createHttpClientWithCert(providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
+		certHttpClient := createHttpClientWithCert(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
-		consumerToken := token.GetUserToken(t, ctx, testConfig.ConsumerTokenURL+testConfig.TokenPath, testConfig.ProviderClientID, testConfig.ProviderClientSecret, testConfig.BasicUsername, testConfig.BasicPassword, "subscriptionClaims")
-		headers := map[string][]string{authorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
+		consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
+		headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		t.Log("Getting consumer application using both provider and consumer credentials...")
-		respBody := makeRequestWithHeaders(t, certHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+		respBody := makeRequestWithHeaders(t, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 		require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
 		require.Equal(t, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 		t.Log("Successfully fetched consumer application using both provider and consumer credentials")
 
-		buildAndExecuteUnsubscribeRequest(t, runtime, httpClient, apiPath, subscriptionToken, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+		subscription.BuildAndExecuteUnsubscribeRequest(t, runtime, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
 		t.Log("Validating no application is returned after successful unsubscription request...")
-		respBody = makeRequestWithHeaders(t, certHttpClient, testConfig.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+		respBody = makeRequestWithHeaders(t, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 		require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
 		t.Log("Successfully validated no application is returned after successful unsubscription request")
 	})
-}
-
-func buildAndExecuteUnsubscribeRequest(t *testing.T, runtime graphql.RuntimeExt, httpClient *http.Client, apiPath, subscriptionToken, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID string) {
-	unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte{}))
-	require.NoError(t, err)
-	unsubscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
-	unsubscribeReq.Header.Add(testConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
-
-	t.Logf("Removing subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
-	unsubscribeResp, err := httpClient.Do(unsubscribeReq)
-	require.NoError(t, err)
-	unsubscribeBody, err := ioutil.ReadAll(unsubscribeResp.Body)
-	require.NoError(t, err)
-
-	body := string(unsubscribeBody)
-	if strings.Contains(body, "does not exist") { // Check in the body if subscription is already removed if yes, do not perform unsubscription again because it will fail
-		t.Logf("Subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q, and subaccount id: %q is alredy removed", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
-		return
-	}
-
-	require.Equal(t, http.StatusAccepted, unsubscribeResp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", unsubscribeResp.StatusCode, http.StatusAccepted, body))
-	unsubJobStatusPath := unsubscribeResp.Header.Get(locationHeader)
-	require.NotEmpty(t, unsubJobStatusPath)
-	unsubJobStatusURL := testConfig.SubscriptionConfig.URL + unsubJobStatusPath
-	require.Eventually(t, func() bool {
-		return getSubscriptionJobStatus(t, httpClient, unsubJobStatusURL, subscriptionToken) == jobSucceededStatus
-	}, eventuallyTimeout, eventuallyTick)
-	t.Logf("Successfully removed subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q, and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
-}
-
-func getSubscriptionJobStatus(t *testing.T, httpClient *http.Client, jobStatusURL, token string) string {
-	getJobReq, err := http.NewRequest(http.MethodGet, jobStatusURL, bytes.NewBuffer([]byte{}))
-	require.NoError(t, err)
-	getJobReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", token))
-	getJobReq.Header.Add(contentTypeHeader, contentTypeApplicationJson)
-
-	resp, err := httpClient.Do(getJobReq)
-	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode)
-
-	respBody, err := ioutil.ReadAll(resp.Body)
-	require.NoError(t, err)
-
-	id := gjson.GetBytes(respBody, "id")
-	state := gjson.GetBytes(respBody, "state")
-	require.True(t, id.Exists())
-	require.True(t, state.Exists())
-	t.Logf("state of the asynchronous job with id: %s is: %s", id.String(), state.String())
-
-	jobErr := gjson.GetBytes(respBody, "error")
-	if jobErr.Exists() {
-		t.Errorf("Error occurred while executing asynchronous subscription job: %s", jobErr.String())
-	}
-
-	return state.String()
 }
 
 func assignToFormation(t *testing.T, ctx context.Context, objectID, objectType, formationName, tenantID string) {
@@ -327,16 +271,4 @@ func executeGQLRequest(t *testing.T, ctx context.Context, gqlRequest *gcli.Reque
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, gqlRequest, &formation)
 	require.NoError(t, err)
 	require.Equal(t, formationName, formation.Name)
-}
-
-func fixRuntimeInput(name string, description *string) graphql.RuntimeRegisterInput {
-	return graphql.RuntimeRegisterInput{
-		Name:        name,
-		Description: description,
-		Labels: graphql.Labels{
-			testConfig.ProviderLabelKey:           testConfig.ProviderID,
-			tenantfetcher.RegionKey:               testConfig.Region,
-			testConfig.SelfRegDistinguishLabelKey: []interface{}{testConfig.SelfRegDistinguishLabelValue},
-		},
-	}
 }

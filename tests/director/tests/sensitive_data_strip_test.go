@@ -308,8 +308,8 @@ func appWithAPIsAndEvents(name string) graphql.ApplicationRegisterInput {
 
 func fixAppTemplateWithWebhookInput(name string) graphql.ApplicationTemplateInput {
 	input := fixtures.FixApplicationTemplateWithWebhook(name)
-	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input.Labels[tenantfetcher.RegionKey] = conf.SelfRegRegion
+	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SubscriptionConfig.SelfRegDistinguishLabelValue}
+	input.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
 
 	return input
 }

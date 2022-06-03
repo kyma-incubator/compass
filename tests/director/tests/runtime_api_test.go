@@ -129,18 +129,6 @@ func TestRuntimeRegisterWithWebhooks(t *testing.T) {
 	ctx := context.Background()
 	url := "http://mywordpress.com/webhooks1"
 
-	//in := graphql.RuntimeRegisterInput{
-	//	Name:        "runtime-with-webhooks",
-	//	Description: ptr.String("runtime-1-description"),
-	//	Labels:      graphql.Labels{"ggg": []interface{}{"hhh"}},
-	//	Webhooks: []*graphql.WebhookInput{
-	//		{
-	//			Type: graphql.WebhookTypeConfigurationChanged,
-	//			Auth: fixtures.FixBasicAuth(t),
-	//			URL:  &url,
-	//		},
-	//	},
-	//}
 	in := fixRuntimeInput("runtime-with-webhooks")
 	in.Description = ptr.String("runtime-1-description")
 	in.Webhooks = []*graphql.WebhookInput{
@@ -740,8 +728,8 @@ func TestQuerySpecificRuntimeWithCertificate(t *testing.T) {
 
 func fixRuntimeInput(name string) graphql.RuntimeRegisterInput {
 	input := fixtures.FixRuntimeRegisterInput(name)
-	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input.Labels[tenantfetcher.RegionKey] = conf.SelfRegRegion
+	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SubscriptionConfig.SelfRegDistinguishLabelValue}
+	input.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
 	delete(input.Labels, "placeholder")
 
 	return input
@@ -749,8 +737,8 @@ func fixRuntimeInput(name string) graphql.RuntimeRegisterInput {
 
 func fixRuntimeUpdateInput(name string) graphql.RuntimeUpdateInput {
 	input := fixtures.FixRuntimeUpdateInput(name)
-	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input.Labels[tenantfetcher.RegionKey] = conf.SelfRegRegion
+	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SubscriptionConfig.SelfRegDistinguishLabelValue}
+	input.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
 	delete(input.Labels, "placeholder")
 
 	return input

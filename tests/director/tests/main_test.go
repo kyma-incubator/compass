@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/subscription"
+
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
@@ -32,10 +34,17 @@ type DirectorConfig struct {
 	SkipSSLValidation              bool `envconfig:"default=false"`
 	CertLoaderConfig               certloader.Config
 	certprovider.ExternalCertProviderConfig
-	SelfRegLabelKey              string `envconfig:"APP_SELF_REGISTER_LABEL_KEY"`
-	SelfRegDistinguishLabelKey   string
-	SelfRegDistinguishLabelValue string
-	SelfRegRegion                string
+	//SelfRegLabelKey                     string `envconfig:"APP_SELF_REGISTER_LABEL_KEY"` // todo:: check from main merge
+	SubscriptionConfig                  subscription.Config
+	TestProviderSubaccountID            string
+	TestConsumerSubaccountID            string
+	TestConsumerTenantID                string
+	ExternalServicesMockBaseURL         string
+	TokenPath                           string
+	SubscriptionProviderAppNameLabelKey string
+	SubscriptionProviderAppNameValue    string
+	ConsumerSubaccountLabelKey          string
+	SubscriptionLabelKey                string
 }
 
 type BaseDirectorConfig struct {

@@ -108,6 +108,10 @@ spec:
                 value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
               - name: APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY #The property which states the provider subaccount used in the tenant provider
                 value: {{.Values.global.tenantFetcher.tenantProvider.providerSubaccountIdProperty }}
+              - name: APP_TENANT_PROVIDER_CONSUMER_TENANT_ID_PROPERTY
+                value: {{.Values.global.tenantFetcher.tenantProvider.consumerTenantIdProperty }}
+              - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY
+                value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionProviderAppNameProperty }}
               - name: APP_TENANT_CONFIG_TENANT_FETCHER_URL
                 value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
               - name: APP_TENANT_CONFIG_ROOT_API
@@ -119,17 +123,19 @@ spec:
               - name: APP_TENANT_CONFIG_REGION_PATH_PARAM
                 value: "{{ .Values.global.tenantFetcher.server.regionPathParam }}"
               - name: APP_TENANT_CONFIG_SUBSCRIPTION_PROVIDER_ID
-                value: "{{ .Values.global.tests.subscriptionProviderIdValue }}"
+                value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_ACCOUNT_ID
-                value: {{ .Values.global.tests.ordService.consumerAccountID }}
+                value: {{ .Values.global.tests.subscription.tenants.consumerAccountID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_SUBACCOUNT_ID
-                value: {{ .Values.global.tests.ordService.consumerSubaccountID }}
+                value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_TENANT_ID
-                value: {{ .Values.global.tests.ordService.consumerTenantID }}
+                value: {{ .Values.global.tests.subscription.tenants.consumerTenantID }}
+              - name: APP_TENANT_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
+                value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+              - name: APP_TENANT_CONFIG_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
+                value: {{ .Values.global.tests.subscription.subscriptionProviderAppNameValue }}
               - name: APP_TENANT_CONFIG_TEST_TENANT_ON_DEMAND_ID
                 value: {{ .Values.global.tests.tenantFetcher.tenantOnDemandID }}
-              - name: APP_TENANT_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
-                value: {{ .Values.global.tests.ordService.propagatedProviderSubaccountHeader }}
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}
