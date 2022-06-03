@@ -51,7 +51,6 @@ type ApplicationService interface {
 // ExternalTenantsService missing godoc
 //go:generate mockery --name=ExternalTenantsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ExternalTenantsService interface {
-	GetExternalTenant(ctx context.Context, id string) (string, error)
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
@@ -244,9 +243,10 @@ func (s *service) getTokenFromAdapter(ctx context.Context, adapterURL string, ap
 
 	extTenant := tnt.ExternalTenant
 	if tnt.Type == tenantpkg.Subaccount {
-		if extTenant, err = s.extTenantsSvc.GetExternalTenant(ctx, tnt.Parent); err != nil {
-			return nil, errors.Wrapf(err, "while getting parent external tenant for internal tenant %q", tnt.Parent)
+		if tnt, err = s.extTenantsSvc.GetTenantByID(ctx, tnt.Parent); err != nil {
+			return nil, errors.Wrapf(err, "while getting parent tenant with internal tenant %q", tnt.Parent)
 		}
+		extTenant = tnt.ExternalTenant
 	}
 
 	clientUser, err := client.LoadFromContext(ctx)

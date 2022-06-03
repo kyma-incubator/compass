@@ -459,7 +459,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			tenantSvc: func() onetimetoken.ExternalTenantsService {
 				tenantSvc := &automock.ExternalTenantsService{}
 				tenantSvc.On("GetTenantByID", ctxWithSubaccount, subaccountInternalID).Return(subaccountMapping, nil)
-				tenantSvc.On("GetExternalTenant", ctxWithSubaccount, gaInternalID).Return(gaExternalID, nil)
+				tenantSvc.On("GetTenantByID", ctxWithSubaccount, gaInternalID).Return(gaMapping, nil)
 				return tenantSvc
 			},
 			httpClient: func() onetimetoken.HTTPDoer {
@@ -712,7 +712,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			tenantSvc: func() onetimetoken.ExternalTenantsService {
 				tenantSvc := &automock.ExternalTenantsService{}
 				tenantSvc.On("GetTenantByID", ctxWithSubaccount, subaccountInternalID).Return(subaccountMapping, nil)
-				tenantSvc.On("GetExternalTenant", ctxWithSubaccount, gaInternalID).Return(gaExternalID, nil)
+				tenantSvc.On("GetTenantByID", ctxWithSubaccount, gaInternalID).Return(gaMapping, nil)
 				return tenantSvc
 			},
 			httpClient: func() onetimetoken.HTTPDoer {
@@ -824,7 +824,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			pairingAdapters: &pairingAdaptersWithMapping,
 		},
 		{
-			description: "Generate Application token, with int system, should fail when can't get global account external ID",
+			description: "Generate Application token, with int system, should fail when can't get parent tenant",
 			ctx:         ctxWithSubaccount,
 			systemAuthSvc: func() onetimetoken.SystemAuthService {
 				return &automock.SystemAuthService{}
@@ -845,7 +845,7 @@ func TestGenerateOneTimeToken(t *testing.T) {
 			tenantSvc: func() onetimetoken.ExternalTenantsService {
 				tenantSvc := &automock.ExternalTenantsService{}
 				tenantSvc.On("GetTenantByID", ctxWithSubaccount, subaccountInternalID).Return(subaccountMapping, nil)
-				tenantSvc.On("GetExternalTenant", ctxWithSubaccount, gaInternalID).Return("", errors.New("some-error"))
+				tenantSvc.On("GetTenantByID", ctxWithSubaccount, gaInternalID).Return(&model.BusinessTenantMapping{}, errors.New("some-error"))
 				return tenantSvc
 			},
 			httpClient: func() onetimetoken.HTTPDoer {
