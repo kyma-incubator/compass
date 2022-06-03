@@ -21,7 +21,7 @@ type RuntimeService interface {
 	ListByFilters(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
-// RuntimeCtxService missing godoc
+// RuntimeCtxService is used to interact with runtime contexts.
 //go:generate mockery --name=RuntimeCtxService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeCtxService interface {
 	ListByFilter(ctx context.Context, runtimeID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error)

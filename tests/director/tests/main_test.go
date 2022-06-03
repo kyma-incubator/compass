@@ -34,7 +34,6 @@ type DirectorConfig struct {
 	SkipSSLValidation              bool `envconfig:"default=false"`
 	CertLoaderConfig               certloader.Config
 	certprovider.ExternalCertProviderConfig
-	//SelfRegLabelKey                     string `envconfig:"APP_SELF_REGISTER_LABEL_KEY"` // todo:: check from main merge
 	SubscriptionConfig                  subscription.Config
 	TestProviderSubaccountID            string
 	TestConsumerSubaccountID            string

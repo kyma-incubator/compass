@@ -29,7 +29,7 @@ type RuntimeService interface {
 	ListByFilters(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
-// RuntimeCtxService missing godoc
+// RuntimeCtxService provide functionality to interact with the runtime contexts(create, list, delete).
 //go:generate mockery --name=RuntimeCtxService --output=automock --outpkg=automock --case=underscore
 type RuntimeCtxService interface {
 	Create(ctx context.Context, in model.RuntimeContextInput) (string, error)
