@@ -37,7 +37,7 @@ func TestApplicationTemplateWithExternalCertificate(t *testing.T) {
 	t.Run("Create Application Template with external certificate", func(t *testing.T) {
 		// WHEN
 		t.Log("Create application template")
-		appTemplateInput := fixtures.FixApplicationTemplate(name)
+		appTemplateInput := fixAppTemplateInput(name)
 		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenantId, appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertSecuredClient, tenantId, &appTemplate)
 
@@ -54,7 +54,8 @@ func TestApplicationTemplateWithExternalCertificate(t *testing.T) {
 
 	t.Run("Delete Application Template with external certificate", func(t *testing.T) {
 		t.Log("Create application template")
-		appTemplate, err := fixtures.CreateApplicationTemplate(t, ctx, directorCertSecuredClient, tenantId, name)
+		appTemplateInput := fixAppTemplateInput(name)
+		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenantId, appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertSecuredClient, tenantId, &appTemplate)
 
 		require.NoError(t, err)
