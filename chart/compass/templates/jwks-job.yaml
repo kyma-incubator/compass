@@ -55,6 +55,8 @@ spec:
   template:
     metadata:
       name: {{ .Release.Name }}-jwks-creator
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
     spec:
       serviceAccountName: {{ .Release.Name }}-jwks-creator-sa
       restartPolicy: Never

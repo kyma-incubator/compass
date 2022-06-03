@@ -23,6 +23,8 @@ spec:
         metadata:
           labels:
             cronjob: {{ .Values.global.ordAggregator.name }}
+          annotations:
+            cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         spec:
           {{ if .Values.global.isLocalEnv }}
           hostAliases:

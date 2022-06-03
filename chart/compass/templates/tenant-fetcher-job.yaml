@@ -28,6 +28,8 @@ spec:
         metadata:
           labels:
             cronjob: tenant-fetcher
+          annotations:
+            cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         spec:
           {{ if $.Values.global.isLocalEnv }}
           # HostAliases are used by Pod to resolve kyma.local domain

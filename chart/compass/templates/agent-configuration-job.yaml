@@ -43,6 +43,8 @@ spec:
   template:
     metadata:
       name: compass-agent-configuration
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
     spec:
       {{ if .Values.global.isLocalEnv }}
       hostAliases:
