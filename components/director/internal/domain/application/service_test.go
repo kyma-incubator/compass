@@ -4927,7 +4927,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Returns error when application succeeds but application does not exist",
+			Name: "Returns error when application does not exist",
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("Exists", ctx, tnt, applicationID).Return(false, nil).Once()
@@ -4991,7 +4991,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil, formationSvc)
 
 			// WHEN
-			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey) // TODO
+			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
