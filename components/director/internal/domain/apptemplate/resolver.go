@@ -25,8 +25,8 @@ import (
 // ApplicationTemplateService missing godoc
 //go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateService interface {
-	Create(ctx context.Context, in model.ApplicationTemplateInput, selfRegID *string) (string, error)
-	CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}, id string) (string, error)
+	Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error)
+	CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error)
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 	GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error)
 	List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
@@ -212,6 +212,8 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	}
 
 	selfRegID := r.uidService.Generate()
+	convertedIn.ID = &selfRegID
+
 	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID)
 	if err != nil {
 		return nil, err
@@ -233,7 +235,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	}()
 
 	log.C(ctx).Infof("Creating an Application Template with name %s", convertedIn.Name)
-	id, err := r.appTemplateSvc.CreateWithLabels(ctx, convertedIn, labels, selfRegID)
+	id, err := r.appTemplateSvc.CreateWithLabels(ctx, convertedIn, labels)
 	if err != nil {
 		return nil, err
 	}

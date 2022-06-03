@@ -17,19 +17,19 @@ type ApplicationTemplateService struct {
 }
 
 // Create provides a mock function with given fields: ctx, in, selfRegID
-func (_m *ApplicationTemplateService) Create(ctx context.Context, in model.ApplicationTemplateInput, selfRegID *string) (string, error) {
-	ret := _m.Called(ctx, in, selfRegID)
+func (_m *ApplicationTemplateService) Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error) {
+	ret := _m.Called(ctx, in)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationTemplateInput, *string) string); ok {
-		r0 = rf(ctx, in, selfRegID)
+	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationTemplateInput) string); ok {
+		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationTemplateInput, *string) error); ok {
-		r1 = rf(ctx, in, selfRegID)
+	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationTemplateInput) error); ok {
+		r1 = rf(ctx, in)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -38,19 +38,19 @@ func (_m *ApplicationTemplateService) Create(ctx context.Context, in model.Appli
 }
 
 // CreateWithLabels provides a mock function with given fields: ctx, in, labels, id
-func (_m *ApplicationTemplateService) CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}, id string) (string, error) {
-	ret := _m.Called(ctx, in, labels, id)
+func (_m *ApplicationTemplateService) CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error) {
+	ret := _m.Called(ctx, in, labels)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationTemplateInput, map[string]interface{}, string) string); ok {
-		r0 = rf(ctx, in, labels, id)
+	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationTemplateInput, map[string]interface{}) string); ok {
+		r0 = rf(ctx, in, labels)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationTemplateInput, map[string]interface{}, string) error); ok {
-		r1 = rf(ctx, in, labels, id)
+	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationTemplateInput, map[string]interface{}) error); ok {
+		r1 = rf(ctx, in, labels)
 	} else {
 		r1 = ret.Error(1)
 	}
