@@ -55,7 +55,7 @@ func NewSelfRegisterManager(cfg config.SelfRegConfig, provider ExternalSvcCaller
 	return &selfRegisterManager{cfg: cfg, callerProvider: provider}, nil
 }
 
-//TODO add is self reg flow and use it for update app template
+// TODO add is self reg flow and use it for update app template
 
 // PrepareForSelfRegistration executes the prerequisite calls for self-registration in case the runtime
 // is being self-registered

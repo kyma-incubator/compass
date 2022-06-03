@@ -390,7 +390,7 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 	if err != nil {
 		return nil, err
 	}
-	//TODO check name before update
+	// TODO check name before update
 	err = r.appTemplateSvc.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err
@@ -531,7 +531,7 @@ func validateAppTemplateInputForSelfReg(appTemplateInput model.ApplicationTempla
 		}
 	}
 
-	//Matches the following pattern - "SAP <product name> (<region>)"
+	// Matches the following pattern - "SAP <product name> (<region>)"
 	r := regexp.MustCompile(`(^SAP\s)([A-Za-z0-9_\- ]*)\s[(]([A-Za-z0-9_\- ]*)[)]`)
 	matches := r.FindStringSubmatch(appTemplateInput.Name)
 	if len(matches) == 0 {
