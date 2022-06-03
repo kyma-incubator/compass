@@ -107,8 +107,8 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
 		appTemplateInput := graphql.ApplicationTemplateInput{
 			Name: appTemplateName,
 			ApplicationInput: &graphql.ApplicationRegisterInput{
-				Name:         "{{name}}",
-				Description:  ptr.String("test {{display-name}}"),
+				Name:        "{{name}}",
+				Description: ptr.String("test {{display-name}}"),
 			},
 			Placeholders: []*graphql.PlaceholderDefinitionInput{
 				{
@@ -143,7 +143,7 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
 		t.Log(fmt.Sprintf("Registering application from template: %s", appTemplateName))
 		appFromAppTemplateInput := graphql.ApplicationFromTemplateInput{
 			TemplateName: appTemplateName,
-			Values:     []*graphql.TemplateValueInput{
+			Values: []*graphql.TemplateValueInput{
 				{
 					Placeholder: "name",
 					Value:       appName,
@@ -182,8 +182,8 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 		appTemplateInput := graphql.ApplicationTemplateInput{
 			Name: appTemplateName,
 			ApplicationInput: &graphql.ApplicationRegisterInput{
-				Name:         "{{name}}",
-				Description:  ptr.String("test {{display-name}}"),
+				Name:        "{{name}}",
+				Description: ptr.String("test {{display-name}}"),
 			},
 			Placeholders: []*graphql.PlaceholderDefinitionInput{
 				{
@@ -218,7 +218,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 		t.Log(fmt.Sprintf("Registering application from template: %s", appName))
 		appFromAppTemplateInput := graphql.ApplicationFromTemplateInput{
 			TemplateName: appTemplateName,
-			Values:     []*graphql.TemplateValueInput{
+			Values: []*graphql.TemplateValueInput{
 				{
 					Placeholder: "name",
 					Value:       appName,
