@@ -167,8 +167,6 @@ func main() {
 	exitOnError(err, "Failed to configure Logger")
 	logger := log.C(ctx)
 
-	log.C(ctx).Info("================================")
-	log.C(ctx).Info(cfg.TenantOnDemandConfig.IsDisabled)
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
