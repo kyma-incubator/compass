@@ -69,12 +69,12 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 	}
 
 	providerCfg := ProviderConfig{
-		TenantIDProperty:               "tenantProperty",
-		SubaccountTenantIDProperty:     "subaccountProperty",
-		SubdomainProperty:              "subdomainProperty",
-		SubscriptionProviderIDProperty: "subscriptionProviderProperty",
-		ProviderSubaccountIDProperty:   "providerSubaccountIDProperty",
-		ConsumerTenantIDProperty:       "consumerTenantIdProperty",
+		TenantIDProperty:                    "tenantProperty",
+		SubaccountTenantIDProperty:          "subaccountProperty",
+		SubdomainProperty:                   "subdomainProperty",
+		SubscriptionProviderIDProperty:      "subscriptionProviderProperty",
+		ProviderSubaccountIDProperty:        "providerSubaccountIDProperty",
+		ConsumerTenantIDProperty:            "consumerTenantIdProperty",
 		SubscriptionProviderAppNameProperty: "subscriptionProviderAppNameProperty",
 	}
 
