@@ -25,7 +25,7 @@ import (
 // ApplicationTemplateService missing godoc
 //go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateService interface {
-	Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error)
+	Create(ctx context.Context, in model.ApplicationTemplateInput, selfRegID *string) (string, error)
 	CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}, id string) (string, error)
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 	GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error)

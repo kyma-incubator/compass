@@ -244,7 +244,7 @@ func registerAppTemplate(ctx context.Context, transact persistence.Transactioner
 			return errors.Wrap(err, fmt.Sprintf("error while getting application template with name: %s", appTemplateName))
 		}
 
-		templateID, err := appTemplateSvc.Create(ctxWithTx, appTemplate)
+		templateID, err := appTemplateSvc.Create(ctxWithTx, appTemplate, nil)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("error while registering application template with name: %s", appTemplateName))
 		}

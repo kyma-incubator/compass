@@ -16,20 +16,20 @@ type ApplicationTemplateService struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, in
-func (_m *ApplicationTemplateService) Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error) {
-	ret := _m.Called(ctx, in)
+// Create provides a mock function with given fields: ctx, in, selfRegID
+func (_m *ApplicationTemplateService) Create(ctx context.Context, in model.ApplicationTemplateInput, selfRegID *string) (string, error) {
+	ret := _m.Called(ctx, in, selfRegID)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationTemplateInput) string); ok {
-		r0 = rf(ctx, in)
+	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationTemplateInput, *string) string); ok {
+		r0 = rf(ctx, in, selfRegID)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationTemplateInput) error); ok {
-		r1 = rf(ctx, in)
+	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationTemplateInput, *string) error); ok {
+		r1 = rf(ctx, in, selfRegID)
 	} else {
 		r1 = ret.Error(1)
 	}
