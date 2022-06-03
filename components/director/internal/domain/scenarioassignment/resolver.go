@@ -33,11 +33,6 @@ type tenantService interface {
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
-//go:generate mockery --exported --name=tenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
-type tenantFetcher interface {
-	FetchOnDemand(tenant, parentTenant string) error
-}
-
 //go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationService interface {
 	CreateAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
@@ -46,7 +41,7 @@ type formationService interface {
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, svc asaService, converter gqlConverter, tenantService tenantService, fetcher tenantFetcher, formationSvc formationService) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc asaService, converter gqlConverter, tenantService tenantService, fetcher tenant.FetcherOnDemand, formationSvc formationService) *Resolver {
 	return &Resolver{
 		transact:      transact,
 		svc:           svc,
@@ -63,7 +58,7 @@ type Resolver struct {
 	converter     gqlConverter
 	svc           asaService
 	tenantService tenantService
-	fetcher       tenantFetcher
+	fetcher       tenant.FetcherOnDemand
 	formationSvc  formationService
 }
 
