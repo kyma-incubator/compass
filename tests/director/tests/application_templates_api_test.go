@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
@@ -25,8 +26,8 @@ import (
 func TestCreateApplicationTemplate(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	name := "app-template-name"
-	appTemplateInput := fixAppTemplateInput(name)
+	appTemplateName := createAppTemplateName("app-template-name")
+	appTemplateInput := fixAppTemplateInput(appTemplateName)
 	appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
 	require.NoError(t, err)
 
@@ -61,10 +62,99 @@ func TestCreateApplicationTemplate(t *testing.T) {
 	saveExample(t, getApplicationTemplateRequest.Query(), "query application template")
 }
 
+func TestCreateApplicationTemplate_NotValid(t *testing.T) {
+	namePlaceholder := "name-placeholder"
+	displayNamePlaceholder := "display-name-placeholder"
+
+	testCases := []struct {
+		Name                    string
+		AppTemplateName         string
+		AppTemplatePlaceholders []*graphql.PlaceholderDefinitionInput
+		AppInputDescription     *string
+		ExpectedErrMessage      string
+	}{
+		{
+			Name:            "not compliant name",
+			AppTemplateName: "not-compliant-name",
+			AppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
+				{
+					Name:        "name",
+					Description: &namePlaceholder,
+				},
+				{
+					Name:        "display-name",
+					Description: &displayNamePlaceholder,
+				},
+			},
+			AppInputDescription: nil,
+			ExpectedErrMessage:  "application template name \"not-compliant-name\" does not comply with the following naming convention",
+		},
+		{
+			Name:            "not compliant placeholders",
+			AppTemplateName: fmt.Sprintf("SAP %s (%s)", "app-template-name", conf.SelfRegRegion),
+			AppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
+				{
+					Name:        "name",
+					Description: &namePlaceholder,
+				},
+				{
+					Name:        "not-compliant",
+					Description: &displayNamePlaceholder,
+				},
+			},
+			AppInputDescription: ptr.String("test {{not-compliant}}"),
+			ExpectedErrMessage:  "unexpected placeholder with name \"not-compliant\" found",
+		},
+		{
+			Name:            "not matching region",
+			AppTemplateName: fmt.Sprintf("SAP %s (%s)", "app-template-name-2", "random-region"),
+			AppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
+				{
+					Name:        "name",
+					Description: &namePlaceholder,
+				},
+				{
+					Name:        "display-name",
+					Description: &displayNamePlaceholder,
+				},
+			},
+			AppInputDescription: nil,
+			ExpectedErrMessage:  "the region specified in the application template name does not match",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			ctx := context.Background()
+			appTemplateInput := fixAppTemplateInput(testCase.AppTemplateName)
+			if testCase.AppInputDescription != nil {
+				appTemplateInput.ApplicationInput.Description = testCase.AppInputDescription
+			}
+			appTemplateInput.Placeholders = testCase.AppTemplatePlaceholders
+			appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
+			require.NoError(t, err)
+
+			createApplicationTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplate)
+			output := graphql.ApplicationTemplate{}
+
+			// WHEN
+			t.Log("Create application template")
+			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createApplicationTemplateRequest, &output)
+			defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &output)
+
+			//THEN
+			require.NotNil(t, err)
+			if testCase.ExpectedErrMessage != "" {
+				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+		})
+	}
+}
+
 func TestUpdateApplicationTemplate(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	name := "app-template"
+	appTemplateName := createAppTemplateName("app-template")
 	newName := "new-app-template"
 	newDescription := "new description"
 	newAppCreateInput := &graphql.ApplicationRegisterInput{
@@ -75,7 +165,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
-	appTmplInput := fixAppTemplateInput(name)
+	appTmplInput := fixAppTemplateInput(appTemplateName)
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate)
 	require.NoError(t, err)
@@ -103,12 +193,12 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 func TestDeleteApplicationTemplate(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	name := "app-template"
+	appTemplateName := createAppTemplateName("app-template")
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
-	appTmplInput := fixAppTemplateInput(name)
+	appTmplInput := fixAppTemplateInput(appTemplateName)
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate)
 	require.NoError(t, err)
@@ -134,7 +224,7 @@ func TestDeleteApplicationTemplate(t *testing.T) {
 func TestQueryApplicationTemplate(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	name := "app-template"
+	name := createAppTemplateName("app-template")
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -160,8 +250,8 @@ func TestQueryApplicationTemplate(t *testing.T) {
 func TestQueryApplicationTemplates(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	name1 := "app-template-1"
-	name2 := "app-template-2"
+	name1 := createAppTemplateName("app-template-1")
+	name2 := createAppTemplateName("app-template-2")
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -194,14 +284,17 @@ func TestQueryApplicationTemplates(t *testing.T) {
 func TestRegisterApplicationFromTemplate(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	tmplName := "template"
-	placeholderKey := "new-placeholder"
-	appTmplInput := fixAppTemplateInput(tmplName)
-	appTmplInput.ApplicationInput.Description = ptr.String("test {{new-placeholder}}")
+	appTemplateName := createAppTemplateName("template")
+	appTmplInput := fixAppTemplateInput(appTemplateName)
+	appTmplInput.ApplicationInput.Description = ptr.String("test {{display-name}}")
 	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
 		{
-			Name:        placeholderKey,
-			Description: ptr.String("description"),
+			Name:        "name",
+			Description: ptr.String("name"),
+		},
+		{
+			Name:        "display-name",
+			Description: ptr.String("display-name"),
 		},
 	}
 
@@ -211,10 +304,14 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTmpl)
 	require.NoError(t, err)
 
-	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: tmplName, Values: []*graphql.TemplateValueInput{
+	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: appTemplateName, Values: []*graphql.TemplateValueInput{
 		{
-			Placeholder: placeholderKey,
-			Value:       "new-value",
+			Placeholder: "name",
+			Value:       "new-name",
+		},
+		{
+			Placeholder: "display-name",
+			Value:       "new-display-name",
 		}}}
 	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
 	require.NoError(t, err)
@@ -228,7 +325,7 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 	fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
 	require.NotEmpty(t, outputApp)
 	require.NotNil(t, outputApp.Application.Description)
-	require.Equal(t, "test new-value", *outputApp.Application.Description)
+	require.Equal(t, "test new-display-name", *outputApp.Application.Description)
 	saveExample(t, createAppFromTmplRequest.Query(), "register application from template")
 }
 
@@ -336,4 +433,8 @@ func fixAppTemplateInput(name string) graphql.ApplicationTemplateInput {
 	input.Labels[tenantfetcher.RegionKey] = conf.SelfRegRegion
 
 	return input
+}
+
+func createAppTemplateName(name string) string {
+	return fmt.Sprintf("SAP %s (%s)", name, conf.SelfRegRegion)
 }

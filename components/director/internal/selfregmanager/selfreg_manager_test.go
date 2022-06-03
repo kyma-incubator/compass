@@ -227,7 +227,8 @@ func TestSelfRegisterManager_PrepareRuntimeForSelfRegistration(t *testing.T) {
 			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider)
 			require.NoError(t, err)
 
-			output, err := manager.PrepareForSelfRegistration(testCase.Context, testCase.ResourceType, testCase.Input.Labels, testUUID)
+			validation := func() error { return nil }
+			output, err := manager.PrepareForSelfRegistration(testCase.Context, testCase.ResourceType, testCase.Input.Labels, testUUID, validation)
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedErr.Error())

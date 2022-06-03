@@ -32,7 +32,6 @@ import (
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/request"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -681,16 +680,8 @@ func TestORDService(t *testing.T) {
 	})
 
 	t.Run("Additional non-ORD details about system instances are exposed", func(t *testing.T) {
-		expectedProductType := "productType"
+		expectedProductType := fmt.Sprintf("SAP %s (%s)", "productType", testConfig.SelfRegRegion)
 		appTmplInput := fixtures.FixApplicationTemplate(expectedProductType)
-		placeholderKey := "new-placeholder"
-		appTmplInput.ApplicationInput.Description = ptr.String("test {{new-placeholder}}")
-		appTmplInput.Placeholders = []*directorSchema.PlaceholderDefinitionInput{
-			{
-				Name:        placeholderKey,
-				Description: ptr.String("description"),
-			},
-		}
 		appTmplInput.Labels[testConfig.SelfRegDistinguishLabelKey] = []interface{}{testConfig.SelfRegDistinguishLabelValue}
 		appTmplInput.Labels[tenantfetcher.RegionKey] = testConfig.SelfRegRegion
 
@@ -701,7 +692,11 @@ func TestORDService(t *testing.T) {
 		appFromTmpl := directorSchema.ApplicationFromTemplateInput{
 			TemplateName: expectedProductType, Values: []*directorSchema.TemplateValueInput{
 				{
-					Placeholder: placeholderKey,
+					Placeholder: "name",
+					Value:       "new-value",
+				},
+				{
+					Placeholder: "display-name",
 					Value:       "new-value",
 				},
 			},

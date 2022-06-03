@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -1493,24 +1494,29 @@ func TestMergeApplications(t *testing.T) {
 	baseURL := ptr.String("http://base.com")
 	healthURL := ptr.String("http://health.com")
 	providerName := ptr.String("test-provider")
-	description := ptr.String("app description")
+	description := "app description"
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 	namePlaceholder := "name"
+	displayNamePlaceholder := "display-name"
 	managedLabelValue := "true"
 	sccLabelValue := "cloud connector"
-	expectedProductType := "MergeTemplate"
+	expectedProductType := createAppTemplateName("MergeTemplate")
 	newFormation := "formation-merge-applications-e2e"
 
 	appTmplInput := fixAppTemplateInput(expectedProductType)
 	appTmplInput.ApplicationInput.Name = "{{name}}"
 	appTmplInput.ApplicationInput.BaseURL = baseURL
 	appTmplInput.ApplicationInput.ProviderName = nil
-	appTmplInput.ApplicationInput.Description = nil
+	appTmplInput.ApplicationInput.Description = ptr.String("{{display-name}}")
 	appTmplInput.ApplicationInput.HealthCheckURL = nil
 	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
 		{
 			Name:        namePlaceholder,
 			Description: ptr.String("description"),
+		},
+		{
+			Name:        displayNamePlaceholder,
+			Description: ptr.String(description),
 		},
 	}
 
@@ -1525,6 +1531,10 @@ func TestMergeApplications(t *testing.T) {
 				Placeholder: namePlaceholder,
 				Value:       "app1-e2e-merge",
 			},
+			{
+				Placeholder: displayNamePlaceholder,
+				Value:       description,
+			},
 		},
 	}
 
@@ -1533,6 +1543,10 @@ func TestMergeApplications(t *testing.T) {
 			{
 				Placeholder: namePlaceholder,
 				Value:       "app2-e2e-merge",
+			},
+			{
+				Placeholder: displayNamePlaceholder,
+				Value:       description,
 			},
 		},
 	}
@@ -1559,7 +1573,7 @@ func TestMergeApplications(t *testing.T) {
 	updateInput := fixtures.FixSampleApplicationUpdateInput("after")
 	updateInput.ProviderName = providerName
 	updateInput.HealthCheckURL = healthURL
-	updateInput.Description = description
+	updateInput.Description = ptr.String(description)
 	updateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationUpdateInputToGQL(updateInput)
 	require.NoError(t, err)
 
@@ -1629,7 +1643,7 @@ func TestMergeApplications(t *testing.T) {
 	// THEN
 	require.NoError(t, err)
 
-	assert.Equal(t, description, destApp.Description)
+	assert.Equal(t, description, str.PtrStrToStr(destApp.Description))
 	assert.Equal(t, healthURL, destApp.HealthCheckURL)
 	assert.Equal(t, providerName, destApp.ProviderName)
 	assert.Equal(t, managedLabelValue, destApp.Labels[managedLabel])

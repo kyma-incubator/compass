@@ -3,6 +3,7 @@ package apptemplate
 import (
 	"context"
 	"encoding/json"
+	"regexp"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
@@ -79,7 +80,7 @@ type WebhookConverter interface {
 // SelfRegisterManager missing godoc
 //go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SelfRegisterManager interface {
-	PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string) (map[string]interface{}, error)
+	PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string, validate func() error) (map[string]interface{}, error)
 	CleanupSelfRegistration(ctx context.Context, selfRegisterLabelValue, region string) error
 	GetSelfRegDistinguishingLabelKey() string
 }
@@ -212,7 +213,10 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	}
 
 	selfRegID := r.uidService.Generate()
-	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID)
+	validate := func() error {
+		return validateAppTemplateInputForSelfReg(convertedIn)
+	}
+	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validate)
 	if err != nil {
 		return nil, err
 	}
@@ -386,7 +390,7 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 	if err != nil {
 		return nil, err
 	}
-
+	//TODO check name before update
 	err = r.appTemplateSvc.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err
@@ -514,4 +518,39 @@ func (r *Resolver) cleanupAndLogOnError(ctx context.Context, id, region string) 
 	if err := r.selfRegManager.CleanupSelfRegistration(ctx, id, region); err != nil {
 		log.C(ctx).Errorf("An error occurred during cleanup of self-registered app template: %v", err)
 	}
+}
+
+func validateAppTemplateInputForSelfReg(appTemplateInput model.ApplicationTemplateInput) error {
+	if len(appTemplateInput.Placeholders) != 2 {
+		return errors.Errorf("expecting %q and %q placeholders", "name", "display-name")
+	}
+
+	for _, placeholder := range appTemplateInput.Placeholders {
+		if !(placeholder.Name == "name") && !(placeholder.Name == "display-name") {
+			return errors.Errorf("unexpected placeholder with name %q found", placeholder.Name)
+		}
+	}
+
+	//Matches the following pattern - "SAP <product name> (<region>)"
+	r := regexp.MustCompile(`(^SAP\s)([A-Za-z0-9_\- ]*)\s[(]([A-Za-z0-9_\- ]*)[)]`)
+	matches := r.FindStringSubmatch(appTemplateInput.Name)
+	if len(matches) == 0 {
+		return errors.Errorf("application template name %q does not comply with the following naming convention: %q", appTemplateInput.Name, "SAP <product name> (<region>)")
+	}
+
+	regionValue, exists := appTemplateInput.Labels[selfregmanager.RegionLabel]
+	if !exists {
+		return errors.Errorf("missing %q label", selfregmanager.RegionLabel)
+	}
+
+	region, ok := regionValue.(string)
+	if !ok {
+		return errors.Errorf("region value should be of type %q", "string")
+	}
+
+	if matches[len(matches)-1] != region {
+		return errors.Errorf("the region specified in the application template name does not match %q", region)
+	}
+
+	return nil
 }
