@@ -122,7 +122,7 @@ global:
       version: "PR-2383"
     ord_service:
       dir:
-      version: "PR-67"
+      version: "PR-68"
     schema_migrator:
       dir:
       version: "PR-2383"
