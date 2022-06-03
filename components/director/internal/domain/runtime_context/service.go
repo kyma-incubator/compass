@@ -45,8 +45,8 @@ type LabelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
-//go:generate mockery --exported --name=scenarioAssignmentEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
-type scenarioAssignmentEngine interface {
+//go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationService interface {
 	GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error)
 	GetFormationsForObject(ctx context.Context, tnt string, objType model.LabelableObject, objID string) ([]string, error)
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
@@ -67,28 +67,28 @@ type UIDService interface {
 }
 
 type service struct {
-	repo                     RuntimeContextRepository
-	labelRepo                LabelRepository
-	scenarioAssignmentEngine scenarioAssignmentEngine
-	tenantService            tenantService
-	labelUpsertService       LabelUpsertService
-	uidService               UIDService
+	repo               RuntimeContextRepository
+	labelRepo          LabelRepository
+	formationService   formationService
+	tenantService      tenantService
+	labelUpsertService LabelUpsertService
+	uidService         UIDService
 }
 
 // NewService missing godoc
 func NewService(repo RuntimeContextRepository,
 	labelRepo LabelRepository,
 	labelUpsertService LabelUpsertService,
-	scenarioAssignmentEngine scenarioAssignmentEngine,
+	formationService formationService,
 	tenantService tenantService,
 	uidService UIDService) *service {
 	return &service{
-		repo:                     repo,
-		labelRepo:                labelRepo,
-		scenarioAssignmentEngine: scenarioAssignmentEngine,
-		tenantService:            tenantService,
-		labelUpsertService:       labelUpsertService,
-		uidService:               uidService,
+		repo:               repo,
+		labelRepo:          labelRepo,
+		formationService:   formationService,
+		tenantService:      tenantService,
+		labelUpsertService: labelUpsertService,
+		uidService:         uidService,
 	}
 }
 
@@ -128,13 +128,13 @@ func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (str
 
 	if len(tnt.Parent) != 0 {
 		ctxWithParentTenant := tenant.SaveToContext(ctx, tnt.Parent, "")
-		scenariosFromAssignments, err := s.scenarioAssignmentEngine.GetScenariosFromMatchingASAs(ctxWithParentTenant, id, graphql.FormationObjectTypeRuntimeContext)
+		scenariosFromAssignments, err := s.formationService.GetScenariosFromMatchingASAs(ctxWithParentTenant, id, graphql.FormationObjectTypeRuntimeContext)
 		if err != nil {
 			return "", errors.Wrapf(err, "while getting formations from automatic scenario assignments")
 		}
 
 		for _, scenario := range scenariosFromAssignments {
-			if _, err := s.scenarioAssignmentEngine.AssignFormation(ctxWithParentTenant, tnt.Parent, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}); err != nil {
+			if _, err := s.formationService.AssignFormation(ctxWithParentTenant, tnt.Parent, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}); err != nil {
 				return "", errors.Wrapf(err, "while assigning formation with name %q for runtime context", scenario)
 			}
 		}
@@ -169,13 +169,13 @@ func (s *service) Delete(ctx context.Context, id string) error {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	formations, err := s.scenarioAssignmentEngine.GetFormationsForObject(ctx, rtmTenant, model.RuntimeContextLabelableObject, id)
+	formations, err := s.formationService.GetFormationsForObject(ctx, rtmTenant, model.RuntimeContextLabelableObject, id)
 	if err != nil && !apperrors.IsNotFoundError(err) {
 		return errors.Wrapf(err, "while listing formations for runtime context with id %q", id)
 	}
 
 	for _, f := range formations {
-		if _, err := s.scenarioAssignmentEngine.UnassignFormation(ctx, rtmTenant, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: f}); err != nil {
+		if _, err := s.formationService.UnassignFormation(ctx, rtmTenant, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: f}); err != nil {
 			return errors.Wrapf(err, "while unassigning formation with name %q for runtime context", f)
 		}
 	}

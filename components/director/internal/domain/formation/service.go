@@ -187,8 +187,8 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 // For objectType graphql.FormationObjectTypeApplication it removes the provided formation from the
 // scenario label of the application.
 // For objectTypes graphql.FormationObjectTypeRuntime and graphql.FormationObjectTypeRuntimeContext
-// it removes the formation from the scenario label of the runtime if the provided formation is assigned
-// from ASA and does nothing if it is assigned from ASA it does nothing.
+// it removes the formation from the scenario label of the runtime if the provided formation is NOT assigned
+// from ASA and does nothing if it is assigned from ASA.
 // For objectType graphql.FormationObjectTypeTenant it will
 // delete the automatic scenario assignment with the caller and target tenant.
 func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
@@ -379,16 +379,17 @@ func (s *service) GetScenariosFromMatchingASAs(ctx context.Context, objectID str
 		return nil, err
 	}
 
+	match, err := s.getMatchingFuncByFormationObjectType(objType)
+	if err != nil {
+		return nil, err
+	}
+
 	scenarioAssignments, err := s.repo.ListAll(ctx, tenantID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listinng Automatic Scenario Assignments in tenant: %s", tenantID)
 	}
 
 	matchingASAs := make([]*model.AutomaticScenarioAssignment, 0, len(scenarioAssignments))
-	match, err := s.getMatchingFuncByFormationObjectType(objType)
-	if err != nil {
-		return nil, err
-	}
 
 	for _, scenarioAssignment := range scenarioAssignments {
 		matches, err := match(ctx, scenarioAssignment, objectID)
@@ -416,7 +417,7 @@ func (s *service) getMatchingFuncByFormationObjectType(objType graphql.Formation
 	case graphql.FormationObjectTypeRuntimeContext:
 		return s.isASAMatchingRuntimeContext, nil
 	}
-	return nil, errors.New("unknown formation object type")
+	return nil, errors.New(fmt.Sprintf("unexpected formation object type %q", objType))
 }
 
 func (s *service) isASAMatchingRuntime(ctx context.Context, asa *model.AutomaticScenarioAssignment, runtimeID string) (bool, error) {

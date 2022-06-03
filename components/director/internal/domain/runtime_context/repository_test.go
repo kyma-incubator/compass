@@ -321,8 +321,6 @@ func TestPgRepository_ListAll(t *testing.T) {
 		Name: "List Runtime Contexts",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				//'SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE runtime_id = $1 AND (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $2))', arguments do not match: expected 5, but got 2 arguments" component="persistence/sql_error_mapper.go:35:persistence.MapSQLError" error="Query 'SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE runtime_id = $1 AND (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $2))', arguments do not match: expected 5, but got 2 arguments" error_source="check component log field" x-request-id=bootstrap
-				//
 				Query:    regexp.QuoteMeta(`SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $1))`),
 				Args:     []driver.Value{tenantID},
 				IsSelect: true,
@@ -364,8 +362,6 @@ func TestPgRepository_ListAllForRuntime(t *testing.T) {
 		Name: "List Runtime Contexts",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				//'SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE runtime_id = $1 AND (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $2))', arguments do not match: expected 5, but got 2 arguments" component="persistence/sql_error_mapper.go:35:persistence.MapSQLError" error="Query 'SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE runtime_id = $1 AND (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $2))', arguments do not match: expected 5, but got 2 arguments" error_source="check component log field" x-request-id=bootstrap
-				//
 				Query: regexp.QuoteMeta(`SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE runtime_id = $1 AND
 												(id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $2))`),
 				Args:     []driver.Value{runtimeID, tenantID},

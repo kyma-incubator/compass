@@ -135,7 +135,7 @@ func TestService_Create(t *testing.T) {
 		RuntimeContextRepositoryFn func() *automock.RuntimeContextRepository
 		UIDServiceFn               func() *automock.UIDService
 		TenantServiceFN            func() *automock.TenantService
-		ScenarioAssignmentEngineFN func() *automock.ScenarioAssignmentEngine
+		FormationServiceFn         func() *automock.FormationService
 		Input                      model.RuntimeContextInput
 		Context                    context.Context
 		ExpectedErrMessage         string
@@ -152,11 +152,11 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			ScenarioAssignmentEngineFN: func() *automock.ScenarioAssignmentEngine {
-				engine := &automock.ScenarioAssignmentEngine{}
-				engine.On("GetScenariosFromMatchingASAs", ctxWithParentTenant, id, graphql.FormationObjectTypeRuntimeContext).Return(formations, nil).Once()
-				engine.On("AssignFormation", ctxWithParentTenant, parentTnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}).Return(nil, nil).Once()
-				return engine
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("GetScenariosFromMatchingASAs", ctxWithParentTenant, id, graphql.FormationObjectTypeRuntimeContext).Return(formations, nil).Once()
+				formationSvc.On("AssignFormation", ctxWithParentTenant, parentTnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}).Return(nil, nil).Once()
+				return formationSvc
 			},
 			TenantServiceFN: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
@@ -179,33 +179,21 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return("").Once()
 				return svc
 			},
-			ScenarioAssignmentEngineFN: func() *automock.ScenarioAssignmentEngine {
-				return &automock.ScenarioAssignmentEngine{}
-			},
-			TenantServiceFN: func() *automock.TenantService {
-				return &automock.TenantService{}
-			},
+			FormationServiceFn: unusedFormationService,
+			TenantServiceFN:    unusedTenantService,
 			Input:              modelInput,
 			Context:            ctxWithTenant,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Returns error on loading tenant",
-			RuntimeContextRepositoryFn: func() *automock.RuntimeContextRepository {
-				return &automock.RuntimeContextRepository{}
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
-			},
-			ScenarioAssignmentEngineFN: func() *automock.ScenarioAssignmentEngine {
-				return &automock.ScenarioAssignmentEngine{}
-			},
-			TenantServiceFN: func() *automock.TenantService {
-				return &automock.TenantService{}
-			},
-			Input:              model.RuntimeContextInput{},
-			Context:            ctxWithoutTenant,
-			ExpectedErrMessage: "while loading tenant from context: cannot read tenant from context",
+			Name:                       "Returns error on loading tenant",
+			RuntimeContextRepositoryFn: unusedRuntimeContextRepo,
+			UIDServiceFn:               unusedUIDService,
+			FormationServiceFn:         unusedFormationService,
+			TenantServiceFN:            unusedTenantService,
+			Input:                      model.RuntimeContextInput{},
+			Context:                    ctxWithoutTenant,
+			ExpectedErrMessage:         "while loading tenant from context: cannot read tenant from context",
 		},
 		{
 			Name: "Returns error when fetching tenant",
@@ -219,9 +207,7 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			ScenarioAssignmentEngineFN: func() *automock.ScenarioAssignmentEngine {
-				return &automock.ScenarioAssignmentEngine{}
-			},
+			FormationServiceFn: unusedFormationService,
 			TenantServiceFN: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetTenantByID", ctxWithTenant, tnt).Return(nil, testErr).Once()
@@ -243,10 +229,10 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			ScenarioAssignmentEngineFN: func() *automock.ScenarioAssignmentEngine {
-				engine := &automock.ScenarioAssignmentEngine{}
-				engine.On("GetScenariosFromMatchingASAs", ctxWithParentTenant, id, graphql.FormationObjectTypeRuntimeContext).Return(nil, testErr).Once()
-				return engine
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("GetScenariosFromMatchingASAs", ctxWithParentTenant, id, graphql.FormationObjectTypeRuntimeContext).Return(nil, testErr).Once()
+				return formationSvc
 			},
 			TenantServiceFN: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
@@ -269,11 +255,11 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return(id)
 				return svc
 			},
-			ScenarioAssignmentEngineFN: func() *automock.ScenarioAssignmentEngine {
-				engine := &automock.ScenarioAssignmentEngine{}
-				engine.On("GetScenariosFromMatchingASAs", ctxWithParentTenant, id, graphql.FormationObjectTypeRuntimeContext).Return(formations, nil).Once()
-				engine.On("AssignFormation", ctxWithParentTenant, parentTnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}).Return(nil, testErr).Once()
-				return engine
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("GetScenariosFromMatchingASAs", ctxWithParentTenant, id, graphql.FormationObjectTypeRuntimeContext).Return(formations, nil).Once()
+				formationSvc.On("AssignFormation", ctxWithParentTenant, parentTnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}).Return(nil, testErr).Once()
+				return formationSvc
 			},
 			TenantServiceFN: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
@@ -290,9 +276,9 @@ func TestService_Create(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RuntimeContextRepositoryFn()
 			idSvc := testCase.UIDServiceFn()
-			scenarioAssignmenEngine := testCase.ScenarioAssignmentEngineFN()
+			formationSvc := testCase.FormationServiceFn()
 			tenantSvc := testCase.TenantServiceFN()
-			svc := runtimectx.NewService(repo, nil, nil, scenarioAssignmenEngine, tenantSvc, idSvc)
+			svc := runtimectx.NewService(repo, nil, nil, formationSvc, tenantSvc, idSvc)
 
 			// WHEN
 			result, err := svc.Create(testCase.Context, testCase.Input)
@@ -307,7 +293,7 @@ func TestService_Create(t *testing.T) {
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			mock.AssertExpectationsForObjects(t, repo, scenarioAssignmenEngine, tenantSvc, idSvc)
+			mock.AssertExpectationsForObjects(t, repo, formationSvc, tenantSvc, idSvc)
 		})
 	}
 }
@@ -446,13 +432,13 @@ func TestService_Delete(t *testing.T) {
 	formations := []string{"scenario"}
 
 	testCases := []struct {
-		Name                       string
-		RepositoryFn               func() *automock.RuntimeContextRepository
-		ScenarioAssignmentEngineFN func() *automock.ScenarioAssignmentEngine
-		Input                      model.RuntimeContextInput
-		InputID                    string
-		Context                    context.Context
-		ExpectedErrMessage         string
+		Name               string
+		RepositoryFn       func() *automock.RuntimeContextRepository
+		FormationServiceFN func() *automock.FormationService
+		Input              model.RuntimeContextInput
+		InputID            string
+		Context            context.Context
+		ExpectedErrMessage string
 	}{
 		{
 			Name: "Success",
@@ -461,11 +447,11 @@ func TestService_Delete(t *testing.T) {
 				repo.On("Delete", ctxWithTenant, tnt, runtimeCtxModel.ID).Return(nil).Once()
 				return repo
 			},
-			ScenarioAssignmentEngineFN: func() *automock.ScenarioAssignmentEngine {
-				engine := &automock.ScenarioAssignmentEngine{}
-				engine.On("GetFormationsForObject", ctxWithTenant, tnt, model.RuntimeContextLabelableObject, id).Return(formations, nil).Once()
-				engine.On("UnassignFormation", ctxWithTenant, tnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}).Return(nil, nil).Once()
-				return engine
+			FormationServiceFN: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("GetFormationsForObject", ctxWithTenant, tnt, model.RuntimeContextLabelableObject, id).Return(formations, nil).Once()
+				formationSvc.On("UnassignFormation", ctxWithTenant, tnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}).Return(nil, nil).Once()
+				return formationSvc
 			},
 			InputID:            id,
 			Context:            ctxWithTenant,
@@ -477,37 +463,31 @@ func TestService_Delete(t *testing.T) {
 				repo := &automock.RuntimeContextRepository{}
 				return repo
 			},
-			ScenarioAssignmentEngineFN: func() *automock.ScenarioAssignmentEngine {
-				return &automock.ScenarioAssignmentEngine{}
-			},
+			FormationServiceFN: unusedFormationService,
 			InputID:            id,
 			Context:            ctxWithoutTenant,
 			ExpectedErrMessage: "while loading tenant from context: cannot read tenant from context",
 		},
 		{
-			Name: "Returns error when listing formations for runtime context",
-			RepositoryFn: func() *automock.RuntimeContextRepository {
-				return &automock.RuntimeContextRepository{}
-			},
-			ScenarioAssignmentEngineFN: func() *automock.ScenarioAssignmentEngine {
-				engine := &automock.ScenarioAssignmentEngine{}
-				engine.On("GetFormationsForObject", ctxWithTenant, tnt, model.RuntimeContextLabelableObject, id).Return(nil, testErr).Once()
-				return engine
+			Name:         "Returns error when listing formations for runtime context",
+			RepositoryFn: unusedRuntimeContextRepo,
+			FormationServiceFN: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("GetFormationsForObject", ctxWithTenant, tnt, model.RuntimeContextLabelableObject, id).Return(nil, testErr).Once()
+				return formationSvc
 			},
 			InputID:            id,
 			Context:            ctxWithTenant,
 			ExpectedErrMessage: "while listing formations for runtime context with id",
 		},
 		{
-			Name: "Returns error while unassigning formation",
-			RepositoryFn: func() *automock.RuntimeContextRepository {
-				return &automock.RuntimeContextRepository{}
-			},
-			ScenarioAssignmentEngineFN: func() *automock.ScenarioAssignmentEngine {
-				engine := &automock.ScenarioAssignmentEngine{}
-				engine.On("GetFormationsForObject", ctxWithTenant, tnt, model.RuntimeContextLabelableObject, id).Return(formations, nil).Once()
-				engine.On("UnassignFormation", ctxWithTenant, tnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}).Return(nil, testErr).Once()
-				return engine
+			Name:         "Returns error while unassigning formation",
+			RepositoryFn: unusedRuntimeContextRepo,
+			FormationServiceFN: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("GetFormationsForObject", ctxWithTenant, tnt, model.RuntimeContextLabelableObject, id).Return(formations, nil).Once()
+				formationSvc.On("UnassignFormation", ctxWithTenant, tnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}).Return(nil, testErr).Once()
+				return formationSvc
 			},
 			InputID:            id,
 			Context:            ctxWithTenant,
@@ -520,11 +500,11 @@ func TestService_Delete(t *testing.T) {
 				repo.On("Delete", ctxWithTenant, tnt, runtimeCtxModel.ID).Return(testErr).Once()
 				return repo
 			},
-			ScenarioAssignmentEngineFN: func() *automock.ScenarioAssignmentEngine {
-				engine := &automock.ScenarioAssignmentEngine{}
-				engine.On("GetFormationsForObject", ctxWithTenant, tnt, model.RuntimeContextLabelableObject, id).Return(formations, nil).Once()
-				engine.On("UnassignFormation", ctxWithTenant, tnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}).Return(nil, nil).Once()
-				return engine
+			FormationServiceFN: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("GetFormationsForObject", ctxWithTenant, tnt, model.RuntimeContextLabelableObject, id).Return(formations, nil).Once()
+				formationSvc.On("UnassignFormation", ctxWithTenant, tnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}).Return(nil, nil).Once()
+				return formationSvc
 			},
 			InputID:            id,
 			Context:            ctxWithTenant,
@@ -535,8 +515,8 @@ func TestService_Delete(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			scenarioAssignmenEngine := testCase.ScenarioAssignmentEngineFN()
-			svc := runtimectx.NewService(repo, nil, nil, scenarioAssignmenEngine, nil, nil)
+			formationSvc := testCase.FormationServiceFN()
+			svc := runtimectx.NewService(repo, nil, nil, formationSvc, nil, nil)
 
 			// WHEN
 			err := svc.Delete(testCase.Context, testCase.InputID)
@@ -548,7 +528,7 @@ func TestService_Delete(t *testing.T) {
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			mock.AssertExpectationsForObjects(t, repo, scenarioAssignmenEngine)
+			mock.AssertExpectationsForObjects(t, repo, formationSvc)
 		})
 	}
 }
@@ -1225,4 +1205,20 @@ func TestService_ListLabel(t *testing.T) {
 		require.Error(t, err)
 		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})
+}
+
+func unusedRuntimeContextRepo() *automock.RuntimeContextRepository {
+	return &automock.RuntimeContextRepository{}
+}
+
+func unusedUIDService() *automock.UIDService {
+	return &automock.UIDService{}
+}
+
+func unusedFormationService() *automock.FormationService {
+	return &automock.FormationService{}
+}
+
+func unusedTenantService() *automock.TenantService {
+	return &automock.TenantService{}
 }
