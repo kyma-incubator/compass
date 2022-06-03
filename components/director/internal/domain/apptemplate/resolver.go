@@ -213,6 +213,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	}
 
 	selfRegID := r.uidService.Generate()
+  convertedIn.ID = &selfRegID
 	validate := func() error {
 		return validateAppTemplateInputForSelfReg(convertedIn)
 	}
