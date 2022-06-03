@@ -2,6 +2,7 @@ package formation_test
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
 
 	"fmt"
