@@ -28,3 +28,18 @@ func (_m *LabelRepository) Delete(_a0 context.Context, _a1 string, _a2 model.Lab
 
 	return r0
 }
+
+type NewLabelRepositoryT interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewLabelRepository creates a new instance of LabelRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewLabelRepository(t NewLabelRepositoryT) *LabelRepository {
+	mock := &LabelRepository{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
+}

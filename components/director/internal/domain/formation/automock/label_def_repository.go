@@ -86,3 +86,18 @@ func (_m *LabelDefRepository) UpdateWithVersion(ctx context.Context, def model.L
 
 	return r0
 }
+
+type NewLabelDefRepositoryT interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewLabelDefRepository creates a new instance of LabelDefRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewLabelDefRepository(t NewLabelDefRepositoryT) *LabelDefRepository {
+	mock := &LabelDefRepository{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
+}

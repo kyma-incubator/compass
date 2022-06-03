@@ -96,3 +96,18 @@ func (_m *RuntimeContextService) ListByRuntimeIDs(ctx context.Context, runtimeID
 
 	return r0, r1
 }
+
+type NewRuntimeContextServiceT interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewRuntimeContextService creates a new instance of RuntimeContextService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewRuntimeContextService(t NewRuntimeContextServiceT) *RuntimeContextService {
+	mock := &RuntimeContextService{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
+}

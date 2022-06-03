@@ -80,3 +80,18 @@ func (_m *TenantService) GetTenantByID(ctx context.Context, id string) (*model.B
 
 	return r0, r1
 }
+
+type NewTenantServiceT interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewTenantService creates a new instance of TenantService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewTenantService(t NewTenantServiceT) *TenantService {
+	mock := &TenantService{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
+}

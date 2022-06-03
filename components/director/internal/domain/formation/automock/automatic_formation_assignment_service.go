@@ -35,3 +35,18 @@ func (_m *AutomaticFormationAssignmentService) GetForScenarioName(ctx context.Co
 
 	return r0, r1
 }
+
+type NewAutomaticFormationAssignmentServiceT interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewAutomaticFormationAssignmentService creates a new instance of AutomaticFormationAssignmentService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewAutomaticFormationAssignmentService(t NewAutomaticFormationAssignmentServiceT) *AutomaticFormationAssignmentService {
+	mock := &AutomaticFormationAssignmentService{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
+}

@@ -216,3 +216,18 @@ func (_m *RuntimeContextRepository) Update(ctx context.Context, tenant string, i
 
 	return r0
 }
+
+type NewRuntimeContextRepositoryT interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewRuntimeContextRepository creates a new instance of RuntimeContextRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewRuntimeContextRepository(t NewRuntimeContextRepositoryT) *RuntimeContextRepository {
+	mock := &RuntimeContextRepository{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
+}

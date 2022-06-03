@@ -31,3 +31,18 @@ func (_m *ScenariosService) EnsureScenariosLabelDefinitionExists(ctx context.Con
 
 	return r0
 }
+
+type NewScenariosServiceT interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewScenariosService creates a new instance of ScenariosService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewScenariosService(t NewScenariosServiceT) *ScenariosService {
+	mock := &ScenariosService{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
+}

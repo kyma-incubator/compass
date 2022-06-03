@@ -41,3 +41,18 @@ func (_m *LabelUpsertService) UpsertMultipleLabels(ctx context.Context, tenant s
 
 	return r0
 }
+
+type NewLabelUpsertServiceT interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewLabelUpsertService creates a new instance of LabelUpsertService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewLabelUpsertService(t NewLabelUpsertServiceT) *LabelUpsertService {
+	mock := &LabelUpsertService{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
+}

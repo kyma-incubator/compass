@@ -107,3 +107,18 @@ func (_m *ScenarioAssignmentEngine) UnassignFormation(ctx context.Context, tnt s
 
 	return r0, r1
 }
+
+type NewScenarioAssignmentEngineT interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewScenarioAssignmentEngine creates a new instance of ScenarioAssignmentEngine. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewScenarioAssignmentEngine(t NewScenarioAssignmentEngineT) *ScenarioAssignmentEngine {
+	mock := &ScenarioAssignmentEngine{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
+}
