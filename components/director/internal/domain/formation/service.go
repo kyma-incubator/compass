@@ -187,8 +187,8 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 // For objectType graphql.FormationObjectTypeApplication it removes the provided formation from the
 // scenario label of the application.
 // For objectTypes graphql.FormationObjectTypeRuntime and graphql.FormationObjectTypeRuntimeContext
-// it removes the formation from the scenario label of the runtime if the provided formation is NOT assigned
-// from ASA and does nothing if it is assigned from ASA.
+// it removes the formation from the scenario label of the runtime/runtime context if the provided
+// formation is NOT assigned from ASA and does nothing if it is assigned from ASA.
 // For objectType graphql.FormationObjectTypeTenant it will
 // delete the automatic scenario assignment with the caller and target tenant.
 func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
@@ -417,7 +417,7 @@ func (s *service) getMatchingFuncByFormationObjectType(objType graphql.Formation
 	case graphql.FormationObjectTypeRuntimeContext:
 		return s.isASAMatchingRuntimeContext, nil
 	}
-	return nil, errors.New(fmt.Sprintf("unexpected formation object type %q", objType))
+	return nil, errors.Errorf("unexpected formation object type %q", objType)
 }
 
 func (s *service) isASAMatchingRuntime(ctx context.Context, asa *model.AutomaticScenarioAssignment, runtimeID string) (bool, error) {

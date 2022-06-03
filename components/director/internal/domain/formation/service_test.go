@@ -2,7 +2,8 @@ package formation_test
 
 import (
 	"context"
-	"errors"
+	"github.com/pkg/errors"
+
 	"fmt"
 	"testing"
 
@@ -2777,7 +2778,7 @@ func TestService_GetScenariosFromMatchingASAs(t *testing.T) {
 			RuntimeContextRepoFn:     formation.UnusedRuntimeContextRepo,
 			ObjectID:                 formation.RuntimeID,
 			ObjectType:               graphql.FormationObjectTypeTenant,
-			ExpectedError:            errors.New(fmt.Sprintf("unexpected formation object type %q", graphql.FormationObjectTypeTenant)),
+			ExpectedError:            errors.Errorf("unexpected formation object type %q", graphql.FormationObjectTypeTenant),
 			ExpectedScenarios:        nil,
 		},
 		{
