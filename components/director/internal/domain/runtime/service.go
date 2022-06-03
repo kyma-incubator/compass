@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -58,11 +60,6 @@ type scenariosService interface {
 	AddDefaultScenarioIfEnabled(ctx context.Context, tenant string, labels *map[string]interface{})
 }
 
-//go:generate mockery --exported --name=scenarioAssignmentEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
-type scenarioAssignmentEngine interface {
-	MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error)
-}
-
 //go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantService interface {
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
@@ -79,12 +76,12 @@ type service struct {
 	repo      runtimeRepository
 	labelRepo labelRepository
 
-	labelUpsertService       labelUpsertService
-	uidService               uidService
-	scenariosService         scenariosService
-	scenarioAssignmentEngine scenarioAssignmentEngine
-	tenantSvc                tenantService
-	webhookService           WebhookService
+	labelUpsertService labelUpsertService
+	uidService         uidService
+	scenariosService   scenariosService
+	formationService   formationService
+	tenantSvc          tenantService
+	webhookService     WebhookService
 
 	protectedLabelPattern string
 	immutableLabelPattern string
@@ -96,22 +93,22 @@ func NewService(repo runtimeRepository,
 	scenariosService scenariosService,
 	labelUpsertService labelUpsertService,
 	uidService uidService,
-	scenarioAssignmentEngine scenarioAssignmentEngine,
+	formationService formationService,
 	tenantService tenantService,
 	webhookService WebhookService,
 	protectedLabelPattern string,
 	immutableLabelPattern string) *service {
 	return &service{
-		repo:                     repo,
-		labelRepo:                labelRepo,
-		scenariosService:         scenariosService,
-		labelUpsertService:       labelUpsertService,
-		uidService:               uidService,
-		scenarioAssignmentEngine: scenarioAssignmentEngine,
-		tenantSvc:                tenantService,
-		webhookService:           webhookService,
-		protectedLabelPattern:    protectedLabelPattern,
-		immutableLabelPattern:    immutableLabelPattern,
+		repo:                  repo,
+		labelRepo:             labelRepo,
+		scenariosService:      scenariosService,
+		labelUpsertService:    labelUpsertService,
+		uidService:            uidService,
+		formationService:      formationService,
+		tenantSvc:             tenantService,
+		webhookService:        webhookService,
+		protectedLabelPattern: protectedLabelPattern,
+		immutableLabelPattern: immutableLabelPattern,
 	}
 }
 
@@ -261,6 +258,14 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 		in.Labels[key] = value
 	}
 
+	if scenarios, areScenariosInLabels := in.Labels[model.ScenariosKey]; areScenariosInLabels {
+		if err := s.assignRuntimeScenarios(ctx, rtmTenant, id, scenarios); err != nil {
+			return err
+		}
+
+		delete(in.Labels, model.ScenariosKey)
+	}
+
 	if err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels); err != nil {
 		return errors.Wrapf(err, "while creating multiple labels for Runtime")
 	}
@@ -282,27 +287,20 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 	}
 
 	ctxWithParentTenant := tenant.SaveToContext(ctx, tnt.Parent, "")
-	scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctxWithParentTenant, map[string]interface{}{}, id)
+
+	mergedScenarios, err := s.formationService.MergeScenariosFromInputLabelsAndAssignments(ctxWithParentTenant, map[string]interface{}{}, id)
 	if err != nil {
 		return errors.Wrap(err, "while merging scenarios from input and assignments")
 	}
 
-	if len(scenarios) == 0 { // No ASAs in parent tenant
-		return nil
-	}
-
-	scenariosLabels := map[string]interface{}{
-		model.ScenariosKey: scenarios,
-	}
-
-	if err = s.labelUpsertService.UpsertMultipleLabels(ctxWithParentTenant, tnt.Parent, model.RuntimeLabelableObject, id, scenariosLabels); err != nil {
-		return errors.Wrapf(err, "while creating multiple labels for Runtime")
+	if err := s.assignRuntimeScenarios(ctxWithParentTenant, tnt.Parent, id, mergedScenarios); err != nil {
+		return errors.Wrapf(err, "while assigning merged formations")
 	}
 
 	return nil
 }
 
-// Update missing godoc
+// Update updates Runtime and its labels
 func (s *service) Update(ctx context.Context, id string, in model.RuntimeUpdateInput) error {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -327,48 +325,42 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeUpdateI
 		in.Labels[IsNormalizedLabel] = "true"
 	}
 
+	if err := s.updateScenariosLabel(ctx, rtmTenant, id, in.Labels); err != nil {
+		return errors.Wrap(err, "while updating scenarios label")
+	}
+	delete(in.Labels, model.ScenariosKey)
+
 	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
 	if in.Labels, err = unsafeExtractModifiableLabels(in.Labels, s.protectedLabelPattern, s.immutableLabelPattern); err != nil {
 		return err
 	}
 	log.C(ctx).Debugf("Successfully stripped protected labels. Resulting labels after operation are: %+v", in.Labels)
 
+	protectedAndScenariosPattern := s.protectedLabelPattern + "|^" + model.ScenariosKey + "$"
 	// NOTE: The db layer does not support OR currently so multiple label patterns can't be implemented easily
-	err = s.labelRepo.DeleteByKeyNegationPattern(ctx, rtmTenant, model.RuntimeLabelableObject, id, s.protectedLabelPattern)
-	if err != nil {
+	if err = s.labelRepo.DeleteByKeyNegationPattern(ctx, rtmTenant, model.RuntimeLabelableObject, id, protectedAndScenariosPattern); err != nil {
 		return errors.Wrapf(err, "while deleting all labels for Runtime")
 	}
 
-	if in.Labels == nil {
-		return nil
-	}
-
-	scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctx, in.Labels, id)
-	if err != nil {
-		return errors.Wrap(err, "while merging scenarios from input and assignments")
-	}
-
-	if len(scenarios) > 0 {
-		in.Labels[model.ScenariosKey] = scenarios
-	}
-
-	err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels)
-	if err != nil {
+	if err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels); err != nil {
 		return errors.Wrapf(err, "while creating multiple labels for Runtime")
 	}
 
 	return nil
 }
 
-// Delete missing godoc
+// Delete deletes Runtime and its labels
 func (s *service) Delete(ctx context.Context, id string) error {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	err = s.repo.Delete(ctx, rtmTenant, id)
-	if err != nil {
+	if err = s.unassignRuntimeScenarios(ctx, rtmTenant, id); err != nil {
+		return err
+	}
+
+	if err = s.repo.Delete(ctx, rtmTenant, id); err != nil {
 		return errors.Wrapf(err, "while deleting Runtime")
 	}
 
@@ -377,42 +369,30 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-// SetLabel missing godoc
+// SetLabel sets Runtime label from a given input
 func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) error {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	err = s.ensureRuntimeExists(ctx, rtmTenant, labelInput.ObjectID)
-	if err != nil {
+	if err = s.ensureRuntimeExists(ctx, rtmTenant, labelInput.ObjectID); err != nil {
 		return err
 	}
 
-	currentRuntimeLabels, err := s.getCurrentLabelsForRuntime(ctx, rtmTenant, labelInput.ObjectID)
-	if err != nil {
+	if modifiable, err := isLabelModifiable(labelInput.Key, s.protectedLabelPattern, s.immutableLabelPattern); err != nil {
 		return err
-	}
-
-	newRuntimeLabels := make(map[string]interface{})
-	for k, v := range currentRuntimeLabels {
-		newRuntimeLabels[k] = v
-	}
-
-	newRuntimeLabels[labelInput.Key] = labelInput.Value
-
-	if err = s.upsertScenariosLabelIfShould(ctx, labelInput.ObjectID, labelInput.Key, newRuntimeLabels); err != nil {
-		return err
-	}
-
-	modifiable, err := isLabelModifiable(labelInput.Key, s.protectedLabelPattern, s.immutableLabelPattern)
-	if err != nil {
-		return err
-	}
-	if !modifiable {
+	} else if !modifiable {
 		return apperrors.NewInvalidDataError("could not set unmodifiable label with key %s", labelInput.Key)
 	}
-	if labelInput.Key != model.ScenariosKey {
+
+	id := labelInput.ObjectID
+
+	if labelInput.Key == model.ScenariosKey {
+		if err := s.updateScenariosLabel(ctx, rtmTenant, id, map[string]interface{}{model.ScenariosKey: labelInput.Value}); err != nil {
+			return errors.Wrap(err, "while updating scenarios label")
+		}
+	} else {
 		if err = s.labelUpsertService.UpsertLabel(ctx, rtmTenant, labelInput); err != nil {
 			return errors.Wrapf(err, "while creating label for Runtime")
 		}
@@ -468,44 +448,29 @@ func (s *service) ListLabels(ctx context.Context, runtimeID string) (map[string]
 	return extractUnProtectedLabels(labels, s.protectedLabelPattern)
 }
 
-// DeleteLabel missing godoc
+// DeleteLabel deletes Runtime label from a given label key
 func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string) error {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	err = s.ensureRuntimeExists(ctx, rtmTenant, runtimeID)
-	if err != nil {
+	if err = s.ensureRuntimeExists(ctx, rtmTenant, runtimeID); err != nil {
 		return err
 	}
 
-	currentRuntimeLabels, err := s.getCurrentLabelsForRuntime(ctx, rtmTenant, runtimeID)
-	if err != nil {
+	if modifiable, err := isLabelModifiable(key, s.protectedLabelPattern, s.immutableLabelPattern); err != nil {
 		return err
-	}
-
-	newRuntimeLabels := make(map[string]interface{})
-	for k, v := range currentRuntimeLabels {
-		newRuntimeLabels[k] = v
-	}
-
-	delete(newRuntimeLabels, key)
-
-	if err = s.upsertScenariosLabelIfShould(ctx, runtimeID, key, newRuntimeLabels); err != nil {
-		return err
-	}
-
-	modifiable, err := isLabelModifiable(key, s.protectedLabelPattern, s.immutableLabelPattern)
-	if err != nil {
-		return err
-	}
-	if !modifiable {
+	} else if !modifiable {
 		return apperrors.NewInvalidDataError("could not delete unmodifiable label with key %s", key)
 	}
-	if key != model.ScenariosKey {
-		err = s.labelRepo.Delete(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID, key)
-		if err != nil {
+
+	if key == model.ScenariosKey {
+		if err := s.unassignRuntimeScenarios(ctx, rtmTenant, runtimeID); err != nil {
+			return err
+		}
+	} else {
+		if err = s.labelRepo.Delete(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID, key); err != nil {
 			return errors.Wrapf(err, "while deleting Runtime label")
 		}
 	}
@@ -525,39 +490,93 @@ func (s *service) ensureRuntimeExists(ctx context.Context, tnt string, runtimeID
 	return nil
 }
 
-func (s *service) upsertScenariosLabelIfShould(ctx context.Context, runtimeID string, modifiedLabelKey string, newRuntimeLabels map[string]interface{}) error {
-	if modifiedLabelKey != model.ScenariosKey {
-		return nil
-	}
-
-	rtmTenant, err := tenant.LoadFromContext(ctx)
+func (s *service) assignRuntimeScenarios(ctx context.Context, rtmTenant, id string, scenarios interface{}) error {
+	scenariosStr, err := label.ValueToStringsSlice(scenarios)
 	if err != nil {
-		return errors.Wrapf(err, "while loading tenant from context")
+		return errors.Wrapf(err, "while converting scenarios: %+v to slice of strings", scenarios)
 	}
 
-	scenarios, err := s.scenarioAssignmentEngine.MergeScenariosFromInputLabelsAndAssignments(ctx, newRuntimeLabels, runtimeID)
+	for _, scenario := range scenariosStr {
+		if _, err = s.formationService.AssignFormation(ctx, rtmTenant, id, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
+			return errors.Wrapf(err, "while assigning formation %q from runtime with ID %q", scenario, id)
+		}
+	}
+
+	return nil
+}
+
+func (s *service) unassignRuntimeScenarios(ctx context.Context, rtmTenant, runtimeID string) error {
+	currentRuntimeLabels, err := s.getCurrentLabelsForRuntime(ctx, rtmTenant, runtimeID)
+	if err != nil {
+		return err
+	}
+
+	if scenarios, areScenariosInLabels := currentRuntimeLabels[model.ScenariosKey]; areScenariosInLabels {
+		scenariosStr, err := label.ValueToStringsSlice(scenarios)
+		if err != nil {
+			return errors.Wrapf(err, "while converting scenarios: %+v to slice of strings", scenarios)
+		}
+
+		for _, scenario := range scenariosStr {
+			if _, err = s.formationService.UnassignFormation(ctx, rtmTenant, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
+				return errors.Wrapf(err, "while unassigning formation %q from runtime with ID %q", scenario, runtimeID)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *service) updateScenariosLabel(ctx context.Context, rtmTenant, rtmId string, inputLabels map[string]interface{}) error {
+	mergedScenarios, err := s.formationService.MergeScenariosFromInputLabelsAndAssignments(ctx, inputLabels, rtmId)
 	if err != nil {
 		return errors.Wrap(err, "while merging scenarios from input and assignments")
 	}
 
-	if len(scenarios) == 0 {
-		err := s.labelRepo.Delete(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID, model.ScenariosKey)
-		if err != nil {
-			return errors.Wrapf(err, "while deleting scenarios label from runtime with id [%s]", runtimeID)
-		}
-		return nil
-	}
-
-	scenariosLabelInput := &model.LabelInput{
-		Key:        model.ScenariosKey,
-		Value:      scenarios,
-		ObjectID:   runtimeID,
-		ObjectType: model.RuntimeLabelableObject,
-	}
-
-	err = s.labelUpsertService.UpsertLabel(ctx, rtmTenant, scenariosLabelInput)
+	mergedScenariosSlice, err := label.ValueToStringsSlice(mergedScenarios)
 	if err != nil {
-		return errors.Wrapf(err, "while creating scenarios label for Runtime with id [%s]", runtimeID)
+		return errors.Wrapf(err, "while converting merged scenarios: %+v to slice of strings", mergedScenarios)
+	}
+
+	currentRuntimeLabels, err := s.getCurrentLabelsForRuntime(ctx, rtmTenant, rtmId)
+	if err != nil {
+		return err
+	}
+
+	currentScenarios, areCurrentScenariosInLabels := currentRuntimeLabels[model.ScenariosKey]
+	if !areCurrentScenariosInLabels {
+		currentScenarios = []interface{}{}
+	}
+
+	currentScenariosSlice, err := label.ValueToStringsSlice(currentScenarios)
+	if err != nil {
+		return errors.Wrapf(err, "while converting current runtime scenarios: %+v to slice of strings", currentScenarios)
+	}
+
+	currentScenariosMap := make(map[string]struct{}, len(currentScenariosSlice))
+	for _, s := range currentScenariosSlice {
+		currentScenariosMap[s] = struct{}{}
+	}
+
+	mergedScenariosMap := make(map[string]struct{}, len(mergedScenariosSlice))
+	for _, s := range mergedScenariosSlice {
+		mergedScenariosMap[s] = struct{}{}
+	}
+
+	for scenario := range currentScenariosMap {
+		if _, found := mergedScenariosMap[scenario]; !found {
+			if _, err = s.formationService.UnassignFormation(ctx, rtmTenant, rtmId, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
+				return errors.Wrapf(err, "while unassigning formation %q from runtime with ID %q", scenario, rtmId)
+			}
+		}
+	}
+
+	for scenario := range mergedScenariosMap {
+		if _, found := currentScenariosMap[scenario]; !found {
+			if _, err = s.formationService.AssignFormation(ctx, rtmTenant, rtmId, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
+				return errors.Wrapf(err, "while assigning formation %q from runtime with ID %q", scenario, rtmId)
+			}
+		}
 	}
 
 	return nil
