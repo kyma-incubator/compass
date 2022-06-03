@@ -212,6 +212,8 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	}
 
 	selfRegID := r.uidService.Generate()
+	convertedIn.ID = &selfRegID
+
 	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID)
 	if err != nil {
 		return nil, err

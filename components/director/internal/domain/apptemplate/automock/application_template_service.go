@@ -16,7 +16,7 @@ type ApplicationTemplateService struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, in
+// Create provides a mock function with given fields: ctx, in, selfRegID
 func (_m *ApplicationTemplateService) Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error) {
 	ret := _m.Called(ctx, in)
 
@@ -37,7 +37,7 @@ func (_m *ApplicationTemplateService) Create(ctx context.Context, in model.Appli
 	return r0, r1
 }
 
-// CreateWithLabels provides a mock function with given fields: ctx, in, labels
+// CreateWithLabels provides a mock function with given fields: ctx, in, labels, id
 func (_m *ApplicationTemplateService) CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error) {
 	ret := _m.Called(ctx, in, labels)
 
