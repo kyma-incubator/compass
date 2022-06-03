@@ -539,12 +539,13 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
-		protectedConsumerSubaccountIdsLabel := "consumer_subaccount_ids"
+		runtimeTypeLabelKey := conf.SubscriptionProviderAppNameLabelKey
+		runtimeTypeLabelValue := conf.SubscriptionProviderAppNameValue
 
 		runtimeInput := fixRuntimeInput("register-runtime-with-protected-labels")
 		runtimeInput.Description = ptr.String("register-runtime-with-protected-labels-description")
-		runtimeInput.Labels[protectedConsumerSubaccountIdsLabel] = []string{"subaccountID-1", "subaccountID-2"}
-
+		runtimeInput.Labels[runtimeTypeLabelKey] = runtimeTypeLabelValue
+		//
 		t.Log("Successfully register runtime using certificate with protected labels and validate that they are excluded")
 		actualRtm := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtimeInput)
 		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &actualRtm)
@@ -553,7 +554,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		require.NotEmpty(t, actualRtm.ID)
 		require.Equal(t, runtimeInput.Name, actualRtm.Name)
 		require.Equal(t, runtimeInput.Description, actualRtm.Description)
-		require.Empty(t, actualRtm.Labels[protectedConsumerSubaccountIdsLabel])
+		require.Equal(t, actualRtm.Labels[runtimeTypeLabelKey], runtimeTypeLabelValue)
 
 		t.Log("Successfully register runtime with certificate")
 		// GIVEN
@@ -583,29 +584,30 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		t.Log("Fail setting protected label on runtime")
 		// GIVEN
-		protectedLabel := graphql.Label{}
+		immutableLabel := graphql.Label{}
 
 		// WHEN
-		pLabelReq := fixtures.FixSetRuntimeLabelRequest(actualRuntime.ID, protectedConsumerSubaccountIdsLabel, []string{"subaccountID-1", "subaccountID-2"})
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, pLabelReq, &protectedLabel)
+		pLabelReq := fixtures.FixSetRuntimeLabelRequest(actualRuntime.ID, runtimeTypeLabelKey, runtimeTypeLabelValue)
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, pLabelReq, &immutableLabel)
 
 		//THEN
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "could not set unmodifiable label with key consumer_subaccount_ids")
-		require.Empty(t, protectedLabel)
+		require.Contains(t, err.Error(), fmt.Sprintf("could not set unmodifiable label with key %s", runtimeTypeLabelKey))
+		require.Empty(t, immutableLabel)
 
 		t.Log("Successfully get runtime")
 		getRuntimeReq := fixtures.FixGetRuntimeRequest(actualRuntime.ID)
 		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, getRuntimeReq, &actualRuntime)
 		require.NoError(t, err)
 		require.NotEmpty(t, actualRuntime.ID)
-		assert.Len(t, actualRuntime.Labels, 5) // three labels from the different runtime inputs plus two additional during runtime registration - isNormalized and "self register" label
+		assert.Len(t, actualRuntime.Labels, 6) // three labels from the different runtime inputs plus two additional during runtime registration - isNormalized and "self register" label
 
-		t.Log("Successfully update runtime and validate the protected labels are excluded")
+		// todo:: adapt/delete
+		t.Log("Successfully update runtime with certificate")
 		//GIVEN
 		runtimeUpdateInput := fixRuntimeUpdateInput("updated-runtime")
 		runtimeUpdateInput.Description = ptr.String("updated-runtime-description")
-		runtimeUpdateInput.Labels[protectedConsumerSubaccountIdsLabel] = []interface{}{"subaccountID-1", "subaccountID-2"}
+		runtimeUpdateInput.Labels[runtimeTypeLabelKey] = runtimeTypeLabelValue + "-updated-runtime"
 
 		runtimeStatusCond := graphql.RuntimeStatusConditionConnected
 		runtimeUpdateInput.StatusCondition = &runtimeStatusCond
@@ -623,10 +625,10 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		require.Equal(t, runtimeUpdateInput.Name, actualRuntime.Name)
 		require.Equal(t, *runtimeUpdateInput.Description, *actualRuntime.Description)
 		require.Equal(t, runtimeStatusCond, actualRuntime.Status.Condition)
-		require.Equal(t, len(actualRuntime.Labels), 3) // two labels from the runtime input plus one additional label, added during runtime update(isNormalized)
-		labelValues, ok := actualRuntime.Labels[protectedConsumerSubaccountIdsLabel]
-		require.False(t, ok)
-		require.Empty(t, labelValues)
+		require.Equal(t, len(actualRuntime.Labels), 4) // three labels from the runtime input plus one additional label, added during runtime update(isNormalized)
+		labelValue, ok := actualRuntime.Labels[runtimeTypeLabelKey].(string)
+		require.True(t, ok)
+		require.Equal(t, runtimeTypeLabelValue+"-updated-runtime", labelValue)
 
 		t.Log("Successfully delete runtime using certificate")
 		// WHEN

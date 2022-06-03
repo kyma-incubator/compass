@@ -20,7 +20,7 @@ type Config struct {
 	ProviderLabelKey                    string `envconfig:"APP_SUBSCRIPTION_PROVIDER_LABEL_KEY,default=subscriptionProviderId"`
 	ConsumerSubaccountLabelKey          string `envconfig:"APP_CONSUMER_SUBACCOUNT_LABEL_KEY,default=consumer_subaccount_id"`
 	SubscriptionLabelKey                string `envconfig:"APP_SUBSCRIPTION_LABEL_KEY,default=subscription"`
-	SubscriptionProviderAppNameLabelKey string `envconfig:"APP_SUBSCRIPTION_PROVIDER_APP_NAME_LABEL_KEY,default=subscriptionProviderAppName"`
+	SubscriptionProviderAppNameLabelKey string `envconfig:"APP_SUBSCRIPTION_PROVIDER_APP_NAME_LABEL_KEY,default=runtimeType"`
 }
 
 // RuntimeService missing godoc
