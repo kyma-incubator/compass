@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// FetchOnDemandApiConfig is the configuration needed for tenant on demand fetch API
 type FetchOnDemandApiConfig struct {
 	TenantOnDemandURL string `envconfig:"optional,APP_FETCH_TENANT_URL"`
 	IsDisabled        bool   `envconfig:"default=false,APP_DISABLE_TENANT_ON_DEMAND_MODE"`
