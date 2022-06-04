@@ -489,10 +489,11 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 
 	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationWebhooks(testWebhookID, testID))
 	modelAppTemplateInput := fixModelAppTemplateInput(testName, appInputJSONString)
+	modelAppTemplateInput.ID = &testUUID
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
 	gqlAppTemplateInput := fixGQLAppTemplateInputWithPlaceholder(testName)
 
-	labels := map[string]interface{}{"xsappnameCMPClone": "clone"}
+	labels := map[string]interface{}{"cloneLabel": "clone"}
 	distinguishLabel := map[string]interface{}{apptmpltest.TestDistinguishLabel: "selfRegVal"}
 	regionLabel := map[string]interface{}{RegionKey: "region"}
 	badValueLabel := map[string]interface{}{RegionKey: 1}

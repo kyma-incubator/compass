@@ -32,6 +32,7 @@ type DirectorConfig struct {
 	GatewayOauth                   string
 	DirectorExternalCertSecuredURL string
 	SkipSSLValidation              bool `envconfig:"default=false"`
+	ConsumerID                   string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
 	CertLoaderConfig               certloader.Config
 	certprovider.ExternalCertProviderConfig
 	SubscriptionConfig                  subscription.Config
