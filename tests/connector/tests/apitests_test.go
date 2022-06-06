@@ -4,8 +4,6 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
@@ -15,7 +13,7 @@ import (
 )
 
 func TestTokens(t *testing.T) {
-	input := fixRuntimeInput("test-tokens-runtime")
+	input := fixtures.FixRuntimeRegisterInput("test-tokens-runtime")
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &input)
 
 	defer fixtures.CleanupRuntime(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &runtime)
@@ -339,12 +337,4 @@ func TestFullConnectorFlow(t *testing.T) {
 	require.Nil(t, configWithRevokedCert.Token)
 	require.Nil(t, configWithRevokedCert.CertificateSigningRequestInfo)
 	require.Nil(t, configWithRevokedCert.ManagementPlaneInfo)
-}
-
-func fixRuntimeInput(name string) graphql.RuntimeRegisterInput {
-	input := fixtures.FixRuntimeRegisterInput(name)
-	input.Labels[cfg.SelfRegDistinguishLabelKey] = []interface{}{cfg.SelfRegDistinguishLabelValue}
-	input.Labels[tenantfetcher.RegionKey] = cfg.SelfRegRegion
-
-	return input
 }
