@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 )
@@ -50,6 +51,7 @@ func LoadTenantPairFromContext(ctx context.Context) (TenantCtx, error) {
 // SaveToContext returns a child context of the provided context, including the provided tenant information.
 // The internal tenant ID can be later retrieved from the context by calling LoadFromContext.
 func SaveToContext(ctx context.Context, internalID, externalID string) context.Context {
+	fmt.Printf("ALEX ctx int: %+s ext: %s", internalID, externalID)
 	tenantCtx := TenantCtx{InternalID: internalID, ExternalID: externalID}
 	return context.WithValue(ctx, TenantContextKey, tenantCtx)
 }

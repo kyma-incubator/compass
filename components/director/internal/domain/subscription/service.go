@@ -210,10 +210,20 @@ func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID s
 	return true, nil
 }
 
-func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, region, subscribedSubaccountID, subscribedAppName string) (bool, error) {
+func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, region, providerSubaccountID, subscribedSubaccountID, subscribedAppName string) (bool, error) {
+	providerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, providerSubaccountID)
+	if err != nil {
+		return false, errors.Wrap(err, "while getting provider subaccount internal ID")
+	}
+	ctx = tenant.SaveToContext(ctx, providerInternalTenant, providerSubaccountID)
+
 	filters := s.buildLabelFilters(providerID, region)
 	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return false, nil
+		}
+
 		return false, errors.Wrapf(err, "while getting application template with filter labels %q and %q", providerID, region)
 	}
 

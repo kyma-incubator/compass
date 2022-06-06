@@ -201,7 +201,7 @@ func registerTenantsHandler(ctx context.Context, router *mux.Router, cfg tenantf
 	tenantConverter := tenant.NewConverter()
 
 	provisioner := tenantfetcher.NewTenantProvisioner(directorClient, tenantConverter, cfg.TenantProvider)
-	subscriber := tenantfetcher.NewSubscriber(directorClient, provisioner, cfg.SelfRegisterDistinguishLabelKey)
+	subscriber := tenantfetcher.NewSubscriber(directorClient, provisioner)
 	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(subscriber, cfg)
 
 	log.C(ctx).Infof("Registering Regional Tenant Onboarding endpoint on %s...", cfg.RegionalHandlerEndpoint)

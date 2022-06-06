@@ -51,8 +51,6 @@ type HandlerConfig struct {
 	ClientTimeout               time.Duration `envconfig:"default=60s"`
 	HTTPClientSkipSslValidation bool          `envconfig:"APP_HTTP_CLIENT_SKIP_SSL_VALIDATION,default=false"`
 
-	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
-
 	TenantProviderConfig
 	features.Config
 

@@ -9,22 +9,22 @@ import (
 	"github.com/pkg/errors"
 )
 
-// SubscriptionService missing godoc
+// SubscriptionService responsible for service-layer Subscription operations
 //go:generate mockery --name=SubscriptionService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SubscriptionService interface {
 	SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error)
 	UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error)
-	SubscribeTenantToApplication(ctx context.Context, subaccountTenantID, region, subscribedSubaccountID, subscribedAppName string) (bool, error)
+	SubscribeTenantToApplication(ctx context.Context, subaccountTenantID, region, providerSubaccountID, subscribedSubaccountID, subscribedAppName string) (bool, error)
 	DetermineSubscriptionFlow(ctx context.Context, providerID, region string) (resource.Type, error)
 }
 
-// Resolver missing godoc
+// NewResolver is an object responsible for resolver-layer Subscription operations.
 type Resolver struct {
 	transact        persistence.Transactioner
 	subscriptionSvc SubscriptionService
 }
 
-// NewResolver missing godoc
+// NewResolver returns a new object responsible for resolver-layer Subscription operations.
 func NewResolver(transact persistence.Transactioner, subscriptionSvc SubscriptionService) *Resolver {
 	return &Resolver{
 		transact:        transact,
@@ -51,7 +51,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 
 	if flowType == resource.ApplicationTemplate {
 		log.C(ctx).Infof("Entering Application flow")
-		success, err = r.subscriptionSvc.SubscribeTenantToApplication(ctx, providerID, region, subaccountTenantID, subscriptionAppName)
+		success, err = r.subscriptionSvc.SubscribeTenantToApplication(ctx, providerID, region, providerSubaccountID, subaccountTenantID, subscriptionAppName)
 		if err != nil {
 			return false, err
 		}

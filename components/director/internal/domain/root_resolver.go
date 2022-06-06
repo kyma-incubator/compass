@@ -810,12 +810,12 @@ func (r *mutationResolver) DeleteTenants(ctx context.Context, in []string) (int,
 	return r.tenant.Delete(ctx, in)
 }
 
-// SubscribeTenantToRuntime subscribes given tenant to runtime
+// SubscribeTenant subscribes given tenant
 func (r *mutationResolver) SubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, region, subscriptionAppName string) (bool, error) {
 	return r.subscription.SubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, region, subscriptionAppName)
 }
 
-// UnsubscribeTenantFromRuntime unsubscribes given tenant from runtime
+// UnsubscribeTenant unsubscribes given tenant
 func (r *mutationResolver) UnsubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, region string) (bool, error) {
 	return r.subscription.UnsubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, region)
 }

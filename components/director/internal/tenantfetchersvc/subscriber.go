@@ -13,17 +13,15 @@ type TenantProvisioner interface {
 type subscriptionFunc func(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest) error
 
 type subscriber struct {
-	gqlClient                       DirectorGraphQLClient
-	provisioner                     TenantProvisioner
-	selfRegisterDistinguishLabelKey string
+	gqlClient   DirectorGraphQLClient
+	provisioner TenantProvisioner
 }
 
 // NewSubscriber creates new subscriber
-func NewSubscriber(directorClient DirectorGraphQLClient, provisioner TenantProvisioner, selfRegisterDistinguishLabelKey string) *subscriber {
+func NewSubscriber(directorClient DirectorGraphQLClient, provisioner TenantProvisioner) *subscriber {
 	return &subscriber{
-		gqlClient:                       directorClient,
-		provisioner:                     provisioner,
-		selfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
+		gqlClient:   directorClient,
+		provisioner: provisioner,
 	}
 }
 
@@ -45,9 +43,9 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 	var err error
 
 	if subscribe {
-		err = s.gqlClient.SubscribeTenantToRuntime(ctx, subscriptionProviderID, subaccountTenantID, providerSubaccountID, region, appName)
+		err = s.gqlClient.SubscribeTenant(ctx, subscriptionProviderID, subaccountTenantID, providerSubaccountID, region, appName)
 	} else {
-		err = s.gqlClient.UnsubscribeTenantFromRuntime(ctx, subscriptionProviderID, subaccountTenantID, providerSubaccountID, region)
+		err = s.gqlClient.UnsubscribeTenant(ctx, subscriptionProviderID, subaccountTenantID, providerSubaccountID, region)
 	}
 	return err
 }
