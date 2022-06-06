@@ -20,11 +20,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 
