@@ -16,7 +16,7 @@ import (
 
 func TestResolver_SubscribeTenant(t *testing.T) {
 	// GIVEN
-	subscriptionProviderID := "distingush-value-123"
+	subscriptionProviderID := "distinguish-value-123"
 	providerSubaccountID := "provder-subaccount"
 	subscribedSubaacountID := "subscribed-subaccount"
 	subscriptionAppName := "app-name"
@@ -148,7 +148,7 @@ func TestResolver_SubscribeTenant(t *testing.T) {
 
 func TestResolver_UnsubscribeTenant(t *testing.T) {
 	// GIVEN
-	subscriptionProviderID := "distingush-value-123"
+	subscriptionProviderID := "distinguish-value-123"
 	providerSubaccountID := "provder-subaccount"
 	subscribedSubaacountID := "subscribed-subaccount"
 	region := "eu-1"

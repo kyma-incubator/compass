@@ -18,7 +18,7 @@ type SubscriptionService interface {
 	DetermineSubscriptionFlow(ctx context.Context, providerID, region string) (resource.Type, error)
 }
 
-// NewResolver is an object responsible for resolver-layer Subscription operations.
+// Resolver is an object responsible for resolver-layer Subscription operations.
 type Resolver struct {
 	transact        persistence.Transactioner
 	subscriptionSvc SubscriptionService
