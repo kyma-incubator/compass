@@ -374,7 +374,7 @@ func cleanupAppTemplate(t *testing.T, name string) {
 
 	for _, appTemplate := range output.Data {
 		if appTemplate.Name == name {
-			t.Log("App template %s with ID %s found - deleting ...", appTemplate.Name, appTemplate.ID)
+			t.Logf("App template %q with ID %q found - deleting ...", appTemplate.Name, appTemplate.ID)
 			fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate)
 			return
 		}
