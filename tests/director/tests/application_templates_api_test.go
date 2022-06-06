@@ -53,7 +53,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getApplicationTemplateRequest, &appTemplateOutput)
 
 	appTemplateInput.Labels[conf.SelfRegLabelKey] = appTemplateOutput.Labels[conf.SelfRegLabelKey]
-	appTemplateInput.Labels["global_subaccount_id"] = tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
+	appTemplateInput.Labels["global_subaccount_id"] = conf.ConsumerID
 
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplateOutput)

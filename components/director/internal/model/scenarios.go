@@ -1,11 +1,15 @@
 package model
 
-// ScenariosKey missing godoc
-const ScenariosKey = "scenarios"
+const (
+	// ScenariosKey is scenarios label key
+	ScenariosKey = "scenarios"
+	// DefaultScenario is default value for scenarios label
+	DefaultScenario = "DEFAULT"
+)
 
 var (
 	// ScenariosDefaultValue missing godoc
-	ScenariosDefaultValue = []interface{}{"DEFAULT"}
+	ScenariosDefaultValue = []interface{}{DefaultScenario}
 	// ScenariosSchema missing godoc
 	ScenariosSchema = map[string]interface{}{
 		"type":        "array",
