@@ -52,6 +52,10 @@ var (
 )
 
 func TestSystemBrokerAuthentication(t *testing.T) {
+	runtimeInput = &graphql.RuntimeRegisterInput{
+		Name: testRuntimeName,
+	}
+
 	logrus.Infof("registering runtime with name: %s, within tenant: %s", runtimeInput.Name, testCtx.Tenant)
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, runtimeInput)
 	defer fixtures.CleanupRuntime(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, &runtime)

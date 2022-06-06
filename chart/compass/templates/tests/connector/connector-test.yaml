@@ -52,7 +52,7 @@ spec:
           - name: APP_EXTERNAL_CLIENT_CERT_KEY
             value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
           - name: APP_EXTERNAL_CLIENT_KEY_KEY
-            value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}" 
+            value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
       restartPolicy: Never
       {{ if .Values.global.isLocalEnv }}
       hostAliases:

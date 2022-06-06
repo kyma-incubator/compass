@@ -17,7 +17,9 @@ func TestAddRuntimeContext(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	runtime, err := fixtures.RegisterRuntime(t, ctx, certSecuredGraphQLClient, "addRuntimeContext", tenantId)
+	in := fixRuntimeInput("addRuntimeContext")
+
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
@@ -56,7 +58,9 @@ func TestQueryRuntimeContexts(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	runtime, err := fixtures.RegisterRuntime(t, ctx, certSecuredGraphQLClient, "addRuntimeContext", tenantId)
+	in := fixRuntimeInput("addRuntimeContext")
+
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
@@ -83,7 +87,9 @@ func TestUpdateRuntimeContext(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	runtime, err := fixtures.RegisterRuntime(t, ctx, certSecuredGraphQLClient, "addRuntimeContext", tenantId)
+	in := fixRuntimeInput("addRuntimeContext")
+
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
@@ -115,7 +121,9 @@ func TestDeleteRuntimeContext(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	runtime, err := fixtures.RegisterRuntime(t, ctx, certSecuredGraphQLClient, "addRuntimeContext", tenantId)
+	in := fixRuntimeInput("addRuntimeContext")
+
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)

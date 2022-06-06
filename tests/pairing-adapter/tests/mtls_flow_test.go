@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 
 	director_http "github.com/kyma-incubator/compass/components/director/pkg/http"
@@ -37,14 +39,17 @@ func TestGettingTokenWithMTLSWorks(t *testing.T) {
 
 	if conf.IsLocalEnv {
 		newIntSys = createIntSystem(t, ctx, defaultTestTenant)
-		updateAdaptersConfigmap(t, ctx, newIntSys.ID, conf)
-		appTemplate = createAppTemplate(t, ctx, defaultTestTenant, newIntSys.ID, templateName, namePlaceholderKey, displayNamePlaceholderKey)
-	}
+		defer func() {
+			fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, newIntSys)
+		}()
 
-	defer func() {
-		fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTemplate)
-		fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, newIntSys)
-	}()
+		updateAdaptersConfigmap(t, ctx, newIntSys.ID, conf)
+
+		appTemplate = createAppTemplate(t, ctx, defaultTestTenant, newIntSys.ID, templateName, namePlaceholderKey, displayNamePlaceholderKey)
+		defer func() {
+			fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTemplate)
+		}()
+	}
 
 	appTmplInput := directorSchema.ApplicationFromTemplateInput{
 		TemplateName: templateName,
@@ -214,7 +219,10 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 				Description: &displayNamePlaceholderDescription,
 			},
 		},
-		Labels:      map[string]interface{}{},
+		Labels: directorSchema.Labels{
+			conf.SelfRegDistinguishLabelKey: []interface{}{conf.SelfRegDistinguishLabelValue},
+			tenantfetcher.RegionKey:         conf.SelfRegRegion,
+		},
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
 	}
 
@@ -232,6 +240,9 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getApplicationTemplateRequest, &appTemplateOutput)
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplateOutput)
+
+	appTemplateInput.Labels[conf.SelfRegLabelKey] = appTemplateOutput.Labels[conf.SelfRegLabelKey]
+	appTemplateInput.Labels["global_subaccount_id"] = tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 	assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
 
 	t.Logf("Successfully registered application template with name %q", templateName)

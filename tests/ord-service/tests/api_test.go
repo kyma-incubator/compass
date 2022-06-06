@@ -27,6 +27,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -689,6 +691,8 @@ func TestORDService(t *testing.T) {
 				Description: ptr.String("description"),
 			},
 		}
+		appTmplInput.Labels[testConfig.ProviderLabelKey] = []interface{}{testConfig.ProviderID}
+		appTmplInput.Labels[tenantfetcher.RegionKey] = testConfig.SelfRegRegion
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTmplInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, &appTmpl)

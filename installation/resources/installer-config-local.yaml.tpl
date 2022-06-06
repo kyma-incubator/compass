@@ -160,6 +160,7 @@ data:
   global.tenantFetcher.fieldMapping.detailsField: "eventData"
   global.tenantFetcher.fieldMapping.entityTypeField: "type"
   global.tenantFetcher.endpoints.subaccountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-create"
+  global.tenantFetcher.server.subscriptionProviderLabelKey: "subscriptionProviderId"
 ---
 apiVersion: v1
 kind: ConfigMap

@@ -332,14 +332,14 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	labelKeyFoo := "foo"
 	labelKeyBar := "bar"
 
-	inputFirst := fixtures.FixRuntimeRegisterInput("first")
+	inputFirst := fixRuntimeInput("first")
 	firstRuntime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &inputFirst)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &firstRuntime)
 	require.NoError(t, err)
 	require.NotEmpty(t, firstRuntime.ID)
 
 	//Create second runtime
-	inputSecond := fixtures.FixRuntimeRegisterInput("second")
+	inputSecond := fixRuntimeInput("second")
 	secondRuntime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &inputSecond)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &secondRuntime)
 	require.NoError(t, err)
@@ -411,6 +411,8 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 func TestListLabelDefinitions(t *testing.T) {
 	//GIVEN
 	tenantID := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
+	defer tenant.TestTenants.CleanupTenant(tenantID)
+
 	ctx := context.TODO()
 
 	jsonSchema := map[string]interface{}{
@@ -436,9 +438,9 @@ func TestListLabelDefinitions(t *testing.T) {
 
 	output := graphql.LabelDefinition{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createRequest, &output)
+	require.NoError(t, err)
 
 	firstLabelDefinition := &output
-	defer tenant.TestTenants.CleanupTenant(tenantID)
 
 	//WHEN
 	labelDefinitions, err := fixtures.ListLabelDefinitionsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID)

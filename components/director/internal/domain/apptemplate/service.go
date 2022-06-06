@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
@@ -77,6 +78,10 @@ func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo Webho
 // Create missing godoc
 func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error) {
 	appTemplateID := s.uidService.Generate()
+	if len(str.PtrStrToStr(in.ID)) > 0 {
+		appTemplateID = *in.ID
+	}
+
 	log.C(ctx).Debugf("ID %s generated for Application Template with name %s", appTemplateID, in.Name)
 
 	appTemplate := in.ToApplicationTemplate(appTemplateID)
@@ -101,6 +106,20 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, "", model.AppTemplateLabelableObject, appTemplateID, in.Labels)
 	if err != nil {
 		return appTemplateID, errors.Wrapf(err, "while creating multiple labels for Application Template with id %s", appTemplateID)
+	}
+
+	return appTemplateID, nil
+}
+
+// CreateWithLabels Creates an AppTemplate with provided labels
+func (s *service) CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error) {
+	for key, val := range labels {
+		in.Labels[key] = val
+	}
+
+	appTemplateID, err := s.Create(ctx, in)
+	if err != nil {
+		return "", errors.Wrapf(err, "while creating Application Template")
 	}
 
 	return appTemplateID, nil
@@ -158,6 +177,21 @@ func (s *service) ListLabels(ctx context.Context, appTemplateID string) (map[str
 	}
 
 	return labels, nil
+}
+
+// GetLabel gets a given label for application template
+func (s *service) GetLabel(ctx context.Context, appTemplateID string, key string) (*model.Label, error) {
+	labels, err := s.ListLabels(ctx, appTemplateID)
+	if err != nil {
+		return nil, err
+	}
+
+	label, ok := labels[key]
+	if !ok {
+		return nil, fmt.Errorf("label %s for application template with ID %s doesn't exist", key, appTemplateID)
+	}
+
+	return label, nil
 }
 
 // Exists missing godoc

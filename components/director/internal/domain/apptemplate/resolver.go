@@ -6,6 +6,10 @@ import (
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
@@ -23,6 +27,7 @@ import (
 //go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateService interface {
 	Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error)
+	CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error)
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 	GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error)
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
@@ -30,6 +35,7 @@ type ApplicationTemplateService interface {
 	Delete(ctx context.Context, id string) error
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
 	ListLabels(ctx context.Context, appTemplateID string) (map[string]*model.Label, error)
+	GetLabel(ctx context.Context, appTemplateID string, key string) (*model.Label, error)
 }
 
 // ApplicationTemplateConverter missing godoc
@@ -71,6 +77,14 @@ type WebhookConverter interface {
 	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
 }
 
+// SelfRegisterManager missing godoc
+//go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore --disable-version-string
+type SelfRegisterManager interface {
+	PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string) (map[string]interface{}, error)
+	CleanupSelfRegistration(ctx context.Context, selfRegisterLabelValue, region string) error
+	GetSelfRegDistinguishingLabelKey() string
+}
+
 // Resolver missing godoc
 type Resolver struct {
 	transact persistence.Transactioner
@@ -81,10 +95,12 @@ type Resolver struct {
 	appTemplateConverter ApplicationTemplateConverter
 	webhookSvc           WebhookService
 	webhookConverter     WebhookConverter
+	selfRegManager       SelfRegisterManager
+	uidService           UIDService
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, selfRegisterManager SelfRegisterManager, uidService UIDService) *Resolver {
 	return &Resolver{
 		transact:             transact,
 		appSvc:               appSvc,
@@ -93,6 +109,8 @@ func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, 
 		appTemplateConverter: appTemplateConverter,
 		webhookSvc:           webhookService,
 		webhookConverter:     webhookConverter,
+		selfRegManager:       selfRegisterManager,
+		uidService:           uidService,
 	}
 }
 
@@ -195,8 +213,31 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		convertedIn.Labels = make(map[string]interface{})
 	}
 
+	selfRegID := r.uidService.Generate()
+	convertedIn.ID = &selfRegID
+
+	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		didRollback := r.transact.RollbackUnlessCommitted(ctx, tx)
+		if didRollback {
+			labelVal := str.CastOrEmpty(convertedIn.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
+			if labelVal != "" {
+				label, ok := in.Labels[selfregmanager.RegionLabel].(string)
+				if !ok {
+					log.C(ctx).Errorf("An error occurred while casting region label value to string")
+				} else {
+					r.cleanupAndLogOnError(ctx, selfRegID, label)
+				}
+			}
+		}
+	}()
+
 	log.C(ctx).Infof("Creating an Application Template with name %s", convertedIn.Name)
-	id, err := r.appTemplateSvc.Create(ctx, convertedIn)
+	id, err := r.appTemplateSvc.CreateWithLabels(ctx, convertedIn, labels)
 	if err != nil {
 		return nil, err
 	}
@@ -388,6 +429,39 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 		return nil, err
 	}
 
+	_, err = r.appTemplateSvc.GetLabel(ctx, id, r.selfRegManager.GetSelfRegDistinguishingLabelKey())
+	if err != nil {
+		if !apperrors.IsNotFoundError(err) {
+			return nil, errors.Wrapf(err, "while getting self register label")
+		}
+	} else {
+		regionLabel, err := r.appTemplateSvc.GetLabel(ctx, id, selfregmanager.RegionLabel)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting region label")
+		}
+
+		// Committing transaction as the cleanup sends request to external service
+		if err = tx.Commit(); err != nil {
+			return nil, err
+		}
+
+		regionValue, ok := regionLabel.Value.(string)
+		if !ok {
+			return nil, errors.Wrap(err, "while casting region label value to string")
+		}
+
+		log.C(ctx).Infof("Executing clean-up for self-registered app template with id %q", id)
+		if err := r.selfRegManager.CleanupSelfRegistration(ctx, id, regionValue); err != nil {
+			return nil, errors.Wrap(err, "An error occurred during cleanup of self-registered app template: ")
+		}
+
+		tx, err = r.transact.Begin()
+		if err != nil {
+			return nil, err
+		}
+		ctx = persistence.SaveToContext(ctx, tx)
+	}
+
 	err = r.appTemplateSvc.Delete(ctx, id)
 	if err != nil {
 		return nil, err
@@ -438,4 +512,10 @@ func extractApplicationNameFromTemplateInput(applicationInputJSON string) (strin
 	}
 
 	return data["name"].(string), nil
+}
+
+func (r *Resolver) cleanupAndLogOnError(ctx context.Context, id, region string) {
+	if err := r.selfRegManager.CleanupSelfRegistration(ctx, id, region); err != nil {
+		log.C(ctx).Errorf("An error occurred during cleanup of self-registered app template: %v", err)
+	}
 }
