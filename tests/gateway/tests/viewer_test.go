@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
-
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
@@ -88,9 +86,7 @@ func TestViewerQuery(t *testing.T) {
 		runtimeInput := graphql.RuntimeRegisterInput{
 			Name: "test-runtime",
 			Labels: graphql.Labels{
-				"scenarios":                              []interface{}{"DEFAULT"},
-				testConfig.AppSelfRegDistinguishLabelKey: []interface{}{testConfig.AppSelfRegDistinguishLabelValue},
-				tenantfetcher.RegionKey:                  testConfig.AppSelfRegRegion,
+				"scenarios": []interface{}{"DEFAULT"},
 			},
 		}
 

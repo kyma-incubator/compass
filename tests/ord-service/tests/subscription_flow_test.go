@@ -334,9 +334,8 @@ func fixRuntimeInput(name string, description *string) graphql.RuntimeRegisterIn
 		Name:        name,
 		Description: description,
 		Labels: graphql.Labels{
-			testConfig.ProviderLabelKey:           testConfig.ProviderID,
-			tenantfetcher.RegionKey:               testConfig.Region,
-			testConfig.SelfRegDistinguishLabelKey: []interface{}{testConfig.SelfRegDistinguishLabelValue},
+			testConfig.ProviderLabelKey: testConfig.ProviderID,
+			tenantfetcher.RegionKey:     testConfig.Region,
 		},
 	}
 }
