@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/subscription"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/subscription"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/subscription/automock"
 

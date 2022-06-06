@@ -377,6 +377,8 @@ func assertTenant(t *testing.T, tenant *directorSchema.Tenant, tenantID, subdoma
 
 func fixRuntimeInput(name string) directorSchema.RuntimeRegisterInput {
 	input := fixtures.FixRuntimeRegisterInput(name)
+	input.Labels[config.SelfRegDistinguishLabelKey] = []interface{}{config.SelfRegDistinguishLabelValue}
+	input.Labels[tenantfetcher.RegionKey] = config.SelfRegRegion
 	delete(input.Labels, "placeholder")
 
 	return input
