@@ -17,12 +17,15 @@ type DirectorGraphQLClient interface {
 	WriteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
 	SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountID, providerSubaccountID, region string) error
 	UnsubscribeTenantFromRuntime(ctx context.Context, providerID, subaccountID, providerSubaccountID, region string) error
+	DeleteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
+	UpdateTenant(context.Context, string, graphql.BusinessTenantMappingInput) error
 }
 
 // TenantConverter expects tenant converter implementation
 //go:generate mockery --name=TenantConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantConverter interface {
 	MultipleInputToGraphQLInput([]model.BusinessTenantMappingInput) []graphql.BusinessTenantMappingInput
+	ToGraphQLInput(model.BusinessTenantMappingInput) graphql.BusinessTenantMappingInput
 }
 
 // TenantSubscriptionRequest represents the information provided during tenant provisioning request in Compass, which includes tenant IDs, subdomain, and region of the tenant.

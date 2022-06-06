@@ -1,4 +1,4 @@
-package tenantfetcher
+package tenantfetchersvc
 
 import (
 	"context"
@@ -114,11 +114,11 @@ type TenantSyncService interface {
 
 // DirectorGraphQLClient expects graphql implementation
 //go:generate mockery --name=DirectorGraphQLClient --output=automock --outpkg=automock --case=underscore --disable-version-string
-type DirectorGraphQLClient interface {
-	WriteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
-	DeleteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
-	UpdateTenant(context.Context, string, graphql.BusinessTenantMappingInput) error
-}
+//type DirectorGraphQLClient interface {
+//	WriteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
+//	DeleteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
+//	UpdateTenant(context.Context, string, graphql.BusinessTenantMappingInput) error
+//}
 
 // LabelDefConverter missing godoc
 //go:generate mockery --name=LabelDefConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -128,10 +128,10 @@ type LabelDefConverter interface {
 
 // TenantConverter expects tenant converter implementation
 //go:generate mockery --name=TenantConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
-type TenantConverter interface {
-	MultipleInputToGraphQLInput([]model.BusinessTenantMappingInput) []graphql.BusinessTenantMappingInput
-	ToGraphQLInput(model.BusinessTenantMappingInput) graphql.BusinessTenantMappingInput
-}
+//type TenantConverter interface {
+//	MultipleInputToGraphQLInput([]model.BusinessTenantMappingInput) []graphql.BusinessTenantMappingInput
+//	ToGraphQLInput(model.BusinessTenantMappingInput) graphql.BusinessTenantMappingInput
+//}
 
 const (
 	// RetryAttempts Failed requests retry attempts number

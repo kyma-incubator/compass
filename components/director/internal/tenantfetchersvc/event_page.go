@@ -1,4 +1,4 @@
-package tenantfetcher
+package tenantfetchersvc
 
 import (
 	"encoding/json"

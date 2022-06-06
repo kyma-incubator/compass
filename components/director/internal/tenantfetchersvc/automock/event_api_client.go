@@ -5,7 +5,7 @@ package automock
 import (
 	testing "testing"
 
-	tenantfetcher "github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
+	tenantfetcher "github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
 	mock "github.com/stretchr/testify/mock"
 )
 
