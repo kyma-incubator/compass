@@ -16,8 +16,8 @@ type DirectorGraphQLClient struct {
 	mock.Mock
 }
 
-// SubscribeTenantToRuntime provides a mock function with given fields: ctx, providerID, subaccountID, providerSubaccountID, region, appName
-func (_m *DirectorGraphQLClient) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string, appName string) error {
+// SubscribeTenant provides a mock function with given fields: ctx, providerID, subaccountID, providerSubaccountID, region, appName
+func (_m *DirectorGraphQLClient) SubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string, appName string) error {
 	ret := _m.Called(ctx, providerID, subaccountID, providerSubaccountID, region, appName)
 
 	var r0 error
@@ -30,8 +30,8 @@ func (_m *DirectorGraphQLClient) SubscribeTenantToRuntime(ctx context.Context, p
 	return r0
 }
 
-// UnsubscribeTenantFromRuntime provides a mock function with given fields: ctx, providerID, subaccountID, providerSubaccountID, region
-func (_m *DirectorGraphQLClient) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) error {
+// UnsubscribeTenant provides a mock function with given fields: ctx, providerID, subaccountID, providerSubaccountID, region
+func (_m *DirectorGraphQLClient) UnsubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) error {
 	ret := _m.Called(ctx, providerID, subaccountID, providerSubaccountID, region)
 
 	var r0 error

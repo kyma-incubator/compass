@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -672,6 +674,7 @@ func TestService_List(t *testing.T) {
 		fixModelApplicationTemplate("foo1", "bar1", fixModelApplicationTemplateWebhooks("webhook-id-1", "foo1")),
 		fixModelApplicationTemplate("foo2", "bar2", fixModelApplicationTemplateWebhooks("webhook-id-2", "foo2")),
 	})
+	labelFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(RegionKey, `eu-1`)}
 
 	testCases := []struct {
 		Name              string
@@ -685,7 +688,7 @@ func TestService_List(t *testing.T) {
 			Name: "Success",
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("List", ctx, 50, testCursor).Return(modelAppTemplate, nil).Once()
+				appTemplateRepo.On("List", ctx, labelFilters, 50, testCursor).Return(modelAppTemplate, nil).Once()
 				return appTemplateRepo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
@@ -698,7 +701,7 @@ func TestService_List(t *testing.T) {
 			Name: "Error when listing application template",
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("List", ctx, 50, testCursor).Return(model.ApplicationTemplatePage{}, testError).Once()
+				appTemplateRepo.On("List", ctx, labelFilters, 50, testCursor).Return(model.ApplicationTemplatePage{}, testError).Once()
 				return appTemplateRepo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
@@ -743,7 +746,7 @@ func TestService_List(t *testing.T) {
 			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, nil)
 
 			// WHEN
-			result, err := svc.List(ctx, testCase.InputPageSize, testCursor)
+			result, err := svc.List(ctx, labelFilters, testCase.InputPageSize, testCursor)
 
 			// THEN
 			if testCase.ExpectedError != nil {
