@@ -26,6 +26,8 @@ func TestCreateApplicationTemplate(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "app-template-name"
+	// Cleanup
+	cleanupAppTemplate(t, name)
 	appTemplateInput := fixAppTemplateInput(name)
 	appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
 	require.NoError(t, err)
@@ -66,6 +68,9 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	ctx := context.Background()
 	name := "app-template"
 	newName := "new-app-template"
+	// Cleanup
+	cleanupAppTemplate(t, name)
+	cleanupAppTemplate(t, newName)
 	newDescription := "new description"
 	newAppCreateInput := &graphql.ApplicationRegisterInput{
 		Name:           "new-app-create-input",
@@ -83,6 +88,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 
 	appTemplateInput := graphql.ApplicationTemplateUpdateInput{Name: newName, ApplicationInput: newAppCreateInput, Description: &newDescription, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
 	appTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateUpdateInputToGQL(appTemplateInput)
+	require.NoError(t, err)
 
 	updateAppTemplateRequest := fixtures.FixUpdateApplicationTemplateRequest(appTemplate.ID, appTemplateGQL)
 	updateOutput := graphql.ApplicationTemplate{}
@@ -104,6 +110,8 @@ func TestDeleteApplicationTemplate(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "app-template"
+	// Cleanup
+	cleanupAppTemplate(t, name)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -135,6 +143,8 @@ func TestQueryApplicationTemplate(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "app-template"
+	// Cleanup
+	cleanupAppTemplate(t, name)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -142,6 +152,7 @@ func TestQueryApplicationTemplate(t *testing.T) {
 	appTmplInput := fixAppTemplateInput(name)
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate)
+	require.NoError(t, err)
 
 	getApplicationTemplateRequest := fixtures.FixApplicationTemplateRequest(appTemplate.ID)
 	output := graphql.ApplicationTemplate{}
@@ -162,6 +173,9 @@ func TestQueryApplicationTemplates(t *testing.T) {
 	ctx := context.Background()
 	name1 := "app-template-1"
 	name2 := "app-template-2"
+	// Cleanup
+	cleanupAppTemplate(t, name1)
+	cleanupAppTemplate(t, name2)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -169,10 +183,12 @@ func TestQueryApplicationTemplates(t *testing.T) {
 	appTmplInput1 := fixAppTemplateInput(name1)
 	appTemplate1, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput1)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate1)
+	require.NoError(t, err)
 
 	appTmplInput2 := fixAppTemplateInput(name2)
 	appTemplate2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate2)
+	require.NoError(t, err)
 
 	first := 100
 	after := ""
@@ -195,6 +211,8 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 	tmplName := "template"
+	// Cleanup
+	cleanupAppTemplate(t, tmplName)
 	placeholderKey := "new-placeholder"
 	appTmplInput := fixAppTemplateInput(tmplName)
 	appTmplInput.ApplicationInput.Description = ptr.String("test {{new-placeholder}}")
@@ -236,6 +254,8 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	name := "app-template"
+	// Cleanup
+	cleanupAppTemplate(t, name)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -336,4 +356,27 @@ func fixAppTemplateInput(name string) graphql.ApplicationTemplateInput {
 	input.Labels[tenantfetcher.RegionKey] = conf.SelfRegRegion
 
 	return input
+}
+
+func cleanupAppTemplate(t *testing.T, name string) {
+	ctx := context.Background()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	first := 200
+	after := ""
+
+	getApplicationTemplatesRequest := fixtures.FixGetApplicationTemplatesWithPagination(first, after)
+	output := graphql.ApplicationTemplatePage{}
+
+	t.Log("List application templates")
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getApplicationTemplatesRequest, &output)
+	require.NoError(t, err)
+
+	for _, appTemplate := range output.Data {
+		if appTemplate.Name == name {
+			t.Log("App template %q with ID %q found - deleting ...", appTemplate.Name, appTemplate.ID)
+			fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate)
+			return
+		}
+	}
 }
