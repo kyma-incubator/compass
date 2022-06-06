@@ -66,6 +66,9 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 	if consumerInfo.Flow.IsCertFlow() {
 		distinguishLabel, exists := labels[s.cfg.SelfRegisterDistinguishLabelKey]
 		if !exists {
+			if resourceType == resource.Runtime {
+				return labels, nil
+			}
 			return labels, errors.Errorf("missing %q label", s.cfg.SelfRegisterDistinguishLabelKey)
 		}
 
@@ -116,7 +119,7 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 		selfRegLabelVal := gjson.GetBytes(respBytes, s.cfg.SelfRegisterResponseKey)
 		labels[s.cfg.SelfRegisterLabelKey] = selfRegLabelVal.Str
 
-		if resource.ApplicationTemplate == resourceType {
+		if resourceType == resource.ApplicationTemplate {
 			labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
 		}
 
