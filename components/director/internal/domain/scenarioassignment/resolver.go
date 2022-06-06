@@ -33,6 +33,12 @@ type tenantService interface {
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
+// TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
+//go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
+type TenantFetcher interface {
+	FetchOnDemand(tenant, parentTenant string) error
+}
+
 //go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationService interface {
 	CreateAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
@@ -41,7 +47,7 @@ type formationService interface {
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, svc asaService, converter gqlConverter, tenantService tenantService, fetcher tenant.FetcherOnDemand, formationSvc formationService) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc asaService, converter gqlConverter, tenantService tenantService, fetcher TenantFetcher, formationSvc formationService) *Resolver {
 	return &Resolver{
 		transact:      transact,
 		svc:           svc,
@@ -58,7 +64,7 @@ type Resolver struct {
 	converter     gqlConverter
 	svc           asaService
 	tenantService tenantService
-	fetcher       tenant.FetcherOnDemand
+	fetcher       TenantFetcher
 	formationSvc  formationService
 }
 

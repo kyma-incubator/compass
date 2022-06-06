@@ -13,9 +13,9 @@ type FetchOnDemandApiConfig struct {
 	IsDisabled        bool   `envconfig:"default=false,APP_DISABLE_TENANT_ON_DEMAND_MODE"`
 }
 
-// FetcherOnDemand calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
-//go:generate mockery --name=FetcherOnDemand --output=automock --outpkg=automock --case=underscore --disable-version-string
-type FetcherOnDemand interface {
+// Fetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
+//go:generate mockery --name=Fetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
+type Fetcher interface {
 	FetchOnDemand(tenant, parentTenant string) error
 }
 
@@ -33,7 +33,7 @@ type fetchOnDemandService struct {
 type noopOnDemandService struct{}
 
 // NewFetchOnDemandService returns object responsible for fetching tenants
-func NewFetchOnDemandService(client Client, config FetchOnDemandApiConfig) FetcherOnDemand {
+func NewFetchOnDemandService(client Client, config FetchOnDemandApiConfig) Fetcher {
 	if config.IsDisabled {
 		return &noopOnDemandService{}
 	}

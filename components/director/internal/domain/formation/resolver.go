@@ -26,16 +26,22 @@ type Converter interface {
 	ToGraphQL(i *model.Formation) *graphql.Formation
 }
 
+// TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
+//go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
+type TenantFetcher interface {
+	FetchOnDemand(tenant, parentTenant string) error
+}
+
 // Resolver is the formation resolver
 type Resolver struct {
 	transact persistence.Transactioner
 	service  Service
 	conv     Converter
-	fetcher  tenant.FetcherOnDemand
+	fetcher  TenantFetcher
 }
 
 // NewResolver creates formation resolver
-func NewResolver(transact persistence.Transactioner, service Service, conv Converter, fetcher tenant.FetcherOnDemand) *Resolver {
+func NewResolver(transact persistence.Transactioner, service Service, conv Converter, fetcher TenantFetcher) *Resolver {
 	return &Resolver{
 		transact: transact,
 		service:  service,

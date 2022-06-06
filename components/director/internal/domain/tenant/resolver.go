@@ -44,11 +44,11 @@ type Resolver struct {
 
 	srv     BusinessTenantMappingService
 	conv    BusinessTenantMappingConverter
-	fetcher FetcherOnDemand
+	fetcher Fetcher
 }
 
 // NewResolver returns the GraphQL resolver for tenants.
-func NewResolver(transact persistence.Transactioner, srv BusinessTenantMappingService, conv BusinessTenantMappingConverter, fetcher FetcherOnDemand) *Resolver {
+func NewResolver(transact persistence.Transactioner, srv BusinessTenantMappingService, conv BusinessTenantMappingConverter, fetcher Fetcher) *Resolver {
 	return &Resolver{
 		transact: transact,
 		srv:      srv,
