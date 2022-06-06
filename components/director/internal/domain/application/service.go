@@ -86,6 +86,13 @@ type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
 }
 
+// FormationService missing godoc
+//go:generate mockery --name=FormationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationService interface {
+	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
+	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
+}
+
 // RuntimeRepository missing godoc
 //go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeRepository interface {
@@ -140,10 +147,11 @@ type service struct {
 	uidService         UIDService
 	bndlService        BundleService
 	timestampGen       timestamp.Generator
+	formationService   FormationService
 }
 
 // NewService missing godoc
-func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, bndlService BundleService, uidService UIDService) *service {
+func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, bndlService BundleService, uidService UIDService, formationService FormationService) *service {
 	return &service{
 		appNameNormalizer:  appNameNormalizer,
 		appHideCfgProvider: appHideCfgProvider,
@@ -157,6 +165,7 @@ func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider Ap
 		bndlService:        bndlService,
 		uidService:         uidService,
 		timestampGen:       timestamp.DefaultGenerator,
+		formationService:   formationService,
 	}
 }
 
@@ -623,7 +632,9 @@ func (s *service) Unpair(ctx context.Context, id string) error {
 	return nil
 }
 
-// SetLabel missing godoc
+// SetLabel updates application label with given input label
+// In the case of a scenario label, it assigns the newly added formations from the input and
+// unassigns old formations that are not present in the input label, but are stored in the database
 func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) error {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -636,6 +647,10 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 	}
 	if !appExists {
 		return apperrors.NewNotFoundError(resource.Application, labelInput.ObjectID)
+	}
+
+	if labelInput.Key == model.ScenariosKey {
+		return s.setScenarioLabel(ctx, appTenant, labelInput)
 	}
 
 	err = s.labelUpsertService.UpsertLabel(ctx, appTenant, labelInput)
@@ -682,7 +697,7 @@ func (s *service) ListLabels(ctx context.Context, applicationID string) (map[str
 	}
 
 	if !appExists {
-		return nil, fmt.Errorf("application with ID %s doesn't exist", applicationID)
+		return nil, errors.Errorf("application with ID %s doesn't exist", applicationID)
 	}
 
 	labels, err := s.labelRepo.ListForObject(ctx, appTenant, model.ApplicationLabelableObject, applicationID)
@@ -693,7 +708,7 @@ func (s *service) ListLabels(ctx context.Context, applicationID string) (map[str
 	return labels, nil
 }
 
-// DeleteLabel missing godoc
+// DeleteLabel delete label given application ID, label key and label value.
 func (s *service) DeleteLabel(ctx context.Context, applicationID string, key string) error {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -705,7 +720,22 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 		return errors.Wrap(err, "while checking Application existence")
 	}
 	if !appExists {
-		return fmt.Errorf("application with ID %s doesn't exist", applicationID)
+		return errors.Errorf("application with ID %s doesn't exist", applicationID)
+	}
+
+	if key == model.ScenariosKey {
+		storedLabel, err := s.labelRepo.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, applicationID, key)
+		if err != nil {
+			return errors.Wrapf(err, "while getting scenario label for %s", applicationID)
+		}
+		scenarios, err := label.ValueToStringsSlice(storedLabel.Value)
+		if err != nil {
+			return errors.Wrapf(err, "while converting label to string slice")
+		}
+		if err = s.unassignFormations(ctx, appTenant, applicationID, scenarios, allowAllCriteria); err != nil {
+			return errors.Wrapf(err, "while unassigning formations")
+		}
+		return nil
 	}
 
 	err = s.labelRepo.Delete(ctx, appTenant, model.ApplicationLabelableObject, applicationID, key)
@@ -962,6 +992,20 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	}
 	in.Labels[nameKey] = normalizedName
 
+	if scenarioLabel, ok := in.Labels[model.ScenariosKey]; ok {
+		scenarios, err := label.ValueToStringsSlice(scenarioLabel)
+		if err != nil {
+			return "", errors.Wrapf(err, "while parsing formations from scenario label")
+		}
+
+		if err = s.assignFormations(ctx, appTenant, id, scenarios, allowAllCriteria); err != nil {
+			return "", errors.Wrapf(err, "while assigning formations")
+		}
+
+		// In order for the scenario label not to be attempted to be created during upsert later
+		delete(in.Labels, model.ScenariosKey)
+	}
+
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
 	if err != nil {
 		return id, errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
@@ -1105,6 +1149,19 @@ func (s *service) getRuntimeNamesForScenarios(ctx context.Context, tenant string
 	return runtimesNames, nil
 }
 
+func (s *service) getStoredLabels(ctx context.Context, tenantID, objectID string) ([]string, error) {
+	storedLabel, err := s.labelRepo.GetByKey(ctx, tenantID, model.ApplicationLabelableObject, objectID, model.ScenariosKey)
+	storedLabels := make([]string, 0)
+	if err != nil && apperrors.ErrorCode(err) != apperrors.NotFound {
+		return nil, errors.Wrapf(err, "while getting label with id %s", objectID)
+	} else if err == nil {
+		if storedLabels, err = label.ValueToStringsSlice(storedLabel.Value); err != nil {
+			return nil, errors.Wrapf(err, "while getting label with id %s", objectID)
+		}
+	}
+	return storedLabels, nil
+}
+
 func removeDefaultScenario(scenarios []string) []string {
 	defaultScenarioIndex := -1
 	for idx, scenario := range scenarios {
@@ -1159,4 +1216,72 @@ func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.
 	}
 
 	return nil
+}
+
+func (s *service) setScenarioLabel(ctx context.Context, appTenant string, labelInput *model.LabelInput) error {
+	inputFormations, err := label.ValueToStringsSlice(labelInput.Value)
+	if err != nil {
+		return errors.Wrapf(err, "while parsing formations from input label value")
+	}
+
+	inputFormationsMap := createMapFromFormationsSlice(inputFormations)
+
+	storedLabels, err := s.getStoredLabels(ctx, appTenant, labelInput.ObjectID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting stored labels for label with id %s", labelInput.ObjectID)
+	}
+
+	storedFormationsMap := createMapFromFormationsSlice(storedLabels)
+	assignFormationCriteria := func(formation string) bool {
+		_, ok := storedFormationsMap[formation]
+		return !ok
+	}
+	if err = s.assignFormations(ctx, appTenant, labelInput.ObjectID, inputFormations, assignFormationCriteria); err != nil {
+		return errors.Wrapf(err, "while assigning formations")
+	}
+
+	unassignFormationCriteria := func(formation string) bool {
+		_, ok := inputFormationsMap[formation]
+		return !ok
+	}
+
+	if err = s.unassignFormations(ctx, appTenant, labelInput.ObjectID, storedLabels, unassignFormationCriteria); err != nil {
+		return errors.Wrapf(err, "while unnasigning formations")
+	}
+
+	return nil
+}
+
+func (s *service) assignFormations(ctx context.Context, appTenant, objectID string, formations []string, shouldAssignCriteria func(string) bool) error {
+	for _, f := range formations {
+		if shouldAssignCriteria(f) {
+			if _, err := s.formationService.AssignFormation(ctx, appTenant, objectID, graphql.FormationObjectTypeApplication, model.Formation{Name: f}); err != nil {
+				return errors.Wrapf(err, "while assigning formation with name %q from application with id %q", f, objectID)
+			}
+		}
+	}
+	return nil
+}
+
+func (s *service) unassignFormations(ctx context.Context, appTenant, objectID string, formations []string, shouldUnassignCriteria func(string) bool) error {
+	for _, f := range formations {
+		if shouldUnassignCriteria(f) {
+			if _, err := s.formationService.UnassignFormation(ctx, appTenant, objectID, graphql.FormationObjectTypeApplication, model.Formation{Name: f}); err != nil {
+				return errors.Wrapf(err, "while unassigning formation with name %q from application with id %q", f, objectID)
+			}
+		}
+	}
+	return nil
+}
+
+func createMapFromFormationsSlice(formations []string) map[string]struct{} {
+	resultMap := make(map[string]struct{}, len(formations))
+	for _, f := range formations {
+		resultMap[f] = struct{}{}
+	}
+	return resultMap
+}
+
+func allowAllCriteria(_ string) bool {
+	return true
 }
