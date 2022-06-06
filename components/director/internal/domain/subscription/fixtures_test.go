@@ -41,6 +41,16 @@ func fixModelApplicationTemplate(id, name string) *model.ApplicationTemplate {
 	return &out
 }
 
+func fixModelRuntime(name string) *model.Runtime {
+	desc := testDescription
+	out := model.Runtime{
+		Name:        name,
+		Description: &desc,
+	}
+
+	return &out
+}
+
 func fixModelPlaceholders() []model.ApplicationTemplatePlaceholder {
 	placeholderDesc := testDescription
 	return []model.ApplicationTemplatePlaceholder{

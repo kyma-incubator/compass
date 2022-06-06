@@ -21,13 +21,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Config is configuration for the tenant-runtime subscription flow
+// Config is configuration for the tenant subscription flow
 type Config struct {
 	ProviderLabelKey              string `envconfig:"APP_SUBSCRIPTION_PROVIDER_LABEL_KEY,default=subscriptionProviderId"`
 	ConsumerSubaccountIDsLabelKey string `envconfig:"APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY,default=consumer_subaccount_ids"`
 }
 
-// RuntimeService missing godoc
+// RuntimeService is responsible for Runtime operations
 //go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	ListByFilters(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
@@ -54,7 +54,7 @@ type uidService interface {
 	Generate() string
 }
 
-// ApplicationTemplateService missing godoc
+// ApplicationTemplateService is responsible for Application Template operations
 //go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateService interface {
 	Exists(ctx context.Context, id string) (bool, error)
@@ -62,7 +62,7 @@ type ApplicationTemplateService interface {
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
 }
 
-// ApplicationConverter missing godoc
+// ApplicationConverter is converting graphql and model Applications
 //go:generate mockery --name=ApplicationConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationConverter interface {
 	ToGraphQL(in *model.Application) *graphql.Application
@@ -70,7 +70,7 @@ type ApplicationConverter interface {
 	CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
 }
 
-// ApplicationService missing godoc
+// ApplicationService is responsible for Application operations
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error)
@@ -93,7 +93,7 @@ type service struct {
 	consumerSubaccountIDsLabelKey string
 }
 
-// NewService missing godoc
+// NewService returns a new object responsible for service-layer Subscription operations.
 func NewService(runtimeSvc RuntimeService, tenantSvc TenantService, labelSvc LabelService, appTemplateSvc ApplicationTemplateService, appConv ApplicationConverter, appSvc ApplicationService, uidService uidService,
 	subscriptionProviderLabelKey string, consumerSubaccountIDsLabelKey string) *service {
 	return &service{
@@ -109,6 +109,7 @@ func NewService(runtimeSvc RuntimeService, tenantSvc TenantService, labelSvc Lab
 	}
 }
 
+// SubscribeTenantToRuntime subscribes a tenant to runtimes by labeling the runtime
 func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, region string) (bool, error) {
 	providerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, providerSubaccountID)
 	if err != nil {
@@ -160,6 +161,7 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 	return true, nil
 }
 
+// UnsubscribeTenantFromRuntime unsubscribes a tenant from runtimes by removing labels from runtime
 func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
 	providerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, providerSubaccountID)
 	if err != nil {
@@ -210,10 +212,11 @@ func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID s
 	return true, nil
 }
 
+// SubscribeTenantToApplication fetches model.ApplicationTemplate by region and provider and registers an Application from that template
 func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, region, providerSubaccountID, subscribedSubaccountID, subscribedAppName string) (bool, error) {
 	providerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, providerSubaccountID)
 	if err != nil {
-		return false, errors.Wrap(err, "while getting provider subaccount internal ID")
+		return false, errors.Wrapf(err, "while getting provider subaccount internal ID: %q", providerSubaccountID)
 	}
 	ctx = tenant.SaveToContext(ctx, providerInternalTenant, providerSubaccountID)
 
@@ -234,6 +237,8 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 	return true, nil
 }
 
+// DetermineSubscriptionFlow determines if the subscription flow is resource.ApplicationTemplate or resource.Runtime
+// by fetching both resources by provider and region
 func (s *service) DetermineSubscriptionFlow(ctx context.Context, providerID, region string) (resource.Type, error) {
 	filters := s.buildLabelFilters(providerID, region)
 	runtime, err := s.runtimeSvc.GetByFiltersGlobal(ctx, filters)

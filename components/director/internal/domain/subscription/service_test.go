@@ -1019,3 +1019,132 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 		})
 	}
 }
+
+func TestDetermineSubscriptionFlow(t *testing.T) {
+	filters := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery("subscriptionProviderId", fmt.Sprintf("\"%s\"", providerSubaccountID)),
+		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", regionalTenantSubdomain)),
+	}
+	appTemplateID := "app-tmpl-ID"
+	appTemplateName := "app-tmpl-name"
+	rtmName := "rtm-name"
+	modelAppTemplate := fixModelApplicationTemplate(appTemplateID, appTemplateName)
+	modelRuntime := fixModelRuntime(rtmName)
+
+	testCases := []struct {
+		Name                string
+		AppTemplateFn       func() *automock.ApplicationTemplateService
+		RuntimeFn           func() *automock.RuntimeService
+		Output              resource.Type
+		ExpectedErrorOutput string
+	}{
+		{
+			Name: "Success for runtime",
+			AppTemplateFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", context.TODO(), filters).Return(nil, nil).Once()
+				return appTemplateSvc
+			},
+			RuntimeFn: func() *automock.RuntimeService {
+				runtimeSvc := &automock.RuntimeService{}
+				runtimeSvc.On("GetByFiltersGlobal", context.TODO(), filters).Return(modelRuntime, nil).Once()
+				return runtimeSvc
+			},
+			Output: resource.Runtime,
+		},
+		{
+			Name: "Success for application template",
+			AppTemplateFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", context.TODO(), filters).Return(modelAppTemplate, nil).Once()
+				return appTemplateSvc
+			},
+			RuntimeFn: func() *automock.RuntimeService {
+				runtimeSvc := &automock.RuntimeService{}
+				runtimeSvc.On("GetByFiltersGlobal", context.TODO(), filters).Return(nil, nil).Once()
+				return runtimeSvc
+			},
+			Output: resource.ApplicationTemplate,
+		},
+		{
+			Name: "Error for runtime fetch by filters",
+			AppTemplateFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.AssertNotCalled(t, "GetByFilters")
+				return appTemplateSvc
+			},
+			RuntimeFn: func() *automock.RuntimeService {
+				runtimeSvc := &automock.RuntimeService{}
+				runtimeSvc.On("GetByFiltersGlobal", context.TODO(), filters).Return(nil, testError).Once()
+				return runtimeSvc
+			},
+			Output:              "",
+			ExpectedErrorOutput: testError.Error(),
+		},
+		{
+			Name: "Error for application template fetch by filters",
+			AppTemplateFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", context.TODO(), filters).Return(nil, testError).Once()
+				return appTemplateSvc
+			},
+			RuntimeFn: func() *automock.RuntimeService {
+				runtimeSvc := &automock.RuntimeService{}
+				runtimeSvc.On("GetByFiltersGlobal", context.TODO(), filters).Return(nil, nil).Once()
+				return runtimeSvc
+			},
+			Output:              "",
+			ExpectedErrorOutput: testError.Error(),
+		},
+		{
+			Name: "Error when a runtime and app template exist",
+			AppTemplateFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", context.TODO(), filters).Return(modelAppTemplate, nil).Once()
+				return appTemplateSvc
+			},
+			RuntimeFn: func() *automock.RuntimeService {
+				runtimeSvc := &automock.RuntimeService{}
+				runtimeSvc.On("GetByFiltersGlobal", context.TODO(), filters).Return(modelRuntime, nil).Once()
+				return runtimeSvc
+			},
+			Output:              "",
+			ExpectedErrorOutput: "both a runtime and application template exist with filter labels \"123-456\" and \"myregionaltenant\"",
+		},
+		{
+			Name: "Error when no runtime or app template exists",
+			AppTemplateFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", context.TODO(), filters).Return(nil, nil).Once()
+				return appTemplateSvc
+			},
+			RuntimeFn: func() *automock.RuntimeService {
+				runtimeSvc := &automock.RuntimeService{}
+				runtimeSvc.On("GetByFiltersGlobal", context.TODO(), filters).Return(nil, nil).Once()
+				return runtimeSvc
+			},
+			Output:              "",
+			ExpectedErrorOutput: "no runtime or application template exists with filter labels \"123-456\" and \"myregionaltenant\"",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			appTemplateSvc := testCase.AppTemplateFn()
+			rtmService := testCase.RuntimeFn()
+			defer mock.AssertExpectationsForObjects(t, appTemplateSvc, rtmService)
+
+			service := subscription.NewService(rtmService, nil, nil, appTemplateSvc, nil, nil, nil, "subscriptionProviderId", "")
+
+			output, err := service.DetermineSubscriptionFlow(context.TODO(), providerSubaccountID, regionalTenantSubdomain)
+			if len(testCase.ExpectedErrorOutput) > 0 {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrorOutput)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, testCase.Output, output)
+		})
+	}
+}
