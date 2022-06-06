@@ -23,7 +23,7 @@ const (
 	testTenant         = "tnt"
 	testExternalTenant = "external-tnt"
 	testID             = "foo"
-	testUUID           = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
+
 	testWebhookID      = "webhook-id-1"
 	testName           = "bar"
 	testPageSize       = 3
@@ -33,6 +33,7 @@ const (
 )
 
 var (
+	testUUID                       = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
 	testDescription                = "Lorem ipsum"
 	testDescriptionWithPlaceholder = "Lorem ipsum {{test}}"
 	testProviderName               = "provider-display-name"
@@ -112,6 +113,13 @@ func fixModelAppTemplateInput(name string, appInputString string) *model.Applica
 		Labels:               map[string]interface{}{"test": "test"},
 		AccessLevel:          model.GlobalApplicationTemplateAccessLevel,
 	}
+}
+
+func fixModelAppTemplateWithIDInput(name, appInputString string, id *string) *model.ApplicationTemplateInput {
+	model := fixModelAppTemplateInput(name, appInputString)
+	model.ID = id
+
+	return model
 }
 
 func fixModelAppTemplateUpdateInput(name string, appInputString string) *model.ApplicationTemplateUpdateInput {
