@@ -691,7 +691,7 @@ func TestORDService(t *testing.T) {
 				Description: ptr.String("description"),
 			},
 		}
-		appTmplInput.Labels[testConfig.SelfRegDistinguishLabelKey] = []interface{}{testConfig.SelfRegDistinguishLabelValue}
+		appTmplInput.Labels[testConfig.ProviderLabelKey] = []interface{}{testConfig.ProviderID}
 		appTmplInput.Labels[tenantfetcher.RegionKey] = testConfig.SelfRegRegion
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTmplInput)
