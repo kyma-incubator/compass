@@ -1,3 +1,5 @@
+counter 0
+
 # Director
 
 The Director exposes a GraphQL API for managing applications and runtimes.
