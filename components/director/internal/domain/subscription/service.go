@@ -217,7 +217,7 @@ func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID s
 }
 
 // SubscribeTenantToApplication fetches model.ApplicationTemplate by region and provider and registers an Application from that template
-func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, region, providerSubaccountID, subscribedSubaccountID, subscribedAppName string) (bool, error) {
+func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, subscribedSubaccountID, providerSubaccountID, region, subscribedAppName string) (bool, error) {
 	providerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, providerSubaccountID)
 	if err != nil {
 		return false, errors.Wrapf(err, "while getting provider subaccount internal ID: %q", providerSubaccountID)
@@ -243,7 +243,7 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 
 // UnsubscribeTenantFromApplication fetches model.ApplicationTemplate by region and provider, lists all applications for
 // the providerSubaccountID tenant and deletes them synchronously
-func (s *service) UnsubscribeTenantFromApplication(ctx context.Context, providerID, region, providerSubaccountID string) (bool, error) {
+func (s *service) UnsubscribeTenantFromApplication(ctx context.Context, providerID, providerSubaccountID, region string) (bool, error) {
 	providerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, providerSubaccountID)
 	if err != nil {
 		return false, errors.Wrapf(err, "while getting provider subaccount internal ID: %q", providerSubaccountID)

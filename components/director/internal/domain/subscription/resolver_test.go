@@ -38,7 +38,7 @@ func TestResolver_SubscribeTenant(t *testing.T) {
 			ServiceFn: func() *automock.SubscriptionService {
 				svc := &automock.SubscriptionService{}
 				svc.On("DetermineSubscriptionFlow", txtest.CtxWithDBMatcher(), subscriptionProviderID, region).Return(resource.ApplicationTemplate, nil).Once()
-				svc.On("SubscribeTenantToApplication", txtest.CtxWithDBMatcher(), subscriptionProviderID, region, providerSubaccountID, subscribedSubaacountID, subscriptionAppName).Return(true, nil).Once()
+				svc.On("SubscribeTenantToApplication", txtest.CtxWithDBMatcher(), subscriptionProviderID, subscribedSubaacountID, providerSubaccountID, region, subscriptionAppName).Return(true, nil).Once()
 				svc.AssertNotCalled(t, "SubscribeTenantToRuntime")
 				return svc
 			},
@@ -90,7 +90,7 @@ func TestResolver_SubscribeTenant(t *testing.T) {
 			ServiceFn: func() *automock.SubscriptionService {
 				svc := &automock.SubscriptionService{}
 				svc.On("DetermineSubscriptionFlow", txtest.CtxWithDBMatcher(), subscriptionProviderID, region).Return(resource.ApplicationTemplate, nil).Once()
-				svc.On("SubscribeTenantToApplication", txtest.CtxWithDBMatcher(), subscriptionProviderID, region, providerSubaccountID, subscribedSubaacountID, subscriptionAppName).Return(false, testErr).Once()
+				svc.On("SubscribeTenantToApplication", txtest.CtxWithDBMatcher(), subscriptionProviderID, subscribedSubaacountID, providerSubaccountID, region, subscriptionAppName).Return(false, testErr).Once()
 				svc.AssertNotCalled(t, "SubscribeTenantToRuntime")
 				return svc
 			},
@@ -181,7 +181,7 @@ func TestResolver_UnsubscribeTenant(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.SubscriptionService {
 				svc := &automock.SubscriptionService{}
-				svc.On("UnsubscribeTenantFromApplication", txtest.CtxWithDBMatcher(), subscriptionProviderID, region, providerSubaccountID).Return(true, nil).Once()
+				svc.On("UnsubscribeTenantFromApplication", txtest.CtxWithDBMatcher(), subscriptionProviderID, providerSubaccountID, region).Return(true, nil).Once()
 				svc.On("DetermineSubscriptionFlow", txtest.CtxWithDBMatcher(), subscriptionProviderID, region).Return(resource.ApplicationTemplate, nil).Once()
 				svc.AssertNotCalled(t, "UnsubscribeTenantFromRuntime")
 				return svc
@@ -231,7 +231,7 @@ func TestResolver_UnsubscribeTenant(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.SubscriptionService {
 				svc := &automock.SubscriptionService{}
-				svc.On("UnsubscribeTenantFromApplication", txtest.CtxWithDBMatcher(), subscriptionProviderID, region, providerSubaccountID).Return(false, testErr).Once()
+				svc.On("UnsubscribeTenantFromApplication", txtest.CtxWithDBMatcher(), subscriptionProviderID, providerSubaccountID, region).Return(false, testErr).Once()
 				svc.On("DetermineSubscriptionFlow", txtest.CtxWithDBMatcher(), subscriptionProviderID, region).Return(resource.ApplicationTemplate, nil).Once()
 
 				return svc
