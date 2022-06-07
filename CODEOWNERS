@@ -54,7 +54,6 @@
 /tests/pairing-adapter @kyma-incubator/team-falcon
 /tests/system-fetcher @kyma-incubator/team-falcon
 /tests/tenant-fetcher @kyma-incubator/team-dragon
-/tests/tenant-fetcher-job @kyma-incubator/team-dragon
 
 # All .md files
 *.md @kyma-incubator/cmp-technical-writers

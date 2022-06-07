@@ -41,7 +41,6 @@ COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/ord-service.
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/system-broker.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/tenant-fetcher.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/system-fetcher.test .
-COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/tenant-fetcher-job.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/istio.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/pairing-adapter.test .
 
