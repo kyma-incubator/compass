@@ -131,6 +131,18 @@ func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
 	`, fp.ForPlaceholders(), fp.ForWebhooks())
 }
 
+// ForFormationTemplate missing godoc
+func (fp *GqlFieldsProvider) ForFormationTemplate(ctx ...FieldCtx) string {
+	return `
+		id
+		name
+        applicationTypes
+	    runtimeTypes
+	    missingArtifactInfoMessage
+	    missingArtifactWarningMessage
+	`
+}
+
 // OmitForWebhooks missing godoc
 func (fp *GqlFieldsProvider) OmitForWebhooks(omittedProperties []string) string {
 	return buildProperties(map[string]string{
