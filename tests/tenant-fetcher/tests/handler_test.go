@@ -21,14 +21,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	gcli "github.com/machinebox/graphql"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	gcli "github.com/machinebox/graphql"
 
 	"github.com/google/uuid"
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
