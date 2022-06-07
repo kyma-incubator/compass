@@ -523,8 +523,14 @@ func (g *Graphqlizer) TemplateValueInputToGQL(in graphql.TemplateValueInput) (st
 func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}"
-		applicationTypes: "{{.ApplicationTypes}}"
-		runtimeTypes: "{{.RuntimeTypes}}"
+		applicationTypes: [
+			{{- range $i, $e := .ApplicationTypes}} 
+				{{- if $i}}, {{- end}} {{ marshal $e }}
+			{{- end }} ],
+		runtimeTypes: [
+			{{- range $i, $e := .RuntimeTypes}} 
+				{{- if $i}}, {{- end}} {{ marshal $e }}
+			{{- end }} ],
 		missingArtifactInfoMessage: "{{.MissingArtifactInfoMessage}}"
 		missingArtifactWarningMessage: "{{.MissingArtifactWarningMessage}}"
 	}`)
