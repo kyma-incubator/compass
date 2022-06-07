@@ -310,7 +310,7 @@ func TestRepository_List(t *testing.T) {
 			*fixEntityApplicationTemplate(t, "id3", "name3"),
 		}
 
-		labelFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(RegionKey, `eu-1`)}
+		labelFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(RegionKey, "еу-1")}
 
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
@@ -345,7 +345,7 @@ func TestRepository_List(t *testing.T) {
 			*fixEntityApplicationTemplate(t, "id1", "name1"),
 		}
 
-		labelFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(RegionKey, `eu-1`)}
+		labelFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(RegionKey, "еу-1")}
 
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)

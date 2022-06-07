@@ -80,7 +80,7 @@ func (r *repository) Get(ctx context.Context, id string) (*model.ApplicationTemp
 	return result, nil
 }
 
-// TODO missing godoc
+// GetByFilters builds a subquery for a given slice of labelfilter.LabelFilter and gets a model.ApplicationTemplate
 func (r *repository) GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error) {
 	filterSubquery, args, err := label.FilterQueryGlobal(model.AppTemplateLabelableObject, label.IntersectSet, filter)
 	if err != nil {

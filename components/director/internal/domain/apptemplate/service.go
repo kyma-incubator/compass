@@ -135,7 +135,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.ApplicationTemplat
 	return appTemplate, nil
 }
 
-// TODO missing godoc
+// GetByFilters gets a model.ApplicationTemplate by given slice of labelfilter.LabelFilter
 func (s *service) GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error) {
 	appTemplate, err := s.appTemplateRepo.GetByFilters(ctx, filter)
 	if err != nil {

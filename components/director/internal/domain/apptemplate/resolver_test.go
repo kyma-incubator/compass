@@ -223,7 +223,7 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 	after := "test"
 	gqlAfter := graphql.PageCursor(after)
 
-	labelFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(RegionKey, `eu-1`)}
+	labelFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(RegionKey, "eu-1")}
 	labelFiltersEmpty := []*labelfilter.LabelFilter{}
 	gqlFilter := []*graphql.LabelFilter{
 		{Key: RegionKey, Query: str.Ptr("eu-1")},

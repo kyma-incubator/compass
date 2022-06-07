@@ -104,7 +104,7 @@ type SelfRegisterManager interface {
 	GetSelfRegDistinguishingLabelKey() string
 }
 
-// SubscriptionService missing godoc
+// SubscriptionService is responsible for service layer operations for subscribing a tenant to a runtime
 //go:generate mockery --name=SubscriptionService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SubscriptionService interface {
 	SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error)
