@@ -124,6 +124,8 @@ spec:
               value: "{{ .Values.global.tests.db.maxIdleConnections }}"
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
               value: "{{ .Values.global.tenantFetcher.requiredAuthScope }}"
+            - name: EXTERNAL_SERVICES_MOCK_BASE_URL
+              value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080"
       restartPolicy: Never
 ---
 apiVersion: v1
