@@ -310,12 +310,51 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 					}
 				}
 
-				fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appID)
+				defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appID)
 
 				require.True(t, appExists)
 				require.NoError(t, err)
 				assertTenant(t, tnt, providedTenantIDs.TenantID, providedTenantIDs.Subdomain)
 				require.Equal(t, tenantfetcher.RegionPathParamValue, tnt.Labels[tenantfetcher.RegionKey])
+			})
+		})
+
+		t.Run("Regional account tenant deletion", func(t *testing.T) {
+			t.Run("Success", func(t *testing.T) {
+				// GIVEN
+				providedTenantIDs := tenantfetcher.Tenant{
+					TenantID:               uuid.New().String(),
+					Subdomain:              tenantfetcher.DefaultSubdomain,
+					SubscriptionProviderID: config.SelfRegDistinguishLabelValue,
+					ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
+					SubscriptionAppName:    "app-name",
+				}
+
+				addRegionalTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
+
+				apps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID())
+				require.Greater(t, apps.TotalCount, 0)
+
+				appExists := false
+				for _, v := range apps.Data {
+					if str.PtrStrToStr(v.ApplicationTemplateID) == appTemplate.ID {
+						appExists = true
+					}
+				}
+				require.True(t, appExists)
+
+				// WHEN
+				removeRegionalTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
+
+				// THEN
+				apps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID())
+				appExists = false
+				for _, v := range apps.Data {
+					if str.PtrStrToStr(v.ApplicationTemplateID) == appTemplate.ID {
+						appExists = true
+					}
+				}
+				require.False(t, appExists)
 			})
 		})
 	})
@@ -348,6 +387,10 @@ func TestGetDependenciesHandler(t *testing.T) {
 
 func addRegionalTenantExpectStatusCode(t *testing.T, providedTenantIDs tenantfetcher.Tenant, expectedStatusCode int) {
 	makeTenantRequestExpectStatusCode(t, providedTenantIDs, http.MethodPut, config.TenantFetcherFullRegionalURL, expectedStatusCode)
+}
+
+func removeRegionalTenantExpectStatusCode(t *testing.T, providedTenantIDs tenantfetcher.Tenant, expectedStatusCode int) {
+	makeTenantRequestExpectStatusCode(t, providedTenantIDs, http.MethodDelete, config.TenantFetcherFullRegionalURL, expectedStatusCode)
 }
 
 func makeTenantRequestExpectStatusCode(t *testing.T, providedTenantIDs tenantfetcher.Tenant, httpMethod, url string, expectedStatusCode int) {
