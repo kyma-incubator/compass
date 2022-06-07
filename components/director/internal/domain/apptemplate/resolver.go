@@ -80,6 +80,7 @@ type WebhookConverter interface {
 // SelfRegisterManager missing godoc
 //go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SelfRegisterManager interface {
+	IsSelfRegistrationFlow(ctx context.Context, labels map[string]interface{}) (bool, error)
 	PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string, validate func() error) (map[string]interface{}, error)
 	CleanupSelfRegistration(ctx context.Context, selfRegisterLabelValue, region string) error
 	GetSelfRegDistinguishingLabelKey() string
@@ -215,7 +216,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	selfRegID := r.uidService.Generate()
 	convertedIn.ID = &selfRegID
 	validate := func() error {
-		return validateAppTemplateInputForSelfReg(convertedIn)
+		return validateAppTemplateForSelfReg(convertedIn.Name, convertedIn.Placeholders, convertedIn.Labels)
 	}
 	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validate)
 	if err != nil {
@@ -392,6 +393,26 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 		return nil, err
 	}
 
+	labels, err := r.appTemplateSvc.ListLabels(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	resultLabels := make(map[string]interface{})
+	for _, label := range labels {
+		resultLabels[label.Key] = label.Value
+	}
+
+	isSelfRegFlow, err := r.selfRegManager.IsSelfRegistrationFlow(ctx, resultLabels)
+	if err != nil {
+		return nil, err
+	}
+	if isSelfRegFlow {
+		if err := validateAppTemplateForSelfReg(convertedIn.Name, convertedIn.Placeholders, resultLabels); err != nil {
+			return nil, err
+		}
+	}
+
 	err = r.appTemplateSvc.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err
@@ -521,12 +542,12 @@ func (r *Resolver) cleanupAndLogOnError(ctx context.Context, id, region string) 
 	}
 }
 
-func validateAppTemplateInputForSelfReg(appTemplateInput model.ApplicationTemplateInput) error {
-	if len(appTemplateInput.Placeholders) != 2 {
+func validateAppTemplateForSelfReg(name string, placeholders []model.ApplicationTemplatePlaceholder, labels map[string]interface{}) error {
+	if len(placeholders) != 2 {
 		return errors.Errorf("expecting %q and %q placeholders", "name", "display-name")
 	}
 
-	for _, placeholder := range appTemplateInput.Placeholders {
+	for _, placeholder := range placeholders {
 		if !(placeholder.Name == "name") && !(placeholder.Name == "display-name") {
 			return errors.Errorf("unexpected placeholder with name %q found", placeholder.Name)
 		}
@@ -534,12 +555,12 @@ func validateAppTemplateInputForSelfReg(appTemplateInput model.ApplicationTempla
 
 	// Matches the following pattern - "SAP <product name> (<region>)"
 	r := regexp.MustCompile(`(^SAP\s)([A-Za-z0-9_\- ]*)\s[(]([A-Za-z0-9_\- ]*)[)]`)
-	matches := r.FindStringSubmatch(appTemplateInput.Name)
+	matches := r.FindStringSubmatch(name)
 	if len(matches) == 0 {
-		return errors.Errorf("application template name %q does not comply with the following naming convention: %q", appTemplateInput.Name, "SAP <product name> (<region>)")
+		return errors.Errorf("application template name %q does not comply with the following naming convention: %q", name, "SAP <product name> (<region>)")
 	}
 
-	regionValue, exists := appTemplateInput.Labels[selfregmanager.RegionLabel]
+	regionValue, exists := labels[selfregmanager.RegionLabel]
 	if !exists {
 		return errors.Errorf("missing %q label", selfregmanager.RegionLabel)
 	}

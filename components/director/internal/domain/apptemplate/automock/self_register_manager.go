@@ -44,6 +44,27 @@ func (_m *SelfRegisterManager) GetSelfRegDistinguishingLabelKey() string {
 	return r0
 }
 
+// IsSelfRegistrationFlow provides a mock function with given fields: ctx, labels
+func (_m *SelfRegisterManager) IsSelfRegistrationFlow(ctx context.Context, labels map[string]interface{}) (bool, error) {
+	ret := _m.Called(ctx, labels)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, map[string]interface{}) bool); ok {
+		r0 = rf(ctx, labels)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, map[string]interface{}) error); ok {
+		r1 = rf(ctx, labels)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // PrepareForSelfRegistration provides a mock function with given fields: ctx, resourceType, labels, id, validate
 func (_m *SelfRegisterManager) PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string, validate func() error) (map[string]interface{}, error) {
 	ret := _m.Called(ctx, resourceType, labels, id, validate)

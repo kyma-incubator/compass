@@ -68,6 +68,110 @@ var testConfig = config.SelfRegConfig{
 	ClientTimeout: 5 * time.Second,
 }
 
+func TestSelfRegisterManager_IsSelfRegistrationFlow(t *testing.T) {
+	tokenConsumer := consumer.Consumer{
+		ConsumerID: consumerID,
+		Flow:       oathkeeper.OAuth2Flow,
+	}
+	certConsumer := consumer.Consumer{
+		ConsumerID: consumerID,
+		Flow:       oathkeeper.CertificateFlow,
+	}
+
+	ctxWithTokenConsumer := consumer.SaveToContext(context.TODO(), tokenConsumer)
+	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
+
+	testCases := []struct {
+		Name           string
+		Config         config.SelfRegConfig
+		Region         string
+		InputLabels    map[string]interface{}
+		Context        context.Context
+		ExpectedErr    error
+		ExpectedOutput bool
+	}{
+		{
+			Name:           "Success",
+			Config:         testConfig,
+			InputLabels:    fixLblInput(),
+			Region:         testRegion,
+			Context:        ctxWithCertConsumer,
+			ExpectedErr:    nil,
+			ExpectedOutput: true,
+		},
+		{
+			Name:           "Success for non-matching consumer",
+			Config:         testConfig,
+			Region:         testRegion,
+			InputLabels:    fixLblWithoutRegion(),
+			Context:        ctxWithTokenConsumer,
+			ExpectedErr:    nil,
+			ExpectedOutput: false,
+		},
+		{
+			Name:           "Error for missing distinguished label",
+			Config:         testConfig,
+			Region:         testRegion,
+			InputLabels:    map[string]interface{}{},
+			Context:        ctxWithCertConsumer,
+			ExpectedErr:    fmt.Errorf("missing %q label", selfRegisterDistinguishLabelKey),
+			ExpectedOutput: false,
+		},
+		{
+			Name:           "Error when region label is missing",
+			Config:         testConfig,
+			Region:         testRegion,
+			InputLabels:    fixLblWithoutRegion(),
+			Context:        ctxWithCertConsumer,
+			ExpectedErr:    fmt.Errorf("missing %q label", selfregmanager.RegionLabel),
+			ExpectedOutput: false,
+		},
+		{
+			Name:           "Error when region label is not string",
+			Config:         testConfig,
+			Region:         testRegion,
+			InputLabels:    map[string]interface{}{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: struct{}{}},
+			Context:        ctxWithCertConsumer,
+			ExpectedErr:    fmt.Errorf("region value should be of type %q", "string"),
+			ExpectedOutput: false,
+		},
+		{
+			Name:           "Error when region doesn't exist",
+			Config:         testConfig,
+			Region:         testRegion,
+			InputLabels:    map[string]interface{}{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: "not-valid"},
+			Context:        ctxWithCertConsumer,
+			ExpectedErr:    errors.New("missing configuration for region"),
+			ExpectedOutput: false,
+		},
+		{
+			Name:           "Error when context does not contain consumer",
+			Config:         testConfig,
+			Region:         testRegion,
+			InputLabels:    map[string]interface{}{},
+			Context:        context.TODO(),
+			ExpectedErr:    consumer.NoConsumerError,
+			ExpectedOutput: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, nil)
+			require.NoError(t, err)
+
+			output, err := manager.IsSelfRegistrationFlow(testCase.Context, testCase.InputLabels)
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, testCase.ExpectedOutput, output)
+		})
+	}
+}
+
 func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 	tokenConsumer := consumer.Consumer{
 		ConsumerID: consumerID,
