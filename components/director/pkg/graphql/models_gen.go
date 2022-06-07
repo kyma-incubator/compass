@@ -429,6 +429,31 @@ type FormationInput struct {
 	Name string `json:"name"`
 }
 
+type FormationTemplate struct {
+	ID                            string   `json:"id"`
+	Name                          string   `json:"name"`
+	ApplicationTypes              []string `json:"applicationTypes"`
+	RuntimeTypes                  []string `json:"runtimeTypes"`
+	MissingArtifactInfoMessage    string   `json:"missingArtifactInfoMessage"`
+	MissingArtifactWarningMessage string   `json:"missingArtifactWarningMessage"`
+}
+
+type FormationTemplateInput struct {
+	Name                          string   `json:"name"`
+	ApplicationTypes              []string `json:"applicationTypes"`
+	RuntimeTypes                  []string `json:"runtimeTypes"`
+	MissingArtifactInfoMessage    string   `json:"missingArtifactInfoMessage"`
+	MissingArtifactWarningMessage string   `json:"missingArtifactWarningMessage"`
+}
+
+type FormationTemplatePage struct {
+	Data       []*FormationTemplate `json:"data"`
+	PageInfo   *PageInfo            `json:"pageInfo"`
+	TotalCount int                  `json:"totalCount"`
+}
+
+func (FormationTemplatePage) IsPageable() {}
+
 type HealthCheck struct {
 	Type      HealthCheckType            `json:"type"`
 	Condition HealthCheckStatusCondition `json:"condition"`

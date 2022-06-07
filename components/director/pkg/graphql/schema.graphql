@@ -566,6 +566,14 @@ input FormationInput {
 	name: String!
 }
 
+input FormationTemplateInput {
+	name: String!
+	applicationTypes: [String!]!
+	runtimeTypes: [String!]!
+	missingArtifactInfoMessage: String!
+	missingArtifactWarningMessage: String!
+}
+
 input IntegrationSystemInput {
 	"""
 	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
@@ -1004,6 +1012,21 @@ type Formation {
 	name: String!
 }
 
+type FormationTemplate {
+	id: ID!
+	name: String!
+	applicationTypes: [String!]!
+	runtimeTypes: [String!]!
+	missingArtifactInfoMessage: String!
+	missingArtifactWarningMessage: String!
+}
+
+type FormationTemplatePage implements Pageable {
+	data: [FormationTemplate!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
 type HealthCheck {
 	type: HealthCheckType!
 	condition: HealthCheckStatusCondition!
@@ -1303,6 +1326,8 @@ type Query {
 	automaticScenarioAssignments(first: Int = 200, after: PageCursor): AutomaticScenarioAssignmentPage @hasScopes(path: "graphql.query.automaticScenarioAssignments")
 	systemAuth(id: ID!): SystemAuth @hasScopes(path: "graphql.query.systemAuth")
 	systemAuthByToken(token: String!): SystemAuth @hasScopes(path: "graphql.query.systemAuthByToken")
+	formationTemplate(id: ID!): FormationTemplate @hasScopes(path: "graphql.query.formationTemplate")
+	formationTemplates(first: Int = 200, after: PageCursor): FormationTemplatePage! @hasScopes(path: "graphql.query.formationTemplates")
 }
 
 type Mutation {
@@ -1590,5 +1615,8 @@ type Mutation {
 	updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")
 	subscribeTenantToRuntime(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenantToRuntime")
 	unsubscribeTenantFromRuntime(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenantFromRuntime")
+	createFormationTemplate(in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.createFormationTemplate")
+	deleteFormationTemplate(id: ID!): FormationTemplate @hasScopes(path: "graphql.mutation.deleteFormationTemplate")
+	updateFormationTemplate(id: ID!, in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.updateFormationTemplate")
 }
 
