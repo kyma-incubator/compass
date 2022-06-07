@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -74,6 +76,8 @@ type ApplicationConverter interface {
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error)
+	ListAll(ctx context.Context) ([]*model.Application, error)
+	Delete(ctx context.Context, id string) error
 }
 
 const (
@@ -237,6 +241,33 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 	return true, nil
 }
 
+// UnsubscribeTenantFromApplication fetches model.ApplicationTemplate by region and provider, lists all applications for
+// the providerSubaccountID tenant and deletes them synchronously
+func (s *service) UnsubscribeTenantFromApplication(ctx context.Context, providerID, region, providerSubaccountID string) (bool, error) {
+	providerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, providerSubaccountID)
+	if err != nil {
+		return false, errors.Wrapf(err, "while getting provider subaccount internal ID: %q", providerSubaccountID)
+	}
+
+	ctx = tenant.SaveToContext(ctx, providerInternalTenant, providerSubaccountID)
+
+	filters := s.buildLabelFilters(providerID, region)
+	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return false, nil
+		}
+
+		return false, errors.Wrapf(err, "while getting application template with filter labels %q and %q", providerID, region)
+	}
+
+	if err := s.deleteApplicationsByAppTemplateID(ctx, appTemplate.ID); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
 // DetermineSubscriptionFlow determines if the subscription flow is resource.ApplicationTemplate or resource.Runtime
 // by fetching both resources by provider and region
 func (s *service) DetermineSubscriptionFlow(ctx context.Context, providerID, region string) (resource.Type, error) {
@@ -311,6 +342,23 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 	_, err = s.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID)
 	if err != nil {
 		return errors.Wrapf(err, "while creating an Application with name %s from Application Template with name %s", subscribedAppName, appTemplate.Name)
+	}
+
+	return nil
+}
+
+func (s *service) deleteApplicationsByAppTemplateID(ctx context.Context, appTemplateID string) error {
+	applications, err := s.appSvc.ListAll(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while listing applications")
+	}
+
+	for _, app := range applications {
+		if str.PtrStrToStr(app.ApplicationTemplateID) == appTemplateID {
+			if err := s.appSvc.Delete(ctx, app.ID); err != nil {
+				return errors.Wrapf(err, "while trying to delete Application with ID: %q", app.ID)
+			}
+		}
 	}
 
 	return nil

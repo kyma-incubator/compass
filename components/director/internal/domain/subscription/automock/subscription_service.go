@@ -100,6 +100,27 @@ func (_m *SubscriptionService) UnsubscribeTenantFromRuntime(ctx context.Context,
 	return r0, r1
 }
 
+// UnsubscribeTenantFromApplication provides a mock function with given fields: ctx, subaccountTenantID, region, providerSubaccountID
+func (_m *SubscriptionService) UnsubscribeTenantFromApplication(ctx context.Context, subaccountTenantID string, region string, providerSubaccountID string) (bool, error) {
+	ret := _m.Called(ctx, subaccountTenantID, region, providerSubaccountID)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) bool); ok {
+		r0 = rf(ctx, subaccountTenantID, region, providerSubaccountID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, subaccountTenantID, region, providerSubaccountID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // NewSubscriptionService creates a new instance of SubscriptionService. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
 func NewSubscriptionService(t testing.TB) *SubscriptionService {
 	mock := &SubscriptionService{}
