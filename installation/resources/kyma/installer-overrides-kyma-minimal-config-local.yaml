@@ -98,7 +98,7 @@ data:
   global.monitoring_integration_tests.enabled: "false" # Tests rely on dex security which we already removed.
   prometheusOperator.configReloaderMemory: 256Mi
   prometheus-istio.server.resources.limits.memory: 1Gi
-  pushgateway.enabled: "true"
+  pushgateway.enabled: "false"
 ---
 apiVersion: v1
 kind: ConfigMap
