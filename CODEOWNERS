@@ -23,7 +23,6 @@
 /components/director/cmd/ordaggregator @kyma-incubator/team-falcon
 /components/director/cmd/scopessynchronizer @kyma-incubator/team-raptor
 /components/director/cmd/systemfetcher @kyma-incubator/team-falcon
-/components/director/cmd/tenantfetcher-job @kyma-incubator/team-dragon
 /components/director/cmd/tenantfetcher-svc @kyma-incubator/team-dragon
 /components/director/cmd/tenantloader @kyma-incubator/team-raptor @kyma-incubator/team-dragon @kyma-incubator/team-falcon
 /components/director/internal/domain/formation @kyma-incubator/team-raptor
