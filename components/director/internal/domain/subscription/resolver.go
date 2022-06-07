@@ -53,7 +53,6 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 	if flowType == resource.ApplicationTemplate {
 		log.C(ctx).Infof("Entering Application flow")
 		success, err = r.subscriptionSvc.SubscribeTenantToApplication(ctx, providerID, subaccountTenantID, providerSubaccountID, region, subscriptionAppName)
-		//success, err = r.subscriptionSvc.SubscribeTenantToApplication(ctx, providerID, region, providerSubaccountID, subaccountTenantID, subscriptionAppName)
 		if err != nil {
 			return false, err
 		}
