@@ -1441,6 +1441,7 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, updateLabelDefinitionReq, nil)
 	require.NoError(t, err)
+	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, []string{"DEFAULT"})
 
 	in := graphql.ApplicationRegisterInput{
 		Name:           "wordpress",
