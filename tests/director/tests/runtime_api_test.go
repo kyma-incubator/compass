@@ -67,9 +67,9 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRuntimeReq, &actualRuntime)
 	require.NoError(t, err)
 	if conf.DefaultScenarioEnabled {
-		assert.Len(t, actualRuntime.Labels, 7)
+		assert.Len(t, actualRuntime.Labels, 4)
 	} else {
-		assert.Len(t, actualRuntime.Labels, 6)
+		assert.Len(t, actualRuntime.Labels, 3)
 	}
 
 	// add agent auth
@@ -110,7 +110,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, givenUpdateInput.Name, actualRuntime.Name)
 	assert.Equal(t, *givenUpdateInput.Description, *actualRuntime.Description)
-	assert.Equal(t, len(actualRuntime.Labels), 4)
+	assert.Equal(t, len(actualRuntime.Labels), 2)
 	assert.Equal(t, runtimeStatusCond, actualRuntime.Status.Condition)
 
 	// delete runtime
@@ -129,18 +129,6 @@ func TestRuntimeRegisterWithWebhooks(t *testing.T) {
 	ctx := context.Background()
 	url := "http://mywordpress.com/webhooks1"
 
-	//in := graphql.RuntimeRegisterInput{
-	//	Name:        "runtime-with-webhooks",
-	//	Description: ptr.String("runtime-1-description"),
-	//	Labels:      graphql.Labels{"ggg": []interface{}{"hhh"}},
-	//	Webhooks: []*graphql.WebhookInput{
-	//		{
-	//			Type: graphql.WebhookTypeConfigurationChanged,
-	//			Auth: fixtures.FixBasicAuth(t),
-	//			URL:  &url,
-	//		},
-	//	},
-	//}
 	in := fixRuntimeInput("runtime-with-webhooks")
 	in.Description = ptr.String("runtime-1-description")
 	in.Webhooks = []*graphql.WebhookInput{
@@ -569,7 +557,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		t.Log("Successfully register runtime with certificate")
 		// GIVEN
-		runtimeInput = fixRuntimeInput("runtime-create-update-delete")
+		runtimeInput = fixRuntimeWithSelfRegLabelsInput("runtime-create-update-delete")
 		runtimeInput.Description = ptr.String("runtime-create-update-delete-description")
 
 		actualRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtimeInput)
@@ -615,7 +603,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		t.Log("Successfully update runtime and validate the protected labels are excluded")
 		//GIVEN
-		runtimeUpdateInput := fixRuntimeUpdateInput("updated-runtime")
+		runtimeUpdateInput := fixRuntimeUpdateWithSelfRegLabelsInput("updated-runtime")
 		runtimeUpdateInput.Description = ptr.String("updated-runtime-description")
 		runtimeUpdateInput.Labels[protectedConsumerSubaccountIdsLabel] = []interface{}{"subaccountID-1", "subaccountID-2"}
 
@@ -740,6 +728,13 @@ func TestQuerySpecificRuntimeWithCertificate(t *testing.T) {
 
 func fixRuntimeInput(name string) graphql.RuntimeRegisterInput {
 	input := fixtures.FixRuntimeRegisterInput(name)
+	delete(input.Labels, "placeholder")
+
+	return input
+}
+
+func fixRuntimeWithSelfRegLabelsInput(name string) graphql.RuntimeRegisterInput {
+	input := fixtures.FixRuntimeRegisterInput(name)
 	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
 	input.Labels[tenantfetcher.RegionKey] = conf.SelfRegRegion
 	delete(input.Labels, "placeholder")
@@ -748,6 +743,13 @@ func fixRuntimeInput(name string) graphql.RuntimeRegisterInput {
 }
 
 func fixRuntimeUpdateInput(name string) graphql.RuntimeUpdateInput {
+	input := fixtures.FixRuntimeUpdateInput(name)
+	delete(input.Labels, "placeholder")
+
+	return input
+}
+
+func fixRuntimeUpdateWithSelfRegLabelsInput(name string) graphql.RuntimeUpdateInput {
 	input := fixtures.FixRuntimeUpdateInput(name)
 	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
 	input.Labels[tenantfetcher.RegionKey] = conf.SelfRegRegion

@@ -15,9 +15,5 @@ type ConnectorTestConfig struct {
 	RevocationConfigMapName      string `envconfig:"default=revocations-config"`
 	RevocationConfigMapNamespace string `envconfig:"default=compass-system"`
 
-	SelfRegDistinguishLabelKey   string
-	SelfRegDistinguishLabelValue string
-	SelfRegRegion                string
-
 	CertLoaderConfig certloader.Config
 }
