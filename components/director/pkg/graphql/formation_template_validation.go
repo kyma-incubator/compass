@@ -11,5 +11,6 @@ func (i FormationTemplateInput) Validate() error {
 		validation.Field(&i.Name, validation.Required, validation.RuneLength(0, longStringLengthLimit)),
 		validation.Field(&i.MissingArtifactInfoMessage, validation.Required, validation.RuneLength(0, longLongStringLengthLimit)),
 		validation.Field(&i.MissingArtifactWarningMessage, validation.Required, validation.RuneLength(0, longLongStringLengthLimit)),
-		validation.Field(&i.RuntimeTypes, inputvalidation.Each(validation.Required, validation.Match(alphanumericUnderscoreRegexp))))
+		validation.Field(&i.RuntimeTypes, inputvalidation.Each(validation.Required, validation.RuneLength(0, longLongStringLengthLimit))),
+		validation.Field(&i.ApplicationTypes, inputvalidation.Each(validation.Required, validation.RuneLength(0, longLongStringLengthLimit))))
 }
