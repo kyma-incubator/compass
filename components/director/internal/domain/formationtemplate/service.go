@@ -56,12 +56,12 @@ func (s *service) Create(ctx context.Context, in model.FormationTemplateInput) (
 }
 
 func (s *service) Get(ctx context.Context, id string) (*model.FormationTemplate, error) {
-	appTemplate, err := s.repo.Get(ctx, id)
+	formationTemplate, err := s.repo.Get(ctx, id)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Application Template with id %s", id)
+		return nil, errors.Wrapf(err, "while getting Formation Template with id %s", id)
 	}
 
-	return appTemplate, nil
+	return formationTemplate, nil
 }
 
 func (s *service) List(ctx context.Context, pageSize int, cursor string) (model.FormationTemplatePage, error) {
