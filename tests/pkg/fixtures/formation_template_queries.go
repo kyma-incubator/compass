@@ -31,14 +31,14 @@ func QueryFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *
 	return &formationTemplate
 }
 
-func QueryFormationTemplatesWithPageSize(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, pageSize int) []*graphql.FormationTemplate {
+func QueryFormationTemplatesWithPageSize(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, pageSize int) *graphql.FormationTemplatePage {
 	queryPaginationRequest := FixQueryFormationTemplatesRequestWithPageSize(pageSize)
 
-	var formationTemplates []*graphql.FormationTemplate
+	var formationTemplates graphql.FormationTemplatePage
 	require.NoError(t, testctx.Tc.RunOperation(ctx, gqlClient, queryPaginationRequest, &formationTemplates))
 	require.NotEmpty(t, formationTemplates)
 
-	return formationTemplates
+	return &formationTemplates
 }
 
 func DeleteFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string) *graphql.FormationTemplate {

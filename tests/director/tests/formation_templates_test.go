@@ -158,13 +158,16 @@ func TestQueryFormationTemplates(t *testing.T) {
 		MissingArtifactWarningMessage: "Missing Artifact Message Warning 2: %s",
 	}
 
+	// Get current state
+	first := 100
+	currentFormationPage := fixtures.QueryFormationTemplatesWithPageSize(t, ctx, certSecuredGraphQLClient, first)
+
 	createdFormationTemplate := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, createdFormationTemplate.ID)
 	secondCreatedFormationTemplate := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, secondFormationInput)
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, secondCreatedFormationTemplate.ID)
 
 	var output graphql.FormationTemplatePage
-	first := 20
 	queryFormationTemplatesRequest := fixtures.FixQueryFormationTemplatesRequestWithPageSize(first)
 
 	// WHEN
@@ -174,6 +177,7 @@ func TestQueryFormationTemplates(t *testing.T) {
 	//THEN
 	require.NotEmpty(t, output)
 	require.NoError(t, err)
+	assert.Equal(t, currentFormationPage.TotalCount+2, output.TotalCount)
 
 	saveExample(t, queryFormationTemplatesRequest.Query(), "query formation templates")
 
