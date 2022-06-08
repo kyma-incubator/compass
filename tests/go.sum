@@ -318,6 +318,14 @@ github.com/kyma-incubator/compass/components/connector v0.0.0-20220225101454-1e1
 github.com/kyma-incubator/compass/components/connector v0.0.0-20220225101454-1e11cf2f8a9b/go.mod h1:wGzvH5XWBA34gt7cb+UVrovLHsIqjNddzP+DkPBZ3u0=
 github.com/kyma-incubator/compass/components/director v0.0.0-20220517151221-fee3ac416dc2 h1:OAhdSvhsiGxL+tWazAioxtQAhVOTzXvjSyisyCPyqQQ=
 github.com/kyma-incubator/compass/components/director v0.0.0-20220517151221-fee3ac416dc2/go.mod h1:Y3LnqEGbb7vR0qX+ASAs+arqdMmF+n7L65V5zqAtjwk=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220607114056-55d2535e38f6 h1:Wgs2g/jWAxmWBkOGerdK0mQfGGrAF03i6dRF75iyJbQ=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220607114056-55d2535e38f6/go.mod h1:IUlFyONxb8YHJyB3unZNVMGoFeOXlaoijuvI65I6NCA=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220607115724-361e0e4bbbc0 h1:qpxDNwdz1ZDSac5EbRfaAFstH46gm0cRXoVkkxlRyMA=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220607115724-361e0e4bbbc0/go.mod h1:IUlFyONxb8YHJyB3unZNVMGoFeOXlaoijuvI65I6NCA=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220607122031-8ac6943c186b h1:cvcNkQAV4WXEhF/lMvxUUYf7HoC0QtQcRV6edSr2XLQ=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220607122031-8ac6943c186b/go.mod h1:IUlFyONxb8YHJyB3unZNVMGoFeOXlaoijuvI65I6NCA=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220607141433-f672635f39cc h1:Hk7kSTosmj/iyc1svKkuhwyARNK/bMscjua1m6ej4ZE=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220607141433-f672635f39cc/go.mod h1:IUlFyONxb8YHJyB3unZNVMGoFeOXlaoijuvI65I6NCA=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20220225101454-1e11cf2f8a9b h1:4R8r0Us/Arb5LyJojWuLJFImHLolGNKSsJGubZqoapY=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20220225101454-1e11cf2f8a9b/go.mod h1:GW13QCwxZX0gyEBKypJ0OX1VRyOrKe1BFvL4q1RZODY=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20220225101454-1e11cf2f8a9b h1:oxx4DknU9x54foCUWRoFzaSK7Z1Xpj0eG6Fr1gPQkOI=
