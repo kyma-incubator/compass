@@ -258,7 +258,17 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 }
 
 func TestSelfRegisterManager_CleanupSelfRegistration(t *testing.T) {
-	ctx := context.TODO()
+	tokenConsumer := consumer.Consumer{
+		ConsumerID: consumerID,
+		Flow:       oathkeeper.OAuth2Flow,
+	}
+	certConsumer := consumer.Consumer{
+		ConsumerID: consumerID,
+		Flow:       oathkeeper.CertificateFlow,
+	}
+
+	ctxWithTokenConsumer := consumer.SaveToContext(context.TODO(), tokenConsumer)
+	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
 
 	testCases := []struct {
 		Name                                string
@@ -275,7 +285,7 @@ func TestSelfRegisterManager_CleanupSelfRegistration(t *testing.T) {
 			Region:                              testRegion,
 			Config:                              testConfig,
 			SelfRegisteredDistinguishLabelValue: distinguishLblVal,
-			Context:                             ctx,
+			Context:                             ctxWithCertConsumer,
 			ExpectedErr:                         nil,
 		},
 		{
@@ -284,7 +294,7 @@ func TestSelfRegisterManager_CleanupSelfRegistration(t *testing.T) {
 			Region:                              testRegion,
 			Config:                              testConfig,
 			SelfRegisteredDistinguishLabelValue: "",
-			Context:                             ctx,
+			Context:                             ctxWithCertConsumer,
 			ExpectedErr:                         nil,
 		},
 		{
@@ -293,7 +303,7 @@ func TestSelfRegisterManager_CleanupSelfRegistration(t *testing.T) {
 			Region:                              fakeRegion,
 			Config:                              testConfig,
 			SelfRegisteredDistinguishLabelValue: "invalid value",
-			Context:                             ctx,
+			Context:                             ctxWithCertConsumer,
 			ExpectedErr:                         errors.New("while creating url for cleanup of self-registered resource"),
 		},
 		{
@@ -302,7 +312,7 @@ func TestSelfRegisterManager_CleanupSelfRegistration(t *testing.T) {
 			CallerProvider:                      selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:                              "not-valid",
 			SelfRegisteredDistinguishLabelValue: distinguishLblVal,
-			Context:                             ctx,
+			Context:                             ctxWithCertConsumer,
 			ExpectedErr:                         errors.New("missing configuration for region"),
 		},
 		{
@@ -311,7 +321,7 @@ func TestSelfRegisterManager_CleanupSelfRegistration(t *testing.T) {
 			CallerProvider:                      selfregmngrtest.CallerProviderThatFails,
 			Region:                              testRegion,
 			SelfRegisteredDistinguishLabelValue: distinguishLblVal,
-			Context:                             ctx,
+			Context:                             ctxWithCertConsumer,
 			ExpectedErr:                         errors.New("while getting caller"),
 		},
 		{
@@ -320,7 +330,7 @@ func TestSelfRegisterManager_CleanupSelfRegistration(t *testing.T) {
 			Region:                              testRegion,
 			Config:                              testConfig,
 			SelfRegisteredDistinguishLabelValue: distinguishLblVal,
-			Context:                             ctx,
+			Context:                             ctxWithCertConsumer,
 			ExpectedErr:                         selfregmngrtest.TestError,
 		},
 		{
@@ -329,8 +339,17 @@ func TestSelfRegisterManager_CleanupSelfRegistration(t *testing.T) {
 			Region:                              testRegion,
 			Config:                              testConfig,
 			SelfRegisteredDistinguishLabelValue: distinguishLblVal,
-			Context:                             ctx,
+			Context:                             ctxWithCertConsumer,
 			ExpectedErr:                         errors.New("received unexpected status code"),
+		},
+		{
+			Name:                                "Success when token consumer is used",
+			CallerProvider:                      selfregmngrtest.CallerThatDoesNotGetCalled,
+			Region:                              testRegion,
+			Config:                              testConfig,
+			SelfRegisteredDistinguishLabelValue: "",
+			Context:                             ctxWithTokenConsumer,
+			ExpectedErr:                         nil,
 		},
 	}
 
