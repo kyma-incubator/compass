@@ -542,25 +542,11 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		runtimeTypeLabelKey := conf.SubscriptionProviderAppNameLabelKey
 		runtimeTypeLabelValue := conf.SubscriptionProviderAppNameValue
 
-		runtimeInput := fixRuntimeInput("register-runtime-with-protected-labels")
-		runtimeInput.Description = ptr.String("register-runtime-with-protected-labels-description")
+		runtimeInput := fixRuntimeInput("runtime-create-update-delete")
+		runtimeInput.Description = ptr.String("runtime-create-update-delete-description")
 		runtimeInput.Labels[runtimeTypeLabelKey] = runtimeTypeLabelValue
-		//
-		t.Log("Successfully register runtime using certificate with protected labels and validate that they are excluded")
-		actualRtm := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtimeInput)
-		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &actualRtm)
-
-		//THEN
-		require.NotEmpty(t, actualRtm.ID)
-		require.Equal(t, runtimeInput.Name, actualRtm.Name)
-		require.Equal(t, runtimeInput.Description, actualRtm.Description)
-		require.Equal(t, actualRtm.Labels[runtimeTypeLabelKey], runtimeTypeLabelValue)
 
 		t.Log("Successfully register runtime with certificate")
-		// GIVEN
-		runtimeInput = fixRuntimeInput("runtime-create-update-delete")
-		runtimeInput.Description = ptr.String("runtime-create-update-delete-description")
-
 		actualRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtimeInput)
 		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &actualRuntime)
 
@@ -573,22 +559,21 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		actualLabel := graphql.Label{}
 
 		// WHEN
-		addLabelReq := fixtures.FixSetRuntimeLabelRequest(actualRuntime.ID, "regular_label", []string{"labelValue"})
+		addLabelReq := fixtures.FixSetRuntimeLabelRequest(actualRuntime.ID, "regularLabel", "regularLabelValue")
 		err := testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, addLabelReq, &actualLabel)
 
 		//THEN
 		require.NoError(t, err)
-		require.Equal(t, "regular_label", actualLabel.Key)
-		require.Len(t, actualLabel.Value, 1)
-		require.Contains(t, actualLabel.Value, "labelValue")
+		require.Equal(t, "regularLabel", actualLabel.Key)
+		require.Equal(t, "regularLabelValue", actualLabel.Value)
 
-		t.Log("Fail setting protected label on runtime")
+		t.Log("Fail setting immutable label on runtime")
 		// GIVEN
 		immutableLabel := graphql.Label{}
 
 		// WHEN
-		pLabelReq := fixtures.FixSetRuntimeLabelRequest(actualRuntime.ID, runtimeTypeLabelKey, runtimeTypeLabelValue)
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, pLabelReq, &immutableLabel)
+		iLabelReq := fixtures.FixSetRuntimeLabelRequest(actualRuntime.ID, runtimeTypeLabelKey, runtimeTypeLabelValue)
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, iLabelReq, &immutableLabel)
 
 		//THEN
 		require.Error(t, err)
@@ -600,14 +585,12 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, getRuntimeReq, &actualRuntime)
 		require.NoError(t, err)
 		require.NotEmpty(t, actualRuntime.ID)
-		assert.Len(t, actualRuntime.Labels, 6) // three labels from the different runtime inputs plus two additional during runtime registration - isNormalized and "self register" label
+		assert.Len(t, actualRuntime.Labels, 6) // four labels from the different runtime inputs plus two additional during runtime registration - isNormalized and "self register" label
 
-		// todo:: adapt/delete
 		t.Log("Successfully update runtime with certificate")
 		//GIVEN
 		runtimeUpdateInput := fixRuntimeUpdateInput("updated-runtime")
 		runtimeUpdateInput.Description = ptr.String("updated-runtime-description")
-		runtimeUpdateInput.Labels[runtimeTypeLabelKey] = runtimeTypeLabelValue + "-updated-runtime"
 
 		runtimeStatusCond := graphql.RuntimeStatusConditionConnected
 		runtimeUpdateInput.StatusCondition = &runtimeStatusCond
@@ -625,10 +608,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		require.Equal(t, runtimeUpdateInput.Name, actualRuntime.Name)
 		require.Equal(t, *runtimeUpdateInput.Description, *actualRuntime.Description)
 		require.Equal(t, runtimeStatusCond, actualRuntime.Status.Condition)
-		require.Equal(t, len(actualRuntime.Labels), 4) // three labels from the runtime input plus one additional label, added during runtime update(isNormalized)
-		labelValue, ok := actualRuntime.Labels[runtimeTypeLabelKey].(string)
-		require.True(t, ok)
-		require.Equal(t, runtimeTypeLabelValue+"-updated-runtime", labelValue)
+		require.Equal(t, len(actualRuntime.Labels), 3) // two labels from the runtime input plus one additional label, added during runtime update(isNormalized)
 
 		t.Log("Successfully delete runtime using certificate")
 		// WHEN

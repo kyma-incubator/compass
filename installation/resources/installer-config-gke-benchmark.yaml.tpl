@@ -30,7 +30,7 @@ data:
   global.externalServicesMock.oauthSecret.manage: "true"
   global.externalServicesMock.regionInstancesCredentials.manage: "true"
   global.tests.basicCredentials.manage: "true"
-  global.tests.ordService.subscriptionOauthSecret.manage: "true"
+  global.tests.subscription.oauthSecret.manage: "true"
   global.hydrator.http.client.skipSSLValidation: "true"
   global.pairingAdapter.configMap.manage: "true"
 

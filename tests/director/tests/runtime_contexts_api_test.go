@@ -238,36 +238,37 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
 		t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 
-		// Assert provider runtime is visible in the consumer's subaccount after successful subscription
+		t.Log("Assert provider runtime is visible in the consumer's subaccount after successful subscription")
 		consumerSubaccountRuntimes := fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
 		require.Len(t, consumerSubaccountRuntimes.Data, 1)
 		require.Equal(t, consumerSubaccountRuntimes.Data[0].ID, providerRuntime.ID)
 
-		// Assert subscription provider application name label of the provider runtime exists and it is the correct one
+		t.Log("Assert subscription provider application name label of the provider runtime exists and it is the correct one")
 		subProviderAppNameValue, ok := consumerSubaccountRuntimes.Data[0].Labels[conf.SubscriptionProviderAppNameLabelKey].(string)
 		require.True(t, ok)
 		require.Equal(t, conf.SubscriptionProviderAppNameValue, subProviderAppNameValue)
 
-		// Assert there is a runtime context(subscription) as part of the provider runtime
+		t.Log("Assert there is a runtime context(subscription) as part of the provider runtime")
 		require.Len(t, consumerSubaccountRuntimes.Data[0].RuntimeContexts.Data, 1)
 		require.Equal(t, conf.SubscriptionLabelKey, consumerSubaccountRuntimes.Data[0].RuntimeContexts.Data[0].Key)
 		require.Equal(t, subscriptionConsumerTenantID, consumerSubaccountRuntimes.Data[0].RuntimeContexts.Data[0].Value)
 
-		// Assert the runtime context has label containing consumer subaccount ID
+		t.Log("Assert the runtime context has label containing consumer subaccount ID")
 		consumerSubaccountFromRtmCtxLabel, ok := consumerSubaccountRuntimes.Data[0].RuntimeContexts.Data[0].Labels[conf.ConsumerSubaccountLabelKey].(string)
 		require.True(t, ok)
 		require.Equal(t, subscriptionConsumerSubaccountID, consumerSubaccountFromRtmCtxLabel)
 
-		// Assert provider runtime is visible in the consumer's account after successful subscription
+		t.Log("Assert provider runtime is visible in the consumer's account after successful subscription")
 		consumerAccountRuntimes := fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID)
 		require.Len(t, consumerAccountRuntimes.Data, 1)
 		require.Equal(t, consumerAccountRuntimes.Data[0].ID, providerRuntime.ID)
 		require.Len(t, consumerSubaccountRuntimes.Data[0].RuntimeContexts.Data, 1)
 
-		// Assert the consumer cannot modify(create, update or delete) the provider runtime(owner false check)
+		t.Log("Assert the consumer cannot modify(create, update or delete) the provider runtime(owner false check)")
 		consumerRuntimeUpdateInput := fixRuntimeUpdateInput("consumerUpdatedRuntime")
 		rtm, err := fixtures.UpdateRuntimeWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, providerRuntime.ID, consumerRuntimeUpdateInput)
-		require.Nil(t, rtm)
+		require.Empty(t, rtm)
 		require.Error(t, err)
+		require.Contains(t, err.Error(), "Owner access is needed for resource modification")
 	})
 }

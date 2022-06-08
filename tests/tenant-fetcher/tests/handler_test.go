@@ -40,10 +40,12 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 			// GIVEN
 			providedTenant := tenantfetcher.Tenant{
-				TenantID:               uuid.New().String(),
-				Subdomain:              tenantfetcher.DefaultSubdomain,
-				SubscriptionProviderID: uuid.New().String(),
-				ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
+				TenantID:                    uuid.New().String(),
+				Subdomain:                   tenantfetcher.DefaultSubdomain,
+				SubscriptionProviderID:      uuid.New().String(),
+				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
+				ConsumerTenantID:            uuid.New().String(),
+				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
 			}
 
 			// WHEN
