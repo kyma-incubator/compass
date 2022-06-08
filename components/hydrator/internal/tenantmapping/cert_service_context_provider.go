@@ -41,13 +41,18 @@ type certServiceContextProvider struct {
 // By using trusted external certificate issuer we assume that we will receive the tenant information extracted from the certificate.
 // There we should only convert the tenant identifier from external to internal.
 func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
-	externalTenantID := authDetails.AuthID
-
 	consumerType := reqData.ConsumerType()
 	logger := log.C(ctx).WithFields(logrus.Fields{
 		"consumer_type": consumerType,
 	})
 	ctx = log.ContextWithLogger(ctx, logger)
+
+	externalTenantID := authDetails.AuthID
+
+	if tnt := reqData.Header.Get("Tenant"); len(tnt) > 0 {
+		log.C(ctx).Infof("Tenant header with value %q is found. Will use it for the tenant context", tnt)
+		externalTenantID = tnt
+	}
 
 	scopes, err := p.directorScopes(consumerType)
 	if err != nil {
