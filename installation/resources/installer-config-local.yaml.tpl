@@ -64,6 +64,7 @@ data:
   global.tests.subscription.oauthSecret.manage: "true"
   global.hydrator.http.client.skipSSLValidation: "true"
   global.pairingAdapter.configMap.manage: "true"
+  global.director.subscription.subscriptionProviderLabelKey: "subscriptionProviderId"
 
   global.tenantFetchers.account-fetcher.enabled: "true"
   global.tenantFetchers.account-fetcher.dbPool.maxOpenConnections: "1"
@@ -160,7 +161,6 @@ data:
   global.tenantFetcher.fieldMapping.detailsField: "eventData"
   global.tenantFetcher.fieldMapping.entityTypeField: "type"
   global.tenantFetcher.endpoints.subaccountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-create"
-  global.tenantFetcher.server.subscriptionProviderLabelKey: "subscriptionProviderId"
 ---
 apiVersion: v1
 kind: ConfigMap

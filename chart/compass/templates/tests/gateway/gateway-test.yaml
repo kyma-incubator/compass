@@ -58,7 +58,7 @@ spec:
             - name: SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
             - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
               value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
             - name: APP_SELF_REG_REGION
