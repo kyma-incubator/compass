@@ -73,7 +73,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 			},
 			ScopesGetterFn: func() *automock.ScopesGetter {
 				scopesGetter := &automock.ScopesGetter{}
-				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(scopes, nil)
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.external_certificate").Return(scopes, nil)
 				return scopesGetter
 			},
 			ReqDataInput:       reqData,
@@ -91,7 +91,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 			},
 			ScopesGetterFn: func() *automock.ScopesGetter {
 				scopesGetter := &automock.ScopesGetter{}
-				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(scopes, nil)
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.external_certificate").Return(scopes, nil)
 				return scopesGetter
 			},
 			ReqDataInput:       reqData,
@@ -109,7 +109,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 			},
 			ScopesGetterFn: func() *automock.ScopesGetter {
 				scopesGetter := &automock.ScopesGetter{}
-				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(scopes, nil)
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.external_certificate").Return(scopes, nil)
 				return scopesGetter
 			},
 			ReqDataInput:       reqData,
@@ -127,7 +127,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 			},
 			ScopesGetterFn: func() *automock.ScopesGetter {
 				scopesGetter := &automock.ScopesGetter{}
-				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(scopes, nil)
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.external_certificate").Return(scopes, nil)
 				return scopesGetter
 			},
 			ReqDataInput:       reqDataWithInternalConsumerID,
@@ -142,7 +142,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 			DirectorClient: unusedDirectorClient,
 			ScopesGetterFn: func() *automock.ScopesGetter {
 				scopesGetter := &automock.ScopesGetter{}
-				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.runtime").Return(nil, testError)
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.external_certificate").Return(nil, testError)
 				return scopesGetter
 			},
 			ReqDataInput:     reqData,
@@ -165,7 +165,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 			// THEN
 			if testCase.ExpectedErr == nil {
 				require.NoError(t, err)
-				require.Equal(t, consumer.Runtime, objectCtx.ConsumerType)
+				require.Equal(t, consumer.ExternalCertificate, objectCtx.ConsumerType)
 				require.Equal(t, testCase.ExpectedConsumerID, objectCtx.ConsumerID)
 				require.Equal(t, testCase.ExpectedInternalID, objectCtx.TenantContext.TenantID)
 				require.Equal(t, tenantID, objectCtx.TenantContext.ExternalTenantID)
