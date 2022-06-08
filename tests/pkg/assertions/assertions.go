@@ -333,6 +333,14 @@ func AssertUpdateApplicationTemplate(t *testing.T, in graphql.ApplicationTemplat
 	assert.Equal(t, in.AccessLevel, actualApplicationTemplate.AccessLevel)
 }
 
+func AssertFormationTemplate(t *testing.T, in *graphql.FormationTemplateInput, actual *graphql.FormationTemplate) {
+	assert.Equal(t, in.Name, actual.Name)
+	assert.ElementsMatch(t, in.ApplicationTypes, actual.ApplicationTypes)
+	assert.ElementsMatch(t, in.RuntimeTypes, actual.RuntimeTypes)
+	assert.Equal(t, in.MissingArtifactInfoMessage, actual.MissingArtifactInfoMessage)
+	assert.Equal(t, in.MissingArtifactWarningMessage, actual.MissingArtifactWarningMessage)
+}
+
 func AssertApplicationTemplatePlaceholder(t *testing.T, in []*graphql.PlaceholderDefinitionInput, actualPlaceholders []*graphql.PlaceholderDefinition) {
 	for i, _ := range in {
 		assert.Equal(t, in[i].Name, actualPlaceholders[i].Name)
