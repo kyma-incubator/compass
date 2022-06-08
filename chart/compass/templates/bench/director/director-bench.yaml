@@ -82,12 +82,6 @@ spec:
                   key: postgresql-sslMode
             - name: APP_DEFAULT_SCENARIO
               value: "DEFAULT"
-            - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
-              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
-            - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
-              value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
-            - name: APP_SELF_REG_REGION
-              value: {{ .Values.global.tests.selfRegistration.region }}
 ---
 apiVersion: v1
 kind: ServiceAccount

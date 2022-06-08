@@ -67,9 +67,9 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRuntimeReq, &actualRuntime)
 	require.NoError(t, err)
 	if conf.DefaultScenarioEnabled {
-		assert.Len(t, actualRuntime.Labels, 7)
+		assert.Len(t, actualRuntime.Labels, 4)
 	} else {
-		assert.Len(t, actualRuntime.Labels, 6)
+		assert.Len(t, actualRuntime.Labels, 3)
 	}
 
 	// add agent auth
@@ -110,7 +110,7 @@ func TestRuntimeRegisterUpdateAndUnregister(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, givenUpdateInput.Name, actualRuntime.Name)
 	assert.Equal(t, *givenUpdateInput.Description, *actualRuntime.Description)
-	assert.Equal(t, len(actualRuntime.Labels), 4)
+	assert.Equal(t, len(actualRuntime.Labels), 2)
 	assert.Equal(t, runtimeStatusCond, actualRuntime.Status.Condition)
 
 	// delete runtime
@@ -542,7 +542,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		runtimeTypeLabelKey := conf.SubscriptionProviderAppNameLabelKey
 		runtimeTypeLabelValue := conf.SubscriptionProviderAppNameValue
 
-		runtimeInput := fixRuntimeInput("runtime-create-update-delete")
+		runtimeInput := fixRuntimeWithSelfRegLabelsInput("runtime-create-update-delete")
 		runtimeInput.Description = ptr.String("runtime-create-update-delete-description")
 		runtimeInput.Labels[runtimeTypeLabelKey] = runtimeTypeLabelValue
 
@@ -589,7 +589,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		t.Log("Successfully update runtime with certificate")
 		//GIVEN
-		runtimeUpdateInput := fixRuntimeUpdateInput("updated-runtime")
+		runtimeUpdateInput := fixRuntimeUpdateWithSelfRegLabelsInput("updated-runtime")
 		runtimeUpdateInput.Description = ptr.String("updated-runtime-description")
 
 		runtimeStatusCond := graphql.RuntimeStatusConditionConnected
@@ -710,7 +710,14 @@ func TestQuerySpecificRuntimeWithCertificate(t *testing.T) {
 
 func fixRuntimeInput(name string) graphql.RuntimeRegisterInput {
 	input := fixtures.FixRuntimeRegisterInput(name)
-	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SubscriptionConfig.SelfRegDistinguishLabelValue}
+	delete(input.Labels, "placeholder")
+
+	return input
+}
+
+func fixRuntimeWithSelfRegLabelsInput(name string) graphql.RuntimeRegisterInput {
+	input := fixtures.FixRuntimeRegisterInput(name)
+	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
 	input.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
 	delete(input.Labels, "placeholder")
 
@@ -718,6 +725,13 @@ func fixRuntimeInput(name string) graphql.RuntimeRegisterInput {
 }
 
 func fixRuntimeUpdateInput(name string) graphql.RuntimeUpdateInput {
+	input := fixtures.FixRuntimeUpdateInput(name)
+	delete(input.Labels, "placeholder")
+
+	return input
+}
+
+func fixRuntimeUpdateWithSelfRegLabelsInput(name string) graphql.RuntimeUpdateInput {
 	input := fixtures.FixRuntimeUpdateInput(name)
 	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SubscriptionConfig.SelfRegDistinguishLabelValue}
 	input.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
@@ -30,8 +28,6 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 	runtime := fixtures.FixRuntimeRegisterInput("runtime")
 	(runtime.Labels)["scenarios"] = []string{conf.DefaultScenario}
 	(runtime.Labels)["isNormalized"] = "false"
-	(runtime.Labels)[conf.SelfRegDistinguishLabelKey] = conf.SelfRegDistinguishLabelValue
-	(runtime.Labels)[tenantfetcher.RegionKey] = conf.SelfRegRegion
 
 	rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(b, ctx, certSecuredGraphQLClient, tenantID, &runtime)
 	defer fixtures.CleanupRuntime(b, ctx, certSecuredGraphQLClient, tenantID, &rt)
