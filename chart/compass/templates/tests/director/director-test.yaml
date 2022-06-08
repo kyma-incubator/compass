@@ -82,6 +82,8 @@ spec:
               value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.externalCertConfiguration.ouCertSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName | trimPrefix "/" | replace "/" ", " | quote }}
             - name: APP_INFO_CERT_ISSUER
               value: {{ .Values.global.externalCertConfiguration.issuer }}
+            - name: APP_INFO_CERT_CONSUMER_ID
+              value: "{{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
             - name: APP_EXTERNAL_CLIENT_CERT_KEY
