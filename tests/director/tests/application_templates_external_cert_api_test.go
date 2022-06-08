@@ -47,8 +47,11 @@ func TestApplicationTemplateWithExternalCertificate(t *testing.T) {
 
 		t.Log("Check if application template was created")
 		appTemplateOutput := fixtures.GetApplicationTemplate(t, ctx, directorCertSecuredClient, tenantId, appTemplate.ID)
-
 		require.NotEmpty(t, appTemplateOutput)
+
+		// Enhance input to match the newly created labels
+		appTemplateInput.Labels[conf.SelfRegLabelKey] = appTemplateOutput.Labels[conf.SelfRegLabelKey]
+		appTemplateInput.Labels["global_subaccount_id"] = conf.ConsumerID
 		assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
 	})
 
