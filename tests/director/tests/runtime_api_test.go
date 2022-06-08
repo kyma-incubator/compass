@@ -717,7 +717,7 @@ func fixRuntimeInput(name string) graphql.RuntimeRegisterInput {
 
 func fixRuntimeWithSelfRegLabelsInput(name string) graphql.RuntimeRegisterInput {
 	input := fixtures.FixRuntimeRegisterInput(name)
-	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
+	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SubscriptionConfig.SelfRegDistinguishLabelValue}
 	input.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
 	delete(input.Labels, "placeholder")
 
