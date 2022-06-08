@@ -55,12 +55,6 @@ do
             DUMP_IMAGE_TAG="dump"
             shift # past argument
         ;;
-        --k3d-cpus)
-            checkInputParameterValue "${2}"
-            K3D_CPUS="${2}"
-            shift # past argument
-            shift # past value
-        ;;
         --k3d-memory)
             checkInputParameterValue "${2}"
             K3D_MEMORY="${2}"
@@ -70,6 +64,12 @@ do
         --k3d-timeout)
             checkInputParameterValue "${2}"
             K3D_TIMEOUT="${2}"
+            shift # past argument
+            shift # past value
+        ;;
+        --apiserver-version)
+            checkInputParameterValue "${2}"
+            APISERVER_VERSION="${2}"
             shift # past argument
             shift # past value
         ;;

@@ -6,7 +6,7 @@ api-gateway:
 application-connector:
   global:
     disableLegacyConnectivity: true
-    domainName: kyma.local.dev
+    domainName: local.kyma.dev
     isLocalEnv: true
 cluster-essentials:
   global:
