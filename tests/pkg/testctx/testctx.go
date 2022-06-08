@@ -2,7 +2,6 @@ package testctx
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -63,10 +62,6 @@ func (o *Operation) WithTenant(tenant string) *Operation {
 func (o *Operation) Run(req *gcli.Request, cli *gcli.Client, resp interface{}) error {
 	m := resultMapperFor(&resp)
 	req.Header.Set("Tenant", o.tenant)
-
-	cli.Log = func(s string) {
-		fmt.Println(s)
-	}
 
 	return withRetryOnTemporaryConnectionProblems(func() error {
 		return cli.Run(o.ctx, req, &m)
