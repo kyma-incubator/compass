@@ -68,7 +68,7 @@ func (v *validator) Validate(ctx context.Context, claims Claims) error {
 
 	log.C(ctx).Infof("Consumer-Provider call by %s on behalf of %s. Proceeding with double authentication crosscheck...", claims.Tenant[tenantmapping.ProviderTenantKey], claims.Tenant[tenantmapping.ConsumerTenantKey])
 	switch claims.ConsumerType {
-	case consumer.Runtime:
+	case consumer.Runtime, consumer.ExternalCertificate:
 		return v.validateRuntimeConsumer(ctx, claims)
 	case consumer.IntegrationSystem:
 		return v.validateIntegrationSystemConsumer(ctx, claims)
