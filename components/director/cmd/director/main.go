@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/appmetadatavalidation"
 	"net/http"
 	"net/url"
 	"os"
@@ -276,6 +277,8 @@ func main() {
 
 	packageToBundlesMiddleware := packagetobundles.NewHandler(transact)
 
+	systemsMiddleware := appmetadatavalidation.NewHandler(transact, tenantSvc(), labelSvc())
+
 	statusMiddleware := statusupdate.New(transact, statusupdate.NewRepository())
 
 	mainRouter := mux.NewRouter()
@@ -288,6 +291,7 @@ func main() {
 	gqlAPIRouter.Use(authMiddleware.Handler())
 	gqlAPIRouter.Use(packageToBundlesMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
+	gqlAPIRouter.Use(systemsMiddleware.Handler())
 	gqlAPIRouter.Use(dataloader.HandlerBundle(rootResolver.BundlesDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerAPIDef(rootResolver.APIDefinitionsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerEventDef(rootResolver.EventDefinitionsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
@@ -616,4 +620,22 @@ func intSystemSvc() claims.IntegrationSystemService {
 	intSysConverter := integrationsystem.NewConverter()
 	intSysRepo := integrationsystem.NewRepository(intSysConverter)
 	return integrationsystem.NewService(intSysRepo, uid.NewService())
+}
+
+func tenantSvc() tenant.BusinessTenantMappingService {
+	tenantRepo := tenant.NewRepository(tenant.NewConverter())
+	lblRepo := label.NewRepository(label.NewConverter())
+	labelDefRepo := labeldef.NewRepository(labeldef.NewConverter())
+
+	uidSvc := uid.NewService()
+	labelSvc := label.NewLabelService(lblRepo, labelDefRepo, uidSvc)
+	return tenant.NewServiceWithLabels(tenantRepo, uidSvc, lblRepo, labelSvc)
+}
+
+func labelSvc() appmetadatavalidation.LabelService {
+	lblRepo := label.NewRepository(label.NewConverter())
+	labelDefRepo := labeldef.NewRepository(labeldef.NewConverter())
+
+	uidSvc := uid.NewService()
+	return label.NewLabelService(lblRepo, labelDefRepo, uidSvc)
 }
