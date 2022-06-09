@@ -199,7 +199,7 @@ ory:
       config:
         dsn: memory
         log:
-          leak_sensitive_values: true
+          leak_sensitive_values: false
           level: trace
         secrets: {}
         serve:
