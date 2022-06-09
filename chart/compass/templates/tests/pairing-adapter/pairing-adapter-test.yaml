@@ -81,6 +81,7 @@ spec:
               value: "{{ $.Values.global.pairingAdapter.configMap.integrationSystemID }}"
             - name: APP_LOCAL_ADAPTER_FQDN
               value: "{{ $.Values.global.pairingAdapter.configMap.localAdapterFQDN }}"
+            {{ end }}
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
@@ -111,7 +112,6 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
-            {{ end }}
 {{ $shouldAdd = false }}
 {{ end }}
 {{- end -}}
