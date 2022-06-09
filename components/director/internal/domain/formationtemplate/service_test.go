@@ -47,7 +47,6 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Create", ctx, &formationTemplateModel).Return(nil).Once()
 				return repo
-
 			},
 			ExpectedOutput: testID,
 			ExpectedError:  nil,
@@ -64,7 +63,6 @@ func TestService_Create(t *testing.T) {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Create", ctx, &formationTemplateModel).Return(testErr).Once()
 				return repo
-
 			},
 			ExpectedOutput: "",
 			ExpectedError:  testErr,
@@ -116,7 +114,6 @@ func TestService_Get(t *testing.T) {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Get", ctx, testID).Return(&formationTemplateModel, nil).Once()
 				return repo
-
 			},
 			ExpectedOutput: &formationTemplateModel,
 			ExpectedError:  nil,
@@ -128,7 +125,6 @@ func TestService_Get(t *testing.T) {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Get", ctx, testID).Return(nil, testErr).Once()
 				return repo
-
 			},
 			ExpectedOutput: nil,
 			ExpectedError:  testErr,
@@ -180,7 +176,6 @@ func TestService_List(t *testing.T) {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("List", ctx, pageSize, mock.Anything).Return(&formationTemplateModelPage, nil).Once()
 				return repo
-
 			},
 			ExpectedOutput: &formationTemplateModelPage,
 			ExpectedError:  nil,
@@ -192,7 +187,6 @@ func TestService_List(t *testing.T) {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("List", ctx, pageSize, mock.Anything).Return(nil, testErr).Once()
 				return repo
-
 			},
 			ExpectedOutput: nil,
 			ExpectedError:  testErr,
@@ -258,7 +252,6 @@ func TestService_Update(t *testing.T) {
 				repo.On("Exists", ctx, testID).Return(true, nil).Once()
 				repo.On("Update", ctx, &formationTemplateModel).Return(nil).Once()
 				return repo
-
 			},
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
@@ -276,7 +269,6 @@ func TestService_Update(t *testing.T) {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Exists", ctx, testID).Return(false, nil).Once()
 				return repo
-
 			},
 			FormationTemplateConverter: UnusedFormationTemplateConverter,
 			ExpectedError:              apperrors.NewNotFoundError(resource.FormationTemplate, testID),
@@ -289,7 +281,6 @@ func TestService_Update(t *testing.T) {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Exists", ctx, testID).Return(false, testErr).Once()
 				return repo
-
 			},
 			FormationTemplateConverter: UnusedFormationTemplateConverter,
 			ExpectedError:              testErr,
@@ -303,7 +294,6 @@ func TestService_Update(t *testing.T) {
 				repo.On("Exists", ctx, testID).Return(true, nil).Once()
 				repo.On("Update", ctx, &formationTemplateModel).Return(testErr).Once()
 				return repo
-
 			},
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
@@ -357,7 +347,6 @@ func TestService_Delete(t *testing.T) {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Delete", ctx, testID).Return(nil).Once()
 				return repo
-
 			},
 			ExpectedError: nil,
 		},
@@ -368,7 +357,6 @@ func TestService_Delete(t *testing.T) {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Delete", ctx, testID).Return(testErr).Once()
 				return repo
-
 			},
 			ExpectedError: testErr,
 		},

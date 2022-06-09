@@ -42,6 +42,7 @@ func NewService(repo FormationTemplateRepository, uidSvc UIDService, converter F
 	}
 }
 
+// Create missing godoc
 func (s *service) Create(ctx context.Context, in *model.FormationTemplateInput) (string, error) {
 	formationTemplateID := s.uidSvc.Generate()
 
@@ -55,6 +56,7 @@ func (s *service) Create(ctx context.Context, in *model.FormationTemplateInput) 
 	return formationTemplateID, nil
 }
 
+// Get missing godoc
 func (s *service) Get(ctx context.Context, id string) (*model.FormationTemplate, error) {
 	formationTemplate, err := s.repo.Get(ctx, id)
 	if err != nil {
@@ -64,6 +66,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.FormationTemplate,
 	return formationTemplate, nil
 }
 
+// List missing godoc
 func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
 	if pageSize < 1 || pageSize > 200 {
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
@@ -72,6 +75,7 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 	return s.repo.List(ctx, pageSize, cursor)
 }
 
+// Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in *model.FormationTemplateInput) error {
 	exists, err := s.repo.Exists(ctx, id)
 	if err != nil {
@@ -87,9 +91,9 @@ func (s *service) Update(ctx context.Context, id string, in *model.FormationTemp
 	return nil
 }
 
+// Delete missing godoc
 func (s *service) Delete(ctx context.Context, id string) error {
-	err := s.repo.Delete(ctx, id)
-	if err != nil {
+	if err := s.repo.Delete(ctx, id); err != nil {
 		return errors.Wrapf(err, "while deleting Formation Template with ID %s", id)
 	}
 

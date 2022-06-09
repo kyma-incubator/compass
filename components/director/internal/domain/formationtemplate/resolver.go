@@ -29,6 +29,7 @@ type FormationTemplateService interface {
 	Delete(ctx context.Context, id string) error
 }
 
+// Resolver is the formation template resolver
 type Resolver struct {
 	transact persistence.Transactioner
 
@@ -36,6 +37,7 @@ type Resolver struct {
 	converter            FormationTemplateConverter
 }
 
+// NewResolver creates formation template resolver
 func NewResolver(transact persistence.Transactioner, converter FormationTemplateConverter, formationTemplateSvc FormationTemplateService) *Resolver {
 	return &Resolver{
 		transact:             transact,
@@ -44,6 +46,7 @@ func NewResolver(transact persistence.Transactioner, converter FormationTemplate
 	}
 }
 
+// FormationTemplates missing godoc
 func (r *Resolver) FormationTemplates(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.FormationTemplatePage, error) {
 	var cursor string
 	if after != nil {
@@ -84,6 +87,7 @@ func (r *Resolver) FormationTemplates(ctx context.Context, first *int, after *gr
 	}, nil
 }
 
+// FormationTemplate missing godoc
 func (r *Resolver) FormationTemplate(ctx context.Context, id string) (*graphql.FormationTemplate, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -141,6 +145,7 @@ func (r *Resolver) CreateFormationTemplate(ctx context.Context, in graphql.Forma
 	return r.converter.ToGraphQL(formationTemplate), nil
 }
 
+// DeleteFormationTemplate missing godoc
 func (r *Resolver) DeleteFormationTemplate(ctx context.Context, id string) (*graphql.FormationTemplate, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -168,6 +173,7 @@ func (r *Resolver) DeleteFormationTemplate(ctx context.Context, id string) (*gra
 	return r.converter.ToGraphQL(formationTemplate), nil
 }
 
+// UpdateFormationTemplate missing godoc
 func (r *Resolver) UpdateFormationTemplate(ctx context.Context, id string, in graphql.FormationTemplateInput) (*graphql.FormationTemplate, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
