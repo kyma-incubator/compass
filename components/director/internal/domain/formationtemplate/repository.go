@@ -2,6 +2,7 @@ package formationtemplate
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -48,9 +49,13 @@ func NewRepository(conv EntityConverter) *repository {
 	}
 }
 
-func (r *repository) Create(ctx context.Context, item model.FormationTemplate) error {
+func (r *repository) Create(ctx context.Context, item *model.FormationTemplate) error {
+	if item == nil {
+		return apperrors.NewInternalError("model can not be empty")
+	}
+
 	log.C(ctx).Debugf("Converting Formation Template with id %s to entity", item.ID)
-	entity, err := r.conv.ToEntity(&item)
+	entity, err := r.conv.ToEntity(item)
 	if err != nil {
 		return errors.Wrapf(err, "while converting Template Template with ID %s", item.ID)
 	}
@@ -73,32 +78,36 @@ func (r *repository) Get(ctx context.Context, id string) (*model.FormationTempla
 	return result, nil
 }
 
-func (r *repository) List(ctx context.Context, pageSize int, cursor string) (model.FormationTemplatePage, error) {
+func (r *repository) List(ctx context.Context, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
 	var entityCollection EntityCollection
 	page, totalCount, err := r.pageableQuerierGlobal.ListGlobal(ctx, pageSize, cursor, "id", &entityCollection)
 	if err != nil {
-		return model.FormationTemplatePage{}, err
+		return nil, err
 	}
 
 	items := make([]*model.FormationTemplate, 0, len(entityCollection))
 
 	for _, entity := range entityCollection {
-		isModel, err := r.conv.FromEntity(&entity)
+		isModel, err := r.conv.FromEntity(entity)
 		if err != nil {
-			return model.FormationTemplatePage{}, errors.Wrapf(err, "while converting Formation Template entity with ID %s", entity.ID)
+			return nil, errors.Wrapf(err, "while converting Formation Template entity with ID %s", entity.ID)
 		}
 
 		items = append(items, isModel)
 	}
-	return model.FormationTemplatePage{
+	return &model.FormationTemplatePage{
 		Data:       items,
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
 }
 
-func (r *repository) Update(ctx context.Context, model model.FormationTemplate) error {
-	entity, err := r.conv.ToEntity(&model)
+func (r *repository) Update(ctx context.Context, model *model.FormationTemplate) error {
+	if model == nil {
+		return apperrors.NewInternalError("model can not be empty")
+	}
+
+	entity, err := r.conv.ToEntity(model)
 	if err != nil {
 		return errors.Wrapf(err, "while converting Formation Template with ID %s", model.ID)
 	}

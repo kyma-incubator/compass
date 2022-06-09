@@ -65,6 +65,9 @@ func (c *converter) MultipleToGraphQL(in []*model.FormationTemplate) []*graphql.
 
 // ToEntity converts from internal model to entity
 func (c *converter) ToEntity(in *model.FormationTemplate) (*Entity, error) {
+	if in == nil {
+		return nil, nil
+	}
 	marshalledApplicationTypes, err := json.Marshal(in.ApplicationTypes)
 	if err != nil {
 		return nil, errors.Wrap(err, "while marshalling application types")
@@ -86,6 +89,10 @@ func (c *converter) ToEntity(in *model.FormationTemplate) (*Entity, error) {
 
 // FromEntity converts from entity to internal model
 func (c *converter) FromEntity(in *Entity) (*model.FormationTemplate, error) {
+	if in == nil {
+		return nil, nil
+	}
+
 	var unmarshalledApplicationTypes []string
 	err := json.Unmarshal([]byte(in.ApplicationTypes), &unmarshalledApplicationTypes)
 	if err != nil {

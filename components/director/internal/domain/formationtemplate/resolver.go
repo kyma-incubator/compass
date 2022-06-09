@@ -22,10 +22,10 @@ type FormationTemplateConverter interface {
 // FormationTemplateService missing godoc
 //go:generate mockery --name=FormationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationTemplateService interface {
-	Create(ctx context.Context, in model.FormationTemplateInput) (string, error)
+	Create(ctx context.Context, in *model.FormationTemplateInput) (string, error)
 	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
-	List(ctx context.Context, pageSize int, cursor string) (model.FormationTemplatePage, error)
-	Update(ctx context.Context, id string, in model.FormationTemplateInput) error
+	List(ctx context.Context, pageSize int, cursor string) (*model.FormationTemplatePage, error)
+	Update(ctx context.Context, id string, in *model.FormationTemplateInput) error
 	Delete(ctx context.Context, id string) error
 }
 
@@ -94,7 +94,7 @@ func (r *Resolver) FormationTemplate(ctx context.Context, id string) (*graphql.F
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	formationTemplate, err := r.formationTemplateSvc.Get(ctx, id)
-	if err != nil { // TODO
+	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return nil, tx.Commit()
 		}
@@ -123,7 +123,7 @@ func (r *Resolver) CreateFormationTemplate(ctx context.Context, in graphql.Forma
 		return nil, err
 	}
 
-	id, err := r.formationTemplateSvc.Create(ctx, *r.converter.FromInputGraphQL(&in))
+	id, err := r.formationTemplateSvc.Create(ctx, r.converter.FromInputGraphQL(&in))
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func (r *Resolver) UpdateFormationTemplate(ctx context.Context, id string, in gr
 
 	convertedIn := r.converter.FromInputGraphQL(&in)
 
-	err = r.formationTemplateSvc.Update(ctx, id, *convertedIn)
+	err = r.formationTemplateSvc.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err
 	}

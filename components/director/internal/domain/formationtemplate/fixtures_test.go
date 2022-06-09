@@ -1,6 +1,7 @@
 package formationtemplate_test
 
 import (
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -12,6 +13,7 @@ const (
 )
 
 var (
+	nilModelEntity              *model.FormationTemplate
 	inputFormationTemplateModel = model.FormationTemplateInput{
 		Name:                          "formation-template-name",
 		ApplicationTypes:              []string{"some-application-type"},
@@ -31,6 +33,14 @@ var (
 		Name:                          inputFormationTemplateModel.Name,
 		ApplicationTypes:              inputFormationTemplateModel.ApplicationTypes,
 		RuntimeTypes:                  inputFormationTemplateModel.RuntimeTypes,
+		MissingArtifactInfoMessage:    inputFormationTemplateModel.MissingArtifactInfoMessage,
+		MissingArtifactWarningMessage: inputFormationTemplateModel.MissingArtifactWarningMessage,
+	}
+	formationTemplateEntity = formationtemplate.Entity{
+		ID:                            testID,
+		Name:                          inputFormationTemplateModel.Name,
+		ApplicationTypes:              "[\"some-application-type\"]",
+		RuntimeTypes:                  "[\"some-runtime-type\"]",
 		MissingArtifactInfoMessage:    inputFormationTemplateModel.MissingArtifactInfoMessage,
 		MissingArtifactWarningMessage: inputFormationTemplateModel.MissingArtifactWarningMessage,
 	}
@@ -61,6 +71,10 @@ var (
 		TotalCount: 1,
 	}
 )
+
+func fixColumns() []string {
+	return []string{"id", "name", "application_types", "runtime_types", "missing_artifact_info_message", "missing_artifact_warning_message"}
+}
 
 func UnusedFormationTemplateService() *automock.FormationTemplateService {
 	return &automock.FormationTemplateService{}

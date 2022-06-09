@@ -11,7 +11,7 @@ type Entity struct {
 }
 
 // EntityCollection missing godoc
-type EntityCollection []Entity
+type EntityCollection []*Entity
 
 // Len missing godoc
 func (s EntityCollection) Len() int {

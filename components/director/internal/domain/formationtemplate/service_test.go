@@ -2,6 +2,8 @@ package formationtemplate_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -11,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestService_Create(t *testing.T) {
@@ -44,7 +45,7 @@ func TestService_Create(t *testing.T) {
 			},
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("Create", ctx, formationTemplateModel).Return(nil).Once()
+				repo.On("Create", ctx, &formationTemplateModel).Return(nil).Once()
 				return repo
 
 			},
@@ -61,7 +62,7 @@ func TestService_Create(t *testing.T) {
 			},
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("Create", ctx, formationTemplateModel).Return(testErr).Once()
+				repo.On("Create", ctx, &formationTemplateModel).Return(testErr).Once()
 				return repo
 
 			},
@@ -79,7 +80,7 @@ func TestService_Create(t *testing.T) {
 			svc := formationtemplate.NewService(formationTemplateRepo, idSvc, formationTemplateConv)
 
 			// WHEN
-			result, err := svc.Create(ctx, *testCase.Input)
+			result, err := svc.Create(ctx, testCase.Input)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -169,7 +170,7 @@ func TestService_List(t *testing.T) {
 		Name                        string
 		PageSize                    int
 		FormationTemplateRepository func() *automock.FormationTemplateRepository
-		ExpectedOutput              model.FormationTemplatePage
+		ExpectedOutput              *model.FormationTemplatePage
 		ExpectedError               error
 	}{
 		{
@@ -177,11 +178,11 @@ func TestService_List(t *testing.T) {
 			PageSize: pageSize,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("List", ctx, pageSize, mock.Anything).Return(formationTemplateModelPage, nil).Once()
+				repo.On("List", ctx, pageSize, mock.Anything).Return(&formationTemplateModelPage, nil).Once()
 				return repo
 
 			},
-			ExpectedOutput: formationTemplateModelPage,
+			ExpectedOutput: &formationTemplateModelPage,
 			ExpectedError:  nil,
 		},
 		{
@@ -189,18 +190,18 @@ func TestService_List(t *testing.T) {
 			PageSize: pageSize,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("List", ctx, pageSize, mock.Anything).Return(model.FormationTemplatePage{}, testErr).Once()
+				repo.On("List", ctx, pageSize, mock.Anything).Return(nil, testErr).Once()
 				return repo
 
 			},
-			ExpectedOutput: model.FormationTemplatePage{},
+			ExpectedOutput: nil,
 			ExpectedError:  testErr,
 		},
 		{
 			Name:                        "Error when invalid page size is given",
 			PageSize:                    invalidPageSize,
 			FormationTemplateRepository: UnusedFormationTemplateRepository,
-			ExpectedOutput:              model.FormationTemplatePage{},
+			ExpectedOutput:              nil,
 			ExpectedError:               errors.New("page size must be between 1 and 200"),
 		},
 	}
@@ -243,7 +244,7 @@ func TestService_Update(t *testing.T) {
 	testCases := []struct {
 		Name                        string
 		Input                       string
-		InputFormationTemplate      model.FormationTemplateInput
+		InputFormationTemplate      *model.FormationTemplateInput
 		FormationTemplateRepository func() *automock.FormationTemplateRepository
 		FormationTemplateConverter  func() *automock.FormationTemplateConverter
 		ExpectedError               error
@@ -251,11 +252,11 @@ func TestService_Update(t *testing.T) {
 		{
 			Name:                   "Success",
 			Input:                  testID,
-			InputFormationTemplate: inputFormationTemplateModel,
+			InputFormationTemplate: &inputFormationTemplateModel,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Exists", ctx, testID).Return(true, nil).Once()
-				repo.On("Update", ctx, formationTemplateModel).Return(nil).Once()
+				repo.On("Update", ctx, &formationTemplateModel).Return(nil).Once()
 				return repo
 
 			},
@@ -270,7 +271,7 @@ func TestService_Update(t *testing.T) {
 		{
 			Name:                   "Error when formation template does not exist",
 			Input:                  testID,
-			InputFormationTemplate: inputFormationTemplateModel,
+			InputFormationTemplate: &inputFormationTemplateModel,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Exists", ctx, testID).Return(false, nil).Once()
@@ -283,7 +284,7 @@ func TestService_Update(t *testing.T) {
 		{
 			Name:                   "Error when formation existence check failed",
 			Input:                  testID,
-			InputFormationTemplate: inputFormationTemplateModel,
+			InputFormationTemplate: &inputFormationTemplateModel,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Exists", ctx, testID).Return(false, testErr).Once()
@@ -296,11 +297,11 @@ func TestService_Update(t *testing.T) {
 		{
 			Name:                   "Error when updating formation template fails",
 			Input:                  testID,
-			InputFormationTemplate: inputFormationTemplateModel,
+			InputFormationTemplate: &inputFormationTemplateModel,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Exists", ctx, testID).Return(true, nil).Once()
-				repo.On("Update", ctx, formationTemplateModel).Return(testErr).Once()
+				repo.On("Update", ctx, &formationTemplateModel).Return(testErr).Once()
 				return repo
 
 			},
