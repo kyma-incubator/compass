@@ -143,6 +143,16 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 
 // CleanupSelfRegistration executes cleanup calls for self-registered runtimes
 func (s *selfRegisterManager) CleanupSelfRegistration(ctx context.Context, resourceID, region string) error {
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading consumer")
+	}
+
+	if !consumerInfo.Flow.IsCertFlow() {
+		log.C(ctx).Infof("Not certificate flow, skipping clone deletion for resource %q", resourceID)
+		return nil
+	}
+
 	if resourceID == "" {
 		return nil
 	}
