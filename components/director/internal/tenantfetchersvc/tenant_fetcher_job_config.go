@@ -229,10 +229,8 @@ func (j *job) getTenantProviderConfig() TenantProviderConfig {
 
 func (j *job) getEnvValueForKey(defaultVal string, key string) string {
 	if val, ok := j.environmentVars[key]; ok {
-		log.C(j.ctx).Infof("Env var %s value is: %s", key, val)
 		return val
 	}
-	log.C(j.ctx).Infof("Value for var %s is default: %s", key, defaultVal)
 	return defaultVal
 }
 

@@ -21,6 +21,7 @@ import (
 	"crypto/tls"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
@@ -113,16 +114,12 @@ func main() {
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Handler.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
-	defer func() {
-		err := closeFunc()
-		exitOnError(err, "Error while closing the connection to the database")
-	}()
-
 	envVars := tenantfetcher.ReadFromEnvironment(os.Environ())
 	jobNames := tenantfetcher.GetJobNames(envVars)
-	log.C(ctx).Infof("Tenant fetcher jobs are: %s", jobNames)
+	log.C(ctx).Infof("Tenant fetcher jobs are: %s", strings.Join(jobNames, ","))
 
-	dbCloseFunctions := make([]func() error, 0, len(jobNames))
+	dbCloseFunctions := make([]func() error, 0)
+	dbCloseFunctions = append(dbCloseFunctions, closeFunc)
 	defer func() {
 		for _, fn := range dbCloseFunctions {
 			err := fn()
@@ -174,7 +171,6 @@ func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig,
 	ticker := time.NewTicker(jobInterval)
 	jobName := jobConfig.JobName
 
-	log.C(ctx).Infof("Job %s database config: %+v", jobConfig.JobName, jobConfig.GetHandlerCgf().Database)
 	transact, closeFunc, err := persistence.Configure(ctx, jobConfig.GetHandlerCgf().Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
