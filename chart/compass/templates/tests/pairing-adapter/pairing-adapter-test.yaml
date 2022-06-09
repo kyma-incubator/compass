@@ -62,6 +62,14 @@ spec:
               value: "{{ $.Values.global.pairingAdapter.templateName }}"
             - name: APP_CLIENT_ID_HTTP_HEADER
               value: {{ $.Values.global.director.clientIDHeaderKey }}
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
+              value: {{ $.Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
+              value: {{ $.Values.global.tests.subscriptionProviderIdValue | quote }}
+            - name: APP_SELF_REG_REGION
+              value: {{ $.Values.global.tests.selfRegistration.region }}
+            - name: APP_SELF_REG_LABEL_KEY
+              value: {{ $.Values.global.director.selfRegister.label }}
             {{ if $.Values.global.isLocalEnv }}
             - name: APP_CONFIG_MAP_NAME
               value: "{{ $.Values.global.pairingAdapter.configMap.name }}"
@@ -73,14 +81,7 @@ spec:
               value: "{{ $.Values.global.pairingAdapter.configMap.integrationSystemID }}"
             - name: APP_LOCAL_ADAPTER_FQDN
               value: "{{ $.Values.global.pairingAdapter.configMap.localAdapterFQDN }}"
-            - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
-              value: {{ $.Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
-            - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
-              value: {{ $.Values.global.tests.subscriptionProviderIdValue | quote }}
-            - name: APP_SELF_REG_REGION
-              value: {{ $.Values.global.tests.selfRegistration.region }}
-            - name: APP_SELF_REG_LABEL_KEY
-              value: {{ $.Values.global.director.selfRegister.label }}
+            {{ end }}
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
@@ -111,7 +112,6 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
-            {{ end }}
 {{ $shouldAdd = false }}
 {{ end }}
 {{- end -}}
