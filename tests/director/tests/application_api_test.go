@@ -1487,17 +1487,16 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, request, nil)
 	require.NoError(t, err)
 
-	request = fixtures.FixUnregisterApplicationRequest(actualApp.ID)
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, request, nil)
-	require.NoError(t, err)
+	fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &actualApp)
 
+	actualAppDeleted := graphql.ApplicationExt{}
 	queryAppReq := fixtures.FixGetApplicationRequest(actualApp.ID)
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, queryAppReq, &actualApp)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, queryAppReq, &actualAppDeleted)
 	if err != nil {
 		t.Logf("Get Applicaiton return error: %s", err)
 	} else {
-		t.Logf("Get Applicaiton return applicaiton: %+v", actualApp)
-		spew.Dump(actualApp)
+		t.Logf("Get Applicaiton return applicaiton: %+v", actualAppDeleted)
+		spew.Dump(actualAppDeleted)
 	}
 }
 
