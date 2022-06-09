@@ -544,7 +544,6 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		runtimeInput := fixRuntimeWithSelfRegLabelsInput("runtime-create-update-delete")
 		runtimeInput.Description = ptr.String("runtime-create-update-delete-description")
-		runtimeInput.Labels[runtimeTypeLabelKey] = runtimeTypeLabelValue
 
 		t.Log("Successfully register runtime with certificate")
 		actualRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtimeInput)

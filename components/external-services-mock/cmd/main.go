@@ -115,7 +115,7 @@ func main() {
 	extSvcMockURL := fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port)
 	staticClaimsMapping := map[string]oauth.ClaimsGetterFunc{
 		"tenantFetcherClaims": claimsFunc("test", "tenant-fetcher", "client_id", "tenantID", "tenant-fetcher-test-identity", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
-		"subscriptionClaims":  claimsFunc("subsc-key-test", "subscription-flow", "client_id", cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", extSvcMockURL, []string{}, map[string]interface{}{}),
+		"subscriptionClaims":  claimsFunc("subsc-key-test", "subscription-flow", "subscriptionProviderId", cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", extSvcMockURL, []string{"runtime:read"}, map[string]interface{}{}), // runtime:read scope is needed because the subscription claims are used in the consumer-provider test that call the director component to get runtime and certain scopes are required
 		"nsAdapterClaims":     claimsFunc("ns-adapter-test", "ns-adapter-flow", "test_prefix", cfg.DefaultTenant, "nsadapter-flow-identity", extSvcMockURL, []string{}, map[string]interface{}{"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321"}),
 	}
 

@@ -234,11 +234,21 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
 		t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 
-		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
-		certHttpClient := createHttpClientWithCert(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
-
+		// After successful subscription from above we call the director component with "double authentication(token + certificate)" in order to test claims validation is successful
 		consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
 		headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
+
+		getRtmReq := fixtures.FixGetRuntimeRequest(runtime.ID)
+		getRtmReq.Header = headers
+		rtmExt := graphql.RuntimeExt{}
+
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, getRtmReq, &rtmExt)
+		require.NoError(t, err)
+
+		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
+
+		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
+		certHttpClient := createHttpClientWithCert(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		t.Log("Getting consumer application using both provider and consumer credentials...")

@@ -91,6 +91,8 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-director-db-name
+            - name: SUBSCRIPTION_PROVIDER_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
