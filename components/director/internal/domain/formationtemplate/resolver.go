@@ -8,7 +8,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/pkg/errors"
 )
 
 // FormationTemplateConverter missing godoc
@@ -73,9 +72,6 @@ func (r *Resolver) FormationTemplates(ctx context.Context, first *int, after *gr
 	}
 
 	gqlFormationTemplate := r.converter.MultipleToGraphQL(formationTemplatePage.Data)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while converting application templates to graphql")
-	}
 
 	return &graphql.FormationTemplatePage{
 		Data:       gqlFormationTemplate,
@@ -97,7 +93,7 @@ func (r *Resolver) FormationTemplate(ctx context.Context, id string) (*graphql.F
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	appTemplate, err := r.formationTemplateSvc.Get(ctx, id)
+	formationTemplate, err := r.formationTemplateSvc.Get(ctx, id)
 	if err != nil { // TODO
 		if apperrors.IsNotFoundError(err) {
 			return nil, tx.Commit()
@@ -110,7 +106,7 @@ func (r *Resolver) FormationTemplate(ctx context.Context, id string) (*graphql.F
 		return nil, err
 	}
 
-	return r.converter.ToGraphQL(appTemplate), nil
+	return r.converter.ToGraphQL(formationTemplate), nil
 }
 
 // CreateFormationTemplate missing godoc
@@ -133,7 +129,7 @@ func (r *Resolver) CreateFormationTemplate(ctx context.Context, in graphql.Forma
 	}
 	log.C(ctx).Infof("Successfully created an Formation Template with name %s and id %s", in.Name, id)
 
-	appTemplate, err := r.formationTemplateSvc.Get(ctx, id)
+	formationTemplate, err := r.formationTemplateSvc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +138,7 @@ func (r *Resolver) CreateFormationTemplate(ctx context.Context, in graphql.Forma
 		return nil, err
 	}
 
-	return r.converter.ToGraphQL(appTemplate), nil
+	return r.converter.ToGraphQL(formationTemplate), nil
 }
 
 func (r *Resolver) DeleteFormationTemplate(ctx context.Context, id string) (*graphql.FormationTemplate, error) {
@@ -181,7 +177,7 @@ func (r *Resolver) UpdateFormationTemplate(ctx context.Context, id string, in gr
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err := in.Validate(); err != nil {
+	if err = in.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -192,7 +188,7 @@ func (r *Resolver) UpdateFormationTemplate(ctx context.Context, id string, in gr
 		return nil, err
 	}
 
-	appTemplate, err := r.formationTemplateSvc.Get(ctx, id)
+	formationTemplate, err := r.formationTemplateSvc.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -202,5 +198,5 @@ func (r *Resolver) UpdateFormationTemplate(ctx context.Context, id string, in gr
 		return nil, err
 	}
 
-	return r.converter.ToGraphQL(appTemplate), nil
+	return r.converter.ToGraphQL(formationTemplate), nil
 }

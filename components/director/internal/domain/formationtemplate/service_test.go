@@ -14,29 +14,6 @@ import (
 	"testing"
 )
 
-var (
-	inputFormationTemplateModel = model.FormationTemplateInput{
-		Name:                          "formation-template-name",
-		ApplicationTypes:              []string{"some-application-type"},
-		RuntimeTypes:                  []string{"some-runtime-type"},
-		MissingArtifactInfoMessage:    "some missing info message",
-		MissingArtifactWarningMessage: "some missing warning message",
-	}
-	formationTemplateModel = model.FormationTemplate{
-		ID:                            testID,
-		Name:                          inputFormationTemplateModel.Name,
-		ApplicationTypes:              inputFormationTemplateModel.ApplicationTypes,
-		RuntimeTypes:                  inputFormationTemplateModel.RuntimeTypes,
-		MissingArtifactInfoMessage:    inputFormationTemplateModel.MissingArtifactInfoMessage,
-		MissingArtifactWarningMessage: inputFormationTemplateModel.MissingArtifactWarningMessage,
-	}
-	formationTemplateModelPage = model.FormationTemplatePage{
-		Data:       []*model.FormationTemplate{&formationTemplateModel},
-		PageInfo:   nil,
-		TotalCount: 1,
-	}
-)
-
 func TestService_Create(t *testing.T) {
 	// GIVEN
 	ctx := context.TODO()
