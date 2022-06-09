@@ -1467,9 +1467,9 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, request, nil)
 	require.NoError(t, err)
 
-	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, defaultScenarios)
-
-	fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &actualApp)
+	request = fixtures.FixUnregisterApplicationRequest(actualApp.ID)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, request, nil)
+	require.NoError(t, err)
 
 	actualAppDeleted := graphql.ApplicationExt{}
 	queryAppReq := fixtures.FixGetApplicationRequest(actualApp.ID)
