@@ -51,9 +51,9 @@ spec:
             timeoutSeconds: 1
           {{- with .Values.global.tests.securityContext }}
           securityContext:
-          {{ toYaml . | indent 12 }}
-        {{- end }}
-        {{end}}
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          {{end}}
         - name: pairing-adapter-tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
