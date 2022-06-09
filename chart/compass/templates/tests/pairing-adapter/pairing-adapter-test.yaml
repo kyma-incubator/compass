@@ -70,17 +70,6 @@ spec:
               value: {{ $.Values.global.tests.selfRegistration.region }}
             - name: APP_SELF_REG_LABEL_KEY
               value: {{ $.Values.global.director.selfRegister.label }}
-            {{ if $.Values.global.isLocalEnv }}
-            - name: APP_CONFIG_MAP_NAME
-              value: "{{ $.Values.global.pairingAdapter.configMap.name }}"
-            - name: APP_CONFIG_MAP_NAMESPACE
-              value: "{{ $.Values.global.pairingAdapter.configMap.namespace }}"
-            - name: APP_CONFIG_MAP_KEY
-              value: "{{ $.Values.global.pairingAdapter.configMap.key }}"
-            - name: APP_INTEGRATION_SYSTEM_ID
-              value: "{{ $.Values.global.pairingAdapter.configMap.integrationSystemID }}"
-            - name: APP_LOCAL_ADAPTER_FQDN
-              value: "{{ $.Values.global.pairingAdapter.configMap.localAdapterFQDN }}"
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
@@ -111,6 +100,17 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
+            {{ if $.Values.global.isLocalEnv }}
+            - name: APP_CONFIG_MAP_NAME
+              value: "{{ $.Values.global.pairingAdapter.configMap.name }}"
+            - name: APP_CONFIG_MAP_NAMESPACE
+              value: "{{ $.Values.global.pairingAdapter.configMap.namespace }}"
+            - name: APP_CONFIG_MAP_KEY
+              value: "{{ $.Values.global.pairingAdapter.configMap.key }}"
+            - name: APP_INTEGRATION_SYSTEM_ID
+              value: "{{ $.Values.global.pairingAdapter.configMap.integrationSystemID }}"
+            - name: APP_LOCAL_ADAPTER_FQDN
+              value: "{{ $.Values.global.pairingAdapter.configMap.localAdapterFQDN }}"
             {{ end }}
 {{ $shouldAdd = false }}
 {{ end }}
