@@ -240,7 +240,7 @@ func TestUpdateSystemAuthQuery(t *testing.T) {
 		authData := &graphql.Auth{
 			OneTimeToken:   nil,
 			CertCommonName: str.Ptr("CN"),
-			Credential: &graphql.BasicCredentialData{
+			Credential: graphql.BasicCredentialData{
 				Username: "user",
 				Password: "pass",
 			},
