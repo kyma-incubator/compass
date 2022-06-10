@@ -274,7 +274,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 
 	t.Run("Application flows", func(t *testing.T) {
 		//GIVEN
-		tmplName := "app-flow-tmpl-name"
+		tmplName := fmt.Sprintf("SAP %s (%s)", "app-flow-tmpl-name", config.SelfRegRegion)
 		ctx := context.TODO()
 		appTmplInput := fixAppTemplateInput(tmplName)
 		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTmplInput)
