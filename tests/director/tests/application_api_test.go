@@ -11,7 +11,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	"github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -1420,30 +1419,11 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
+	defaultScenarios := []string{conf.DefaultScenario}
 	scenarios := []string{conf.DefaultScenario, "test"}
 
-	validSchema := map[string]interface{}{
-		"type":        "array",
-		"minItems":    1,
-		"uniqueItems": true,
-		"items": map[string]interface{}{
-			"type": "string",
-			"enum": scenarios,
-		},
-	}
-	labelDefinitionInput := graphql.LabelDefinitionInput{
-		Key:    "scenarios",
-		Schema: json.MarshalJSONSchema(t, validSchema),
-	}
-
-	ldInputGql, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(labelDefinitionInput)
-	require.NoError(t, err)
-
-	updateLabelDefinitionReq := fixtures.FixUpdateLabelDefinitionRequest(ldInputGql)
-
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, updateLabelDefinitionReq, nil)
-	require.NoError(t, err)
-	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, []string{"DEFAULT"})
+	fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, scenarios)
+	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, defaultScenarios)
 
 	in := graphql.ApplicationRegisterInput{
 		Name:           "wordpress",
