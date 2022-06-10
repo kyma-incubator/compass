@@ -140,7 +140,8 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 
 				next.ServeHTTP(w, r)
 
-				if strings.Contains(strings.ToLower(body), "bundle") && consumerInfo.ConsumerType == consumer.Runtime {
+				if strings.Contains(strings.ToLower(body), "bundle") &&
+					(consumerInfo.ConsumerType == consumer.Runtime || consumerInfo.ConsumerType == consumer.ExternalCertificate) {
 					if err := h.labelRuntimeWithBundlesParam(ctx, consumerInfo); err != nil {
 						log.C(ctx).WithError(err).Errorf("Error labelling runtime with %q: %v", usesBundlesLabel, err)
 					}

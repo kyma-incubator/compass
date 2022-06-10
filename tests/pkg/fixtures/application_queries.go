@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
@@ -116,11 +117,13 @@ func UnpairAsyncApplicationInTenant(t require.TestingT, ctx context.Context, gql
 
 func CleanupApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, app *graphql.ApplicationExt) {
 	if app == nil || app.Application.BaseEntity == nil || app.ID == "" {
+		log.D().Infof("Cleanup of applicaiton was bypassed as applicaiton was %+v", app)
 		return
 	}
 	deleteRequest := FixUnregisterApplicationRequest(app.ID)
 
 	deleteApplicationFunc := func() error {
+		log.D().Infof("Attempt to delete applicaiton %+v", app)
 		err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, deleteRequest, &app)
 		if err != nil && !strings.Contains(strings.ToLower(err.Error()), "not found") {
 			return err
