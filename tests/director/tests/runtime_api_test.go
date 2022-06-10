@@ -584,7 +584,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, getRuntimeReq, &actualRuntime)
 		require.NoError(t, err)
 		require.NotEmpty(t, actualRuntime.ID)
-		assert.Len(t, actualRuntime.Labels, 6) // four labels from the different runtime inputs plus two additional during runtime registration - isNormalized and "self register" label
+		assert.Len(t, actualRuntime.Labels, 5) // three labels from the different runtime inputs plus two additional during runtime registration - isNormalized and "self register" label
 
 		t.Log("Successfully update runtime with certificate")
 		//GIVEN

@@ -221,7 +221,7 @@ global:
       clientKeyPath: "clientKey"
       local:
         templateMappings:
-          clientIDMapping: '{{ printf "\"%s\":\"client_id\"" .Values.global.director.selfRegister.clientIdPath }}'
+          clientIDMapping: '{{ printf "\"%s\":\"subscriptionProviderId\"" .Values.global.director.selfRegister.clientIdPath }}'
           clientSecretMapping: '{{ printf "\"%s\":\"client_secret\"" .Values.global.director.selfRegister.clientSecretPath }}'
           urlMapping: '{{ printf "\"%s\":\"http://compass-external-services-mock.%s.svc.cluster.local:%s\"" .Values.global.director.selfRegister.urlPath .Release.Namespace (.Values.service.port | toString) }}'
           tokenURLMapping: '{{ printf "\"%s\":\"https://%s.%s:%s\"" .Values.global.director.selfRegister.tokenUrlPath .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName (.Values.service.certPort | toString) }}'
@@ -528,7 +528,7 @@ global:
       regionPathParam: "region"
     containerName: "tenant-fetcher"
     oauth:
-      client: "client_id"
+      client: "subscriptionProviderId"
       secret: ""
       tokenURL: '{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'
       tokenPath: "/cert/token"
@@ -637,7 +637,7 @@ global:
       client:
         skipSSLValidation: false
     oauth:
-      client: "client_id"
+      client: "subscriptionProviderId"
       tokenEndpointProtocol: "https"
       tokenBaseHost: "compass-external-services-mock-sap-mtls"
       tokenPath: "/cert/token"

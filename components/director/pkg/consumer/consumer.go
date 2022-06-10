@@ -20,6 +20,8 @@ const (
 	IntegrationSystem ConsumerType = "Integration System"
 	// User missing godoc
 	User ConsumerType = "Static User"
+	// SuperAdmin is a consumer type that is used only in our tests
+	SuperAdmin ConsumerType = "Super Admin"
 )
 
 // Consumer missing godoc

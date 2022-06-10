@@ -50,7 +50,7 @@ func TestApplicationTemplateWithExternalCertificate(t *testing.T) {
 		require.NotEmpty(t, appTemplateOutput)
 
 		// Enhance input to match the newly created labels
-		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = appTemplateOutput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelValue]
+		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
 		appTemplateInput.Labels["global_subaccount_id"] = conf.ConsumerID
 		assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
 	})
