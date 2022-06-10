@@ -43,6 +43,8 @@ func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (Co
 		return Runtime, nil
 	case model.IntegrationSystemReference:
 		return IntegrationSystem, nil
+	case model.SuperAdminReference:
+		return SuperAdmin, nil
 	}
 	return "", apperrors.NewInternalError("unknown reference object type")
 }
