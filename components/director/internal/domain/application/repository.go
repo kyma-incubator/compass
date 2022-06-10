@@ -274,7 +274,7 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 func (r *pgRepository) ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	var appsCollection EntityCollection
 
-	page, totalCount, err := r.globalPageableQuerier.ListGlobalWithSelectForUpdate(ctx, pageSize, cursor, "id", &appsCollection)
+	page, totalCount, err := r.globalPageableQuerier.ListGlobal(ctx, pageSize, cursor, "id", &appsCollection)
 
 	if err != nil {
 		return nil, err
