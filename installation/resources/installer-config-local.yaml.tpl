@@ -75,7 +75,7 @@ data:
   global.tenantFetchers.account-fetcher.secret.clientSecretKey: "client-secret"
   global.tenantFetchers.account-fetcher.secret.oauthMode: "standard"
   global.tenantFetchers.account-fetcher.secret.oauthUrlKey: "url"
-  global.tenantFetchers.account-fetcher.oauth.client: "client_id"
+  global.tenantFetchers.account-fetcher.oauth.client: "subscriptionProviderId"
   global.tenantFetchers.account-fetcher.oauth.secret: "client_secret"
   global.tenantFetchers.account-fetcher.oauth.tokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
   global.tenantFetchers.account-fetcher.oauth.tokenPath: "/secured/oauth/token"
@@ -118,7 +118,7 @@ data:
   global.tenantFetchers.subaccount-fetcher.secret.clientKeyKey: "client-key"
   global.tenantFetchers.subaccount-fetcher.secret.oauthUrlKey: "url"
   global.tenantFetchers.subaccount-fetcher.secret.skipSSLValidation: "true"
-  global.tenantFetchers.subaccount-fetcher.oauth.client: "client_id"
+  global.tenantFetchers.subaccount-fetcher.oauth.client: "subscriptionProviderId"
   global.tenantFetchers.subaccount-fetcher.oauth.secret: "client_secret"
   global.tenantFetchers.subaccount-fetcher.oauth.tokenURL: '{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'
   global.tenantFetchers.subaccount-fetcher.oauth.tokenPath: "/cert/token"
