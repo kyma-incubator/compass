@@ -63,8 +63,7 @@ func (s *selfRegisterManager) IsSelfRegistrationFlow(ctx context.Context, labels
 	}
 
 	if consumerInfo.Flow.IsCertFlow() {
-		_, exists := labels[s.cfg.SelfRegisterDistinguishLabelKey]
-		if !exists {
+		if _, exists := labels[s.cfg.SelfRegisterDistinguishLabelKey]; !exists {
 			return false, errors.Errorf("missing %q label", s.cfg.SelfRegisterDistinguishLabelKey)
 		}
 
