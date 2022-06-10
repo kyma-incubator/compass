@@ -198,7 +198,7 @@ func TestResolver_Tenant(t *testing.T) {
 		TxFn           func() ([]*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		TenantSvcFn    func() *automock.BusinessTenantMappingService
 		TenantConvFn   func() *automock.BusinessTenantMappingConverter
-		TenantFetcher  func() *automock.TenantFetcher
+		TenantFetcher  func() *automock.Fetcher
 		TenantInput    graphql.BusinessTenantMappingInput
 		IDInput        string
 		ExpectedError  error
@@ -250,8 +250,8 @@ func TestResolver_Tenant(t *testing.T) {
 				conv.On("ToGraphQL", expectedTenantModel).Return(expectedTenantGQL)
 				return conv
 			},
-			TenantFetcher: func() *automock.TenantFetcher {
-				fetcher := &automock.TenantFetcher{}
+			TenantFetcher: func() *automock.Fetcher {
+				fetcher := &automock.Fetcher{}
 				fetcher.On("FetchOnDemand", testExternal, "").Return(nil)
 				return fetcher
 			},
@@ -289,8 +289,8 @@ func TestResolver_Tenant(t *testing.T) {
 				return TenantSvc
 			},
 			TenantConvFn: unusedTenantConverter,
-			TenantFetcher: func() *automock.TenantFetcher {
-				fetcher := &automock.TenantFetcher{}
+			TenantFetcher: func() *automock.Fetcher {
+				fetcher := &automock.Fetcher{}
 				fetcher.On("FetchOnDemand", testExternal, "").Return(tenantNotFoundError)
 				return fetcher
 			},
@@ -1092,6 +1092,6 @@ func unusedTenantService() *automock.BusinessTenantMappingService {
 	return &automock.BusinessTenantMappingService{}
 }
 
-func unusedFetcherService() *automock.TenantFetcher {
-	return &automock.TenantFetcher{}
+func unusedFetcherService() *automock.Fetcher {
+	return &automock.Fetcher{}
 }
