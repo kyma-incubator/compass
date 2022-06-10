@@ -17,6 +17,9 @@ type converter struct{}
 
 // FromInputGraphQL converts from GraphQL input to internal model
 func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) *model.FormationTemplateInput {
+	if in == nil {
+		return nil
+	}
 	return &model.FormationTemplateInput{
 		Name:                          in.Name,
 		ApplicationTypes:              in.ApplicationTypes,
@@ -27,6 +30,9 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) *model.
 }
 
 func (c *converter) FromModelInputToModel(in *model.FormationTemplateInput, id string) *model.FormationTemplate {
+	if in == nil {
+		return nil
+	}
 	return &model.FormationTemplate{
 		ID:                            id,
 		Name:                          in.Name,
@@ -39,6 +45,9 @@ func (c *converter) FromModelInputToModel(in *model.FormationTemplateInput, id s
 
 // ToGraphQL converts from internal model to GraphQL output
 func (c *converter) ToGraphQL(in *model.FormationTemplate) *graphql.FormationTemplate {
+	if in == nil {
+		return nil
+	}
 	return &graphql.FormationTemplate{
 		ID:                            in.ID,
 		Name:                          in.Name,
@@ -51,6 +60,9 @@ func (c *converter) ToGraphQL(in *model.FormationTemplate) *graphql.FormationTem
 
 // MultipleToGraphQL missing godoc
 func (c *converter) MultipleToGraphQL(in []*model.FormationTemplate) []*graphql.FormationTemplate {
+	if in == nil {
+		return nil
+	}
 	formationTemplates := make([]*graphql.FormationTemplate, 0, len(in))
 	for _, r := range in {
 		if r == nil {
