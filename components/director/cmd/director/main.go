@@ -148,7 +148,7 @@ type config struct {
 
 	SubscriptionConfig subscription.Config
 
-	TenantOnDemandURL string `envconfig:"optional,APP_FETCH_TENANT_URL"`
+	TenantOnDemandConfig tenant.FetchOnDemandApiConfig
 
 	SkipSSLValidation bool `envconfig:"default=false,APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"`
 }
@@ -244,7 +244,7 @@ func main() {
 		adminURL,
 		accessStrategyExecutorProvider,
 		cfg.SubscriptionConfig,
-		cfg.TenantOnDemandURL,
+		cfg.TenantOnDemandConfig,
 	)
 	exitOnError(err, "Failed to initialize root resolver")
 

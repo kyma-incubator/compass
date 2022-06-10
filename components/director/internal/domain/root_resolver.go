@@ -102,7 +102,7 @@ func NewRootResolver(
 	hydraURL *url.URL,
 	accessStrategyExecutorProvider *accessstrategy.Provider,
 	subscriptionConfig subscription.Config,
-	tenantOnDemandURL string,
+	tenantOnDemandAPIConfig tenant.FetchOnDemandApiConfig,
 ) (*RootResolver, error) {
 	oAuth20HTTPClient := &http.Client{
 		Timeout:   oAuth20Cfg.HTTPClientTimeout,
@@ -191,7 +191,7 @@ func NewRootResolver(
 	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, labelDefSvc, bundleSvc, uidSvc, formationSvc)
 	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalFQDNHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdapters, timeService)
 	subscriptionSvc := subscription.NewService(runtimeSvc, tenantSvc, labelSvc, uidSvc, subscriptionConfig.ProviderLabelKey, subscriptionConfig.ConsumerSubaccountIDsLabelKey)
-	tenantOnDemandSvc := tenant.NewFetchOnDemandService(internalGatewayHTTPClient, tenantOnDemandURL)
+	tenantOnDemandSvc := tenant.NewFetchOnDemandService(internalGatewayHTTPClient, tenantOnDemandAPIConfig)
 
 	return &RootResolver{
 		appNameNormalizer:  appNameNormalizer,
