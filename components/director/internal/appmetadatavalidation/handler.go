@@ -3,6 +3,9 @@ package appmetadatavalidation
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/http"
+
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	tnt "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -10,30 +13,30 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/pkg/errors"
 	"github.com/vektah/gqlparser/v2/gqlerror"
-	"net/http"
 )
 
-// LabelService missing godoc
+// LabelService is responsible to service-related label operations
 //go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelService interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
-// TenantService missing godoc
+// TenantService is responsible to service-related tenant operations
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantService interface {
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
-// Handler missing godoc
+// Handler is an object with dependencies
 type Handler struct {
 	transact  persistence.Transactioner
 	tenantSvc TenantService
 	labelSvc  LabelService
 }
 
-// NewHandler missing godoc
+// NewHandler is a constructor for Handler object
 func NewHandler(transact persistence.Transactioner, tenantSvc TenantService, labelSvc LabelService) *Handler {
 	return &Handler{
 		transact:  transact,
@@ -42,7 +45,9 @@ func NewHandler(transact persistence.Transactioner, tenantSvc TenantService, lab
 	}
 }
 
-// Handler missing godoc
+// Handler is a middleware that checks if the flow is oathkeeper.CertificateFlow and consumer type is consumer.ExternalCertificate.
+// If it's not - continue with next handler. If it is, get the consumer tenant's Region label and the Region label of the tenant header.
+// They have to match in order to continue with the next handler, otherwise fail the request
 func (h *Handler) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -52,66 +57,91 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 			consumerInfo, err := consumer.LoadFromContext(ctx)
 			if err != nil {
 				logger.WithError(err).Errorf("An error has occurred while fetching consumer info from context: %v", err)
-				appErr := apperrors.InternalErrorFrom(err, "while fetching consumer info")
-				writeAppError(ctx, w, appErr)
-				return
-			}
-
-			if !isExternalCertificateFlow(consumerInfo) {
 				next.ServeHTTP(w, r)
 				return
 			}
 
-			// TODO check if empty
-			headerTenant := r.Header.Get("tenant")
+			if !h.isExternalCertificateFlow(consumerInfo) {
+				logger.Infof("Flow is not external certificate. Continue with next handler.")
+				next.ServeHTTP(w, r)
+				return
+			}
 
-			consumerTenantModel, err := h.tenantSvc.GetTenantByExternalID(ctx, consumerInfo.ConsumerID)
+			tenantHeader := r.Header.Get("tenant")
+			if len(tenantHeader) == 0 {
+				logger.Infof("Missing tenant header. Continue with next handler.")
+				next.ServeHTTP(w, r)
+				return
+			}
+			logger.Infof("Flow is external certificate")
+
+			tx, err := h.transact.Begin()
 			if err != nil {
-				logger.WithError(err).Errorf("An error has occurred while fetching consumer tenant by external ID %q: %v", consumerInfo.ConsumerID, err)
-				appErr := apperrors.InternalErrorFrom(err, "while fetching consumer tenant by ID")
+				logger.WithError(err).Errorf("An error has occurred while opening transaction: %v", err)
+				appErr := apperrors.InternalErrorFrom(err, "while opening db transaction")
 				writeAppError(ctx, w, appErr)
 				return
 			}
 
-			consumerRegionLabel, err := h.labelSvc.GetByKey(ctx, consumerTenantModel.ID, model.TenantLabelableObject, consumerTenantModel.ID, tnt.RegionLabelKey)
+			defer h.transact.RollbackUnlessCommitted(ctx, tx)
+
+			ctx = persistence.SaveToContext(ctx, tx)
+
+			consumerRegionLabel, err := h.getTenantRegionLabelValue(ctx, consumerInfo.ConsumerID)
 			if err != nil {
-				logger.WithError(err).Errorf("An error has occurred while fetching %q label for tenant ID %q: %v", tnt.RegionLabelKey, consumerInfo.ConsumerID, err)
-				appErr := apperrors.InternalErrorFrom(err, "while fetching label")
+				appErr := apperrors.InternalErrorFrom(err, "while fetching consumer tenant label")
 				writeAppError(ctx, w, appErr)
 				return
 			}
 
-			headerTenantModel, err := h.tenantSvc.GetTenantByExternalID(ctx, headerTenant)
+			headerTenantRegionLabel, err := h.getTenantRegionLabelValue(ctx, tenantHeader)
 			if err != nil {
-				logger.WithError(err).Errorf("An error has occurred while fetching header tenant by external ID %q: %v", headerTenantModel.ID, err)
-				appErr := apperrors.InternalErrorFrom(err, "while fetching header tenant by ID")
+				appErr := apperrors.InternalErrorFrom(err, "while fetching tenant header label")
 				writeAppError(ctx, w, appErr)
 				return
 			}
 
-			headerTenantRegionLabel, err := h.labelSvc.GetByKey(ctx, headerTenantModel.ID, model.TenantLabelableObject, headerTenantModel.ID, tnt.RegionLabelKey)
-			if err != nil {
-				logger.WithError(err).Errorf("An error has occurred while fetching %q label for tenant ID %q: %v", tnt.RegionLabelKey, headerTenantModel.ID, err)
-				appErr := apperrors.InternalErrorFrom(err, "while fetching label")
+			if consumerRegionLabel != headerTenantRegionLabel {
+				err = errors.New(fmt.Sprintf("labels mismatch: %q and %q", consumerRegionLabel, headerTenantRegionLabel))
+				logger.WithError(err).Errorf("Regions for external tenants %q and %q do not match: %q and %q", consumerInfo.ConsumerID, tenantHeader, consumerRegionLabel, headerTenantRegionLabel)
+				appErr := apperrors.InternalErrorFrom(err, "region labels for tenants do not match")
 				writeAppError(ctx, w, appErr)
 				return
 			}
 
-			if consumerRegionLabel.Value != headerTenantRegionLabel.Value {
-				logger.WithError(err).Errorf("Regions do not match: %q and %q", consumerRegionLabel.Value, headerTenantRegionLabel.Value)
-
-				appErr := apperrors.InternalErrorFrom(err, "while reading request body")
+			if err := tx.Commit(); err != nil {
+				logger.WithError(err).Errorf("An error has occurred while committing transaction: %v", err)
+				appErr := apperrors.InternalErrorFrom(err, "error has occurred while committing transaction")
 				writeAppError(ctx, w, appErr)
+				return
 			}
 
-			logger.Infof("Regions matched. Continuing with request")
+			logger.Infof("Regions for tenants with external ID %q and %q matched. Continuing with request", consumerInfo.ConsumerID, tenantHeader)
 
 			next.ServeHTTP(w, r)
 		})
 	}
 }
 
-func isExternalCertificateFlow(consumerInfo consumer.Consumer) bool {
+func (h *Handler) getTenantRegionLabelValue(ctx context.Context, tenantID string) (interface{}, error) {
+	logger := log.C(ctx)
+
+	tenantModel, err := h.tenantSvc.GetTenantByExternalID(ctx, tenantID)
+	if err != nil {
+		logger.WithError(err).Errorf("An error has occurred while fetching tenant by external ID %q: %v", tenantID, err)
+		return nil, errors.Wrapf(err, "while fetching tenant by external ID %q", tenantID)
+	}
+
+	tenantRegionLabel, err := h.labelSvc.GetByKey(ctx, tenantModel.ID, model.TenantLabelableObject, tenantModel.ID, tnt.RegionLabelKey)
+	if err != nil {
+		logger.WithError(err).Errorf("An error has occurred while fetching %q label for tenant ID %q: %v", tnt.RegionLabelKey, tenantID, err)
+		return nil, errors.Wrapf(err, "while fetching %q label tenant by external ID %q", tnt.RegionLabelKey, tenantID)
+	}
+
+	return tenantRegionLabel.Value, nil
+}
+
+func (h *Handler) isExternalCertificateFlow(consumerInfo consumer.Consumer) bool {
 	return consumerInfo.Flow.IsCertFlow() && consumerInfo.ConsumerType == consumer.ExternalCertificate
 }
 

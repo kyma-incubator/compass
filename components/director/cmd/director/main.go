@@ -4,11 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/appmetadatavalidation"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/appmetadatavalidation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 
