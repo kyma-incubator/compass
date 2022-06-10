@@ -1,10 +1,11 @@
 package graphql_test
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFormationTemplateInput_ValidateName(t *testing.T) {
