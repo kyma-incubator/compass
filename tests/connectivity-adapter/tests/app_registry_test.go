@@ -39,13 +39,7 @@ func TestAppRegistry(t *testing.T) {
 	}
 
 	descr := "test"
-	runtimeInput := directorSchema.RuntimeInput{
-		Name:        TestRuntime,
-		Description: &descr,
-		Labels: directorSchema.Labels{
-			"scenarios": []interface{}{"DEFAULT"},
-		},
-	}
+	runtimeInput := fixRuntimeInput(descr)
 
 	appID, err := directorClient.CreateApplication(appInput)
 	defer func() {
@@ -151,4 +145,14 @@ func TestAppRegistry(t *testing.T) {
 
 func ptrSpecResponse(in model.SpecResponse) *model.SpecResponse {
 	return &in
+}
+
+func fixRuntimeInput(descr string) directorSchema.RuntimeRegisterInput {
+	return directorSchema.RuntimeRegisterInput{
+		Name:        TestRuntime,
+		Description: &descr,
+		Labels: directorSchema.Labels{
+			"scenarios": []interface{}{"DEFAULT"},
+		},
+	}
 }

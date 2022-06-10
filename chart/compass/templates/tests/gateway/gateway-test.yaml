@@ -1,3 +1,4 @@
+{{ if .Values.global.isForTesting }}
 apiVersion: "testing.kyma-project.io/v1alpha1"
 kind: TestDefinition
 metadata:
@@ -56,6 +57,12 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscriptionProviderIdValue | quote }}
+            - name: APP_SELF_REG_REGION
+              value: {{ .Values.global.tests.selfRegistration.region }}
       restartPolicy: Never
 ---
 apiVersion: v1
@@ -91,3 +98,4 @@ roleRef:
   kind: Role
   name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
   apiGroup: rbac.authorization.k8s.io
+{{ end }}

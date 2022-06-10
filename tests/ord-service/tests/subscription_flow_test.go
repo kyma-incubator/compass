@@ -88,11 +88,7 @@ func TestSelfRegisterFlow(t *testing.T) {
 	}()
 
 	// Self register runtime
-	runtimeInput := graphql.RuntimeInput{
-		Name:        "selfRegisterRuntime",
-		Description: ptr.String("selfRegisterRuntime-description"),
-		Labels:      graphql.Labels{testConfig.ProviderLabelKey: testConfig.ProviderID, tenantfetcher.RegionKey: testConfig.Region},
-	}
+	runtimeInput := fixRuntimeInput("selfRegisterRuntime", ptr.String("selfRegisterRuntime-description"))
 	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtimeInput)
 	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtime)
 	require.NotEmpty(t, runtime.ID)
@@ -132,12 +128,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, testConfig.ExternalCertProviderConfig)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
 
-		runtimeInput := graphql.RuntimeInput{
-			Name:        "providerRuntime",
-			Description: ptr.String("providerRuntime-description"),
-			Labels:      graphql.Labels{testConfig.ProviderLabelKey: testConfig.ProviderID, tenantfetcher.RegionKey: testConfig.Region},
-		}
-
+		runtimeInput := fixRuntimeInput("providerRuntime", ptr.String("providerRuntime-description"))
 		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
 		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
 		require.NotEmpty(t, runtime.ID)
@@ -216,6 +207,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, testConfig.SubscriptionConfig.TokenURL+testConfig.TokenPath, testConfig.ClientID, testConfig.ClientSecret, "tenantFetcherClaims")
 		subscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
 		subscribeReq.Header.Add(contentTypeHeader, contentTypeApplicationJson)
+		subscribeReq.Header.Add(testConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
 
 		// unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
 		// In case there isn't subscription it will fail-safe without error
@@ -269,6 +261,7 @@ func buildAndExecuteUnsubscribeRequest(t *testing.T, runtime graphql.RuntimeExt,
 	unsubscribeReq, err := http.NewRequest(http.MethodDelete, testConfig.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte{}))
 	require.NoError(t, err)
 	unsubscribeReq.Header.Add(authorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
+	unsubscribeReq.Header.Add(testConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
 
 	t.Logf("Removing subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 	unsubscribeResp, err := httpClient.Do(unsubscribeReq)
@@ -334,4 +327,15 @@ func executeGQLRequest(t *testing.T, ctx context.Context, gqlRequest *gcli.Reque
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, gqlRequest, &formation)
 	require.NoError(t, err)
 	require.Equal(t, formationName, formation.Name)
+}
+
+func fixRuntimeInput(name string, description *string) graphql.RuntimeRegisterInput {
+	return graphql.RuntimeRegisterInput{
+		Name:        name,
+		Description: description,
+		Labels: graphql.Labels{
+			testConfig.ProviderLabelKey: testConfig.ProviderID,
+			tenantfetcher.RegionKey:     testConfig.Region,
+		},
+	}
 }

@@ -2,6 +2,7 @@ package systemfetcher
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
@@ -20,10 +21,15 @@ type oauthMtlsClient struct {
 
 // NewOauthMtlsClient missing docs
 func NewOauthMtlsClient(oauthCfg oauth.Config, certCache auth.CertificateCache, client *http.Client) *oauthMtlsClient {
+	protocol := oauthCfg.TokenEndpointProtocol + "://"
+	tokenParsedURL, err := url.Parse(oauthCfg.TokenBaseURL)
+	if err == nil && len(tokenParsedURL.Scheme) != 0 {
+		protocol = ""
+	}
 	return &oauthMtlsClient{
 		clientID:     oauthCfg.ClientID,
 		certCache:    certCache,
-		tokenURL:     oauthCfg.TokenEndpointProtocol + "://" + oauthCfg.TokenBaseURL + oauthCfg.TokenPath,
+		tokenURL:     protocol + oauthCfg.TokenBaseURL + oauthCfg.TokenPath,
 		scopesClaim:  strings.Join(oauthCfg.ScopesClaim, " "),
 		tenantHeader: oauthCfg.TenantHeaderName,
 		c:            client,

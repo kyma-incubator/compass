@@ -25,17 +25,14 @@ const (
 	connectorPath = "/connector/graphql"
 )
 
-var (
-	runtimeInput = &graphql.RuntimeInput{
-		Name: "test-runtime",
-	}
-)
-
 func TestCallingCompassGateways(t *testing.T) {
 	var (
-		ctx    = context.TODO()
-		err    error
-		tenant = conf.DefaultTenant
+		ctx          = context.TODO()
+		err          error
+		tenant       = conf.DefaultTenant
+		runtimeInput = &graphql.RuntimeRegisterInput{
+			Name: "test-runtime",
+		}
 	)
 
 	authorizedClient := gql.NewCertAuthorizedHTTPClient(certCache.Get().PrivateKey, certCache.Get().Certificate, conf.SkipSSLValidation)

@@ -1,0 +1,35 @@
+deployment:
+  minReplicas: 1
+  maxReplicas: 1
+  autoscaling:
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 75
+  image:
+    pullPolicy: IfNotPresent
+  resources: {}
+  resourcesIstioProxy:
+    requests: {}
+    limits: {}
+  args:
+    containerPort: 3000
+    csrSubject:
+      country: "DE"
+      organization: "Org"
+      organizationalUnit: "OrgUnit"
+      locality: "locality"
+      province: "province"
+    externalIssuerSubject:
+      country: "DE"
+      organization: "SAP SE"
+      organizationalUnitPattern: "Region|SAP Cloud Platform Clients" # Region or SAP Cloud Platform Clients
+  securityContext: # Set on container level
+    runAsUser: 2000
+    allowPrivilegeEscalation: false
+  strategy: {} # Read more: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+  nodeSelector: {}
+
+adminGroupNames: "mps-superadmin, runtimeAdmin, runtimeNamespaceAdmin"
+operatorGroupNames: "runtimeOperator"
+
+configFile:
+  name: "config.yaml"

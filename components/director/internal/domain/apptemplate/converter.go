@@ -16,7 +16,7 @@ import (
 )
 
 // AppConverter missing godoc
-//go:generate mockery --name=AppConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=AppConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AppConverter interface {
 	CreateInputGQLToJSON(in *graphql.ApplicationRegisterInput) (string, error)
 }
@@ -95,12 +95,18 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationTemplateInput) (model
 		return model.ApplicationTemplateInput{}, errors.Wrapf(err, "error occurred while converting webhooks og GraphQL input to Application Template model with name %s", in.Name)
 	}
 
+	var labels map[string]interface{}
+	if in.Labels != nil {
+		labels = in.Labels
+	}
+
 	return model.ApplicationTemplateInput{
 		Name:                 in.Name,
 		Description:          in.Description,
 		ApplicationInputJSON: appCreateInput,
 		Placeholders:         c.placeholdersFromGraphql(in.Placeholders),
 		AccessLevel:          model.ApplicationTemplateAccessLevel(in.AccessLevel),
+		Labels:               labels,
 		Webhooks:             webhooks,
 	}, nil
 }

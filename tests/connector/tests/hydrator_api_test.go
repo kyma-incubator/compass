@@ -24,9 +24,8 @@ func TestHydrators(t *testing.T) {
 	require.NotEmpty(t, app.ID)
 	appID := app.ID
 
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &graphql.RuntimeInput{
-		Name: "test-hydrators-runtime",
-	})
+	input := fixtures.FixRuntimeRegisterInput("test-hydrators-runtime")
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &input)
 	defer fixtures.CleanupRuntime(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
@@ -77,7 +76,7 @@ func TestHydrators(t *testing.T) {
 			}
 
 			//when
-			authSession := directorHydratorClient.ResolveToken(t, headers)
+			authSession := hydratorClient.ResolveToken(t, headers)
 
 			hasAuth := false
 			for _, auth := range appSystemAuths {
@@ -122,7 +121,7 @@ func TestHydrators(t *testing.T) {
 			}
 
 			//when
-			authSession := connectorHydratorClient.ResolveCertificateData(t, headers)
+			authSession := hydratorClient.ResolveCertificateData(t, headers)
 
 			var appSystemAuths []*graphql.AppSystemAuth
 			var runtimeSystemAuths []*graphql.RuntimeSystemAuth
@@ -159,7 +158,7 @@ func TestHydrators(t *testing.T) {
 			require.NotEmpty(t, token.Token)
 
 			//when
-			authSession := directorHydratorClient.ResolveToken(t, nil)
+			authSession := hydratorClient.ResolveToken(t, nil)
 
 			//then
 			assert.Empty(t, authSession)

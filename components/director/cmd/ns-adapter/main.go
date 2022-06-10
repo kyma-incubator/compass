@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/schema"
 	"github.com/kyma-incubator/compass/components/director/internal/healthz"
 
@@ -98,7 +100,7 @@ func main() {
 	intSysConverter := integrationsystem.NewConverter()
 	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
-	runtimeConverter := runtime.NewConverter()
+	runtimeConverter := runtime.NewConverter(webhookConverter)
 	bundleReferenceConv := bundlereferences.NewConverter()
 
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
@@ -126,13 +128,14 @@ func main() {
 	eventAPISvc := eventdef.NewService(eventAPIRepo, uidSvc, specSvc, bundleReferenceSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc)
+	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
+	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc, formationSvc)
 
 	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
-
-	tntSvc := tenant.NewService(tenantRepo, uidSvc)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 
 	err = registerAppTemplate(ctx, transact, appTemplateSvc)
 	exitOnError(err, "while registering application template")
@@ -169,7 +172,7 @@ func main() {
 	server := &http.Server{
 		Addr:              conf.Address,
 		Handler:           router,
-		ReadHeaderTimeout: conf.ServerTimeout,
+		ReadHeaderTimeout: conf.ReadHeadersTimeout,
 	}
 	ctx, err = log.Configure(ctx, conf.Log)
 	exitOnError(err, "while configuring logger")
@@ -284,9 +287,14 @@ func calculateTemplateMappings(ctx context.Context, cfg adapter.Configuration, t
 	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConv)
 	webhookRepo := webhook.NewRepository(webhookConverter)
+	labelDefConverter := labeldef.NewConverter()
+	labelConverter := label.NewConverter()
+	labelRepo := label.NewRepository(labelConverter)
+	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 
 	uidSvc := uid.NewService()
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc)
+	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 
 	tx, err := transact.Begin()
 	if err != nil {

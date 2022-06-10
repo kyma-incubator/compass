@@ -15,29 +15,35 @@ import (
 )
 
 // WebhookService missing godoc
-//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookService interface {
 	Get(ctx context.Context, id string, objectType model.WebhookReferenceObjectType) (*model.Webhook, error)
 	ListAllApplicationWebhooks(ctx context.Context, applicationID string) ([]*model.Webhook, error)
+	ListForRuntime(ctx context.Context, runtimeID string) ([]*model.Webhook, error)
 	Create(ctx context.Context, resourceID string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) (string, error)
 	Update(ctx context.Context, id string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) error
 	Delete(ctx context.Context, id string, objectType model.WebhookReferenceObjectType) error
 }
 
 // ApplicationService missing godoc
-//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	Exist(ctx context.Context, id string) (bool, error)
 }
 
 // ApplicationTemplateService missing godoc
-//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateService interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
+//go:generate mockery --exported --name=runtimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type runtimeService interface {
+	Exist(ctx context.Context, id string) (bool, error)
+}
+
 // WebhookConverter missing godoc
-//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=WebhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookConverter interface {
 	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
 	MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error)
@@ -52,23 +58,25 @@ type Resolver struct {
 	webhookSvc       WebhookService
 	appSvc           ApplicationService
 	appTemplateSvc   ApplicationTemplateService
+	runtimeSvc       runtimeService
 	webhookConverter WebhookConverter
 	transact         persistence.Transactioner
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, webhookSvc WebhookService, applicationService ApplicationService, appTemplateService ApplicationTemplateService, webhookConverter WebhookConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, webhookSvc WebhookService, applicationService ApplicationService, appTemplateService ApplicationTemplateService, runtimeService runtimeService, webhookConverter WebhookConverter) *Resolver {
 	return &Resolver{
 		webhookSvc:       webhookSvc,
 		appSvc:           applicationService,
 		appTemplateSvc:   appTemplateService,
+		runtimeSvc:       runtimeService,
 		webhookConverter: webhookConverter,
 		transact:         transact,
 	}
 }
 
 // AddWebhook missing godoc
-func (r *Resolver) AddWebhook(ctx context.Context, applicationID *string, applicationTemplateID *string, in graphql.WebhookInput) (*graphql.Webhook, error) {
+func (r *Resolver) AddWebhook(ctx context.Context, applicationID *string, applicationTemplateID *string, runtimeID *string, in graphql.WebhookInput) (*graphql.Webhook, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -76,11 +84,12 @@ func (r *Resolver) AddWebhook(ctx context.Context, applicationID *string, applic
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	appSpecified := applicationID != nil && applicationTemplateID == nil
-	appTemplateSpecified := applicationID == nil && applicationTemplateID != nil
+	appSpecified := applicationID != nil && applicationTemplateID == nil && runtimeID == nil
+	appTemplateSpecified := applicationID == nil && applicationTemplateID != nil && runtimeID == nil
+	runtimeSpecified := applicationID == nil && applicationTemplateID == nil && runtimeID != nil
 
-	if !(appSpecified || appTemplateSpecified) {
-		return nil, apperrors.NewInvalidDataError("exactly one of applicationID and applicationTemplateID should be specified")
+	if !(appSpecified || appTemplateSpecified || runtimeSpecified) {
+		return nil, apperrors.NewInvalidDataError("exactly one of applicationID, applicationTemplateID or runtimeID should be specified")
 	}
 
 	convertedIn, err := r.webhookConverter.InputFromGraphQL(&in)
@@ -96,6 +105,9 @@ func (r *Resolver) AddWebhook(ctx context.Context, applicationID *string, applic
 	} else if appTemplateSpecified {
 		objectID = *applicationTemplateID
 		objectType = model.ApplicationTemplateWebhookReference
+	} else if runtimeSpecified {
+		objectID = *runtimeID
+		objectType = model.RuntimeWebhookReference
 	}
 
 	id, err := r.checkForExistenceAndCreate(ctx, *convertedIn, objectID, objectType)
@@ -187,6 +199,8 @@ func (r *Resolver) checkForExistenceAndCreate(ctx context.Context, input model.W
 		existsFunc = r.appSvc.Exist
 	case model.ApplicationTemplateWebhookReference:
 		existsFunc = r.appTemplateSvc.Exists
+	case model.RuntimeWebhookReference:
+		existsFunc = r.runtimeSvc.Exist
 	}
 
 	err := r.genericCheckExistence(ctx, objectID, objectType, existsFunc)

@@ -234,10 +234,25 @@ func AssertEventsAPI(t *testing.T, in []*graphql.EventDefinitionInput, actual []
 	}
 }
 
-func AssertRuntime(t *testing.T, in graphql.RuntimeInput, actualRuntime graphql.RuntimeExt, defaultScenarioEnabled, isSubaccountTenant bool) {
+func AssertRuntime(t *testing.T, in graphql.RuntimeRegisterInput, actualRuntime graphql.RuntimeExt, defaultScenarioEnabled, isSubaccountTenant bool) {
+	assert.Equal(t, in.Name, actualRuntime.Name)
+	assert.Equal(t, in.Description, actualRuntime.Description)
+	AssertWebhooks(t, in.Webhooks, actualRuntime.Webhooks)
+	AssertRuntimeLabels(t, &in.Labels, actualRuntime.Labels, defaultScenarioEnabled, isSubaccountTenant)
+}
+
+func AssertUpdatedRuntime(t *testing.T, in graphql.RuntimeUpdateInput, actualRuntime graphql.RuntimeExt, defaultScenarioEnabled, isSubaccountTenant bool) {
 	assert.Equal(t, in.Name, actualRuntime.Name)
 	assert.Equal(t, in.Description, actualRuntime.Description)
 	AssertRuntimeLabels(t, &in.Labels, actualRuntime.Labels, defaultScenarioEnabled, isSubaccountTenant)
+}
+
+func AssertRuntimePageContainOnlyIDs(t *testing.T, page graphql.RuntimePageExt, ids ...string) {
+	require.Equal(t, len(ids), len(page.Data))
+
+	for _, runtime := range page.Data {
+		require.Contains(t, ids, runtime.ID)
+	}
 }
 
 func AssertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels graphql.Labels, defaultScenarioEnabled, isSubaccountTenant bool) {
@@ -270,6 +285,11 @@ func AssertRuntimeLabels(t *testing.T, inLabels *graphql.Labels, actualLabels gr
 	}
 }
 
+func AssertRuntimeContext(t *testing.T, in *graphql.RuntimeContextInput, actual *graphql.RuntimeContextExt) {
+	assert.Equal(t, in.Key, actual.Key)
+	assert.Equal(t, in.Value, actual.Value)
+}
+
 func AssertLabel(t *testing.T, actualLabels graphql.Labels, key string, values interface{}) {
 	labelValues, ok := actualLabels[key]
 	assert.True(t, ok)
@@ -294,7 +314,7 @@ func AssertApplicationTemplate(t *testing.T, in graphql.ApplicationTemplateInput
 	assert.Equal(t, gqlAppInput, actualApplicationTemplate.ApplicationInput)
 	AssertApplicationTemplatePlaceholder(t, in.Placeholders, actualApplicationTemplate.Placeholders)
 	assert.Equal(t, in.AccessLevel, actualApplicationTemplate.AccessLevel)
-
+	assert.Equal(t, in.Labels, actualApplicationTemplate.Labels)
 	AssertWebhooks(t, in.Webhooks, actualApplicationTemplate.Webhooks)
 }
 

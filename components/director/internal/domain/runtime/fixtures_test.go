@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
@@ -125,8 +127,32 @@ func fixDetailedGQLRuntime(t *testing.T, id, name, description string) *graphql.
 	}
 }
 
-func fixModelRuntimeInput(name, description string) model.RuntimeInput {
-	return model.RuntimeInput{
+func fixModelRuntimeRegisterInput(name, description string, webhooks []*model.WebhookInput) model.RuntimeRegisterInput {
+	return model.RuntimeRegisterInput{
+		Name:        name,
+		Description: &description,
+		Labels: map[string]interface{}{
+			"test": []string{"val", "val2"},
+		},
+		Webhooks: webhooks,
+	}
+}
+
+func fixGQLRuntimeRegisterInput(name, description string, webhooks []*graphql.WebhookInput) graphql.RuntimeRegisterInput {
+	labels := graphql.Labels{
+		"test": []string{"val", "val2"},
+	}
+
+	return graphql.RuntimeRegisterInput{
+		Name:        name,
+		Description: &description,
+		Labels:      labels,
+		Webhooks:    webhooks,
+	}
+}
+
+func fixModelRuntimeUpdateInput(name, description string) model.RuntimeUpdateInput {
+	return model.RuntimeUpdateInput{
 		Name:        name,
 		Description: &description,
 		Labels: map[string]interface{}{
@@ -135,63 +161,15 @@ func fixModelRuntimeInput(name, description string) model.RuntimeInput {
 	}
 }
 
-func fixGQLRuntimeInput(name, description string) graphql.RuntimeInput {
+func fixGQLRuntimeUpdateInput(name, description string) graphql.RuntimeUpdateInput {
 	labels := graphql.Labels{
 		"test": []string{"val", "val2"},
 	}
 
-	return graphql.RuntimeInput{
+	return graphql.RuntimeUpdateInput{
 		Name:        name,
 		Description: &description,
 		Labels:      labels,
-	}
-}
-
-func fixApplicationPage(applications []*model.Application) *model.ApplicationPage {
-	return &model.ApplicationPage{
-		Data: applications,
-		PageInfo: &pagination.Page{
-			StartCursor: "start",
-			EndCursor:   "end",
-			HasNextPage: false,
-		},
-		TotalCount: len(applications),
-	}
-}
-
-func fixGQLApplicationPage(applications []*graphql.Application) *graphql.ApplicationPage {
-	return &graphql.ApplicationPage{
-		Data: applications,
-		PageInfo: &graphql.PageInfo{
-			StartCursor: "start",
-			EndCursor:   "end",
-			HasNextPage: false,
-		},
-		TotalCount: len(applications),
-	}
-}
-
-func fixModelApplication(id, name, description string) *model.Application {
-	return &model.Application{
-		Status: &model.ApplicationStatus{
-			Condition: model.ApplicationStatusConditionInitial,
-		},
-		Name:        name,
-		Description: &description,
-		BaseEntity:  &model.BaseEntity{ID: id},
-	}
-}
-
-func fixGQLApplication(id, name, description string) *graphql.Application {
-	return &graphql.Application{
-		BaseEntity: &graphql.BaseEntity{
-			ID: id,
-		},
-		Status: &graphql.ApplicationStatus{
-			Condition: graphql.ApplicationStatusConditionInitial,
-		},
-		Name:        name,
-		Description: &description,
 	}
 }
 
@@ -243,8 +221,8 @@ func fixGQLAuth() *graphql.Auth {
 	}
 }
 
-func fixModelSystemAuth(id, tenant, runtimeID string, auth *model.Auth) model.SystemAuth {
-	return model.SystemAuth{
+func fixModelSystemAuth(id, tenant, runtimeID string, auth *model.Auth) pkgmodel.SystemAuth {
+	return pkgmodel.SystemAuth{
 		ID:        id,
 		TenantID:  &tenant,
 		RuntimeID: &runtimeID,
@@ -279,4 +257,45 @@ func fixValidURL(t *testing.T, rawURL string) url.URL {
 	require.NoError(t, err)
 	require.NotNil(t, eventingURL)
 	return *eventingURL
+}
+
+func fixModelRuntimeContext(id, runtimeID, key, val string) *model.RuntimeContext {
+	return &model.RuntimeContext{
+		ID:        id,
+		RuntimeID: runtimeID,
+		Key:       key,
+		Value:     val,
+	}
+}
+
+func fixGqlRuntimeContext(id, key, val string) *graphql.RuntimeContext {
+	return &graphql.RuntimeContext{
+		ID:    id,
+		Key:   key,
+		Value: val,
+	}
+}
+
+func fixGQLRtmCtxPage(rtmCtxs []*graphql.RuntimeContext) *graphql.RuntimeContextPage {
+	return &graphql.RuntimeContextPage{
+		Data: rtmCtxs,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(rtmCtxs),
+	}
+}
+
+func fixRtmCtxPage(rtmCtxs []*model.RuntimeContext) *model.RuntimeContextPage {
+	return &model.RuntimeContextPage{
+		Data: rtmCtxs,
+		PageInfo: &pagination.Page{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(rtmCtxs),
+	}
 }

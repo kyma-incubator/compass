@@ -3,9 +3,13 @@ package str
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 
+	"golang.org/x/text/language"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"golang.org/x/text/cases"
 )
 
 // Unique missing godoc
@@ -60,7 +64,7 @@ func PrefixStrings(in []string, prefix string) []string {
 
 // Title missing godoc
 func Title(s string) string {
-	return strings.Title(strings.ToLower(s))
+	return cases.Title(language.Und).String(strings.ToLower(s))
 }
 
 // PtrStrToStr missing godoc
@@ -101,4 +105,20 @@ func CastOrEmpty(i interface{}) string {
 		return s
 	}
 	return ""
+}
+
+// ContainsInSlice checks if a string value is present in a given slice
+func ContainsInSlice(s []string, str string) bool {
+	for _, val := range s {
+		if val == str {
+			return true
+		}
+	}
+	return false
+}
+
+// CastToBool casts the given value to string and then parsers it to a bool value
+func CastToBool(i interface{}) (bool, error) {
+	str := CastOrEmpty(i)
+	return strconv.ParseBool(str)
 }

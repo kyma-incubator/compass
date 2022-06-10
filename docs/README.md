@@ -9,26 +9,15 @@ Start with the overarching [Compass documentation](./compass) where you can find
 * [Director](./director)
 * [Integration System](./integration-system)
 * [Runtime Agent](./runtime-agent)
-
-
-### Docs structure
-
-The directory has the following structure:
-
-```
-  ├── compass                  # Overarching Compass documentation
-  ├── connector                # Documentation for the Connector component     
-  ├── director                 # Documentation for the Director component      
-  ├── integration-system       # Documentation for the Integration System component                                    
-  ├── internal                 # Internal documentation, such as investigations, proposals, and standards
-  └── runtime-agent            # Documentation for the Runtime Agent component     
-```
+* [System Broker](./system-broker)
+* [System Fetcher](./system-fetcher)
+* [Asynchronous Operations Controller](./operations-controller)
 
 ## Development
 
 Follow these basic rules when you add a new document to the official documentation:
 
-1. Get familiar with the [Content Strategy]https://github.com/kyma-project/community/blob/main/guidelines/content-guidelines/01-content-strategy.md) to learn about the official approach to content development.
-2. Follow the [Contribution Guide](https://github.com/kyma-project/community/blob/main/contributing/02-contributing.md) for the general contribution rules and process.
-3. Make use of the [templates](https://github.com/kyma-project/community/tree/main/guidelines/templates) to structure your documents properly.
-4. Be compliant with the writing [guidelines](https://github.com/kyma-project/community/blob/main/guidelines/content-guidelines) to contribute high-quality and standardized content.
+1. Get familiar with the [Content Strategy](https://github.com/kyma-project/community/blob/main/docs/guidelines/content-guidelines/01-content-strategy.md) to learn about the official approach to content development.
+2. Follow the [Contribution Guide](https://github.com/kyma-project/community/blob/main/docs/contributing/02-contributing.md) for the general contribution rules and process.
+3. Make use of the [templates](https://github.com/kyma-project/community/blob/main/docs/guidelines/templates/templates-type.md) to structure your documents properly.
+4. Be compliant with the writing [guidelines](https://github.com/kyma-project/community/tree/main/docs/guidelines/content-guidelines) to contribute high-quality and standardized content.

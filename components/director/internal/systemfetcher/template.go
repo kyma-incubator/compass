@@ -10,13 +10,13 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-//go:generate mockery --name=applicationTemplateService --output=automock --outpkg=automock --case=underscore --exported=true
+//go:generate mockery --name=applicationTemplateService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type applicationTemplateService interface {
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
 }
 
-//go:generate mockery --name=applicationConverter --output=automock --outpkg=automock --case=underscore --exported=true
+//go:generate mockery --name=applicationConverter --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type applicationConverter interface {
 	CreateInputJSONToModel(ctx context.Context, in string) (model.ApplicationRegisterInput, error)
 }
@@ -98,7 +98,7 @@ func (r *renderer) getTemplateInputs(s System) (*model.ApplicationFromTemplateIn
 	for _, pm := range r.placeholdersMapping {
 		placeholderInput := gjson.GetBytes(systemJSON, pm.SystemKey).String()
 		if len(placeholderInput) == 0 && !pm.Optional {
-			return nil, fmt.Errorf("failed to find key %q in system input %s", pm.SystemKey, string(systemJSON))
+			return nil, fmt.Errorf("missing or empty key %q in system input %s", pm.SystemKey, string(systemJSON))
 		}
 		inputValues = append(inputValues, &model.ApplicationTemplateValueInput{
 			Placeholder: pm.PlaceholderName,

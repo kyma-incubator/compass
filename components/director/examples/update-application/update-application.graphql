@@ -6,6 +6,7 @@ mutation {
       providerName: "after"
       description: "after"
       healthCheckURL: "https://kyma-project.io"
+      baseUrl: "after"
       statusCondition: CONNECTED
     }
   ) {
@@ -15,6 +16,7 @@ mutation {
     description
     baseUrl
     systemNumber
+    systemStatus
     integrationSystemID
     applicationTemplateID
     labels
@@ -29,6 +31,7 @@ mutation {
       id
       applicationID
       applicationTemplateID
+      runtimeID
       type
       mode
       correlationIdKey

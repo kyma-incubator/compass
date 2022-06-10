@@ -121,6 +121,12 @@ models:
         resolver: true
       eventingConfiguration:
         resolver: true
+      runtimeContext:
+        resolver: true
+      runtimeContexts:
+        resolver: true
+      webhooks:
+        resolver: true
 
   RuntimeContext:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.RuntimeContext"
@@ -162,6 +168,8 @@ models:
     model: "github.com/kyma-incubator/compass/components/director/pkg/graphql.ApplicationTemplate"
     fields:
       webhooks:
+        resolver: true
+      labels:
         resolver: true
 
   Tenant:

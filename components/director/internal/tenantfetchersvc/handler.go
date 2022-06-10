@@ -7,6 +7,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+
+	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -19,8 +24,14 @@ const (
 	compassURL          = "https://github.com/kyma-incubator/compass"
 )
 
+// TenantFetcher is used to fectch tenants for creation;
+//go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
+type TenantFetcher interface {
+	FetchTenantOnDemand(ctx context.Context, tenantID, parentTenantID string) error
+}
+
 // TenantSubscriber is used to apply subscription changes for tenants;
-//go:generate mockery --name=TenantSubscriber --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=TenantSubscriber --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantSubscriber interface {
 	Subscribe(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest) error
 	Unsubscribe(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest) error
@@ -29,10 +40,12 @@ type TenantSubscriber interface {
 // HandlerConfig is the configuration required by the tenant handler.
 // It includes configurable parameters for incoming requests, including different tenant IDs json properties, and path parameters.
 type HandlerConfig struct {
-	RegionalHandlerEndpoint string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
-	DependenciesEndpoint    string `envconfig:"APP_DEPENDENCIES_ENDPOINT,default=/v1/dependencies"`
-	TenantPathParam         string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
-	RegionPathParam         string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
+	TenantOnDemandHandlerEndpoint string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{parentTenantId}/{tenantId}"`
+	RegionalHandlerEndpoint       string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
+	DependenciesEndpoint          string `envconfig:"APP_DEPENDENCIES_ENDPOINT,default=/v1/dependencies"`
+	TenantPathParam               string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
+	ParentTenantPathParam         string `envconfig:"APP_PARENT_TENANT_PATH_PARAM,default=parentTenantId"`
+	RegionPathParam               string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
 
 	DirectorGraphQLEndpoint     string        `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
 	ClientTimeout               time.Duration `envconfig:"default=60s"`
@@ -40,6 +53,8 @@ type HandlerConfig struct {
 
 	TenantProviderConfig
 	features.Config
+
+	Database persistence.DatabaseConfig
 }
 
 // TenantProviderConfig includes the configuration for tenant providers - the tenant ID json property names, the subdomain property name, and the tenant provider name.
@@ -50,9 +65,20 @@ type TenantProviderConfig struct {
 	SubdomainProperty              string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY,default=subdomain"`
 	TenantProvider                 string `envconfig:"APP_TENANT_PROVIDER,default=external-provider"`
 	SubscriptionProviderIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY,default=subscriptionProviderId"`
+	ProviderSubaccountIDProperty   string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY,default=providerSubaccountId"`
+}
+
+// EventsConfig contains configuration for Events API requests
+type EventsConfig struct {
+	OAuthConfig        tenantfetcher.OAuth2Config
+	APIConfig          tenantfetcher.APIConfig
+	AuthMode           oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
+	QueryConfig        tenantfetcher.QueryConfig
+	TenantFieldMapping tenantfetcher.TenantFieldMapping
 }
 
 type handler struct {
+	fetcher    TenantFetcher
 	subscriber TenantSubscriber
 	config     HandlerConfig
 }
@@ -62,6 +88,52 @@ func NewTenantsHTTPHandler(subscriber TenantSubscriber, config HandlerConfig) *h
 	return &handler{
 		subscriber: subscriber,
 		config:     config,
+	}
+}
+
+// NewTenantFetcherHTTPHandler returns a new HTTP handler, responsible for creation of on-demand tenants.
+func NewTenantFetcherHTTPHandler(fetcher TenantFetcher, config HandlerConfig) *handler {
+	return &handler{
+		fetcher: fetcher,
+		config:  config,
+	}
+}
+
+// FetchTenantOnDemand fetches External tenants registry events for a provided subaccount and creates a subaccount tenant
+func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.Request) {
+	ctx := request.Context()
+
+	vars := mux.Vars(request)
+	tenantID, ok := vars[h.config.TenantPathParam]
+	if !ok || len(tenantID) == 0 {
+		log.C(ctx).Error("Tenant path parameter is missing from request")
+		http.Error(writer, "Tenant path parameter is missing from request", http.StatusBadRequest)
+		return
+	}
+
+	parentTenantID, ok := vars[h.config.ParentTenantPathParam]
+	if !ok || len(parentTenantID) == 0 {
+		log.C(ctx).Error("Parent tenant path parameter is missing from request")
+		http.Error(writer, "Parent tenant ID path parameter is missing from request", http.StatusBadRequest)
+		return
+	}
+
+	log.C(ctx).Infof("Fetching create event for tenant with ID %s", tenantID)
+
+	err := h.fetcher.FetchTenantOnDemand(ctx, tenantID, parentTenantID)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Error while processing request for creation of tenant %s: %v", tenantID, err)
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
+		return
+	}
+	writeCreatedResponse(writer, ctx, tenantID)
+}
+
+func writeCreatedResponse(writer http.ResponseWriter, ctx context.Context, tenantID string) {
+	writer.Header().Set("Content-Type", "text/plain")
+	writer.WriteHeader(http.StatusOK)
+	if _, err := writer.Write([]byte(compassURL)); err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to write response body for request for creation of tenant %s: %v", tenantID, err)
 	}
 }
 
@@ -126,6 +198,7 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		h.config.SubdomainProperty:              true,
 		h.config.CustomerIDProperty:             false,
 		h.config.SubscriptionProviderIDProperty: true,
+		h.config.ProviderSubaccountIDProperty:   true,
 	})
 	if err != nil {
 		return nil, err
@@ -137,6 +210,7 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		CustomerTenantID:       properties[h.config.CustomerIDProperty],
 		Subdomain:              properties[h.config.SubdomainProperty],
 		SubscriptionProviderID: properties[h.config.SubscriptionProviderIDProperty],
+		ProviderSubaccountID:   properties[h.config.ProviderSubaccountIDProperty],
 		Region:                 region,
 	}
 

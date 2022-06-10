@@ -54,7 +54,7 @@ func (c APIConfig) isUnassignedOptionalProperty(eventsType EventsType) bool {
 }
 
 // MetricsPusher missing godoc
-//go:generate mockery --name=MetricsPusher --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=MetricsPusher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type MetricsPusher interface {
 	RecordEventingRequest(method string, statusCode int, desc string)
 }

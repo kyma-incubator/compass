@@ -29,7 +29,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/pkg/errors"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -45,7 +45,7 @@ import (
 const usesBundlesLabel = "useBundles"
 
 // LabelUpsertService missing godoc
-//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
@@ -140,7 +140,8 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 
 				next.ServeHTTP(w, r)
 
-				if strings.Contains(strings.ToLower(body), "bundle") && consumerInfo.ConsumerType == consumer.Runtime {
+				if strings.Contains(strings.ToLower(body), "bundle") &&
+					(consumerInfo.ConsumerType == consumer.Runtime || consumerInfo.ConsumerType == consumer.ExternalCertificate) {
 					if err := h.labelRuntimeWithBundlesParam(ctx, consumerInfo); err != nil {
 						log.C(ctx).WithError(err).Errorf("Error labelling runtime with %q: %v", usesBundlesLabel, err)
 					}

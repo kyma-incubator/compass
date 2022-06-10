@@ -3,7 +3,7 @@ package bundleinstanceauth
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -16,7 +16,7 @@ import (
 )
 
 // Repository missing godoc
-//go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Repository interface {
 	Create(ctx context.Context, item *model.BundleInstanceAuth) error
 	GetByID(ctx context.Context, tenantID string, id string) (*model.BundleInstanceAuth, error)
@@ -28,7 +28,7 @@ type Repository interface {
 }
 
 // UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
@@ -67,7 +67,7 @@ func (s *service) Create(ctx context.Context, bundleID string, in model.BundleIn
 	}
 
 	var runtimeID *string
-	if con.ConsumerType == consumer.Runtime {
+	if con.ConsumerType == consumer.Runtime || con.ConsumerType == consumer.ExternalCertificate {
 		runtimeID = &con.ConsumerID
 	}
 

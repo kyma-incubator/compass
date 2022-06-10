@@ -1,0 +1,143 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.deployment.minReplicas }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      release: {{ .Release.Name }}
+  strategy:
+    {{- toYaml .Values.deployment.strategy | nindent 4 }}
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+        {{ if .Values.deployment.resourcesIstioProxy.requests.cpu }}
+        sidecar.istio.io/proxyCPU: {{ .Values.deployment.resourcesIstioProxy.requests.cpu }}
+        {{ end }}
+        {{ if .Values.deployment.resourcesIstioProxy.requests.memory }}
+        sidecar.istio.io/proxyMemory: {{ .Values.deployment.resourcesIstioProxy.requests.memory }}
+        {{ end }}
+        {{ if .Values.deployment.resourcesIstioProxy.limits.cpu }}
+        sidecar.istio.io/proxyCPULimit: {{ .Values.deployment.resourcesIstioProxy.limits.cpu }}
+        {{ end }}
+        {{ if .Values.deployment.resourcesIstioProxy.limits.memory }}
+        sidecar.istio.io/proxyMemoryLimit: {{ .Values.deployment.resourcesIstioProxy.limits.memory }}
+        {{ end }}
+      labels:
+        app: {{ .Chart.Name }}
+        reqlimit: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit5MBLabel }}
+        release: {{ .Release.Name }}
+    spec:
+      {{ if .Values.global.isLocalEnv }}
+      # HostAliases are used by Pod to resolve kyma.local domain
+      hostAliases:
+        - ip: {{ .Values.global.minikubeIP }}
+          hostnames:
+            # Used for calls to Director
+            - "{{ .Values.global.director.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}"
+      {{ end }}
+      serviceAccountName: {{ template "fullname" . }}
+      nodeSelector:
+        {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.hydrator.dir }}compass-hydrator:{{ $.Values.global.images.hydrator.version }}
+          imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.deployment.args.containerPort }}
+              protocol: TCP
+            - name: metrics
+              containerPort: {{ .Values.global.hydrator.metrics.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.deployment.resources | nindent 12 }}
+          {{- with .Values.deployment.securityContext }}
+          securityContext:
+{{ toYaml . | indent 12 }}
+          {{- end }}
+          env:
+            - name: APP_LOG_FORMAT
+              value: {{.Values.global.log.format | quote }}
+            - name: APP_ADDRESS
+              value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
+            - name: APP_ROOT_API
+              value: "{{ .Values.global.hydrator.prefix }}"
+            - name: APP_DIRECTOR_URL
+              value: "https://{{ .Values.global.director.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}/graphql"
+            - name: APP_DIRECTOR_SKIP_SSL_VALIDATION
+              value: {{ .Values.global.hydrator.http.client.skipSSLValidation | quote }}
+            - name: APP_CONFIGURATION_FILE
+              value: /config/config.yaml
+            - name: APP_REVOCATION_CONFIG_MAP_NAME
+              value: "{{ tpl .Values.global.connector.revocation.configmap.namespace . }}/{{ .Values.global.connector.revocation.configmap.name }}"
+            - name: APP_METRICS_ADDRESS
+              value: "0.0.0.0:{{ .Values.global.hydrator.metrics.port }}"
+            - name: APP_METRICS_ENABLE_CLIENT_ID_INSTRUMENTATION
+              value: "{{ .Values.global.hydrator.metrics.enableClientInstrumentation }}"
+            - name: APP_METRICS_CENSORED_FLOWS
+              value: "{{ .Values.global.hydrator.metrics.censoredFlows }}"
+            {{- range $authenMappingServiceName, $config := .Values.global.oathkeeper.mutators.authenticationMappingServices }}
+            {{- if eq $config.authenticator.enabled true }}
+            - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_TRUSTED_ISSUERS
+              value: {{ $config.authenticator.trusted_issuers | quote }}
+            - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_ATTRIBUTES
+              value: {{ $config.authenticator.attributes | quote }}
+            - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_CHECK_CLIENT_ID_SUFFIX
+              value: {{ $config.authenticator.checkSuffix | quote }}
+            {{- end }}
+            {{- end }}
+            - name: APP_CSR_SUBJECT_COUNTRY
+              value: {{ .Values.deployment.args.csrSubject.country | quote }}
+            - name: APP_CSR_SUBJECT_ORGANIZATION
+              value: {{ .Values.deployment.args.csrSubject.organization | quote }}
+            - name: APP_CSR_SUBJECT_ORGANIZATIONAL_UNIT
+              value: {{ .Values.deployment.args.csrSubject.organizationalUnit | quote }}
+            - name: APP_CSR_SUBJECT_LOCALITY
+              value: {{ .Values.deployment.args.csrSubject.locality | quote }}
+            - name: APP_CSR_SUBJECT_PROVINCE
+              value: {{ .Values.deployment.args.csrSubject.province | quote }}
+            - name: APP_EXTERNAL_ISSUER_SUBJECT_COUNTRY
+              value: {{ .Values.deployment.args.externalIssuerSubject.country | quote }}
+            - name: APP_EXTERNAL_ISSUER_SUBJECT_ORGANIZATION
+              value: {{ .Values.deployment.args.externalIssuerSubject.organization | quote }}
+            - name: APP_EXTERNAL_ISSUER_SUBJECT_ORGANIZATIONAL_UNIT_PATTERN
+              value: {{ .Values.deployment.args.externalIssuerSubject.organizationalUnitPattern | quote }}
+            - name: APP_CERTIFICATE_DATA_HEADER
+              value: {{ .Values.global.hydrator.certificateDataHeader | quote }}
+            - name: APP_SUBJECT_CONSUMER_MAPPING_CONFIG
+              value: {{ .Values.global.hydrator.subjectConsumerMappingConfig | quote }}
+          livenessProbe:
+            httpGet:
+              port: {{.Values.deployment.args.containerPort }}
+              path: "/healthz"
+            initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
+            periodSeconds: {{.Values.global.livenessProbe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              port: {{.Values.deployment.args.containerPort }}
+              path: "/readyz"
+            initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
+            periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}
+          volumeMounts:
+            - mountPath: /config
+              name: hydrator-config
+            - mountPath: /data/static-groups.yaml
+              name: static-groups
+              subPath: static-groups.yaml
+      volumes:
+        - name: hydrator-config
+          configMap:
+            name: {{ template "fullname" . }}-config
+        - name: static-groups
+          configMap:
+            name: {{ template "fullname" . }}-static-groups

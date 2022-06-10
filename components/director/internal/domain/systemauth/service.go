@@ -4,15 +4,18 @@ import (
 	"context"
 	"time"
 
+	intModel "github.com/kyma-incubator/compass/components/director/internal/model"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 )
 
 // Repository missing godoc
-//go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Repository interface {
 	Create(ctx context.Context, item model.SystemAuth) error
 	GetByIDForObject(ctx context.Context, tenant, id string, objType model.SystemAuthReferenceObjectType) (*model.SystemAuth, error)
@@ -27,7 +30,7 @@ type Repository interface {
 }
 
 // UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
@@ -46,16 +49,16 @@ func NewService(repo Repository, uidService UIDService) *service {
 }
 
 // Create missing godoc
-func (s *service) Create(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error) {
+func (s *service) Create(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *intModel.AuthInput) (string, error) {
 	return s.create(ctx, s.uidService.Generate(), objectType, objectID, authInput)
 }
 
 // CreateWithCustomID missing godoc
-func (s *service) CreateWithCustomID(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error) {
+func (s *service) CreateWithCustomID(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *intModel.AuthInput) (string, error) {
 	return s.create(ctx, id, objectType, objectID, authInput)
 }
 
-func (s *service) create(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *model.AuthInput) (string, error) {
+func (s *service) create(ctx context.Context, id string, objectType model.SystemAuthReferenceObjectType, objectID string, authInput *intModel.AuthInput) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		if !model.IsIntegrationSystemNoTenantFlow(err, objectType) {
@@ -125,7 +128,7 @@ func (s *service) GetGlobal(ctx context.Context, id string) (*model.SystemAuth, 
 	return item, nil
 }
 
-// GetByToken missing godoc
+// GetByToken get a SystemAuth by a one time token value
 func (s *service) GetByToken(ctx context.Context, token string) (*model.SystemAuth, error) {
 	return s.repo.GetByJSONValue(ctx, map[string]interface{}{
 		"OneTimeToken": map[string]interface{}{
@@ -135,16 +138,42 @@ func (s *service) GetByToken(ctx context.Context, token string) (*model.SystemAu
 	})
 }
 
-// InvalidateToken missing godoc
-func (s *service) InvalidateToken(ctx context.Context, item *model.SystemAuth) error {
-	item.Value.OneTimeToken.Used = true
-	item.Value.OneTimeToken.UsedAt = time.Now()
-	return s.repo.Update(ctx, item)
+// InvalidateToken gets a SystemAuth by ID, sets the Used properties for the OTT and updates the model
+func (s *service) InvalidateToken(ctx context.Context, id string) (*model.SystemAuth, error) {
+	systemAuth, err := s.GetGlobal(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	systemAuth.Value.OneTimeToken.Used = true
+	systemAuth.Value.OneTimeToken.UsedAt = time.Now()
+
+	if err := s.repo.Update(ctx, systemAuth); err != nil {
+		return nil, err
+	}
+
+	return systemAuth, nil
 }
 
 // Update missing godoc
 func (s *service) Update(ctx context.Context, item *model.SystemAuth) error {
 	return s.repo.Update(ctx, item)
+}
+
+// UpdateValue get SystemAuth by provided id and update it with the given input
+func (s *service) UpdateValue(ctx context.Context, id string, item *intModel.Auth) (*model.SystemAuth, error) {
+	systemAuth, err := s.repo.GetByIDGlobal(ctx, id)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting System Auth with id '%s'", id)
+	}
+
+	systemAuth.Value = item
+
+	if err := s.repo.Update(ctx, systemAuth); err != nil {
+		return nil, errors.Wrapf(err, "while updating System Auth with id '%s'", id)
+	}
+
+	return systemAuth, nil
 }
 
 // ListForObject missing godoc

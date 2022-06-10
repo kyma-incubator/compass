@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ory/hydra-client-go/models"
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+
+	"github.com/ory/hydra-client-go/models"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/ory/hydra-client-go/client/admin"
 	"github.com/pkg/errors"
@@ -19,20 +22,20 @@ const (
 )
 
 // ClientDetailsConfigProvider missing godoc
-//go:generate mockery --name=ClientDetailsConfigProvider --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ClientDetailsConfigProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ClientDetailsConfigProvider interface {
 	GetRequiredScopes(path string) ([]string, error)
 	GetRequiredGrantTypes(path string) ([]string, error)
 }
 
 // UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
 
 // OryHydraService missing godoc
-//go:generate mockery --name=OryHydraService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=OryHydraService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OryHydraService interface {
 	ListOAuth2Clients(params *admin.ListOAuth2ClientsParams, opts ...admin.ClientOption) (*admin.ListOAuth2ClientsOK, error)
 	CreateOAuth2Client(params *admin.CreateOAuth2ClientParams, opts ...admin.ClientOption) (*admin.CreateOAuth2ClientCreated, error)
@@ -64,7 +67,7 @@ func NewService(scopeCfgProvider ClientDetailsConfigProvider, uidService UIDServ
 }
 
 // CreateClientCredentials missing godoc
-func (s *service) CreateClientCredentials(ctx context.Context, objectType model.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error) {
+func (s *service) CreateClientCredentials(ctx context.Context, objectType pkgmodel.SystemAuthReferenceObjectType) (*model.OAuthCredentialDataInput, error) {
 	details, err := s.GetClientDetails(objectType)
 	if err != nil {
 		return nil, err
@@ -87,7 +90,7 @@ func (s *service) CreateClientCredentials(ctx context.Context, objectType model.
 }
 
 // UpdateClient missing godoc
-func (s *service) UpdateClient(ctx context.Context, clientID string, objectType model.SystemAuthReferenceObjectType) error {
+func (s *service) UpdateClient(ctx context.Context, clientID string, objectType pkgmodel.SystemAuthReferenceObjectType) error {
 	details, err := s.GetClientDetails(objectType)
 	if err != nil {
 		return err
@@ -115,7 +118,7 @@ func (s *service) DeleteClientCredentials(ctx context.Context, clientID string) 
 }
 
 // DeleteMultipleClientCredentials missing godoc
-func (s *service) DeleteMultipleClientCredentials(ctx context.Context, auths []model.SystemAuth) error {
+func (s *service) DeleteMultipleClientCredentials(ctx context.Context, auths []pkgmodel.SystemAuth) error {
 	for _, auth := range auths {
 		if auth.Value == nil {
 			continue
@@ -141,7 +144,7 @@ func (s *service) ListClients() ([]*models.OAuth2Client, error) {
 }
 
 // GetClientDetails missing godoc
-func (s *service) GetClientDetails(objType model.SystemAuthReferenceObjectType) (*ClientDetails, error) {
+func (s *service) GetClientDetails(objType pkgmodel.SystemAuthReferenceObjectType) (*ClientDetails, error) {
 	scopes, err := s.scopeCfgProvider.GetRequiredScopes(s.buildPath(objType))
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting scopes for registering Client Credentials for %s", objType)
@@ -187,7 +190,7 @@ func (s *service) updateClient(ctx context.Context, clientID string, details *Cl
 	return nil
 }
 
-func (s *service) buildPath(objType model.SystemAuthReferenceObjectType) string {
+func (s *service) buildPath(objType pkgmodel.SystemAuthReferenceObjectType) string {
 	lowerCaseType := strings.ToLower(string(objType))
 	transformedObjType := strings.ReplaceAll(lowerCaseType, " ", "_")
 	return fmt.Sprintf("%s.%s", scopesPerConsumerTypePrefix, transformedObjType)

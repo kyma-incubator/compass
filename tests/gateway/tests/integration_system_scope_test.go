@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 
@@ -63,6 +65,10 @@ func TestIntegrationSystemScenario(t *testing.T) {
 				Name:         "test",
 				ProviderName: ptr.String("test"),
 			},
+			Labels: graphql.Labels{
+				testConfig.AppSelfRegDistinguishLabelKey: []interface{}{testConfig.AppSelfRegDistinguishLabelValue},
+				tenantfetcher.RegionKey:                  testConfig.AppSelfRegRegion,
+			},
 			Placeholders: nil,
 			AccessLevel:  "GLOBAL",
 		}
@@ -83,7 +89,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 
 	t.Run("Test runtime scopes", func(t *testing.T) {
 		t.Log("Register runtime")
-		runtimeInput := graphql.RuntimeInput{
+		runtimeInput := graphql.RuntimeRegisterInput{
 			Name: "test",
 		}
 		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, &runtimeInput)

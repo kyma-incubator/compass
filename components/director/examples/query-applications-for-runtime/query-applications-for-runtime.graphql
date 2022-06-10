@@ -12,6 +12,7 @@ query {
       description
       baseUrl
       systemNumber
+      systemStatus
       integrationSystemID
       applicationTemplateID
       labels
@@ -26,6 +27,7 @@ query {
         id
         applicationID
         applicationTemplateID
+        runtimeID
         type
         mode
         correlationIdKey

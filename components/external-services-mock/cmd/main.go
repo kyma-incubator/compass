@@ -55,6 +55,7 @@ type config struct {
 	ORDServers    ORDServers
 	SelfRegConfig selfreg.Config
 	DefaultTenant string `envconfig:"APP_DEFAULT_TENANT"`
+	TrustedTenant string `envconfig:"APP_TRUSTED_TENANT"`
 
 	TenantConfig         subscription.Config
 	TenantProviderConfig subscription.ProviderConfig
@@ -200,39 +201,39 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	router.Methods(http.MethodPost).PathPrefix("/systemfetcher/configure").HandlerFunc(systemFetcherHandler.HandleConfigure)
 	router.Methods(http.MethodDelete).PathPrefix("/systemfetcher/reset").HandlerFunc(systemFetcherHandler.HandleReset)
 	systemsRouter := router.PathPrefix("/systemfetcher/systems").Subrouter()
-	systemsRouter.Use(oauthMiddleware(&key.PublicKey, getClaimsValidator(cfg.DefaultTenant, cfg.ClientID, cfg.Scopes)))
+	systemsRouter.Use(oauthMiddleware(&key.PublicKey, getClaimsValidator([]string{cfg.DefaultTenant, cfg.TrustedTenant})))
 	systemsRouter.HandleFunc("", systemFetcherHandler.HandleFunc)
 
 	// Tenant fetcher handlers
-	tenantFetcherHandler := tenantfetcher.NewHandler()
+	tenantFetcherHandler := tenantfetcher.NewHandler(cfg.TenantConfig.TestTenantOnDemandID)
 
-	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/global-account-create/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure("create"))
-	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-create/reset").HandlerFunc(tenantFetcherHandler.HandleReset("create"))
-	router.HandleFunc("/tenant-fetcher/global-account-create", tenantFetcherHandler.HandleFunc("create"))
+	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/global-account-create/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure(tenantfetcher.AccountCreationEventType))
+	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-create/reset").HandlerFunc(tenantFetcherHandler.HandleReset(tenantfetcher.AccountCreationEventType))
+	router.HandleFunc("/tenant-fetcher/global-account-create", tenantFetcherHandler.HandleFunc(tenantfetcher.AccountCreationEventType))
 
-	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/global-account-delete/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure("delete"))
-	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-delete/reset").HandlerFunc(tenantFetcherHandler.HandleReset("delete"))
-	router.HandleFunc("/tenant-fetcher/global-account-delete", tenantFetcherHandler.HandleFunc("delete"))
+	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/global-account-delete/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure(tenantfetcher.AccountDeletionEventType))
+	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-delete/reset").HandlerFunc(tenantFetcherHandler.HandleReset(tenantfetcher.AccountDeletionEventType))
+	router.HandleFunc("/tenant-fetcher/global-account-delete", tenantFetcherHandler.HandleFunc(tenantfetcher.AccountDeletionEventType))
 
-	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/global-account-update/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure("update"))
-	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-update/reset").HandlerFunc(tenantFetcherHandler.HandleReset("update"))
-	router.HandleFunc("/tenant-fetcher/global-account-update", tenantFetcherHandler.HandleFunc("update"))
+	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/global-account-update/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure(tenantfetcher.AccountUpdateEventType))
+	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-update/reset").HandlerFunc(tenantFetcherHandler.HandleReset(tenantfetcher.AccountUpdateEventType))
+	router.HandleFunc("/tenant-fetcher/global-account-update", tenantFetcherHandler.HandleFunc(tenantfetcher.AccountUpdateEventType))
 
-	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/subaccount-create/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure("create_subaccount"))
-	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/subaccount-create/reset").HandlerFunc(tenantFetcherHandler.HandleReset("create_subaccount"))
-	router.HandleFunc("/tenant-fetcher/subaccount-create", tenantFetcherHandler.HandleFunc("create_subaccount"))
+	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/subaccount-create/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure(tenantfetcher.SubaccountCreationEventType))
+	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/subaccount-create/reset").HandlerFunc(tenantFetcherHandler.HandleReset(tenantfetcher.SubaccountCreationEventType))
+	router.HandleFunc("/tenant-fetcher/subaccount-create", tenantFetcherHandler.HandleFunc(tenantfetcher.SubaccountCreationEventType))
 
-	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/subaccount-delete/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure("delete_subaccount"))
-	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/subaccount-delete/reset").HandlerFunc(tenantFetcherHandler.HandleReset("delete_subaccount"))
-	router.HandleFunc("/tenant-fetcher/subaccount-delete", tenantFetcherHandler.HandleFunc("delete_subaccount"))
+	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/subaccount-delete/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure(tenantfetcher.SubaccountDeletionEventType))
+	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/subaccount-delete/reset").HandlerFunc(tenantFetcherHandler.HandleReset(tenantfetcher.SubaccountDeletionEventType))
+	router.HandleFunc("/tenant-fetcher/subaccount-delete", tenantFetcherHandler.HandleFunc(tenantfetcher.SubaccountDeletionEventType))
 
-	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/subaccount-update/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure("update_subaccount"))
-	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/subaccount-update/reset").HandlerFunc(tenantFetcherHandler.HandleReset("update_subaccount"))
-	router.HandleFunc("/tenant-fetcher/subaccount-update", tenantFetcherHandler.HandleFunc("update_subaccount"))
+	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/subaccount-update/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure(tenantfetcher.SubaccountUpdateEventType))
+	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/subaccount-update/reset").HandlerFunc(tenantFetcherHandler.HandleReset(tenantfetcher.SubaccountUpdateEventType))
+	router.HandleFunc("/tenant-fetcher/subaccount-update", tenantFetcherHandler.HandleFunc(tenantfetcher.SubaccountUpdateEventType))
 
-	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/subaccount-move/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure("move_subaccount"))
-	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/subaccount-move/reset").HandlerFunc(tenantFetcherHandler.HandleReset("move_subaccount"))
-	router.HandleFunc("/tenant-fetcher/subaccount-move", tenantFetcherHandler.HandleFunc("move_subaccount"))
+	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/subaccount-move/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure(tenantfetcher.SubaccountMoveEventType))
+	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/subaccount-move/reset").HandlerFunc(tenantFetcherHandler.HandleReset(tenantfetcher.SubaccountMoveEventType))
+	router.HandleFunc("/tenant-fetcher/subaccount-move", tenantFetcherHandler.HandleFunc(tenantfetcher.SubaccountMoveEventType))
 
 	// Fetch request handlers
 	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
@@ -416,6 +417,7 @@ func oauthMiddleware(key *rsa.PublicKey, validateClaims func(claims *oauth.Claim
 				httphelpers.WriteError(w, errors.New("Could not validate claims"), http.StatusUnauthorized)
 				return
 			}
+			r.Header.Set("tenant", parsed.Tenant)
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -481,8 +483,14 @@ func stopServer(server *http.Server) {
 func noopClaimsValidator(_ *oauth.Claims) bool {
 	return true
 }
-func getClaimsValidator(expectedTenant, expectedClient, expectedScopes string) func(*oauth.Claims) bool {
+
+func getClaimsValidator(trustedTenants []string) func(*oauth.Claims) bool {
 	return func(claims *oauth.Claims) bool {
-		return claims.Tenant == expectedTenant
+		for _, tenant := range trustedTenants {
+			if claims.Tenant == tenant {
+				return true
+			}
+		}
+		return false
 	}
 }

@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/tokens"
 
@@ -295,7 +297,7 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", context.TODO(), model.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
+				svc.On("ListForObject", context.TODO(), pkgmodel.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -327,7 +329,7 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", context.TODO(), model.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
+				svc.On("ListForObject", context.TODO(), pkgmodel.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -387,7 +389,7 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", context.TODO(), model.ApplicationReference, modelApplication.ID).Return(nil, testErr)
+				svc.On("ListForObject", context.TODO(), pkgmodel.ApplicationReference, modelApplication.ID).Return(nil, testErr)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -417,7 +419,7 @@ func TestResolver_UnregisterApplication(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", context.TODO(), model.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
+				svc.On("ListForObject", context.TODO(), pkgmodel.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -523,7 +525,7 @@ func TestResolver_UnpairApplication(t *testing.T) {
 			},
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", context.TODO(), model.ApplicationReference, modelApplication.ID).Return(testAuths, nil).Once()
+				svc.On("ListForObject", context.TODO(), pkgmodel.ApplicationReference, modelApplication.ID).Return(testAuths, nil).Once()
 				svc.On("DeleteMultipleByIDForObject", context.TODO(), testAuths).Return(nil).Once()
 				return svc
 			},
@@ -610,7 +612,7 @@ func TestResolver_UnpairApplication(t *testing.T) {
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				svc.AssertNotCalled(t, "DeleteMultipleClientCredentials")
-				svc.On("ListForObject", context.TODO(), model.ApplicationReference, modelApplication.ID).Return(nil, testErr)
+				svc.On("ListForObject", context.TODO(), pkgmodel.ApplicationReference, modelApplication.ID).Return(nil, testErr)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -641,7 +643,7 @@ func TestResolver_UnpairApplication(t *testing.T) {
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				svc.On("DeleteMultipleByIDForObject", context.TODO(), testAuths).Return(nil).Once()
-				svc.On("ListForObject", context.TODO(), model.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
+				svc.On("ListForObject", context.TODO(), pkgmodel.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -670,7 +672,7 @@ func TestResolver_UnpairApplication(t *testing.T) {
 			SysAuthServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
 				svc.On("DeleteMultipleByIDForObject", context.TODO(), testAuths).Return(testErr).Once()
-				svc.On("ListForObject", context.TODO(), model.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
+				svc.On("ListForObject", context.TODO(), pkgmodel.ApplicationReference, modelApplication.ID).Return(testAuths, nil)
 				return svc
 			},
 			OAuth20ServiceFn: func() *automock.OAuth20Service {
@@ -706,6 +708,134 @@ func TestResolver_UnpairApplication(t *testing.T) {
 			}
 
 			mock.AssertExpectationsForObjects(t, svc, converter, persistTx, transact, sysAuthSvc, oAuth20Svc)
+		})
+	}
+}
+
+func TestResolver_MergeApplications(t *testing.T) {
+	// GIVEN
+	srcAppID := "srcID"
+	destAppID := "destID"
+
+	modelApplication := fixModelApplication(destAppID, "tenant-foo", "Foo", "Lorem ipsum")
+	gqlApplication := fixGQLApplication(destAppID, "Foo", "Lorem ipsum")
+
+	testErr := errors.New("Test error")
+
+	testCases := []struct {
+		Name                   string
+		PersistenceFn          func() *persistenceautomock.PersistenceTx
+		TransactionerFn        func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn              func() *automock.ApplicationService
+		ApplicationConverterFn func() *automock.ApplicationConverter
+		ExpectedResult         *graphql.Application
+		ExpectedErr            error
+	}{
+		{
+			Name:            "Success",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ApplicationConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				conv.On("ToGraphQL", modelApplication).Return(gqlApplication).Once()
+
+				return conv
+			},
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("Merge", txtest.CtxWithDBMatcher(), destAppID, srcAppID).Return(modelApplication, nil).Once()
+
+				return svc
+			},
+			ExpectedResult: gqlApplication,
+			ExpectedErr:    nil,
+		},
+		{
+			Name: "Returns error when webhook conversion to graphql fails",
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(nil, testErr).Once()
+				return transact
+			},
+			PersistenceFn: txtest.PersistenceContextThatDoesntExpectCommit,
+			ApplicationConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				conv.AssertNotCalled(t, "ToGraphQL")
+
+				return conv
+			},
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.AssertNotCalled(t, "Merge")
+
+				return svc
+			},
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+		{
+			Name: "Returns error on committing transaction",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(testErr).Once()
+				return persistTx
+			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ApplicationConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				conv.AssertNotCalled(t, "ToGraphQL")
+
+				return conv
+			},
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("Merge", txtest.CtxWithDBMatcher(), destAppID, srcAppID).Return(modelApplication, nil).Once()
+
+				return svc
+			},
+			ExpectedErr: testErr,
+		},
+		{
+			Name:          "Returns error then Merge fails",
+			PersistenceFn: txtest.PersistenceContextThatDoesntExpectCommit,
+			ApplicationConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				conv.AssertNotCalled(t, "ToGraphQL")
+
+				return conv
+			},
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("Merge", txtest.CtxWithDBMatcher(), destAppID, srcAppID).Return(nil, testErr).Once()
+
+				return svc
+			},
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ExpectedResult:  nil,
+			ExpectedErr:     testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			svc := testCase.ServiceFn()
+			converter := testCase.ApplicationConverterFn()
+
+			mockPersistence := testCase.PersistenceFn()
+			mockTransactioner := testCase.TransactionerFn(mockPersistence)
+
+			resolver := application.NewResolver(mockTransactioner, svc, nil, nil, nil, converter, nil, nil, nil, nil, nil)
+
+			// WHEN
+			result, err := resolver.MergeApplications(context.TODO(), destAppID, srcAppID)
+
+			// then
+			assert.Equal(t, testCase.ExpectedResult, result)
+			assert.Equal(t, testCase.ExpectedErr, err)
+
+			svc.AssertExpectations(t)
+			mockPersistence.AssertExpectations(t)
+			mockTransactioner.AssertExpectations(t)
 		})
 	}
 }
@@ -1553,8 +1683,8 @@ func TestResolver_Auths(t *testing.T) {
 	gqlApp := fixGQLApplication(id, "name", "desc")
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
-	sysAuthModels := []model.SystemAuth{{ID: "id1", AppID: &id, Value: &auth}, {ID: "id2", AppID: &id, Value: &auth}}
-	sysAuthModelCert := []model.SystemAuth{{ID: "id1", AppID: &id, Value: nil}}
+	sysAuthModels := []pkgmodel.SystemAuth{{ID: "id1", AppID: &id, Value: &auth}, {ID: "id2", AppID: &id, Value: &auth}}
+	sysAuthModelCert := []pkgmodel.SystemAuth{{ID: "id1", AppID: &id, Value: nil}}
 	sysAuthGQL := []*graphql.AppSystemAuth{{ID: "id1", Auth: &graphql.Auth{
 		OneTimeToken: &gqlAuth,
 	}}, {ID: "id2", Auth: &graphql.Auth{
@@ -1576,7 +1706,7 @@ func TestResolver_Auths(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.ApplicationReference, id).Return(sysAuthModels, nil).Once()
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), pkgmodel.ApplicationReference, id).Return(sysAuthModels, nil).Once()
 				return svc
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
@@ -1594,7 +1724,7 @@ func TestResolver_Auths(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.ApplicationReference, id).Return(sysAuthModelCert, nil).Once()
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), pkgmodel.ApplicationReference, id).Return(sysAuthModelCert, nil).Once()
 				return svc
 			},
 			SysAuthConvFn: func() *automock.SystemAuthConverter {
@@ -1611,7 +1741,7 @@ func TestResolver_Auths(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.ApplicationReference, id).Return(sysAuthModels, nil).Once()
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), pkgmodel.ApplicationReference, id).Return(sysAuthModels, nil).Once()
 				svc.AssertNotCalled(t, "IsSystemAuthOneTimeTokenType")
 				return svc
 			},
@@ -1629,7 +1759,7 @@ func TestResolver_Auths(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.ApplicationReference, id).Return([]model.SystemAuth{}, testError).Once()
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), pkgmodel.ApplicationReference, id).Return([]pkgmodel.SystemAuth{}, testError).Once()
 				svc.AssertNotCalled(t, "IsSystemAuthOneTimeTokenType")
 				return svc
 			},
@@ -1647,7 +1777,7 @@ func TestResolver_Auths(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.SystemAuthService {
 				svc := &automock.SystemAuthService{}
-				svc.On("ListForObject", txtest.CtxWithDBMatcher(), model.ApplicationReference, id).Return(sysAuthModels, nil).Once()
+				svc.On("ListForObject", txtest.CtxWithDBMatcher(), pkgmodel.ApplicationReference, id).Return(sysAuthModels, nil).Once()
 				svc.AssertNotCalled(t, "IsSystemAuthOneTimeTokenType")
 				return svc
 			},
@@ -2174,8 +2304,8 @@ func TestResolver_Bundle(t *testing.T) {
 	})
 }
 
-func fixOAuths() []model.SystemAuth {
-	return []model.SystemAuth{
+func fixOAuths() []pkgmodel.SystemAuth {
+	return []pkgmodel.SystemAuth{
 		{
 			ID:       "foo",
 			TenantID: str.Ptr("foo"),

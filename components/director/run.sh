@@ -11,13 +11,14 @@ NC='\033[0m' # No Color
 set -e
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-echo $ROOT_PATH
 
 SKIP_DB_CLEANUP=false
 REUSE_DB=false
 DUMP_DB=false
+AUTO_TERMINATE=false
 DISABLE_ASYNC_MODE=true
 COMPONENT='director'
+TERMINAION_TIMEOUT_IN_SECONDS=300
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -70,6 +71,12 @@ do
             shift
             shift
         ;;
+        --auto-terminate)
+             AUTO_TERMINATE=true
+             TERMINAION_TIMEOUT_IN_SECONDS=$2
+             shift
+             shift
+         ;;
         --*)
             echo "Unknown flag ${1}"
             exit 1
@@ -91,25 +98,26 @@ CLIENT_CERT_SECRET_NAMESPACE="default"
 CLIENT_CERT_SECRET_NAME="external-client-certificate"
 
 function cleanup() {
-    if [[ ${DEBUG} ]]; then
+
+    if [[ ${DEBUG} == true ]]; then
        echo -e "${GREEN}Cleanup Director binary${NC}"
-       rm  $GOPATH/src/github.com/kyma-incubator/compass/components/director/director
+       rm  $GOPATH/src/github.com/kyma-incubator/compass/components/director/director 
     fi
 
     if [[ ${SKIP_DB_CLEANUP} = false ]]; then
         echo -e "${GREEN}Cleanup Postgres container${NC}"
-        docker rm --force ${POSTGRES_CONTAINER}
+        docker rm --force ${POSTGRES_CONTAINER} 
     else
         echo -e "${GREEN}Skipping Postgres container cleanup${NC}"
     fi
 
-    echo -e "${GREEN}Destroying k3d cluster..."
-    k3d cluster delete k3d-cluster
+    echo -e "${GREEN}Destroying k3d cluster...${NC}"
+    k3d cluster delete k3d-cluster 
 }
 
 trap cleanup EXIT
 
-echo -e "${GREEN}Creating k3d cluster..."
+echo -e "${GREEN}Creating k3d cluster...${NC}"
 curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v5.2.0 bash
 k3d cluster create k3d-cluster --api-port 6550 --servers 1 --port 443:443@loadbalancer --image rancher/k3s:v1.22.4-k3s1 --kubeconfig-update-default --wait
 
@@ -201,7 +209,6 @@ export APP_DB_USER=${DB_USER}
 export APP_DB_PASSWORD=${DB_PWD}
 export APP_DB_NAME=${DB_NAME}
 export APP_CONFIGURATION_FILE=${ROOT_PATH}/hack/config-local.yaml
-export APP_STATIC_GROUPS_SRC=${ROOT_PATH}/hack/static-groups-local.yaml
 export APP_OAUTH20_URL="https://oauth2-admin.kyma.local"
 export APP_OAUTH20_PUBLIC_ACCESS_TOKEN_ENDPOINT="https://oauth2.kyma.local/oauth2/token"
 export APP_ONE_TIME_TOKEN_URL="http://connector.not.configured.url/graphql"
@@ -237,6 +244,12 @@ export APP_SELF_REGISTER_INSTANCE_TOKEN_URL_PATH="tokenUrl"
 export APP_SELF_REGISTER_INSTANCE_X509_CERT_PATH="clientCert"
 export APP_SELF_REGISTER_INSTANCE_X509_KEY_PATH="clientKey"
 
+# Pairing Adapters Properties
+export APP_PAIRING_ADAPTER_CM_NAME="pairing-adapter-config-local"
+export APP_PAIRING_ADAPTER_CM_NAMESPACE="default"
+export APP_PAIRING_ADAPTER_CM_KEY="config.json"
+export APP_PAIRING_ADAPTER_WATCHER_ID="pairing-adapter-watcher-id"
+
 # This file contains necessary configuration for self registration flow
 cat <<EOF > /tmp/keyConfig
 {
@@ -253,11 +266,40 @@ EOF
 
 kubectl create secret generic "$CLIENT_CERT_SECRET_NAME" --from-literal="$APP_EXTERNAL_CLIENT_CERT_KEY"="$APP_EXTERNAL_CLIENT_CERT_VALUE" --from-literal="$APP_EXTERNAL_CLIENT_KEY_KEY"="$APP_EXTERNAL_CLIENT_KEY_VALUE" --save-config --dry-run=client -o yaml | kubectl apply -f -
 
-if [[  ${DEBUG} ]]; then
+# pairing adapters configmap needed for the watcher started in the director
+kubectl create configmap "$APP_PAIRING_ADAPTER_CM_NAME" --from-literal="$APP_PAIRING_ADAPTER_CM_KEY"='{"d3e9b9f5-25dc-4adb-a0a0-ed69ef371fb6":"http://compass-pairing-adapter.compass-system.svc.cluster.local/adapter-local-mtls"}'
+
+if [[  ${DEBUG} == true ]]; then
     echo -e "${GREEN}Debug mode activated on port $DEBUG_PORT${NC}"
     cd $GOPATH/src/github.com/kyma-incubator/compass/components/director
     CGO_ENABLED=0 go build -gcflags="all=-N -l" ./cmd/${COMPONENT}
     dlv --listen=:$DEBUG_PORT --headless=true --api-version=2 exec ./${COMPONENT}
 else
-    go run ${ROOT_PATH}/cmd/${COMPONENT}/main.go
+    if [[  ${AUTO_TERMINATE} == true ]]; then
+        cd ${ROOT_PATH}
+        go build ${ROOT_PATH}/cmd/${COMPONENT}/main.go 
+        MAIN_APP_LOGFILE=${ROOT_PATH}/main.log
+
+        ${ROOT_PATH}/main > ${MAIN_APP_LOGFILE} &
+        MAIN_PROCESS_PID="$!"
+
+        START_TIME=$(date +%s)
+        SECONDS=0
+        while (( SECONDS < ${TERMINAION_TIMEOUT_IN_SECONDS} )) ; do
+            CURRENT_TIME=$(date +%s)
+            SECONDS=$((CURRENT_TIME-START_TIME))
+            SECONDS_LEFT=$((TERMINAION_TIMEOUT_IN_SECONDS-SECONDS))
+            echo "[Director] left ${SECONDS_LEFT} seconds. Wait ..."
+            sleep 10
+        done
+        
+        echo "Timeout of ${TERMINAION_TIMEOUT_IN_SECONDS} seconds for starting director reached. Killing the process."
+        echo -e "${GREEN}Kill main process..${NC}"
+        kill -SIGINT "${MAIN_PROCESS_PID}"
+        echo -e "${GREEN}Delete build result ...${NC}"
+        rm ${ROOT_PATH}/main || true
+        wait
+    else
+        go run ${ROOT_PATH}/cmd/${COMPONENT}/main.go
+    fi
 fi

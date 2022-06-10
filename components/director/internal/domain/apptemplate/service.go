@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -15,7 +19,7 @@ import (
 )
 
 // ApplicationTemplateRepository missing godoc
-//go:generate mockery --name=ApplicationTemplateRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=ApplicationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateRepository interface {
 	Create(ctx context.Context, item model.ApplicationTemplate) error
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
@@ -27,35 +31,55 @@ type ApplicationTemplateRepository interface {
 }
 
 // UIDService missing godoc
-//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
 }
 
 // WebhookRepository missing godoc
-//go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=WebhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookRepository interface {
 	CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error
 }
 
+// LabelUpsertService missing godoc
+//go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type LabelUpsertService interface {
+	UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error
+}
+
+// LabelRepository missing godoc
+//go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type LabelRepository interface {
+	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
+}
+
 type service struct {
-	appTemplateRepo ApplicationTemplateRepository
-	webhookRepo     WebhookRepository
-	uidService      UIDService
+	appTemplateRepo    ApplicationTemplateRepository
+	webhookRepo        WebhookRepository
+	uidService         UIDService
+	labelUpsertService LabelUpsertService
+	labelRepo          LabelRepository
 }
 
 // NewService missing godoc
-func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo WebhookRepository, uidService UIDService) *service {
+func NewService(appTemplateRepo ApplicationTemplateRepository, webhookRepo WebhookRepository, uidService UIDService, labelUpsertService LabelUpsertService, labelRepo LabelRepository) *service {
 	return &service{
-		appTemplateRepo: appTemplateRepo,
-		webhookRepo:     webhookRepo,
-		uidService:      uidService,
+		appTemplateRepo:    appTemplateRepo,
+		webhookRepo:        webhookRepo,
+		uidService:         uidService,
+		labelUpsertService: labelUpsertService,
+		labelRepo:          labelRepo,
 	}
 }
 
 // Create missing godoc
 func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error) {
 	appTemplateID := s.uidService.Generate()
+	if len(str.PtrStrToStr(in.ID)) > 0 {
+		appTemplateID = *in.ID
+	}
+
 	log.C(ctx).Debugf("ID %s generated for Application Template with name %s", appTemplateID, in.Name)
 
 	appTemplate := in.ToApplicationTemplate(appTemplateID)
@@ -71,6 +95,29 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 	}
 	if err = s.webhookRepo.CreateMany(ctx, "", webhooks); err != nil {
 		return "", errors.Wrapf(err, "while creating Webhooks for applicationTemplate")
+	}
+
+	if in.Labels == nil {
+		in.Labels = map[string]interface{}{}
+	}
+
+	err = s.labelUpsertService.UpsertMultipleLabels(ctx, "", model.AppTemplateLabelableObject, appTemplateID, in.Labels)
+	if err != nil {
+		return appTemplateID, errors.Wrapf(err, "while creating multiple labels for Application Template with id %s", appTemplateID)
+	}
+
+	return appTemplateID, nil
+}
+
+// CreateWithLabels Creates an AppTemplate with provided labels
+func (s *service) CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error) {
+	for key, val := range labels {
+		in.Labels[key] = val
+	}
+
+	appTemplateID, err := s.Create(ctx, in)
+	if err != nil {
+		return "", errors.Wrapf(err, "while creating Application Template")
 	}
 
 	return appTemplateID, nil
@@ -94,6 +141,45 @@ func (s *service) GetByName(ctx context.Context, name string) (*model.Applicatio
 	}
 
 	return appTemplate, nil
+}
+
+// ListLabels retrieves all labels for application template
+func (s *service) ListLabels(ctx context.Context, appTemplateID string) (map[string]*model.Label, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	appTemplateExists, err := s.appTemplateRepo.Exists(ctx, appTemplateID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while checking Application Template existence")
+	}
+
+	if !appTemplateExists {
+		return nil, fmt.Errorf("application template with ID %s doesn't exist", appTemplateID)
+	}
+
+	labels, err := s.labelRepo.ListForObject(ctx, appTenant, model.AppTemplateLabelableObject, appTemplateID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting labels for Application Template")
+	}
+
+	return labels, nil
+}
+
+// GetLabel gets a given label for application template
+func (s *service) GetLabel(ctx context.Context, appTemplateID string, key string) (*model.Label, error) {
+	labels, err := s.ListLabels(ctx, appTemplateID)
+	if err != nil {
+		return nil, err
+	}
+
+	label, ok := labels[key]
+	if !ok {
+		return nil, fmt.Errorf("label %s for application template with ID %s doesn't exist", key, appTemplateID)
+	}
+
+	return label, nil
 }
 
 // Exists missing godoc

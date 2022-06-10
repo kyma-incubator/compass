@@ -12,6 +12,7 @@ mutation {
     description
     baseUrl
     systemNumber
+    systemStatus
     integrationSystemID
     applicationTemplateID
     labels
@@ -26,6 +27,7 @@ mutation {
       id
       applicationID
       applicationTemplateID
+      runtimeID
       type
       mode
       correlationIdKey

@@ -23,10 +23,8 @@ func TestCreateRuntime_ValidationSuccess(t *testing.T) {
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	runtimeIn := graphql.RuntimeInput{
-		Name: "012345Myaccount_Runtime",
-	}
-	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
+	runtimeIn := fixRuntimeInput("012345Myaccount_Runtime")
+	inputString, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
 	request := fixtures.FixRegisterRuntimeRequest(inputString)
@@ -43,10 +41,8 @@ func TestCreateRuntime_ValidationFailure(t *testing.T) {
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	runtimeIn := graphql.RuntimeInput{
-		Name: "my runtime",
-	}
-	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
+	runtimeIn := fixRuntimeInput("my runtime")
+	inputString, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
 	request := fixtures.FixRegisterRuntimeRequest(inputString)
@@ -56,7 +52,7 @@ func TestCreateRuntime_ValidationFailure(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=must be in a valid format]")
+	assert.EqualError(t, err, "graphql: Invalid data RuntimeRegisterInput [name=must be in a valid format]")
 }
 
 func TestUpdateRuntime_ValidationSuccess(t *testing.T) {
@@ -65,16 +61,15 @@ func TestUpdateRuntime_ValidationSuccess(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixtures.FixRuntimeInput("validation-test-rtm")
+	input := fixRuntimeInput("validation-test-rtm")
+
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 
-	runtimeIn := graphql.RuntimeInput{
-		Name: "012345Myaccount_Runtime",
-	}
-	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
+	runtimeIn := fixRuntimeUpdateInput("012345Myaccount_Runtime")
+	inputString, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
 	request := fixtures.FixUpdateRuntimeRequest(rtm.ID, inputString)
@@ -92,16 +87,15 @@ func TestUpdateRuntime_ValidationFailure(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixtures.FixRuntimeInput("validation-test-rtm")
+	input := fixRuntimeInput("validation-test-rtm")
+
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 
-	runtimeIn := graphql.RuntimeInput{
-		Name: "my runtime",
-	}
-	inputString, err := testctx.Tc.Graphqlizer.RuntimeInputToGQL(runtimeIn)
+	runtimeIn := fixRuntimeUpdateInput("my runtime")
+	inputString, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(runtimeIn)
 	require.NoError(t, err)
 	var result graphql.RuntimeExt
 	request := fixtures.FixUpdateRuntimeRequest(rtm.ID, inputString)
@@ -111,7 +105,7 @@ func TestUpdateRuntime_ValidationFailure(t *testing.T) {
 
 	// THEN
 	require.Error(t, err)
-	assert.EqualError(t, err, "graphql: Invalid data RuntimeInput [name=must be in a valid format]")
+	assert.EqualError(t, err, "graphql: Invalid data RuntimeUpdateInput [name=must be in a valid format]")
 }
 
 // Label Definition Validation
@@ -191,7 +185,8 @@ func TestSetRuntimeLabel_Validation(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixtures.FixRuntimeInput("validation-test-rtm")
+	input := fixRuntimeInput("validation-test-rtm")
+
 	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
 	require.NoError(t, err)
@@ -453,12 +448,10 @@ func TestCreateApplicationTemplate_Validation(t *testing.T) {
 	ctx := context.Background()
 
 	appCreateInput := fixtures.FixSampleApplicationRegisterInputWithWebhooks("placeholder")
-	invalidInput := graphql.ApplicationTemplateInput{
-		Name:             "",
-		Placeholders:     []*graphql.PlaceholderDefinitionInput{},
-		ApplicationInput: &appCreateInput,
-		AccessLevel:      graphql.ApplicationTemplateAccessLevelGlobal,
-	}
+	invalidInput := fixAppTemplateInput("")
+	invalidInput.Placeholders = []*graphql.PlaceholderDefinitionInput{}
+	invalidInput.ApplicationInput = &appCreateInput
+	invalidInput.AccessLevel = graphql.ApplicationTemplateAccessLevelGlobal
 	inputString, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(invalidInput)
 	require.NoError(t, err)
 	var result graphql.ApplicationTemplate
@@ -478,7 +471,8 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixtures.FixApplicationTemplate("validation-test-app-tpl")
+	input := fixAppTemplateInput("validation-test-app-tpl")
+
 	appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, input)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTpl)
 	require.NoError(t, err)
@@ -510,7 +504,8 @@ func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixtures.FixApplicationTemplate("validation-app")
+	input := fixAppTemplateInput("validation-app")
+
 	tmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, input)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &tmpl)
 	require.NoError(t, err)

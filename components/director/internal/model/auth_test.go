@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+
 	"github.com/stretchr/testify/assert"
 )
 

@@ -23,6 +23,7 @@ type regionalTenantCreationRequest struct {
 	TenantID               string `json:"tenantId"`
 	Subdomain              string `json:"subdomain"`
 	SubscriptionProviderID string `json:"subscriptionProviderId"`
+	ProviderSubaccountID   string `json:"providerSubaccountId"`
 }
 
 type errReader int
@@ -43,6 +44,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		TenantID:               tenantExtID,
 		Subdomain:              regionalTenantSubdomain,
 		SubscriptionProviderID: subscriptionProviderID,
+		ProviderSubaccountID:   providerSubaccountID,
 	})
 	assert.NoError(t, err)
 
@@ -50,6 +52,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		SubaccountID:           subaccountTenantExtID,
 		Subdomain:              regionalTenantSubdomain,
 		SubscriptionProviderID: subscriptionProviderID,
+		ProviderSubaccountID:   providerSubaccountID,
 	})
 	assert.NoError(t, err)
 
@@ -57,13 +60,15 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		SubaccountID:           subaccountTenantExtID,
 		TenantID:               tenantExtID,
 		SubscriptionProviderID: subscriptionProviderID,
+		ProviderSubaccountID:   providerSubaccountID,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMissingSubscriptionConsumerID, err := json.Marshal(regionalTenantCreationRequest{
-		SubaccountID: subaccountTenantExtID,
-		TenantID:     tenantExtID,
-		Subdomain:    regionalTenantSubdomain,
+		SubaccountID:         subaccountTenantExtID,
+		TenantID:             tenantExtID,
+		Subdomain:            regionalTenantSubdomain,
+		ProviderSubaccountID: providerSubaccountID,
 	})
 	assert.NoError(t, err)
 
@@ -72,7 +77,17 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		SubaccountID:           tenantExtID,
 		Subdomain:              regionalTenantSubdomain,
 		SubscriptionProviderID: subscriptionProviderID,
+		ProviderSubaccountID:   providerSubaccountID,
 	})
+	assert.NoError(t, err)
+
+	bodyWithMissingProviderSubaccountID, err := json.Marshal(regionalTenantCreationRequest{
+		TenantID:               tenantExtID,
+		SubaccountID:           tenantExtID,
+		Subdomain:              regionalTenantSubdomain,
+		SubscriptionProviderID: subscriptionProviderID,
+	})
+
 	assert.NoError(t, err)
 
 	validHandlerConfig := tenantfetchersvc.HandlerConfig{
@@ -84,6 +99,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 			CustomerIDProperty:             tenantProviderCustomerIDProperty,
 			SubdomainProperty:              tenantProviderSubdomainProperty,
 			SubscriptionProviderIDProperty: subscriptionProviderIDProperty,
+			ProviderSubaccountIDProperty:   providerSubaccountIDProperty,
 		},
 	}
 	regionalTenant := tenantfetchersvc.TenantSubscriptionRequest{
@@ -92,6 +108,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		Subdomain:              regionalTenantSubdomain,
 		Region:                 region,
 		SubscriptionProviderID: subscriptionProviderID,
+		ProviderSubaccountID:   providerSubaccountID,
 	}
 	regionalTenantWithMatchingParentID := tenantfetchersvc.TenantSubscriptionRequest{
 		SubaccountTenantID:     "",
@@ -99,6 +116,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		Subdomain:              regionalTenantSubdomain,
 		Region:                 region,
 		SubscriptionProviderID: subscriptionProviderID,
+		ProviderSubaccountID:   providerSubaccountID,
 	}
 
 	// Subscribe flow
@@ -157,6 +175,14 @@ func TestService_SubscriptionFlows(t *testing.T) {
 			Region:              region,
 			ExpectedStatusCode:  http.StatusBadRequest,
 			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", subscriptionProviderIDProperty),
+		},
+		{
+			Name:                "Returns error when providerSubaccountIDProperty is not found in body",
+			TenantSubscriberFn:  func() *automock.TenantSubscriber { return &automock.TenantSubscriber{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingProviderSubaccountID)),
+			Region:              region,
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", providerSubaccountIDProperty),
 		},
 		{
 			Name:                "Returns error when request body doesn't contain tenant subdomain",
@@ -254,4 +280,108 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		assert.Contains(t, string(body), tenantfetchersvc.InternalServerError)
 		assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 	})
+}
+
+func TestService_FetchTenantOnDemand(t *testing.T) {
+	const (
+		parentIDPathVar = "tenantId"
+		tenantIDPathVar = "parentTenantId"
+		parentID        = "fd116270-b71d-4c49-a4d7-4a03785a5e6a"
+		tenantID        = "f09ba084-0e82-49ab-ab2e-b7ecc988312d"
+	)
+
+	target := fmt.Sprintf("/v1/fetch/:%s/:%s", parentIDPathVar, tenantIDPathVar)
+
+	validHandlerConfig := tenantfetchersvc.HandlerConfig{
+		TenantPathParam:       "tenantId",
+		ParentTenantPathParam: "parentTenantId",
+	}
+
+	testCases := []struct {
+		Name                string
+		Request             *http.Request
+		PathParams          map[string]string
+		TenantFetcherSvc    func() *automock.TenantFetcher
+		ExpectedErrorOutput string
+		ExpectedStatusCode  int
+	}{
+		{
+			Name:    "Successful fetch on-demand",
+			Request: httptest.NewRequest(http.MethodGet, target, nil),
+			PathParams: map[string]string{
+				validHandlerConfig.ParentTenantPathParam: parentID,
+				validHandlerConfig.TenantPathParam:       tenantID,
+			},
+			TenantFetcherSvc: func() *automock.TenantFetcher {
+				svc := &automock.TenantFetcher{}
+				svc.On("FetchTenantOnDemand", mock.Anything, tenantID, parentID).Return(nil)
+				return svc
+			},
+			ExpectedStatusCode: http.StatusOK,
+		},
+		{
+			Name:    "Failure when parent ID is missing",
+			Request: httptest.NewRequest(http.MethodGet, target, nil),
+			PathParams: map[string]string{
+				validHandlerConfig.ParentTenantPathParam: "",
+				validHandlerConfig.TenantPathParam:       tenantID,
+			},
+			TenantFetcherSvc:    func() *automock.TenantFetcher { return &automock.TenantFetcher{} },
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: "Parent tenant ID path parameter is missing from request",
+		},
+		{
+			Name:    "Failure when tenant ID is missing",
+			Request: httptest.NewRequest(http.MethodGet, target, nil),
+			PathParams: map[string]string{
+				validHandlerConfig.ParentTenantPathParam: parentIDPathVar,
+				validHandlerConfig.TenantPathParam:       "",
+			},
+			TenantFetcherSvc:    func() *automock.TenantFetcher { return &automock.TenantFetcher{} },
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: "Tenant path parameter is missing from request",
+		},
+		{
+			Name:    "Failure when fetch on-demand returns an error",
+			Request: httptest.NewRequest(http.MethodGet, target, nil),
+			PathParams: map[string]string{
+				validHandlerConfig.ParentTenantPathParam: parentID,
+				validHandlerConfig.TenantPathParam:       tenantID,
+			},
+			TenantFetcherSvc: func() *automock.TenantFetcher {
+				svc := &automock.TenantFetcher{}
+				svc.On("FetchTenantOnDemand", mock.Anything, tenantID, parentID).Return(errors.New("error"))
+				return svc
+			},
+			ExpectedStatusCode: http.StatusInternalServerError,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			tf := testCase.TenantFetcherSvc()
+			defer mock.AssertExpectationsForObjects(t, tf)
+
+			handler := tenantfetchersvc.NewTenantFetcherHTTPHandler(tf, validHandlerConfig)
+			req := testCase.Request
+			req = mux.SetURLVars(req, testCase.PathParams)
+
+			w := httptest.NewRecorder()
+
+			// WHEN
+			handler.FetchTenantOnDemand(w, req)
+
+			// THEN
+			resp := w.Result()
+			body, err := ioutil.ReadAll(resp.Body)
+			assert.NoError(t, err)
+
+			if len(testCase.ExpectedErrorOutput) > 0 {
+				assert.Contains(t, string(body), testCase.ExpectedErrorOutput)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, testCase.ExpectedStatusCode, resp.StatusCode)
+		})
+	}
 }

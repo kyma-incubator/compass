@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery --name=GraphQLizer --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=GraphQLizer --output=automock --outpkg=automock --case=underscore --disable-version-string
 type GraphQLizer interface {
 	APIDefinitionInputToGQL(in graphql.APIDefinitionInput) (string, error)
 	EventDefinitionInputToGQL(in graphql.EventDefinitionInput) (string, error)
@@ -21,7 +21,7 @@ type GraphQLizer interface {
 	BundleUpdateInputToGQL(in graphql.BundleUpdateInput) (string, error)
 }
 
-//go:generate mockery --name=GqlFieldsProvider --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=GqlFieldsProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
 type GqlFieldsProvider interface {
 	ForApplication(ctx ...graphqlizer.FieldCtx) string
 	ForAPIDefinition(ctx ...graphqlizer.FieldCtx) string

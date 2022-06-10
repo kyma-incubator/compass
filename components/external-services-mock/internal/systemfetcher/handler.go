@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
 	"sync"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
@@ -15,20 +14,27 @@ import (
 type SystemFetcherHandler struct {
 	mutex         sync.Mutex
 	defaulTenant  string
-	mockedSystems [][]byte
+	mockedSystems map[string][][]byte
 }
 
 func NewSystemFetcherHandler(defaultTenant string) *SystemFetcherHandler {
 	return &SystemFetcherHandler{
 		mutex:         sync.Mutex{},
 		defaulTenant:  defaultTenant,
-		mockedSystems: make([][]byte, 0),
+		mockedSystems: make(map[string][][]byte),
 	}
 }
 
 func (s *SystemFetcherHandler) HandleConfigure(rw http.ResponseWriter, req *http.Request) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
+
+	tenant := req.URL.Query().Get("tenant")
+	if len(tenant) == 0 {
+		httphelpers.WriteError(rw, errors.New("Missing tenant query param"), http.StatusBadRequest)
+		return
+	}
+
 	bodyBytes, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		httphelpers.WriteError(rw, errors.Wrap(err, "error while reading request body"), http.StatusInternalServerError)
@@ -46,26 +52,26 @@ func (s *SystemFetcherHandler) HandleConfigure(rw http.ResponseWriter, req *http
 		return
 	}
 
-	s.mockedSystems = append(s.mockedSystems, bodyBytes)
+	systems := s.mockedSystems[tenant]
+	systems = append(systems, bodyBytes)
+	s.mockedSystems[tenant] = systems
+
 	rw.WriteHeader(http.StatusOK)
 }
 
 func (s *SystemFetcherHandler) HandleFunc(rw http.ResponseWriter, req *http.Request) {
-	filter := req.URL.Query().Get("$filter")
 	rw.WriteHeader(http.StatusOK)
 
-	if !strings.Contains(filter, s.defaulTenant) {
-		_, err := rw.Write([]byte(`[]`))
-		if err != nil {
-			httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
-		}
+	tenant := req.Header.Get("tenant")
+	if len(tenant) == 0 {
+		httphelpers.WriteError(rw, errors.New("Missing tenant header"), http.StatusBadRequest)
 		return
 	}
 
 	resp := []byte("[]")
-	if len(s.mockedSystems) > 0 {
-		resp = s.mockedSystems[0]
-		s.mockedSystems = s.mockedSystems[1:]
+	if len(s.mockedSystems[tenant]) > 0 {
+		resp = s.mockedSystems[tenant][0]
+		s.mockedSystems[tenant] = s.mockedSystems[tenant][1:]
 	}
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -80,6 +86,6 @@ func (s *SystemFetcherHandler) HandleReset(rw http.ResponseWriter, _ *http.Reque
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	log.Println("Recieved a reset call.SystemFetcher queue will be emptied...")
-	s.mockedSystems = make([][]byte, 0)
+	s.mockedSystems = make(map[string][][]byte, 0)
 	rw.WriteHeader(http.StatusOK)
 }

@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	tnt2 "github.com/kyma-incubator/compass/components/director/pkg/tenant"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -15,36 +13,47 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate mockery --exported --name=gqlConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=gqlConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type gqlConverter interface {
 	FromInputGraphQL(in graphql.AutomaticScenarioAssignmentSetInput, targetTenantInternalID string) model.AutomaticScenarioAssignment
 	ToGraphQL(in model.AutomaticScenarioAssignment, targetTenantExternalID string) graphql.AutomaticScenarioAssignment
 }
 
-//go:generate mockery --exported --name=asaService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=asaService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type asaService interface {
-	Create(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
 	ListForTargetTenant(ctx context.Context, targetTenantInternalID string) ([]*model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
-	DeleteManyForSameTargetTenant(ctx context.Context, in []*model.AutomaticScenarioAssignment) error
-	Delete(ctx context.Context, in model.AutomaticScenarioAssignment) error
 }
 
-//go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantService interface {
 	GetExternalTenant(ctx context.Context, id string) (string, error)
 	CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) error
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
+//go:generate mockery --exported --name=tenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
+type tenantFetcher interface {
+	FetchOnDemand(tenant, parentTenant string) error
+}
+
+//go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type formationService interface {
+	CreateAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error)
+	DeleteManyASAForSameTargetTenant(ctx context.Context, in []*model.AutomaticScenarioAssignment) error
+	DeleteAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) error
+}
+
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, svc asaService, converter gqlConverter, tenantService tenantService) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc asaService, converter gqlConverter, tenantService tenantService, fetcher tenantFetcher, formationSvc formationService) *Resolver {
 	return &Resolver{
 		transact:      transact,
 		svc:           svc,
 		converter:     converter,
 		tenantService: tenantService,
+		fetcher:       fetcher,
+		formationSvc:  formationSvc,
 	}
 }
 
@@ -54,30 +63,26 @@ type Resolver struct {
 	converter     gqlConverter
 	svc           asaService
 	tenantService tenantService
+	fetcher       tenantFetcher
+	formationSvc  formationService
 }
 
 // CreateAutomaticScenarioAssignment missing godoc
 func (r *Resolver) CreateAutomaticScenarioAssignment(ctx context.Context, in graphql.AutomaticScenarioAssignmentSetInput) (*graphql.AutomaticScenarioAssignment, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.fetcher.FetchOnDemand(in.Selector.Value, tnt); err != nil {
+		return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", in.Selector.Value)
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, errors.Wrap(err, "while beginning transaction")
 	}
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
-
-	callingTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	if err := r.tenantService.CreateManyIfNotExists(ctx, model.BusinessTenantMappingInput{
-		ExternalTenant: in.Selector.Value,
-		Parent:         callingTenant,
-		Type:           string(tnt2.Subaccount),
-		Provider:       "lazilyWhileASACreation",
-	}); err != nil {
-		return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", in.Selector.Value)
-	}
 
 	targetTenant, err := r.tenantService.GetInternalTenant(ctx, in.Selector.Value)
 	if err != nil {
@@ -86,7 +91,7 @@ func (r *Resolver) CreateAutomaticScenarioAssignment(ctx context.Context, in gra
 
 	convertedIn := r.converter.FromInputGraphQL(in, targetTenant)
 
-	out, err := r.svc.Create(ctx, convertedIn)
+	out, err := r.formationSvc.CreateAutomaticScenarioAssignment(ctx, convertedIn)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating Assignment")
 	}
@@ -236,7 +241,7 @@ func (r *Resolver) DeleteAutomaticScenarioAssignmentsForSelector(ctx context.Con
 		return nil, errors.Wrapf(err, "while getting the Assignments for target tenant [%v]", targetTenant)
 	}
 
-	err = r.svc.DeleteManyForSameTargetTenant(ctx, assignments)
+	err = r.formationSvc.DeleteManyASAForSameTargetTenant(ctx, assignments)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while deleting the Assignments for target tenant [%v]", targetTenant)
 	}
@@ -271,7 +276,7 @@ func (r *Resolver) DeleteAutomaticScenarioAssignmentForScenario(ctx context.Cont
 		return nil, errors.Wrapf(err, "while getting the Assignment for scenario [name=%s]", scenarioName)
 	}
 
-	err = r.svc.Delete(ctx, assignment)
+	err = r.formationSvc.DeleteAutomaticScenarioAssignment(ctx, assignment)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while deleting the Assignment for scenario [name=%s]", scenarioName)
 	}

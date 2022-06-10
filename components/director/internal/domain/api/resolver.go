@@ -16,7 +16,7 @@ import (
 )
 
 // APIService is responsible for the service-layer APIDefinition operations.
-//go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=APIService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIService interface {
 	CreateInBundle(ctx context.Context, appID, bundleID string, in model.APIDefinitionInput, spec *model.SpecInput) (string, error)
 	Update(ctx context.Context, id string, in model.APIDefinitionInput, spec *model.SpecInput) error
@@ -26,13 +26,13 @@ type APIService interface {
 }
 
 // RuntimeService is responsible for the service-layer Runtime operations.
-//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	Get(ctx context.Context, id string) (*model.Runtime, error)
 }
 
 // APIConverter converts EventDefinitions between the model.APIDefinition service-layer representation and the graphql-layer representation.
-//go:generate mockery --name=APIConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=APIConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type APIConverter interface {
 	ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.APIDefinition, error)
 	MultipleToGraphQL(in []*model.APIDefinition, specs []*model.Spec, bundleRefs []*model.BundleReference) ([]*graphql.APIDefinition, error)
@@ -41,16 +41,22 @@ type APIConverter interface {
 }
 
 // FetchRequestConverter converts FetchRequest between the model.FetchRequest service-layer representation and the graphql-layer one.
-//go:generate mockery --name=FetchRequestConverter --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=FetchRequestConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FetchRequestConverter interface {
 	ToGraphQL(in *model.FetchRequest) (*graphql.FetchRequest, error)
 	InputFromGraphQL(in *graphql.FetchRequestInput) (*model.FetchRequestInput, error)
 }
 
 // BundleService is responsible for the service-layer Bundle operations.
-//go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=BundleService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleService interface {
 	Get(ctx context.Context, id string) (*model.Bundle, error)
+}
+
+// ApplicationService is responsible for the service-layer Application operations.
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationService interface {
+	UpdateBaseURL(ctx context.Context, appID, targetURL string) error
 }
 
 // Resolver is an object responsible for resolver-layer APIDefinition operations
@@ -64,10 +70,11 @@ type Resolver struct {
 	frConverter   FetchRequestConverter
 	specService   SpecService
 	specConverter SpecConverter
+	appSvc        ApplicationService
 }
 
 // NewResolver returns a new object responsible for resolver-layer APIDefinition operations.
-func NewResolver(transact persistence.Transactioner, svc APIService, rtmSvc RuntimeService, bndlSvc BundleService, bndlRefSvc BundleReferenceService, converter APIConverter, frConverter FetchRequestConverter, specService SpecService, specConverter SpecConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, svc APIService, rtmSvc RuntimeService, bndlSvc BundleService, bndlRefSvc BundleReferenceService, converter APIConverter, frConverter FetchRequestConverter, specService SpecService, specConverter SpecConverter, appSvc ApplicationService) *Resolver {
 	return &Resolver{
 		transact:      transact,
 		svc:           svc,
@@ -78,6 +85,7 @@ func NewResolver(transact persistence.Transactioner, svc APIService, rtmSvc Runt
 		frConverter:   frConverter,
 		specService:   specService,
 		specConverter: specConverter,
+		appSvc:        appSvc,
 	}
 }
 
@@ -114,6 +122,10 @@ func (r *Resolver) AddAPIDefinitionToBundle(ctx context.Context, bundleID string
 	api, err := r.svc.Get(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+
+	if err = r.appSvc.UpdateBaseURL(ctx, api.ApplicationID, in.TargetURL); err != nil {
+		return nil, errors.Wrapf(err, "while trying to update baseURL")
 	}
 
 	spec, err := r.specService.GetByReferenceObjectID(ctx, model.APISpecReference, api.ID)

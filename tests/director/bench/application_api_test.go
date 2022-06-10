@@ -18,14 +18,14 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 
 	appsCount := 5
 	for i := 0; i < appsCount; i++ {
-		app := fixtures.CreateApp(fmt.Sprintf("director-%d", i))
-		appResp, err := fixtures.RegisterApplicationFromInput(b, ctx, certSecuredGraphQLClient, tenantID, app)
+		appInput := fixtures.CreateApp(fmt.Sprintf("director-%d", i))
+		appResp, err := fixtures.RegisterApplicationFromInput(b, ctx, certSecuredGraphQLClient, tenantID, appInput)
 		defer fixtures.CleanupApplication(b, ctx, certSecuredGraphQLClient, tenantID, &appResp)
 		require.NoError(b, err)
 	}
 
 	//create runtime without normalization
-	runtime := fixtures.FixRuntimeInput("runtime")
+	runtime := fixtures.FixRuntimeRegisterInput("runtime")
 	(runtime.Labels)["scenarios"] = []string{conf.DefaultScenario}
 	(runtime.Labels)["isNormalized"] = "false"
 

@@ -3,6 +3,8 @@ package rtmtest
 import (
 	"errors"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime/automock"
 	"github.com/stretchr/testify/mock"
 )
@@ -14,6 +16,9 @@ const (
 	SelfRegErrorMsg = "error during self-reg prep"
 )
 
+// TestError is a testing error
+var TestError = errors.New("test-error")
+
 // NoopSelfRegManager missing godoc
 func NoopSelfRegManager() *automock.SelfRegisterManager {
 	return &automock.SelfRegisterManager{}
@@ -23,7 +28,7 @@ func NoopSelfRegManager() *automock.SelfRegisterManager {
 func SelfRegManagerThatDoesPrepWithNoErrors(res map[string]interface{}) func() *automock.SelfRegisterManager {
 	return func() *automock.SelfRegisterManager {
 		srm := &automock.SelfRegisterManager{}
-		srm.On("PrepareRuntimeForSelfRegistration", mock.Anything, mock.Anything, mock.AnythingOfType("string")).Return(res, nil).Once()
+		srm.On("PrepareForSelfRegistration", mock.Anything, resource.Runtime, mock.Anything, mock.AnythingOfType("string")).Return(res, nil).Once()
 		return srm
 	}
 }
@@ -32,7 +37,7 @@ func SelfRegManagerThatDoesPrepWithNoErrors(res map[string]interface{}) func() *
 func SelfRegManagerThatReturnsErrorOnPrep() *automock.SelfRegisterManager {
 	srm := &automock.SelfRegisterManager{}
 	labels := make(map[string]interface{})
-	srm.On("PrepareRuntimeForSelfRegistration", mock.Anything, mock.Anything, mock.AnythingOfType("string")).Return(labels, errors.New(SelfRegErrorMsg)).Once()
+	srm.On("PrepareForSelfRegistration", mock.Anything, resource.Runtime, mock.Anything, mock.AnythingOfType("string")).Return(labels, errors.New(SelfRegErrorMsg)).Once()
 	return srm
 }
 
@@ -40,7 +45,7 @@ func SelfRegManagerThatReturnsErrorOnPrep() *automock.SelfRegisterManager {
 func SelfRegManagerThatDoesCleanupWithNoErrors() *automock.SelfRegisterManager {
 	srm := &automock.SelfRegisterManager{}
 	srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
-	srm.On("CleanupSelfRegisteredRuntime", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil).Once()
+	srm.On("CleanupSelfRegistration", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil).Once()
 	return srm
 }
 
@@ -55,7 +60,7 @@ func SelfRegManagerThatDoesNotCleanup() *automock.SelfRegisterManager {
 func SelfRegManagerThatReturnsErrorOnCleanup() *automock.SelfRegisterManager {
 	srm := &automock.SelfRegisterManager{}
 	srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
-	srm.On("CleanupSelfRegisteredRuntime", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(errors.New(SelfRegErrorMsg)).Once()
+	srm.On("CleanupSelfRegistration", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(errors.New(SelfRegErrorMsg)).Once()
 	return srm
 }
 
@@ -71,7 +76,7 @@ func SelfRegManagerThatReturnsNoErrors(res map[string]interface{}) func() *autom
 	return func() *automock.SelfRegisterManager {
 		srm := SelfRegManagerThatDoesPrepWithNoErrors(res)()
 		srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
-		srm.On("CleanupSelfRegisteredRuntime", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil).Once()
+		srm.On("CleanupSelfRegistration", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil).Once()
 		return srm
 	}
 }
@@ -90,7 +95,7 @@ func SelfRegManagerThatFailsOnCleanup(res map[string]interface{}) func() *automo
 	return func() *automock.SelfRegisterManager {
 		srm := SelfRegManagerThatDoesPrepWithNoErrors(res)()
 		srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
-		srm.On("CleanupSelfRegisteredRuntime", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(TestError).Once()
+		srm.On("CleanupSelfRegistration", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(TestError).Once()
 		return srm
 	}
 }

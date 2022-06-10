@@ -28,11 +28,13 @@ type ApplicationTemplatePage struct {
 
 // ApplicationTemplateInput missing godoc
 type ApplicationTemplateInput struct {
+	ID                   *string
 	Name                 string
 	Description          *string
 	ApplicationInputJSON string
 	Placeholders         []ApplicationTemplatePlaceholder
 	AccessLevel          ApplicationTemplateAccessLevel
+	Labels               map[string]interface{}
 	Webhooks             []*WebhookInput
 }
 

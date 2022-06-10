@@ -19,10 +19,6 @@ deployment:
       organizationalUnit: "OrgUnit"
       locality: "locality"
       province: "province"
-    externalIssuerSubject:
-      country: "DE"
-      organization: "SAP SE"
-      organizationalUnitPattern: "Region|SAP Cloud Platform Clients" # Region or SAP Cloud Platform Clients
     certificateValidityTime: "2160h"
     attachRootCAToChain: false
   kubernetesClient:

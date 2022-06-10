@@ -1,6 +1,6 @@
 APP_NAME = compass-director
 APP_PATH = components/director
-BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.17.0
+BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 export GO111MODULE = on
 export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"
@@ -31,3 +31,17 @@ install-tools:
 	go mod download
 	@echo Installing tools from tools.go
 	cat tools/tools.go | grep _ | awk -F'"' '{print $$2}' | xargs -tI % go install %
+
+deploy-on-minikube: build-to-minikube
+	kubectl config use-context minikube
+	kubectl set image -n $(NAMESPACE) deployment/compass-director director=compass-director:latest
+	kubectl rollout restart -n $(NAMESPACE) deployment/compass-director
+	kubectl set image -n $(NAMESPACE) deployment/compass-ns-adapter ns-adapter=compass-director:latest
+	kubectl rollout restart -n $(NAMESPACE) deployment/compass-ns-adapter
+	kubectl set image -n $(NAMESPACE) cronjob/compass-ord-aggregator aggregator=compass-director:latest
+	kubectl set image -n $(NAMESPACE) cronjob/compass-system-fetcher system-fetcher=compass-director:latest
+	kubectl set image -n $(NAMESPACE) cronjob/compass-tenant-fetcher-account-fetcher tenant-fetcher=compass-director:latest
+	kubectl set image -n $(NAMESPACE) cronjob/compass-tenant-fetcher-subaccount-fetcher tenant-fetcher=compass-director:latest
+	kubectl set image -n $(NAMESPACE) cronjob/compass-director-tenant-loader-external loader=compass-director:latest
+	kubectl get job -n $(NAMESPACE) compass-director-tenant-loader-default -o json  | jq "del(.spec.selector)" | jq "del(.spec.template.metadata.labels)" | jq "del(.status)" | kubectl patch -f - --patch '{"spec":  {"template":  {"spec":  {"containers": [{"name": "loader", "image": "compass-director:latest"}]}}}}' --dry-run=client -o yaml | kubectl replace --force -f -
+	kubectl get job -n $(NAMESPACE) compass-director-clients-scopes-synchronization -o json  | jq "del(.spec.selector)" | jq "del(.spec.template.metadata.labels)" | jq "del(.status)" | kubectl patch -f - --patch '{"spec":  {"template":  {"spec":  {"containers": [{"name": "sync", "image": "compass-director:latest"}]}}}}' --dry-run=client -o yaml | kubectl replace --force -f -

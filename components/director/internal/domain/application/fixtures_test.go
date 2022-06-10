@@ -69,7 +69,7 @@ func fixModelApplication(id, tenant, name, description string) *model.Applicatio
 	}
 }
 
-func fixModelApplicationWithAllUpdatableFields(id, tenant, name, description, url string, conditionStatus model.ApplicationStatusCondition, conditionTimestamp time.Time) *model.Application {
+func fixModelApplicationWithAllUpdatableFields(id, name, description, url string, baseURL *string, conditionStatus model.ApplicationStatusCondition, conditionTimestamp time.Time) *model.Application {
 	return &model.Application{
 		Status: &model.ApplicationStatus{
 			Condition: conditionStatus,
@@ -81,6 +81,7 @@ func fixModelApplicationWithAllUpdatableFields(id, tenant, name, description, ur
 		HealthCheckURL:      &url,
 		ProviderName:        &providerName,
 		BaseEntity:          &model.BaseEntity{ID: id},
+		BaseURL:             baseURL,
 	}
 }
 
@@ -221,13 +222,14 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 	}
 }
 
-func fixModelApplicationUpdateInput(name, description, url string, statusCondition model.ApplicationStatusCondition) model.ApplicationUpdateInput {
+func fixModelApplicationUpdateInput(name, description, healthCheckURL, baseURL string, statusCondition model.ApplicationStatusCondition) model.ApplicationUpdateInput {
 	return model.ApplicationUpdateInput{
 		Description:         &description,
-		HealthCheckURL:      &url,
+		HealthCheckURL:      &healthCheckURL,
 		IntegrationSystemID: &intSysID,
 		ProviderName:        &providerName,
 		StatusCondition:     &statusCondition,
+		BaseURL:             &baseURL,
 	}
 }
 
@@ -274,13 +276,14 @@ func fixGQLApplicationRegisterInput(name, description string) graphql.Applicatio
 	}
 }
 
-func fixGQLApplicationUpdateInput(name, description, url string, statusCondition graphql.ApplicationStatusCondition) graphql.ApplicationUpdateInput {
+func fixGQLApplicationUpdateInput(name, description, healthCheckURL, baseURL string, statusCondition graphql.ApplicationStatusCondition) graphql.ApplicationUpdateInput {
 	return graphql.ApplicationUpdateInput{
 		Description:         &description,
-		HealthCheckURL:      &url,
+		HealthCheckURL:      &healthCheckURL,
 		IntegrationSystemID: &intSysID,
 		ProviderName:        &providerName,
 		StatusCondition:     &statusCondition,
+		BaseURL:             &baseURL,
 	}
 }
 
@@ -501,4 +504,27 @@ func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
 
 func fixAppColumns() []string {
 	return []string{"id", "app_template_id", "system_number", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "documentation_labels"}
+}
+
+func fixApplicationLabels(appID, labelKey1, labelKey2 string, labelValue1 []interface{}, labelValue2 string) map[string]*model.Label {
+	tnt := "tenant"
+
+	return map[string]*model.Label{
+		labelKey1: {
+			ID:         "abc",
+			Tenant:     str.Ptr(tnt),
+			Key:        labelKey1,
+			Value:      labelValue1,
+			ObjectID:   appID,
+			ObjectType: model.ApplicationLabelableObject,
+		},
+		labelKey2: {
+			ID:         "def",
+			Tenant:     str.Ptr(tnt),
+			Key:        labelKey2,
+			Value:      labelValue2,
+			ObjectID:   appID,
+			ObjectType: model.ApplicationLabelableObject,
+		},
+	}
 }

@@ -4,26 +4,26 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/internal/consumer"
 	labelutils "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 	"github.com/pkg/errors"
 )
 
 // RuntimeService is used to interact with runtimes.
-//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=RuntimeService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeService interface {
 	GetLabel(context.Context, string, string) (*model.Label, error)
 	ListByFilters(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
 // IntegrationSystemService is used to check if integration system with a given ID exists.
-//go:generate mockery --name=IntegrationSystemService --output=automock --outpkg=automock --case=underscore
+//go:generate mockery --name=IntegrationSystemService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationSystemService interface {
 	Exists(context.Context, string) (bool, error)
 }
@@ -61,7 +61,7 @@ func (v *validator) Validate(ctx context.Context, claims Claims) error {
 
 	log.C(ctx).Infof("Consumer-Provider call by %s on behalf of %s. Proceeding with double authentication crosscheck...", claims.Tenant[tenantmapping.ProviderTenantKey], claims.Tenant[tenantmapping.ConsumerTenantKey])
 	switch claims.ConsumerType {
-	case consumer.Runtime:
+	case consumer.Runtime, consumer.ExternalCertificate:
 		return v.validateRuntimeConsumer(ctx, claims)
 	case consumer.IntegrationSystem:
 		return v.validateIntegrationSystemConsumer(ctx, claims)
