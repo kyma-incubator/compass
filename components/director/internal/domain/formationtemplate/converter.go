@@ -15,7 +15,7 @@ func NewConverter() *converter {
 
 type converter struct{}
 
-// FromInputGraphQL converts from GraphQL input to internal model
+// FromInputGraphQL converts from GraphQL input to internal model input
 func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) *model.FormationTemplateInput {
 	if in == nil {
 		return nil
@@ -29,6 +29,7 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) *model.
 	}
 }
 
+// FromModelInputToModel converts from internal model input and id to internal model
 func (c *converter) FromModelInputToModel(in *model.FormationTemplateInput, id string) *model.FormationTemplate {
 	if in == nil {
 		return nil
@@ -58,7 +59,7 @@ func (c *converter) ToGraphQL(in *model.FormationTemplate) *graphql.FormationTem
 	}
 }
 
-// MultipleToGraphQL missing godoc
+// MultipleToGraphQL converts multiple internal models to GraphQL models
 func (c *converter) MultipleToGraphQL(in []*model.FormationTemplate) []*graphql.FormationTemplate {
 	if in == nil {
 		return nil

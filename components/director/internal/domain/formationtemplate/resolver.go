@@ -29,7 +29,7 @@ type FormationTemplateService interface {
 	Delete(ctx context.Context, id string) error
 }
 
-// Resolver is the formation template resolver
+// Resolver is the FormationTemplate resolver
 type Resolver struct {
 	transact persistence.Transactioner
 
@@ -37,7 +37,7 @@ type Resolver struct {
 	converter            FormationTemplateConverter
 }
 
-// NewResolver creates formation template resolver
+// NewResolver creates FormationTemplate resolver
 func NewResolver(transact persistence.Transactioner, converter FormationTemplateConverter, formationTemplateSvc FormationTemplateService) *Resolver {
 	return &Resolver{
 		transact:             transact,
@@ -46,7 +46,7 @@ func NewResolver(transact persistence.Transactioner, converter FormationTemplate
 	}
 }
 
-// FormationTemplates missing godoc
+// FormationTemplates pagination lists all FormationTemplates based on `first` and `after`
 func (r *Resolver) FormationTemplates(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.FormationTemplatePage, error) {
 	var cursor string
 	if after != nil {
@@ -87,7 +87,7 @@ func (r *Resolver) FormationTemplates(ctx context.Context, first *int, after *gr
 	}, nil
 }
 
-// FormationTemplate missing godoc
+// FormationTemplate queries the FormationTemplate matching ID `id`
 func (r *Resolver) FormationTemplate(ctx context.Context, id string) (*graphql.FormationTemplate, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -113,7 +113,7 @@ func (r *Resolver) FormationTemplate(ctx context.Context, id string) (*graphql.F
 	return r.converter.ToGraphQL(formationTemplate), nil
 }
 
-// CreateFormationTemplate missing godoc
+// CreateFormationTemplate creates a FormationTemplate using `in`
 func (r *Resolver) CreateFormationTemplate(ctx context.Context, in graphql.FormationTemplateInput) (*graphql.FormationTemplate, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -123,7 +123,7 @@ func (r *Resolver) CreateFormationTemplate(ctx context.Context, in graphql.Forma
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err := in.Validate(); err != nil {
+	if err = in.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -145,7 +145,7 @@ func (r *Resolver) CreateFormationTemplate(ctx context.Context, in graphql.Forma
 	return r.converter.ToGraphQL(formationTemplate), nil
 }
 
-// DeleteFormationTemplate missing godoc
+// DeleteFormationTemplate deletes the FormationTemplate matching ID `id`
 func (r *Resolver) DeleteFormationTemplate(ctx context.Context, id string) (*graphql.FormationTemplate, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -173,7 +173,7 @@ func (r *Resolver) DeleteFormationTemplate(ctx context.Context, id string) (*gra
 	return r.converter.ToGraphQL(formationTemplate), nil
 }
 
-// UpdateFormationTemplate missing godoc
+// UpdateFormationTemplate updates the FormationTemplate matching ID `id` using `in`
 func (r *Resolver) UpdateFormationTemplate(ctx context.Context, id string, in graphql.FormationTemplateInput) (*graphql.FormationTemplate, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {

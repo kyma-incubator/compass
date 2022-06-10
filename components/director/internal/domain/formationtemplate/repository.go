@@ -20,7 +20,7 @@ var (
 	tableColumns          = append(idTableColumns, updatableTableColumns...)
 )
 
-// EntityConverter missing godoc
+// EntityConverter converts between the internal model and entity
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityConverter interface {
 	ToEntity(in *model.FormationTemplate) (*Entity, error)
@@ -37,7 +37,7 @@ type repository struct {
 	conv                  EntityConverter
 }
 
-// NewRepository missing godoc
+// NewRepository creates a new FormationTemplate repository
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
 		creator:               repo.NewCreatorGlobal(resource.FormationTemplate, tableName, tableColumns),
@@ -50,6 +50,7 @@ func NewRepository(conv EntityConverter) *repository {
 	}
 }
 
+// Create creates a new FormationTemplate in the database with the fields in model
 func (r *repository) Create(ctx context.Context, item *model.FormationTemplate) error {
 	if item == nil {
 		return apperrors.NewInternalError("model can not be empty")
@@ -65,6 +66,7 @@ func (r *repository) Create(ctx context.Context, item *model.FormationTemplate) 
 	return r.creator.Create(ctx, entity)
 }
 
+// Get queries for a single FormationTemplate matching the given id
 func (r *repository) Get(ctx context.Context, id string) (*model.FormationTemplate, error) {
 	var entity Entity
 	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
@@ -79,6 +81,7 @@ func (r *repository) Get(ctx context.Context, id string) (*model.FormationTempla
 	return result, nil
 }
 
+// List queries for all FormationTemplate sorted by ID and paginated by the pageSize and cursor parameters
 func (r *repository) List(ctx context.Context, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
 	var entityCollection EntityCollection
 	page, totalCount, err := r.pageableQuerierGlobal.ListGlobal(ctx, pageSize, cursor, "id", &entityCollection)
@@ -103,6 +106,7 @@ func (r *repository) List(ctx context.Context, pageSize int, cursor string) (*mo
 	}, nil
 }
 
+// Update updates the FormationTemplate matching the ID of the input model
 func (r *repository) Update(ctx context.Context, model *model.FormationTemplate) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be empty")
@@ -116,11 +120,12 @@ func (r *repository) Update(ctx context.Context, model *model.FormationTemplate)
 	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
 }
 
+// Delete deletes a formation template with given ID
 func (r *repository) Delete(ctx context.Context, id string) error {
 	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-// Exists missing godoc
+// Exists check if a formation template with given ID exists
 func (r *repository) Exists(ctx context.Context, id string) (bool, error) {
 	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }

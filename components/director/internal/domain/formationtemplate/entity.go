@@ -1,6 +1,6 @@
 package formationtemplate
 
-// Entity missing godoc
+// Entity represents the formation template entity
 type Entity struct {
 	ID                            string `db:"id"`
 	Name                          string `db:"name"`
@@ -10,10 +10,10 @@ type Entity struct {
 	MissingArtifactWarningMessage string `db:"missing_artifact_warning_message"`
 }
 
-// EntityCollection missing godoc
+// EntityCollection is a collection of formation template entities.
 type EntityCollection []*Entity
 
-// Len missing godoc
+// Len returns the number of entities in the collection.
 func (s EntityCollection) Len() int {
 	return len(s)
 }

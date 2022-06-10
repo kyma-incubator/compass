@@ -21,7 +21,7 @@ type FormationTemplateRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
-// UIDService missing godoc
+// UIDService generates UUIDs for new entities
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
 	Generate() string
@@ -33,7 +33,7 @@ type service struct {
 	converter FormationTemplateConverter
 }
 
-// NewService missing godoc
+// NewService creates a FormationTemplate service
 func NewService(repo FormationTemplateRepository, uidSvc UIDService, converter FormationTemplateConverter) *service {
 	return &service{
 		repo:      repo,
@@ -42,7 +42,7 @@ func NewService(repo FormationTemplateRepository, uidSvc UIDService, converter F
 	}
 }
 
-// Create missing godoc
+// Create creates a FormationTemplate using `in`
 func (s *service) Create(ctx context.Context, in *model.FormationTemplateInput) (string, error) {
 	formationTemplateID := s.uidSvc.Generate()
 
@@ -56,7 +56,7 @@ func (s *service) Create(ctx context.Context, in *model.FormationTemplateInput) 
 	return formationTemplateID, nil
 }
 
-// Get missing godoc
+// Get queries FormationTemplate matching ID `id`
 func (s *service) Get(ctx context.Context, id string) (*model.FormationTemplate, error) {
 	formationTemplate, err := s.repo.Get(ctx, id)
 	if err != nil {
@@ -66,7 +66,7 @@ func (s *service) Get(ctx context.Context, id string) (*model.FormationTemplate,
 	return formationTemplate, nil
 }
 
-// List missing godoc
+// List pagination lists FormationTemplate based on `pageSize` and `cursor`
 func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
 	if pageSize < 1 || pageSize > 200 {
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
@@ -75,7 +75,7 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 	return s.repo.List(ctx, pageSize, cursor)
 }
 
-// Update missing godoc
+// Update updates a FormationTemplate matching ID `id` using `in`
 func (s *service) Update(ctx context.Context, id string, in *model.FormationTemplateInput) error {
 	exists, err := s.repo.Exists(ctx, id)
 	if err != nil {
@@ -91,7 +91,7 @@ func (s *service) Update(ctx context.Context, id string, in *model.FormationTemp
 	return nil
 }
 
-// Delete missing godoc
+// Delete deletes a FormationTemplate matching ID `id`
 func (s *service) Delete(ctx context.Context, id string) error {
 	if err := s.repo.Delete(ctx, id); err != nil {
 		return errors.Wrapf(err, "while deleting Formation Template with ID %s", id)
