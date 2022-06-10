@@ -36,9 +36,9 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 
 if [[ ${DUMP_DB} ]]; then
-    sudo ${INSTALLATION_DIR}/cmd/run.sh --dump-db
+    sudo ${INSTALLATION_DIR}/cmd/run.sh --k3d-memory 12288 --dump-db
 else
-    sudo ${INSTALLATION_DIR}/cmd/run.sh
+    sudo ${INSTALLATION_DIR}/cmd/run.sh --k3d-memory 12288
 fi
 
 if [[ ${DUMP_DB} ]]; then
