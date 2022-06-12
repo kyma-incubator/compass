@@ -40,6 +40,7 @@ type testConfig struct {
 	TenantFetcherFullDependenciesURL string `envconfig:"-"`
 	SkipSSLValidation                bool   `envconfig:"default=false"`
 	CertLoaderConfig                 certloader.Config
+	ExternalSvcMockURL               string `envconfig:"APP_EXTERNAL_SERVICES_MOCK_URL"`
 }
 
 type TenantProviderConfig struct {

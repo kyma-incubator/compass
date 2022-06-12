@@ -357,12 +357,8 @@ const (
 }`
 )
 
-type Config struct {
-	ExternalSvcMockURL string `envconfig:"EXTERNAL_SERVICES_MOCK_BASE_URL"`
-}
-
 var (
-	cfg                       Config
+	cfg                       testConfig
 	directorInternalGQLClient *gql.Client
 )
 
@@ -761,6 +757,7 @@ func genMockPage(events string, numEvents int) string {
 
 func setMockTenantEvents(t *testing.T, mockEvents string, subPath string) {
 	reader := bytes.NewReader([]byte(mockEvents))
+	t.Logf("Mock url: %s", cfg.ExternalSvcMockURL)
 	response, err := http.DefaultClient.Post(cfg.ExternalSvcMockURL+fmt.Sprintf("/tenant-fetcher/%s/configure", subPath), "application/json", reader)
 	require.NoError(t, err)
 	defer func() {
