@@ -113,7 +113,7 @@ global:
       version: "PR-2403"
     hydrator:
       dir:
-      version: "PR-2383"
+      version: "PR-2385"
     gateway:
       dir:
       version: "PR-2383"
@@ -844,6 +844,16 @@ global:
         - "bundle.instance_auths:read"
         - "runtime.webhooks:read"
         - "webhook:write"
+      external_certificate:
+        - "runtime:read"
+        - "runtime:write"
+        - "application:read"
+        - "runtime.auths:read"
+        - "bundle.instance_auths:read"
+        - "runtime.webhooks:read"
+        - "webhook:write"
+        - "application_template:read"
+        - "application_template:write"
       application:
         - "application:read"
         - "application:write"
