@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"crypto/tls"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"testing"
@@ -33,14 +34,13 @@ type testConfig struct {
 	RegionPathParam                string
 	SubscriptionCallbackScope      string
 	TenantProviderConfig
-	ExternalServicesMockURL          string
 	ClientID                         string
 	ClientSecret                     string
 	TenantFetcherFullRegionalURL     string `envconfig:"-"`
 	TenantFetcherFullDependenciesURL string `envconfig:"-"`
 	SkipSSLValidation                bool   `envconfig:"default=false"`
 	CertLoaderConfig                 certloader.Config
-	ExternalSvcMockURL               string `envconfig:"APP_EXTERNAL_SERVICES_MOCK_URL"`
+	ExternalServicesMockURL          string `envconfig:"APP_EXTERNAL_SERVICES_MOCK_URL"`
 }
 
 type TenantProviderConfig struct {
@@ -55,6 +55,7 @@ type TenantProviderConfig struct {
 var config testConfig
 
 func TestMain(m *testing.M) {
+	log.D().Log(logrus.InfoLevel, "TestMain, initializing envconfig")
 	err := envconfig.InitWithPrefix(&config, "APP")
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while initializing envconfig"))
