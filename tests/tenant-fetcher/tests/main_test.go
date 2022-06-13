@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"crypto/tls"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"net/http"
 	"os"
 	"testing"
@@ -75,7 +76,7 @@ func TestMain(m *testing.M) {
 	if err := util.WaitForCache(cc); err != nil {
 		log.D().Fatal(err)
 	}
-	
+
 	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(config.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, config.SkipSSLValidation)
 	certSecuredGraphQLClient.Log = func(s string) {
 		log.D().Info(s)
@@ -88,7 +89,17 @@ func TestMain(m *testing.M) {
 		},
 	}
 
-	directorInternalGQLClient = graphql.NewClient(config.InternalDirectorGQLURL, graphql.WithHTTPClient(httpClient))
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+	saTransport := httputil.NewServiceAccountTokenTransportWithHeader(tr, "Authorization")
+	client := &http.Client{
+		Transport: saTransport,
+		Timeout:   time.Second * 30,
+	}
+	directorInternalGQLClient = graphql.NewClient(config.InternalDirectorGQLURL, graphql.WithHTTPClient(client))
 	directorInternalGQLClient.Log = func(s string) {
 		log.D().Info(s)
 	}
