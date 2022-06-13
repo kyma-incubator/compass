@@ -227,7 +227,7 @@ func TestUpdate_Handler(t *testing.T) {
 			Request:              createRequestWithClaims(tenantHeaderID, consumerID, consumer.ExternalCertificate, oathkeeper.CertificateFlow),
 			ExpectedStatus:       http.StatusInternalServerError,
 			ExpectedErrorMessage: str.Ptr("An error has occurred while fetching \"region\" label for tenant ID \"abcd1122-ae7e-4d1a-8027-520a96d5319d\":"),
-			ExpectedError:        str.Ptr(testErrRegionMismatch.Error()),
+			ExpectedError:        str.Ptr(testErr.Error()),
 			MockNextHandler:      fixNextHandler(t),
 		},
 		{
@@ -248,6 +248,7 @@ func TestUpdate_Handler(t *testing.T) {
 			},
 			Request:         createRequestWithClaims(tenantHeaderID, consumerID, consumer.ExternalCertificate, oathkeeper.CertificateFlow),
 			ExpectedStatus:  http.StatusInternalServerError,
+			ExpectedError:   str.Ptr(testErrRegionMismatch.Error()),
 			MockNextHandler: fixNextHandler(t),
 		},
 	}
