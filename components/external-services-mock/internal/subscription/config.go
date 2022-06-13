@@ -34,6 +34,7 @@ type ProviderConfig struct {
 	SubdomainProperty              string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"`
 	SubscriptionProviderIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY"`
 	ProviderSubaccountIDProperty   string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY"`
+	SubscribedSubaccountIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIBED_SUBACCOUNT_ID_PROPERTY"`
 }
 
 func BuildTenantFetcherRegionalURL(tenantConfig *Config) {

@@ -12,14 +12,13 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/appmetadatavalidation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/subscription"
 
 	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
-
-	"github.com/kyma-incubator/compass/components/director/internal/subscription"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
@@ -148,7 +147,7 @@ type config struct {
 
 	SubscriptionConfig subscription.Config
 
-	TenantOnDemandURL string `envconfig:"optional,APP_FETCH_TENANT_URL"`
+	TenantOnDemandConfig tenant.FetchOnDemandApiConfig
 
 	SkipSSLValidation bool `envconfig:"default=false,APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"`
 }
@@ -244,7 +243,7 @@ func main() {
 		adminURL,
 		accessStrategyExecutorProvider,
 		cfg.SubscriptionConfig,
-		cfg.TenantOnDemandURL,
+		cfg.TenantOnDemandConfig,
 	)
 	exitOnError(err, "Failed to initialize root resolver")
 

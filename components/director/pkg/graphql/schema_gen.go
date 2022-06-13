@@ -395,14 +395,14 @@ type ComplexityRoot struct {
 		SetBundleInstanceAuth                         func(childComplexity int, authID string, in BundleInstanceAuthSetInput) int
 		SetDefaultEventingForApplication              func(childComplexity int, appID string, runtimeID string) int
 		SetRuntimeLabel                               func(childComplexity int, runtimeID string, key string, value interface{}) int
-		SubscribeTenantToRuntime                      func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, region string) int
+		SubscribeTenant                               func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, region string, subscriptionAppName string) int
 		UnassignFormation                             func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
 		UnpairApplication                             func(childComplexity int, id string, mode *OperationMode) int
 		UnregisterApplication                         func(childComplexity int, id string, mode *OperationMode) int
 		UnregisterIntegrationSystem                   func(childComplexity int, id string) int
 		UnregisterRuntime                             func(childComplexity int, id string) int
 		UnregisterRuntimeContext                      func(childComplexity int, id string) int
-		UnsubscribeTenantFromRuntime                  func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, region string) int
+		UnsubscribeTenant                             func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, region string) int
 		UpdateAPIDefinition                           func(childComplexity int, id string, in APIDefinitionInput) int
 		UpdateApplication                             func(childComplexity int, id string, in ApplicationUpdateInput) int
 		UpdateApplicationTemplate                     func(childComplexity int, id string, in ApplicationTemplateUpdateInput) int
@@ -463,7 +463,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Application                             func(childComplexity int, id string) int
 		ApplicationTemplate                     func(childComplexity int, id string) int
-		ApplicationTemplates                    func(childComplexity int, first *int, after *PageCursor) int
+		ApplicationTemplates                    func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
 		Applications                            func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
 		ApplicationsForRuntime                  func(childComplexity int, runtimeID string, first *int, after *PageCursor) int
 		AutomaticScenarioAssignmentForScenario  func(childComplexity int, scenarioName string) int
@@ -696,8 +696,8 @@ type MutationResolver interface {
 	WriteTenants(ctx context.Context, in []*BusinessTenantMappingInput) (int, error)
 	DeleteTenants(ctx context.Context, in []string) (int, error)
 	UpdateTenant(ctx context.Context, id string, in BusinessTenantMappingInput) (*Tenant, error)
-	SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) (bool, error)
-	UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) (bool, error)
+	SubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string, subscriptionAppName string) (bool, error)
+	UnsubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) (bool, error)
 }
 type OneTimeTokenForApplicationResolver interface {
 	Raw(ctx context.Context, obj *OneTimeTokenForApplication) (*string, error)
@@ -711,7 +711,7 @@ type QueryResolver interface {
 	Applications(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationPage, error)
 	Application(ctx context.Context, id string) (*Application, error)
 	ApplicationsForRuntime(ctx context.Context, runtimeID string, first *int, after *PageCursor) (*ApplicationPage, error)
-	ApplicationTemplates(ctx context.Context, first *int, after *PageCursor) (*ApplicationTemplatePage, error)
+	ApplicationTemplates(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationTemplatePage, error)
 	ApplicationTemplate(ctx context.Context, id string) (*ApplicationTemplate, error)
 	Runtimes(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*RuntimePage, error)
 	Runtime(ctx context.Context, id string) (*Runtime, error)
@@ -2658,17 +2658,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SetRuntimeLabel(childComplexity, args["runtimeID"].(string), args["key"].(string), args["value"].(interface{})), true
 
-	case "Mutation.subscribeTenantToRuntime":
-		if e.complexity.Mutation.SubscribeTenantToRuntime == nil {
+	case "Mutation.subscribeTenant":
+		if e.complexity.Mutation.SubscribeTenant == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_subscribeTenantToRuntime_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_subscribeTenant_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SubscribeTenantToRuntime(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string)), true
+		return e.complexity.Mutation.SubscribeTenant(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string), args["subscriptionAppName"].(string)), true
 
 	case "Mutation.unassignFormation":
 		if e.complexity.Mutation.UnassignFormation == nil {
@@ -2742,17 +2742,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UnregisterRuntimeContext(childComplexity, args["id"].(string)), true
 
-	case "Mutation.unsubscribeTenantFromRuntime":
-		if e.complexity.Mutation.UnsubscribeTenantFromRuntime == nil {
+	case "Mutation.unsubscribeTenant":
+		if e.complexity.Mutation.UnsubscribeTenant == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_unsubscribeTenantFromRuntime_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_unsubscribeTenant_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UnsubscribeTenantFromRuntime(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string)), true
+		return e.complexity.Mutation.UnsubscribeTenant(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string)), true
 
 	case "Mutation.updateAPIDefinition":
 		if e.complexity.Mutation.UpdateAPIDefinition == nil {
@@ -3133,7 +3133,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.ApplicationTemplates(childComplexity, args["first"].(*int), args["after"].(*PageCursor)), true
+		return e.complexity.Query.ApplicationTemplates(childComplexity, args["filter"].([]*LabelFilter), args["first"].(*int), args["after"].(*PageCursor)), true
 
 	case "Query.applications":
 		if e.complexity.Query.Applications == nil {
@@ -5156,7 +5156,7 @@ type Query {
 	**Examples**
 	- [query application templates](examples/query-application-templates/query-application-templates.graphql)
 	"""
-	applicationTemplates(first: Int = 200, after: PageCursor): ApplicationTemplatePage! @hasScopes(path: "graphql.query.applicationTemplates")
+	applicationTemplates(filter: [LabelFilter!], first: Int = 200, after: PageCursor): ApplicationTemplatePage! @hasScopes(path: "graphql.query.applicationTemplates")
 	"""
 	**Examples**
 	- [query application template](examples/query-application-template/query-application-template.graphql)
@@ -5509,8 +5509,8 @@ type Mutation {
 	writeTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.writeTenants")
 	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
 	updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")
-	subscribeTenantToRuntime(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenantToRuntime")
-	unsubscribeTenantFromRuntime(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenantFromRuntime")
+	subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!, subscriptionAppName: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
+	unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
 }
 
 `, BuiltIn: false},
@@ -6885,7 +6885,7 @@ func (ec *executionContext) field_Mutation_setRuntimeLabel_args(ctx context.Cont
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_subscribeTenantToRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_subscribeTenant_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -6920,6 +6920,14 @@ func (ec *executionContext) field_Mutation_subscribeTenantToRuntime_args(ctx con
 		}
 	}
 	args["region"] = arg3
+	var arg4 string
+	if tmp, ok := rawArgs["subscriptionAppName"]; ok {
+		arg4, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["subscriptionAppName"] = arg4
 	return args, nil
 }
 
@@ -7039,7 +7047,7 @@ func (ec *executionContext) field_Mutation_unregisterRuntime_args(ctx context.Co
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_unsubscribeTenantFromRuntime_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_unsubscribeTenant_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -7528,22 +7536,30 @@ func (ec *executionContext) field_Query_applicationTemplate_args(ctx context.Con
 func (ec *executionContext) field_Query_applicationTemplates_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *int
+	var arg0 []*LabelFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		arg0, err = ec.unmarshalOLabelFilter2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelFilterᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	var arg1 *int
 	if tmp, ok := rawArgs["first"]; ok {
-		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["first"] = arg0
-	var arg1 *PageCursor
+	args["first"] = arg1
+	var arg2 *PageCursor
 	if tmp, ok := rawArgs["after"]; ok {
-		arg1, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
+		arg2, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["after"] = arg1
+	args["after"] = arg2
 	return args, nil
 }
 
@@ -18690,7 +18706,7 @@ func (ec *executionContext) _Mutation_updateTenant(ctx context.Context, field gr
 	return ec.marshalNTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_subscribeTenantToRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_subscribeTenant(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -18706,7 +18722,7 @@ func (ec *executionContext) _Mutation_subscribeTenantToRuntime(ctx context.Conte
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_subscribeTenantToRuntime_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_subscribeTenant_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -18715,10 +18731,10 @@ func (ec *executionContext) _Mutation_subscribeTenantToRuntime(ctx context.Conte
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().SubscribeTenantToRuntime(rctx, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string))
+			return ec.resolvers.Mutation().SubscribeTenant(rctx, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string), args["subscriptionAppName"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.subscribeTenantToRuntime")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.subscribeTenant")
 			if err != nil {
 				return nil, err
 			}
@@ -18755,7 +18771,7 @@ func (ec *executionContext) _Mutation_subscribeTenantToRuntime(ctx context.Conte
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_unsubscribeTenantFromRuntime(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_unsubscribeTenant(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -18771,7 +18787,7 @@ func (ec *executionContext) _Mutation_unsubscribeTenantFromRuntime(ctx context.C
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_unsubscribeTenantFromRuntime_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_unsubscribeTenant_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -18780,10 +18796,10 @@ func (ec *executionContext) _Mutation_unsubscribeTenantFromRuntime(ctx context.C
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UnsubscribeTenantFromRuntime(rctx, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string))
+			return ec.resolvers.Mutation().UnsubscribeTenant(rctx, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.unsubscribeTenantFromRuntime")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.unsubscribeTenant")
 			if err != nil {
 				return nil, err
 			}
@@ -19936,7 +19952,7 @@ func (ec *executionContext) _Query_applicationTemplates(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().ApplicationTemplates(rctx, args["first"].(*int), args["after"].(*PageCursor))
+			return ec.resolvers.Query().ApplicationTemplates(rctx, args["filter"].([]*LabelFilter), args["first"].(*int), args["after"].(*PageCursor))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.query.applicationTemplates")
@@ -28061,13 +28077,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "subscribeTenantToRuntime":
-			out.Values[i] = ec._Mutation_subscribeTenantToRuntime(ctx, field)
+		case "subscribeTenant":
+			out.Values[i] = ec._Mutation_subscribeTenant(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "unsubscribeTenantFromRuntime":
-			out.Values[i] = ec._Mutation_unsubscribeTenantFromRuntime(ctx, field)
+		case "unsubscribeTenant":
+			out.Values[i] = ec._Mutation_unsubscribeTenant(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

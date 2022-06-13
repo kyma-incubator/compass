@@ -6,13 +6,12 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/subscription"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 
 	pkgadapters "github.com/kyma-incubator/compass/components/director/pkg/adapters"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/model"
-
-	"github.com/kyma-incubator/compass/components/director/internal/subscription"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
@@ -84,6 +83,7 @@ type RootResolver struct {
 	mpBundle           *bundleutil.Resolver
 	bundleInstanceAuth *bundleinstanceauth.Resolver
 	scenarioAssignment *scenarioassignment.Resolver
+	subscription       *subscription.Resolver
 }
 
 // NewRootResolver missing godoc
@@ -102,7 +102,7 @@ func NewRootResolver(
 	hydraURL *url.URL,
 	accessStrategyExecutorProvider *accessstrategy.Provider,
 	subscriptionConfig subscription.Config,
-	tenantOnDemandURL string,
+	tenantOnDemandAPIConfig tenant.FetchOnDemandApiConfig,
 ) (*RootResolver, error) {
 	oAuth20HTTPClient := &http.Client{
 		Timeout:   oAuth20Cfg.HTTPClientTimeout,
@@ -190,8 +190,8 @@ func NewRootResolver(
 	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, labelDefSvc, bundleSvc, uidSvc, formationSvc)
 	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalFQDNHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdapters, timeService)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantSvc, webhookSvc, featuresConfig.ProtectedLabelPattern, featuresConfig.ImmutableLabelPattern)
-	subscriptionSvc := subscription.NewService(runtimeSvc, tenantSvc, labelSvc, uidSvc, subscriptionConfig.ProviderLabelKey, subscriptionConfig.ConsumerSubaccountIDsLabelKey)
-	tenantOnDemandSvc := tenant.NewFetchOnDemandService(internalGatewayHTTPClient, tenantOnDemandURL)
+	subscriptionSvc := subscription.NewService(runtimeSvc, tenantSvc, labelSvc, appTemplateSvc, appConverter, appSvc, uidSvc, subscriptionConfig.ProviderLabelKey, subscriptionConfig.ConsumerSubaccountIDsLabelKey)
+	tenantOnDemandSvc := tenant.NewFetchOnDemandService(internalGatewayHTTPClient, tenantOnDemandAPIConfig)
 
 	return &RootResolver{
 		appNameNormalizer:  appNameNormalizer,
@@ -216,6 +216,7 @@ func NewRootResolver(
 		mpBundle:           bundleutil.NewResolver(transact, bundleSvc, bundleInstanceAuthSvc, bundleReferenceSvc, apiSvc, eventAPISvc, docSvc, bundleConverter, bundleInstanceAuthConv, apiConverter, eventAPIConverter, docConverter, specSvc),
 		bundleInstanceAuth: bundleinstanceauth.NewResolver(transact, bundleInstanceAuthSvc, bundleSvc, bundleInstanceAuthConv, bundleConverter),
 		scenarioAssignment: scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv, tenantSvc, tenantOnDemandSvc, formationSvc),
+		subscription:       subscription.NewResolver(transact, subscriptionSvc),
 	}, nil
 }
 
@@ -359,8 +360,8 @@ func (r *queryResolver) Application(ctx context.Context, id string) (*graphql.Ap
 }
 
 // ApplicationTemplates missing godoc
-func (r *queryResolver) ApplicationTemplates(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.ApplicationTemplatePage, error) {
-	return r.appTemplate.ApplicationTemplates(ctx, first, after)
+func (r *queryResolver) ApplicationTemplates(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationTemplatePage, error) {
+	return r.appTemplate.ApplicationTemplates(ctx, filter, first, after)
 }
 
 // ApplicationTemplate missing godoc
@@ -809,14 +810,14 @@ func (r *mutationResolver) DeleteTenants(ctx context.Context, in []string) (int,
 	return r.tenant.Delete(ctx, in)
 }
 
-// SubscribeTenantToRuntime subscribes given tenant to runtime
-func (r *mutationResolver) SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountID, providerSubaccountID, region string) (bool, error) {
-	return r.runtime.SubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, region)
+// SubscribeTenant subscribes given tenant
+func (r *mutationResolver) SubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, region, subscriptionAppName string) (bool, error) {
+	return r.subscription.SubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, region, subscriptionAppName)
 }
 
-// UnsubscribeTenantFromRuntime unsubscribes given tenant from runtime
-func (r *mutationResolver) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, subaccountID, providerSubaccountID, region string) (bool, error) {
-	return r.runtime.UnsubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, region)
+// UnsubscribeTenant unsubscribes given tenant
+func (r *mutationResolver) UnsubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, region string) (bool, error) {
+	return r.subscription.UnsubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, region)
 }
 
 func (r *mutationResolver) UpdateTenant(ctx context.Context, id string, in graphql.BusinessTenantMappingInput) (*graphql.Tenant, error) {

@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate/automock"
@@ -245,6 +247,87 @@ func TestRepository_GetByName(t *testing.T) {
 	})
 }
 
+func TestRepository_GetByFilters(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		webhooksModel := fixModelApplicationWebhooks(testWebhookID, testID)
+		appTemplateModel := fixModelApplicationTemplate(testID, testName, webhooksModel)
+		appTemplateEntity := fixEntityApplicationTemplate(t, testID, testName)
+
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromEntity", appTemplateEntity).Return(appTemplateModel, nil).Once()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		rowsToReturn := fixSQLRows([]apptemplate.Entity{*appTemplateEntity})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_input, placeholders, access_level FROM public.app_templates WHERE id IN (SELECT "app_template_id" FROM public.labels WHERE "app_template_id" IS NOT NULL AND "key" = $1)`)).
+			WithArgs("someKey").
+			WillReturnRows(rowsToReturn)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		appTemplateRepo := apptemplate.NewRepository(mockConverter)
+
+		// WHEN
+		filters := []*labelfilter.LabelFilter{labelfilter.NewForKey("someKey")}
+		result, err := appTemplateRepo.GetByFilters(ctx, filters)
+
+		// THEN
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, appTemplateModel, result)
+	})
+
+	t.Run("Error when getting", func(t *testing.T) {
+		// GIVEN
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_input, placeholders, access_level FROM public.app_templates WHERE id IN (SELECT "app_template_id" FROM public.labels WHERE "app_template_id" IS NOT NULL AND "key" = $1)`)).
+			WithArgs("someKey").
+			WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		appTemplateRepo := apptemplate.NewRepository(mockConverter)
+
+		// WHEN
+		filters := []*labelfilter.LabelFilter{labelfilter.NewForKey("someKey")}
+		_, err := appTemplateRepo.GetByFilters(ctx, filters)
+
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+
+	t.Run("Error when converting", func(t *testing.T) {
+		// GIVEN
+		appTemplateEntity := fixEntityApplicationTemplate(t, testID, testName)
+
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromEntity", appTemplateEntity).Return(nil, testError).Once()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		rowsToReturn := fixSQLRows([]apptemplate.Entity{*appTemplateEntity})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_input, placeholders, access_level FROM public.app_templates WHERE id IN (SELECT "app_template_id" FROM public.labels WHERE "app_template_id" IS NOT NULL AND "key" = $1)`)).
+			WithArgs("someKey").
+			WillReturnRows(rowsToReturn)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		appTemplateRepo := apptemplate.NewRepository(mockConverter)
+
+		// WHEN
+		filters := []*labelfilter.LabelFilter{labelfilter.NewForKey("someKey")}
+		_, err := appTemplateRepo.GetByFilters(ctx, filters)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testError.Error())
+	})
+}
+
 func TestRepository_Exists(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
@@ -308,6 +391,8 @@ func TestRepository_List(t *testing.T) {
 			*fixEntityApplicationTemplate(t, "id3", "name3"),
 		}
 
+		labelFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(RegionKey, "еу-1")}
+
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 
@@ -318,7 +403,7 @@ func TestRepository_List(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		rowsToReturn := fixSQLRows(appTemplateEntities)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_input, placeholders, access_level FROM public.app_templates ORDER BY id LIMIT 3 OFFSET 0`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_input, placeholders, access_level FROM public.app_templates WHERE id IN (SELECT "app_template_id" FROM public.labels WHERE "app_template_id" IS NOT NULL AND "key" = $1 AND "value" @> $2) ORDER BY id LIMIT 3 OFFSET 0`)).
 			WillReturnRows(rowsToReturn)
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT COUNT(*) FROM public.app_templates`)).
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
@@ -327,7 +412,7 @@ func TestRepository_List(t *testing.T) {
 		appTemplateRepo := apptemplate.NewRepository(mockConverter)
 
 		// WHEN
-		result, err := appTemplateRepo.List(ctx, testPageSize, testCursor)
+		result, err := appTemplateRepo.List(ctx, labelFilters, testPageSize, testCursor)
 
 		// THEN
 		require.NoError(t, err)
@@ -341,6 +426,8 @@ func TestRepository_List(t *testing.T) {
 			*fixEntityApplicationTemplate(t, "id1", "name1"),
 		}
 
+		labelFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(RegionKey, "еу-1")}
+
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 
@@ -349,7 +436,7 @@ func TestRepository_List(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		rowsToReturn := fixSQLRows(appTemplateEntities)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_input, placeholders, access_level FROM public.app_templates ORDER BY id LIMIT 3 OFFSET 0`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_input, placeholders, access_level FROM public.app_templates WHERE id IN (SELECT "app_template_id" FROM public.labels WHERE "app_template_id" IS NOT NULL AND "key" = $1 AND "value" @> $2) ORDER BY id LIMIT 3 OFFSET 0`)).
 			WillReturnRows(rowsToReturn)
 		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT COUNT(*) FROM public.app_templates`)).
 			WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(3))
@@ -358,7 +445,7 @@ func TestRepository_List(t *testing.T) {
 		appTemplateRepo := apptemplate.NewRepository(mockConverter)
 
 		// WHEN
-		_, err := appTemplateRepo.List(ctx, testPageSize, testCursor)
+		_, err := appTemplateRepo.List(ctx, labelFilters, testPageSize, testCursor)
 
 		// THEN
 		require.Error(t, err)
@@ -378,7 +465,7 @@ func TestRepository_List(t *testing.T) {
 		appTemplateRepo := apptemplate.NewRepository(mockConverter)
 
 		// WHEN
-		_, err := appTemplateRepo.List(ctx, testPageSize, testCursor)
+		_, err := appTemplateRepo.List(ctx, nil, testPageSize, testCursor)
 
 		// THEN
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
