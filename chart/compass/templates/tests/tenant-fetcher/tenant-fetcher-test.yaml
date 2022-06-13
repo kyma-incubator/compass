@@ -52,7 +52,7 @@ spec:
             - name: APP_TENANT_FETCHER_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_EXTERNAL_SERVICES_MOCK_URL
-              value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080"
+              value: {{ .Values.global.tests.externalServicesMockFQDN }}:8080
             - name: APP_CLIENT_ID
               valueFrom:
                 secretKeyRef:
