@@ -41,6 +41,17 @@ func fixModelApplicationTemplate(id, name string) *model.ApplicationTemplate {
 	return &out
 }
 
+func fixModelApplication(id, name, appTemplateID string) *model.Application {
+	return &model.Application{
+		Status: &model.ApplicationStatus{
+			Condition: model.ApplicationStatusConditionInitial,
+		},
+		Name:                  name,
+		BaseEntity:            &model.BaseEntity{ID: id},
+		ApplicationTemplateID: &appTemplateID,
+	}
+}
+
 func fixModelRuntime(name string) *model.Runtime {
 	desc := testDescription
 	out := model.Runtime{

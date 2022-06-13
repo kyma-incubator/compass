@@ -101,6 +101,7 @@ func (d *Director) UnsubscribeTenant(ctx context.Context, providerID string, sub
 
 	unsubscriptionMutation := fmt.Sprintf(`mutation { unsubscribeTenant(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", region: "%s")}`, providerID, subaccountID, providerSubaccountID, region)
 	gRequest := gcli.NewRequest(unsubscriptionMutation)
+	gRequest.Header.Set("tenant", subaccountID)
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql mutation")
 	}

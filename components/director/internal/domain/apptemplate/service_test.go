@@ -553,7 +553,6 @@ func TestService_GetByName(t *testing.T) {
 	testCases := []struct {
 		Name              string
 		AppTemplateRepoFn func() *automock.ApplicationTemplateRepository
-		WebhookRepoFn     func() *automock.WebhookRepository
 		ExpectedError     error
 		ExpectedOutput    *model.ApplicationTemplate
 	}{
@@ -564,9 +563,6 @@ func TestService_GetByName(t *testing.T) {
 				appTemplateRepo.On("GetByName", ctx, testName).Return(modelAppTemplate, nil).Once()
 				return appTemplateRepo
 			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				return &automock.WebhookRepository{}
-			},
 			ExpectedOutput: modelAppTemplate,
 		},
 		{
@@ -576,8 +572,60 @@ func TestService_GetByName(t *testing.T) {
 				appTemplateRepo.On("GetByName", ctx, testName).Return(nil, testError).Once()
 				return appTemplateRepo
 			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				return &automock.WebhookRepository{}
+			ExpectedError: testError,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			appTemplateRepo := testCase.AppTemplateRepoFn()
+			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, nil)
+
+			// WHEN
+			result, err := svc.GetByName(ctx, testName)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			appTemplateRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_GetByFilters(t *testing.T) {
+	// GIVEN
+	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
+
+	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
+	filters := []*labelfilter.LabelFilter{labelfilter.NewForKey("someKey")}
+
+	testCases := []struct {
+		Name              string
+		AppTemplateRepoFn func() *automock.ApplicationTemplateRepository
+		ExpectedError     error
+		ExpectedOutput    *model.ApplicationTemplate
+	}{
+		{
+			Name: "Success",
+			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				appTemplateRepo.On("GetByFilters", ctx, filters).Return(modelAppTemplate, nil).Once()
+				return appTemplateRepo
+			},
+			ExpectedOutput: modelAppTemplate,
+		},
+		{
+			Name: "Error when getting application template",
+			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				appTemplateRepo.On("GetByFilters", ctx, filters).Return(nil, testError).Once()
+				return appTemplateRepo
 			},
 			ExpectedError: testError,
 		},
@@ -586,11 +634,10 @@ func TestService_GetByName(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
-			webhookRepo := testCase.WebhookRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, nil, nil, nil)
+			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, nil)
 
 			// WHEN
-			result, err := svc.GetByName(ctx, testName)
+			result, err := svc.GetByFilters(ctx, filters)
 
 			// THEN
 			if testCase.ExpectedError != nil {

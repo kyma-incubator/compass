@@ -14,7 +14,8 @@ import (
 type SubscriptionService interface {
 	SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error)
 	UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error)
-	SubscribeTenantToApplication(ctx context.Context, subaccountTenantID, region, providerSubaccountID, subscribedSubaccountID, subscribedAppName string) (bool, error)
+	SubscribeTenantToApplication(ctx context.Context, subaccountTenantID, subscribedSubaccountID, providerSubaccountID, region, subscribedAppName string) (bool, error)
+	UnsubscribeTenantFromApplication(ctx context.Context, subaccountTenantID, providerSubaccountID, region string) (bool, error)
 	DetermineSubscriptionFlow(ctx context.Context, providerID, region string) (resource.Type, error)
 }
 
@@ -51,7 +52,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 
 	if flowType == resource.ApplicationTemplate {
 		log.C(ctx).Infof("Entering Application flow")
-		success, err = r.subscriptionSvc.SubscribeTenantToApplication(ctx, providerID, region, providerSubaccountID, subaccountTenantID, subscriptionAppName)
+		success, err = r.subscriptionSvc.SubscribeTenantToApplication(ctx, providerID, subaccountTenantID, providerSubaccountID, region, subscriptionAppName)
 		if err != nil {
 			return false, err
 		}
@@ -80,9 +81,25 @@ func (r *Resolver) UnsubscribeTenant(ctx context.Context, providerID string, sub
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	success, err := r.subscriptionSvc.UnsubscribeTenantFromRuntime(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
+	flowType, err := r.subscriptionSvc.DetermineSubscriptionFlow(ctx, providerID, region)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "while determining subscription flow")
+	}
+
+	var success bool
+
+	if flowType == resource.ApplicationTemplate {
+		log.C(ctx).Infof("Entering Application flow")
+		success, err = r.subscriptionSvc.UnsubscribeTenantFromApplication(ctx, providerID, providerSubaccountID, region)
+		if err != nil {
+			return false, err
+		}
+	} else {
+		log.C(ctx).Infof("Entering Runtime flow")
+		success, err = r.subscriptionSvc.UnsubscribeTenantFromRuntime(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
+		if err != nil {
+			return false, err
+		}
 	}
 
 	if err = tx.Commit(); err != nil {

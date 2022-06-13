@@ -43,6 +43,7 @@ const (
 var (
 	testError                     = errors.New("test error")
 	notFoundErr                   = apperrors.NewNotFoundErrorWithType(resource.Runtime)
+	notFoundAppTemplateErr        = apperrors.NewNotFoundErrorWithType(resource.ApplicationTemplate)
 	subscriptionConsumerLabelKey  = "SubscriptionProviderLabelKey"
 	consumerSubaccountIDsLabelKey = "ConsumerSubaccountIDsLabelKey"
 
@@ -1003,7 +1004,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			service := subscription.NewService(nil, tenantSvc, labelSvc, appTemplateSvc, appConv, appSvc, uuidSvc, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
 
 			// WHEN
-			isSubscribeSuccessful, err := service.SubscribeTenantToApplication(context.TODO(), subscriptionProviderID, testCase.Region, providerSubaccountID, subscribedSubaccountID, subscriptionAppName)
+			isSubscribeSuccessful, err := service.SubscribeTenantToApplication(context.TODO(), subscriptionProviderID, subscribedSubaccountID, providerSubaccountID, testCase.Region, subscriptionAppName)
 
 			// THEN
 			if len(testCase.ExpectedErrorOutput) > 0 {
@@ -1016,6 +1017,179 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			assert.Equal(t, testCase.IsSuccessful, isSubscribeSuccessful)
 
 			mock.AssertExpectationsForObjects(t, appTemplateSvc, labelSvc, uuidSvc, tenantSvc, appConv, appSvc)
+		})
+	}
+}
+
+func TestUnsubscribeTenantFromApplication(t *testing.T) {
+	appTmplAppName := "app-name"
+	appTmplName := "app-tmpl-name"
+	appTmplID := "b91b59f7-2563-40b2-aba9-fef726037aa3"
+	appFirstID := "b91b59f7-2563-40b2-aba9-fef726037bb4"
+	appSecondID := "b91b59e6-2563-40b2-aba9-fef726037cc5"
+	jsonAppCreateInput := fixJSONApplicationCreateInput(appTmplAppName)
+	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(appTmplID, appTmplName, jsonAppCreateInput)
+	modelApps := []*model.Application{
+		fixModelApplication(appFirstID, "first", appTmplID),
+		fixModelApplication(appSecondID, "second", appTmplID),
+	}
+	testCases := []struct {
+		Name                 string
+		AppTemplateServiceFn func() *automock.ApplicationTemplateService
+		AppSvcFn             func() *automock.ApplicationService
+		TenantSvcFn          func() *automock.TenantService
+		ExpectedErrorOutput  string
+		IsSuccessful         bool
+	}{
+		{
+			Name: "Success",
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				svc := &automock.ApplicationTemplateService{}
+				svc.On("GetByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return(modelAppTemplate, nil).Once()
+				return svc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("ListAll", CtxWithTenantMatcher(providerInternalID)).Return(modelApps, nil).Once()
+				svc.On("Delete", CtxWithTenantMatcher(providerInternalID), appFirstID).Return(nil).Once()
+				svc.On("Delete", CtxWithTenantMatcher(providerInternalID), appSecondID).Return(nil).Once()
+				return svc
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				return tenantSvc
+			},
+			IsSuccessful: true,
+		},
+		{
+			Name: "Error when fails to get internal tenant",
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				svc := &automock.ApplicationTemplateService{}
+				svc.AssertNotCalled(t, "GetByFilters")
+				return svc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.AssertNotCalled(t, "ListAll")
+				svc.AssertNotCalled(t, "Delete")
+				return svc
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return("", testError).Once()
+				return tenantSvc
+			},
+			IsSuccessful:        false,
+			ExpectedErrorOutput: testError.Error(),
+		},
+		{
+			Name: "Error when getting app template by filters",
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				svc := &automock.ApplicationTemplateService{}
+				svc.On("GetByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return(nil, testError).Once()
+				return svc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.AssertNotCalled(t, "ListAll")
+				svc.AssertNotCalled(t, "Delete")
+				return svc
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				return tenantSvc
+			},
+			IsSuccessful:        false,
+			ExpectedErrorOutput: testError.Error(),
+		},
+		{
+			Name: "Error when app template by filters is not found",
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				svc := &automock.ApplicationTemplateService{}
+				svc.On("GetByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return(nil, notFoundAppTemplateErr).Once()
+				return svc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.AssertNotCalled(t, "ListAll")
+				svc.AssertNotCalled(t, "Delete")
+				return svc
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				return tenantSvc
+			},
+			IsSuccessful: false,
+		},
+		{
+			Name: "Error when listing applications",
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				svc := &automock.ApplicationTemplateService{}
+				svc.On("GetByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return(modelAppTemplate, nil).Once()
+				return svc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("ListAll", CtxWithTenantMatcher(providerInternalID)).Return(nil, testError).Once()
+				svc.AssertNotCalled(t, "Delete")
+				return svc
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				return tenantSvc
+			},
+			IsSuccessful:        false,
+			ExpectedErrorOutput: testError.Error(),
+		},
+		{
+			Name: "Error when deleting application",
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				svc := &automock.ApplicationTemplateService{}
+				svc.On("GetByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return(modelAppTemplate, nil).Once()
+				return svc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("ListAll", CtxWithTenantMatcher(providerInternalID)).Return(modelApps, nil).Once()
+				svc.On("Delete", CtxWithTenantMatcher(providerInternalID), appFirstID).Return(nil).Once()
+				svc.On("Delete", CtxWithTenantMatcher(providerInternalID), appSecondID).Return(testError).Once()
+				return svc
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Once()
+				return tenantSvc
+			},
+			IsSuccessful:        false,
+			ExpectedErrorOutput: testError.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			appTemplateSvc := testCase.AppTemplateServiceFn()
+			appSvc := testCase.AppSvcFn()
+			tenantSvc := testCase.TenantSvcFn()
+			service := subscription.NewService(nil, tenantSvc, nil, appTemplateSvc, nil, appSvc, nil, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
+
+			// WHEN
+			successful, err := service.UnsubscribeTenantFromApplication(context.TODO(), subscriptionProviderID, providerSubaccountID, tenantRegion)
+
+			// THEN
+			if len(testCase.ExpectedErrorOutput) > 0 {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrorOutput)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, testCase.IsSuccessful, successful)
+
+			mock.AssertExpectationsForObjects(t, appTemplateSvc, tenantSvc, appSvc)
 		})
 	}
 }
