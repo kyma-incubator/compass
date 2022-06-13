@@ -142,7 +142,6 @@ SELECT DISTINCT t_apps.tenant_id,
                 apps.app_template_id,
                 apps.correlation_ids,
                 apps.system_number,
-                apps.system_status,
                 tmpl.name AS product_type
 FROM applications apps
          LEFT JOIN app_templates tmpl ON apps.app_template_id = tmpl.id
