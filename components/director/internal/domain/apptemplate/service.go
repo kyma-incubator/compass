@@ -3,6 +3,7 @@ package apptemplate
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -176,7 +177,7 @@ func (s *service) GetLabel(ctx context.Context, appTemplateID string, key string
 
 	label, ok := labels[key]
 	if !ok {
-		return nil, fmt.Errorf("label %s for application template with ID %s doesn't exist", key, appTemplateID)
+		return nil, apperrors.NewNotFoundErrorWithMessage(resource.Label, "", fmt.Sprintf("label %s for application template with ID %s doesn't exist", key, appTemplateID))
 	}
 
 	return label, nil
