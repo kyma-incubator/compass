@@ -31,20 +31,6 @@ func (_m *LabelRepository) Create(ctx context.Context, tenant string, _a2 *model
 	return r0
 }
 
-// Delete provides a mock function with given fields: ctx, tenant, objectType, objectID, key
-func (_m *LabelRepository) Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error {
-	ret := _m.Called(ctx, tenant, objectType, objectID, key)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) error); ok {
-		r0 = rf(ctx, tenant, objectType, objectID, key)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // GetByKey provides a mock function with given fields: ctx, tenant, objectType, objectID, key
 func (_m *LabelRepository) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) (*model.Label, error) {
 	ret := _m.Called(ctx, tenant, objectType, objectID, key)
