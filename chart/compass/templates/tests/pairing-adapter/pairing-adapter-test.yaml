@@ -90,9 +90,9 @@ spec:
             - name: APP_CLIENT_ID_HTTP_HEADER
               value: {{ $.Values.global.director.clientIDHeaderKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
-              value: {{ $.Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+              value: {{ $.Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
-              value: {{ $.Values.global.tests.subscriptionProviderIdValue | quote }}
+              value: {{ $.Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
             - name: APP_SELF_REG_REGION
               value: {{ $.Values.global.tests.selfRegistration.region }}
             - name: APP_SELF_REG_LABEL_KEY
@@ -108,14 +108,6 @@ spec:
               value: "{{ $.Values.global.pairingAdapter.configMap.integrationSystemID }}"
             - name: APP_LOCAL_ADAPTER_FQDN
               value: "{{ $.Values.global.pairingAdapter.configMap.localAdapterFQDN }}"
-            - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
-              value: {{ $.Values.global.director.subscription.subscriptionProviderLabelKey }}
-            - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
-              value: {{ $.Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
-            - name: APP_SELF_REG_REGION
-              value: {{ $.Values.global.tests.selfRegistration.region }}
-            - name: APP_SELF_REG_LABEL_KEY
-              value: {{ $.Values.global.director.selfRegister.label }}
             {{ end }}
             - name: APP_DB_USER
               valueFrom:

@@ -137,13 +137,13 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
-				rtmCtxSvc.On("Create", mock.AnythingOfType("*context.valueCtx"), runtimeCtxInput).Return(runtimeCtxID, nil).Once()
+				rtmCtxSvc.On("Create", consumerCtx, runtimeCtxInput).Return(runtimeCtxID, nil).Once()
 				return rtmCtxSvc
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetTenantByExternalID", ctx, providerSubaccountID).Return(providerTenant, nil).Once()
-				tenantSvc.On("GetLowestOwnerForResource", providerCtx, resource.Runtime, mock.Anything).Return(providerSubaccountID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", providerCtx, resource.Runtime, providerRuntimeID).Return(providerSubaccountID, nil).Once()
 				tenantSvc.On("GetTenantByExternalID", providerCtx, subaccountTenantExtID).Return(consumerTenant, nil).Once()
 				return tenantSvc
 			},
@@ -232,7 +232,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetTenantByExternalID", ctx, providerSubaccountID).Return(providerTenant, nil).Once()
-				tenantSvc.On("GetLowestOwnerForResource", mock.AnythingOfType("*context.valueCtx"), resource.Runtime, providerRuntimeID).Return("", testError).Once()
+				tenantSvc.On("GetLowestOwnerForResource", providerCtx, resource.Runtime, providerRuntimeID).Return("", testError).Once()
 				return tenantSvc
 			},
 			LabelServiceFn:            emptyLabelSvcFn,
@@ -253,13 +253,13 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetTenantByExternalID", ctx, providerSubaccountID).Return(providerTenant, nil).Once()
-				tenantSvc.On("GetLowestOwnerForResource", providerCtx, resource.Runtime, mock.Anything).Return(providerSubaccountID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", providerCtx, resource.Runtime, providerRuntimeID).Return(providerSubaccountID, nil).Once()
 				return tenantSvc
 			},
 
 			LabelServiceFn: func() *automock.LabelService {
 				labelSvc := &automock.LabelService{}
-				labelSvc.On("UpsertLabel", mock.AnythingOfType("*context.valueCtx"), providerSubaccountID, providerAppNameLabelInput).Return(testError).Once()
+				labelSvc.On("UpsertLabel", providerCtx, providerSubaccountID, providerAppNameLabelInput).Return(testError).Once()
 				return labelSvc
 			},
 			UIDServiceFn:              emptyUIDSvcFn,
@@ -279,7 +279,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetTenantByExternalID", ctx, providerSubaccountID).Return(providerTenant, nil).Once()
-				tenantSvc.On("GetLowestOwnerForResource", providerCtx, resource.Runtime, mock.Anything).Return(providerSubaccountID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", providerCtx, resource.Runtime, providerRuntimeID).Return(providerSubaccountID, nil).Once()
 				tenantSvc.On("GetTenantByExternalID", providerCtx, subaccountTenantExtID).Return(nil, testError).Once()
 				return tenantSvc
 			},
@@ -310,7 +310,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetTenantByExternalID", ctx, providerSubaccountID).Return(providerTenant, nil).Once()
-				tenantSvc.On("GetLowestOwnerForResource", providerCtx, resource.Runtime, mock.Anything).Return(providerSubaccountID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", providerCtx, resource.Runtime, providerRuntimeID).Return(providerSubaccountID, nil).Once()
 				tenantSvc.On("GetTenantByExternalID", providerCtx, subaccountTenantExtID).Return(consumerTenant, nil).Once()
 				return tenantSvc
 			},
@@ -340,7 +340,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetTenantByExternalID", ctx, providerSubaccountID).Return(providerTenant, nil).Once()
-				tenantSvc.On("GetLowestOwnerForResource", providerCtx, resource.Runtime, mock.Anything).Return(providerSubaccountID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", providerCtx, resource.Runtime, providerRuntimeID).Return(providerSubaccountID, nil).Once()
 				tenantSvc.On("GetTenantByExternalID", providerCtx, subaccountTenantExtID).Return(consumerTenant, nil).Once()
 				return tenantSvc
 			},
@@ -374,7 +374,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetTenantByExternalID", ctx, providerSubaccountID).Return(providerTenant, nil).Once()
-				tenantSvc.On("GetLowestOwnerForResource", providerCtx, resource.Runtime, mock.Anything).Return(providerSubaccountID, nil).Once()
+				tenantSvc.On("GetLowestOwnerForResource", providerCtx, resource.Runtime, providerRuntimeID).Return(providerSubaccountID, nil).Once()
 				tenantSvc.On("GetTenantByExternalID", providerCtx, subaccountTenantExtID).Return(consumerTenant, nil).Once()
 				return tenantSvc
 			},
@@ -453,7 +453,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 	}
 
 	runtimeCtxFilter := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(subscriptionLabelKey, fmt.Sprintf("\"%s\"", consumerTenantID)),
+		labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID)),
 	}
 
 	testCases := []struct {
@@ -478,7 +478,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
-				rtmCtxSvc.On("ListByFilter", providerCtx, providerRuntimeID, runtimeCtxFilter, 100, "").Return(runtimeCtxPage, nil).Once()
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, runtimeCtxFilter, 100, "").Return(runtimeCtxPage, nil).Once()
 				rtmCtxSvc.On("Delete", consumerCtx, runtimeCtxID).Return(nil).Once()
 				return rtmCtxSvc
 			},
@@ -558,12 +558,13 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
-				rtmCtxSvc.On("ListByFilter", providerCtx, providerRuntimeID, runtimeCtxFilter, 100, "").Return(nil, testError).Once()
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, runtimeCtxFilter, 100, "").Return(nil, testError).Once()
 				return rtmCtxSvc
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetTenantByExternalID", ctx, providerSubaccountID).Return(providerTenant, nil).Once()
+				tenantSvc.On("GetTenantByExternalID", providerCtx, subaccountTenantExtID).Return(consumerTenant, nil).Once()
 				return tenantSvc
 			},
 			LabelServiceFn:            emptyLabelSvcFn,
@@ -580,11 +581,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 				provisioner.On("ListByFilters", providerCtx, regionalFilters).Return(providerRuntimes, nil).Once()
 				return provisioner
 			},
-			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
-				rtmCtxSvc := &automock.RuntimeCtxService{}
-				rtmCtxSvc.On("ListByFilter", providerCtx, providerRuntimeID, runtimeCtxFilter, 100, "").Return(runtimeCtxPage, nil).Once()
-				return rtmCtxSvc
-			},
+			RuntimeCtxServiceFn: emptyRtmCtxSvcFn,
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetTenantByExternalID", ctx, providerSubaccountID).Return(providerTenant, nil).Once()
@@ -607,7 +604,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
-				rtmCtxSvc.On("ListByFilter", providerCtx, providerRuntimeID, runtimeCtxFilter, 100, "").Return(runtimeCtxPage, nil).Once()
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, runtimeCtxFilter, 100, "").Return(runtimeCtxPage, nil).Once()
 				rtmCtxSvc.On("Delete", consumerCtx, runtimeCtxID).Return(testError).Once()
 				return rtmCtxSvc
 			},

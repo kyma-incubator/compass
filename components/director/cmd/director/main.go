@@ -259,7 +259,7 @@ func main() {
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
-	claimsValidator := claims.NewValidator(runtimeSvc(cfg), runtimeCtxSvc(), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey)
+	claimsValidator := claims.NewValidator(transact, runtimeSvc(cfg), runtimeCtxSvc(), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
 	authMiddleware := mp_authenticator.New(httpClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claimsValidator)

@@ -85,6 +85,7 @@ func NewService(runtimeSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, tena
 }
 
 func (s *service) SubscribeTenant(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, appNameLabel string) (bool, error) {
+	log.C(ctx).Infof("Subscribe request is triggerred between consumer with tenant: %q and subaccount: %q and provider with subaccount: %q", consumerTenantID, subaccountTenantID, providerSubaccountID)
 	filters := []*labelfilter.LabelFilter{
 		labelfilter.NewForKeyWithQuery(s.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", providerID)),
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
@@ -92,18 +93,20 @@ func (s *service) SubscribeTenant(ctx context.Context, providerID, subaccountTen
 
 	providerTenant, err := s.tenantSvc.GetTenantByExternalID(ctx, providerSubaccountID)
 	if err != nil {
-		return false, errors.Wrapf(err, "while getting provider subaccount internal ID from external ID: %s", providerSubaccountID)
+		return false, errors.Wrapf(err, "while getting provider subaccount internal ID from external ID: %q", providerSubaccountID)
 	}
 	ctx = tenant.SaveToContext(ctx, providerTenant.ID, providerSubaccountID)
 
+	log.C(ctx).Infof("Listing runtimes in provider tenant %q for labels %q: %q and %q: %q", providerSubaccountID, tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, providerID)
 	runtimes, err := s.runtimeSvc.ListByFilters(ctx, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return false, nil
 		}
 
-		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, providerID))
+		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %q: %q and %q: %q", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, providerID))
 	}
+	log.C(ctx).Infof("Found %d provider runtime(s) during subscription", len(runtimes))
 
 	for _, runtime := range runtimes {
 		tnt, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Runtime, runtime.ID)
@@ -125,7 +128,7 @@ func (s *service) SubscribeTenant(ctx context.Context, providerID, subaccountTen
 		tenantMapping, err := s.tenantSvc.GetTenantByExternalID(ctx, subaccountTenantID)
 		if err != nil {
 			log.C(ctx).Errorf("An error occurred while getting tenant by external ID: %q during subscription: %v", subaccountTenantID, err)
-			return false, errors.Wrapf(err, "while getting tenant with external ID: %s", subaccountTenantID)
+			return false, errors.Wrapf(err, "while getting tenant with external ID: %q", subaccountTenantID)
 		}
 
 		ctx = tenant.SaveToContext(ctx, tenantMapping.ID, tenantMapping.ExternalTenant)
@@ -167,6 +170,7 @@ func (s *service) SubscribeTenant(ctx context.Context, providerID, subaccountTen
 }
 
 func (s *service) UnsubscribeTenant(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region string) (bool, error) {
+	log.C(ctx).Infof("Unsubscribe request is triggerred between consumer with tenant: %q and subaccount: %q and provider with subaccount: %q", consumerTenantID, subaccountTenantID, providerSubaccountID)
 	filters := []*labelfilter.LabelFilter{
 		labelfilter.NewForKeyWithQuery(s.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", providerID)),
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
@@ -174,38 +178,40 @@ func (s *service) UnsubscribeTenant(ctx context.Context, providerID, subaccountT
 
 	providerTenant, err := s.tenantSvc.GetTenantByExternalID(ctx, providerSubaccountID)
 	if err != nil {
-		return false, errors.Wrapf(err, "while getting provider subaccount internal ID from external ID: %s", providerSubaccountID)
+		return false, errors.Wrapf(err, "while getting provider subaccount internal ID from external ID: %q", providerSubaccountID)
 	}
 	ctx = tenant.SaveToContext(ctx, providerTenant.ID, providerSubaccountID)
 
+	log.C(ctx).Infof("Listing runtimes in provider tenant %q for labels %q: %q and %q: %q", providerSubaccountID, tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, providerID)
 	runtimes, err := s.runtimeSvc.ListByFilters(ctx, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
 			return false, nil
 		}
-
-		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %s: %s and %s: %s", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, providerID))
+		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %q: %q and %q: %q", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, providerID))
 	}
+	log.C(ctx).Infof("Found %d provider runtime(s) during unsubscribe", len(runtimes))
+
+	tenantMapping, err := s.tenantSvc.GetTenantByExternalID(ctx, subaccountTenantID)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting tenant by external ID: %q during subscription: %v", subaccountTenantID, err)
+		return false, errors.Wrapf(err, "while getting tenant with external ID: %q", subaccountTenantID)
+	}
+
+	ctx = tenant.SaveToContext(ctx, tenantMapping.ID, tenantMapping.ExternalTenant)
 
 	for _, runtime := range runtimes {
 		runtimeID := runtime.ID
-		rtmCtxPage, err := s.runtimeCtxSvc.ListByFilter(ctx, runtimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(s.subscriptionLabelKey, fmt.Sprintf("\"%s\"", consumerTenantID))}, 100, "")
+		log.C(ctx).Infof("Listing runtime context(s) in the consumer tenant %q for label with key: %q and value: %q", subaccountTenantID, s.consumerSubaccountLabelKey, subaccountTenantID)
+		rtmCtxPage, err := s.runtimeCtxSvc.ListByFilter(ctx, runtimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(s.consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantID))}, 100, "")
 		if err != nil {
-			log.C(ctx).Errorf("An error occurred while listing runtime contexts for runtime with ID: %q: %v", runtimeID, err)
+			log.C(ctx).Errorf("An error occurred while listing runtime contexts with key: %q and value: %q for runtime with ID: %q: %v", s.consumerSubaccountLabelKey, subaccountTenantID, runtimeID, err)
 			return false, err
 		}
-		log.C(ctx).Debugf("Found %d runtime context(s) for runtime with ID: %q", len(rtmCtxPage.Data), runtimeID)
-
-		tenantMapping, err := s.tenantSvc.GetTenantByExternalID(ctx, subaccountTenantID)
-		if err != nil {
-			log.C(ctx).Errorf("An error occurred while getting tenant by external ID: %q during subscription: %v", subaccountTenantID, err)
-			return false, errors.Wrapf(err, "while getting tenant by external ID: %q during subscription", subaccountTenantID)
-		}
-		ctx = tenant.SaveToContext(ctx, tenantMapping.ID, tenantMapping.ExternalTenant)
+		log.C(ctx).Infof("Found %d runtime context(s) with key: %q and value: %q for runtime with ID: %q", len(rtmCtxPage.Data), s.consumerSubaccountLabelKey, subaccountTenantID, runtimeID)
 
 		for _, rtmCtx := range rtmCtxPage.Data {
-			// if the current subscription(runtime context) is the one for which the unsubscribe request is initiated,
-			// delete the record from the DB
+			// if the current subscription(runtime context) is the one for which the unsubscribe request is initiated, delete the record from the DB
 			if rtmCtx.Value == consumerTenantID {
 				log.C(ctx).Infof("Deleting runtime context with key: %q and value: %q for runtime ID: %q", rtmCtx.Key, rtmCtx.Value, runtimeID)
 				if err := s.runtimeCtxSvc.Delete(ctx, rtmCtx.ID); err != nil {

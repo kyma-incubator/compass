@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -34,6 +36,7 @@ type IntegrationSystemService interface {
 }
 
 type validator struct {
+	transact                     persistence.Transactioner
 	runtimesSvc                  RuntimeService
 	runtimeCtxSvc                RuntimeCtxService
 	intSystemSvc                 IntegrationSystemService
@@ -42,8 +45,9 @@ type validator struct {
 }
 
 // NewValidator creates new claims validator
-func NewValidator(runtimesSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, intSystemSvc IntegrationSystemService, subscriptionProviderLabelKey, consumerSubaccountLabelKey string) *validator {
+func NewValidator(transact persistence.Transactioner, runtimesSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, intSystemSvc IntegrationSystemService, subscriptionProviderLabelKey, consumerSubaccountLabelKey string) *validator {
 	return &validator{
+		transact:                     transact,
 		runtimesSvc:                  runtimesSvc,
 		runtimeCtxSvc:                runtimeCtxSvc,
 		intSystemSvc:                 intSystemSvc,
@@ -78,6 +82,15 @@ func (v *validator) Validate(ctx context.Context, claims Claims) error {
 }
 
 func (v *validator) validateRuntimeConsumer(ctx context.Context, claims Claims) error {
+	tx, err := v.transact.Begin()
+	if err != nil {
+		log.C(ctx).Errorf("An error has occurred while opening transaction: %v", err)
+		return errors.Wrapf(err, "An error has occurred while opening transaction")
+	}
+	defer v.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	if len(claims.TokenClientID) == 0 {
 		log.C(ctx).Errorf("Could not find consumer token client ID")
 		return apperrors.NewUnauthorizedError("could not find consumer token client ID")
@@ -114,11 +127,14 @@ func (v *validator) validateRuntimeConsumer(ctx context.Context, claims Claims) 
 
 	found := false
 	for _, runtime := range runtimes {
+		log.C(ctx).Infof("Listing runtime context(s) in the consumer tenant %q for runtime with ID: %q and label with key: %q and value: %q", consumerExternalTenantID, runtime.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
 		rtmCtxPage, err := v.runtimeCtxSvc.ListByFilter(ctxWithConsumerTenant, runtime.ID, rtmCtxFilter, 100, "")
 		if err != nil {
 			log.C(ctx).Errorf("An error occurred while listing runtime context for runtime with ID: %q and filter with key: %q and value: %q", runtime.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
 			return errors.Wrapf(err, "while listing runtime context for runtime with ID: %q and filter with key: %q and value: %q", runtime.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
 		}
+		log.C(ctx).Infof("Found %d runtime context(s) for runtime with ID: %q", len(rtmCtxPage.Data), runtime.ID)
+
 		if len(rtmCtxPage.Data) > 0 {
 			found = true
 			break
@@ -128,6 +144,10 @@ func (v *validator) validateRuntimeConsumer(ctx context.Context, claims Claims) 
 	if !found {
 		log.C(ctx).Errorf("Consumer's external tenant %s was not found as subscription record in the runtime context table for any runtime in the provider tenant %s", consumerExternalTenantID, providerInternalTenantID)
 		return apperrors.NewUnauthorizedError(fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the runtime context table for any runtime in the provider tenant %s", consumerExternalTenantID, providerInternalTenantID))
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
 	}
 
 	return nil

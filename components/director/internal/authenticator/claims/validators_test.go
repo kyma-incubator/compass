@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"testing"
 
+	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
+
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
 	"github.com/form3tech-oss/jwt-go"
@@ -84,6 +87,8 @@ func TestValidator_Validate(t *testing.T) {
 		RuntimeCtxSvcFn            func() *automock.RuntimeCtxService
 		IntegrationSystemServiceFn func() *automock.IntegrationSystemService
 		Claims                     claims.Claims
+		PersistenceFn              func() *persistenceautomock.PersistenceTx
+		TransactionerFn            func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
 		ExpectedErr                string
 	}{
 		// common
@@ -131,6 +136,19 @@ func TestValidator_Validate(t *testing.T) {
 			Name:        "consumer-provider flow: error when token clientID missing",
 			Claims:      getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, ""),
 			ExpectedErr: "could not find consumer token client ID",
+		},
+		{
+			Name:   "consumer-provider flow: error when transaction cannot be opened",
+			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				return txtest.PersistenceContextThatDoesntExpectCommit()
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := txtest.NoopTransactioner(persistTx)
+				transact.On("Begin").Return(persistTx, testErr).Once()
+				return transact
+			},
+			ExpectedErr: "An error has occurred while opening transaction",
 		},
 		{
 			Name:        "consumer-provider flow: error when region missing",
@@ -187,6 +205,30 @@ func TestValidator_Validate(t *testing.T) {
 			},
 			ExpectedErr: testErr.Error(),
 		},
+		{
+			Name:   "Consumer-provider flow: Error when transaction cannot be committed",
+			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+			RuntimeServiceFn: func() *automock.RuntimeService {
+				runtimeSvc := &automock.RuntimeService{}
+				runtimeSvc.On("ListByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(runtimes, nil).Once()
+				return runtimeSvc
+			},
+			RuntimeCtxSvcFn: func() *automock.RuntimeCtxService {
+				rtmCtxSvc := &automock.RuntimeCtxService{}
+				rtmCtxSvc.On("ListByFilter", contextThatHasTenant(consumerTenantID), runtimeID, rtmCtxFilter, 100, "").Return(emptyRtmCtxPage, nil).Once()
+				rtmCtxSvc.On("ListByFilter", contextThatHasTenant(consumerTenantID), runtime2ID, rtmCtxFilter, 100, "").Return(rtmCtxWithConsumerSubaccountLabel, nil).Once()
+				return rtmCtxSvc
+			},
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := txtest.PersistenceContextThatDoesntExpectCommit()
+				persistTx.On("Commit").Return(testErr).Once()
+				return persistTx
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				return txtest.TransactionerThatDoesARollback(persistTx)
+			},
+			ExpectedErr: "test",
+		},
 		// integration system
 		{
 			Name:   "Success for integration system consumer-provider flow: when subaccount tenant ID is provided instead of integration system ID for consumer ID",
@@ -237,8 +279,16 @@ func TestValidator_Validate(t *testing.T) {
 			if testCase.IntegrationSystemServiceFn != nil {
 				intSysSvc = testCase.IntegrationSystemServiceFn()
 			}
+			persistTxMock := txtest.PersistenceContextThatExpectsCommit()
+			if testCase.PersistenceFn != nil {
+				persistTxMock = testCase.PersistenceFn()
+			}
+			transactionerMock := txtest.TransactionerThatSucceeds(persistTxMock)
+			if testCase.TransactionerFn != nil {
+				transactionerMock = testCase.TransactionerFn(persistTxMock)
+			}
 
-			validator := claims.NewValidator(runtimeSvc, runtimeCtxSvc, intSysSvc, providerLabelKey, consumerSubaccountLabelKey)
+			validator := claims.NewValidator(transactionerMock, runtimeSvc, runtimeCtxSvc, intSysSvc, providerLabelKey, consumerSubaccountLabelKey)
 			err := validator.Validate(context.TODO(), testCase.Claims)
 
 			if len(testCase.ExpectedErr) > 0 {

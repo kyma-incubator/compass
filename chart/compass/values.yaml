@@ -468,8 +468,8 @@ global:
             enabled: false
             createRule: false
             gatewayHost: "compass-gateway-sap-mtls"
-            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
-            attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
+            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http", "region": "eu-1"}]'
+            attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" }, "clientid": { "key": "client_id" } }'
             path: /<.*>
             checkSuffix: false
       tenantMappingService:

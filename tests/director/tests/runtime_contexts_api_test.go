@@ -270,5 +270,15 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		require.Empty(t, rtm)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "Owner access is needed for resource modification")
+
+	    subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+		t.Log("List runtimes(and runtime contexts) after successful unsubscribe request")
+		consumerSubaccountRtms := fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
+		require.Len(t, consumerSubaccountRtms.Data, 1)
+		require.Equal(t, consumerSubaccountRtms.Data[0].ID, providerRuntime.ID)
+
+		t.Log("Assert there is no runtime context(subscription) after successful unsubscribe request")
+		require.Len(t, consumerSubaccountRtms.Data[0].RuntimeContexts.Data, 0)
 	})
 }
