@@ -75,8 +75,11 @@ func TestMain(m *testing.M) {
 	if err := util.WaitForCache(cc); err != nil {
 		log.D().Fatal(err)
 	}
-
+	
 	certSecuredGraphQLClient = gql.NewCertAuthorizedGraphQLClientWithCustomURL(config.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, config.SkipSSLValidation)
+	certSecuredGraphQLClient.Log = func(s string) {
+		log.D().Info(s)
+	}
 
 	httpClient = &http.Client{
 		Timeout: 15 * time.Second,
