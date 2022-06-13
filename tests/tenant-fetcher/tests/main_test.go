@@ -34,13 +34,13 @@ type testConfig struct {
 	RegionPathParam                string
 	SubscriptionCallbackScope      string
 	TenantProviderConfig
+	ExternalServicesMockURL          string
 	ClientID                         string
 	ClientSecret                     string
 	TenantFetcherFullRegionalURL     string `envconfig:"-"`
 	TenantFetcherFullDependenciesURL string `envconfig:"-"`
 	SkipSSLValidation                bool   `envconfig:"default=false"`
 	CertLoaderConfig                 certloader.Config
-	ExternalServicesMockURL          string `envconfig:"APP_EXTERNAL_SERVICES_MOCK_URL"`
 }
 
 type TenantProviderConfig struct {
