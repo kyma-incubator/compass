@@ -81,6 +81,11 @@ func TestMain(m *testing.M) {
 		},
 	}
 
+	directorInternalGQLClient = graphql.NewClient(config.InternalDirectorGQLURL, graphql.WithHTTPClient(httpClient))
+	directorInternalGQLClient.Log = func(s string) {
+		log.D().Info(s)
+	}
+
 	config.TenantFetcherFullRegionalURL = tenantfetcher.BuildTenantFetcherRegionalURL(config.RegionalHandlerEndpoint, config.TenantPathParam, config.RegionPathParam, config.TenantFetcherURL, config.RootAPI)
 
 	config.TenantFetcherFullDependenciesURL = config.TenantFetcherURL + config.RootAPI + config.DependenciesEndpoint
