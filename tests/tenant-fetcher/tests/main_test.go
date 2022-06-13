@@ -3,7 +3,6 @@ package tests
 import (
 	"context"
 	"crypto/tls"
-	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"testing"
@@ -55,7 +54,6 @@ type TenantProviderConfig struct {
 var config testConfig
 
 func TestMain(m *testing.M) {
-	log.D().Log(logrus.InfoLevel, "TestMain, initializing envconfig")
 	err := envconfig.InitWithPrefix(&config, "APP")
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while initializing envconfig"))

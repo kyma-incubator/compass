@@ -358,7 +358,6 @@ const (
 )
 
 var (
-	cfg                       testConfig
 	directorInternalGQLClient *gql.Client
 )
 
@@ -757,8 +756,7 @@ func genMockPage(events string, numEvents int) string {
 
 func setMockTenantEvents(t *testing.T, mockEvents string, subPath string) {
 	reader := bytes.NewReader([]byte(mockEvents))
-	t.Logf("Mock url: %s", cfg.ExternalServicesMockURL)
-	response, err := http.DefaultClient.Post(cfg.ExternalServicesMockURL+fmt.Sprintf("/tenant-fetcher/%s/configure", subPath), "application/json", reader)
+	response, err := http.DefaultClient.Post(config.ExternalServicesMockURL+fmt.Sprintf("/tenant-fetcher/%s/configure", subPath), "application/json", reader)
 	require.NoError(t, err)
 	defer func() {
 		if err := response.Body.Close(); err != nil {
@@ -773,7 +771,7 @@ func setMockTenantEvents(t *testing.T, mockEvents string, subPath string) {
 }
 
 func cleanupMockEvents(t *testing.T, subPath string) {
-	req, err := http.NewRequest(http.MethodDelete, cfg.ExternalServicesMockURL+fmt.Sprintf("/tenant-fetcher/%s/reset", subPath), nil)
+	req, err := http.NewRequest(http.MethodDelete, config.ExternalServicesMockURL+fmt.Sprintf("/tenant-fetcher/%s/reset", subPath), nil)
 	require.NoError(t, err)
 
 	response, err := http.DefaultClient.Do(req)
