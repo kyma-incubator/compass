@@ -98,13 +98,13 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
-	appTemplateName1 := fmt.Sprintf("SAP %s (%s)", "temp1", cfg.SelfRegRegion)
+	appTemplateName1 := fmt.Sprintf("SAP %s", "temp1")
 	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
-	appTemplateName2 := fmt.Sprintf("SAP %s (%s)", "temp2", cfg.SelfRegRegion)
+	appTemplateName2 := fmt.Sprintf("SAP %s", "temp2")
 	appTemplateInput2 := fixApplicationTemplate(appTemplateName2)
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
@@ -163,7 +163,7 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	setMultipleMockSystemsResponses(t, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
-	appTemplateName2 := fmt.Sprintf("SAP %s (%s)", "temp2", cfg.SelfRegRegion)
+	appTemplateName2 := fmt.Sprintf("SAP %s", "temp2")
 	appTemplateInput2 := fixApplicationTemplate(appTemplateName2)
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
@@ -171,7 +171,7 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, template2.ID)
 
-	appTemplateName1 := fmt.Sprintf("SAP %s (%s)", "temp1", cfg.SelfRegRegion)
+	appTemplateName1 := fmt.Sprintf("SAP %s", "temp1")
 	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
 	require.NoError(t, err)
@@ -260,13 +260,13 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetSystemFetcherTenantID())
 	defer cleanupMockSystems(t)
 
-	appTemplateName1 := fmt.Sprintf("SAP %s (%s)", "temp1", cfg.SelfRegRegion)
+	appTemplateName1 := fmt.Sprintf("SAP %s", "temp1")
 	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
-	appTemplateName2 := fmt.Sprintf("SAP %s (%s)", "temp2", cfg.SelfRegRegion)
+	appTemplateName2 := fmt.Sprintf("SAP %s", "temp2")
 	appTemplateInput2 := fixApplicationTemplate(appTemplateName2)
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
@@ -373,13 +373,13 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
-	appTemplateName1 := fmt.Sprintf("SAP %s (%s)", "temp1", cfg.SelfRegRegion)
+	appTemplateName1 := fmt.Sprintf("SAP %s", "temp1")
 	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
-	appTemplateName2 := fmt.Sprintf("SAP %s (%s)", "temp2", cfg.SelfRegRegion)
+	appTemplateName2 := fmt.Sprintf("SAP %s", "temp2")
 	appTemplateInput2 := fixApplicationTemplate(appTemplateName2)
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
@@ -495,13 +495,13 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 
-	appTemplateName1 := fmt.Sprintf("SAP %s (%s)", "temp1", cfg.SelfRegRegion)
+	appTemplateName1 := fmt.Sprintf("SAP %s", "temp1")
 	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
-	appTemplateName2 := fmt.Sprintf("SAP %s (%s)", "temp2", cfg.SelfRegRegion)
+	appTemplateName2 := fmt.Sprintf("SAP %s", "temp2")
 	appTemplateInput2 := fixApplicationTemplate(appTemplateName2)
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)

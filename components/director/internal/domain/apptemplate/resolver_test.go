@@ -1672,55 +1672,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			WebhookSvcFn: func() *automock.WebhookService {
 				return &automock.WebhookService{}
 			},
-			ExpectedError: errors.New("application template name \"not-valid-name\" does not comply with the following naming convention: \"SAP <product name> (<region>)\""),
-		},
-		{
-			Name: "Returns error when validating app template name - region mismatch",
-			TxFn: txGen.ThatDoesntExpectCommit,
-			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
-				labels := map[string]*model.Label{
-					"region": {
-						Key:   "region",
-						Value: "valid-region",
-					},
-				}
-				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
-				return appTemplateSvc
-			},
-			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
-				modelAppTemplateInput := &model.ApplicationTemplateUpdateInput{
-					Name:                 "SAP app-template (wrong-region)",
-					Description:          &testDescription,
-					ApplicationInputJSON: appInputJSONString,
-					Placeholders: []model.ApplicationTemplatePlaceholder{
-						{
-							Name:        "name",
-							Description: &testDescription,
-						},
-						{
-							Name:        "display-name",
-							Description: &testDescription,
-						},
-					},
-					AccessLevel: model.GlobalApplicationTemplateAccessLevel,
-				}
-				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
-				return appTemplateConv
-			},
-			SelfRegManagerFn: func() *automock.SelfRegisterManager {
-				srm := &automock.SelfRegisterManager{}
-				srm.On("IsSelfRegistrationFlow", mock.Anything, mock.Anything).Return(true, nil).Once()
-				return srm
-			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
-			ExpectedError: errors.New("the region specified in the application template name does not match \"valid-region\""),
+			ExpectedError: errors.New("application template name \"not-valid-name\" does not comply with the following naming convention: \"SAP <product name>\""),
 		},
 		{
 			Name: "Returns error when beginning transaction",

@@ -103,7 +103,7 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
 		defer cancel()
 		appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
 		appTemplateName := fmt.Sprintf("test-app-tmpl-%s", time.Now().Format("060102150405"))
-		appTemplateName = fmt.Sprintf("SAP %s (%s)", appTemplateName, testConfig.AppSelfRegRegion)
+		appTemplateName = fmt.Sprintf("SAP %s", appTemplateName)
 		appTemplateInput := graphql.ApplicationTemplateInput{
 			Name: appTemplateName,
 			ApplicationInput: &graphql.ApplicationRegisterInput{
@@ -178,7 +178,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 		defer cancel()
 		appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
 		appTemplateName := fmt.Sprintf("test-app-tmpl-%s", time.Now().Format("060102150405"))
-		appTemplateName = fmt.Sprintf("SAP %s (%s)", appTemplateName, testConfig.AppSelfRegRegion)
+		appTemplateName = fmt.Sprintf("SAP %s", appTemplateName)
 		appTemplateInput := graphql.ApplicationTemplateInput{
 			Name: appTemplateName,
 			ApplicationInput: &graphql.ApplicationRegisterInput{

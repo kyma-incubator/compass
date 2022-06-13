@@ -91,7 +91,7 @@ func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 		},
 		{
 			Name:            "not compliant placeholders",
-			AppTemplateName: fmt.Sprintf("SAP %s (%s)", "app-template-name", conf.SelfRegRegion),
+			AppTemplateName: fmt.Sprintf("SAP %s", "app-template-name"),
 			AppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
 				{
 					Name:        "name",
@@ -104,22 +104,6 @@ func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 			},
 			AppInputDescription: ptr.String("test {{not-compliant}}"),
 			ExpectedErrMessage:  "unexpected placeholder with name \"not-compliant\" found",
-		},
-		{
-			Name:            "not matching region",
-			AppTemplateName: fmt.Sprintf("SAP %s (%s)", "app-template-name-2", "random-region"),
-			AppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
-				{
-					Name:        "name",
-					Description: &namePlaceholder,
-				},
-				{
-					Name:        "display-name",
-					Description: &displayNamePlaceholder,
-				},
-			},
-			AppInputDescription: nil,
-			ExpectedErrMessage:  "the region specified in the application template name does not match",
 		},
 	}
 
@@ -241,22 +225,6 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 			},
 			AppInputDescription: ptr.String("test {{not-compliant}}"),
 			ExpectedErrMessage:  "unexpected placeholder with name \"not-compliant\" found",
-		},
-		{
-			Name:               "not matching region",
-			NewAppTemplateName: fmt.Sprintf("SAP %s (%s)", "app-template-name-2", "random-region"),
-			NewAppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
-				{
-					Name:        "name",
-					Description: &namePlaceholder,
-				},
-				{
-					Name:        "display-name",
-					Description: &displayNamePlaceholder,
-				},
-			},
-			AppInputDescription: ptr.String("test {{display-name}}"),
-			ExpectedErrMessage:  "the region specified in the application template name does not match",
 		},
 	}
 
@@ -553,5 +521,5 @@ func fixAppTemplateInput(name string) graphql.ApplicationTemplateInput {
 }
 
 func createAppTemplateName(name string) string {
-	return fmt.Sprintf("SAP %s (%s)", name, conf.SelfRegRegion)
+	return fmt.Sprintf("SAP %s", name)
 }

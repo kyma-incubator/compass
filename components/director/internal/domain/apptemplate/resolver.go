@@ -216,7 +216,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	selfRegID := r.uidService.Generate()
 	convertedIn.ID = &selfRegID
 	validate := func() error {
-		return validateAppTemplateForSelfReg(convertedIn.Name, convertedIn.Placeholders, convertedIn.Labels)
+		return validateAppTemplateForSelfReg(convertedIn.Name, convertedIn.Placeholders)
 	}
 	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validate)
 	if err != nil {
@@ -408,7 +408,7 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 		return nil, err
 	}
 	if isSelfRegFlow {
-		if err := validateAppTemplateForSelfReg(convertedIn.Name, convertedIn.Placeholders, resultLabels); err != nil {
+		if err := validateAppTemplateForSelfReg(convertedIn.Name, convertedIn.Placeholders); err != nil {
 			return nil, err
 		}
 	}
@@ -542,7 +542,7 @@ func (r *Resolver) cleanupAndLogOnError(ctx context.Context, id, region string) 
 	}
 }
 
-func validateAppTemplateForSelfReg(name string, placeholders []model.ApplicationTemplatePlaceholder, labels map[string]interface{}) error {
+func validateAppTemplateForSelfReg(name string, placeholders []model.ApplicationTemplatePlaceholder) error {
 	if len(placeholders) != 2 {
 		return errors.Errorf("expecting %q and %q placeholders", "name", "display-name")
 	}
@@ -553,25 +553,11 @@ func validateAppTemplateForSelfReg(name string, placeholders []model.Application
 		}
 	}
 
-	// Matches the following pattern - "SAP <product name> (<region>)"
-	r := regexp.MustCompile(`(^SAP\s)([A-Za-z0-9_\- ]*)\s[(]([A-Za-z0-9_\- ]*)[)]`)
+	// Matches the following pattern - "SAP <product name>"
+	r := regexp.MustCompile(`(^SAP\s)([A-Za-z0-9()_\- ]*)`)
 	matches := r.FindStringSubmatch(name)
 	if len(matches) == 0 {
-		return errors.Errorf("application template name %q does not comply with the following naming convention: %q", name, "SAP <product name> (<region>)")
-	}
-
-	regionValue, exists := labels[selfregmanager.RegionLabel]
-	if !exists {
-		return errors.Errorf("missing %q label", selfregmanager.RegionLabel)
-	}
-
-	region, ok := regionValue.(string)
-	if !ok {
-		return errors.Errorf("region value should be of type %q", "string")
-	}
-
-	if matches[len(matches)-1] != region {
-		return errors.Errorf("the region specified in the application template name does not match %q", region)
+		return errors.Errorf("application template name %q does not comply with the following naming convention: %q", name, "SAP <product name>")
 	}
 
 	return nil
