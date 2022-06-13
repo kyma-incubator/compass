@@ -12,6 +12,8 @@ type ConsumerType string
 const (
 	// Runtime missing godoc
 	Runtime ConsumerType = "Runtime"
+	// ExternalCertificate missing godoc
+	ExternalCertificate ConsumerType = "External Certificate"
 	// Application missing godoc
 	Application ConsumerType = "Application"
 	// IntegrationSystem missing godoc
@@ -33,6 +35,8 @@ func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (Co
 	switch refObj {
 	case model.ApplicationReference:
 		return Application, nil
+	case model.ExternalCertificateReference:
+		return ExternalCertificate, nil
 	case model.RuntimeReference:
 		return Runtime, nil
 	case model.IntegrationSystemReference:
