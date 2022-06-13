@@ -37,11 +37,10 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	gql "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	tenant "github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 )
 
 func TestRegionalOnboardingHandler(t *testing.T) {
@@ -355,10 +354,6 @@ const (
 	"globalAccountGUID": "%s",
 	"type": "Subaccount"
 }`
-)
-
-var (
-	directorInternalGQLClient *gql.Client
 )
 
 func TestGlobalAccounts(t *testing.T) {

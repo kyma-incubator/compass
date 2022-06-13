@@ -24,6 +24,7 @@ var certSecuredGraphQLClient *graphql.Client
 var httpClient *http.Client
 
 type testConfig struct {
+	InternalDirectorGQLURL         string `envconfig:"INTERNAL_DIRECTOR_URL"`
 	DirectorExternalCertSecuredURL string
 	TenantFetcherURL               string
 	RootAPI                        string
@@ -51,7 +52,10 @@ type TenantProviderConfig struct {
 	ProviderSubaccountIDProperty   string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY"`
 }
 
-var config testConfig
+var (
+	config                    testConfig
+	directorInternalGQLClient *graphql.Client
+)
 
 func TestMain(m *testing.M) {
 	err := envconfig.InitWithPrefix(&config, "APP")
