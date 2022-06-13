@@ -3,7 +3,6 @@ package apptemplate
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
@@ -428,9 +427,7 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 		return nil, err
 	}
 
-	fmt.Printf("Drago 1 %+v", apperrors.ErrorCode(err))
 	_, err = r.appTemplateSvc.GetLabel(ctx, id, r.selfRegManager.GetSelfRegDistinguishingLabelKey())
-	fmt.Printf("Drago 2 %+v", apperrors.ErrorCode(err))
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
 			return nil, errors.Wrapf(err, "while getting self register label")
@@ -463,10 +460,7 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 		ctx = persistence.SaveToContext(ctx, tx)
 	}
 
-	fmt.Printf("Drago 3 %+v", apperrors.ErrorCode(err))
 	err = r.appTemplateSvc.Delete(ctx, id)
-	fmt.Printf("Drago 4 %+v", apperrors.ErrorCode(err))
-
 	if err != nil {
 		return nil, err
 	}
@@ -476,12 +470,10 @@ func (r *Resolver) DeleteApplicationTemplate(ctx context.Context, id string) (*g
 		return nil, err
 	}
 
-	fmt.Printf("Drago 5 %+v", apperrors.ErrorCode(err))
 	deletedAppTemplate, err := r.appTemplateConverter.ToGraphQL(appTemplate)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while converting application template to graphql")
 	}
-	fmt.Printf("Drago 6 %+v", apperrors.ErrorCode(err))
 
 	return deletedAppTemplate, nil
 }
