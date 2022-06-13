@@ -155,19 +155,19 @@ type service struct {
 // NewService missing godoc
 func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, bndlService BundleService, uidService UIDService, formationService FormationService, selfRegisterDistinguishLabelKey string) *service {
 	return &service{
-		appNameNormalizer:  			 appNameNormalizer,
-		appHideCfgProvider: 			 appHideCfgProvider,
-		appRepo:            			 app,
-		webhookRepo:        			 webhook,
-		runtimeRepo:        			 runtimeRepo,
-		labelRepo:          			 labelRepo,
-		intSystemRepo:      			 intSystemRepo,
-		labelUpsertService: 			 labelUpsertService,
-		scenariosService:   			 scenariosService,
-		bndlService:        			 bndlService,
-		uidService:         			 uidService,
+		appNameNormalizer:               appNameNormalizer,
+		appHideCfgProvider:              appHideCfgProvider,
+		appRepo:                         app,
+		webhookRepo:                     webhook,
+		runtimeRepo:                     runtimeRepo,
+		labelRepo:                       labelRepo,
+		intSystemRepo:                   intSystemRepo,
+		labelUpsertService:              labelUpsertService,
+		scenariosService:                scenariosService,
+		bndlService:                     bndlService,
+		uidService:                      uidService,
 		timestampGen:                    timestamp.DefaultGenerator,
-		formationService:   			 formationService,
+		formationService:                formationService,
 		selfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
 	}
 }
