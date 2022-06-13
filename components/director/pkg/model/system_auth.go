@@ -55,6 +55,8 @@ type SystemAuthReferenceObjectType string
 const (
 	// RuntimeReference missing godoc
 	RuntimeReference SystemAuthReferenceObjectType = "Runtime"
+	// ExternalCertificateReference missing godoc
+	ExternalCertificateReference SystemAuthReferenceObjectType = "External Certificate"
 	// ApplicationReference missing godoc
 	ApplicationReference SystemAuthReferenceObjectType = "Application"
 	// IntegrationSystemReference missing godoc
