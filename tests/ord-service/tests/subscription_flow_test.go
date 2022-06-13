@@ -238,12 +238,16 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
 		headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
 
+		t.Log("Calling director to verify claims validation is successful...")
 		getRtmReq := fixtures.FixGetRuntimeRequest(runtime.ID)
 		getRtmReq.Header = headers
 		rtmExt := graphql.RuntimeExt{}
 
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, getRtmReq, &rtmExt)
 		require.NoError(t, err)
+		require.Equal(t, runtime.ID, rtmExt.ID)
+		require.Equal(t, runtimeInput.Name, rtmExt.Name)
+		t.Log("Director claims validation was successful")
 
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
@@ -263,6 +267,12 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		respBody = makeRequestWithHeaders(t, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 		require.Equal(t, 0, len(gjson.Get(respBody, "value").Array()))
 		t.Log("Successfully validated no application is returned after successful unsubscription request")
+
+		t.Log("Validating director returns error during claims validation after unsubscribe request is successfully executed...")
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, getRtmReq, &rtmExt)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the runtime context table for any runtime in the provider tenant", subscriptionConsumerSubaccountID))
+		t.Log("Successfully validated an error is returned during claims validation after unsubscribe request")
 	})
 }
 
