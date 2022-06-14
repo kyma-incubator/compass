@@ -25,7 +25,7 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) *model.
 		ApplicationTypes:       in.ApplicationTypes,
 		RuntimeType:            in.RuntimeType,
 		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
-		RuntimeArtifactKind:    string(in.RuntimeArtifactKind),
+		RuntimeArtifactKind:    model.RuntimeArtifactKind(in.RuntimeArtifactKind),
 	}
 }
 
@@ -92,7 +92,7 @@ func (c *converter) ToEntity(in *model.FormationTemplate) (*Entity, error) {
 		ApplicationTypes:       string(marshalledApplicationTypes),
 		RuntimeType:            in.RuntimeType,
 		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
-		RuntimeArtifactKind:    in.RuntimeArtifactKind,
+		RuntimeArtifactKind:    string(in.RuntimeArtifactKind),
 	}, nil
 }
 
@@ -114,6 +114,6 @@ func (c *converter) FromEntity(in *Entity) (*model.FormationTemplate, error) {
 		ApplicationTypes:       unmarshalledApplicationTypes,
 		RuntimeType:            in.RuntimeType,
 		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
-		RuntimeArtifactKind:    in.RuntimeArtifactKind,
+		RuntimeArtifactKind:    model.RuntimeArtifactKind(in.RuntimeArtifactKind),
 	}, nil
 }

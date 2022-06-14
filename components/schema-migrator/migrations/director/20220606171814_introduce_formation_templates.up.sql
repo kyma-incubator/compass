@@ -1,9 +1,9 @@
 BEGIN;
 
 CREATE TYPE artifact_kind AS ENUM (
-    'subscription',
-    'service instance',
-    'environment instance'
+    'SUBSCRIPTION',
+    'SERVICE_INSTANCE',
+    'ENVIRONMENT_INSTANCE'
 );
 
 CREATE TABLE formation_templates
@@ -23,7 +23,7 @@ VALUES (uuid_generate_v4(), 'Side-by-side extensibility with Kyma',
         '["SAP Cloud for Customer", "SAP Commerce Cloud", "SAP Field Service Management", "SAP Marketing Cloud"]',
         'kyma',
         'SAP BTP Kyma',
-        'environment instance'
+        'ENVIRONMENT_INSTANCE'
         );
 
 COMMIT;
