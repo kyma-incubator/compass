@@ -434,16 +434,16 @@ type FormationTemplate struct {
 	Name                   string       `json:"name"`
 	ApplicationTypes       []string     `json:"applicationTypes"`
 	RuntimeType            string       `json:"runtimeType"`
-	RuntimeTypeDisplayName string       `json:"runtime_type_display_name"`
-	RuntimeArtifactKind    ArtifactType `json:"runtime_artifact_kind"`
+	RuntimeTypeDisplayName string       `json:"runtimeTypeDisplayName"`
+	RuntimeArtifactKind    ArtifactType `json:"runtimeArtifactKind"`
 }
 
 type FormationTemplateInput struct {
 	Name                   string       `json:"name"`
 	ApplicationTypes       []string     `json:"applicationTypes"`
 	RuntimeType            string       `json:"runtimeType"`
-	RuntimeTypeDisplayName string       `json:"runtime_type_display_name"`
-	RuntimeArtifactKind    ArtifactType `json:"runtime_artifact_kind"`
+	RuntimeTypeDisplayName string       `json:"runtimeTypeDisplayName"`
+	RuntimeArtifactKind    ArtifactType `json:"runtimeArtifactKind"`
 }
 
 type FormationTemplatePage struct {

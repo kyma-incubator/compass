@@ -576,8 +576,8 @@ input FormationTemplateInput {
 	name: String!
 	applicationTypes: [String!]!
 	runtimeType: String!
-	runtime_type_display_name: String!
-	runtime_artifact_kind: ArtifactType!
+	runtimeTypeDisplayName: String!
+	runtimeArtifactKind: ArtifactType!
 }
 
 input IntegrationSystemInput {
@@ -1023,8 +1023,8 @@ type FormationTemplate {
 	name: String!
 	applicationTypes: [String!]!
 	runtimeType: String!
-	runtime_type_display_name: String!
-	runtime_artifact_kind: ArtifactType!
+	runtimeTypeDisplayName: String!
+	runtimeArtifactKind: ArtifactType!
 }
 
 type FormationTemplatePage implements Pageable {

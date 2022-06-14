@@ -1972,7 +1972,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FormationTemplate.Name(childComplexity), true
 
-	case "FormationTemplate.runtime_artifact_kind":
+	case "FormationTemplate.runtimeArtifactKind":
 		if e.complexity.FormationTemplate.RuntimeArtifactKind == nil {
 			break
 		}
@@ -1986,7 +1986,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FormationTemplate.RuntimeType(childComplexity), true
 
-	case "FormationTemplate.runtime_type_display_name":
+	case "FormationTemplate.runtimeTypeDisplayName":
 		if e.complexity.FormationTemplate.RuntimeTypeDisplayName == nil {
 			break
 		}
@@ -4645,8 +4645,8 @@ input FormationTemplateInput {
 	name: String!
 	applicationTypes: [String!]!
 	runtimeType: String!
-	runtime_type_display_name: String!
-	runtime_artifact_kind: ArtifactType!
+	runtimeTypeDisplayName: String!
+	runtimeArtifactKind: ArtifactType!
 }
 
 input IntegrationSystemInput {
@@ -5092,8 +5092,8 @@ type FormationTemplate {
 	name: String!
 	applicationTypes: [String!]!
 	runtimeType: String!
-	runtime_type_display_name: String!
-	runtime_artifact_kind: ArtifactType!
+	runtimeTypeDisplayName: String!
+	runtimeArtifactKind: ArtifactType!
 }
 
 type FormationTemplatePage implements Pageable {
@@ -13955,7 +13955,7 @@ func (ec *executionContext) _FormationTemplate_runtimeType(ctx context.Context, 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _FormationTemplate_runtime_type_display_name(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
+func (ec *executionContext) _FormationTemplate_runtimeTypeDisplayName(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -13989,7 +13989,7 @@ func (ec *executionContext) _FormationTemplate_runtime_type_display_name(ctx con
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _FormationTemplate_runtime_artifact_kind(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
+func (ec *executionContext) _FormationTemplate_runtimeArtifactKind(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -26443,13 +26443,13 @@ func (ec *executionContext) unmarshalInputFormationTemplateInput(ctx context.Con
 			if err != nil {
 				return it, err
 			}
-		case "runtime_type_display_name":
+		case "runtimeTypeDisplayName":
 			var err error
 			it.RuntimeTypeDisplayName, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "runtime_artifact_kind":
+		case "runtimeArtifactKind":
 			var err error
 			it.RuntimeArtifactKind, err = ec.unmarshalNArtifactType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx, v)
 			if err != nil {
@@ -28483,13 +28483,13 @@ func (ec *executionContext) _FormationTemplate(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "runtime_type_display_name":
-			out.Values[i] = ec._FormationTemplate_runtime_type_display_name(ctx, field, obj)
+		case "runtimeTypeDisplayName":
+			out.Values[i] = ec._FormationTemplate_runtimeTypeDisplayName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "runtime_artifact_kind":
-			out.Values[i] = ec._FormationTemplate_runtime_artifact_kind(ctx, field, obj)
+		case "runtimeArtifactKind":
+			out.Values[i] = ec._FormationTemplate_runtimeArtifactKind(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

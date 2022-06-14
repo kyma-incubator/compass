@@ -137,9 +137,9 @@ func (fp *GqlFieldsProvider) ForFormationTemplate(ctx ...FieldCtx) string {
 		id
 		name
         applicationTypes
-	    runtimeTypes
-	    missingArtifactInfoMessage
-	    missingArtifactWarningMessage
+	    runtimeType
+		runtimeTypeDisplayName	
+		runtimeArtifactKind
 	`
 }
 
