@@ -37,10 +37,10 @@ func TestService_Create(t *testing.T) {
 	}{
 		{
 			Name:  "Success",
-			Input: &inputFormationTemplateModel,
+			Input: &formationTemplateModelInput,
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
-				converter.On("FromModelInputToModel", &inputFormationTemplateModel, testID).Return(&formationTemplateModel).Once()
+				converter.On("FromModelInputToModel", &formationTemplateModelInput, testID).Return(&formationTemplateModel).Once()
 				return converter
 			},
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
@@ -53,10 +53,10 @@ func TestService_Create(t *testing.T) {
 		},
 		{
 			Name:  "Error when creating formation template",
-			Input: &inputFormationTemplateModel,
+			Input: &formationTemplateModelInput,
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
-				converter.On("FromModelInputToModel", &inputFormationTemplateModel, testID).Return(&formationTemplateModel).Once()
+				converter.On("FromModelInputToModel", &formationTemplateModelInput, testID).Return(&formationTemplateModel).Once()
 				return converter
 			},
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
@@ -246,7 +246,7 @@ func TestService_Update(t *testing.T) {
 		{
 			Name:                   "Success",
 			Input:                  testID,
-			InputFormationTemplate: &inputFormationTemplateModel,
+			InputFormationTemplate: &formationTemplateModelInput,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Exists", ctx, testID).Return(true, nil).Once()
@@ -255,7 +255,7 @@ func TestService_Update(t *testing.T) {
 			},
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
-				converter.On("FromModelInputToModel", &inputFormationTemplateModel, testID).Return(&formationTemplateModel).Once()
+				converter.On("FromModelInputToModel", &formationTemplateModelInput, testID).Return(&formationTemplateModel).Once()
 
 				return converter
 			},
@@ -264,7 +264,7 @@ func TestService_Update(t *testing.T) {
 		{
 			Name:                   "Error when formation template does not exist",
 			Input:                  testID,
-			InputFormationTemplate: &inputFormationTemplateModel,
+			InputFormationTemplate: &formationTemplateModelInput,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Exists", ctx, testID).Return(false, nil).Once()
@@ -276,7 +276,7 @@ func TestService_Update(t *testing.T) {
 		{
 			Name:                   "Error when formation existence check failed",
 			Input:                  testID,
-			InputFormationTemplate: &inputFormationTemplateModel,
+			InputFormationTemplate: &formationTemplateModelInput,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Exists", ctx, testID).Return(false, testErr).Once()
@@ -288,7 +288,7 @@ func TestService_Update(t *testing.T) {
 		{
 			Name:                   "Error when updating formation template fails",
 			Input:                  testID,
-			InputFormationTemplate: &inputFormationTemplateModel,
+			InputFormationTemplate: &formationTemplateModelInput,
 			FormationTemplateRepository: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Exists", ctx, testID).Return(true, nil).Once()
@@ -297,7 +297,7 @@ func TestService_Update(t *testing.T) {
 			},
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
-				converter.On("FromModelInputToModel", &inputFormationTemplateModel, testID).Return(&formationTemplateModel).Once()
+				converter.On("FromModelInputToModel", &formationTemplateModelInput, testID).Return(&formationTemplateModel).Once()
 
 				return converter
 			},

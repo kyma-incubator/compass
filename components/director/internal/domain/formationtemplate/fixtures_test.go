@@ -14,40 +14,40 @@ const (
 
 var (
 	nilModelEntity              *model.FormationTemplate
-	inputFormationTemplateModel = model.FormationTemplateInput{
+	formationTemplateModelInput = model.FormationTemplateInput{
 		Name:                   "formation-template-name",
 		ApplicationTypes:       []string{"some-application-type"},
 		RuntimeType:            "some-runtime-type",
 		RuntimeTypeDisplayName: "display-name-for-runtime",
 		RuntimeArtifactKind:    "SUBSCRIPTION",
 	}
-	inputFormationTemplateGraphQLModel = graphql.FormationTemplateInput{
-		Name:                   inputFormationTemplateModel.Name,
-		ApplicationTypes:       inputFormationTemplateModel.ApplicationTypes,
+	formationTemplateGraphQLInput = graphql.FormationTemplateInput{
+		Name:                   formationTemplateModelInput.Name,
+		ApplicationTypes:       formationTemplateModelInput.ApplicationTypes,
 		RuntimeType:            "some-runtime-type",
 		RuntimeTypeDisplayName: "display-name-for-runtime",
 		RuntimeArtifactKind:    "SUBSCRIPTION",
 	}
 	formationTemplateModel = model.FormationTemplate{
 		ID:                     testID,
-		Name:                   inputFormationTemplateModel.Name,
-		ApplicationTypes:       inputFormationTemplateModel.ApplicationTypes,
+		Name:                   formationTemplateModelInput.Name,
+		ApplicationTypes:       formationTemplateModelInput.ApplicationTypes,
 		RuntimeType:            "some-runtime-type",
 		RuntimeTypeDisplayName: "display-name-for-runtime",
 		RuntimeArtifactKind:    "SUBSCRIPTION",
 	}
 	formationTemplateEntity = formationtemplate.Entity{
 		ID:                     testID,
-		Name:                   inputFormationTemplateModel.Name,
+		Name:                   formationTemplateModelInput.Name,
 		ApplicationTypes:       "[\"some-application-type\"]",
 		RuntimeType:            "some-runtime-type",
 		RuntimeTypeDisplayName: "display-name-for-runtime",
 		RuntimeArtifactKind:    "SUBSCRIPTION",
 	}
-	formationTemplateGraphQLModel = graphql.FormationTemplate{
+	graphQLFormationTemplate = graphql.FormationTemplate{
 		ID:                     testID,
-		Name:                   inputFormationTemplateModel.Name,
-		ApplicationTypes:       inputFormationTemplateModel.ApplicationTypes,
+		Name:                   formationTemplateModelInput.Name,
+		ApplicationTypes:       formationTemplateModelInput.ApplicationTypes,
 		RuntimeType:            "some-runtime-type",
 		RuntimeTypeDisplayName: "display-name-for-runtime",
 		RuntimeArtifactKind:    graphql.ArtifactTypeSubscription,
@@ -61,8 +61,8 @@ var (
 		},
 		TotalCount: 1,
 	}
-	formationTemplateGraphQLModelPage = graphql.FormationTemplatePage{
-		Data: []*graphql.FormationTemplate{&formationTemplateGraphQLModel},
+	graphQLFormationTemplatePage = graphql.FormationTemplatePage{
+		Data: []*graphql.FormationTemplate{&graphQLFormationTemplate},
 		PageInfo: &graphql.PageInfo{
 			StartCursor: "start",
 			EndCursor:   "end",

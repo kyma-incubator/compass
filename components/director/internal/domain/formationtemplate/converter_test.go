@@ -17,8 +17,8 @@ func TestConverter_FromInputGraphQL(t *testing.T) {
 		Expected *model.FormationTemplateInput
 	}{{
 		Name:     "Success",
-		Input:    &inputFormationTemplateGraphQLModel,
-		Expected: &inputFormationTemplateModel,
+		Input:    &formationTemplateGraphQLInput,
+		Expected: &formationTemplateModelInput,
 	}, {
 		Name:     "Empty",
 		Input:    nil,
@@ -44,7 +44,7 @@ func TestConverter_FromModelInputToModel(t *testing.T) {
 		Expected *model.FormationTemplate
 	}{{
 		Name:     "Success",
-		Input:    &inputFormationTemplateModel,
+		Input:    &formationTemplateModelInput,
 		Expected: &formationTemplateModel,
 	}, {
 		Name:     "Empty",
@@ -72,7 +72,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 	}{{
 		Name:     "Success",
 		Input:    &formationTemplateModel,
-		Expected: &formationTemplateGraphQLModel,
+		Expected: &graphQLFormationTemplate,
 	}, {
 		Name:     "Empty",
 		Input:    nil,
@@ -99,7 +99,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 	}{{
 		Name:     "Success",
 		Input:    formationTemplateModelPage.Data,
-		Expected: formationTemplateGraphQLModelPage.Data,
+		Expected: graphQLFormationTemplatePage.Data,
 	}, {
 		Name:     "Empty",
 		Input:    nil,
@@ -123,7 +123,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		result := converter.MultipleToGraphQL(formationTemplateModelPage.Data)
 
 		// THEN
-		assert.ElementsMatch(t, result, formationTemplateGraphQLModelPage.Data)
+		assert.ElementsMatch(t, result, graphQLFormationTemplatePage.Data)
 	})
 	t.Run("Returns nil when given empty model", func(t *testing.T) {
 		// GIVEN
