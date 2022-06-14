@@ -529,7 +529,7 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 			{{- end }} ],
 		runtimeType: "{{.RuntimeType}}" 
 		runtimeTypeDisplayName: "{{.RuntimeTypeDisplayName}}"
-		runtimeArtifactKind: "{{.RuntimeArtifactKind}}"
+		runtimeArtifactKind: {{.RuntimeArtifactKind}}
 	}`)
 }
 
