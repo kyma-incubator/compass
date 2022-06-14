@@ -22,6 +22,8 @@ graphql:
     automaticScenarioAssignmentForScenario: ["automatic_scenario_assignment:read"]
     automaticScenarioAssignmentsForSelector: ["automatic_scenario_assignment:read"]
     systemAuth: ["runtime.auths:read", "application.auths:read", "integration_system.auths:read"]
+    formationTemplate: [ "formation_template:read" ]
+    formationTemplates: [ "formation_template:read" ]
 
   mutation:
     registerApplication: ["application:write"]
@@ -89,6 +91,9 @@ graphql:
     updateTenant: ["tenant:write"]
     subscribeTenantToRuntime: ["tenant_subscription:write"]
     unsubscribeTenantFromRuntime: ["tenant_subscription:write"]
+    createFormationTemplate: [ "formation_template:write" ]
+    deleteFormationTemplate: [ "formation_template:write" ]
+    updateFormationTemplate: [ "formation_template:write" ]
 
   field:
     fetch_request:
@@ -152,6 +157,7 @@ clientCredentialsRegistrationScopes:
     - "internal_visibility:read"
     - "application.auths:read"
     - "webhook:write"
+    - "formation_template:read"
   super_admin:
     - "application:read"
     - "application:write"

@@ -879,6 +879,7 @@ global:
         - "internal_visibility:read"
         - "application.auths:read"
         - "webhook:write"
+        - "formation_template:read"
       super_admin:
         - "application:read"
         - "application:write"
