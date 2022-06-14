@@ -5,16 +5,16 @@ mutation {
     in: {
       name: "new-name-for-formation-template"
       applicationTypes: ["app-type-3", "app-type-4"]
-      runtimeTypes: ["runtime-type-2"]
-      missingArtifactInfoMessage: "missing info message %s"
-      missingArtifactWarningMessage: "missing warning message %s"
+      runtimeType: "runtime-type-2"
+      runtimeTypeDisplayName: "test-display-name-2"
+      runtimeArtifactKind: SERVICE_INSTANCE
     }
   ) {
     id
     name
     applicationTypes
-    runtimeTypes
-    missingArtifactInfoMessage
-    missingArtifactWarningMessage
+    runtimeType
+    runtimeTypeDisplayName
+    runtimeArtifactKind
   }
 }

@@ -4,16 +4,16 @@ mutation {
     in: {
       name: "test-formation-template"
       applicationTypes: ["app-type-1", "app-type-2"]
-      runtimeTypes: ["runtime-type"]
-      missingArtifactInfoMessage: "Missing Artifact Message Info: %s"
-      missingArtifactWarningMessage: "Missing Artifact Message Warning: %s"
+      runtimeType: "runtime-type"
+      runtimeTypeDisplayName: "test-display-name"
+      runtimeArtifactKind: SUBSCRIPTION
     }
   ) {
     id
     name
     applicationTypes
-    runtimeTypes
-    missingArtifactInfoMessage
-    missingArtifactWarningMessage
+    runtimeType
+    runtimeTypeDisplayName
+    runtimeArtifactKind
   }
 }
