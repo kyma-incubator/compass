@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 )
 
-// FormationTemplateConverter missing godoc
+// FormationTemplateConverter converts between the graphql and model
 //go:generate mockery --name=FormationTemplateConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationTemplateConverter interface {
 	FromInputGraphQL(in *graphql.FormationTemplateInput) *model.FormationTemplateInput
@@ -19,7 +19,7 @@ type FormationTemplateConverter interface {
 	FromModelInputToModel(in *model.FormationTemplateInput, id string) *model.FormationTemplate
 }
 
-// FormationTemplateService missing godoc
+// FormationTemplateService represents the FormationTemplate service layer
 //go:generate mockery --name=FormationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationTemplateService interface {
 	Create(ctx context.Context, in *model.FormationTemplateInput) (string, error)

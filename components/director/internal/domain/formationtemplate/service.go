@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// FormationTemplateRepository missing godoc
+// FormationTemplateRepository represents the FormationTemplate repository layer
 //go:generate mockery --name=FormationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationTemplateRepository interface {
 	Create(ctx context.Context, item *model.FormationTemplate) error
