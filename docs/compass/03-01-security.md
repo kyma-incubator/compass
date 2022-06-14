@@ -254,7 +254,7 @@ The scopes are added to the authentication session in Tenant Mapping Handler. Th
 1. Istio verifies the client certificate. If the certificate is invalid, Istio rejects the request.
 1. The certificate info (subject and certificate hash) is added to the `Certificate-Data` header.
 1. The Oathkeeper uses the Certificate Resolver as a mutator, which turns the `Certificate-Data` header into the `Client-Certificate-Hash` header and the `Client-Id-From-Certificate` header. If the certificate has expired, the two headers are set empty. Additionally, if the subject matches one of the subjects in a predefined configuration, then, an `extra` field is added to the *Auth Session*. The `extra` field contains a consumer type (integration system), access levels (contains a set of tenant types, which the provider tenant can access, for example, `account` only), and an optional internal consumer ID, which can be the GUID of an existing integration system.
-1. The Certificate Resolver also sets the Authentication ID (`auth_id`) to one of the OUs in the subject. If there are many OUs, Connector can be configured to skip some of them. The auth ID represents the external ID of a tenant of type `subaccount`.
+1. The Certificate Resolver also sets the Authentication ID (`auth_id`) to one of the OUs in the subject. If there are many OUs, Hydrator component can be configured to skip some of them. The auth ID represents the external ID of a tenant of type `subaccount`.
 1. Then, the call is proxied to the Tenant Mapping Handler, where:
    1. In case of a static match to an externally-issued certificate, the `Tenant` header is mapped to a `tenant`.
    2. Otherwise, the `auth_id` is mapped to the `tenant`.
@@ -305,7 +305,7 @@ The scopes are added to the authentication session in Tenant Mapping Handler. Th
 An integration system is any multi-tenant application, which has access to all tenants available in Compass.
 The Integration Systems either can use OAuth credentials for authentication (created via the `requestClientCredentialsForIntegrationSystem` mutation), or a client certificate, issued by an external issuer, which is trusted by Compass.
 
-The latter authentication mechanism is plugged into Compass Connector. It can be configured to trust a specific certificate subject and based on that subject, to set the Consumer type to _Integration System_, and grant it access to a set of tenant types. This mechanism is more restrictive than the one that uses OAuth client.
+The latter authentication mechanism is plugged into Compass Hydrator. It can be configured to trust a specific certificate subject and based on that subject, to set the Consumer type to _Integration System_, and grant it access to a set of tenant types. This mechanism is more restrictive than the one that uses OAuth client.
 The consumer tenant is specified in the `Tenant` header.
 
 **Compass Director Flow:**
@@ -320,7 +320,7 @@ In this case, the scopes from the external certificate context provider (for con
 ##### Runtimes
 Usually, Integration Systems access grants too many permissions and for this reason it must be provided carefully. Therefore, to achieve the required scenario results it was introduced more flexible and secured means for access provisioning. First, the multi-tenant applications are registered as a *special* runtime in Compass, having a special label, which Compass uses for distinguishing multi-tenant and ordinary runtimes.
 
-When the multi-tenant system is represented as a Runtime, its tenant access is managed from an outside service. The service communicates with the Tenant Fetcher deployment and grants the provider tenant access to resources in the consumer tenant. The provider tenant is the tenant where the multi-tenant runtime is registered. The consumer tenant is of type `subaccount`. When the trust between the tenants is established, the external multi-tenant system can access resources in the consumer tenant.
+When the multi-tenant system is represented as a Runtime, its tenant access is managed from an outside service. The service communicates with the Tenant Fetcher deployment which calls Director component that is responsible to create a new entity, called runtime context, that manage the consumer data and establish trust between the consumer and provider. That also grants the provider tenant access to the resources in the consumer tenant. The provider tenant is the tenant where the multi-tenant runtime is registered. The consumer tenant is of type `subaccount`. When the trust between the tenants is established, the external multi-tenant system can access resources in the consumer tenant.
 
 **Compass Director Flow:**
 
