@@ -20,11 +20,11 @@ func TestRepository_Get(t *testing.T) {
 		MethodName: "Get",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, missing_artifact_info_message, missing_artifact_warning_message FROM public.formation_templates WHERE id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_type, runtime_type_display_name, runtime_artifact_kind FROM public.formation_templates WHERE id = $1`),
 				Args:     []driver.Value{testID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.MissingArtifactInfoMessage, formationTemplateEntity.MissingArtifactWarningMessage)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeType, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -51,7 +51,7 @@ func TestRepository_Create(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:       `^INSERT INTO public.formation_templates \(.+\) VALUES \(.+\)$`,
-				Args:        []driver.Value{formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.MissingArtifactInfoMessage, formationTemplateEntity.MissingArtifactWarningMessage},
+				Args:        []driver.Value{formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeType, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind},
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 		},
@@ -124,10 +124,10 @@ func TestRepository_List(t *testing.T) {
 		MethodName: "List",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_types, missing_artifact_info_message, missing_artifact_warning_message FROM public.formation_templates ORDER BY id LIMIT 3 OFFSET 0`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_type, runtime_type_display_name, runtime_artifact_kind FROM public.formation_templates ORDER BY id LIMIT 3 OFFSET 0`),
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.MissingArtifactInfoMessage, formationTemplateEntity.MissingArtifactWarningMessage)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeType, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -168,13 +168,13 @@ func TestRepository_List(t *testing.T) {
 }
 
 func TestRepository_Update(t *testing.T) {
-	updateStmt := regexp.QuoteMeta(`UPDATE public.formation_templates SET name = ?, application_types = ?, runtime_types = ?, missing_artifact_info_message = ?, missing_artifact_warning_message = ? WHERE id = ?`)
+	updateStmt := regexp.QuoteMeta(`UPDATE public.formation_templates SET name = ?, application_types = ?, runtime_type = ?, runtime_type_display_name = ?, runtime_artifact_kind = ? WHERE id = ?`)
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update Formation Template By ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         updateStmt,
-				Args:          []driver.Value{formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeTypes, formationTemplateEntity.MissingArtifactInfoMessage, formationTemplateEntity.MissingArtifactWarningMessage, formationTemplateEntity.ID},
+				Args:          []driver.Value{formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeType, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind, formationTemplateEntity.ID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},

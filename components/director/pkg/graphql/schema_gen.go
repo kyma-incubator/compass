@@ -303,12 +303,12 @@ type ComplexityRoot struct {
 	}
 
 	FormationTemplate struct {
-		ApplicationTypes              func(childComplexity int) int
-		ID                            func(childComplexity int) int
-		MissingArtifactInfoMessage    func(childComplexity int) int
-		MissingArtifactWarningMessage func(childComplexity int) int
-		Name                          func(childComplexity int) int
-		RuntimeTypes                  func(childComplexity int) int
+		ApplicationTypes       func(childComplexity int) int
+		ID                     func(childComplexity int) int
+		Name                   func(childComplexity int) int
+		RuntimeArtifactKind    func(childComplexity int) int
+		RuntimeType            func(childComplexity int) int
+		RuntimeTypeDisplayName func(childComplexity int) int
 	}
 
 	FormationTemplatePage struct {
@@ -1965,20 +1965,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FormationTemplate.ID(childComplexity), true
 
-	case "FormationTemplate.missingArtifactInfoMessage":
-		if e.complexity.FormationTemplate.MissingArtifactInfoMessage == nil {
-			break
-		}
-
-		return e.complexity.FormationTemplate.MissingArtifactInfoMessage(childComplexity), true
-
-	case "FormationTemplate.missingArtifactWarningMessage":
-		if e.complexity.FormationTemplate.MissingArtifactWarningMessage == nil {
-			break
-		}
-
-		return e.complexity.FormationTemplate.MissingArtifactWarningMessage(childComplexity), true
-
 	case "FormationTemplate.name":
 		if e.complexity.FormationTemplate.Name == nil {
 			break
@@ -1986,12 +1972,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FormationTemplate.Name(childComplexity), true
 
-	case "FormationTemplate.runtimeTypes":
-		if e.complexity.FormationTemplate.RuntimeTypes == nil {
+	case "FormationTemplate.runtime_artifact_kind":
+		if e.complexity.FormationTemplate.RuntimeArtifactKind == nil {
 			break
 		}
 
-		return e.complexity.FormationTemplate.RuntimeTypes(childComplexity), true
+		return e.complexity.FormationTemplate.RuntimeArtifactKind(childComplexity), true
+
+	case "FormationTemplate.runtimeType":
+		if e.complexity.FormationTemplate.RuntimeType == nil {
+			break
+		}
+
+		return e.complexity.FormationTemplate.RuntimeType(childComplexity), true
+
+	case "FormationTemplate.runtime_type_display_name":
+		if e.complexity.FormationTemplate.RuntimeTypeDisplayName == nil {
+			break
+		}
+
+		return e.complexity.FormationTemplate.RuntimeTypeDisplayName(childComplexity), true
 
 	case "FormationTemplatePage.data":
 		if e.complexity.FormationTemplatePage.Data == nil {
@@ -4141,6 +4141,12 @@ enum ApplicationTemplateAccessLevel {
 	GLOBAL
 }
 
+enum ArtifactType {
+	SUBSCRIPTION
+	SERVICE_INSTANCE
+	ENVIRONMENT_INSTANCE
+}
+
 enum BundleInstanceAuthSetStatusConditionInput {
 	SUCCEEDED
 	FAILED
@@ -4638,9 +4644,9 @@ input FormationInput {
 input FormationTemplateInput {
 	name: String!
 	applicationTypes: [String!]!
-	runtimeTypes: [String!]!
-	missingArtifactInfoMessage: String!
-	missingArtifactWarningMessage: String!
+	runtimeType: String!
+	runtime_type_display_name: String!
+	runtime_artifact_kind: ArtifactType!
 }
 
 input IntegrationSystemInput {
@@ -5085,9 +5091,9 @@ type FormationTemplate {
 	id: ID!
 	name: String!
 	applicationTypes: [String!]!
-	runtimeTypes: [String!]!
-	missingArtifactInfoMessage: String!
-	missingArtifactWarningMessage: String!
+	runtimeType: String!
+	runtime_type_display_name: String!
+	runtime_artifact_kind: ArtifactType!
 }
 
 type FormationTemplatePage implements Pageable {
@@ -13915,7 +13921,7 @@ func (ec *executionContext) _FormationTemplate_applicationTypes(ctx context.Cont
 	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _FormationTemplate_runtimeTypes(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
+func (ec *executionContext) _FormationTemplate_runtimeType(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -13932,41 +13938,7 @@ func (ec *executionContext) _FormationTemplate_runtimeTypes(ctx context.Context,
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.RuntimeTypes, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]string)
-	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _FormationTemplate_missingArtifactInfoMessage(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "FormationTemplate",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.MissingArtifactInfoMessage, nil
+		return obj.RuntimeType, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13983,7 +13955,7 @@ func (ec *executionContext) _FormationTemplate_missingArtifactInfoMessage(ctx co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _FormationTemplate_missingArtifactWarningMessage(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
+func (ec *executionContext) _FormationTemplate_runtime_type_display_name(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -14000,7 +13972,7 @@ func (ec *executionContext) _FormationTemplate_missingArtifactWarningMessage(ctx
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MissingArtifactWarningMessage, nil
+		return obj.RuntimeTypeDisplayName, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -14015,6 +13987,40 @@ func (ec *executionContext) _FormationTemplate_missingArtifactWarningMessage(ctx
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationTemplate_runtime_artifact_kind(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationTemplate",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RuntimeArtifactKind, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(ArtifactType)
+	fc.Result = res
+	return ec.marshalNArtifactType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationTemplatePage_data(ctx context.Context, field graphql.CollectedField, obj *FormationTemplatePage) (ret graphql.Marshaler) {
@@ -26431,21 +26437,21 @@ func (ec *executionContext) unmarshalInputFormationTemplateInput(ctx context.Con
 			if err != nil {
 				return it, err
 			}
-		case "runtimeTypes":
+		case "runtimeType":
 			var err error
-			it.RuntimeTypes, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			it.RuntimeType, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "missingArtifactInfoMessage":
+		case "runtime_type_display_name":
 			var err error
-			it.MissingArtifactInfoMessage, err = ec.unmarshalNString2string(ctx, v)
+			it.RuntimeTypeDisplayName, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "missingArtifactWarningMessage":
+		case "runtime_artifact_kind":
 			var err error
-			it.MissingArtifactWarningMessage, err = ec.unmarshalNString2string(ctx, v)
+			it.RuntimeArtifactKind, err = ec.unmarshalNArtifactType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -28472,18 +28478,18 @@ func (ec *executionContext) _FormationTemplate(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "runtimeTypes":
-			out.Values[i] = ec._FormationTemplate_runtimeTypes(ctx, field, obj)
+		case "runtimeType":
+			out.Values[i] = ec._FormationTemplate_runtimeType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "missingArtifactInfoMessage":
-			out.Values[i] = ec._FormationTemplate_missingArtifactInfoMessage(ctx, field, obj)
+		case "runtime_type_display_name":
+			out.Values[i] = ec._FormationTemplate_runtime_type_display_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "missingArtifactWarningMessage":
-			out.Values[i] = ec._FormationTemplate_missingArtifactWarningMessage(ctx, field, obj)
+		case "runtime_artifact_kind":
+			out.Values[i] = ec._FormationTemplate_runtime_artifact_kind(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -30906,6 +30912,15 @@ func (ec *executionContext) unmarshalNApplicationTemplateUpdateInput2githubᚗco
 
 func (ec *executionContext) unmarshalNApplicationUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationUpdateInput(ctx context.Context, v interface{}) (ApplicationUpdateInput, error) {
 	return ec.unmarshalInputApplicationUpdateInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNArtifactType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx context.Context, v interface{}) (ArtifactType, error) {
+	var res ArtifactType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNArtifactType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx context.Context, sel ast.SelectionSet, v ArtifactType) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx context.Context, v interface{}) (AuthInput, error) {

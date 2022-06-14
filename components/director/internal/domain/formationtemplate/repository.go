@@ -15,7 +15,7 @@ import (
 const tableName string = `public.formation_templates`
 
 var (
-	updatableTableColumns = []string{"name", "application_types", "runtime_types", "missing_artifact_info_message", "missing_artifact_warning_message"}
+	updatableTableColumns = []string{"name", "application_types", "runtime_type", "runtime_type_display_name", "runtime_artifact_kind"}
 	idTableColumns        = []string{"id"}
 	tableColumns          = append(idTableColumns, updatableTableColumns...)
 )

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -48,7 +49,7 @@ func TestFormationTemplateInput_ValidateName(t *testing.T) {
 	}
 }
 
-func TestFormationTemplateInput_ValidateMissingMessages(t *testing.T) {
+/*func TestFormationTemplateInput_ValidateMissingMessages(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         string
@@ -158,13 +159,14 @@ func TestFormationTemplateInput_ValidateTypes(t *testing.T) {
 		})
 	}
 }
+*/
 
 func fixValidFormationTemplateInput() graphql.FormationTemplateInput {
 	return graphql.FormationTemplateInput{
-		Name:                          "formation-template-name",
-		ApplicationTypes:              []string{"some-application-type"},
-		RuntimeTypes:                  []string{"some-runtime-type"},
-		MissingArtifactInfoMessage:    "some missing info message",
-		MissingArtifactWarningMessage: "some missing warning message",
+		Name:                   "formation-template-name",
+		ApplicationTypes:       []string{"some-application-type"},
+		RuntimeType:            "some-runtime-type",
+		RuntimeTypeDisplayName: "display-name-for-runtime",
+		RuntimeArtifactKind:    "SUBSCRIPTION",
 	}
 }

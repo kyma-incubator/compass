@@ -72,6 +72,12 @@ enum ApplicationTemplateAccessLevel {
 	GLOBAL
 }
 
+enum ArtifactType {
+	SUBSCRIPTION
+	SERVICE_INSTANCE
+	ENVIRONMENT_INSTANCE
+}
+
 enum BundleInstanceAuthSetStatusConditionInput {
 	SUCCEEDED
 	FAILED
@@ -569,9 +575,9 @@ input FormationInput {
 input FormationTemplateInput {
 	name: String!
 	applicationTypes: [String!]!
-	runtimeTypes: [String!]!
-	missingArtifactInfoMessage: String!
-	missingArtifactWarningMessage: String!
+	runtimeType: String!
+	runtime_type_display_name: String!
+	runtime_artifact_kind: ArtifactType!
 }
 
 input IntegrationSystemInput {
@@ -1016,9 +1022,9 @@ type FormationTemplate {
 	id: ID!
 	name: String!
 	applicationTypes: [String!]!
-	runtimeTypes: [String!]!
-	missingArtifactInfoMessage: String!
-	missingArtifactWarningMessage: String!
+	runtimeType: String!
+	runtime_type_display_name: String!
+	runtime_artifact_kind: ArtifactType!
 }
 
 type FormationTemplatePage implements Pageable {

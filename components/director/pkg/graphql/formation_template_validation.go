@@ -9,8 +9,8 @@ import (
 func (i FormationTemplateInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Name, validation.Required, validation.RuneLength(0, longStringLengthLimit)),
-		validation.Field(&i.MissingArtifactInfoMessage, validation.Required, validation.RuneLength(0, longLongStringLengthLimit)),
-		validation.Field(&i.MissingArtifactWarningMessage, validation.Required, validation.RuneLength(0, longLongStringLengthLimit)),
-		validation.Field(&i.RuntimeTypes, validation.Required, inputvalidation.Each(validation.Required, validation.RuneLength(0, longStringLengthLimit))),
-		validation.Field(&i.ApplicationTypes, validation.Required, inputvalidation.Each(validation.Required, validation.RuneLength(0, longStringLengthLimit))))
+		validation.Field(&i.ApplicationTypes, validation.Required, inputvalidation.Each(validation.Required, validation.RuneLength(0, longStringLengthLimit))),
+		validation.Field(&i.RuntimeType, validation.Required, validation.RuneLength(0, longStringLengthLimit)),
+		validation.Field(&i.RuntimeTypeDisplayName, validation.Required, validation.RuneLength(0, longStringLengthLimit)),
+		validation.Field(&i.RuntimeArtifactKind, validation.Required))
 }

@@ -21,11 +21,11 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) *model.
 		return nil
 	}
 	return &model.FormationTemplateInput{
-		Name:                          in.Name,
-		ApplicationTypes:              in.ApplicationTypes,
-		RuntimeTypes:                  in.RuntimeTypes,
-		MissingArtifactInfoMessage:    in.MissingArtifactInfoMessage,
-		MissingArtifactWarningMessage: in.MissingArtifactWarningMessage,
+		Name:                   in.Name,
+		ApplicationTypes:       in.ApplicationTypes,
+		RuntimeType:            in.RuntimeType,
+		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
+		RuntimeArtifactKind:    string(in.RuntimeArtifactKind),
 	}
 }
 
@@ -35,12 +35,12 @@ func (c *converter) FromModelInputToModel(in *model.FormationTemplateInput, id s
 		return nil
 	}
 	return &model.FormationTemplate{
-		ID:                            id,
-		Name:                          in.Name,
-		ApplicationTypes:              in.ApplicationTypes,
-		RuntimeTypes:                  in.RuntimeTypes,
-		MissingArtifactInfoMessage:    in.MissingArtifactInfoMessage,
-		MissingArtifactWarningMessage: in.MissingArtifactWarningMessage,
+		ID:                     id,
+		Name:                   in.Name,
+		ApplicationTypes:       in.ApplicationTypes,
+		RuntimeType:            in.RuntimeType,
+		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
+		RuntimeArtifactKind:    in.RuntimeArtifactKind,
 	}
 }
 
@@ -50,12 +50,12 @@ func (c *converter) ToGraphQL(in *model.FormationTemplate) *graphql.FormationTem
 		return nil
 	}
 	return &graphql.FormationTemplate{
-		ID:                            in.ID,
-		Name:                          in.Name,
-		ApplicationTypes:              in.ApplicationTypes,
-		RuntimeTypes:                  in.RuntimeTypes,
-		MissingArtifactInfoMessage:    in.MissingArtifactInfoMessage,
-		MissingArtifactWarningMessage: in.MissingArtifactWarningMessage,
+		ID:                     in.ID,
+		Name:                   in.Name,
+		ApplicationTypes:       in.ApplicationTypes,
+		RuntimeType:            in.RuntimeType,
+		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
+		RuntimeArtifactKind:    graphql.ArtifactType(in.RuntimeArtifactKind),
 	}
 }
 
@@ -85,18 +85,14 @@ func (c *converter) ToEntity(in *model.FormationTemplate) (*Entity, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "while marshalling application types")
 	}
-	marshalledRuntimeTypes, err := json.Marshal(in.RuntimeTypes)
-	if err != nil {
-		return nil, errors.Wrap(err, "while marshalling runtime types")
-	}
 
 	return &Entity{
-		ID:                            in.ID,
-		Name:                          in.Name,
-		ApplicationTypes:              string(marshalledApplicationTypes),
-		RuntimeTypes:                  string(marshalledRuntimeTypes),
-		MissingArtifactInfoMessage:    in.MissingArtifactInfoMessage,
-		MissingArtifactWarningMessage: in.MissingArtifactWarningMessage,
+		ID:                     in.ID,
+		Name:                   in.Name,
+		ApplicationTypes:       string(marshalledApplicationTypes),
+		RuntimeType:            in.RuntimeType,
+		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
+		RuntimeArtifactKind:    in.RuntimeArtifactKind,
 	}, nil
 }
 
@@ -111,17 +107,13 @@ func (c *converter) FromEntity(in *Entity) (*model.FormationTemplate, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "while unmarshalling application types")
 	}
-	var unmarshalledRuntimeTypes []string
-	err = json.Unmarshal([]byte(in.RuntimeTypes), &unmarshalledRuntimeTypes)
-	if err != nil {
-		return nil, errors.Wrap(err, "while unmarshalling application types")
-	}
+
 	return &model.FormationTemplate{
-		ID:                            in.ID,
-		Name:                          in.Name,
-		ApplicationTypes:              unmarshalledApplicationTypes,
-		RuntimeTypes:                  unmarshalledRuntimeTypes,
-		MissingArtifactInfoMessage:    in.MissingArtifactInfoMessage,
-		MissingArtifactWarningMessage: in.MissingArtifactWarningMessage,
+		ID:                     in.ID,
+		Name:                   in.Name,
+		ApplicationTypes:       unmarshalledApplicationTypes,
+		RuntimeType:            in.RuntimeType,
+		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
+		RuntimeArtifactKind:    in.RuntimeArtifactKind,
 	}, nil
 }

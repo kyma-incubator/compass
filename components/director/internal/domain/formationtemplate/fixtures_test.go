@@ -15,42 +15,42 @@ const (
 var (
 	nilModelEntity              *model.FormationTemplate
 	inputFormationTemplateModel = model.FormationTemplateInput{
-		Name:                          "formation-template-name",
-		ApplicationTypes:              []string{"some-application-type"},
-		RuntimeTypes:                  []string{"some-runtime-type"},
-		MissingArtifactInfoMessage:    "some missing info message",
-		MissingArtifactWarningMessage: "some missing warning message",
+		Name:                   "formation-template-name",
+		ApplicationTypes:       []string{"some-application-type"},
+		RuntimeType:            "some-runtime-type",
+		RuntimeTypeDisplayName: "display-name-for-runtime",
+		RuntimeArtifactKind:    "SUBSCRIPTION",
 	}
 	inputFormationTemplateGraphQLModel = graphql.FormationTemplateInput{
-		Name:                          inputFormationTemplateModel.Name,
-		ApplicationTypes:              inputFormationTemplateModel.ApplicationTypes,
-		RuntimeTypes:                  inputFormationTemplateModel.RuntimeTypes,
-		MissingArtifactInfoMessage:    inputFormationTemplateModel.MissingArtifactInfoMessage,
-		MissingArtifactWarningMessage: inputFormationTemplateModel.MissingArtifactWarningMessage,
+		Name:                   inputFormationTemplateModel.Name,
+		ApplicationTypes:       inputFormationTemplateModel.ApplicationTypes,
+		RuntimeType:            "some-runtime-type",
+		RuntimeTypeDisplayName: "display-name-for-runtime",
+		RuntimeArtifactKind:    "SUBSCRIPTION",
 	}
 	formationTemplateModel = model.FormationTemplate{
-		ID:                            testID,
-		Name:                          inputFormationTemplateModel.Name,
-		ApplicationTypes:              inputFormationTemplateModel.ApplicationTypes,
-		RuntimeTypes:                  inputFormationTemplateModel.RuntimeTypes,
-		MissingArtifactInfoMessage:    inputFormationTemplateModel.MissingArtifactInfoMessage,
-		MissingArtifactWarningMessage: inputFormationTemplateModel.MissingArtifactWarningMessage,
+		ID:                     testID,
+		Name:                   inputFormationTemplateModel.Name,
+		ApplicationTypes:       inputFormationTemplateModel.ApplicationTypes,
+		RuntimeType:            "some-runtime-type",
+		RuntimeTypeDisplayName: "display-name-for-runtime",
+		RuntimeArtifactKind:    "SUBSCRIPTION",
 	}
 	formationTemplateEntity = formationtemplate.Entity{
-		ID:                            testID,
-		Name:                          inputFormationTemplateModel.Name,
-		ApplicationTypes:              "[\"some-application-type\"]",
-		RuntimeTypes:                  "[\"some-runtime-type\"]",
-		MissingArtifactInfoMessage:    inputFormationTemplateModel.MissingArtifactInfoMessage,
-		MissingArtifactWarningMessage: inputFormationTemplateModel.MissingArtifactWarningMessage,
+		ID:                     testID,
+		Name:                   inputFormationTemplateModel.Name,
+		ApplicationTypes:       "[\"some-application-type\"]",
+		RuntimeType:            "some-runtime-type",
+		RuntimeTypeDisplayName: "display-name-for-runtime",
+		RuntimeArtifactKind:    "SUBSCRIPTION",
 	}
 	formationTemplateGraphQLModel = graphql.FormationTemplate{
-		ID:                            testID,
-		Name:                          inputFormationTemplateModel.Name,
-		ApplicationTypes:              inputFormationTemplateModel.ApplicationTypes,
-		RuntimeTypes:                  inputFormationTemplateModel.RuntimeTypes,
-		MissingArtifactInfoMessage:    inputFormationTemplateModel.MissingArtifactInfoMessage,
-		MissingArtifactWarningMessage: inputFormationTemplateModel.MissingArtifactWarningMessage,
+		ID:                     testID,
+		Name:                   inputFormationTemplateModel.Name,
+		ApplicationTypes:       inputFormationTemplateModel.ApplicationTypes,
+		RuntimeType:            "some-runtime-type",
+		RuntimeTypeDisplayName: "display-name-for-runtime",
+		RuntimeArtifactKind:    graphql.ArtifactTypeSubscription,
 	}
 	formationTemplateModelPage = model.FormationTemplatePage{
 		Data: []*model.FormationTemplate{&formationTemplateModel},
@@ -73,7 +73,7 @@ var (
 )
 
 func fixColumns() []string {
-	return []string{"id", "name", "application_types", "runtime_types", "missing_artifact_info_message", "missing_artifact_warning_message"}
+	return []string{"id", "name", "application_types", "runtime_type", "runtime_type_display_name", "runtime_artifact_kind"}
 }
 
 func UnusedFormationTemplateService() *automock.FormationTemplateService {
