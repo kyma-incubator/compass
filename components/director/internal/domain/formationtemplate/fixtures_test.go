@@ -9,47 +9,56 @@ import (
 )
 
 const (
-	testID = "d1fddec6-5456-4a1e-9ae0-74447f5d6ae9"
+	testID                   = "d1fddec6-5456-4a1e-9ae0-74447f5d6ae9"
+	formationTemplateName    = "formation-template-name"
+	runtimeType              = "some-runtime-type"
+	runtimeTypeDisplayName   = "display-name-for-runtime"
+	artifactKindAsString     = "SUBSCRIPTION"
+	applicationTypesAsString = "[\"some-application-type\"]"
+)
+
+var (
+	applicationTypes = []string{"some-application-type"}
 )
 
 var (
 	nilModelEntity              *model.FormationTemplate
 	formationTemplateModelInput = model.FormationTemplateInput{
-		Name:                   "formation-template-name",
-		ApplicationTypes:       []string{"some-application-type"},
-		RuntimeType:            "some-runtime-type",
-		RuntimeTypeDisplayName: "display-name-for-runtime",
-		RuntimeArtifactKind:    "SUBSCRIPTION",
+		Name:                   formationTemplateName,
+		ApplicationTypes:       applicationTypes,
+		RuntimeType:            runtimeType,
+		RuntimeTypeDisplayName: runtimeTypeDisplayName,
+		RuntimeArtifactKind:    artifactKindAsString,
 	}
 	formationTemplateGraphQLInput = graphql.FormationTemplateInput{
-		Name:                   formationTemplateModelInput.Name,
-		ApplicationTypes:       formationTemplateModelInput.ApplicationTypes,
-		RuntimeType:            "some-runtime-type",
-		RuntimeTypeDisplayName: "display-name-for-runtime",
-		RuntimeArtifactKind:    "SUBSCRIPTION",
+		Name:                   formationTemplateName,
+		ApplicationTypes:       applicationTypes,
+		RuntimeType:            runtimeType,
+		RuntimeTypeDisplayName: runtimeTypeDisplayName,
+		RuntimeArtifactKind:    artifactKindAsString,
 	}
 	formationTemplateModel = model.FormationTemplate{
 		ID:                     testID,
-		Name:                   formationTemplateModelInput.Name,
-		ApplicationTypes:       formationTemplateModelInput.ApplicationTypes,
-		RuntimeType:            "some-runtime-type",
-		RuntimeTypeDisplayName: "display-name-for-runtime",
-		RuntimeArtifactKind:    "SUBSCRIPTION",
+		Name:                   formationTemplateName,
+		ApplicationTypes:       applicationTypes,
+		RuntimeType:            runtimeType,
+		RuntimeTypeDisplayName: runtimeTypeDisplayName,
+		RuntimeArtifactKind:    artifactKindAsString,
 	}
 	formationTemplateEntity = formationtemplate.Entity{
 		ID:                     testID,
-		Name:                   formationTemplateModelInput.Name,
-		ApplicationTypes:       "[\"some-application-type\"]",
-		RuntimeType:            "some-runtime-type",
-		RuntimeTypeDisplayName: "display-name-for-runtime",
-		RuntimeArtifactKind:    "SUBSCRIPTION",
+		Name:                   formationTemplateName,
+		ApplicationTypes:       applicationTypesAsString,
+		RuntimeType:            runtimeType,
+		RuntimeTypeDisplayName: runtimeTypeDisplayName,
+		RuntimeArtifactKind:    artifactKindAsString,
 	}
 	graphQLFormationTemplate = graphql.FormationTemplate{
 		ID:                     testID,
-		Name:                   formationTemplateModelInput.Name,
-		ApplicationTypes:       formationTemplateModelInput.ApplicationTypes,
-		RuntimeType:            "some-runtime-type",
-		RuntimeTypeDisplayName: "display-name-for-runtime",
+		Name:                   formationTemplateName,
+		ApplicationTypes:       applicationTypes,
+		RuntimeType:            runtimeType,
+		RuntimeTypeDisplayName: runtimeTypeDisplayName,
 		RuntimeArtifactKind:    graphql.ArtifactTypeSubscription,
 	}
 	formationTemplateModelPage = model.FormationTemplatePage{
