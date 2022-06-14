@@ -31,7 +31,7 @@ func TestCreateFormationTemplate(t *testing.T) {
 	output := graphql.FormationTemplate{}
 
 	// WHEN
-	t.Log("Create formation template")
+	t.Logf("Create formation template with name: %q", <nameVar>)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createFormationTemplateRequest, &output)
 
 	//THEN
