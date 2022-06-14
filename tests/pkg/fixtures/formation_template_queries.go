@@ -42,16 +42,6 @@ func QueryFormationTemplatesWithPageSize(t require.TestingT, ctx context.Context
 	return &formationTemplates
 }
 
-func DeleteFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string) *graphql.FormationTemplate {
-	deleteRequest := FixDeleteFormationTemplateRequest(id)
-
-	formationTemplate := graphql.FormationTemplate{}
-	require.NoError(t, testctx.Tc.RunOperation(ctx, gqlClient, deleteRequest, &formationTemplate))
-	require.NotEmpty(t, formationTemplate.ID)
-
-	return &formationTemplate
-}
-
 func CleanupFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string) *graphql.FormationTemplate {
 	deleteRequest := FixDeleteFormationTemplateRequest(id)
 

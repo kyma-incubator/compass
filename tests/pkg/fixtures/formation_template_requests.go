@@ -43,15 +43,6 @@ func FixQueryFormationTemplateRequest(id string) *gcli.Request {
 				}`, id, testctx.Tc.GQLFieldsProvider.ForFormationTemplate()))
 }
 
-func FixQueryFormationTemplatesRequest() *gcli.Request {
-	return gcli.NewRequest(
-		fmt.Sprintf(`query {
-				  result: formationTemplates {
-    					%s
-					}
-				}`, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForFormationTemplate())))
-}
-
 func FixQueryFormationTemplatesRequestWithPageSize(pageSize int) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
