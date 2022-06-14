@@ -13,11 +13,11 @@ import (
 )
 
 var formationTemplateInput = graphql.FormationTemplateInput{
-	Name:                          "test-formation-template",
-	ApplicationTypes:              []string{"app-type-1", "app-type-2"},
-	RuntimeTypes:                  []string{"runtime-type"},
-	MissingArtifactInfoMessage:    "Missing Artifact Message Info: %s",
-	MissingArtifactWarningMessage: "Missing Artifact Message Warning: %s",
+	Name:                   "test-formation-template",
+	ApplicationTypes:       []string{"app-type-1", "app-type-2"},
+	RuntimeType:            "runtime-type",
+	RuntimeTypeDisplayName: "test-display-name",
+	RuntimeArtifactKind:    graphql.ArtifactTypeSubscription,
 }
 
 func TestCreateFormationTemplate(t *testing.T) {
@@ -87,11 +87,11 @@ func TestUpdateFormationTemplate(t *testing.T) {
 	ctx := context.Background()
 
 	var updatedFormationTemplateInput = graphql.FormationTemplateInput{
-		Name:                          "new-name-for-formation-template",
-		ApplicationTypes:              []string{"app-type-3", "app-type-4"},
-		RuntimeTypes:                  []string{"runtime-type-2"},
-		MissingArtifactInfoMessage:    "missing info message %s",
-		MissingArtifactWarningMessage: "missing warning message %s",
+		Name:                   "new-name-for-formation-template",
+		ApplicationTypes:       []string{"app-type-3", "app-type-4"},
+		RuntimeType:            "runtime-type-2",
+		RuntimeTypeDisplayName: "test-display-name-2",
+		RuntimeArtifactKind:    graphql.ArtifactTypeServiceInstance,
 	}
 
 	updatedFormationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(updatedFormationTemplateInput)
@@ -152,11 +152,11 @@ func TestQueryFormationTemplates(t *testing.T) {
 	ctx := context.Background()
 
 	secondFormationInput := graphql.FormationTemplateInput{
-		Name:                          "test-formation-template-2",
-		ApplicationTypes:              []string{"app-type-3", "app-type-3"},
-		RuntimeTypes:                  []string{"runtime-type-2"},
-		MissingArtifactInfoMessage:    "Missing Artifact Message Info 2: %s",
-		MissingArtifactWarningMessage: "Missing Artifact Message Warning 2: %s",
+		Name:                   "test-formation-template-2",
+		ApplicationTypes:       []string{"app-type-3", "app-type-5"},
+		RuntimeType:            "runtime-type-2",
+		RuntimeTypeDisplayName: "test-display-name-2",
+		RuntimeArtifactKind:    graphql.ArtifactTypeServiceInstance,
 	}
 
 	// Get current state
