@@ -132,7 +132,7 @@ func TestQueryFormationTemplate(t *testing.T) {
 	output := graphql.FormationTemplate{}
 
 	// WHEN
-	t.Log("Query formation template")
+	t.Logf("Query formation template with name: %q", <nameVar>)
 	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, queryFormationTemplateRequest, &output)
 
 	//THEN
