@@ -25,14 +25,13 @@ type TenantService interface {
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
-// Handler is an object with dependencies
 type directive struct {
 	transact  persistence.Transactioner
 	tenantSvc TenantService
 	labelSvc  LabelService
 }
 
-// NewHandler is a constructor for Handler object
+// NewDirective is a constructor for directive object
 func NewDirective(transact persistence.Transactioner, tenantSvc TenantService, labelSvc LabelService) *directive {
 	return &directive{
 		transact:  transact,
@@ -44,7 +43,7 @@ func NewDirective(transact persistence.Transactioner, tenantSvc TenantService, l
 // Validate is a middleware that checks if the flow is oathkeeper.CertificateFlow and consumer type is consumer.ExternalCertificate.
 // If it's not - continue with next handler. If it is, get the consumer tenant's Region label and the Region label of the tenant header.
 // They have to match in order to continue with the next handler, otherwise fail the request
-func (d *directive) Validate(ctx context.Context, obj interface{}, next gqlgen.Resolver) (interface{}, error) {
+func (d *directive) Validate(ctx context.Context, _ interface{}, next gqlgen.Resolver) (interface{}, error) {
 	logger := log.C(ctx)
 
 	consumerInfo, err := consumer.LoadFromContext(ctx)

@@ -2,8 +2,6 @@ package application
 
 import (
 	"context"
-	"fmt"
-	gqlgen "github.com/99designs/gqlgen/graphql"
 	"strings"
 
 	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
@@ -290,16 +288,6 @@ func (r *Resolver) ApplicationsForRuntime(ctx context.Context, runtimeID string,
 // RegisterApplication missing godoc
 func (r *Resolver) RegisterApplication(ctx context.Context, in graphql.ApplicationRegisterInput) (*graphql.Application, error) {
 	log.C(ctx).Infof("Registering Application with name %s", in.Name)
-
-	resCtx := gqlgen.GetFieldContext(ctx)
-	opCtx := gqlgen.GetOperationContext(ctx)
-	fmt.Printf("ALEX 1.1 %+v\n", resCtx)
-	//fmt.Printf("ALEX 2 %+v\n", opCtx.Operation.Name)
-	if opCtx.Operation != nil {
-		fmt.Printf("ALEX 2 %+v\n", opCtx.Operation)
-		fmt.Printf("ALEX 2 %+v\n", opCtx.Doc.Operations.ForName("RegisterApplication"))
-
-	}
 
 	convertedIn, err := r.appConverter.CreateInputFromGraphQL(ctx, in)
 	if err != nil {
