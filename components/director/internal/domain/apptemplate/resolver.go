@@ -398,7 +398,7 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 		return nil, err
 	}
 
-	resultLabels := make(map[string]interface{})
+	resultLabels := make(map[string]interface{}, len(labels))
 	for _, label := range labels {
 		resultLabels[label.Key] = label.Value
 	}
