@@ -28,6 +28,8 @@
     - "webhooks.auth:read"
     - "formation:write"
     - "internal_visibility:read"
+    - "formation_template:read"
+    - "formation_template:write"
 {{- end -}}
 {{ range $name := regexSplit "," .Values.operatorGroupNames -1 }}
 - groupname: "{{ trim $name }}"
