@@ -1,4 +1,8 @@
 """
+appMetadataValidation directive is added to application metadata mutations to protect them
+"""
+directive @appMetadataValidation on FIELD_DEFINITION
+"""
 Async directive is added to mutations which are capable of being executed in asynchronious matter
 """
 directive @async(operationType: OperationType!, webhookType: WebhookType, idField: String) on FIELD_DEFINITION
@@ -1417,17 +1421,17 @@ type Mutation {
 	**Examples**
 	- [add api definition to bundle](examples/add-api-definition-to-bundle/add-api-definition-to-bundle.graphql)
 	"""
-	addAPIDefinitionToBundle(bundleID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToBundle")
+	addAPIDefinitionToBundle(bundleID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToBundle") @appMetadataValidation
 	"""
 	**Examples**
 	- [update api definition](examples/update-api-definition/update-api-definition.graphql)
 	"""
-	updateAPIDefinition(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPIDefinition")
+	updateAPIDefinition(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPIDefinition") @appMetadataValidation
 	"""
 	**Examples**
 	- [delete api definition](examples/delete-api-definition/delete-api-definition.graphql)
 	"""
-	deleteAPIDefinition(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPIDefinition")
+	deleteAPIDefinition(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPIDefinition") @appMetadataValidation
 	"""
 	**Examples**
 	- [refetch api spec](examples/refetch-api-spec/refetch-api-spec.graphql)
@@ -1447,17 +1451,17 @@ type Mutation {
 	**Examples**
 	- [add event definition to bundle](examples/add-event-definition-to-bundle/add-event-definition-to-bundle.graphql)
 	"""
-	addEventDefinitionToBundle(bundleID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToBundle")
+	addEventDefinitionToBundle(bundleID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToBundle") @appMetadataValidation
 	"""
 	**Examples**
 	- [update event definition](examples/update-event-definition/update-event-definition.graphql)
 	"""
-	updateEventDefinition(id: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.updateEventDefinition")
+	updateEventDefinition(id: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.updateEventDefinition") @appMetadataValidation
 	"""
 	**Examples**
 	- [delete event definition](examples/delete-event-definition/delete-event-definition.graphql)
 	"""
-	deleteEventDefinition(id: ID!): EventDefinition! @hasScopes(path: "graphql.mutation.deleteEventDefinition")
+	deleteEventDefinition(id: ID!): EventDefinition! @hasScopes(path: "graphql.mutation.deleteEventDefinition") @appMetadataValidation
 	refetchEventDefinitionSpec(eventID: ID!): EventSpec! @hasScopes(path: "graphql.mutation.refetchEventDefinitionSpec")
 	"""
 	**Examples**
@@ -1559,17 +1563,17 @@ type Mutation {
 	**Examples**
 	- [add bundle](examples/add-bundle/add-bundle.graphql)
 	"""
-	addBundle(applicationID: ID!, in: BundleCreateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.addBundle")
+	addBundle(applicationID: ID!, in: BundleCreateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.addBundle") @appMetadataValidation
 	"""
 	**Examples**
 	- [update bundle](examples/update-bundle/update-bundle.graphql)
 	"""
-	updateBundle(id: ID!, in: BundleUpdateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.updateBundle")
+	updateBundle(id: ID!, in: BundleUpdateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.updateBundle") @appMetadataValidation
 	"""
 	**Examples**
 	- [delete bundle](examples/delete-bundle/delete-bundle.graphql)
 	"""
-	deleteBundle(id: ID!): Bundle! @hasScopes(path: "graphql.mutation.deleteBundle")
+	deleteBundle(id: ID!): Bundle! @hasScopes(path: "graphql.mutation.deleteBundle") @appMetadataValidation
 	"""
 	**Examples**
 	- [create automatic scenario assignment](examples/create-automatic-scenario-assignment/create-automatic-scenario-assignment.graphql)

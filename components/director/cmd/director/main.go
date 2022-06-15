@@ -251,11 +251,12 @@ func main() {
 	gqlCfg := graphql.Config{
 		Resolvers: rootResolver,
 		Directives: graphql.DirectiveRoot{
-			Async:       getAsyncDirective(ctx, cfg, transact, appRepo),
-			HasScenario: scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
-			HasScopes:   scope.NewDirective(cfgProvider, &scope.HasScopesErrorProvider{}).VerifyScopes,
-			Sanitize:    scope.NewDirective(cfgProvider, &scope.SanitizeErrorProvider{}).VerifyScopes,
-			Validate:    inputvalidation.NewDirective().Validate,
+			Async:                 getAsyncDirective(ctx, cfg, transact, appRepo),
+			HasScenario:           scenario.NewDirective(transact, label.NewRepository(label.NewConverter()), bundleRepo(), bundleInstanceAuthRepo()).HasScenario,
+			HasScopes:             scope.NewDirective(cfgProvider, &scope.HasScopesErrorProvider{}).VerifyScopes,
+			Sanitize:              scope.NewDirective(cfgProvider, &scope.SanitizeErrorProvider{}).VerifyScopes,
+			AppMetadataValidation: appmetadatavalidation.NewDirective(transact, tenantSvc(), labelSvc()).Validate,
+			Validate:              inputvalidation.NewDirective().Validate,
 		},
 	}
 
@@ -278,9 +279,9 @@ func main() {
 
 	packageToBundlesMiddleware := packagetobundles.NewHandler(transact)
 
-	systemsMiddleware := appmetadatavalidation.NewHandler(transact, tenantSvc(), labelSvc())
-
 	statusMiddleware := statusupdate.New(transact, statusupdate.NewRepository())
+
+	tntHeaderMiddleware := appmetadatavalidation.NewHandler()
 
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
@@ -292,7 +293,7 @@ func main() {
 	gqlAPIRouter.Use(authMiddleware.Handler())
 	gqlAPIRouter.Use(packageToBundlesMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
-	gqlAPIRouter.Use(systemsMiddleware.Handler())
+	gqlAPIRouter.Use(tntHeaderMiddleware.Handler())
 	gqlAPIRouter.Use(dataloader.HandlerBundle(rootResolver.BundlesDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerAPIDef(rootResolver.APIDefinitionsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerEventDef(rootResolver.EventDefinitionsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
@@ -301,6 +302,8 @@ func main() {
 	gqlAPIRouter.Use(dataloader.HandlerFetchRequestEventDef(rootResolver.FetchRequestEventDefDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerFetchRequestDocument(rootResolver.FetchRequestDocumentDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerRuntimeContext(rootResolver.RuntimeContextsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
+
+	//gqlAPIRouter.Use(systemsMiddleware.Handler())
 
 	operationMiddleware := operation.NewMiddleware(cfg.AppURL + cfg.LastOperationPath)
 
