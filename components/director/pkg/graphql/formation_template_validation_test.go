@@ -49,7 +49,7 @@ func TestFormationTemplateInput_ValidateName(t *testing.T) {
 	}
 }
 
-/*func TestFormationTemplateInput_ValidateMissingMessages(t *testing.T) {
+func TestFormationTemplateInput_ValidateRuntimeDisplayName(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         string
@@ -73,23 +73,10 @@ func TestFormationTemplateInput_ValidateName(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run("Warning Message "+testCase.Name, func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			formationTemplateInput := fixValidFormationTemplateInput()
-			formationTemplateInput.MissingArtifactWarningMessage = testCase.Value
-			// WHEN
-			err := formationTemplateInput.Validate()
-			// THEN
-			if testCase.ExpectedValid {
-				require.NoError(t, err)
-			} else {
-				require.Error(t, err)
-			}
-		})
-		t.Run("Info Message "+testCase.Name, func(t *testing.T) {
-			//GIVEN
-			formationTemplateInput := fixValidFormationTemplateInput()
-			formationTemplateInput.MissingArtifactInfoMessage = testCase.Value
+			formationTemplateInput.RuntimeTypeDisplayName = testCase.Value
 			// WHEN
 			err := formationTemplateInput.Validate()
 			// THEN
@@ -102,7 +89,57 @@ func TestFormationTemplateInput_ValidateName(t *testing.T) {
 	}
 }
 
-func TestFormationTemplateInput_ValidateTypes(t *testing.T) {
+func TestFormationTemplateInput_ValidateRuntimeArtifactKind(t *testing.T) {
+	testCases := []struct {
+		Name          string
+		Value         graphql.ArtifactType
+		ExpectedValid bool
+	}{
+		{
+			Name:          "Success - Service Instance",
+			Value:         graphql.ArtifactTypeServiceInstance,
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Success - Subscription",
+			Value:         graphql.ArtifactTypeSubscription,
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Success - Environment Instance",
+			Value:         graphql.ArtifactTypeEnvironmentInstance,
+			ExpectedValid: true,
+		},
+		{
+			Name:          "Invalid type",
+			Value:         graphql.ArtifactType("Invalid type"),
+			ExpectedValid: false,
+		},
+		{
+			Name:          "Invalid",
+			Value:         "",
+			ExpectedValid: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			formationTemplateInput := fixValidFormationTemplateInput()
+			formationTemplateInput.RuntimeArtifactKind = testCase.Value
+			// WHEN
+			err := formationTemplateInput.Validate()
+			// THEN
+			if testCase.ExpectedValid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestFormationTemplateInput_ValidateApplicationTypes(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         []string
@@ -131,7 +168,7 @@ func TestFormationTemplateInput_ValidateTypes(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		t.Run("Application Types  "+testCase.Name, func(t *testing.T) {
+		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
 			formationTemplateInput := fixValidFormationTemplateInput()
 			formationTemplateInput.ApplicationTypes = testCase.Value
@@ -144,22 +181,8 @@ func TestFormationTemplateInput_ValidateTypes(t *testing.T) {
 				require.Error(t, err)
 			}
 		})
-		t.Run("Runtime Types "+testCase.Name, func(t *testing.T) {
-			//GIVEN
-			formationTemplateInput := fixValidFormationTemplateInput()
-			formationTemplateInput.RuntimeTypes = testCase.Value
-			// WHEN
-			err := formationTemplateInput.Validate()
-			// THEN
-			if testCase.ExpectedValid {
-				require.NoError(t, err)
-			} else {
-				require.Error(t, err)
-			}
-		})
 	}
 }
-*/
 
 func fixValidFormationTemplateInput() graphql.FormationTemplateInput {
 	return graphql.FormationTemplateInput{
