@@ -54,14 +54,6 @@ spec:
           - name: APP_EXTERNAL_CLIENT_KEY_KEY
             value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
       restartPolicy: Never
-      {{ if .Values.global.isLocalEnv }}
-      hostAliases:
-        - ip: {{ .Values.global.minikubeIP }}
-          hostnames:
-            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
-      {{ end }}
 ---
 apiVersion: v1
 kind: ServiceAccount

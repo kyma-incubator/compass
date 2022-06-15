@@ -19,12 +19,6 @@ spec:
                 app: {{ .Chart.Name }}
                 release: {{ .Release.Name }}
         spec:
-            {{ if .Values.global.isLocalEnv }}
-            hostAliases:
-              - ip: {{ .Values.global.minikubeIP }}
-                hostnames:
-                  - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            {{ end }}
             containers:
             - name: {{ .Chart.Name }}
               image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.external_services_mock.dir }}compass-external-services-mock:{{ .Values.global.images.external_services_mock.version }}
