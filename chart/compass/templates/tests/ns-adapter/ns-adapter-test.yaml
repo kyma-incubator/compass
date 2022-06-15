@@ -42,8 +42,6 @@ spec:
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
             - name: ADAPTER_URL
               value: "https://{{ .Values.global.nsAdapter.e2eTests.gatewayHost }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.nsAdapter.path }}"
-            - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
