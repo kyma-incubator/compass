@@ -19,12 +19,6 @@ spec:
       labels:
         app: {{ .Chart.Name }}-pairing-adapter-tests-app
     spec:
-      {{ if .Values.global.isLocalEnv }}
-      hostAliases:
-        - ip: {{ .Values.global.minikubeIP }}
-          hostnames:
-            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
-      {{ end }}
       serviceAccountName: {{ $.Chart.Name }}-e2e-pairing-adapter
       containers:
         {{if eq .Values.global.database.embedded.enabled false}}
