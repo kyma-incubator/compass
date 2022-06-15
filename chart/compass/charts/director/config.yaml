@@ -22,6 +22,8 @@ graphql:
     automaticScenarioAssignments: ["automatic_scenario_assignment:read"]
     automaticScenarioAssignmentForScenario: ["automatic_scenario_assignment:read"]
     automaticScenarioAssignmentsForSelector: ["automatic_scenario_assignment:read"]
+    formationTemplate: [ "formation_template:read" ]
+    formationTemplates: [ "formation_template:read" ]
     systemAuth: ["ory_internal"]
     systemAuthByToken: ["ory_internal"]
 
@@ -95,6 +97,9 @@ graphql:
     unsubscribeTenant: ["tenant_subscription:write"]
     updateSystemAuth: [ "ory_internal" ]
     invalidateSystemAuthOneTimeToken: [ "ory_internal" ]
+    createFormationTemplate: [ "formation_template:write" ]
+    deleteFormationTemplate: [ "formation_template:write" ]
+    updateFormationTemplate: [ "formation_template:write" ]
 
   field:
     fetch_request:
