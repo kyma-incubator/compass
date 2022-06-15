@@ -3,7 +3,7 @@ mutation {
   result: updateFormationTemplate(
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
     in: {
-      name: "new-name-for-formation-template"
+      name: "updated-formation-template-name"
       applicationTypes: ["app-type-3", "app-type-4"]
       runtimeType: "runtime-type-2"
       runtimeTypeDisplayName: "test-display-name-2"

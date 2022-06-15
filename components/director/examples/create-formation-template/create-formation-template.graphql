@@ -2,7 +2,7 @@
 mutation {
   result: createFormationTemplate(
     in: {
-      name: "test-formation-template"
+      name: "create-formation-template-name"
       applicationTypes: ["app-type-1", "app-type-2"]
       runtimeType: "runtime-type"
       runtimeTypeDisplayName: "test-display-name"
