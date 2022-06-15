@@ -66,8 +66,6 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
-            - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: BASIC_USERNAME
               valueFrom:
                 secretKeyRef:
