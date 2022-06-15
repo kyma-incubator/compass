@@ -20,13 +20,6 @@ spec:
       labels:
         app: {{ .Chart.Name }}-system-fetcher-tests-app
     spec:
-      {{ if .Values.global.isLocalEnv }}
-      hostAliases:
-        - ip: {{ .Values.global.minikubeIP }}
-          hostnames:
-            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
-      {{ end }}
       serviceAccountName: {{ .Chart.Name }}-e2e-system-fetcher
       containers:
         - name: {{ .Values.global.systemFetcher.containerName }}

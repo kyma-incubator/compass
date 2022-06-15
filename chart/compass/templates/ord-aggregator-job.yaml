@@ -24,13 +24,6 @@ spec:
           labels:
             cronjob: {{ .Values.global.ordAggregator.name }}
         spec:
-          {{ if .Values.global.isLocalEnv }}
-          hostAliases:
-            - ip: {{ .Values.global.minikubeIP }}
-              hostnames:
-                - "{{ .Values.global.externalServicesMock.ordCertSecuredHost }}.{{ .Values.global.ingress.domainName }}"
-                - "{{ .Values.global.externalServicesMock.ordGlobalCertSecuredHost }}.{{ .Values.global.ingress.domainName }}"
-          {{ end }}
           serviceAccountName: {{ $.Chart.Name }}-ord-aggregator
           containers:
             - name: aggregator
