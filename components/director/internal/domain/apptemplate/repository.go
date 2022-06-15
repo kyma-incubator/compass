@@ -15,7 +15,7 @@ import (
 const tableName string = `public.app_templates`
 
 var (
-	updatableTableColumns = []string{"name", "description", "application_input", "placeholders", "access_level"}
+	updatableTableColumns = []string{"name", "description", "application_namespace", "application_input", "placeholders", "access_level"}
 	idTableColumns        = []string{"id"}
 	tableColumns          = append(idTableColumns, updatableTableColumns...)
 )

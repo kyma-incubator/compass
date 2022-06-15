@@ -120,10 +120,11 @@ type ApplicationTemplateInput struct {
 	Webhooks    []*WebhookInput `json:"webhooks"`
 	Description *string         `json:"description"`
 	// **Validation:** label key is alphanumeric with underscore
-	Labels           Labels                         `json:"labels"`
-	ApplicationInput *ApplicationRegisterInput      `json:"applicationInput"`
-	Placeholders     []*PlaceholderDefinitionInput  `json:"placeholders"`
-	AccessLevel      ApplicationTemplateAccessLevel `json:"accessLevel"`
+	Labels               Labels                         `json:"labels"`
+	ApplicationInput     *ApplicationRegisterInput      `json:"applicationInput"`
+	Placeholders         []*PlaceholderDefinitionInput  `json:"placeholders"`
+	AccessLevel          ApplicationTemplateAccessLevel `json:"accessLevel"`
+	ApplicationNamespace *string                        `json:"applicationNamespace"`
 }
 
 type ApplicationTemplatePage struct {
@@ -138,10 +139,11 @@ type ApplicationTemplateUpdateInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
 	// **Validation:** max=2000
-	Description      *string                        `json:"description"`
-	ApplicationInput *ApplicationRegisterInput      `json:"applicationInput"`
-	Placeholders     []*PlaceholderDefinitionInput  `json:"placeholders"`
-	AccessLevel      ApplicationTemplateAccessLevel `json:"accessLevel"`
+	Description          *string                        `json:"description"`
+	ApplicationInput     *ApplicationRegisterInput      `json:"applicationInput"`
+	Placeholders         []*PlaceholderDefinitionInput  `json:"placeholders"`
+	AccessLevel          ApplicationTemplateAccessLevel `json:"accessLevel"`
+	ApplicationNamespace *string                        `json:"applicationNamespace"`
 }
 
 type ApplicationUpdateInput struct {
