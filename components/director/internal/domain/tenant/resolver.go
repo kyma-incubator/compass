@@ -38,23 +38,17 @@ type BusinessTenantMappingConverter interface {
 	ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant
 }
 
-// TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
-//go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
-type TenantFetcher interface {
-	FetchOnDemand(tenant, parentTenant string) error
-}
-
 // Resolver is the resolver responsible for tenant-related GraphQL requests.
 type Resolver struct {
 	transact persistence.Transactioner
 
 	srv     BusinessTenantMappingService
 	conv    BusinessTenantMappingConverter
-	fetcher TenantFetcher
+	fetcher Fetcher
 }
 
 // NewResolver returns the GraphQL resolver for tenants.
-func NewResolver(transact persistence.Transactioner, srv BusinessTenantMappingService, conv BusinessTenantMappingConverter, fetcher TenantFetcher) *Resolver {
+func NewResolver(transact persistence.Transactioner, srv BusinessTenantMappingService, conv BusinessTenantMappingConverter, fetcher Fetcher) *Resolver {
 	return &Resolver{
 		transact: transact,
 		srv:      srv,

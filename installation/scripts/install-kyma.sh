@@ -8,8 +8,11 @@ LOCAL_ENV=${LOCAL_ENV:-false}
 
 CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
+OVERRIDES_DIR="${CURRENT_DIR}/../resources/kyma"
+DEFAULT_JWKS_URL="http://ory-hydra-public.kyma-system.svc.cluster.local:4444/.well-known/jwks.json"
 source $SCRIPTS_DIR/utils.sh
-useMinikube
+
+usek3d
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -43,30 +46,40 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 
-CERT=$(<$HOME/.minikube/ca.crt)
+CERT=$(docker exec k3d-kyma-server-0 cat /var/lib/rancher/k3s/server/tls/server-ca.crt)
 CERT="${CERT//$'\n'/\\\\n}"
 
-INSTALLER_CR_PATH="${ROOT_PATH}"/installation/resources/kyma/installer-cr-kyma-minimal.yaml
-OVERRIDES_KYMA_MINIMAL_CFG_LOCAL="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-kyma-minimal-config-local.yaml
+VALUES_FILE="${ROOT_PATH}"/chart/compass/values.yaml
+IDP_HOST=$(yq ".global.cockpit.auth.idpHost" $VALUES_FILE)
+AUTH_PATH=$(yq ".global.cockpit.auth.path" $VALUES_FILE)
 
-MINIMAL_OVERRIDES_FILENAME=override-local-minimal.yaml
-MINIMAL_OVERRIDES_CONTENT=$(sed "s~\"__CERT__\"~\"$CERT\"~" "${OVERRIDES_KYMA_MINIMAL_CFG_LOCAL}")
+if [ -z "$IDP_HOST" ]; then
+  JWKS_URL=$DEFAULT_JWKS_URL # in case no oidc args were passed nor config file
+else
+  JWKS_URL=$IDP_HOST$AUTH_PATH
+fi
 
->"${MINIMAL_OVERRIDES_FILENAME}" cat <<-EOF
+KYMA_COMPONENTS_MINIMAL="${ROOT_PATH}"/installation/resources/kyma/kyma-components-minimal.yaml
+KYMA_OVERRIDES_MINIMAL="${ROOT_PATH}"/installation/resources/kyma/kyma-overrides-minimal.yaml
+
+MINIMAL_OVERRIDES_TEMP=overrides-minimal.yaml
+MINIMAL_OVERRIDES_CONTENT=$(sed -e "s~__CERT__~$CERT~" -e "s~__URL__~$JWKS_URL~" "${KYMA_OVERRIDES_MINIMAL}")
+
+>"${MINIMAL_OVERRIDES_TEMP}" cat <<-EOF
 $MINIMAL_OVERRIDES_CONTENT
 EOF
 
-INSTALLER_CR_FULL_PATH="${ROOT_PATH}"/installation/resources/kyma/installer-cr-kyma.yaml
-OVERRIDES_KYMA_FULL_CFG_LOCAL="${ROOT_PATH}"/installation/resources/kyma/installer-overrides-kyma-full-config-local.yaml
+KYMA_COMPONENTS_FULL="${ROOT_PATH}"/installation/resources/kyma/kyma-components-full.yaml
+KYMA_OVERRIDES_FULL="${ROOT_PATH}"/installation/resources/kyma/kyma-overrides-full.yaml
 
-FULL_OVERRIDES_FILENAME=override-local-full.yaml
-FULL_OVERRIDES_CONTENT=$(sed "s~\"__CERT__\"~\"$CERT\"~" "${OVERRIDES_KYMA_FULL_CFG_LOCAL}")
+FULL_OVERRIDES_TEMP=overrides-full.yaml
+FULL_OVERRIDES_CONTENT=$(sed -e "s~__CERT__~$CERT~" -e "s~__URL__~$JWKS_URL~" "${KYMA_OVERRIDES_FULL}")
 
->"${FULL_OVERRIDES_FILENAME}" cat <<-EOF
+>"${FULL_OVERRIDES_TEMP}" cat <<-EOF
 $FULL_OVERRIDES_CONTENT
 EOF
 
-trap "rm -f ${MINIMAL_OVERRIDES_FILENAME} ${FULL_OVERRIDES_FILENAME}" EXIT INT TERM
+trap "rm -f ${MINIMAL_OVERRIDES_TEMP} ${FULL_OVERRIDES_TEMP}" EXIT INT TERM
 
 if [[ $KYMA_RELEASE == *PR-* ]]; then
   KYMA_TAG=$(curl -L https://storage.googleapis.com/kyma-development-artifacts/${KYMA_RELEASE}/kyma-installer-cluster.yaml | grep 'image: eu.gcr.io/kyma-project/kyma-installer:'| sed 's+image: eu.gcr.io/kyma-project/kyma-installer:++g' | tr -d '[:space:]')
@@ -80,33 +93,12 @@ else
   KYMA_SOURCE="${KYMA_RELEASE}"
 fi
 
-echo "Using Kyma source '${KYMA_SOURCE}'..."
+echo "Using Kyma source ${KYMA_SOURCE}"
 
-# Temporary hack. Should be removed when we start using Kyma 2.0
-kubectl create namespace kyma-system
-kubectl label namespace kyma-system name=kyma-system
-kubectl create secret -n kyma-system generic admin-user \
-  --from-literal email="Dex not installed. Admin user is missing." \
-  --from-literal password="Dex not installed. Admin password is missing." \
-
-echo "Installing Kyma..."
-set -o xtrace
 if [[ $KYMA_INSTALLATION == *full* ]]; then
   echo "Installing full Kyma"
-  kyma install -c $INSTALLER_CR_FULL_PATH -o $FULL_OVERRIDES_FILENAME --source $KYMA_SOURCE
+  kyma deploy --components-file $KYMA_COMPONENTS_FULL --values-file $FULL_OVERRIDES_TEMP --source $KYMA_SOURCE
 else
   echo "Installing minimal Kyma"
-  kyma install -c $INSTALLER_CR_PATH -o $MINIMAL_OVERRIDES_FILENAME --source $KYMA_SOURCE
-fi
-set +o xtrace
-
-# Kyma CLI uses the internal IP for the /etc/hosts override when docker driver is used. However on the host machine this should be localhost
-USED_DRIVER=$(minikube profile list -o json | jq -r ".valid[0].Config.Driver")
-if [[ $USED_DRIVER == "docker" ]]; then
-  MINIKUBE_IP=$(minikube ssh egrep "minikube$" /etc/hosts | cut -f1)
-  if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines, reference issue: https://stackoverflow.com/questions/4247068/sed-command-with-i-option-failing-on-mac-but-works-on-linux
-    sudo sed -i "" "s/$MINIKUBE_IP/127.0.0.1/g" /etc/hosts
-  else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
-    sudo sed -i "s/$MINIKUBE_IP/127.0.0.1/g" /etc/hosts
-  fi
+  kyma deploy --components-file $KYMA_COMPONENTS_MINIMAL  --values-file $MINIMAL_OVERRIDES_TEMP --source $KYMA_SOURCE
 fi

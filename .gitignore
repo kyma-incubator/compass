@@ -57,6 +57,7 @@ components/schema-migrator/seeds/dump.sql
 mk-ca.crt
 override-local-minimal.yaml
 override-local-full.yaml
+mergedOverrides.yaml
 
 # Changelog temporary directory
 .changelog/
