@@ -77,7 +77,6 @@ function patchDeploymentsToInjectSidecar() {
     kiali-server
     monitoring-kube-state-metrics
     monitoring-operator
-    api-gateway
   )
 
   resource="deployment"
@@ -305,19 +304,24 @@ EOF
 
 function patchKymaServiceMonitorsForMTLS() {
   kymaSvcMonitors=(
+    istio-component-monitor
     kiali
     logging-fluent-bit
     logging-loki
-    ory-oathkeeper-maester
-    ory-hydra-maester
-    tracing-jaeger-operator
-    tracing-jaeger
-    monitoring-grafana
     monitoring-alertmanager
-    monitoring-operator 
-    monitoring-kube-state-metrics 
-    api-gateway
-    monitoring-prometheus-pushgateway
+    monitoring-apiserver
+    monitoring-grafana
+    monitoring-kube-state-metrics
+    monitoring-kubelet
+    monitoring-node-exporter
+    monitoring-operator
+    monitoring-prometheus
+    monitoring-prometheus-istio-server-server
+    ory-hydra-maester
+    ory-oathkeeper-maester
+    tracing-jaeger
+    tracing-jaeger-operator
+    tracing-metrics
   )
 
   crd="servicemonitors.monitoring.coreos.com"
@@ -329,7 +333,6 @@ function patchKymaServiceMonitorsForMTLS() {
       certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
       keyFile: /etc/prometheus/secrets/istio.default/key.pem
       insecureSkipVerify: true
-
 EOF
   )
 
@@ -369,7 +372,6 @@ function removeKymaPeerAuthsForPrometheus() {
     ory-hydra-maester-metrics
     tracing-jaeger-operator-metrics
     tracing-jaeger-metrics
-    monitoring-prometheus-pushgateway
   )
 
   for pa in "${allPAs[@]}"; do

@@ -1,0 +1,142 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    app: monitoring
+  name: monitoring-custom-mps-rules
+  namespace: kyma-system
+spec:
+  groups:
+    - name: custom-mps-rules
+      rules:
+        - alert: CompassTenantFetcherCIS1JobFailure
+          annotations:
+            description: No successful compass-tenant-fetcher-cis1 job finish since 15
+              minutes
+          expr: absent(topk(3, kube_job_status_start_time{job="kube-state-metrics", namespace="compass-system",
+            job_name=~"compass-tenant-fetcher-cis1.*"}) * ON(job_name) GROUP_RIGHT() kube_job_complete{condition="true"})
+          for: 15m
+          labels:
+            severity: critical
+        - alert: CompassTenantFetcherCIS2JobFailure
+          annotations:
+            description: No successful compass-tenant-fetcher-cis2 job finish since 15
+              minutes
+          expr: absent(topk(3, kube_job_status_start_time{job="kube-state-metrics", namespace="compass-system",
+            job_name=~"compass-tenant-fetcher-cis2.*"}) * ON(job_name) GROUP_RIGHT() kube_job_complete{condition="true"})
+          for: 15m
+          labels:
+            severity: critical
+        - alert: IstioRequests-WorkloadFailures-5xx
+          annotations:
+            description: From source_workload={{`{{`}} $labels.source_workload {{`}}`}} to destination_workload={{`{{`}}
+              $labels.destination_workload {{`}}`}} its 5xx failure rate ({{`{{`}} $value | humanizePercentage
+              {{`}}`}} > 30%) in the past 5 minutes.
+          expr: (sum by (source_workload,destination_workload)(rate(istio_requests_total{response_code=~"5.*"}[5m]))
+            / sum by (source_workload,destination_workload)(rate(istio_requests_total[5m])))
+            > 0.3
+          for: 10m
+          labels:
+            severity: warning
+        - alert: IstioRequests-TotalCountFailures-5xx
+          annotations:
+            description: Total failure account of requests is ({{`{{`}} $value {{`}}`}} > 30) which
+              came from source_workload={{`{{`}} $labels.source_workload {{`}}`}} to destination_workload={{`{{`}}
+              $labels.destination_workload{{`}}`}} in the past 5 minutes.
+          expr: (sum by (source_workload,destination_workload)(increase(istio_requests_total{response_code=~"5.*"}[5m])))
+            > 30
+          for: 10m
+          labels:
+            severity: warning
+        - alert: CompassOperationsControllerIncreaseOfReconciliationErrors
+          annotations:
+            description: Reconciliation errors percentage is ({{`{{`}} $value | humanizePercentage
+              {{`}}`}} > 30%) in the past 5 minutes.
+          expr: (rate(controller_runtime_reconcile_errors_total{controller="operation"}[2m])/rate(controller_runtime_reconcile_errors_total{controller="operation"}[2m]
+            offset 1h))>1.3
+          for: 5m
+          labels:
+            severity: critical
+        - alert: CompassOperationsControllerIncreaseOfReconciliationQueueLength
+          annotations:
+            description: Reconciliation queue length increase is ({{`{{`}} $value | humanizePercentage
+              {{`}}`}} > 30%) in the past 5 minutes.
+          expr: workqueue_depth{name="operation"} > 4
+          for: 5m
+          labels:
+            severity: critical
+        - alert: CompassOperationsControllerHighCPUUsage
+          annotations:
+            description: High CPU usage (> 80%)
+          expr: rate(process_cpu_seconds_total{service="compass-operations-controller-metrics"}[5m])
+            > 0.08
+          for: 5m
+          labels:
+            severity: warning
+        - alert: CompassOperationsControllerHighMemoryUsage
+          annotations:
+            description: High memory usage (> 80%)
+          expr: go_memstats_heap_alloc_bytes{service="compass-operations-controller-metrics"}
+            > 24.0e+06
+          for: 5m
+          labels:
+            severity: warning
+        - alert: CompassOperationsControllerHighFileDescriptorUsage
+          annotations:
+            description: High File Descriptor usage (> 80%)
+          expr: process_open_fds{service="compass-operations-controller-metrics"} > 838860
+          for: 5m
+          labels:
+            severity: warning
+        - alert: CompassOperationsControllerPodCrashes
+          annotations:
+            description: Container {{`{{`}} $labels.container {{`}}`}} in pod {{`{{`}} $labels.namespace
+              {{`}}`}}/{{`{{`}} $labels.pod {{`}}`}} has been restarted {{`{{`}} $value {{`}}`}} times in the last 5
+              minutes.
+          expr: rate(kube_pod_container_status_restarts_total{pod=~"compass-operations-controller-manager.*"}[5m])
+            * 60 * 5 > 0
+          for: 5m
+          labels:
+            severity: critical
+        - alert: CompassOperationsControllerIncreaceOfOperationsLatency
+          annotations:
+            description: Operations with type {{`{{`}} $labels.type {{`}}`}} starting to take {{`{{`}} $value
+              | humanizePercentage {{`}}`}} > 30% longer in the last 5 minutes.
+          expr: ((rate(compass_operations_controller_operation_duration_seconds_sum[5m])
+            / rate(compass_operations_controller_operation_duration_seconds_count[5m]))
+            / (rate(compass_operations_controller_operation_duration_seconds_sum[5m] offset
+            1h) / rate(compass_operations_controller_operation_duration_seconds_count[5m]
+            offset 1h))) > 1.3
+          for: 5m
+          labels:
+            severity: critical
+        - alert: OperationGotErrorCondition
+          annotations:
+            description: Operation name={{`{{`}} $labels.name {{`}}`}} with correlationID={{`{{`}} $labels.correlation_id
+              {{`}}`}}, operationType={{`{{`}} $labels.type {{`}}`}}, category={{`{{`}} $labels.category {{`}}`}}, requestObject={{`{{`}}
+              $labels.request_object {{`}}`}} failed with error={{`{{`}} $labels.error {{`}}`}}
+          expr: (compass_operations_controller_failed_operations_count == 1) unless (compass_operations_controller_failed_operations_count
+            offset 1m == 1 )
+          for: 0m
+          labels:
+            severity: critical
+        - alert: OperationInProgressNearTimeout
+          annotations:
+            description: Operation with type={{`{{`}} $labels.type {{`}}`}} has been InProgress near
+              reconciliation timeout.
+          expr: (compass_operations_controller_operations_near_reconciliation_timeout_count
+            >= 1) unless (compass_operations_controller_operations_near_reconciliation_timeout_count
+            offset 90s == compass_operations_controller_operations_near_reconciliation_timeout_count)
+          for: 0m
+          labels:
+            severity: warning
+        - alert: IstioRequests-RateLimited-429
+          annotations:
+            description: From source_workload={{`{{`}} $labels.source_workload {{`}}`}} to destination_workload={{`{{`}}
+              $labels.destination_workload {{`}}`}} there is 429 (rate-limited) failure rate
+              ({{`{{`}} $value | humanizePercentage {{`}}`}} > 30%) in the past 5 minutes.
+          expr: (sum by (source_workload,destination_workload)(rate(istio_requests_total{source_workload!="unknown",
+            response_code=~"429"}[5m])) / sum by (source_workload,destination_workload)(rate(istio_requests_total{source_workload!="unknown"}[5m])))
+            > 0.3
+          labels:
+            severity: warning
