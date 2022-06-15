@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
+
 	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
@@ -1633,4 +1635,58 @@ func TestMergeApplications(t *testing.T) {
 
 	// Source application is deleted
 	assert.Empty(t, srcApp.BaseEntity)
+}
+
+func TestApplicationForTenant(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	// Build graphql director client configured with certificate
+	externalCertProviderConfig := buildExternalCertProviderConfig()
+
+	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig)
+	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
+	tenantId := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
+
+	name := "template-with-external-cert-name"
+
+	t.Log("Create application template")
+	appTemplateInput := fixAppTemplateInput(name)
+	appTemplateInput.Placeholders = nil
+	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenantId, appTemplateInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertSecuredClient, tenantId, &appTemplate)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, appTemplate.ID)
+
+	// Register application from app template
+	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: name, Values: []*graphql.TemplateValueInput{}}
+	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
+	require.NoError(t, err)
+	createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
+	outputApp := graphql.ApplicationExt{}
+
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, tenantId, createAppFromTmplRequest, &outputApp)
+	defer fixtures.UnregisterApplication(t, ctx, directorCertSecuredClient, tenantId, outputApp.ID)
+
+	t.Run("Success", func(t *testing.T) {
+		//WHEN
+		app := fixtures.GetApplicationForTenant(t, ctx, directorCertSecuredClient, tenantId)
+
+		//THEN
+		require.NotEmpty(t, app)
+		require.Equal(t, outputApp.ID, app.ID)
+	})
+
+	t.Run("Error when using different header", func(t *testing.T) {
+		//WHEN
+		req := fixtures.FixGetApplicationForTenantRequest()
+		saveExample(t, req.Query(), "get application fo tenant")
+
+		app := graphql.ApplicationExt{}
+		err := testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), req, &app)
+
+		//THEN
+		require.Error(t, err)
+		require.Empty(t, app)
+	})
 }

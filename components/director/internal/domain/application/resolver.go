@@ -2,7 +2,12 @@ package application
 
 import (
 	"context"
+	"fmt"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
@@ -35,6 +40,7 @@ type ApplicationService interface {
 	Get(ctx context.Context, id string) (*model.Application, error)
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
+	ListAll(ctx context.Context) ([]*model.Application, error)
 	ListByRuntimeID(ctx context.Context, runtimeUUID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error)
 	SetLabel(ctx context.Context, label *model.LabelInput) error
 	GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
@@ -124,12 +130,20 @@ type OneTimeTokenService interface {
 	IsTokenValid(systemAuth *pkgmodel.SystemAuth) (bool, error)
 }
 
+// ApplicationTemplateService missing godoc
+//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationTemplateService interface {
+	GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)
+}
+
 // Resolver missing godoc
 type Resolver struct {
 	transact persistence.Transactioner
 
 	appSvc       ApplicationService
 	appConverter ApplicationConverter
+
+	appTemplateSvc ApplicationTemplateService
 
 	webhookSvc WebhookService
 	oAuth20Svc OAuth20Service
@@ -153,7 +167,8 @@ func NewResolver(transact persistence.Transactioner,
 	sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService,
 	bndlSvc BundleService,
-	bndlConverter BundleConverter) *Resolver {
+	bndlConverter BundleConverter,
+	appTemplateSvc ApplicationTemplateService) *Resolver {
 	return &Resolver{
 		transact:         transact,
 		appSvc:           svc,
@@ -166,6 +181,7 @@ func NewResolver(transact persistence.Transactioner,
 		eventingSvc:      eventingSvc,
 		bndlSvc:          bndlSvc,
 		bndlConv:         bndlConverter,
+		appTemplateSvc:   appTemplateSvc,
 	}
 }
 
@@ -236,6 +252,62 @@ func (r *Resolver) Application(ctx context.Context, id string) (*graphql.Applica
 	}
 
 	return r.appConverter.ToGraphQL(app), nil
+}
+
+// ApplicationForTenant could be executed only in a certificate flow. It fetches model.ApplicationTemplate by label scenarioassignment.SubaccountIDKey
+// with value equal to the consumer ID. Lists all tenant header scoped []model.Application and finds the one created by the previously fetched App Template
+func (r *Resolver) ApplicationForTenant(ctx context.Context) (*graphql.Application, error) {
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if !consumerInfo.Flow.IsCertFlow() {
+		return nil, apperrors.NewInvalidOperationError("query is accessible only with а certificate authentication")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	filters := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(scenarioassignment.SubaccountIDKey, fmt.Sprintf("\"%s\"", consumerInfo.ConsumerID)),
+	}
+	appTemplate, err := r.appTemplateSvc.GetByFilters(ctx, filters)
+
+	if err != nil {
+		log.C(ctx).Infof("No app template found with filter %s = %q", scenarioassignment.SubaccountIDKey, consumerInfo.ConsumerID)
+		return nil, errors.Wrapf(err, "no app template found with filter %s = %q", scenarioassignment.SubaccountIDKey, consumerInfo.ConsumerID)
+	}
+
+	tntApplications, err := r.appSvc.ListAll(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing applications for tenant")
+	}
+
+	var foundApp *model.Application
+	for _, app := range tntApplications {
+		if str.PtrStrToStr(app.ApplicationTemplateID) == appTemplate.ID {
+			foundApp = app
+			break
+		}
+	}
+
+	if foundApp == nil {
+		log.C(ctx).Infof("No application found for template with ID %q", appTemplate.ID)
+		return nil, errors.Errorf("No application found for template with ID %q", appTemplate.ID)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.appConverter.ToGraphQL(foundApp), nil
 }
 
 // ApplicationsForRuntime missing godoc

@@ -195,7 +195,7 @@ func NewRootResolver(
 
 	return &RootResolver{
 		appNameNormalizer:  appNameNormalizer,
-		app:                application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter),
+		app:                application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, appTemplateSvc),
 		appTemplate:        apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, selfRegisterManager, uidSvc),
 		api:                api.NewResolver(transact, apiSvc, runtimeSvc, bundleSvc, bundleReferenceSvc, apiConverter, frConverter, specSvc, specConverter, appSvc),
 		eventAPI:           eventdef.NewResolver(transact, eventAPISvc, bundleSvc, bundleReferenceSvc, eventAPIConverter, frConverter, specSvc, specConverter),
@@ -357,6 +357,12 @@ func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.Labe
 // Application missing godoc
 func (r *queryResolver) Application(ctx context.Context, id string) (*graphql.Application, error) {
 	return r.app.Application(ctx, id)
+}
+
+// ApplicationForTenant could be executed only in a certificate flow. It fetches model.ApplicationTemplate by label scenarioassignment.SubaccountIDKey
+// with value equal to the consumer ID. Lists all tenant header scoped []model.Application and finds the one created by the previously fetched App Template
+func (r *queryResolver) ApplicationForTenant(ctx context.Context) (*graphql.Application, error) {
+	return r.app.ApplicationForTenant(ctx)
 }
 
 // ApplicationTemplates missing godoc
