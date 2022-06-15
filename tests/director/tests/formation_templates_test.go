@@ -17,7 +17,7 @@ func TestCreateFormationTemplate(t *testing.T) {
 	ctx := context.Background()
 
 	formationTemplateName := "create-formation-template-name"
-	formationTemplate := fixFormationTemplate(formationTemplateName)
+	formationTemplate := fixtures.FixFormationTemplate(formationTemplateName)
 
 	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTemplate)
 	require.NoError(t, err)
@@ -50,7 +50,7 @@ func TestDeleteFormationTemplate(t *testing.T) {
 	ctx := context.Background()
 
 	formationTemplateName := "delete-formation-template-name"
-	formationTemplate := fixFormationTemplate(formationTemplateName)
+	formationTemplate := fixtures.FixFormationTemplate(formationTemplateName)
 
 	createdFormationRequest := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplate)
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, createdFormationRequest.ID)
@@ -85,7 +85,7 @@ func TestUpdateFormationTemplate(t *testing.T) {
 	ctx := context.Background()
 
 	createdFormationTemplateName := "created-formation-template-name"
-	createdFormationTemplate := fixFormationTemplate(createdFormationTemplateName)
+	createdFormationTemplate := fixtures.FixFormationTemplate(createdFormationTemplateName)
 
 	var updatedFormationTemplateInput = graphql.FormationTemplateInput{
 		Name:                   "updated-formation-template-name",
@@ -127,7 +127,7 @@ func TestQueryFormationTemplate(t *testing.T) {
 	ctx := context.Background()
 
 	formationTemplateName := "query-formation-template-name"
-	formationTemplate := fixFormationTemplate(formationTemplateName)
+	formationTemplate := fixtures.FixFormationTemplate(formationTemplateName)
 
 	createdFormationRequest := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplate)
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, createdFormationRequest.ID)
@@ -156,7 +156,7 @@ func TestQueryFormationTemplates(t *testing.T) {
 	ctx := context.Background()
 
 	formationTemplateName := "delete-formation-template-name"
-	formationTemplate := fixFormationTemplate(formationTemplateName)
+	formationTemplate := fixtures.FixFormationTemplate(formationTemplateName)
 
 	secondFormationInput := graphql.FormationTemplateInput{
 		Name:                   "test-formation-template-2",
@@ -195,14 +195,4 @@ func TestQueryFormationTemplates(t *testing.T) {
 		createdFormationTemplate,
 		secondCreatedFormationTemplate,
 	})
-}
-
-func fixFormationTemplate(formationName string) graphql.FormationTemplateInput {
-	return graphql.FormationTemplateInput{
-		Name:                   formationName,
-		ApplicationTypes:       []string{"app-type-1", "app-type-2"},
-		RuntimeType:            "runtime-type",
-		RuntimeTypeDisplayName: "test-display-name",
-		RuntimeArtifactKind:    graphql.ArtifactTypeSubscription,
-	}
 }

@@ -18,11 +18,8 @@ const (
 )
 
 var (
-	applicationTypes = []string{"some-application-type"}
-)
-
-var (
 	nilModelEntity              *model.FormationTemplate
+	applicationTypes            = []string{"some-application-type"}
 	formationTemplateModelInput = model.FormationTemplateInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,

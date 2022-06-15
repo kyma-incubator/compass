@@ -190,6 +190,6 @@ func fixValidFormationTemplateInput() graphql.FormationTemplateInput {
 		ApplicationTypes:       []string{"some-application-type"},
 		RuntimeType:            "some-runtime-type",
 		RuntimeTypeDisplayName: "display-name-for-runtime",
-		RuntimeArtifactKind:    "SUBSCRIPTION",
+		RuntimeArtifactKind:    graphql.ArtifactTypeSubscription,
 	}
 }
