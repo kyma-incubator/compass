@@ -45,6 +45,7 @@
 /components/schema-migrator @kyma-incubator/team-falcon @kyma-incubator/team-raptor @kyma-incubator/team-dragon
 /installation/cmd @kyma-incubator/team-raptor
 /installation/scripts @kyma-incubator/team-raptor
+/installation/scripts/prow @kyma-incubator/team-raptor @kyma-incubator/team-falcon
 /tests/connectivity-adapter @kyma-incubator/team-falcon
 /tests/connector @kyma-incubator/team-raptor
 /tests/gateway @kyma-incubator/team-raptor
