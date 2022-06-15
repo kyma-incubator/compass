@@ -20,15 +20,6 @@ spec:
         app: {{ .Chart.Name }}-istio-tests-app
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-istio
-      {{ if .Values.global.isLocalEnv }}
-      hostAliases:
-        - ip: {{ .Values.global.minikubeIP }}
-          hostnames:
-            - "oauth2.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
-      {{ end }}
       containers:
         - name: istio-tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
