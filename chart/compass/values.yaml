@@ -382,7 +382,7 @@ global:
     serviceAccountTokenIssuer: kubernetes/serviceaccount
     serviceAccountTokenJWKS: https://kubernetes.default.svc.cluster.local/openid/v1/jwks
   ingress:
-    domainName: "kyma.local"
+    domainName: "local.kyma.dev"
   database:
     sqlProxyServiceAccount: "proxy-user@gcp-cmp.iam.gserviceaccount.com"
     manageSecrets: true
@@ -818,6 +818,7 @@ global:
       name: "compass-director-migrations"
       namespace: "compass-system"
       migrationsPath: "/compass-migrations"
+      isLocalEnv: true
   http:
     client:
       skipSSLValidation: false

@@ -109,16 +109,16 @@ function checkInputParameterValue() {
     fi
 }
 
-function useMinikube() {
+function usek3d() {
     CURRENT_CONTEXT=$(kubectl config current-context)
-    if [ $CURRENT_CONTEXT != "minikube"  ]; then
-        echo "Current context is not minikube, switching to minikube..."
-        minikube update-context
+    if [ $CURRENT_CONTEXT != "k3d-kyma"  ]; then
+        echo "Current context is not 'k3d-kyma', switching to it..."
+        kubectl config use-context k3d-kyma
         if [ $? -ne 0 ]; then
-            echo "Failed to update context to minikube. Local installation requires minikube running"
+            echo "Failed to update context to 'k3d-kyma'. Local installation requires k3d running. To list all available contexts execute: 'kubectl config get-contexts'"
             return 1
         fi
     fi
 
-    echo "Using minikube kubectl context"
+    echo "Using 'k3d-kyma' kubectl context"
 }

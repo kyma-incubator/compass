@@ -1,0 +1,13 @@
+defaultNamespace: kyma-system
+prerequisites:
+  - name: "cluster-essentials"
+  - name: "istio-configuration"
+    namespace: "istio-system"
+  - name: "certificates"
+    namespace: "istio-system"
+components:
+  - name: "logging"
+  - name: "tracing"
+  - name: "kiali"
+  - name: "monitoring"
+  - name: "ory"
