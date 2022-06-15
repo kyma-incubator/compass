@@ -58,8 +58,8 @@ global:
     systemsAPIEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/systemfetcher/systems"
     systemsAPIFilterCriteria: "no"
   tests:
-    ordService:
-      subscriptionOauthSecret:
+    subscription:
+      oauthSecret:
         manage: true
     basicCredentials:
       manage: true
