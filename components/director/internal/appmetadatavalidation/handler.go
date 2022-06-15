@@ -89,20 +89,20 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 
 			consumerRegionLabel, err := h.getTenantRegionLabelValue(ctx, consumerInfo.ConsumerID)
 			if err != nil {
-				appErr := apperrors.InternalErrorFrom(err, "while fetching consumer tenant label")
+				appErr := apperrors.InternalErrorFrom(err, "while fetching consumer tenant %q region label", consumerInfo.ConsumerID)
 				writeAppError(ctx, w, appErr)
 				return
 			}
 
 			headerTenantRegionLabel, err := h.getTenantRegionLabelValue(ctx, tenantHeader)
 			if err != nil {
-				appErr := apperrors.InternalErrorFrom(err, "while fetching tenant header label")
+				appErr := apperrors.InternalErrorFrom(err, "while fetching tenant header %q region label", tenantHeader)
 				writeAppError(ctx, w, appErr)
 				return
 			}
 
 			if consumerRegionLabel != headerTenantRegionLabel {
-				err = errors.New(fmt.Sprintf("labels mismatch: %q and %q", consumerRegionLabel, headerTenantRegionLabel))
+				err = errors.New(fmt.Sprintf("region labels mismatch: %q and %q for tenants %q and %q", consumerRegionLabel, headerTenantRegionLabel, consumerInfo.ConsumerID, tenantHeader))
 				logger.WithError(err).Errorf("Regions for external tenants %q and %q do not match: %q and %q", consumerInfo.ConsumerID, tenantHeader, consumerRegionLabel, headerTenantRegionLabel)
 				appErr := apperrors.InternalErrorFrom(err, "region labels for tenants do not match")
 				writeAppError(ctx, w, appErr)
@@ -156,8 +156,8 @@ func writeAppError(ctx context.Context, w http.ResponseWriter, appErr error) {
 	resp := gqlgen.Response{Errors: []*gqlerror.Error{{
 		Message:    appErr.Error(),
 		Extensions: map[string]interface{}{"error_code": errCode, "error": errCode.String()}}}}
-	err := json.NewEncoder(w).Encode(resp)
-	if err != nil {
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while encoding data: %v", err)
 	}
 }
