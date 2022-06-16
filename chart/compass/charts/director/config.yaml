@@ -127,5 +127,9 @@ graphql:
     integration_system:
       auths: ["integration_system.auths:read"]
 
+  input:
+    application:
+      localTenantID: [ "application.local_tenant_id:write" ]
+
 clientCredentialsRegistrationGrantTypes:
   - "client_credentials"

@@ -865,6 +865,7 @@ global:
       integration_system:
         - "application:read"
         - "application:write"
+        - "application.local_tenant_id:write"
         - "application_template:read"
         - "application_template:write"
         - "runtime:read"

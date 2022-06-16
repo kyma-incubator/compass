@@ -104,6 +104,7 @@ type ApplicationRegisterInput struct {
 	BaseURL             *string                     `json:"baseUrl"`
 	IntegrationSystemID *string                     `json:"integrationSystemID"`
 	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
+	LocalTenantID       *string                     `json:"localTenantID"`
 	Bundles             []*BundleCreateInput        `json:"bundles"`
 }
 
@@ -154,6 +155,7 @@ type ApplicationUpdateInput struct {
 	BaseURL             *string                     `json:"baseUrl"`
 	IntegrationSystemID *string                     `json:"integrationSystemID"`
 	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
+	LocalTenantID       *string                     `json:"localTenantID"`
 }
 
 type Auth struct {
