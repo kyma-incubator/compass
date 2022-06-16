@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
@@ -585,29 +587,33 @@ func appUpdaterFunc(appRepo application.ApplicationRepository) operation.Resourc
 }
 
 func runtimeSvc(cfg config) claims.RuntimeService {
+	asaConverter := scenarioassignment.NewConverter()
 	authConverter := auth.NewConverter()
 	webhookConverter := webhook.NewConverter(authConverter)
-	rtConverter := runtime.NewConverter(webhookConverter)
-	assignmentConv := scenarioassignment.NewConverter()
-	formationConv := formation.NewConverter()
-	formationTemplateConverter := formationtemplate.NewConverter()
+	labelConverter := label.NewConverter()
+	labelDefinitionConverter := labeldef.NewConverter()
+	runtimeContextConverter := runtimectx.NewConverter()
+	runtimeConverter := runtime.NewConverter(webhookConverter)
+	tenantConverter := tenant.NewConverter()
 
-	rtRepo := runtime.NewRepository(rtConverter)
-	lblRepo := label.NewRepository(label.NewConverter())
-	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
-	tenantRepo := tenant.NewRepository(tenant.NewConverter())
-	labelDefRepo := labeldef.NewRepository(labeldef.NewConverter())
+	asaRepo := scenarioassignment.NewRepository(asaConverter)
+	labelRepo := label.NewRepository(labelConverter)
+	labelDefinitionRepo := labeldef.NewRepository(labelDefinitionConverter)
+	runtimeRepo := runtime.NewRepository(runtimeConverter)
+	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConverter)
+	tenantRepo := tenant.NewRepository(tenantConverter)
 	formationRepo := formation.NewRepository(formationConv)
 	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 
 	uidSvc := uid.NewService()
-	labelDefSvc := labeldef.NewService(labelDefRepo, lblRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
-	labelSvc := label.NewLabelService(lblRepo, labelDefRepo, uidSvc)
-	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
-	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, lblRepo, labelSvc)
-	formationSvc := formation.NewService(labelDefRepo, lblRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, rtRepo)
+	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
+	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
+	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo)
+	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 
-	return runtime.NewService(rtRepo, lblRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantSvc, webhookService(), cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
+	return runtime.NewService(runtimeRepo, labelRepo, labelDefinitionSvc, labelSvc, uidSvc, formationSvc, tenantSvc, webhookService(), runtimeContextSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
 }
 
 func intSystemSvc() claims.IntegrationSystemService {
