@@ -42,13 +42,13 @@ func (_m *SelfRegisterManager) GetSelfRegDistinguishingLabelKey() string {
 	return r0
 }
 
-// PrepareForSelfRegistration provides a mock function with given fields: ctx, resourceType, labels, id
-func (_m *SelfRegisterManager) PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string) (map[string]interface{}, error) {
-	ret := _m.Called(ctx, resourceType, labels, id)
+// PrepareForSelfRegistration provides a mock function with given fields: ctx, resourceType, labels, id, validate
+func (_m *SelfRegisterManager) PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string, validate func() error) (map[string]interface{}, error) {
+	ret := _m.Called(ctx, resourceType, labels, id, validate)
 
 	var r0 map[string]interface{}
-	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, map[string]interface{}, string) map[string]interface{}); ok {
-		r0 = rf(ctx, resourceType, labels, id)
+	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, map[string]interface{}, string, func() error) map[string]interface{}); ok {
+		r0 = rf(ctx, resourceType, labels, id, validate)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[string]interface{})
@@ -56,8 +56,8 @@ func (_m *SelfRegisterManager) PrepareForSelfRegistration(ctx context.Context, r
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, map[string]interface{}, string) error); ok {
-		r1 = rf(ctx, resourceType, labels, id)
+	if rf, ok := ret.Get(1).(func(context.Context, resource.Type, map[string]interface{}, string, func() error) error); ok {
+		r1 = rf(ctx, resourceType, labels, id, validate)
 	} else {
 		r1 = ret.Error(1)
 	}

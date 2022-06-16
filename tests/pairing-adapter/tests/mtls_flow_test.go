@@ -31,7 +31,7 @@ import (
 func TestGettingTokenWithMTLSWorks(t *testing.T) {
 	ctx := context.Background()
 	defaultTestTenant := tenant.TestTenants.GetDefaultTenantID()
-	templateName := conf.TemplateName
+	templateName := fmt.Sprintf("SAP %s", conf.TemplateName)
 	namePlaceholderKey := "name"
 	displayNamePlaceholderKey := "display-name"
 	appTemplate := &directorSchema.ApplicationTemplate{}
