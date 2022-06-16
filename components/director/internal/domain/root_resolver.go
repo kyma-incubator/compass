@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
+
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 
 	pkgadapters "github.com/kyma-incubator/compass/components/director/pkg/adapters"
@@ -84,6 +86,7 @@ type RootResolver struct {
 	mpBundle           *bundleutil.Resolver
 	bundleInstanceAuth *bundleinstanceauth.Resolver
 	scenarioAssignment *scenarioassignment.Resolver
+	formationTemplate  *formationtemplate.Resolver
 }
 
 // NewRootResolver missing godoc
@@ -102,7 +105,7 @@ func NewRootResolver(
 	hydraURL *url.URL,
 	accessStrategyExecutorProvider *accessstrategy.Provider,
 	subscriptionConfig subscription.Config,
-	tenantOnDemandURL string,
+	tenantOnDemandAPIConfig tenant.FetchOnDemandApiConfig,
 ) (*RootResolver, error) {
 	oAuth20HTTPClient := &http.Client{
 		Timeout:   oAuth20Cfg.HTTPClientTimeout,
@@ -141,6 +144,7 @@ func NewRootResolver(
 	bundleReferenceConv := bundlereferences.NewConverter()
 	formationConv := formation.NewConverter()
 	runtimeConverter := runtime.NewConverter(webhookConverter)
+	formationTemplateConverter := formationtemplate.NewConverter()
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
@@ -184,14 +188,16 @@ func NewRootResolver(
 	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	eventingSvc := eventing.NewService(appNameNormalizer, runtimeRepo, labelRepo)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
-	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, labelDefSvc, bundleSvc, uidSvc)
 	timeService := time.NewService()
-	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalFQDNHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdapters, timeService)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
 	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo)
+	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, labelDefSvc, bundleSvc, uidSvc, formationSvc)
+	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalFQDNHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdapters, timeService)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantSvc, webhookSvc, featuresConfig.ProtectedLabelPattern, featuresConfig.ImmutableLabelPattern)
 	subscriptionSvc := subscription.NewService(runtimeSvc, tenantSvc, labelSvc, uidSvc, subscriptionConfig.ProviderLabelKey, subscriptionConfig.ConsumerSubaccountIDsLabelKey)
-	tenantOnDemandSvc := tenant.NewFetchOnDemandService(internalGatewayHTTPClient, tenantOnDemandURL)
+	tenantOnDemandSvc := tenant.NewFetchOnDemandService(internalGatewayHTTPClient, tenantOnDemandAPIConfig)
+	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
+	formationTemplateSvc := formationtemplate.NewService(formationTemplateRepo, uidSvc, formationTemplateConverter)
 
 	return &RootResolver{
 		appNameNormalizer:  appNameNormalizer,
@@ -216,6 +222,7 @@ func NewRootResolver(
 		mpBundle:           bundleutil.NewResolver(transact, bundleSvc, bundleInstanceAuthSvc, bundleReferenceSvc, apiSvc, eventAPISvc, docSvc, bundleConverter, bundleInstanceAuthConv, apiConverter, eventAPIConverter, docConverter, specSvc),
 		bundleInstanceAuth: bundleinstanceauth.NewResolver(transact, bundleInstanceAuthSvc, bundleSvc, bundleInstanceAuthConv, bundleConverter),
 		scenarioAssignment: scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv, tenantSvc, tenantOnDemandSvc, formationSvc),
+		formationTemplate:  formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc),
 	}, nil
 }
 
@@ -331,6 +338,14 @@ func (r *RootResolver) Tenant() graphql.TenantResolver {
 
 type queryResolver struct {
 	*RootResolver
+}
+
+func (r *queryResolver) FormationTemplate(ctx context.Context, id string) (*graphql.FormationTemplate, error) {
+	return r.formationTemplate.FormationTemplate(ctx, id)
+}
+
+func (r *queryResolver) FormationTemplates(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.FormationTemplatePage, error) {
+	return r.formationTemplate.FormationTemplates(ctx, first, after)
 }
 
 // Viewer missing godoc
@@ -482,6 +497,18 @@ func (r *queryResolver) SystemAuthByToken(ctx context.Context, id string) (graph
 
 type mutationResolver struct {
 	*RootResolver
+}
+
+func (r *mutationResolver) CreateFormationTemplate(ctx context.Context, in graphql.FormationTemplateInput) (*graphql.FormationTemplate, error) {
+	return r.formationTemplate.CreateFormationTemplate(ctx, in)
+}
+
+func (r *mutationResolver) DeleteFormationTemplate(ctx context.Context, id string) (*graphql.FormationTemplate, error) {
+	return r.formationTemplate.DeleteFormationTemplate(ctx, id)
+}
+
+func (r *mutationResolver) UpdateFormationTemplate(ctx context.Context, id string, in graphql.FormationTemplateInput) (*graphql.FormationTemplate, error) {
+	return r.formationTemplate.UpdateFormationTemplate(ctx, id, in)
 }
 
 func (r *mutationResolver) AssignFormation(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formation graphql.FormationInput) (*graphql.Formation, error) {

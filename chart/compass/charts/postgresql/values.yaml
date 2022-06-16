@@ -14,7 +14,7 @@ global:
 image:
   registry: docker.io
   repository: bitnami/postgresql
-  tag: 11.5.0-debian-9-r15
+  tag: 11.15.0-debian-10-r93
   ## Specify a imagePullPolicy
   ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
   ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
@@ -98,7 +98,7 @@ postgresqlUsername: postgres
 ## PostgreSQL password
 ## ref: https://github.com/bitnami/bitnami-docker-postgresql/blob/master/README.md#setting-the-root-password-on-first-run
 ##
-# postgresqlPassword:
+postgresqlPassword: postgres
 
 ## PostgreSQL password using existing secret
 ## existingSecret: secret

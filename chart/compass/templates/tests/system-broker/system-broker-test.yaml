@@ -19,14 +19,6 @@ spec:
       labels:
         app: {{ .Chart.Name }}-system-broker-tests-app
     spec:
-      {{ if .Values.global.isLocalEnv }}
-      hostAliases:
-        - ip: {{ .Values.global.minikubeIP }}
-          hostnames:
-            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
-      {{ end }}
       serviceAccountName: {{ .Chart.Name }}-e2e-system-broker
       containers:
         - name: system-broker-tests
@@ -36,7 +28,7 @@ spec:
           args: ["-c", "./system-broker.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           env:
             - name: APP_TENANT
-              value: "{{ .Values.global.defaultTenant }}"
+              value: "{{ (index .Values.global.tenants 2).id }}"
             - name: APP_SYSTEM_BROKER_URL
               value: "https://{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.system_broker.prefix }}"
             - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
@@ -53,12 +45,6 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
             - name: APP_EXTERNAL_CLIENT_KEY_KEY
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
-            - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
-            - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
-              value: {{ .Values.global.tests.subscriptionProviderIdValue | quote }}
-            - name: APP_SELF_REG_REGION
-              value: {{ .Values.global.tests.selfRegistration.region }}
       restartPolicy: Never
 ---
 apiVersion: v1

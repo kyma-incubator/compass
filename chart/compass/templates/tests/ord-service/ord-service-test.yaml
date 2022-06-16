@@ -19,14 +19,6 @@ spec:
       labels:
         app: {{ .Chart.Name }}-ord-service-tests-app
     spec:
-      {{ if .Values.global.isLocalEnv }}
-      hostAliases:
-        - ip: {{ .Values.global.minikubeIP }}
-          hostnames:
-            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
-            - "oauth2.{{ .Values.global.ingress.domainName }}"
-      {{ end }}
       serviceAccountName: {{ .Chart.Name }}-e2e-ord-service
       containers:
         - name: ord-service-tests
@@ -176,10 +168,6 @@ spec:
               value: {{ .Values.global.tests.ordService.consumerTenantID }}
             - name: SKIP_TESTS_REGEX
               value: {{ .Values.global.tests.ordService.skipPattern }}
-            - name: SELF_REG_DISTINGUISH_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
-            - name: SELF_REG_DISTINGUISH_LABEL_VALUE
-              value: {{ .Values.global.tests.subscriptionProviderIdValue | quote }}
             - name: SELF_REG_REGION
               value: {{ .Values.global.tests.selfRegistration.region }}
         {{if eq .Values.global.database.embedded.enabled false}}

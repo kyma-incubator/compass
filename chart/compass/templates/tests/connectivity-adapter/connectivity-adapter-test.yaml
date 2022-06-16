@@ -20,15 +20,6 @@ spec:
       labels:
         app: {{ .Chart.Name }}-connectivity-adapter-tests-app
     spec:
-      {{ if .Values.global.isLocalEnv }}
-      hostAliases:
-        - ip: {{ .Values.global.minikubeIP }}
-          hostnames:
-            - "{{ .Values.global.connectivity_adapter.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.connectivity_adapter.mtls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
-      {{ end }}
       serviceAccountName: {{ .Chart.Name }}-e2e-connectivity-adapter
       containers:
         - name: connectivity-adapter-tests
@@ -54,12 +45,6 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
             - name: APP_EXTERNAL_CLIENT_KEY_KEY
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
-            - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
-            - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
-              value: {{ .Values.global.tests.subscriptionProviderIdValue | quote }}
-            - name: APP_SELF_REG_REGION
-              value: {{ .Values.global.tests.selfRegistration.region }}
     restartPolicy: Never
 ---
 apiVersion: v1

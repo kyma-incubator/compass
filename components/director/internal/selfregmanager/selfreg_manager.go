@@ -66,6 +66,9 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 	if consumerInfo.Flow.IsCertFlow() {
 		distinguishLabel, exists := labels[s.cfg.SelfRegisterDistinguishLabelKey]
 		if !exists {
+			if resourceType == resource.Runtime {
+				return labels, nil
+			}
 			return labels, errors.Errorf("missing %q label", s.cfg.SelfRegisterDistinguishLabelKey)
 		}
 
@@ -112,7 +115,7 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 		selfRegLabelVal := gjson.GetBytes(respBytes, s.cfg.SelfRegisterResponseKey)
 		labels[s.cfg.SelfRegisterLabelKey] = selfRegLabelVal.Str
 
-		if resource.ApplicationTemplate == resourceType {
+		if resourceType == resource.ApplicationTemplate {
 			labels[scenarioassignment.SubaccountIDKey] = consumerInfo.ConsumerID
 		}
 
@@ -124,6 +127,16 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 
 // CleanupSelfRegistration executes cleanup calls for self-registered runtimes
 func (s *selfRegisterManager) CleanupSelfRegistration(ctx context.Context, resourceID, region string) error {
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading consumer")
+	}
+
+	if !consumerInfo.Flow.IsCertFlow() {
+		log.C(ctx).Infof("Not certificate flow, skipping clone deletion for resource %q", resourceID)
+		return nil
+	}
+
 	if resourceID == "" {
 		return nil
 	}

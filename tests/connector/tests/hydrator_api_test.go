@@ -24,7 +24,7 @@ func TestHydrators(t *testing.T) {
 	require.NotEmpty(t, app.ID)
 	appID := app.ID
 
-	input := fixRuntimeInput("test-hydrators-runtime")
+	input := fixtures.FixRuntimeRegisterInput("test-hydrators-runtime")
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &input)
 	defer fixtures.CleanupRuntime(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &runtime)
 	require.NoError(t, err)
