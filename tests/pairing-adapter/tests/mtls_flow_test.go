@@ -32,7 +32,7 @@ func TestGettingTokenWithMTLSWorks(t *testing.T) {
 	ctx := context.Background()
 	defaultTestTenant := tenant.TestTenants.GetDefaultTenantID()
 	templateName := conf.TemplateName
-	if !strings.HasPrefix(templateName, "SAP "){
+	if !strings.HasPrefix(templateName, "SAP ") {
 		templateName = fmt.Sprintf("SAP %s", templateName)
 	}
 	namePlaceholderKey := "name"
