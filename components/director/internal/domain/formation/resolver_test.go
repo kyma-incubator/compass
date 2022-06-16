@@ -17,6 +17,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var defaultTemplateName = "Side-by-side extensibility with Kyma"
+
 func TestCreateFormation(t *testing.T) {
 	formationInput := graphql.FormationInput{
 		Name: testFormation,
@@ -41,7 +43,7 @@ func TestCreateFormation(t *testing.T) {
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil)
 
 		// WHEN
-		actual, err := sut.CreateFormation(ctx, formationInput)
+		actual, err := sut.CreateFormation(ctx, formationInput, &defaultTemplateName)
 
 		// THEN
 		require.NoError(t, err)
@@ -55,7 +57,7 @@ func TestCreateFormation(t *testing.T) {
 		sut := formation.NewResolver(nil, nil, nil, nil)
 
 		// WHEN
-		_, err := sut.CreateFormation(ctx, formationInput)
+		_, err := sut.CreateFormation(ctx, formationInput, &defaultTemplateName)
 
 		// THEN
 		require.Error(t, err)
@@ -69,7 +71,7 @@ func TestCreateFormation(t *testing.T) {
 		sut := formation.NewResolver(transact, nil, nil, nil)
 
 		// WHEN
-		_, err := sut.CreateFormation(ctx, formationInput)
+		_, err := sut.CreateFormation(ctx, formationInput, &defaultTemplateName)
 
 		// THEN
 		require.Error(t, err)
@@ -90,7 +92,7 @@ func TestCreateFormation(t *testing.T) {
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil)
 
 		// WHEN
-		_, err := sut.CreateFormation(ctx, formationInput)
+		_, err := sut.CreateFormation(ctx, formationInput, &defaultTemplateName)
 
 		// THEN
 		require.Error(t, err)
@@ -111,7 +113,7 @@ func TestCreateFormation(t *testing.T) {
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil)
 
 		// WHEN
-		actual, err := sut.CreateFormation(ctx, formationInput)
+		actual, err := sut.CreateFormation(ctx, formationInput, &defaultTemplateName)
 
 		// THEN
 		require.Error(t, err)
