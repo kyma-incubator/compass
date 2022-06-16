@@ -53,7 +53,7 @@ func TestServiceCreateFormation(t *testing.T) {
 
 	testCases := []struct {
 		Name                    string
-		UUIDServiceFn            func() *automock.UuidService
+		UUIDServiceFn           func() *automock.UuidService
 		LabelDefRepositoryFn    func() *automock.LabelDefRepository
 		LabelDefServiceFn       func() *automock.LabelDefService
 		FormationTemplateRepoFn func() *automock.FormationTemplateRepository
@@ -106,7 +106,7 @@ func TestServiceCreateFormation(t *testing.T) {
 				formationRepoMock.On("Create", ctx, fixFormationModel(), FixUUID, Tnt, FormationTemplateID).Return(nil).Once()
 				return formationRepoMock
 			},
-			TemplateName: &templateName,
+			TemplateName:       &templateName,
 			ExpectedFormation:  expected,
 			ExpectedErrMessage: "",
 		},
@@ -208,7 +208,7 @@ func TestServiceCreateFormation(t *testing.T) {
 				formationTemplateRepoMock.On("GetByName", ctx, templateName).Return(nil, testErr).Once()
 				return formationTemplateRepoMock
 			},
-			TemplateName: &templateName,
+			TemplateName:       &templateName,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
@@ -240,7 +240,7 @@ func TestServiceCreateFormation(t *testing.T) {
 				formationRepoMock.On("Create", ctx, fixFormationModel(), FixUUID, Tnt, FormationTemplateID).Return(testErr).Once()
 				return formationRepoMock
 			},
-			TemplateName: &templateName,
+			TemplateName:       &templateName,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}
