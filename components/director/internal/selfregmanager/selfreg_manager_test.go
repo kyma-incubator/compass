@@ -68,6 +68,110 @@ var testConfig = config.SelfRegConfig{
 	ClientTimeout: 5 * time.Second,
 }
 
+func TestSelfRegisterManager_IsSelfRegistrationFlow(t *testing.T) {
+	tokenConsumer := consumer.Consumer{
+		ConsumerID: consumerID,
+		Flow:       oathkeeper.OAuth2Flow,
+	}
+	certConsumer := consumer.Consumer{
+		ConsumerID: consumerID,
+		Flow:       oathkeeper.CertificateFlow,
+	}
+
+	ctxWithTokenConsumer := consumer.SaveToContext(context.TODO(), tokenConsumer)
+	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
+
+	testCases := []struct {
+		Name           string
+		Config         config.SelfRegConfig
+		Region         string
+		InputLabels    map[string]interface{}
+		Context        context.Context
+		ExpectedErr    error
+		ExpectedOutput bool
+	}{
+		{
+			Name:           "Success",
+			Config:         testConfig,
+			InputLabels:    fixLblInput(),
+			Region:         testRegion,
+			Context:        ctxWithCertConsumer,
+			ExpectedErr:    nil,
+			ExpectedOutput: true,
+		},
+		{
+			Name:           "Success for non-matching consumer",
+			Config:         testConfig,
+			Region:         testRegion,
+			InputLabels:    fixLblWithoutRegion(),
+			Context:        ctxWithTokenConsumer,
+			ExpectedErr:    nil,
+			ExpectedOutput: false,
+		},
+		{
+			Name:           "Error for missing distinguished label",
+			Config:         testConfig,
+			Region:         testRegion,
+			InputLabels:    map[string]interface{}{},
+			Context:        ctxWithCertConsumer,
+			ExpectedErr:    fmt.Errorf("missing %q label", selfRegisterDistinguishLabelKey),
+			ExpectedOutput: false,
+		},
+		{
+			Name:           "Error when region label is missing",
+			Config:         testConfig,
+			Region:         testRegion,
+			InputLabels:    fixLblWithoutRegion(),
+			Context:        ctxWithCertConsumer,
+			ExpectedErr:    fmt.Errorf("missing %q label", selfregmanager.RegionLabel),
+			ExpectedOutput: false,
+		},
+		{
+			Name:           "Error when region label is not string",
+			Config:         testConfig,
+			Region:         testRegion,
+			InputLabels:    map[string]interface{}{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: struct{}{}},
+			Context:        ctxWithCertConsumer,
+			ExpectedErr:    fmt.Errorf("region value should be of type %q", "string"),
+			ExpectedOutput: false,
+		},
+		{
+			Name:           "Error when region doesn't exist",
+			Config:         testConfig,
+			Region:         testRegion,
+			InputLabels:    map[string]interface{}{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: "not-valid"},
+			Context:        ctxWithCertConsumer,
+			ExpectedErr:    errors.New("missing configuration for region"),
+			ExpectedOutput: false,
+		},
+		{
+			Name:           "Error when context does not contain consumer",
+			Config:         testConfig,
+			Region:         testRegion,
+			InputLabels:    map[string]interface{}{},
+			Context:        context.TODO(),
+			ExpectedErr:    consumer.NoConsumerError,
+			ExpectedOutput: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, nil)
+			require.NoError(t, err)
+
+			output, err := manager.IsSelfRegistrationFlow(testCase.Context, testCase.InputLabels)
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, testCase.ExpectedOutput, output)
+		})
+	}
+}
+
 func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 	tokenConsumer := consumer.Consumer{
 		ConsumerID: consumerID,
@@ -89,6 +193,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 		InputLabels    map[string]interface{}
 		Context        context.Context
 		ResourceType   resource.Type
+		Validation     func() error
 		ExpectedErr    error
 		ExpectedOutput map[string]interface{}
 	}{
@@ -100,6 +205,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			Region:         testRegion,
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
+			Validation:     func() error { return nil },
 			ExpectedErr:    nil,
 			ExpectedOutput: fixLblInputAfterPrep(),
 		},
@@ -111,6 +217,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			Region:         testRegion,
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.ApplicationTemplate,
+			Validation:     func() error { return nil },
 			ExpectedErr:    nil,
 			ExpectedOutput: fixLblInputAfterPrepWithSubaccount(),
 		},
@@ -122,6 +229,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			InputLabels:    fixLblWithoutRegion(),
 			Context:        ctxWithTokenConsumer,
 			ResourceType:   resource.Runtime,
+			Validation:     func() error { return nil },
 			ExpectedErr:    nil,
 			ExpectedOutput: fixLblWithDistinguish(),
 		},
@@ -133,8 +241,21 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			InputLabels:    map[string]interface{}{},
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
+			Validation:     func() error { return nil },
 			ExpectedErr:    nil,
 			ExpectedOutput: map[string]interface{}{},
+		},
+		{
+			Name:           "Error validation failed",
+			Config:         testConfig,
+			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
+			Region:         testRegion,
+			InputLabels:    fixLblInput(),
+			Context:        ctxWithCertConsumer,
+			ResourceType:   resource.ApplicationTemplate,
+			Validation:     func() error { return errors.New("validation failed") },
+			ExpectedErr:    errors.New("validation failed"),
+			ExpectedOutput: fixLblInput(),
 		},
 		{
 			Name:           "Error for missing distinguished label and resource is App Template",
@@ -144,6 +265,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			InputLabels:    map[string]interface{}{},
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.ApplicationTemplate,
+			Validation:     func() error { return nil },
 			ExpectedErr:    fmt.Errorf("missing %q label", selfRegisterDistinguishLabelKey),
 			ExpectedOutput: map[string]interface{}{},
 		},
@@ -155,6 +277,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			InputLabels:    fixLblWithoutRegion(),
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
+			Validation:     func() error { return nil },
 			ExpectedErr:    fmt.Errorf("missing %q label", selfregmanager.RegionLabel),
 			ExpectedOutput: fixLblWithDistinguish(),
 		},
@@ -166,6 +289,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			InputLabels:    map[string]interface{}{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: struct{}{}},
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
+			Validation:     func() error { return nil },
 			ExpectedErr:    fmt.Errorf("region value should be of type %q", "string"),
 			ExpectedOutput: fixLblWithDistinguishAndStructRegion(),
 		},
@@ -177,6 +301,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			InputLabels:    map[string]interface{}{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: "not-valid"},
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
+			Validation:     func() error { return nil },
 			ExpectedErr:    errors.New("missing configuration for region"),
 			ExpectedOutput: fixLblWithDistinguishAndInvalidRegion(),
 		},
@@ -188,6 +313,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			InputLabels:    fixLblInput(),
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
+			Validation:     func() error { return nil },
 			ExpectedErr:    errors.New("while getting caller"),
 			ExpectedOutput: fixLblInputBeforePrep(),
 		},
@@ -199,6 +325,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			InputLabels:    map[string]interface{}{},
 			Context:        context.TODO(),
 			ResourceType:   resource.Runtime,
+			Validation:     func() error { return nil },
 			ExpectedErr:    consumer.NoConsumerError,
 			ExpectedOutput: map[string]interface{}{},
 		},
@@ -210,6 +337,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			InputLabels:    map[string]interface{}{selfRegisterDistinguishLabelKey: "invalid value", selfregmanager.RegionLabel: fakeRegion},
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
+			Validation:     func() error { return nil },
 			ExpectedErr:    errors.New("while creating url for preparation of self-registered resource"),
 			ExpectedOutput: fixLblWithDistinguishAndFakeRegion(),
 		},
@@ -221,6 +349,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			InputLabels:    fixLblInput(),
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
+			Validation:     func() error { return nil },
 			ExpectedErr:    selfregmngrtest.TestError,
 			ExpectedOutput: fixLblInputBeforePrep(),
 		},
@@ -232,6 +361,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			InputLabels:    fixLblInput(),
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
+			Validation:     func() error { return nil },
 			ExpectedErr:    errors.New("received unexpected status"),
 			ExpectedOutput: fixLblInputBeforePrep(),
 		},
@@ -243,7 +373,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider)
 			require.NoError(t, err)
 
-			output, err := manager.PrepareForSelfRegistration(testCase.Context, testCase.ResourceType, testCase.InputLabels, testUUID)
+			output, err := manager.PrepareForSelfRegistration(testCase.Context, testCase.ResourceType, testCase.InputLabels, testUUID, testCase.Validation)
 			if testCase.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.ExpectedErr.Error())
