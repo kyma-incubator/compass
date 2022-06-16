@@ -30,6 +30,8 @@
     - "internal_visibility:read"
     - "runtime.webhooks:read"
     - "webhook:write"
+    - "formation_template:read"
+    - "formation_template:write"
 {{- end -}}
 {{ range $name := regexSplit "," .Values.operatorGroupNames -1 }}
 - groupname: "{{ trim $name }}"

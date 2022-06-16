@@ -125,7 +125,7 @@ global:
       version: "PR-68"
     schema_migrator:
       dir:
-      version: "PR-2383"
+      version: "PR-2412"
     system_broker:
       dir:
       version: "PR-2383"
@@ -377,7 +377,7 @@ global:
     serviceAccountTokenIssuer: kubernetes/serviceaccount
     serviceAccountTokenJWKS: https://kubernetes.default.svc.cluster.local/openid/v1/jwks
   ingress:
-    domainName: "kyma.local"
+    domainName: "local.kyma.dev"
   database:
     sqlProxyServiceAccount: "proxy-user@gcp-cmp.iam.gserviceaccount.com"
     manageSecrets: true
@@ -810,6 +810,7 @@ global:
       name: "compass-director-migrations"
       namespace: "compass-system"
       migrationsPath: "/compass-migrations"
+      isLocalEnv: true
   http:
     client:
       skipSSLValidation: false
@@ -879,6 +880,7 @@ global:
         - "internal_visibility:read"
         - "application.auths:read"
         - "webhook:write"
+        - "formation_template:read"
       super_admin:
         - "application:read"
         - "application:write"
@@ -909,6 +911,8 @@ global:
         - "internal_visibility:read"
         - "runtime.webhooks:read"
         - "webhook:write"
+        - "formation_template:read"
+        - "formation_template:write"
       default:
         - "runtime:read"
         - "runtime:write"

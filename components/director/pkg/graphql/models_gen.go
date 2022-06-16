@@ -429,6 +429,31 @@ type FormationInput struct {
 	Name string `json:"name"`
 }
 
+type FormationTemplate struct {
+	ID                     string       `json:"id"`
+	Name                   string       `json:"name"`
+	ApplicationTypes       []string     `json:"applicationTypes"`
+	RuntimeType            string       `json:"runtimeType"`
+	RuntimeTypeDisplayName string       `json:"runtimeTypeDisplayName"`
+	RuntimeArtifactKind    ArtifactType `json:"runtimeArtifactKind"`
+}
+
+type FormationTemplateInput struct {
+	Name                   string       `json:"name"`
+	ApplicationTypes       []string     `json:"applicationTypes"`
+	RuntimeType            string       `json:"runtimeType"`
+	RuntimeTypeDisplayName string       `json:"runtimeTypeDisplayName"`
+	RuntimeArtifactKind    ArtifactType `json:"runtimeArtifactKind"`
+}
+
+type FormationTemplatePage struct {
+	Data       []*FormationTemplate `json:"data"`
+	PageInfo   *PageInfo            `json:"pageInfo"`
+	TotalCount int                  `json:"totalCount"`
+}
+
+func (FormationTemplatePage) IsPageable() {}
+
 type HealthCheck struct {
 	Type      HealthCheckType            `json:"type"`
 	Condition HealthCheckStatusCondition `json:"condition"`
@@ -837,6 +862,49 @@ func (e *ApplicationTemplateAccessLevel) UnmarshalGQL(v interface{}) error {
 }
 
 func (e ApplicationTemplateAccessLevel) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ArtifactType string
+
+const (
+	ArtifactTypeSubscription        ArtifactType = "SUBSCRIPTION"
+	ArtifactTypeServiceInstance     ArtifactType = "SERVICE_INSTANCE"
+	ArtifactTypeEnvironmentInstance ArtifactType = "ENVIRONMENT_INSTANCE"
+)
+
+var AllArtifactType = []ArtifactType{
+	ArtifactTypeSubscription,
+	ArtifactTypeServiceInstance,
+	ArtifactTypeEnvironmentInstance,
+}
+
+func (e ArtifactType) IsValid() bool {
+	switch e {
+	case ArtifactTypeSubscription, ArtifactTypeServiceInstance, ArtifactTypeEnvironmentInstance:
+		return true
+	}
+	return false
+}
+
+func (e ArtifactType) String() string {
+	return string(e)
+}
+
+func (e *ArtifactType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ArtifactType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ArtifactType", str)
+	}
+	return nil
+}
+
+func (e ArtifactType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
