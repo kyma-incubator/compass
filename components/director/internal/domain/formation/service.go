@@ -44,9 +44,9 @@ type runtimeContextRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 }
 
-// formationRepository represents the Formations repository layer
-//go:generate mockery --name=formationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
-type formationRepository interface {
+// FormationRepository represents the Formations repository layer
+//go:generate mockery --name=FormationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationRepository interface {
 	Create(ctx context.Context, item *model.Formation, id, tenant, formationTemplateID string) error
 	//Get(ctx context.Context, id, tenantID string) (*model.Formation, error)
 	//GetByName(ctx context.Context, name, tenantID string) (*model.Formation, error)
@@ -54,9 +54,9 @@ type formationRepository interface {
 	//Exists(ctx context.Context, id, tenantID string) (bool, error)
 }
 
-// formationTemplateRepository represents the FormationTemplate repository layer
-//go:generate mockery --name=formationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
-type formationTemplateRepository interface {
+// FormationTemplateRepository represents the FormationTemplate repository layer
+//go:generate mockery --name=FormationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationTemplateRepository interface {
 	GetByName(ctx context.Context, templateName string) (*model.FormationTemplate, error)
 }
 
@@ -76,8 +76,8 @@ type labelService interface {
 	GetLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) (*model.Label, error)
 }
 
-//go:generate mockery --exported --name=uidService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type uidService interface {
+//go:generate mockery --exported --name=uuidService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type uuidService interface {
 	Generate() string
 }
 
@@ -101,35 +101,35 @@ type tenantService interface {
 }
 
 type service struct {
-	labelDefRepository labelDefRepository
-	labelRepository    labelRepository
-	formationRepository         formationRepository
-	formationTemplateRepository formationTemplateRepository
-	labelService       labelService
-	labelDefService    labelDefService
-	asaService         automaticFormationAssignmentService
-	uuidService        uidService
-	tenantSvc          tenantService
-	repo               automaticFormationAssignmentRepository
-	runtimeRepo        runtimeRepository
-	runtimeContextRepo runtimeContextRepository
+	labelDefRepository          labelDefRepository
+	labelRepository             labelRepository
+	formationRepository         FormationRepository
+	formationTemplateRepository FormationTemplateRepository
+	labelService                labelService
+	labelDefService             labelDefService
+	asaService                  automaticFormationAssignmentService
+	uuidService                 uuidService
+	tenantSvc                   tenantService
+	repo                        automaticFormationAssignmentRepository
+	runtimeRepo                 runtimeRepository
+	runtimeContextRepo          runtimeContextRepository
 }
 
 // NewService creates formation service
-func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository formationRepository, formationTemplateRepository formationTemplateRepository, labelService labelService, uuidService uidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository) *service {
+func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository) *service {
 	return &service{
-		labelDefRepository: labelDefRepository,
-		labelRepository:    labelRepository,
+		labelDefRepository:          labelDefRepository,
+		labelRepository:             labelRepository,
 		formationRepository:         formationRepository,
 		formationTemplateRepository: formationTemplateRepository,
-		labelService:       labelService,
-		labelDefService:    labelDefService,
-		asaService:         asaService,
-		uuidService:        uuidService,
-		tenantSvc:          tenantSvc,
-		repo:               asaRepo,
-		runtimeRepo:        runtimeRepo,
-		runtimeContextRepo: runtimeContextRepo,
+		labelService:                labelService,
+		labelDefService:             labelDefService,
+		asaService:                  asaService,
+		uuidService:                 uuidService,
+		tenantSvc:                   tenantSvc,
+		repo:                        asaRepo,
+		runtimeRepo:                 runtimeRepo,
+		runtimeContextRepo:          runtimeContextRepo,
 	}
 }
 
@@ -157,6 +157,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 			if err = s.labelDefService.CreateWithFormations(ctx, tnt, []string{formation.Name}); err != nil {
 				return nil, err
 			}
+			// todo:: create formation here as well
 			return &model.Formation{Name: formation.Name}, nil
 		}
 		return nil, err

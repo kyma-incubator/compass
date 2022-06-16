@@ -25,6 +25,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var defaultTemplateName = "Side-by-side extensibility with Kyma"
+
 func TestCreateLabelDefinition(t *testing.T) {
 	scenariosSchema := model.ScenariosSchema
 	var scenarioSchemaInt interface{} = scenariosSchema
@@ -62,7 +64,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 			contextThatHasTenant(tnt),
 			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
 
-		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, nil)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}, &defaultTemplateName).Return(nil, nil)
 
 		mockService.On("Get",
 			contextThatHasTenant(tnt),
@@ -96,7 +98,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 			contextThatHasTenant(tnt),
 			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
 
-		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, nil)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}, &defaultTemplateName).Return(nil, nil)
 
 		mockService.On("Get",
 			contextThatHasTenant(tnt),
@@ -174,7 +176,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 			contextThatHasTenant(tnt),
 			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
 
-		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, notFoundError)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}, &defaultTemplateName).Return(nil, notFoundError)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := labeldef.NewResolver(transact, mockService, mockFormationsService, mockConverter)
@@ -208,7 +210,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 			contextThatHasTenant(tnt),
 			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
 
-		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, nil)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}, &defaultTemplateName).Return(nil, nil)
 
 		mockService.On("Get",
 			contextThatHasTenant(tnt),
@@ -314,7 +316,7 @@ func TestCreateLabelDefinition(t *testing.T) {
 			contextThatHasTenant(tnt),
 			tnt, model.ScenariosKey).Return(nil, notFoundError).Once()
 
-		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}).Return(nil, nil)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "DEFAULT"}, &defaultTemplateName).Return(nil, nil)
 
 		mockService.On("Get",
 			contextThatHasTenant(tnt),
@@ -700,7 +702,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockFormationsService := &automock.FormationService{}
 		defer mockFormationsService.AssertExpectations(t)
-		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "additional-1"}).Return(nil, nil)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "additional-1"}, &defaultTemplateName).Return(nil, nil)
 		mockFormationsService.On("DeleteFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "initial-1"}).Return(nil, nil)
 
 		mockService := &automock.Service{}
@@ -729,7 +731,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockFormationsService := &automock.FormationService{}
 		defer mockFormationsService.AssertExpectations(t)
-		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "additional-1"}).Return(nil, nil)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "additional-1"}, &defaultTemplateName).Return(nil, nil)
 		mockFormationsService.On("DeleteFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "initial-1"}).Return(nil, nil)
 
 		mockService := &automock.Service{}
@@ -816,7 +818,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockFormationsService := &automock.FormationService{}
 		defer mockFormationsService.AssertExpectations(t)
-		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "additional-1"}).Return(nil, testErr)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "additional-1"}, &defaultTemplateName).Return(nil, testErr)
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
 		ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
@@ -848,7 +850,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockFormationsService := &automock.FormationService{}
 		defer mockFormationsService.AssertExpectations(t)
-		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "additional-1"}).Return(nil, nil)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "additional-1"}, &defaultTemplateName).Return(nil, nil)
 		mockFormationsService.On("DeleteFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "initial-1"}).Return(nil, testErr)
 
 		ctx := persistence.SaveToContext(context.TODO(), nil)
@@ -896,7 +898,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockFormationsService := &automock.FormationService{}
 		defer mockFormationsService.AssertExpectations(t)
-		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "additional-1"}).Return(nil, nil)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "additional-1"}, &defaultTemplateName).Return(nil, nil)
 		mockFormationsService.On("DeleteFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "initial-1"}).Return(nil, nil)
 
 		mockService := &automock.Service{}
@@ -934,7 +936,7 @@ func TestUpdateLabelDefinition(t *testing.T) {
 
 		mockFormationsService := &automock.FormationService{}
 		defer mockFormationsService.AssertExpectations(t)
-		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "additional-1"}).Return(nil, nil)
+		mockFormationsService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "additional-1"}, &defaultTemplateName).Return(nil, nil)
 		mockFormationsService.On("DeleteFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: "initial-1"}).Return(nil, nil)
 
 		mockService := &automock.Service{}
