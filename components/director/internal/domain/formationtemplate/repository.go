@@ -81,6 +81,22 @@ func (r *repository) Get(ctx context.Context, id string) (*model.FormationTempla
 	return result, nil
 }
 
+// GetByName returns a single FormationTemplate by given name
+func (r *repository) GetByName(ctx context.Context, templateName string) (*model.FormationTemplate, error) { // todo:: adapt unit tests
+	log.C(ctx).Debugf("Getting formation template by name: %q...", templateName)
+	var entity Entity
+	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("name", templateName)}, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
+	}
+
+	result, err := r.conv.FromEntity(&entity)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting Application Template with name: %q", templateName)
+	}
+
+	return result, nil
+}
+
 // List queries for all FormationTemplate sorted by ID and paginated by the pageSize and cursor parameters
 func (r *repository) List(ctx context.Context, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
 	var entityCollection EntityCollection

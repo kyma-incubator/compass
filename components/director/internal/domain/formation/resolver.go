@@ -13,7 +13,7 @@ import (
 // Service missing godoc
 //go:generate mockery --name=Service --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Service interface {
-	CreateFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
+	CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName *string) (*model.Formation, error)
 	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
@@ -31,6 +31,8 @@ type Converter interface {
 type TenantFetcher interface {
 	FetchOnDemand(tenant, parentTenant string) error
 }
+
+var DefaultTemplateName = "Side-by-side extensibility with Kyma"
 
 // Resolver is the formation resolver
 type Resolver struct {
@@ -51,7 +53,7 @@ func NewResolver(transact persistence.Transactioner, service Service, conv Conve
 }
 
 // CreateFormation creates new formation for the caller tenant
-func (r *Resolver) CreateFormation(ctx context.Context, formation graphql.FormationInput) (*graphql.Formation, error) {
+func (r *Resolver) CreateFormation(ctx context.Context, formation graphql.FormationInput, templateName *string) (*graphql.Formation, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -65,7 +67,11 @@ func (r *Resolver) CreateFormation(ctx context.Context, formation graphql.Format
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	newFormation, err := r.service.CreateFormation(ctx, tnt, r.conv.FromGraphQL(formation))
+	if templateName == nil || *templateName == "" {
+		templateName = &DefaultTemplateName
+	}
+
+	newFormation, err := r.service.CreateFormation(ctx, tnt, r.conv.FromGraphQL(formation), templateName)
 	if err != nil {
 		return nil, err
 	}

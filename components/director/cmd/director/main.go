@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 
 	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
@@ -583,31 +585,27 @@ func appUpdaterFunc(appRepo application.ApplicationRepository) operation.Resourc
 }
 
 func runtimeSvc(cfg config) claims.RuntimeService {
-	uidSvc := uid.NewService()
-
 	authConverter := auth.NewConverter()
-
 	webhookConverter := webhook.NewConverter(authConverter)
 	rtConverter := runtime.NewConverter(webhookConverter)
-	rtRepo := runtime.NewRepository(rtConverter)
-
-	lblRepo := label.NewRepository(label.NewConverter())
-
 	assignmentConv := scenarioassignment.NewConverter()
+	formationConv := formation.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter()
+
+	rtRepo := runtime.NewRepository(rtConverter)
+	lblRepo := label.NewRepository(label.NewConverter())
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
-
 	tenantRepo := tenant.NewRepository(tenant.NewConverter())
-
 	labelDefRepo := labeldef.NewRepository(labeldef.NewConverter())
+	formationRepo := formation.NewRepository(formationConv)
+	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
+
+	uidSvc := uid.NewService()
 	labelDefSvc := labeldef.NewService(labelDefRepo, lblRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
-
 	labelSvc := label.NewLabelService(lblRepo, labelDefRepo, uidSvc)
-
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
-
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, lblRepo, labelSvc)
-
-	formationSvc := formation.NewService(labelDefRepo, lblRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, rtRepo)
+	formationSvc := formation.NewService(labelDefRepo, lblRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, rtRepo)
 
 	return runtime.NewService(rtRepo, lblRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantSvc, webhookService(), cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
 }
