@@ -1,5 +1,6 @@
 package formation
 
+// Entity represents the formation entity
 type Entity struct {
 	ID                  string `db:"id"`
 	TenantID            string `db:"tenant_id"`

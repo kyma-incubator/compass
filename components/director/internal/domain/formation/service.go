@@ -48,10 +48,10 @@ type runtimeContextRepository interface {
 //go:generate mockery --name=FormationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationRepository interface {
 	Create(ctx context.Context, item *model.Formation, id, tenant, formationTemplateID string) error
-	//Get(ctx context.Context, id, tenantID string) (*model.Formation, error)
-	//GetByName(ctx context.Context, name, tenantID string) (*model.Formation, error)
+	//  Get(ctx context.Context, id, tenantID string) (*model.Formation, error)
+	//  GetByName(ctx context.Context, name, tenantID string) (*model.Formation, error)
 	DeleteByName(ctx context.Context, name, tenantID string) error
-	//Exists(ctx context.Context, id, tenantID string) (bool, error)
+	//  Exists(ctx context.Context, id, tenantID string) (bool, error) // todo:: remove
 }
 
 // FormationTemplateRepository represents the FormationTemplate repository layer
@@ -170,6 +170,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 		return nil, errors.Wrapf(err, "An error occurred while getting formation template by name: %q", *templateName)
 	}
 
+	log.C(ctx).Debugf("Creating formation with name: %q and template ID: %q...", formation.Name, fTmpl.ID)
 	if err = s.formationRepository.Create(ctx, &formation, s.uuidService.Generate(), tnt, fTmpl.ID); err != nil {
 		log.C(ctx).Errorf("An error occurred while creating formation with name: %q and template ID: %q", formation.Name, fTmpl.ID)
 		return nil, errors.Wrapf(err, "An error occurred while reating formation with name: %q and template ID: %q", formation.Name, fTmpl.ID)

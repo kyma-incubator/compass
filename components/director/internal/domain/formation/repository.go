@@ -51,7 +51,6 @@ func NewRepository(conv EntityConverter) *repository {
 
 // Create creates a Formation with a given input
 func (r *repository) Create(ctx context.Context, item *model.Formation, id, tenant, formationTemplateID string) error {
-	log.C(ctx).Debugf("Creating formation with name: %q and template ID: %q...", item.Name, formationTemplateID)
 	if item == nil {
 		return apperrors.NewInternalError("model can not be empty")
 	}

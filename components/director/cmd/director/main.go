@@ -150,7 +150,7 @@ type config struct {
 
 	SubscriptionConfig subscription.Config
 
-	TenantOnDemandConfig tenant.FetchOnDemandApiConfig
+	TenantOnDemandConfig tenant.FetchOnDemandAPIConfig
 
 	SkipSSLValidation bool `envconfig:"default=false,APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"`
 }

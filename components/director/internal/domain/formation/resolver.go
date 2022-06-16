@@ -32,7 +32,7 @@ type TenantFetcher interface {
 	FetchOnDemand(tenant, parentTenant string) error
 }
 
-var DefaultTemplateName = "Side-by-side extensibility with Kyma"
+var defaultTemplateName = "Side-by-side extensibility with Kyma"
 
 // Resolver is the formation resolver
 type Resolver struct {
@@ -68,7 +68,7 @@ func (r *Resolver) CreateFormation(ctx context.Context, formation graphql.Format
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	if templateName == nil || *templateName == "" {
-		templateName = &DefaultTemplateName
+		templateName = &defaultTemplateName
 	}
 
 	newFormation, err := r.service.CreateFormation(ctx, tnt, r.conv.FromGraphQL(formation), templateName)
