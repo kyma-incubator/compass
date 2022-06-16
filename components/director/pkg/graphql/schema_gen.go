@@ -4189,6 +4189,7 @@ enum FormationObjectType {
 	APPLICATION
 	TENANT
 	RUNTIME
+	RUNTIME_CONTEXT
 }
 
 enum HealthCheckStatusCondition {
@@ -5590,6 +5591,7 @@ type Mutation {
 	"""
 	**Examples**
 	- [assign application to formation](examples/assign-formation/assign-application-to-formation.graphql)
+	- [assign runtime context to formation](examples/assign-formation/assign-runtime-context-to-formation.graphql)
 	- [assign runtime to formation](examples/assign-formation/assign-runtime-to-formation.graphql)
 	- [assign tenant to formation](examples/assign-formation/assign-tenant-to-formation.graphql)
 	"""
@@ -5597,6 +5599,7 @@ type Mutation {
 	"""
 	**Examples**
 	- [unassign application from formation](examples/unassign-formation/unassign-application-from-formation.graphql)
+	- [unassign runtime context from formation](examples/unassign-formation/unassign-runtime-context-from-formation.graphql)
 	- [unassign runtime from formation](examples/unassign-formation/unassign-runtime-from-formation.graphql)
 	- [unassign tenant from formation](examples/unassign-formation/unassign-tenant-from-formation.graphql)
 	"""
