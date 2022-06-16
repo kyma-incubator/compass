@@ -28,6 +28,8 @@
     - "webhooks.auth:read"
     - "formation:write"
     - "internal_visibility:read"
+    - "runtime.webhooks:read"
+    - "webhook:write"
     - "formation_template:read"
     - "formation_template:write"
 {{- end -}}
