@@ -595,6 +595,8 @@ func runtimeSvc(cfg config) claims.RuntimeService {
 	runtimeContextConverter := runtimectx.NewConverter()
 	runtimeConverter := runtime.NewConverter(webhookConverter)
 	tenantConverter := tenant.NewConverter()
+	formationConv := formation.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter()
 
 	asaRepo := scenarioassignment.NewRepository(asaConverter)
 	labelRepo := label.NewRepository(labelConverter)
