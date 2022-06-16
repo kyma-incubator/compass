@@ -76,12 +76,13 @@ type service struct {
 	repo      runtimeRepository
 	labelRepo labelRepository
 
-	labelUpsertService labelUpsertService
-	uidService         uidService
-	scenariosService   scenariosService
-	formationService   formationService
-	tenantSvc          tenantService
-	webhookService     WebhookService
+	labelUpsertService    labelUpsertService
+	uidService            uidService
+	scenariosService      scenariosService
+	formationService      formationService
+	tenantSvc             tenantService
+	webhookService        WebhookService
+	runtimeContextService RuntimeContextService
 
 	protectedLabelPattern string
 	immutableLabelPattern string
@@ -96,6 +97,7 @@ func NewService(repo runtimeRepository,
 	formationService formationService,
 	tenantService tenantService,
 	webhookService WebhookService,
+	runtimeContextService RuntimeContextService,
 	protectedLabelPattern string,
 	immutableLabelPattern string) *service {
 	return &service{
@@ -107,6 +109,7 @@ func NewService(repo runtimeRepository,
 		formationService:      formationService,
 		tenantSvc:             tenantService,
 		webhookService:        webhookService,
+		runtimeContextService: runtimeContextService,
 		protectedLabelPattern: protectedLabelPattern,
 		immutableLabelPattern: immutableLabelPattern,
 	}
@@ -349,11 +352,22 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeUpdateI
 	return nil
 }
 
-// Delete deletes Runtime and its labels
+// Delete deletes all RuntimeContexts associated with the runtime with ID `id` and then deletes the runtime and its labels
 func (s *service) Delete(ctx context.Context, id string) error {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	runtimeContexts, err := s.runtimeContextService.ListAllForRuntime(ctx, id)
+	if err != nil {
+		return errors.Wrapf(err, "while listing runtimeContexts for runtime with ID %q", id)
+	}
+
+	for _, rc := range runtimeContexts {
+		if err = s.runtimeContextService.Delete(ctx, rc.ID); err != nil {
+			return errors.Wrapf(err, "while deleting runtimeContext with ID %q", rc.ID)
+		}
 	}
 
 	if err = s.unassignRuntimeScenarios(ctx, rtmTenant, id); err != nil {

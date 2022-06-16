@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -73,7 +75,7 @@ func TestService_Exist(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
 			rtmCtxRepo := testCase.RepositoryFn()
-			svc := runtimectx.NewService(rtmCtxRepo, nil, nil, nil)
+			svc := runtimectx.NewService(rtmCtxRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			value, err := svc.Exist(ctx, testCase.InputRuntimeContextID)
@@ -92,7 +94,7 @@ func TestService_Exist(t *testing.T) {
 	}
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// GIVEN
-		svc := runtimectx.NewService(nil, nil, nil, nil)
+		svc := runtimectx.NewService(nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.Exist(context.TODO(), "id")
 		// THEN
@@ -104,7 +106,7 @@ func TestService_Exist(t *testing.T) {
 func TestService_Create(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
-
+	scenario := "scenario"
 	id := "foo"
 	runtimeID := "runtime_id"
 	key := "key"
@@ -121,13 +123,19 @@ func TestService_Create(t *testing.T) {
 
 	tnt := "tenant"
 	externalTnt := "external-tnt"
+	parentTnt := "parent"
+	modelTnt := &model.BusinessTenantMapping{ID: tnt, Parent: parentTnt}
 	ctxWithoutTenant := context.TODO()
 	ctxWithTenant := tenant.SaveToContext(ctxWithoutTenant, tnt, externalTnt)
+	ctxWithParentTenant := tenant.SaveToContext(ctxWithTenant, parentTnt, "")
+	formations := []string{"scenario"}
 
 	testCases := []struct {
 		Name                       string
 		RuntimeContextRepositoryFn func() *automock.RuntimeContextRepository
 		UIDServiceFn               func() *automock.UIDService
+		TenantServiceFN            func() *automock.TenantService
+		FormationServiceFn         func() *automock.FormationService
 		Input                      model.RuntimeContextInput
 		Context                    context.Context
 		ExpectedErrMessage         string
@@ -143,6 +151,17 @@ func TestService_Create(t *testing.T) {
 				svc := &automock.UIDService{}
 				svc.On("Generate").Return(id)
 				return svc
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("GetScenariosFromMatchingASAs", ctxWithParentTenant, id, graphql.FormationObjectTypeRuntimeContext).Return(formations, nil).Once()
+				formationSvc.On("AssignFormation", ctxWithParentTenant, parentTnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}).Return(nil, nil).Once()
+				return formationSvc
+			},
+			TenantServiceFN: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetTenantByID", ctxWithTenant, tnt).Return(modelTnt, nil).Once()
+				return tenantSvc
 			},
 			Input:              modelInput,
 			Context:            ctxWithTenant,
@@ -160,21 +179,96 @@ func TestService_Create(t *testing.T) {
 				svc.On("Generate").Return("").Once()
 				return svc
 			},
+			FormationServiceFn: unusedFormationService,
+			TenantServiceFN:    unusedTenantService,
 			Input:              modelInput,
 			Context:            ctxWithTenant,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Returns error on loading tenant",
+			Name:                       "Returns error on loading tenant",
+			RuntimeContextRepositoryFn: unusedRuntimeContextRepo,
+			UIDServiceFn:               unusedUIDService,
+			FormationServiceFn:         unusedFormationService,
+			TenantServiceFN:            unusedTenantService,
+			Input:                      model.RuntimeContextInput{},
+			Context:                    ctxWithoutTenant,
+			ExpectedErrMessage:         "while loading tenant from context: cannot read tenant from context",
+		},
+		{
+			Name: "Returns error when fetching tenant",
 			RuntimeContextRepositoryFn: func() *automock.RuntimeContextRepository {
-				return &automock.RuntimeContextRepository{}
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("Create", ctxWithTenant, tnt, runtimeCtxModel).Return(nil).Once()
+				return repo
 			},
 			UIDServiceFn: func() *automock.UIDService {
-				return &automock.UIDService{}
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
 			},
-			Input:              model.RuntimeContextInput{},
-			Context:            ctxWithoutTenant,
-			ExpectedErrMessage: "while loading tenant from context: cannot read tenant from context",
+			FormationServiceFn: unusedFormationService,
+			TenantServiceFN: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetTenantByID", ctxWithTenant, tnt).Return(nil, testErr).Once()
+				return tenantSvc
+			},
+			Input:              modelInput,
+			Context:            ctxWithTenant,
+			ExpectedErrMessage: "while getting tenant with id",
+		},
+		{
+			Name: "Returns error when getting ASAs from parent",
+			RuntimeContextRepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("Create", ctxWithTenant, tnt, runtimeCtxModel).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("GetScenariosFromMatchingASAs", ctxWithParentTenant, id, graphql.FormationObjectTypeRuntimeContext).Return(nil, testErr).Once()
+				return formationSvc
+			},
+			TenantServiceFN: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetTenantByID", ctxWithTenant, tnt).Return(modelTnt, nil).Once()
+				return tenantSvc
+			},
+			Input:              modelInput,
+			Context:            ctxWithTenant,
+			ExpectedErrMessage: "while getting formations from automatic scenario assignments",
+		},
+		{
+			Name: "Returns error while assigning runtime context to formation",
+			RuntimeContextRepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("Create", ctxWithTenant, tnt, runtimeCtxModel).Return(nil).Once()
+				return repo
+			},
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("GetScenariosFromMatchingASAs", ctxWithParentTenant, id, graphql.FormationObjectTypeRuntimeContext).Return(formations, nil).Once()
+				formationSvc.On("AssignFormation", ctxWithParentTenant, parentTnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}).Return(nil, testErr).Once()
+				return formationSvc
+			},
+			TenantServiceFN: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetTenantByID", ctxWithTenant, tnt).Return(modelTnt, nil).Once()
+				return tenantSvc
+			},
+			Input:              modelInput,
+			Context:            ctxWithTenant,
+			ExpectedErrMessage: "while assigning formation with name",
 		},
 	}
 
@@ -182,7 +276,9 @@ func TestService_Create(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RuntimeContextRepositoryFn()
 			idSvc := testCase.UIDServiceFn()
-			svc := runtimectx.NewService(repo, nil, nil, idSvc)
+			formationSvc := testCase.FormationServiceFn()
+			tenantSvc := testCase.TenantServiceFN()
+			svc := runtimectx.NewService(repo, nil, nil, formationSvc, tenantSvc, idSvc)
 
 			// WHEN
 			result, err := svc.Create(testCase.Context, testCase.Input)
@@ -197,7 +293,7 @@ func TestService_Create(t *testing.T) {
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			mock.AssertExpectationsForObjects(t, repo, idSvc)
+			mock.AssertExpectationsForObjects(t, repo, formationSvc, tenantSvc, idSvc)
 		})
 	}
 }
@@ -295,7 +391,7 @@ func TestService_Update(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := runtimectx.NewService(repo, nil, nil, nil)
+			svc := runtimectx.NewService(repo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.Update(testCase.Context, testCase.InputID, testCase.Input)
@@ -320,6 +416,7 @@ func TestService_Delete(t *testing.T) {
 	val := "value"
 	runtimeID := "runtime_id"
 
+	scenario := "scenario"
 	runtimeCtxModel := &model.RuntimeContext{
 		ID:        id,
 		Key:       key,
@@ -332,9 +429,12 @@ func TestService_Delete(t *testing.T) {
 	ctxWithoutTenant := context.TODO()
 	ctxWithTenant := tenant.SaveToContext(ctxWithoutTenant, tnt, externalTnt)
 
+	formations := []string{"scenario"}
+
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.RuntimeContextRepository
+		FormationServiceFN func() *automock.FormationService
 		Input              model.RuntimeContextInput
 		InputID            string
 		Context            context.Context
@@ -347,9 +447,51 @@ func TestService_Delete(t *testing.T) {
 				repo.On("Delete", ctxWithTenant, tnt, runtimeCtxModel.ID).Return(nil).Once()
 				return repo
 			},
+			FormationServiceFN: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("GetFormationsForObject", ctxWithTenant, tnt, model.RuntimeContextLabelableObject, id).Return(formations, nil).Once()
+				formationSvc.On("UnassignFormation", ctxWithTenant, tnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}).Return(nil, nil).Once()
+				return formationSvc
+			},
 			InputID:            id,
 			Context:            ctxWithTenant,
 			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when loading tenant from context failed",
+			RepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				return repo
+			},
+			FormationServiceFN: unusedFormationService,
+			InputID:            id,
+			Context:            ctxWithoutTenant,
+			ExpectedErrMessage: "while loading tenant from context: cannot read tenant from context",
+		},
+		{
+			Name:         "Returns error when listing formations for runtime context",
+			RepositoryFn: unusedRuntimeContextRepo,
+			FormationServiceFN: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("GetFormationsForObject", ctxWithTenant, tnt, model.RuntimeContextLabelableObject, id).Return(nil, testErr).Once()
+				return formationSvc
+			},
+			InputID:            id,
+			Context:            ctxWithTenant,
+			ExpectedErrMessage: "while listing formations for runtime context with id",
+		},
+		{
+			Name:         "Returns error while unassigning formation",
+			RepositoryFn: unusedRuntimeContextRepo,
+			FormationServiceFN: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("GetFormationsForObject", ctxWithTenant, tnt, model.RuntimeContextLabelableObject, id).Return(formations, nil).Once()
+				formationSvc.On("UnassignFormation", ctxWithTenant, tnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}).Return(nil, testErr).Once()
+				return formationSvc
+			},
+			InputID:            id,
+			Context:            ctxWithTenant,
+			ExpectedErrMessage: "while unassigning formation with name",
 		},
 		{
 			Name: "Returns error when runtime context deletion failed",
@@ -358,26 +500,23 @@ func TestService_Delete(t *testing.T) {
 				repo.On("Delete", ctxWithTenant, tnt, runtimeCtxModel.ID).Return(testErr).Once()
 				return repo
 			},
+			FormationServiceFN: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("GetFormationsForObject", ctxWithTenant, tnt, model.RuntimeContextLabelableObject, id).Return(formations, nil).Once()
+				formationSvc.On("UnassignFormation", ctxWithTenant, tnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}).Return(nil, nil).Once()
+				return formationSvc
+			},
 			InputID:            id,
 			Context:            ctxWithTenant,
 			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "Returns error when loading tenant from context failed",
-			RepositoryFn: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				return repo
-			},
-			InputID:            id,
-			Context:            ctxWithoutTenant,
-			ExpectedErrMessage: "while loading tenant from context: cannot read tenant from context",
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
-			svc := runtimectx.NewService(repo, nil, nil, nil)
+			formationSvc := testCase.FormationServiceFN()
+			svc := runtimectx.NewService(repo, nil, nil, formationSvc, nil, nil)
 
 			// WHEN
 			err := svc.Delete(testCase.Context, testCase.InputID)
@@ -389,7 +528,7 @@ func TestService_Delete(t *testing.T) {
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			repo.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, repo, formationSvc)
 		})
 	}
 }
@@ -451,7 +590,7 @@ func TestService_GetByID(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtimectx.NewService(repo, nil, nil, nil)
+			svc := runtimectx.NewService(repo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			rtmCtx, err := svc.GetByID(ctx, testCase.InputID)
@@ -470,7 +609,7 @@ func TestService_GetByID(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// GIVEN
-		svc := runtimectx.NewService(nil, nil, nil, nil)
+		svc := runtimectx.NewService(nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.GetByID(context.TODO(), "id")
 		// THEN
@@ -536,7 +675,7 @@ func TestService_GetForRuntime(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtimectx.NewService(repo, nil, nil, nil)
+			svc := runtimectx.NewService(repo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			rtmCtx, err := svc.GetForRuntime(ctx, testCase.InputID, runtimeID)
@@ -555,9 +694,93 @@ func TestService_GetForRuntime(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// GIVEN
-		svc := runtimectx.NewService(nil, nil, nil, nil)
+		svc := runtimectx.NewService(nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.GetForRuntime(context.TODO(), "id", runtimeID)
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
+	})
+}
+
+func TestService_ListAllForRuntime(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	runtimeID := "runtime_id"
+
+	id := "foo"
+	key := "key"
+	val := "value"
+
+	runtimeContexts := []*model.RuntimeContext{
+		{
+			ID:        id,
+			Key:       key,
+			Value:     val,
+			RuntimeID: runtimeID,
+		},
+	}
+
+	tnt := "tenant"
+	externalTnt := "external-tnt"
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.RuntimeContextRepository
+		ExpectedResult     []*model.RuntimeContext
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("ListAllForRuntime", ctx, tnt, runtimeID).Return(runtimeContexts, nil).Once()
+				return repo
+			},
+			ExpectedResult:     runtimeContexts,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when runtime context listing failed",
+			RepositoryFn: func() *automock.RuntimeContextRepository {
+				repo := &automock.RuntimeContextRepository{}
+				repo.On("ListAllForRuntime", ctx, tnt, runtimeID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			svc := runtimectx.NewService(repo, nil, nil, nil, nil, nil)
+
+			// WHEN
+			l, err := svc.ListAllForRuntime(ctx, runtimeID)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, l, testCase.ExpectedResult)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+
+	t.Run("Returns error on loading tenant", func(t *testing.T) {
+		// GIVEN
+		svc := runtimectx.NewService(nil, nil, nil, nil, nil, nil)
+		// WHEN
+		_, err := svc.ListAllForRuntime(context.TODO(), runtimeID)
 		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
@@ -677,7 +900,7 @@ func TestService_ListByFilter(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtimectx.NewService(repo, nil, nil, nil)
+			svc := runtimectx.NewService(repo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			rtmCtx, err := svc.ListByFilter(ctx, runtimeID, testCase.InputLabelFilters, testCase.InputPageSize, testCase.InputCursor)
@@ -696,7 +919,7 @@ func TestService_ListByFilter(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// GIVEN
-		svc := runtimectx.NewService(nil, nil, nil, nil)
+		svc := runtimectx.NewService(nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListByFilter(context.TODO(), "", nil, 1, "")
 		// THEN
@@ -815,7 +1038,7 @@ func TestService_ListByRuntimeIDs(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := runtimectx.NewService(repo, nil, nil, nil)
+			svc := runtimectx.NewService(repo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			rtmCtx, err := svc.ListByRuntimeIDs(ctx, runtimeIDs, testCase.InputPageSize, testCase.InputCursor)
@@ -834,7 +1057,7 @@ func TestService_ListByRuntimeIDs(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// GIVEN
-		svc := runtimectx.NewService(nil, nil, nil, nil)
+		svc := runtimectx.NewService(nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListByRuntimeIDs(context.TODO(), runtimeIDs, 1, "")
 		// THEN
@@ -955,7 +1178,7 @@ func TestService_ListLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := runtimectx.NewService(repo, labelRepo, nil, nil)
+			svc := runtimectx.NewService(repo, labelRepo, nil, nil, nil, nil)
 
 			// WHEN
 			l, err := svc.ListLabels(ctx, testCase.InputRuntimeContextID)
@@ -975,11 +1198,27 @@ func TestService_ListLabel(t *testing.T) {
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
 		// GIVEN
-		svc := runtimectx.NewService(nil, nil, nil, nil)
+		svc := runtimectx.NewService(nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := svc.ListLabels(context.TODO(), "id")
 		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, "while loading tenant from context: cannot read tenant from context")
 	})
+}
+
+func unusedRuntimeContextRepo() *automock.RuntimeContextRepository {
+	return &automock.RuntimeContextRepository{}
+}
+
+func unusedUIDService() *automock.UIDService {
+	return &automock.UIDService{}
+}
+
+func unusedFormationService() *automock.FormationService {
+	return &automock.FormationService{}
+}
+
+func unusedTenantService() *automock.TenantService {
+	return &automock.TenantService{}
 }

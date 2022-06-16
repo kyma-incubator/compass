@@ -1165,20 +1165,22 @@ func (e FetchRequestStatusCondition) MarshalGQL(w io.Writer) {
 type FormationObjectType string
 
 const (
-	FormationObjectTypeApplication FormationObjectType = "APPLICATION"
-	FormationObjectTypeTenant      FormationObjectType = "TENANT"
-	FormationObjectTypeRuntime     FormationObjectType = "RUNTIME"
+	FormationObjectTypeApplication    FormationObjectType = "APPLICATION"
+	FormationObjectTypeTenant         FormationObjectType = "TENANT"
+	FormationObjectTypeRuntime        FormationObjectType = "RUNTIME"
+	FormationObjectTypeRuntimeContext FormationObjectType = "RUNTIME_CONTEXT"
 )
 
 var AllFormationObjectType = []FormationObjectType{
 	FormationObjectTypeApplication,
 	FormationObjectTypeTenant,
 	FormationObjectTypeRuntime,
+	FormationObjectTypeRuntimeContext,
 }
 
 func (e FormationObjectType) IsValid() bool {
 	switch e {
-	case FormationObjectTypeApplication, FormationObjectTypeTenant, FormationObjectTypeRuntime:
+	case FormationObjectTypeApplication, FormationObjectTypeTenant, FormationObjectTypeRuntime, FormationObjectTypeRuntimeContext:
 		return true
 	}
 	return false
