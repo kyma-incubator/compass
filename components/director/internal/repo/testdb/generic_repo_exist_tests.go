@@ -22,6 +22,7 @@ type RepoExistTestSuite struct {
 	TargetID              string
 	TenantID              string
 	RefEntity             interface{}
+	IsGlobal              bool
 }
 
 // Run runs the generic repo exists test suite
@@ -44,7 +45,7 @@ func (suite *RepoExistTestSuite) Run(t *testing.T) bool {
 			convMock := suite.ConverterMockProvider()
 			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 			// WHEN
-			found, err := callExists(pgRepository, ctx, suite.TenantID, suite.TargetID, suite.RefEntity)
+			found, err := callExists(pgRepository, ctx, suite.TenantID, suite.TargetID, suite.RefEntity, suite.IsGlobal)
 			// THEN
 			require.NoError(t, err)
 			require.True(t, found)
@@ -62,7 +63,7 @@ func (suite *RepoExistTestSuite) Run(t *testing.T) bool {
 			convMock := suite.ConverterMockProvider()
 			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 			// WHEN
-			found, err := callExists(pgRepository, ctx, suite.TenantID, suite.TargetID, suite.RefEntity)
+			found, err := callExists(pgRepository, ctx, suite.TenantID, suite.TargetID, suite.RefEntity, suite.IsGlobal)
 			// THEN
 			require.NoError(t, err)
 			require.False(t, found)
@@ -81,7 +82,7 @@ func (suite *RepoExistTestSuite) Run(t *testing.T) bool {
 				convMock := suite.ConverterMockProvider()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 				// WHEN
-				found, err := callExists(pgRepository, ctx, suite.TenantID, suite.TargetID, suite.RefEntity)
+				found, err := callExists(pgRepository, ctx, suite.TenantID, suite.TargetID, suite.RefEntity, suite.IsGlobal)
 				// THEN
 				require.Error(t, err)
 				require.Equal(t, apperrors.InternalError, apperrors.ErrorCode(err))
@@ -96,8 +97,11 @@ func (suite *RepoExistTestSuite) Run(t *testing.T) bool {
 	})
 }
 
-func callExists(repo interface{}, ctx context.Context, tenant string, id string, refEntity interface{}) (bool, error) {
+func callExists(repo interface{}, ctx context.Context, tenant string, id string, refEntity interface{}, isGlobal bool) (bool, error) {
 	args := []reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(tenant), reflect.ValueOf(id)}
+	if isGlobal {
+		args = []reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(id)}
+	}
 	if refEntity != nil {
 		args = append(args, reflect.ValueOf(refEntity))
 	}
