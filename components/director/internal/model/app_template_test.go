@@ -51,6 +51,7 @@ func TestApplicationTemplateInput_ToApplicationTemplate(t *testing.T) {
 			Input: &model.ApplicationTemplateInput{
 				Name:                 testName,
 				Description:          testDescription,
+				ApplicationNamespace: str.Ptr("ns"),
 				ApplicationInputJSON: testAppInputJSON,
 				Placeholders:         testPlaceholders,
 				AccessLevel:          testAccessLevel,
@@ -61,6 +62,7 @@ func TestApplicationTemplateInput_ToApplicationTemplate(t *testing.T) {
 				ID:                   testID,
 				Name:                 testName,
 				Description:          testDescription,
+				ApplicationNamespace: str.Ptr("ns"),
 				ApplicationInputJSON: testAppInputJSON,
 				Placeholders:         testPlaceholders,
 				AccessLevel:          testAccessLevel,

@@ -248,7 +248,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 		Description:           "Test Document",
 		DescribedSystemInstance: &model.Application{
 			BaseURL:             str.Ptr(baseURL),
-			Labels:              json.RawMessage(labels),
+			OrdLabels:           json.RawMessage(labels),
 			DocumentationLabels: json.RawMessage(documentLabels),
 		},
 		Packages: []*model.PackageInput{

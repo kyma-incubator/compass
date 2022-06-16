@@ -13,6 +13,7 @@ type ApplicationTemplate struct {
 	ID                   string
 	Name                 string
 	Description          *string
+	ApplicationNamespace *string
 	ApplicationInputJSON string
 	Placeholders         []ApplicationTemplatePlaceholder
 	AccessLevel          ApplicationTemplateAccessLevel
@@ -31,6 +32,7 @@ type ApplicationTemplateInput struct {
 	ID                   *string
 	Name                 string
 	Description          *string
+	ApplicationNamespace *string
 	ApplicationInputJSON string
 	Placeholders         []ApplicationTemplatePlaceholder
 	AccessLevel          ApplicationTemplateAccessLevel
@@ -94,6 +96,7 @@ func (a *ApplicationTemplateInput) ToApplicationTemplate(id string) ApplicationT
 		ID:                   id,
 		Name:                 a.Name,
 		Description:          a.Description,
+		ApplicationNamespace: a.ApplicationNamespace,
 		ApplicationInputJSON: a.ApplicationInputJSON,
 		Placeholders:         a.Placeholders,
 		AccessLevel:          a.AccessLevel,
@@ -105,6 +108,7 @@ func (a *ApplicationTemplateInput) ToApplicationTemplate(id string) ApplicationT
 type ApplicationTemplateUpdateInput struct {
 	Name                 string
 	Description          *string
+	ApplicationNamespace *string
 	ApplicationInputJSON string
 	Placeholders         []ApplicationTemplatePlaceholder
 	AccessLevel          ApplicationTemplateAccessLevel
@@ -120,6 +124,7 @@ func (a *ApplicationTemplateUpdateInput) ToApplicationTemplate(id string) Applic
 		ID:                   id,
 		Name:                 a.Name,
 		Description:          a.Description,
+		ApplicationNamespace: a.ApplicationNamespace,
 		ApplicationInputJSON: a.ApplicationInputJSON,
 		Placeholders:         a.Placeholders,
 		AccessLevel:          a.AccessLevel,
