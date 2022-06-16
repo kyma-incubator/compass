@@ -453,6 +453,70 @@ func TestUpdateApplication(t *testing.T) {
 	saveExample(t, request.Query(), "update application")
 }
 
+func TestUpdateApplicationWithLocalTenantIDShouldBeAllowedOnlyForIntegrationSystems(t *testing.T) {
+	ctx := context.Background()
+
+	actualApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "before", tenant.TestTenants.GetDefaultTenantID())
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &actualApp)
+	require.NoError(t, err)
+	require.NotEmpty(t, actualApp.ID)
+
+	updateStatusCond := graphql.ApplicationStatusConditionConnected
+	updateInput := fixtures.FixSampleApplicationUpdateInput("after")
+	updateInput.BaseURL = ptr.String("after")
+	updateInput.StatusCondition = &updateStatusCond
+	updateInput.LocalTenantID = ptr.String("localTenantID")
+	updateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationUpdateInputToGQL(updateInput)
+	require.NoError(t, err)
+	request := fixtures.FixUpdateApplicationRequest(actualApp.ID, updateInputGQL)
+	updatedApp := graphql.ApplicationExt{}
+
+	t.Run("should fail for non-integration system", func(t *testing.T) {
+		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &updatedApp)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "insufficient scopes provided")
+	})
+
+	t.Run("should be allowed for integration systems", func(t *testing.T) {
+		expectedApp := actualApp
+		expectedApp.Name = "before"
+		expectedApp.ProviderName = ptr.String("after")
+		expectedApp.Description = ptr.String("after")
+		expectedApp.HealthCheckURL = ptr.String(conf.WebhookUrl)
+		expectedApp.BaseURL = ptr.String("after")
+		expectedApp.Status.Condition = updateStatusCond
+		expectedApp.Labels["name"] = "before"
+		expectedApp.LocalTenantID = ptr.String("localTenantID")
+
+		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "test-update-local-tenant")
+		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
+		require.NoError(t, err)
+		require.NotEmpty(t, intSys.ID)
+
+		intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
+		require.NotEmpty(t, intSysAuth)
+		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+		intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+		require.True(t, ok)
+
+		t.Log("Issue a Hydra token with Client Credentials")
+		accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+		err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, request, &updatedApp)
+
+		require.NoError(t, err)
+		assert.Equal(t, expectedApp.ID, updatedApp.ID)
+		assert.Equal(t, expectedApp.Name, updatedApp.Name)
+		assert.Equal(t, expectedApp.ProviderName, updatedApp.ProviderName)
+		assert.Equal(t, expectedApp.Description, updatedApp.Description)
+		assert.Equal(t, expectedApp.HealthCheckURL, updatedApp.HealthCheckURL)
+		assert.Equal(t, expectedApp.BaseURL, updatedApp.BaseURL)
+		assert.Equal(t, expectedApp.Status.Condition, updatedApp.Status.Condition)
+	})
+}
+
 func TestUpdateApplicationWithNonExistentIntegrationSystem(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
