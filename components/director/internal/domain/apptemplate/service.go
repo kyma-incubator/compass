@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -24,8 +25,9 @@ type ApplicationTemplateRepository interface {
 	Create(ctx context.Context, item model.ApplicationTemplate) error
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 	GetByName(ctx context.Context, id string) (*model.ApplicationTemplate, error)
+	GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)
 	Exists(ctx context.Context, id string) (bool, error)
-	List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
+	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 	Update(ctx context.Context, model model.ApplicationTemplate) error
 	Delete(ctx context.Context, id string) error
 }
@@ -133,6 +135,16 @@ func (s *service) Get(ctx context.Context, id string) (*model.ApplicationTemplat
 	return appTemplate, nil
 }
 
+// GetByFilters gets a model.ApplicationTemplate by given slice of labelfilter.LabelFilter
+func (s *service) GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error) {
+	appTemplate, err := s.appTemplateRepo.GetByFilters(ctx, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting Application Template by filters")
+	}
+
+	return appTemplate, nil
+}
+
 // GetByName missing godoc
 func (s *service) GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error) {
 	appTemplate, err := s.appTemplateRepo.GetByName(ctx, name)
@@ -193,12 +205,12 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 // List missing godoc
-func (s *service) List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error) {
+func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error) {
 	if pageSize < 1 || pageSize > 200 {
 		return model.ApplicationTemplatePage{}, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	return s.appTemplateRepo.List(ctx, pageSize, cursor)
+	return s.appTemplateRepo.List(ctx, filter, pageSize, cursor)
 }
 
 // Update missing godoc
