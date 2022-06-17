@@ -24,7 +24,7 @@ var (
 // EntityConverter converts between the internal model and entity
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityConverter interface {
-	ToEntity(in *model.Formation, id, tenantID, formationTemplateID string) *Entity
+	ToEntity(in *model.Formation) *Entity
 	FromEntity(entity *Entity) *model.Formation
 }
 
@@ -50,13 +50,13 @@ func NewRepository(conv EntityConverter) *repository {
 }
 
 // Create creates a Formation with a given input
-func (r *repository) Create(ctx context.Context, item *model.Formation, id, tenant, formationTemplateID string) error {
+func (r *repository) Create(ctx context.Context, item *model.Formation) error {
 	if item == nil {
 		return apperrors.NewInternalError("model can not be empty")
 	}
 
 	log.C(ctx).Debugf("Converting Formation with name: %q to entity", item.Name)
-	entity := r.conv.ToEntity(item, id, tenant, formationTemplateID)
+	entity := r.conv.ToEntity(item)
 
 	log.C(ctx).Debugf("Persisting Formation entity with name: %q to the DB", item.Name)
 	return r.creator.Create(ctx, entity)
@@ -74,23 +74,15 @@ func (r *repository) Get(ctx context.Context, id, tenantID string) (*model.Forma
 }
 
 // Update updates a Formation with the given input
-func (r *repository) Update(ctx context.Context, model *model.Formation, id, tenantID, formationTemplateID string) error {
+func (r *repository) Update(ctx context.Context, model *model.Formation) error {
 	if model == nil {
 		return apperrors.NewInternalError("model can not be empty")
 	}
-
-	exists, err := r.existQuerier.Exists(ctx, resource.Formations, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)})
-	if err != nil {
-		return errors.Wrapf(err, "while ensuring Formation with ID: %q exists", id)
-	} else if !exists {
-		return apperrors.NewNotFoundError(resource.Formations, id)
-	}
-
-	return r.updater.UpdateSingleGlobal(ctx, r.conv.ToEntity(model, id, tenantID, formationTemplateID))
+	return r.updater.UpdateSingleGlobal(ctx, r.conv.ToEntity(model))
 }
 
 // DeleteByName deletes a Formation with given name
-func (r *repository) DeleteByName(ctx context.Context, name, tenantID string) error {
+func (r *repository) DeleteByName(ctx context.Context, tenantID, name string) error {
 	log.C(ctx).Debugf("Deleting formation with name: %q...", name)
 	return r.deleter.DeleteOne(ctx, resource.Formations, tenantID, repo.Conditions{repo.NewEqualCondition("name", name)})
 }

@@ -17,13 +17,13 @@ type FormationRepository struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, item, id, tenant, formationTemplateID
-func (_m *FormationRepository) Create(ctx context.Context, item *model.Formation, id string, tenant string, formationTemplateID string) error {
-	ret := _m.Called(ctx, item, id, tenant, formationTemplateID)
+// Create provides a mock function with given fields: ctx, item
+func (_m *FormationRepository) Create(ctx context.Context, item *model.Formation) error {
+	ret := _m.Called(ctx, item)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.Formation, string, string, string) error); ok {
-		r0 = rf(ctx, item, id, tenant, formationTemplateID)
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Formation) error); ok {
+		r0 = rf(ctx, item)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -31,13 +31,13 @@ func (_m *FormationRepository) Create(ctx context.Context, item *model.Formation
 	return r0
 }
 
-// DeleteByName provides a mock function with given fields: ctx, name, tenantID
-func (_m *FormationRepository) DeleteByName(ctx context.Context, name string, tenantID string) error {
-	ret := _m.Called(ctx, name, tenantID)
+// DeleteByName provides a mock function with given fields: ctx, tenantID, name
+func (_m *FormationRepository) DeleteByName(ctx context.Context, tenantID string, name string) error {
+	ret := _m.Called(ctx, tenantID, name)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = rf(ctx, name, tenantID)
+		r0 = rf(ctx, tenantID, name)
 	} else {
 		r0 = ret.Error(0)
 	}

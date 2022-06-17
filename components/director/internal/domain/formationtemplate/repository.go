@@ -82,7 +82,7 @@ func (r *repository) Get(ctx context.Context, id string) (*model.FormationTempla
 }
 
 // GetByName returns a single FormationTemplate by given name
-func (r *repository) GetByName(ctx context.Context, templateName string) (*model.FormationTemplate, error) { // todo:: adapt unit tests
+func (r *repository) GetByName(ctx context.Context, templateName string) (*model.FormationTemplate, error) {
 	log.C(ctx).Debugf("Getting formation template by name: %q...", templateName)
 	var entity Entity
 	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("name", templateName)}, repo.NoOrderBy, &entity); err != nil {

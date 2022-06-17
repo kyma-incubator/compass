@@ -32,13 +32,13 @@ func (_m *EntityConverter) FromEntity(entity *formation.Entity) *model.Formation
 	return r0
 }
 
-// ToEntity provides a mock function with given fields: in, id, tenantID, formationTemplateID
-func (_m *EntityConverter) ToEntity(in *model.Formation, id string, tenantID string, formationTemplateID string) *formation.Entity {
-	ret := _m.Called(in, id, tenantID, formationTemplateID)
+// ToEntity provides a mock function with given fields: in
+func (_m *EntityConverter) ToEntity(in *model.Formation) *formation.Entity {
+	ret := _m.Called(in)
 
 	var r0 *formation.Entity
-	if rf, ok := ret.Get(0).(func(*model.Formation, string, string, string) *formation.Entity); ok {
-		r0 = rf(in, id, tenantID, formationTemplateID)
+	if rf, ok := ret.Get(0).(func(*model.Formation) *formation.Entity); ok {
+		r0 = rf(in)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*formation.Entity)

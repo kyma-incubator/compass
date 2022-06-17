@@ -3,6 +3,8 @@ package formation_test
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -11,23 +13,28 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-var tenantID = uuid.New()
-var externalTenantID = uuid.New()
+var (
+	tenantID          = uuid.New()
+	externalTenantID  = uuid.New()
+	nilFormationModel *model.Formation
+)
 
 const (
-	TargetTenantID      = "targetTenantID"
-	ScenarioName        = "scenario-A"
-	ScenarioName2       = "scenario-B"
-	ErrMsg              = "some error"
-	Tnt                 = "953ac686-5773-4ad0-8eb1-2349e931f852"
-	TargetTenant        = "targetTenant"
-	ExternalTnt         = "external-tnt"
-	TenantID2           = "18271026-3998-4391-be58-b783a09fcca8"
-	TargetTenantID2     = "targetTenantID2"
-	RuntimeID           = "rt-id"
-	RuntimeContextID    = "rt-ctx-id"
-	FormationTemplateID = "formationTemplateID"
-	FixUUID             = "003a0855-4eb0-486d-8fc6-3ab2f2312ca0"
+	TargetTenantID          = "targetTenantID"
+	ScenarioName            = "scenario-A"
+	ScenarioName2           = "scenario-B"
+	ErrMsg                  = "some error"
+	Tnt                     = "953ac686-5773-4ad0-8eb1-2349e931f852"
+	TargetTenant            = "targetTenant"
+	ExternalTnt             = "external-tnt"
+	TenantID2               = "18271026-3998-4391-be58-b783a09fcca8"
+	TargetTenantID2         = "targetTenantID2"
+	RuntimeID               = "rt-id"
+	RuntimeContextID        = "rt-ctx-id"
+	FormationTemplateID     = "bda5378d-caa1-4ee4-b8bf-f733e180fbf9"
+	FormationID             = "cf7e396b-ee70-4a47-9aff-9fa9bfa466c1"
+	testFormationName       = "test-formation"
+	secondTestFormationName = "second-formation"
 )
 
 func unusedLabelService() *automock.LabelService {
@@ -98,7 +105,11 @@ func mockScenarioDefServiceThatReturns(scenarios []string) *automock.LabelDefSer
 }
 
 func fixUUID() string {
-	return FixUUID
+	return FormationID
+}
+
+func fixColumns() []string {
+	return []string{"id", "tenant_id", "formation_template_id", "name"}
 }
 
 func fixDefaultScenariosLabelDefinition(tenantID string, schema interface{}) model.LabelDefinition {
@@ -124,11 +135,25 @@ func fixFormationTemplateModel() *model.FormationTemplate {
 		Name:                   "formation-tmpl-name",
 		ApplicationTypes:       []string{"appType1", "appType2"},
 		RuntimeType:            "runtimeTypes",
-		RuntimeTypeDisplayName: "runtimeDispalyName",
+		RuntimeTypeDisplayName: "runtimeDisplayName",
 		RuntimeArtifactKind:    model.RuntimeArtifactKindEnvironmentInstance,
 	}
 }
 
 func fixFormationModel() *model.Formation {
-	return &model.Formation{Name: testFormation}
+	return &model.Formation{
+		ID:                  FormationID,
+		TenantID:            Tnt,
+		FormationTemplateID: FormationTemplateID,
+		Name:                testFormationName,
+	}
+}
+
+func fixFormationEntity() *formation.Entity {
+	return &formation.Entity{
+		ID:                  FormationID,
+		TenantID:            Tnt,
+		FormationTemplateID: FormationTemplateID,
+		Name:                testFormationName,
+	}
 }

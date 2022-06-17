@@ -32,17 +32,17 @@ func TestServiceCreateFormation(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	in := model.Formation{
-		Name: testFormation,
+		Name: testFormationName,
 	}
 	expected := &model.Formation{
-		Name: testFormation,
+		Name: testFormationName,
 	}
 
 	defaultSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT"})
 	assert.NoError(t, err)
 	defaultSchemaLblDef := fixDefaultScenariosLabelDefinition(Tnt, defaultSchema)
 
-	newSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT", testFormation})
+	newSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT", testFormationName})
 	assert.NoError(t, err)
 	newSchemaLblDef := fixDefaultScenariosLabelDefinition(Tnt, newSchema)
 
@@ -71,7 +71,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			LabelDefServiceFn: func() *automock.LabelDefService {
 				labelDefService := &automock.LabelDefService{}
-				labelDefService.On("CreateWithFormations", ctx, Tnt, []string{testFormation}).Return(nil)
+				labelDefService.On("CreateWithFormations", ctx, Tnt, []string{testFormationName}).Return(nil)
 				return labelDefService
 			},
 			ExpectedFormation:  expected,
@@ -103,7 +103,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Create", ctx, fixFormationModel(), FixUUID, Tnt, FormationTemplateID).Return(nil).Once()
+				formationRepoMock.On("Create", ctx, fixFormationModel()).Return(nil).Once()
 				return formationRepoMock
 			},
 			TemplateName:       &templateName,
@@ -119,7 +119,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			LabelDefServiceFn: func() *automock.LabelDefService {
 				labelDefService := &automock.LabelDefService{}
-				labelDefService.On("CreateWithFormations", ctx, Tnt, []string{testFormation}).Return(testErr)
+				labelDefService.On("CreateWithFormations", ctx, Tnt, []string{testFormationName}).Return(testErr)
 				return labelDefService
 			},
 			ExpectedErrMessage: testErr.Error(),
@@ -237,7 +237,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("Create", ctx, fixFormationModel(), FixUUID, Tnt, FormationTemplateID).Return(testErr).Once()
+				formationRepoMock.On("Create", ctx, fixFormationModel()).Return(testErr).Once()
 				return formationRepoMock
 			},
 			TemplateName:       &templateName,
@@ -290,14 +290,14 @@ func TestServiceDeleteFormation(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	in := model.Formation{
-		Name: testFormation,
+		Name: testFormationName,
 	}
 
 	expected := &model.Formation{
-		Name: testFormation,
+		Name: testFormationName,
 	}
 
-	defaultSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT", testFormation})
+	defaultSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT", testFormationName})
 	assert.NoError(t, err)
 	defaultSchemaLblDef := fixDefaultScenariosLabelDefinition(Tnt, defaultSchema)
 
@@ -332,7 +332,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("DeleteByName", ctx, testFormation, Tnt).Return(nil).Once()
+				formationRepoMock.On("DeleteByName", ctx, Tnt, testFormationName).Return(nil).Once()
 				return formationRepoMock
 			},
 			ExpectedFormation:  expected,
@@ -419,7 +419,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				formationRepoMock := &automock.FormationRepository{}
-				formationRepoMock.On("DeleteByName", ctx, testFormation, Tnt).Return(testErr).Once()
+				formationRepoMock.On("DeleteByName", ctx, Tnt, testFormationName).Return(testErr).Once()
 				return formationRepoMock
 			},
 			ExpectedErrMessage: testErr.Error(),
@@ -435,7 +435,6 @@ func TestServiceDeleteFormation(t *testing.T) {
 			if testCase.FormationRepoFn != nil {
 				formationRepoMock = testCase.FormationRepoFn()
 			}
-			//formationTemplateRepoMock := &automock.FormationTemplateRepository{} todo:: remove
 
 			svc := formation.NewService(lblDefRepo, nil, formationRepoMock, nil, nil, nil, lblDefService, nil, nil, nil, nil, nil)
 
@@ -464,10 +463,10 @@ func TestServiceAssignFormation(t *testing.T) {
 	testErr := errors.New("test error")
 
 	inputFormation := model.Formation{
-		Name: testFormation,
+		Name: testFormationName,
 	}
 	expectedFormation := &model.Formation{
-		Name: testFormation,
+		Name: testFormationName,
 	}
 
 	inputSecondFormation := model.Formation{
@@ -482,14 +481,14 @@ func TestServiceAssignFormation(t *testing.T) {
 		ID:         "123",
 		Tenant:     str.Ptr(Tnt),
 		Key:        model.ScenariosKey,
-		Value:      []interface{}{testFormation},
+		Value:      []interface{}{testFormationName},
 		ObjectID:   objectID,
 		ObjectType: model.ApplicationLabelableObject,
 		Version:    0,
 	}
 	applicationLblInput := model.LabelInput{
 		Key:        model.ScenariosKey,
-		Value:      []string{testFormation},
+		Value:      []string{testFormationName},
 		ObjectID:   objectID,
 		ObjectType: model.ApplicationLabelableObject,
 		Version:    0,
@@ -499,21 +498,21 @@ func TestServiceAssignFormation(t *testing.T) {
 		ID:         "123",
 		Tenant:     str.Ptr(Tnt),
 		Key:        model.ScenariosKey,
-		Value:      []interface{}{testFormation},
+		Value:      []interface{}{testFormationName},
 		ObjectID:   objectID,
 		ObjectType: model.RuntimeLabelableObject,
 		Version:    0,
 	}
 	runtimeLblInput := model.LabelInput{
 		Key:        model.ScenariosKey,
-		Value:      []string{testFormation},
+		Value:      []string{testFormationName},
 		ObjectID:   objectID,
 		ObjectType: model.RuntimeLabelableObject,
 		Version:    0,
 	}
 
 	asa := model.AutomaticScenarioAssignment{
-		ScenarioName:   testFormation,
+		ScenarioName:   testFormationName,
 		Tenant:         Tnt,
 		TargetTenantID: TargetTenant,
 	}
@@ -589,7 +588,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				}).Return(applicationLbl, nil)
 				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
-					Value:      []string{testFormation, "test-formation-2"},
+					Value:      []string{testFormationName, "test-formation-2"},
 					ObjectID:   objectID,
 					ObjectType: model.ApplicationLabelableObject,
 					Version:    0,
@@ -662,7 +661,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				}).Return(runtimeLbl, nil)
 				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
-					Value:      []string{testFormation, "test-formation-2"},
+					Value:      []string{testFormationName, "test-formation-2"},
 					ObjectID:   objectID,
 					ObjectType: model.RuntimeLabelableObject,
 					Version:    0,
@@ -691,7 +690,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				labelDefSvc := &automock.LabelDefService{}
 
 				labelDefSvc.On("EnsureScenariosLabelDefinitionExists", ctx, Tnt).Return(nil)
-				labelDefSvc.On("GetAvailableScenarios", ctx, Tnt).Return([]string{testFormation}, nil)
+				labelDefSvc.On("GetAvailableScenarios", ctx, Tnt).Return([]string{testFormationName}, nil)
 
 				return labelDefSvc
 			},
@@ -765,7 +764,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, Tnt, &model.LabelInput{
 					Key:        model.ScenariosKey,
-					Value:      []string{testFormation},
+					Value:      []string{testFormationName},
 					ObjectID:   objectID,
 					ObjectType: model.ApplicationLabelableObject,
 					Version:    0,
@@ -773,7 +772,7 @@ func TestServiceAssignFormation(t *testing.T) {
 					ID:         "123",
 					Tenant:     str.Ptr(Tnt),
 					Key:        model.ScenariosKey,
-					Value:      []string{testFormation},
+					Value:      []string{testFormationName},
 					ObjectID:   objectID,
 					ObjectType: model.ApplicationLabelableObject,
 					Version:    0,
@@ -878,7 +877,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, Tnt, &model.LabelInput{
 					Key:        model.ScenariosKey,
-					Value:      []string{testFormation},
+					Value:      []string{testFormationName},
 					ObjectID:   objectID,
 					ObjectType: model.RuntimeLabelableObject,
 					Version:    0,
@@ -886,7 +885,7 @@ func TestServiceAssignFormation(t *testing.T) {
 					ID:         "123",
 					Tenant:     str.Ptr(Tnt),
 					Key:        model.ScenariosKey,
-					Value:      []string{testFormation},
+					Value:      []string{testFormationName},
 					ObjectID:   objectID,
 					ObjectType: model.RuntimeLabelableObject,
 					Version:    0,
@@ -974,7 +973,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			LabelServiceFn: unusedLabelService,
 			AsaRepoFn: func() *automock.AutomaticFormationAssignmentRepository {
 				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
-				asaRepo.On("Create", ctx, model.AutomaticScenarioAssignment{ScenarioName: testFormation, Tenant: Tnt, TargetTenantID: TargetTenant}).Return(testErr)
+				asaRepo.On("Create", ctx, model.AutomaticScenarioAssignment{ScenarioName: testFormationName, Tenant: Tnt, TargetTenantID: TargetTenant}).Return(testErr)
 
 				return asaRepo
 			},
@@ -983,7 +982,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				labelDefSvc := &automock.LabelDefService{}
 
 				labelDefSvc.On("EnsureScenariosLabelDefinitionExists", ctx, Tnt).Return(nil)
-				labelDefSvc.On("GetAvailableScenarios", ctx, Tnt).Return([]string{testFormation}, nil)
+				labelDefSvc.On("GetAvailableScenarios", ctx, Tnt).Return([]string{testFormationName}, nil)
 
 				return labelDefSvc
 			},
@@ -1051,13 +1050,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 	testErr := errors.New("test error")
 
 	in := model.Formation{
-		Name: testFormation,
+		Name: testFormationName,
 	}
 	expected := &model.Formation{
-		Name: testFormation,
+		Name: testFormationName,
 	}
 	secondFormation := model.Formation{
-		Name: secondTestFormation,
+		Name: secondTestFormationName,
 	}
 
 	objectID := "123"
@@ -1065,7 +1064,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 		ID:         "123",
 		Tenant:     str.Ptr(Tnt),
 		Key:        model.ScenariosKey,
-		Value:      []interface{}{testFormation},
+		Value:      []interface{}{testFormationName},
 		ObjectID:   objectID,
 		ObjectType: model.ApplicationLabelableObject,
 		Version:    0,
@@ -1074,14 +1073,14 @@ func TestServiceUnassignFormation(t *testing.T) {
 		ID:         "123",
 		Tenant:     str.Ptr(Tnt),
 		Key:        model.ScenariosKey,
-		Value:      []interface{}{testFormation, secondTestFormation},
+		Value:      []interface{}{testFormationName, secondTestFormationName},
 		ObjectID:   objectID,
 		ObjectType: model.ApplicationLabelableObject,
 		Version:    0,
 	}
 	applicationLblInput := &model.LabelInput{
 		Key:        model.ScenariosKey,
-		Value:      []string{testFormation},
+		Value:      []string{testFormationName},
 		ObjectID:   objectID,
 		ObjectType: model.ApplicationLabelableObject,
 		Version:    0,
@@ -1091,7 +1090,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 		ID:         "123",
 		Tenant:     str.Ptr(Tnt),
 		Key:        model.ScenariosKey,
-		Value:      []interface{}{testFormation},
+		Value:      []interface{}{testFormationName},
 		ObjectID:   objectID,
 		ObjectType: model.RuntimeLabelableObject,
 		Version:    0,
@@ -1100,21 +1099,21 @@ func TestServiceUnassignFormation(t *testing.T) {
 		ID:         "123",
 		Tenant:     str.Ptr(Tnt),
 		Key:        model.ScenariosKey,
-		Value:      []interface{}{testFormation, secondTestFormation},
+		Value:      []interface{}{testFormationName, secondTestFormationName},
 		ObjectID:   objectID,
 		ObjectType: model.RuntimeLabelableObject,
 		Version:    0,
 	}
 	runtimeLblInput := &model.LabelInput{
 		Key:        model.ScenariosKey,
-		Value:      []string{testFormation},
+		Value:      []string{testFormationName},
 		ObjectID:   objectID,
 		ObjectType: model.RuntimeLabelableObject,
 		Version:    0,
 	}
 
 	asa := model.AutomaticScenarioAssignment{
-		ScenarioName:   testFormation,
+		ScenarioName:   testFormationName,
 		Tenant:         Tnt,
 		TargetTenantID: objectID,
 	}
@@ -1141,7 +1140,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil)
 				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
-					Value:      []string{secondTestFormation},
+					Value:      []string{secondTestFormationName},
 					ObjectID:   objectID,
 					ObjectType: model.ApplicationLabelableObject,
 					Version:    0,
@@ -1166,7 +1165,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil)
 				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
-					Value:      []string{secondTestFormation},
+					Value:      []string{secondTestFormationName},
 					ObjectID:   objectID,
 					ObjectType: model.ApplicationLabelableObject,
 					Version:    0,
@@ -1213,7 +1212,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLbl, nil)
 				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
-					Value:      []string{secondTestFormation},
+					Value:      []string{secondTestFormationName},
 					ObjectID:   objectID,
 					ObjectType: model.RuntimeLabelableObject,
 					Version:    0,
@@ -1257,7 +1256,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, Tnt, &model.LabelInput{
 					Key:        model.ScenariosKey,
-					Value:      []string{testFormation},
+					Value:      []string{testFormationName},
 					ObjectID:   objectID,
 					ObjectType: model.RuntimeLabelableObject,
 					Version:    0,
@@ -1282,14 +1281,14 @@ func TestServiceUnassignFormation(t *testing.T) {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, Tnt, &model.LabelInput{
 					Key:        model.ScenariosKey,
-					Value:      []string{secondTestFormation},
+					Value:      []string{secondTestFormationName},
 					ObjectID:   objectID,
 					ObjectType: model.RuntimeLabelableObject,
 					Version:    0,
 				}).Return(runtimeLblSingleFormation, nil)
 				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
-					Value:      []string{testFormation},
+					Value:      []string{testFormationName},
 					ObjectID:   objectID,
 					ObjectType: model.RuntimeLabelableObject,
 					Version:    0,
@@ -1344,13 +1343,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 			AsaRepoFN: func() *automock.AutomaticFormationAssignmentRepository {
 				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
 
-				asaRepo.On("DeleteForScenarioName", ctx, Tnt, testFormation).Return(nil)
+				asaRepo.On("DeleteForScenarioName", ctx, Tnt, testFormationName).Return(nil)
 
 				return asaRepo
 			},
 			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
 				asaService := &automock.AutomaticFormationAssignmentService{}
-				asaService.On("GetForScenarioName", ctx, testFormation).Return(asa, nil)
+				asaService.On("GetForScenarioName", ctx, testFormationName).Return(asa, nil)
 				return asaService
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
@@ -1393,7 +1392,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, Tnt, &model.LabelInput{
 					Key:        model.ScenariosKey,
-					Value:      []string{testFormation},
+					Value:      []string{testFormationName},
 					ObjectID:   objectID,
 					ObjectType: model.ApplicationLabelableObject,
 					Version:    0,
@@ -1401,7 +1400,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 					ID:         "123",
 					Tenant:     str.Ptr(Tnt),
 					Key:        model.ScenariosKey,
-					Value:      []string{testFormation},
+					Value:      []string{testFormationName},
 					ObjectID:   objectID,
 					ObjectType: model.ApplicationLabelableObject,
 					Version:    0,
@@ -1471,7 +1470,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				labelService.On("GetLabel", ctx, Tnt, applicationLblInput).Return(applicationLbl, nil)
 				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
-					Value:      []string{secondTestFormation},
+					Value:      []string{secondTestFormationName},
 					ObjectID:   objectID,
 					ObjectType: model.ApplicationLabelableObject,
 					Version:    0,
@@ -1533,7 +1532,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctx, Tnt, &model.LabelInput{
 					Key:        model.ScenariosKey,
-					Value:      []string{testFormation},
+					Value:      []string{testFormationName},
 					ObjectID:   objectID,
 					ObjectType: model.RuntimeLabelableObject,
 					Version:    0,
@@ -1541,7 +1540,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 					ID:         "123",
 					Tenant:     str.Ptr(Tnt),
 					Key:        model.ScenariosKey,
-					Value:      []string{testFormation},
+					Value:      []string{testFormationName},
 					ObjectID:   objectID,
 					ObjectType: model.RuntimeLabelableObject,
 					Version:    0,
@@ -1623,7 +1622,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLbl, nil)
 				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
 					Key:        model.ScenariosKey,
-					Value:      []string{secondTestFormation},
+					Value:      []string{secondTestFormationName},
 					ObjectID:   objectID,
 					ObjectType: model.RuntimeLabelableObject,
 					Version:    0,
@@ -1651,13 +1650,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 			AsaRepoFN: func() *automock.AutomaticFormationAssignmentRepository {
 				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
 
-				asaRepo.On("DeleteForScenarioName", ctx, Tnt, testFormation).Return(testErr)
+				asaRepo.On("DeleteForScenarioName", ctx, Tnt, testFormationName).Return(testErr)
 
 				return asaRepo
 			},
 			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
 				asaService := &automock.AutomaticFormationAssignmentService{}
-				asaService.On("GetForScenarioName", ctx, testFormation).Return(asa, nil)
+				asaService.On("GetForScenarioName", ctx, testFormationName).Return(asa, nil)
 				return asaService
 			},
 			RuntimeRepoFN:        unusedRuntimeRepo,
@@ -1674,7 +1673,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			AsaRepoFN:      unusedASARepo,
 			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
 				asaService := &automock.AutomaticFormationAssignmentService{}
-				asaService.On("GetForScenarioName", ctx, testFormation).Return(model.AutomaticScenarioAssignment{}, testErr)
+				asaService.On("GetForScenarioName", ctx, testFormationName).Return(model.AutomaticScenarioAssignment{}, testErr)
 				return asaService
 			},
 			ObjectType:           graphql.FormationObjectTypeTenant,
