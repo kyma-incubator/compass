@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -1466,16 +1465,6 @@ func TestApplicationDeletionInScenario(t *testing.T) {
 	require.NoError(t, err)
 
 	fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &actualApp)
-
-	actualAppDeleted := graphql.ApplicationExt{}
-	queryAppReq := fixtures.FixGetApplicationRequest(actualApp.ID)
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, queryAppReq, &actualAppDeleted)
-	if err != nil {
-		t.Logf("Get Applicaiton return error: %s", err)
-	} else {
-		t.Logf("Get Applicaiton return applicaiton: %+v", actualAppDeleted)
-		spew.Dump(actualAppDeleted)
-	}
 }
 
 func TestMergeApplications(t *testing.T) {
