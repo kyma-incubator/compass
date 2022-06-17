@@ -3834,7 +3834,7 @@ func TestService_ListAll(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			defer mock.AssertExpectationsForObjects(t, repo)
 
-			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, nil, "")
 
 			// WHEN
 			app, err := svc.ListAll(testCase.Context)
