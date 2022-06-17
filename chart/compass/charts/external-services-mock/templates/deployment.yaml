@@ -102,6 +102,8 @@ spec:
                 value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
               - name: APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY #The property which states the provider subaccount used in the tenant provider
                 value: {{.Values.global.tenantFetcher.tenantProvider.providerSubaccountIdProperty }}
+              - name: APP_TENANT_PROVIDER_SUBSCRIPTION_APP_NAME_PROPERTY
+                value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionAppNameProperty }}
               - name: APP_TENANT_CONFIG_TENANT_FETCHER_URL
                 value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
               - name: APP_TENANT_CONFIG_ROOT_API

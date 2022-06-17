@@ -72,6 +72,8 @@ spec:
               value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
             - name: APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY #The property which states the provider subaccount used in the tenant provider
               value: {{.Values.global.tenantFetcher.tenantProvider.providerSubaccountIdProperty }}
+            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_APP_NAME_PROPERTY
+              value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionAppNameProperty }}
             - name: APP_DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: APP_LOG_FORMAT
@@ -188,6 +190,8 @@ spec:
               value: {{ .Values.global.tenantFetcher.fieldMapping.entityTypeField }}
             - name: APP_GLOBAL_ACCOUNT_KEY
               value: {{ default "gaID" .Values.global.tenantFetcher.fieldMapping.globalAccountID }}
+            - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
