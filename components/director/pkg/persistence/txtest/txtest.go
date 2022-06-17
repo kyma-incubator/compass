@@ -67,7 +67,7 @@ func (g txCtxGenerator) ThatSucceeds() (*automock.PersistenceTx, *automock.Trans
 // ThatSucceedsMultipleTimes missing godoc
 func (g txCtxGenerator) ThatSucceedsMultipleTimes(times int) (*automock.PersistenceTx, *automock.Transactioner) {
 	persistTx := &automock.PersistenceTx{}
-	persistTx.On("Commit").Return(nil).Times(times)
+	persistTx.On("Commit").Return(nil).Times(times + 1)
 
 	transact := &automock.Transactioner{}
 	transact.On("Begin").Return(persistTx, nil).Times(times)

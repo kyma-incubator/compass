@@ -41,6 +41,7 @@ type Service struct {
 	labelRepo labelRepository
 
 	appSvc             ApplicationService
+	appTemplateSvc     ApplicationTemplateService
 	webhookSvc         WebhookService
 	bundleSvc          BundleService
 	bundleReferenceSvc BundleReferenceService
@@ -58,11 +59,12 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, labelRepo labelRepository, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client) *Service {
+func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, labelRepo labelRepository, appSvc ApplicationService, appTemplateSvc ApplicationTemplateService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client) *Service {
 	return &Service{
 		config:             config,
 		transact:           transact,
 		appSvc:             appSvc,
+		appTemplateSvc:     appTemplateSvc,
 		labelRepo:          labelRepo,
 		webhookSvc:         webhookSvc,
 		bundleSvc:          bundleSvc,
@@ -107,13 +109,18 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 	wg := &sync.WaitGroup{}
 	wg.Add(s.config.MaxParallelDownloads)
 
+	appTemplates, err := s.getAppTemplates(ctx, pageSize, pageCursor)
+	if err != nil {
+		return err
+	}
+
 	log.C(ctx).Infof("Starting %d workers...", s.config.MaxParallelDownloads)
 	for i := 0; i < s.config.MaxParallelDownloads; i++ {
 		go func() {
 			defer wg.Done()
 
 			for app := range queue {
-				if err := s.processApp(ctx, app, globalResourcesOrdIDs); err != nil {
+				if err := s.processApp(ctx, app, globalResourcesOrdIDs, appTemplates); err != nil {
 					log.C(ctx).WithError(err).Errorf("error while processing app %q", app.ID)
 					atomic.AddInt32(&appErrors, 1)
 				}
@@ -191,7 +198,7 @@ func (s *Service) listAppPage(ctx context.Context, pageSize int, cursor string) 
 	return page, tx.Commit()
 }
 
-func (s *Service) processApp(ctx context.Context, app *model.Application, globalResourcesOrdIDs map[string]bool) error {
+func (s *Service) processApp(ctx context.Context, app *model.Application, globalResourcesOrdIDs map[string]bool, appTemplates map[string]*model.ApplicationTemplate) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
@@ -200,6 +207,7 @@ func (s *Service) processApp(ctx context.Context, app *model.Application, global
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
+
 
 	tnt, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, app.ID)
 	if err != nil {
@@ -212,31 +220,23 @@ func (s *Service) processApp(ctx context.Context, app *model.Application, global
 		return errors.Wrapf(err, "error while locking app with id %q for update", app.ID)
 	}
 
-	webhooks, err := s.webhookSvc.ListForApplicationWithSelectForUpdate(ctx, app.ID)
+	if app.ApplicationTemplateID != nil {
+		appTemplate := appTemplates[*app.ApplicationTemplateID]
+		appTemplateWebhooks := convertWebhooks(appTemplate.Webhooks)
+
+		if err := s.processWebhooksAndDocuments(ctx, tx, appTemplateWebhooks, app, globalResourcesOrdIDs); err != nil {
+			return err
+		}
+	}
+
+	appWebhooks, err := s.webhookSvc.ListForApplicationWithSelectForUpdate(ctx, app.ID)
 	if err != nil {
 		return errors.Wrapf(err, "error fetching webhooks for app with id %q", app.ID)
 	}
-	var documents Documents
-	var baseURL string
-	for _, wh := range webhooks {
-		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
-			ctx = addFieldToLogger(ctx, "app_id", app.ID)
-			documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, wh)
-			if err != nil {
-				log.C(ctx).WithError(err).Errorf("error fetching ORD document for webhook with id %q: %v", wh.ID, err)
-			}
-			break
-		}
+	if err := s.processWebhooksAndDocuments(ctx, tx, appWebhooks, app, globalResourcesOrdIDs); err != nil {
+		return err
 	}
-	if len(documents) > 0 {
-		log.C(ctx).Info("Processing ORD documents")
-		if err := s.processDocuments(ctx, app.ID, baseURL, documents, globalResourcesOrdIDs); err != nil {
-			log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
-		} else {
-			log.C(ctx).Info("Successfully processed ORD documents")
-			return tx.Commit()
-		}
-	}
+
 	return nil
 }
 
@@ -746,6 +746,45 @@ func (s *Service) fetchResources(ctx context.Context, appID string) (map[string]
 	return apiDataFromDB, eventDataFromDB, packageDataFromDB, nil
 }
 
+func (s *Service) processWebhooksAndDocuments(ctx context.Context, tx persistence.PersistenceTx, webhooks []*model.Webhook, app *model.Application, globalResourcesOrdIDs map[string]bool) error {
+	var documents Documents
+	var baseURL string
+	var err error
+	for _, wh := range webhooks {
+		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
+			ctx = addFieldToLogger(ctx, "app_id", app.ID)
+			documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, wh)
+			if err != nil {
+				log.C(ctx).WithError(err).Errorf("error fetching ORD document for webhook with id %q: %v", wh.ID, err)
+			}
+			break
+		}
+	}
+
+	if len(documents) > 0 {
+		log.C(ctx).Info("Processing ORD documents")
+		if err = s.processDocuments(ctx, app.ID, baseURL, documents, globalResourcesOrdIDs); err != nil {
+			log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
+		} else {
+			log.C(ctx).Info("Successfully processed ORD documents")
+			return tx.Commit()
+		}
+	}
+	return nil
+}
+func (s *Service) getAppTemplates(ctx context.Context, pageSize int, pageCursor string) (map[string]*model.ApplicationTemplate, error) {
+	appTemplatePage, err := s.appTemplateSvc.List(ctx, nil, pageSize, pageCursor)
+	if err != nil {
+		return nil, err
+	}
+	appTemplates := make(map[string]*model.ApplicationTemplate)
+	for _, appTmpl := range appTemplatePage.Data {
+		appTemplates[appTmpl.ID] = appTmpl
+	}
+
+	return appTemplates, nil
+}
+
 func hashResources(docs Documents) (map[string]uint64, error) {
 	resourceHashes := make(map[string]uint64)
 
@@ -887,4 +926,13 @@ func addFieldToLogger(ctx context.Context, fieldName, fieldValue string) context
 	logger := log.LoggerFromContext(ctx)
 	logger = logger.WithField(fieldName, fieldValue)
 	return log.ContextWithLogger(ctx, logger)
+}
+
+func convertWebhooks(webhooks []model.Webhook) []*model.Webhook {
+	ptrWebhooks := make([]*model.Webhook, len(webhooks))
+
+	for idx := range webhooks {
+		ptrWebhooks[idx] = &webhooks[idx]
+	}
+	return ptrWebhooks
 }

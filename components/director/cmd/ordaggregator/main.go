@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 	"net/http"
 	"time"
 
@@ -128,6 +129,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	runtimeConverter := runtime.NewConverter(webhookConverter)
 	bundleReferenceConv := bundlereferences.NewConverter()
 	runtimeContextConv := runtimectx.NewConverter()
+	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
 
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
@@ -147,6 +149,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	tombstoneRepo := tombstone.NewRepository(tombstoneConverter)
 	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
 	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConv)
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConv)
 
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
@@ -171,13 +174,14 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 
 	ordClient := ord.NewClient(httpClient, accessStrategyExecutorProvider)
 
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, config.GlobalRegistryConfig, vendorSvc, productSvc, ordClient)
 
 	ordConfig := ord.NewServiceConfig(config.MaxParallelOrdDownloads)
-	return ord.NewAggregatorService(ordConfig, transact, labelRepo, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClient)
+	return ord.NewAggregatorService(ordConfig, transact, labelRepo, appSvc, appTemplateSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClient)
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
