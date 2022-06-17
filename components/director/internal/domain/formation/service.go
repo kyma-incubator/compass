@@ -151,33 +151,22 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 	formationName := formation.Name
 	f, err := s.modifyFormations(ctx, tnt, formationName, addFormation)
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			if err = s.labelDefService.CreateWithFormations(ctx, tnt, []string{formationName}); err != nil {
-				return nil, err
-			}
-			// todo:: create formation here as well
-			return &model.Formation{Name: formationName}, nil
+		if !apperrors.IsNotFoundError(err) {
+			return nil, err
 		}
-		return nil, err
+		if err = s.labelDefService.CreateWithFormations(ctx, tnt, []string{formationName}); err != nil {
+			return nil, err
+		}
+		// TODO:: Currently we need to support both mechanisms of formation creation/deletion(through label definitions and Formations entity) for backwards compatibility
+		if err = s.createFormation(ctx, tnt, *templateName, formationName); err != nil {
+			return nil, err
+		}
+		return &model.Formation{Name: formationName}, nil
 	}
 
 	// TODO:: Currently we need to support both mechanisms of formation creation/deletion(through label definitions and Formations entity) for backwards compatibility
-	fTmpl, err := s.formationTemplateRepository.GetByName(ctx, *templateName)
-	if err != nil {
-		log.C(ctx).Errorf("An error occurred while getting formation template by name: %q: %v", *templateName, err)
-		return nil, errors.Wrapf(err, "An error occurred while getting formation template by name: %q", *templateName)
-	}
-
-	formation = model.Formation{
-		ID:                  s.uuidService.Generate(),
-		TenantID:            tnt,
-		FormationTemplateID: fTmpl.ID,
-		Name:                formationName,
-	}
-	log.C(ctx).Debugf("Creating formation with name: %q and template ID: %q...", formationName, fTmpl.ID)
-	if err = s.formationRepository.Create(ctx, &formation); err != nil {
-		log.C(ctx).Errorf("An error occurred while creating formation with name: %q and template ID: %q", formationName, fTmpl.ID)
-		return nil, errors.Wrapf(err, "An error occurred while reating formation with name: %q and template ID: %q", formationName, fTmpl.ID)
+	if err := s.createFormation(ctx, tnt, *templateName, formationName); err != nil {
+		return nil, err
 	}
 
 	return f, nil
@@ -662,4 +651,26 @@ func (s *service) getAvailableScenarios(ctx context.Context, tenantID string) ([
 		return nil, errors.Wrap(err, "while getting available scenarios")
 	}
 	return out, nil
+}
+
+func (s *service) createFormation(ctx context.Context, tenant, templateName, formationName string) error {
+	fTmpl, err := s.formationTemplateRepository.GetByName(ctx, templateName)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting formation template by name: %q: %v", templateName, err)
+		return errors.Wrapf(err, "An error occurred while getting formation template by name: %q", templateName)
+	}
+
+	formation := &model.Formation{
+		ID:                  s.uuidService.Generate(),
+		TenantID:            tenant,
+		FormationTemplateID: fTmpl.ID,
+		Name:                formationName,
+	}
+	log.C(ctx).Debugf("Creating formation with name: %q and template ID: %q...", formationName, fTmpl.ID)
+	if err = s.formationRepository.Create(ctx, formation); err != nil {
+		log.C(ctx).Errorf("An error occurred while creating formation with name: %q and template ID: %q", formationName, fTmpl.ID)
+		return errors.Wrapf(err, "An error occurred while reating formation with name: %q and template ID: %q", formationName, fTmpl.ID)
+	}
+
+	return nil
 }

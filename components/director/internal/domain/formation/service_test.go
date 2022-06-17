@@ -64,6 +64,11 @@ func TestServiceCreateFormation(t *testing.T) {
 	}{
 		{
 			Name: "success when no labeldef exists",
+			UUIDServiceFn: func() *automock.UuidService {
+				uuidService := &automock.UuidService{}
+				uuidService.On("Generate").Return(fixUUID())
+				return uuidService
+			},
 			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
 				labelDefRepo := &automock.LabelDefRepository{}
 				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.LabelDefinition, ""))
@@ -74,6 +79,17 @@ func TestServiceCreateFormation(t *testing.T) {
 				labelDefService.On("CreateWithFormations", ctx, Tnt, []string{testFormationName}).Return(nil)
 				return labelDefService
 			},
+			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
+				formationTemplateRepoMock := &automock.FormationTemplateRepository{}
+				formationTemplateRepoMock.On("GetByName", ctx, templateName).Return(fixFormationTemplateModel(), nil).Once()
+				return formationTemplateRepoMock
+			},
+			FormationRepoFn: func() *automock.FormationRepository {
+				formationRepoMock := &automock.FormationRepository{}
+				formationRepoMock.On("Create", ctx, fixFormationModel()).Return(nil).Once()
+				return formationRepoMock
+			},
+			TemplateName:       &templateName,
 			ExpectedFormation:  expected,
 			ExpectedErrMessage: "",
 		},
@@ -122,6 +138,26 @@ func TestServiceCreateFormation(t *testing.T) {
 				labelDefService.On("CreateWithFormations", ctx, Tnt, []string{testFormationName}).Return(testErr)
 				return labelDefService
 			},
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error when labeldef is missing and create formation fails",
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.LabelDefinition, ""))
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				labelDefService := &automock.LabelDefService{}
+				labelDefService.On("CreateWithFormations", ctx, Tnt, []string{testFormationName}).Return(nil)
+				return labelDefService
+			},
+			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
+				formationTemplateRepoMock := &automock.FormationTemplateRepository{}
+				formationTemplateRepoMock.On("GetByName", ctx, templateName).Return(nil, testErr).Once()
+				return formationTemplateRepoMock
+			},
+			TemplateName:       &templateName,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
