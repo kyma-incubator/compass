@@ -1674,9 +1674,10 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	baseURL := ptr.String("http://base.com")
 	healthURL := ptr.String("http://health.com")
 	providerName := ptr.String("test-provider")
-	description := ptr.String("app description")
+	description := "app description"
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 	namePlaceholder := "name"
+	displayNamePlaceholder := "display-name"
 	managedLabelValue := "true"
 	sccLabelValue := "cloud connector"
 	expectedProductType := "MergeTemplate"
@@ -1693,6 +1694,10 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 			Name:        namePlaceholder,
 			Description: ptr.String("description"),
 		},
+		{
+			Name:        displayNamePlaceholder,
+			Description: ptr.String(description),
+		},
 	}
 
 	// Create Application Template
@@ -1706,6 +1711,10 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 				Placeholder: namePlaceholder,
 				Value:       "app1-e2e-merge",
 			},
+			{
+				Placeholder: displayNamePlaceholder,
+				Value:       description,
+			},
 		},
 	}
 
@@ -1714,6 +1723,10 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 			{
 				Placeholder: namePlaceholder,
 				Value:       "app2-e2e-merge",
+			},
+			{
+				Placeholder: displayNamePlaceholder,
+				Value:       description,
 			},
 		},
 	}
@@ -1740,7 +1753,7 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	updateInput := fixtures.FixSampleApplicationUpdateInput("after")
 	updateInput.ProviderName = providerName
 	updateInput.HealthCheckURL = healthURL
-	updateInput.Description = description
+	updateInput.Description = ptr.String(description)
 	updateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationUpdateInputToGQL(updateInput)
 	require.NoError(t, err)
 
