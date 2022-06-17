@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -30,7 +31,7 @@ type ApplicationTemplateService interface {
 	CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error)
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 	GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error)
-	List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
+	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 	Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error
 	Delete(ctx context.Context, id string) error
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
@@ -147,7 +148,8 @@ func (r *Resolver) ApplicationTemplate(ctx context.Context, id string) (*graphql
 }
 
 // ApplicationTemplates missing godoc
-func (r *Resolver) ApplicationTemplates(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.ApplicationTemplatePage, error) {
+func (r *Resolver) ApplicationTemplates(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationTemplatePage, error) {
+	labelFilter := labelfilter.MultipleFromGraphQL(filter)
 	var cursor string
 	if after != nil {
 		cursor = string(*after)
@@ -164,7 +166,7 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, first *int, after *
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	appTemplatePage, err := r.appTemplateSvc.List(ctx, *first, cursor)
+	appTemplatePage, err := r.appTemplateSvc.List(ctx, labelFilter, *first, cursor)
 	if err != nil {
 		return nil, err
 	}

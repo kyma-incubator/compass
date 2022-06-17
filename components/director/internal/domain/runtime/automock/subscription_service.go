@@ -13,8 +13,8 @@ type SubscriptionService struct {
 	mock.Mock
 }
 
-// SubscribeTenant provides a mock function with given fields: ctx, providerID, subaccountTenantID, providerSubaccountID, region
-func (_m *SubscriptionService) SubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
+// SubscribeTenantToRuntime provides a mock function with given fields: ctx, providerID, subaccountTenantID, providerSubaccountID, region
+func (_m *SubscriptionService) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
 	ret := _m.Called(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
 
 	var r0 bool
@@ -34,8 +34,8 @@ func (_m *SubscriptionService) SubscribeTenant(ctx context.Context, providerID s
 	return r0, r1
 }
 
-// UnsubscribeTenant provides a mock function with given fields: ctx, providerID, subaccountTenantID, providerSubaccountID, region
-func (_m *SubscriptionService) UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
+// UnsubscribeTenantFromRuntime provides a mock function with given fields: ctx, providerID, subaccountTenantID, providerSubaccountID, region
+func (_m *SubscriptionService) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
 	ret := _m.Called(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
 
 	var r0 bool
