@@ -122,7 +122,7 @@ function cleanup_trap() {
   if [[ ${DUMP_DB} ]]; then
       revert_migrator_file
   fi
-  if $RESET_VALUES_YAML ; then
+  if [[ $RESET_VALUES_YAML ]] ; then
     set_oidc_config "" "" "$DEFAULT_OIDC_ADMIN_GROUPS"
   fi
 }

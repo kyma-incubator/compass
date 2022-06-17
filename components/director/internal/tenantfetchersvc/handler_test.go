@@ -24,6 +24,7 @@ type regionalTenantCreationRequest struct {
 	Subdomain              string `json:"subdomain"`
 	SubscriptionProviderID string `json:"subscriptionProviderId"`
 	ProviderSubaccountID   string `json:"providerSubaccountId"`
+	SubscriptionAppName    string `json:"subscriptionAppName"`
 }
 
 type errReader int
@@ -45,6 +46,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		Subdomain:              regionalTenantSubdomain,
 		SubscriptionProviderID: subscriptionProviderID,
 		ProviderSubaccountID:   providerSubaccountID,
+		SubscriptionAppName:    subscriptionAppName,
 	})
 	assert.NoError(t, err)
 
@@ -53,6 +55,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		Subdomain:              regionalTenantSubdomain,
 		SubscriptionProviderID: subscriptionProviderID,
 		ProviderSubaccountID:   providerSubaccountID,
+		SubscriptionAppName:    subscriptionAppName,
 	})
 	assert.NoError(t, err)
 
@@ -61,6 +64,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		TenantID:               tenantExtID,
 		SubscriptionProviderID: subscriptionProviderID,
 		ProviderSubaccountID:   providerSubaccountID,
+		SubscriptionAppName:    subscriptionAppName,
 	})
 	assert.NoError(t, err)
 
@@ -69,6 +73,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		TenantID:             tenantExtID,
 		Subdomain:            regionalTenantSubdomain,
 		ProviderSubaccountID: providerSubaccountID,
+		SubscriptionAppName:  subscriptionAppName,
 	})
 	assert.NoError(t, err)
 
@@ -78,6 +83,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		Subdomain:              regionalTenantSubdomain,
 		SubscriptionProviderID: subscriptionProviderID,
 		ProviderSubaccountID:   providerSubaccountID,
+		SubscriptionAppName:    subscriptionAppName,
 	})
 	assert.NoError(t, err)
 
@@ -86,8 +92,17 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		SubaccountID:           tenantExtID,
 		Subdomain:              regionalTenantSubdomain,
 		SubscriptionProviderID: subscriptionProviderID,
+		SubscriptionAppName:    subscriptionAppName,
 	})
+	assert.NoError(t, err)
 
+	bodyWithMissingSubscriptionAppName, err := json.Marshal(regionalTenantCreationRequest{
+		SubaccountID:           subaccountTenantExtID,
+		TenantID:               tenantExtID,
+		Subdomain:              regionalTenantSubdomain,
+		SubscriptionProviderID: subscriptionProviderID,
+		ProviderSubaccountID:   providerSubaccountID,
+	})
 	assert.NoError(t, err)
 
 	validHandlerConfig := tenantfetchersvc.HandlerConfig{
@@ -100,6 +115,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 			SubdomainProperty:              tenantProviderSubdomainProperty,
 			SubscriptionProviderIDProperty: subscriptionProviderIDProperty,
 			ProviderSubaccountIDProperty:   providerSubaccountIDProperty,
+			SubscriptionAppNameProperty:    subscriptionAppNameProperty,
 		},
 	}
 	regionalTenant := tenantfetchersvc.TenantSubscriptionRequest{
@@ -109,6 +125,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		Region:                 region,
 		SubscriptionProviderID: subscriptionProviderID,
 		ProviderSubaccountID:   providerSubaccountID,
+		SubscriptionAppName:    subscriptionAppName,
 	}
 	regionalTenantWithMatchingParentID := tenantfetchersvc.TenantSubscriptionRequest{
 		SubaccountTenantID:     "",
@@ -117,6 +134,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		Region:                 region,
 		SubscriptionProviderID: subscriptionProviderID,
 		ProviderSubaccountID:   providerSubaccountID,
+		SubscriptionAppName:    subscriptionAppName,
 	}
 
 	// Subscribe flow
@@ -183,6 +201,14 @@ func TestService_SubscriptionFlows(t *testing.T) {
 			Region:              region,
 			ExpectedStatusCode:  http.StatusBadRequest,
 			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", providerSubaccountIDProperty),
+		},
+		{
+			Name:                "Returns error when subscriptionAppNameProperty is not found in body",
+			TenantSubscriberFn:  func() *automock.TenantSubscriber { return &automock.TenantSubscriber{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingSubscriptionAppName)),
+			Region:              region,
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", subscriptionAppNameProperty),
 		},
 		{
 			Name:                "Returns error when request body doesn't contain tenant subdomain",

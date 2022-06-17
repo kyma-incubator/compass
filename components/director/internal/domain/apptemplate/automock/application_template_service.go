@@ -5,8 +5,10 @@ package automock
 import (
 	context "context"
 
-	model "github.com/kyma-incubator/compass/components/director/internal/model"
+	labelfilter "github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	mock "github.com/stretchr/testify/mock"
+
+	model "github.com/kyma-incubator/compass/components/director/internal/model"
 
 	testing "testing"
 )
@@ -141,20 +143,20 @@ func (_m *ApplicationTemplateService) GetLabel(ctx context.Context, appTemplateI
 	return r0, r1
 }
 
-// List provides a mock function with given fields: ctx, pageSize, cursor
-func (_m *ApplicationTemplateService) List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error) {
-	ret := _m.Called(ctx, pageSize, cursor)
+// List provides a mock function with given fields: ctx, filter, pageSize, cursor
+func (_m *ApplicationTemplateService) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error) {
+	ret := _m.Called(ctx, filter, pageSize, cursor)
 
 	var r0 model.ApplicationTemplatePage
-	if rf, ok := ret.Get(0).(func(context.Context, int, string) model.ApplicationTemplatePage); ok {
-		r0 = rf(ctx, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, int, string) model.ApplicationTemplatePage); ok {
+		r0 = rf(ctx, filter, pageSize, cursor)
 	} else {
 		r0 = ret.Get(0).(model.ApplicationTemplatePage)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
-		r1 = rf(ctx, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter, int, string) error); ok {
+		r1 = rf(ctx, filter, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}
