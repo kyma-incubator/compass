@@ -1680,14 +1680,14 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	displayNamePlaceholder := "display-name"
 	managedLabelValue := "true"
 	sccLabelValue := "cloud connector"
-	expectedProductType := "MergeTemplate"
+	expectedProductType :=  createAppTemplateName("MergeTemplate")
 	newFormation := "formation-merge-applications-e2e"
 
 	appTmplInput := fixAppTemplateInput(expectedProductType)
 	appTmplInput.ApplicationInput.Name = "{{name}}"
 	appTmplInput.ApplicationInput.BaseURL = baseURL
 	appTmplInput.ApplicationInput.ProviderName = nil
-	appTmplInput.ApplicationInput.Description = nil
+	appTmplInput.ApplicationInput.Description = ptr.String("{{display-name}}")
 	appTmplInput.ApplicationInput.HealthCheckURL = nil
 	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
 		{
