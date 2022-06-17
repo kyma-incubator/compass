@@ -803,6 +803,7 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 	}
 
 	if _, exists := appTemplateLabels[s.selfRegisterDistinguishLabelKey]; exists {
+		log.C(ctx).Infof("applications should not be merged, because an application template with id %s has label %s", srcTemplateID, s.selfRegisterDistinguishLabelKey)
 		return nil, errors.Errorf("app template: %s has label %s", srcTemplateID, s.selfRegisterDistinguishLabelKey)
 	}
 	if srcApp.Status == nil {

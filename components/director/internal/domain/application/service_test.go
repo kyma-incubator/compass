@@ -3445,6 +3445,41 @@ func TestService_Merge(t *testing.T) {
 			SourceID:           srcID,
 			ExpectedErrMessage: "app template: 12346789 has label subscriptionProviderId",
 		},
+		{
+			Name: "Error when cannot get application template labels",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
+				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
+				repo.AssertNotCalled(t, "Exists")
+				repo.AssertNotCalled(t, "Update")
+				repo.AssertNotCalled(t, "Delete")
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.AssertNotCalled(t, "ListAll")
+				return repo
+			},
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.AssertNotCalled(t, "GetByKey")
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
+				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
+				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(nil, testErr)
+
+				return repo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				svc := &automock.LabelUpsertService{}
+				svc.AssertNotCalled(t, "UpsertMultipleLabels")
+				return svc
+			},
+			Ctx:                ctx,
+			DestinationID:      destID,
+			SourceID:           srcID,
+			ExpectedErrMessage: testErr.Error(),
+		},
 	}
 
 	for _, testCase := range testCases {
