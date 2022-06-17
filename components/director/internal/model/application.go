@@ -20,7 +20,7 @@ type Application struct {
 	ApplicationTemplateID *string
 	SystemNumber          *string
 	BaseURL               *string         `json:"baseUrl"`
-	Labels                json.RawMessage `json:"labels"`
+	OrdLabels             json.RawMessage `json:"labels"`
 	CorrelationIDs        json.RawMessage `json:"correlationIds,omitempty"`
 	Type                  string          `json:"-"`
 	// SystemStatus shows whether the on-premise system is reachable or unreachable
@@ -58,8 +58,8 @@ func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timest
 	if update.BaseURL != nil {
 		app.BaseURL = update.BaseURL
 	}
-	if update.Labels != nil {
-		app.Labels = update.Labels
+	if update.OrdLabels != nil {
+		app.OrdLabels = update.OrdLabels
 	}
 	if update.CorrelationIDs != nil {
 		app.CorrelationIDs = update.CorrelationIDs
@@ -161,7 +161,7 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id string)
 			Timestamp: timestamp,
 		},
 		BaseURL:             i.BaseURL,
-		Labels:              i.OrdLabels,
+		OrdLabels:           i.OrdLabels,
 		CorrelationIDs:      i.CorrelationIDs,
 		SystemNumber:        i.SystemNumber,
 		SystemStatus:        i.SystemStatus,
@@ -190,7 +190,7 @@ type ApplicationUpdateInput struct {
 	IntegrationSystemID *string
 	StatusCondition     *ApplicationStatusCondition
 	BaseURL             *string
-	Labels              json.RawMessage
+	OrdLabels           json.RawMessage
 	CorrelationIDs      json.RawMessage
 	SystemStatus        *string
 	DocumentationLabels json.RawMessage

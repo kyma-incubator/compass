@@ -31,7 +31,7 @@ func TestRepository_Create(t *testing.T) {
 		mockConverter.On("ToEntity", appTemplateModel).Return(appTemplateEntity, nil).Once()
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.app_templates ( id, name, description, application_input, placeholders, access_level ) VALUES ( ?, ?, ?, ?, ?, ? )`)).
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.app_templates ( id, name, description, application_namespace, application_input, placeholders, access_level ) VALUES ( ?, ?, ?, ?, ?, ?, ? )`)).
 			WithArgs(fixAppTemplateCreateArgs(*appTemplateEntity)...).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
@@ -75,7 +75,7 @@ func TestRepository_Create(t *testing.T) {
 		mockConverter.On("ToEntity", appTemplateModel).Return(appTemplateEntity, nil).Once()
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.app_templates ( id, name, description, application_input, placeholders, access_level ) VALUES ( ?, ?, ?, ?, ?, ? )`)).
+		dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO public.app_templates ( id, name, description, application_namespace, application_input, placeholders, access_level ) VALUES ( ?, ?, ?, ?, ?, ?, ? )`)).
 			WithArgs(fixAppTemplateCreateArgs(*appTemplateEntity)...).
 			WillReturnError(testError)
 
@@ -105,7 +105,7 @@ func TestRepository_Get(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		rowsToReturn := fixSQLRows([]apptemplate.Entity{*appTemplateEntity})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_input, placeholders, access_level FROM public.app_templates WHERE id = $1`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_namespace, application_input, placeholders, access_level FROM public.app_templates WHERE id = $1`)).
 			WithArgs(testID).
 			WillReturnRows(rowsToReturn)
 
@@ -127,7 +127,7 @@ func TestRepository_Get(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_input, placeholders, access_level FROM public.app_templates WHERE id = $1`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_namespace, application_input, placeholders, access_level FROM public.app_templates WHERE id = $1`)).
 			WithArgs(testID).
 			WillReturnError(testError)
 
@@ -153,7 +153,7 @@ func TestRepository_Get(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		rowsToReturn := fixSQLRows([]apptemplate.Entity{*appTemplateEntity})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_input, placeholders, access_level FROM public.app_templates WHERE id = $1`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_namespace, application_input, placeholders, access_level FROM public.app_templates WHERE id = $1`)).
 			WithArgs(testID).
 			WillReturnRows(rowsToReturn)
 
@@ -183,7 +183,7 @@ func TestRepository_GetByName(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		rowsToReturn := fixSQLRows([]apptemplate.Entity{*appTemplateEntity})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_input, placeholders, access_level FROM public.app_templates WHERE name = $1`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_namespace, application_input, placeholders, access_level FROM public.app_templates WHERE name = $1`)).
 			WithArgs(testName).
 			WillReturnRows(rowsToReturn)
 
@@ -205,7 +205,7 @@ func TestRepository_GetByName(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_input, placeholders, access_level FROM public.app_templates WHERE name = $1`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_namespace, application_input, placeholders, access_level FROM public.app_templates WHERE name = $1`)).
 			WithArgs(testName).
 			WillReturnError(testError)
 
@@ -231,7 +231,7 @@ func TestRepository_GetByName(t *testing.T) {
 		defer dbMock.AssertExpectations(t)
 
 		rowsToReturn := fixSQLRows([]apptemplate.Entity{*appTemplateEntity})
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_input, placeholders, access_level FROM public.app_templates WHERE name = $1`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_namespace, application_input, placeholders, access_level FROM public.app_templates WHERE name = $1`)).
 			WithArgs(testName).
 			WillReturnRows(rowsToReturn)
 
@@ -458,7 +458,7 @@ func TestRepository_List(t *testing.T) {
 		defer mockConverter.AssertExpectations(t)
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_input, placeholders, access_level FROM public.app_templates ORDER BY id LIMIT 3 OFFSET 0`)).
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_namespace, application_input, placeholders, access_level FROM public.app_templates ORDER BY id LIMIT 3 OFFSET 0`)).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -484,8 +484,8 @@ func TestRepository_Update(t *testing.T) {
 		mockConverter.On("ToEntity", appTemplateModel).Return(appTemplateEntity, nil).Once()
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.app_templates SET name = ?, description = ?, application_input = ?, placeholders = ?, access_level = ? WHERE id = ?`)).
-			WithArgs(appTemplateEntity.Name, appTemplateEntity.Description, appTemplateEntity.ApplicationInputJSON, appTemplateEntity.PlaceholdersJSON, appTemplateEntity.AccessLevel, appTemplateEntity.ID).
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.app_templates SET name = ?, description = ?, application_namespace = ?, application_input = ?, placeholders = ?, access_level = ? WHERE id = ?`)).
+			WithArgs(appTemplateEntity.Name, appTemplateEntity.Description, appTemplateEntity.ApplicationNamespace, appTemplateEntity.ApplicationInputJSON, appTemplateEntity.PlaceholdersJSON, appTemplateEntity.AccessLevel, appTemplateEntity.ID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -509,8 +509,8 @@ func TestRepository_Update(t *testing.T) {
 		mockConverter.On("ToEntity", appTemplateModel).Return(appTemplateEntity, nil).Once()
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
-		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.app_templates SET name = ?, description = ?, application_input = ?, placeholders = ?, access_level = ? WHERE id = ?`)).
-			WithArgs(appTemplateEntity.Name, appTemplateEntity.Description, appTemplateEntity.ApplicationInputJSON, appTemplateEntity.PlaceholdersJSON, appTemplateEntity.AccessLevel, appTemplateEntity.ID).
+		dbMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.app_templates SET name = ?, description = ?, application_namespace = ?, application_input = ?, placeholders = ?, access_level = ? WHERE id = ?`)).
+			WithArgs(appTemplateEntity.Name, appTemplateEntity.Description, appTemplateEntity.ApplicationNamespace, appTemplateEntity.ApplicationInputJSON, appTemplateEntity.PlaceholdersJSON, appTemplateEntity.AccessLevel, appTemplateEntity.ID).
 			WillReturnError(testError)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)

@@ -39,36 +39,45 @@ func (_m *FormationService) AssignFormation(ctx context.Context, tnt string, obj
 	return r0, r1
 }
 
-// DeleteAutomaticScenarioAssignment provides a mock function with given fields: ctx, in
-func (_m *FormationService) DeleteAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) error {
-	ret := _m.Called(ctx, in)
+// GetFormationsForObject provides a mock function with given fields: ctx, tnt, objType, objID
+func (_m *FormationService) GetFormationsForObject(ctx context.Context, tnt string, objType model.LabelableObject, objID string) ([]string, error) {
+	ret := _m.Called(ctx, tnt, objType, objID)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.AutomaticScenarioAssignment) error); ok {
-		r0 = rf(ctx, in)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// MergeScenariosFromInputLabelsAndAssignments provides a mock function with given fields: ctx, inputLabels, runtimeID
-func (_m *FormationService) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error) {
-	ret := _m.Called(ctx, inputLabels, runtimeID)
-
-	var r0 []interface{}
-	if rf, ok := ret.Get(0).(func(context.Context, map[string]interface{}, string) []interface{}); ok {
-		r0 = rf(ctx, inputLabels, runtimeID)
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string) []string); ok {
+		r0 = rf(ctx, tnt, objType, objID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]interface{})
+			r0 = ret.Get(0).([]string)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, map[string]interface{}, string) error); ok {
-		r1 = rf(ctx, inputLabels, runtimeID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.LabelableObject, string) error); ok {
+		r1 = rf(ctx, tnt, objType, objID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetScenariosFromMatchingASAs provides a mock function with given fields: ctx, objectID, objType
+func (_m *FormationService) GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error) {
+	ret := _m.Called(ctx, objectID, objType)
+
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(context.Context, string, graphql.FormationObjectType) []string); ok {
+		r0 = rf(ctx, objectID, objType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, graphql.FormationObjectType) error); ok {
+		r1 = rf(ctx, objectID, objType)
 	} else {
 		r1 = ret.Error(1)
 	}

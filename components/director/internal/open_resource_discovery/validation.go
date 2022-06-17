@@ -188,7 +188,7 @@ func ValidateSystemInstanceInput(app *model.Application) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
 		})),
 		validation.Field(&app.BaseURL, is.RequestURI, validation.Match(regexp.MustCompile(SystemInstanceBaseURLRegex))),
-		validation.Field(&app.Labels, validation.By(validateORDLabels)),
+		validation.Field(&app.OrdLabels, validation.By(validateORDLabels)),
 		validation.Field(&app.DocumentationLabels, validation.By(validateDocumentationLabels)),
 	)
 }
