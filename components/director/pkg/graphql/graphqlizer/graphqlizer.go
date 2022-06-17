@@ -86,6 +86,9 @@ func (g *Graphqlizer) ApplicationTemplateInputToGQL(in graphql.ApplicationTempla
 		{{- if .Description }}
 		description: "{{.Description}}",
 		{{- end }}
+		{{- if .ApplicationNamespace }}
+		applicationNamespace: "{{.ApplicationNamespace}}",
+		{{- end }}
 		applicationInput: {{ ApplicationRegisterInputToGQL .ApplicationInput}},
 		{{- if .Placeholders }}
 		placeholders: [
@@ -112,6 +115,9 @@ func (g *Graphqlizer) ApplicationTemplateUpdateInputToGQL(in graphql.Application
 		name: "{{.Name}}",
 		{{- if .Description }}
 		description: "{{.Description}}",
+		{{- end }}
+		{{- if .ApplicationNamespace }}
+		applicationNamespace: "{{.ApplicationNamespace}}",
 		{{- end }}
 		applicationInput: {{ ApplicationRegisterInputToGQL .ApplicationInput}},
 		{{- if .Placeholders }}

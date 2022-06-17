@@ -28,7 +28,7 @@ func NoopSelfRegManager() *automock.SelfRegisterManager {
 func SelfRegManagerThatDoesPrepWithNoErrors(res map[string]interface{}) func() *automock.SelfRegisterManager {
 	return func() *automock.SelfRegisterManager {
 		srm := &automock.SelfRegisterManager{}
-		srm.On("PrepareForSelfRegistration", mock.Anything, resource.Runtime, mock.Anything, mock.AnythingOfType("string")).Return(res, nil).Once()
+		srm.On("PrepareForSelfRegistration", mock.Anything, resource.Runtime, mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(res, nil).Once()
 		return srm
 	}
 }
@@ -37,7 +37,7 @@ func SelfRegManagerThatDoesPrepWithNoErrors(res map[string]interface{}) func() *
 func SelfRegManagerThatReturnsErrorOnPrep() *automock.SelfRegisterManager {
 	srm := &automock.SelfRegisterManager{}
 	labels := make(map[string]interface{})
-	srm.On("PrepareForSelfRegistration", mock.Anything, resource.Runtime, mock.Anything, mock.AnythingOfType("string")).Return(labels, errors.New(SelfRegErrorMsg)).Once()
+	srm.On("PrepareForSelfRegistration", mock.Anything, resource.Runtime, mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(labels, errors.New(SelfRegErrorMsg)).Once()
 	return srm
 }
 
