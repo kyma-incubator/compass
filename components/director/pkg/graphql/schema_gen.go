@@ -137,14 +137,15 @@ type ComplexityRoot struct {
 	}
 
 	ApplicationTemplate struct {
-		AccessLevel      func(childComplexity int) int
-		ApplicationInput func(childComplexity int) int
-		Description      func(childComplexity int) int
-		ID               func(childComplexity int) int
-		Labels           func(childComplexity int, key *string) int
-		Name             func(childComplexity int) int
-		Placeholders     func(childComplexity int) int
-		Webhooks         func(childComplexity int) int
+		AccessLevel          func(childComplexity int) int
+		ApplicationInput     func(childComplexity int) int
+		ApplicationNamespace func(childComplexity int) int
+		Description          func(childComplexity int) int
+		ID                   func(childComplexity int) int
+		Labels               func(childComplexity int, key *string) int
+		Name                 func(childComplexity int) int
+		Placeholders         func(childComplexity int) int
+		Webhooks             func(childComplexity int) int
 	}
 
 	ApplicationTemplatePage struct {
@@ -1183,6 +1184,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ApplicationTemplate.ApplicationInput(childComplexity), true
+
+	case "ApplicationTemplate.applicationNamespace":
+		if e.complexity.ApplicationTemplate.ApplicationNamespace == nil {
+			break
+		}
+
+		return e.complexity.ApplicationTemplate.ApplicationNamespace(childComplexity), true
 
 	case "ApplicationTemplate.description":
 		if e.complexity.ApplicationTemplate.Description == nil {
@@ -4197,6 +4205,7 @@ enum FormationObjectType {
 	APPLICATION
 	TENANT
 	RUNTIME
+	RUNTIME_CONTEXT
 }
 
 enum HealthCheckStatusCondition {
@@ -4392,6 +4401,7 @@ input ApplicationTemplateInput {
 	applicationInput: ApplicationRegisterInput!
 	placeholders: [PlaceholderDefinitionInput!]
 	accessLevel: ApplicationTemplateAccessLevel!
+	applicationNamespace: String
 }
 
 input ApplicationTemplateUpdateInput {
@@ -4406,6 +4416,7 @@ input ApplicationTemplateUpdateInput {
 	applicationInput: ApplicationRegisterInput!
 	placeholders: [PlaceholderDefinitionInput!]
 	accessLevel: ApplicationTemplateAccessLevel!
+	applicationNamespace: String
 }
 
 input ApplicationUpdateInput {
@@ -4910,6 +4921,7 @@ type ApplicationTemplate {
 	placeholders: [PlaceholderDefinition!]!
 	labels(key: String): Labels
 	accessLevel: ApplicationTemplateAccessLevel!
+	applicationNamespace: String
 }
 
 type ApplicationTemplatePage implements Pageable {
@@ -5601,6 +5613,7 @@ type Mutation {
 	"""
 	**Examples**
 	- [assign application to formation](examples/assign-formation/assign-application-to-formation.graphql)
+	- [assign runtime context to formation](examples/assign-formation/assign-runtime-context-to-formation.graphql)
 	- [assign runtime to formation](examples/assign-formation/assign-runtime-to-formation.graphql)
 	- [assign tenant to formation](examples/assign-formation/assign-tenant-to-formation.graphql)
 	"""
@@ -5608,6 +5621,7 @@ type Mutation {
 	"""
 	**Examples**
 	- [unassign application from formation](examples/unassign-formation/unassign-application-from-formation.graphql)
+	- [unassign runtime context from formation](examples/unassign-formation/unassign-runtime-context-from-formation.graphql)
 	- [unassign runtime from formation](examples/unassign-formation/unassign-runtime-from-formation.graphql)
 	- [unassign tenant from formation](examples/unassign-formation/unassign-tenant-from-formation.graphql)
 	"""
@@ -10465,6 +10479,37 @@ func (ec *executionContext) _ApplicationTemplate_accessLevel(ctx context.Context
 	res := resTmp.(ApplicationTemplateAccessLevel)
 	fc.Result = res
 	return ec.marshalNApplicationTemplateAccessLevel2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateAccessLevel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ApplicationTemplate_applicationNamespace(ctx context.Context, field graphql.CollectedField, obj *ApplicationTemplate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ApplicationTemplate",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ApplicationNamespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ApplicationTemplatePage_data(ctx context.Context, field graphql.CollectedField, obj *ApplicationTemplatePage) (ret graphql.Marshaler) {
@@ -25764,6 +25809,12 @@ func (ec *executionContext) unmarshalInputApplicationTemplateInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
+		case "applicationNamespace":
+			var err error
+			it.ApplicationNamespace, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -25803,6 +25854,12 @@ func (ec *executionContext) unmarshalInputApplicationTemplateUpdateInput(ctx con
 		case "accessLevel":
 			var err error
 			it.AccessLevel, err = ec.unmarshalNApplicationTemplateAccessLevel2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplateAccessLevel(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "applicationNamespace":
+			var err error
+			it.ApplicationNamespace, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -27697,6 +27754,8 @@ func (ec *executionContext) _ApplicationTemplate(ctx context.Context, sel ast.Se
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "applicationNamespace":
+			out.Values[i] = ec._ApplicationTemplate_applicationNamespace(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

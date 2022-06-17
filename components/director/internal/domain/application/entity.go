@@ -20,7 +20,7 @@ type Entity struct {
 	BaseURL               sql.NullString `db:"base_url"`
 	SystemNumber          sql.NullString `db:"system_number"`
 	LocalTenantID         sql.NullString `db:"local_tenant_id"`
-	Labels                sql.NullString `db:"labels"`
+	OrdLabels             sql.NullString `db:"labels"`
 	CorrelationIDs        sql.NullString `db:"correlation_ids"`
 	SystemStatus          sql.NullString `db:"system_status"`
 

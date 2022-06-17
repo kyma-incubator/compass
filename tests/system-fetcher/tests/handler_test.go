@@ -58,8 +58,9 @@ const (
 		"additionalAttributes": {}
 	}`
 
-	nameLabelKey    = "displayName"
-	namePlaceholder = "name"
+	nameLabelKey           = "displayName"
+	namePlaceholder        = "name"
+	displayNamePlaceholder = "display-name"
 )
 
 var additionalSystemLabels = directorSchema.Labels{
@@ -97,12 +98,14 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate("temp1"))
+	appTemplateName1 := createAppTemplateName("temp1")
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
-	appTemplateInput2 := fixApplicationTemplate("temp2")
+	appTemplateName2 := createAppTemplateName("temp2")
+	appTemplateInput2 := fixApplicationTemplate(appTemplateName2)
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template2)
@@ -160,14 +163,16 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	setMultipleMockSystemsResponses(t, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
-	appTemplateInput2 := fixApplicationTemplate("temp2")
+	appTemplateName2 := createAppTemplateName("temp2")
+	appTemplateInput2 := fixApplicationTemplate(appTemplateName2)
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template2)
 	require.NoError(t, err)
 	require.NotEmpty(t, template2.ID)
 
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate("temp1"))
+	appTemplateName1 := createAppTemplateName("temp1")
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
@@ -255,12 +260,14 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetSystemFetcherTenantID())
 	defer cleanupMockSystems(t)
 
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate("temp1"))
+	appTemplateName1 := createAppTemplateName("temp1")
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
-	appTemplateInput2 := fixApplicationTemplate("temp2")
+	appTemplateName2 := createAppTemplateName("temp2")
+	appTemplateInput2 := fixApplicationTemplate(appTemplateName2)
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template2)
@@ -366,12 +373,14 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate("temp1"))
+	appTemplateName1 := createAppTemplateName("temp1")
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
-	appTemplateInput2 := fixApplicationTemplate("temp2")
+	appTemplateName2 := createAppTemplateName("temp2")
+	appTemplateInput2 := fixApplicationTemplate(appTemplateName2)
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template2)
@@ -486,12 +495,14 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate("temp1"))
+	appTemplateName1 := createAppTemplateName("temp1")
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1))
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template)
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
-	appTemplateInput2 := fixApplicationTemplate("temp2")
+	appTemplateName2 := createAppTemplateName("temp2")
+	appTemplateInput2 := fixApplicationTemplate(appTemplateName2)
 	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &template2)
@@ -804,8 +815,9 @@ func fixApplicationTemplate(name string) directorSchema.ApplicationTemplateInput
 		Name:        name,
 		Description: str.Ptr("template description"),
 		ApplicationInput: &directorSchema.ApplicationRegisterInput{
-			Name:   fmt.Sprintf("{{%s}}", namePlaceholder),
-			Labels: additionalSystemLabels,
+			Name:        fmt.Sprintf("{{%s}}", namePlaceholder),
+			Description: ptr.String(fmt.Sprintf("{{%s}}", displayNamePlaceholder)),
+			Labels:      additionalSystemLabels,
 			Webhooks: []*directorSchema.WebhookInput{{
 				Type: directorSchema.WebhookTypeConfigurationChanged,
 				URL:  ptr.String("http://url.com"),
@@ -815,6 +827,9 @@ func fixApplicationTemplate(name string) directorSchema.ApplicationTemplateInput
 		Placeholders: []*directorSchema.PlaceholderDefinitionInput{
 			{
 				Name: namePlaceholder,
+			},
+			{
+				Name: displayNamePlaceholder,
 			},
 		},
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
@@ -833,4 +848,8 @@ func retrieveAppIdsFromResponse(resp directorSchema.ApplicationPageExt) []string
 		ids = append(ids, app.ID)
 	}
 	return ids
+}
+
+func createAppTemplateName(name string) string {
+	return fmt.Sprintf("SAP %s", name)
 }
