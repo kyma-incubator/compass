@@ -12,14 +12,13 @@ import (
 	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/subscription"
 
 	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
-
-	"github.com/kyma-incubator/compass/components/director/internal/subscription"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"

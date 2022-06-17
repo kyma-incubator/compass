@@ -563,7 +563,7 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 			Name: "Invalid JSON `Labels` field for SystemInstance",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.DescribedSystemInstance.Labels = json.RawMessage(invalidJSON)
+				doc.DescribedSystemInstance.OrdLabels = json.RawMessage(invalidJSON)
 
 				return []*ord.Document{doc}
 			},
@@ -571,7 +571,7 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 			Name: "Invalid JSON object `Labels` field for SystemInstance",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.DescribedSystemInstance.Labels = json.RawMessage(`[]`)
+				doc.DescribedSystemInstance.OrdLabels = json.RawMessage(`[]`)
 
 				return []*ord.Document{doc}
 			},
@@ -579,7 +579,7 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 			Name: "`Labels` values are not array for SystemInstance",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.DescribedSystemInstance.Labels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
+				doc.DescribedSystemInstance.OrdLabels = json.RawMessage(invalidLabelsWhenValueIsNotArray)
 
 				return []*ord.Document{doc}
 			},
@@ -587,7 +587,7 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 			Name: "`Labels` values are not array of strings for SystemInstance",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.DescribedSystemInstance.Labels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
+				doc.DescribedSystemInstance.OrdLabels = json.RawMessage(invalidLabelsWhenValuesAreNotArrayOfStrings)
 
 				return []*ord.Document{doc}
 			},
@@ -595,7 +595,7 @@ func TestDocuments_ValidateSystemInstance(t *testing.T) {
 			Name: "Invalid key for JSON `Labels` field for SystemInstance",
 			DocumentProvider: func() []*ord.Document {
 				doc := fixORDDocument()
-				doc.DescribedSystemInstance.Labels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
+				doc.DescribedSystemInstance.OrdLabels = json.RawMessage(invalidLabelsWhenKeyIsWrong)
 
 				return []*ord.Document{doc}
 			},

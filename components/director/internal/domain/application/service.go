@@ -186,6 +186,16 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 	return s.appRepo.List(ctx, appTenant, filter, pageSize, cursor)
 }
 
+// ListAll lists tenant scoped applications
+func (s *service) ListAll(ctx context.Context) ([]*model.Application, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.appRepo.ListAll(ctx, appTenant)
+}
+
 // ListGlobal missing godoc
 func (s *service) ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	if pageSize < 1 || pageSize > 200 {

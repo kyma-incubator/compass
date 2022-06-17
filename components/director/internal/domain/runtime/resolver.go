@@ -99,16 +99,16 @@ type BundleInstanceAuthService interface {
 // SelfRegisterManager missing godoc
 //go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SelfRegisterManager interface {
-	PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string) (map[string]interface{}, error)
+	PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string, validate func() error) (map[string]interface{}, error)
 	CleanupSelfRegistration(ctx context.Context, selfRegisterLabelValue, region string) error
 	GetSelfRegDistinguishingLabelKey() string
 }
 
-// SubscriptionService missing godoc
+// SubscriptionService is responsible for service layer operations for subscribing a tenant to a runtime
 //go:generate mockery --name=SubscriptionService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SubscriptionService interface {
-	SubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error)
-	UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error)
+	SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error)
+	UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error)
 }
 
 // TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
@@ -298,7 +298,8 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 
 	id := r.uidService.Generate()
 
-	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.Runtime, convertedIn.Labels, id)
+	validate := func() error { return nil }
+	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.Runtime, convertedIn.Labels, id, validate)
 	if err != nil {
 		return nil, err
 	}
@@ -813,7 +814,7 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Runti
 }
 
 // SubscribeTenant subscribes tenant to runtime labeled with `providerID` and `region`
-func (r *Resolver) SubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
+func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, region string) (bool, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return false, err
@@ -821,7 +822,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID string, subac
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
-	success, err := r.subscriptionSvc.SubscribeTenant(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
+	success, err := r.subscriptionSvc.SubscribeTenantToRuntime(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
 	if err != nil {
 		return false, err
 	}
@@ -843,7 +844,7 @@ func (r *Resolver) UnsubscribeTenant(ctx context.Context, providerID string, sub
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	success, err := r.subscriptionSvc.UnsubscribeTenant(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
+	success, err := r.subscriptionSvc.UnsubscribeTenantFromRuntime(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
 	if err != nil {
 		return false, err
 	}
