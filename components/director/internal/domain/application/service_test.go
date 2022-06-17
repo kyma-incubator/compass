@@ -3735,6 +3735,87 @@ func TestService_List(t *testing.T) {
 	}
 }
 
+func TestService_ListAll(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	modelApplications := []*model.Application{
+		fixModelApplication("foo", "tenant-foo", "foo", "Lorem Ipsum"),
+		fixModelApplication("bar", "tenant-bar", "bar", "Lorem Ipsum"),
+	}
+	tnt := "tenant"
+	externalTnt := "external-tnt"
+
+	ctxEmpty := context.TODO()
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	testCases := []struct {
+		Name               string
+		Context            context.Context
+		RepositoryFn       func() *automock.ApplicationRepository
+		ExpectedResult     []*model.Application
+		ExpectedErrMessage string
+	}{
+		{
+			Name:    "Success",
+			Context: ctx,
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListAll", ctx, tnt).Return(modelApplications, nil).Once()
+				return repo
+			},
+
+			ExpectedResult:     modelApplications,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name:    "Returns error when application listing failed",
+			Context: ctx,
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListAll", ctx, tnt).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name:    "Returns error when tenant is not in the context",
+			Context: ctxEmpty,
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.AssertNotCalled(t, "ListAll")
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: "cannot read tenant from context",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+			defer mock.AssertExpectationsForObjects(t, repo)
+
+			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+
+			// WHEN
+			app, err := svc.ListAll(testCase.Context)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, app)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+		})
+	}
+}
+
 func TestService_ListGlobal(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")

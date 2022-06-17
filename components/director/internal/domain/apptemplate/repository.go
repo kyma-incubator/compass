@@ -3,6 +3,9 @@ package apptemplate
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -77,6 +80,31 @@ func (r *repository) Get(ctx context.Context, id string) (*model.ApplicationTemp
 	return result, nil
 }
 
+// GetByFilters builds a subquery for a given slice of labelfilter.LabelFilter and gets a model.ApplicationTemplate
+func (r *repository) GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error) {
+	filterSubquery, args, err := label.FilterQueryGlobal(model.AppTemplateLabelableObject, label.IntersectSet, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
+	var additionalConditions repo.Conditions
+	if filterSubquery != "" {
+		additionalConditions = append(additionalConditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	var entity Entity
+	if err := r.singleGetterGlobal.GetGlobal(ctx, additionalConditions, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
+	}
+
+	model, err := r.conv.FromEntity(&entity)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting Application Template with ID %s", entity.ID)
+	}
+
+	return model, nil
+}
+
 // GetByName missing godoc
 func (r *repository) GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error) {
 	var entity Entity
@@ -98,9 +126,22 @@ func (r *repository) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 // List missing godoc
-func (r *repository) List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error) {
+func (r *repository) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error) {
 	var entityCollection EntityCollection
-	page, totalCount, err := r.pageableQuerierGlobal.ListGlobal(ctx, pageSize, cursor, "id", &entityCollection)
+
+	filterSubquery, args, err := label.FilterQueryGlobal(model.AppTemplateLabelableObject, label.IntersectSet, filter)
+	if err != nil {
+		return model.ApplicationTemplatePage{}, errors.Wrap(err, "while building filter query")
+	}
+
+	var conditions repo.Conditions
+	if filterSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	conditionsTree := repo.And(repo.ConditionTreesFromConditions(conditions)...)
+
+	page, totalCount, err := r.pageableQuerierGlobal.ListGlobalWithAdditionalConditions(ctx, pageSize, cursor, "id", &entityCollection, conditionsTree)
 	if err != nil {
 		return model.ApplicationTemplatePage{}, err
 	}

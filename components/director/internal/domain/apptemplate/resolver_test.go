@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate/apptmpltest"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/mock"
@@ -182,8 +184,15 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 	after := "test"
 	gqlAfter := graphql.PageCursor(after)
 
+	labelFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(RegionKey, "eu-1")}
+	labelFiltersEmpty := []*labelfilter.LabelFilter{}
+	gqlFilter := []*graphql.LabelFilter{
+		{Key: RegionKey, Query: str.Ptr("eu-1")},
+	}
+
 	testCases := []struct {
 		Name              string
+		LabelFilter       []*graphql.LabelFilter
 		TxFn              func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		AppTemplateSvcFn  func() *automock.ApplicationTemplateService
 		AppTemplateConvFn func() *automock.ApplicationTemplateConverter
@@ -193,11 +202,12 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 		ExpectedError     error
 	}{
 		{
-			Name: "Success",
-			TxFn: txGen.ThatSucceeds,
+			Name:        "Success",
+			LabelFilter: gqlFilter,
+			TxFn:        txGen.ThatSucceeds,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("List", txtest.CtxWithDBMatcher(), first, after).Return(modelPage, nil).Once()
+				appTemplateSvc.On("List", txtest.CtxWithDBMatcher(), labelFilters, first, after).Return(modelPage, nil).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
@@ -214,7 +224,7 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("List", txtest.CtxWithDBMatcher(), first, after).Return(model.ApplicationTemplatePage{}, testError).Once()
+				appTemplateSvc.On("List", txtest.CtxWithDBMatcher(), labelFiltersEmpty, first, after).Return(model.ApplicationTemplatePage{}, testError).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: UnusedAppTemplateConv,
@@ -236,7 +246,7 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("List", txtest.CtxWithDBMatcher(), first, after).Return(modelPage, nil).Once()
+				appTemplateSvc.On("List", txtest.CtxWithDBMatcher(), labelFiltersEmpty, first, after).Return(modelPage, nil).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: UnusedAppTemplateConv,
@@ -249,7 +259,7 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("List", txtest.CtxWithDBMatcher(), first, after).Return(modelPage, nil).Once()
+				appTemplateSvc.On("List", txtest.CtxWithDBMatcher(), labelFiltersEmpty, first, after).Return(modelPage, nil).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
@@ -274,7 +284,7 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, nil)
 
 			// WHEN
-			result, err := resolver.ApplicationTemplates(ctx, &first, &gqlAfter)
+			result, err := resolver.ApplicationTemplates(ctx, testCase.LabelFilter, &first, &gqlAfter)
 
 			// THEN
 			if testCase.ExpectedError != nil {
