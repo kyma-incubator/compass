@@ -69,6 +69,13 @@ MINIMAL_OVERRIDES_CONTENT=$(sed -e "s~__CERT__~$CERT~" -e "s~__URL__~$JWKS_URL~"
 $MINIMAL_OVERRIDES_CONTENT
 EOF
 
+if [[ $(uname -m) == 'arm64' ]]; then
+  yq -i ".istio-configuration.global.containerRegistry.path = \"europe-west1-docker.pkg.dev\"" "${MINIMAL_OVERRIDES_TEMP}"
+  yq -i ".istio-configuration.global.images.istio.directory = \"sap-cp-cmp-dev\"" "${MINIMAL_OVERRIDES_TEMP}"
+  yq -i ".istio-configuration.global.images.istio.name = \"ucl-dev\"" "${MINIMAL_OVERRIDES_TEMP}"
+  yq -i ".istio-configuration.global.images.istio.version = \"1.11.4-distroless\"" "${MINIMAL_OVERRIDES_TEMP}"
+fi
+
 KYMA_COMPONENTS_FULL="${ROOT_PATH}"/installation/resources/kyma/kyma-components-full.yaml
 KYMA_OVERRIDES_FULL="${ROOT_PATH}"/installation/resources/kyma/kyma-overrides-full.yaml
 
@@ -78,6 +85,13 @@ FULL_OVERRIDES_CONTENT=$(sed -e "s~__CERT__~$CERT~" -e "s~__URL__~$JWKS_URL~" "$
 >"${FULL_OVERRIDES_TEMP}" cat <<-EOF
 $FULL_OVERRIDES_CONTENT
 EOF
+
+if [[ $(uname -m) == 'arm64' ]]; then
+  yq -i ".istio-configuration.global.containerRegistry.path = \"europe-west1-docker.pkg.dev\"" "${FULL_OVERRIDES_TEMP}"
+  yq -i ".istio-configuration.global.images.istio.directory = \"sap-cp-cmp-dev\"" "${FULL_OVERRIDES_TEMP}"
+  yq -i ".istio-configuration.global.images.istio.name = \"ucl-dev\"" "${FULL_OVERRIDES_TEMP}"
+  yq -i ".istio-configuration.global.images.istio.version = \"1.11.4-distroless\"" "${FULL_OVERRIDES_TEMP}"
+fi
 
 trap "rm -f ${MINIMAL_OVERRIDES_TEMP} ${FULL_OVERRIDES_TEMP}" EXIT INT TERM
 
