@@ -1744,7 +1744,7 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	displayNamePlaceholder := "display-name"
 	managedLabelValue := "true"
 	sccLabelValue := "cloud connector"
-	expectedProductType :=  createAppTemplateName("MergeTemplate")
+	expectedProductType := createAppTemplateName("MergeTemplate")
 	newFormation := "formation-merge-applications-e2e"
 
 	appTmplInput := fixAppTemplateInput(expectedProductType)
