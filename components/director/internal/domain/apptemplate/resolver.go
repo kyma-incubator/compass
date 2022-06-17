@@ -3,6 +3,7 @@ package apptemplate
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"regexp"
 	"strings"
 
@@ -29,7 +30,9 @@ type ApplicationTemplateService interface {
 	Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error)
 	CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error)
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
-	GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error)
+	GetByName(ctx context.Context, name string) ([]*model.ApplicationTemplate, error)
+	GetByNameAndRegion(ctx context.Context, name string, region interface{}) (*model.ApplicationTemplate, error)
+	GetByNameAndSubaccount(ctx context.Context, name string, subaccount string) (*model.ApplicationTemplate, error)
 	List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 	Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error
 	Delete(ctx context.Context, id string) error
@@ -302,8 +305,13 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.ApplicationTemplate,
 	return gqlLabels, nil
 }
 
-// RegisterApplicationFromTemplate missing godoc
+// RegisterApplicationFromTemplate registers an Application using Application Template
 func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graphql.ApplicationFromTemplateInput) (*graphql.Application, error) {
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while fetching consumer info from context")
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -315,8 +323,8 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	log.C(ctx).Infof("Registering an Application from Application Template with name %s", in.TemplateName)
 	convertedIn := r.appTemplateConverter.ApplicationFromTemplateInputFromGraphQL(in)
 
-	log.C(ctx).Debugf("Extracting Application Template with name %s from GraphQL input", in.TemplateName)
-	appTemplate, err := r.appTemplateSvc.GetByName(ctx, convertedIn.TemplateName)
+	log.C(ctx).Debugf("Extracting Application Template with name %q and subaccount %q from GraphQL input", in.TemplateName, consumerInfo.ConsumerID)
+	appTemplate, err := r.appTemplateSvc.GetByNameAndSubaccount(ctx, convertedIn.TemplateName, consumerInfo.ConsumerID)
 	if err != nil {
 		return nil, err
 	}

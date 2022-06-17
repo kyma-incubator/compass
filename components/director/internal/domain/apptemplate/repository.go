@@ -34,6 +34,7 @@ type repository struct {
 	pageableQuerierGlobal repo.PageableQuerierGlobal
 	updaterGlobal         repo.UpdaterGlobal
 	deleterGlobal         repo.DeleterGlobal
+	listerGlobal          repo.ListerGlobal
 	conv                  EntityConverter
 }
 
@@ -46,6 +47,7 @@ func NewRepository(conv EntityConverter) *repository {
 		pageableQuerierGlobal: repo.NewPageableQuerierGlobal(resource.ApplicationTemplate, tableName, tableColumns),
 		updaterGlobal:         repo.NewUpdaterGlobal(resource.ApplicationTemplate, tableName, updatableTableColumns, idTableColumns),
 		deleterGlobal:         repo.NewDeleterGlobal(resource.ApplicationTemplate, tableName),
+		listerGlobal:          repo.NewListerGlobal(resource.ApplicationTemplate, tableName, tableColumns),
 		conv:                  conv,
 	}
 }
@@ -77,19 +79,14 @@ func (r *repository) Get(ctx context.Context, id string) (*model.ApplicationTemp
 	return result, nil
 }
 
-// GetByName missing godoc
-func (r *repository) GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error) {
-	var entity Entity
-	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("name", name)}, repo.NoOrderBy, &entity); err != nil {
+// GetByName retrieves all Application Templates by given name
+func (r *repository) GetByName(ctx context.Context, name string) ([]*model.ApplicationTemplate, error) {
+	var entities EntityCollection
+	if err := r.listerGlobal.ListGlobal(ctx, &entities, repo.Conditions{repo.NewEqualCondition("name", name)}...); err != nil {
 		return nil, err
 	}
 
-	result, err := r.conv.FromEntity(&entity)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while converting Application Template with [name=%s]", name)
-	}
-
-	return result, nil
+	return r.multipleFromEntities(entities)
 }
 
 // Exists missing godoc
@@ -135,4 +132,16 @@ func (r *repository) Update(ctx context.Context, model model.ApplicationTemplate
 // Delete missing godoc
 func (r *repository) Delete(ctx context.Context, id string) error {
 	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+func (r *repository) multipleFromEntities(entities EntityCollection) ([]*model.ApplicationTemplate, error) {
+	items := make([]*model.ApplicationTemplate, 0, len(entities))
+	for _, ent := range entities {
+		m, err := r.conv.FromEntity(&ent)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, m)
+	}
+	return items, nil
 }

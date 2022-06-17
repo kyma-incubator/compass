@@ -3,6 +3,7 @@ package apptemplate
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -18,12 +19,17 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
+const (
+	applicationTypeLabelKey    = "applicationType"
+	globalSubaccountIDLabelKey = "global_subaccount_id"
+)
+
 // ApplicationTemplateRepository missing godoc
 //go:generate mockery --name=ApplicationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateRepository interface {
 	Create(ctx context.Context, item model.ApplicationTemplate) error
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
-	GetByName(ctx context.Context, id string) (*model.ApplicationTemplate, error)
+	GetByName(ctx context.Context, id string) ([]*model.ApplicationTemplate, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 	Update(ctx context.Context, model model.ApplicationTemplate) error
@@ -52,6 +58,7 @@ type LabelUpsertService interface {
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
+	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
 type service struct {
@@ -82,9 +89,34 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 
 	log.C(ctx).Debugf("ID %s generated for Application Template with name %s", appTemplateID, in.Name)
 
+	applicationType, err := s.createApplicationType(in.Name, in.Labels)
+	if err != nil {
+		return "", err
+	}
+	appType, exists := in.Labels[applicationTypeLabelKey]
+	if !exists {
+		in.Labels[applicationTypeLabelKey] = applicationType
+	} else {
+		appTypeValue, ok := appType.(string)
+		if !ok {
+			return "", fmt.Errorf("%q label value must be string", applicationTypeLabelKey)
+		}
+		if appTypeValue != applicationType {
+			return "", fmt.Errorf("%q label value does not follow %q schema", applicationTypeLabelKey, "<app_template_name> (<region>)")
+		}
+	}
+
+	exists, err = s.exists(ctx, in.Name, in.Labels[tenant.RegionLabelKey])
+	if err != nil {
+		return "", errors.Wrapf(err, "while checking if application template with name %q exists", in.Name)
+	}
+	if exists {
+		return "", fmt.Errorf("application template with name %q already exists", in.Name)
+	}
+
 	appTemplate := in.ToApplicationTemplate(appTemplateID)
 
-	err := s.appTemplateRepo.Create(ctx, appTemplate)
+	err = s.appTemplateRepo.Create(ctx, appTemplate)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating Application Template with name %s", in.Name)
 	}
@@ -133,13 +165,62 @@ func (s *service) Get(ctx context.Context, id string) (*model.ApplicationTemplat
 	return appTemplate, nil
 }
 
-// GetByName missing godoc
-func (s *service) GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error) {
-	appTemplate, err := s.appTemplateRepo.GetByName(ctx, name)
+// GetByName retrieves all Application Templates by given name
+func (s *service) GetByName(ctx context.Context, name string) ([]*model.ApplicationTemplate, error) {
+	appTemplates, err := s.appTemplateRepo.GetByName(ctx, name)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Application Template with name %s", name)
+		return nil, errors.Wrapf(err, "while listing application templates with name %q", name)
 	}
 
+	return appTemplates, nil
+}
+
+// GetByNameAndRegion retrieves Application Template by given name and region
+func (s *service) GetByNameAndRegion(ctx context.Context, name string, region interface{}) (*model.ApplicationTemplate, error) {
+	appTemplates, err := s.appTemplateRepo.GetByName(ctx, name)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing application templates with name %q", name)
+	}
+
+	for _, appTemplate := range appTemplates {
+		appTmplRegion, err := s.retrieveLabel(ctx, appTemplate.ID, tenant.RegionLabelKey)
+		if err != nil && !apperrors.IsNotFoundError(err) {
+			return nil, err
+		}
+
+		if region == appTmplRegion {
+			log.C(ctx).Infof("Found Application Template with name %q and region label %v", name, region)
+			return appTemplate, nil
+		}
+	}
+
+	return nil, apperrors.NewNotFoundErrorWithType(resource.ApplicationTemplate)
+}
+
+// GetByNameAndSubaccount retrieves Application Template by given name and subaccount.
+// If there is no subaccount match it will retrieve a global Application Template (not labeled with subaccount).
+func (s *service) GetByNameAndSubaccount(ctx context.Context, name string, subaccount string) (*model.ApplicationTemplate, error) {
+	appTemplates, err := s.GetByName(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+
+	var appTemplate *model.ApplicationTemplate
+	for _, tmpl := range appTemplates {
+		account, err := s.retrieveLabel(ctx, tmpl.ID, globalSubaccountIDLabelKey)
+		if err != nil {
+			if !apperrors.IsNotFoundError(err) {
+				return nil, err
+			}
+			appTemplate = tmpl
+		}
+		if account == subaccount {
+			return tmpl, nil
+		}
+	}
+	if appTemplate == nil {
+		return nil, apperrors.NewNotFoundErrorWithType(resource.ApplicationTemplate)
+	}
 	return appTemplate, nil
 }
 
@@ -203,9 +284,29 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (model.
 
 // Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error {
+	oldAppTemplate, err := s.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if oldAppTemplate.Name != in.Name {
+		region, err := s.retrieveLabel(ctx, id, tenant.RegionLabelKey)
+		if err != nil && !apperrors.IsNotFoundError(err) {
+			return err
+		}
+
+		exists, err := s.exists(ctx, in.Name, region)
+		if err != nil {
+			return errors.Wrapf(err, "while checking if application template with name %q exists", in.Name)
+		}
+		if exists {
+			return fmt.Errorf("application template with name %q already exists", in.Name)
+		}
+	}
+
 	appTemplate := in.ToApplicationTemplate(id)
 
-	err := s.appTemplateRepo.Update(ctx, appTemplate)
+	err = s.appTemplateRepo.Update(ctx, appTemplate)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application Template with ID %s", id)
 	}
@@ -234,4 +335,47 @@ func (s *service) PrepareApplicationCreateInputJSON(appTemplate *model.Applicati
 		appCreateInputJSON = strings.ReplaceAll(appCreateInputJSON, fmt.Sprintf("{{%s}}", placeholder.Name), newValue)
 	}
 	return appCreateInputJSON, nil
+}
+
+func (s *service) exists(ctx context.Context, inputName string, inputRegion interface{}) (bool, error) {
+	appTemplates, err := s.appTemplateRepo.GetByName(ctx, inputName)
+	if err != nil {
+		return false, errors.Wrapf(err, "while listing application templates with name %q", inputName)
+	}
+
+	for _, appTemplate := range appTemplates {
+		region, err := s.retrieveLabel(ctx, appTemplate.ID, tenant.RegionLabelKey)
+		if err != nil && !apperrors.IsNotFoundError(err) {
+			return false, errors.Wrapf(err, "while retrieving application template label with key %q", tenant.RegionLabelKey)
+		}
+
+		if region == inputRegion {
+			log.C(ctx).Infof("Application Template with name %q and region label %v already exists", inputName, inputRegion)
+			return true, nil
+		}
+	}
+
+	return false, nil
+
+}
+
+func (s *service) retrieveLabel(ctx context.Context, id string, labelKey string) (interface{}, error) {
+	label, err := s.labelRepo.GetByKey(ctx, "", model.AppTemplateLabelableObject, id, labelKey)
+	if err != nil {
+		return nil, err
+	}
+	return label.Value, nil
+}
+
+func (s *service) createApplicationType(name string, labels map[string]interface{}) (string, error) {
+	regionValue, exists := labels[tenant.RegionLabelKey]
+	if !exists {
+		return name, nil
+	}
+
+	region, ok := regionValue.(string)
+	if !ok {
+		return "", fmt.Errorf("%q label value must be string", tenant.RegionLabelKey)
+	}
+	return fmt.Sprintf("%s (%s)", name, region), nil
 }

@@ -152,7 +152,7 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	for index, tm := range systemToTemplateMappings {
-		appTemplate, err := appTemplateSvc.GetByName(ctx, tm.Name)
+		appTemplate, err := appTemplateSvc.GetByNameAndRegion(ctx, tm.Name, nil)
 		if err != nil && !apperrors.IsNotFoundError(err) {
 			return err
 		}
