@@ -127,6 +127,8 @@ spec:
               value: {{ .Values.timeouts.server }}
             - name: APP_CLIENT_TIMEOUT
               value: {{ .Values.timeouts.client }}
+            - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
           livenessProbe:
             httpGet:
               port: {{ .Values.global.nsAdapter.external.port }}
