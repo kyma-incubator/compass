@@ -9,7 +9,7 @@ directive @hasScenario(applicationProvider: String!, idField: String!) on FIELD_
 """
 HasScopes directive is added automatically to every query and mutation by scopesdecorator plugin that is triggerred by gqlgen.sh script.
 """
-directive @hasScopes(path: String!) on FIELD_DEFINITION
+directive @hasScopes(path: String!) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 """
 Sanitize directive marks mutation arguments that will be validated.
 """
@@ -292,6 +292,7 @@ input ApplicationRegisterInput {
 	baseUrl: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
+	localTenantID: String @hasScopes(path: "graphql.input.application.localTenantID")
 	bundles: [BundleCreateInput!]
 }
 
@@ -349,6 +350,7 @@ input ApplicationUpdateInput {
 	baseUrl: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
+	localTenantID: String @hasScopes(path: "graphql.input.application.localTenantID")
 }
 
 input AuthInput {
@@ -789,6 +791,7 @@ type Application {
 	id: ID!
 	name: String!
 	systemNumber: String
+	localTenantID: String
 	baseUrl: String
 	providerName: String
 	description: String
