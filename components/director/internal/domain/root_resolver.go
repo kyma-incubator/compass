@@ -1051,7 +1051,7 @@ func (r *queryResolver) TenantByExternalID(ctx context.Context, id string) (*gra
 	return r.tenant.Tenant(ctx, id)
 }
 
-// TenantByInternalID returns а tenant by an internal ID
+// TenantByInternalID returns a tenant by an internal ID
 func (r *queryResolver) TenantByInternalID(ctx context.Context, id string) (*graphql.Tenant, error) {
 	return r.tenant.TenantByID(ctx, id)
 }
