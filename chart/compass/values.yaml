@@ -520,7 +520,6 @@ global:
       providerSubaccountIdProperty: "providerSubaccountIdProperty"
       consumerTenantIdProperty: "consumerTenantIdProperty"
       subscriptionProviderAppNameProperty: "subscriptionProviderAppNameProperty"
-#      subscriptionAppNameProperty: "subscriptionAppNameProperty" todo:: check/remove
     server:
       fetchTenantEndpoint: "/v1/fetch/{parentTenantId}/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"

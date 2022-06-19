@@ -16,13 +16,13 @@ type DirectorGraphQLClient struct {
 	mock.Mock
 }
 
-// SubscribeTenant provides a mock function with given fields: ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, appName
-func (_m *DirectorGraphQLClient) SubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, appName string) error {
-	ret := _m.Called(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, appName)
+// SubscribeTenant provides a mock function with given fields: ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName
+func (_m *DirectorGraphQLClient) SubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionProviderAppName string) error {
+	ret := _m.Called(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string) error); ok {
-		r0 = rf(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, appName)
+		r0 = rf(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName)
 	} else {
 		r0 = ret.Error(0)
 	}

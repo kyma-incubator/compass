@@ -15,10 +15,10 @@ const (
 	tenantExtID  = "tenant-external-id"
 	tenantRegion = "myregion"
 
-	regionalTenantSubdomain = "myregionaltenant"
-	subaccountTenantExtID   = "subaccount-tenant-external-id"
-	subscriptionProviderID  = "123"
-	providerSubaccountID    = "123-456"
+	regionalTenantSubdomain     = "myregionaltenant"
+	subaccountTenantExtID       = "subaccount-tenant-external-id"
+	subscriptionProviderID      = "123"
+	providerSubaccountID        = "123-456"
 	consumerTenantID            = "3ba66f44-dc27-11ec-9d64-0242ac120002"
 	subscriptionProviderAppName = "subscription-provider-test-app-name"
 

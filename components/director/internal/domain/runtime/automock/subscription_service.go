@@ -15,20 +15,20 @@ type SubscriptionService struct {
 	mock.Mock
 }
 
-// SubscribeTenantToRuntime provides a mock function with given fields: ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, appName
-func (_m *SubscriptionService) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, consumerTenantID string, region string, appName string) (bool, error) {
-	ret := _m.Called(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, appName)
+// SubscribeTenantToRuntime provides a mock function with given fields: ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName
+func (_m *SubscriptionService) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionAppName string) (bool, error) {
+	ret := _m.Called(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName)
 
 	var r0 bool
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string) bool); ok {
-		r0 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, appName)
+		r0 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string, string) error); ok {
-		r1 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, appName)
+		r1 = rf(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName)
 	} else {
 		r1 = ret.Error(1)
 	}

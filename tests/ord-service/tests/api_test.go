@@ -681,8 +681,8 @@ func TestORDService(t *testing.T) {
 	t.Run("Additional non-ORD details about system instances are exposed", func(t *testing.T) {
 		expectedProductType := fmt.Sprintf("SAP %s", "productType")
 		appTmplInput := fixtures.FixApplicationTemplate(expectedProductType)
-		appTmplInput.Labels[testConfig.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{testConfig.SubscriptionConfig.SelfRegDistinguishLabelValue}
-		appTmplInput.Labels[tenantfetcher.RegionKey] = testConfig.SubscriptionConfig.SelfRegRegion
+		appTmplInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SubscriptionConfig.SelfRegDistinguishLabelValue}
+		appTmplInput.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTmplInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, &appTmpl)

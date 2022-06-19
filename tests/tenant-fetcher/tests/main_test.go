@@ -39,7 +39,7 @@ type testConfig struct {
 	TenantFetcherFullRegionalURL     string `envconfig:"-"`
 	TenantFetcherFullDependenciesURL string `envconfig:"-"`
 	SkipSSLValidation                bool   `envconfig:"default=false"`
-	SelfRegDistinguishLabelKey       string // todo:: check where those theee fileds are used
+	SelfRegDistinguishLabelKey       string
 	SelfRegDistinguishLabelValue     string
 	SelfRegRegion                    string
 	CertLoaderConfig                 certloader.Config

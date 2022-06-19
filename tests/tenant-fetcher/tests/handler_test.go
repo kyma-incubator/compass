@@ -37,7 +37,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// todo:: double check/fix
 func TestRegionalOnboardingHandler(t *testing.T) {
 	t.Run("Regional account tenant creation", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
@@ -333,11 +332,11 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			t.Run("Success", func(t *testing.T) {
 				// GIVEN
 				providedTenantIDs := tenantfetcher.Tenant{
-					TenantID:               uuid.New().String(),
-					Subdomain:              tenantfetcher.DefaultSubdomain,
-					SubscriptionProviderID: config.SelfRegDistinguishLabelValue,
-					ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
-					SubscriptionProviderAppName:    "app-name",
+					TenantID:                    uuid.New().String(),
+					Subdomain:                   tenantfetcher.DefaultSubdomain,
+					SubscriptionProviderID:      config.SelfRegDistinguishLabelValue,
+					ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
+					SubscriptionProviderAppName: "app-name",
 				}
 
 				// WHEN
@@ -370,11 +369,11 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			t.Run("Success", func(t *testing.T) {
 				// GIVEN
 				providedTenantIDs := tenantfetcher.Tenant{
-					TenantID:               uuid.New().String(),
-					Subdomain:              tenantfetcher.DefaultSubdomain,
-					SubscriptionProviderID: config.SelfRegDistinguishLabelValue,
-					ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
-					SubscriptionProviderAppName:    "app-name",
+					TenantID:                    uuid.New().String(),
+					Subdomain:                   tenantfetcher.DefaultSubdomain,
+					SubscriptionProviderID:      config.SelfRegDistinguishLabelValue,
+					ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
+					SubscriptionProviderAppName: "app-name",
 				}
 
 				addRegionalTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
@@ -442,12 +441,12 @@ func removeRegionalTenantExpectStatusCode(t *testing.T, providedTenant tenantfet
 
 func makeTenantRequestExpectStatusCode(t *testing.T, providedTenant tenantfetcher.Tenant, httpMethod, url string, expectedStatusCode int) {
 	tenantProperties := tenantfetcher.TenantIDProperties{
-		TenantIDProperty:               config.TenantIDProperty,
-		SubaccountTenantIDProperty:     config.SubaccountTenantIDProperty,
-		CustomerIDProperty:             config.CustomerIDProperty,
-		SubdomainProperty:              config.SubdomainProperty,
-		SubscriptionProviderIDProperty: config.SubscriptionProviderIDProperty,
-		ProviderSubaccountIdProperty:   config.ProviderSubaccountIDProperty,
+		TenantIDProperty:                    config.TenantIDProperty,
+		SubaccountTenantIDProperty:          config.SubaccountTenantIDProperty,
+		CustomerIDProperty:                  config.CustomerIDProperty,
+		SubdomainProperty:                   config.SubdomainProperty,
+		SubscriptionProviderIDProperty:      config.SubscriptionProviderIDProperty,
+		ProviderSubaccountIdProperty:        config.ProviderSubaccountIDProperty,
 		ConsumerTenantIDProperty:            config.ConsumerTenantIDProperty,
 		SubscriptionProviderAppNameProperty: config.SubscriptionProviderAppNameProperty,
 	}
@@ -467,14 +466,15 @@ func assertTenant(t *testing.T, tenant *directorSchema.Tenant, tenantID, subdoma
 	}
 }
 
-func fixRuntimeInput(name string) directorSchema.RuntimeRegisterInput {
-	input := fixtures.FixRuntimeRegisterInput(name)
-	input.Labels[config.SelfRegDistinguishLabelKey] = []interface{}{config.SelfRegDistinguishLabelValue}
-	input.Labels[tenantfetcher.RegionKey] = config.SelfRegRegion
-	delete(input.Labels, "placeholder")
-
-	return input
-}
+//// todo:: check/remove
+//func fixRuntimeInput(name string) directorSchema.RuntimeRegisterInput {
+//	input := fixtures.FixRuntimeRegisterInput(name)
+//	input.Labels[config.SelfRegDistinguishLabelKey] = []interface{}{config.SelfRegDistinguishLabelValue}
+//	input.Labels[tenantfetcher.RegionKey] = config.SelfRegRegion
+//	delete(input.Labels, "placeholder")
+//
+//	return input
+//}
 
 func fixAppTemplateInput(name string) directorSchema.ApplicationTemplateInput {
 	input := fixtures.FixApplicationTemplate(name)

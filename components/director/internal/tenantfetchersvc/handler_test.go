@@ -19,11 +19,11 @@ import (
 )
 
 type regionalTenantCreationRequest struct {
-	SubaccountID           string `json:"subaccountTenantId"`
-	TenantID               string `json:"tenantId"`
-	Subdomain              string `json:"subdomain"`
-	SubscriptionProviderID string `json:"subscriptionProviderId"`
-	ProviderSubaccountID   string `json:"providerSubaccountId"`
+	SubaccountID                string `json:"subaccountTenantId"`
+	TenantID                    string `json:"tenantId"`
+	Subdomain                   string `json:"subdomain"`
+	SubscriptionProviderID      string `json:"subscriptionProviderId"`
+	ProviderSubaccountID        string `json:"providerSubaccountId"`
 	ConsumerTenantID            string `json:"consumerTenantID"`
 	SubscriptionProviderAppName string `json:"subscriptionProviderAppName"`
 }

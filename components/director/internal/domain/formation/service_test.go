@@ -1633,7 +1633,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				runtimeRepo := &automock.RuntimeRepository{}
-				runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(make([]*model.Runtime, 0), nil).Once()
+				runtimeRepo.On("ListOwnedRuntimes", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(make([]*model.Runtime, 0), nil).Once()
 				return runtimeRepo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
@@ -1657,7 +1657,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				runtimeRepo := &automock.RuntimeRepository{}
-				runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(nil, formation.FixError()).Once()
+				runtimeRepo.On("ListOwnedRuntimes", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(nil, formation.FixError()).Once()
 				return runtimeRepo
 			},
 			RuntimeContextRepoFn: formation.UnusedRuntimeContextRepo,
@@ -1841,7 +1841,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 		mockRepo.On("DeleteForTargetTenant", ctx, formation.TenantID.String(), formation.TargetTenantID).Return(nil).Once()
 
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(make([]*model.Runtime, 0), nil)
+		runtimeRepo.On("ListOwnedRuntimes", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(make([]*model.Runtime, 0), nil)
 
 		runtimeContextRepo := &automock.RuntimeContextRepository{}
 		runtimeContextRepo.On("ListAll", ctx, formation.TargetTenantID).Return(nil, formation.FixError())
@@ -1964,7 +1964,7 @@ func TestService_DeleteForScenarioName(t *testing.T) {
 		mockRepo.On("DeleteForScenarioName", ctx, formation.TenantID.String(), formation.ScenarioName).Return(nil).Once()
 
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(make([]*model.Runtime, 0), nil).Once()
+		runtimeRepo.On("ListOwnedRuntimes", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(make([]*model.Runtime, 0), nil).Once()
 
 		runtimeContextRepo := &automock.RuntimeContextRepository{}
 		runtimeContextRepo.On("ListAll", ctx, formation.TargetTenantID).Return(nil, formation.FixError())
@@ -2198,7 +2198,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 		ctx := context.TODO()
 
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(make([]*model.Runtime, 0), nil).Once()
+		runtimeRepo.On("ListOwnedRuntimes", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(make([]*model.Runtime, 0), nil).Once()
 
 		runtimeContextRepo := &automock.RuntimeContextRepository{}
 		runtimeContextRepo.On("ListAll", ctx, formation.TargetTenantID).Return(runtimeContexts, nil).Once()
@@ -2229,7 +2229,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 		ctx := context.TODO()
 
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(make([]*model.Runtime, 0), nil).Once()
+		runtimeRepo.On("ListOwnedRuntimes", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(make([]*model.Runtime, 0), nil).Once()
 
 		runtimeContextRepo := &automock.RuntimeContextRepository{}
 		runtimeContextRepo.On("ListAll", ctx, formation.TargetTenantID).Return(runtimeContexts, nil).Once()
@@ -2253,7 +2253,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 		ctx := context.TODO()
 
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("ListAll", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(make([]*model.Runtime, 0), nil).Once()
+		runtimeRepo.On("ListOwnedRuntimes", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(make([]*model.Runtime, 0), nil).Once()
 
 		runtimeContextRepo := &automock.RuntimeContextRepository{}
 		runtimeContextRepo.On("ListAll", ctx, formation.TargetTenantID).Return(nil, testErr).Once()
@@ -2521,7 +2521,6 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 	})
 }
 
-// todo:: retrigger the tests and adapt ListAll to ListOwnedRuntimes where needed
 func TestService_MergeScenariosFromInputLabelsAndAssignments_Success(t *testing.T) {
 	// GIVEN
 	ctx := formation.FixCtxWithTenant()

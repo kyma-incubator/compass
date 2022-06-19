@@ -59,13 +59,13 @@ type HandlerConfig struct {
 
 // TenantProviderConfig includes the configuration for tenant providers - the tenant ID json property names, the subdomain property name, and the tenant provider name.
 type TenantProviderConfig struct {
-	TenantIDProperty               string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY,default=tenantId"`
-	SubaccountTenantIDProperty     string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY,default=subaccountTenantId"`
-	CustomerIDProperty             string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY,default=customerId"`
-	SubdomainProperty              string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY,default=subdomain"`
-	TenantProvider                 string `envconfig:"APP_TENANT_PROVIDER,default=external-provider"`
-	SubscriptionProviderIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY,default=subscriptionProviderIdProperty"`
-	ProviderSubaccountIDProperty   string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY,default=providerSubaccountIdProperty"`
+	TenantIDProperty                    string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY,default=tenantId"`
+	SubaccountTenantIDProperty          string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY,default=subaccountTenantId"`
+	CustomerIDProperty                  string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY,default=customerId"`
+	SubdomainProperty                   string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY,default=subdomain"`
+	TenantProvider                      string `envconfig:"APP_TENANT_PROVIDER,default=external-provider"`
+	SubscriptionProviderIDProperty      string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY,default=subscriptionProviderIdProperty"`
+	ProviderSubaccountIDProperty        string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY,default=providerSubaccountIdProperty"`
 	ConsumerTenantIDProperty            string `envconfig:"APP_TENANT_PROVIDER_CONSUMER_TENANT_ID_PROPERTY,default=consumerTenantIdProperty"`
 	SubscriptionProviderAppNameProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY,default=subscriptionProviderAppNameProperty"`
 }
@@ -209,15 +209,15 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 	}
 
 	req := &TenantSubscriptionRequest{
-		AccountTenantID:        properties[h.config.TenantIDProperty],
-		SubaccountTenantID:     properties[h.config.SubaccountTenantIDProperty],
-		CustomerTenantID:       properties[h.config.CustomerIDProperty],
-		Subdomain:              properties[h.config.SubdomainProperty],
-		SubscriptionProviderID: properties[h.config.SubscriptionProviderIDProperty],
-		ProviderSubaccountID:   properties[h.config.ProviderSubaccountIDProperty],
+		AccountTenantID:             properties[h.config.TenantIDProperty],
+		SubaccountTenantID:          properties[h.config.SubaccountTenantIDProperty],
+		CustomerTenantID:            properties[h.config.CustomerIDProperty],
+		Subdomain:                   properties[h.config.SubdomainProperty],
+		SubscriptionProviderID:      properties[h.config.SubscriptionProviderIDProperty],
+		ProviderSubaccountID:        properties[h.config.ProviderSubaccountIDProperty],
 		ConsumerTenantID:            properties[h.config.ConsumerTenantIDProperty],
 		SubscriptionProviderAppName: properties[h.config.SubscriptionProviderAppNameProperty],
-		Region:                 region,
+		Region:                      region,
 	}
 
 	if req.AccountTenantID == req.SubaccountTenantID {

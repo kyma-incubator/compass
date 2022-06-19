@@ -83,10 +83,10 @@ func (d *Director) UpdateTenant(ctx context.Context, id string, tenant graphql.B
 }
 
 // SubscribeTenant makes graphql query tenant subscription
-func (d *Director) SubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, appName string) error { // todo:: should the appName be renamed?
+func (d *Director) SubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName string) error {
 	var res map[string]interface{}
 
-	subscriptionMutation := fmt.Sprintf(`mutation { subscribeTenant(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", consumerTenantID: "%s", region: "%s", subscriptionAppName: "%s")}`, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, appName)
+	subscriptionMutation := fmt.Sprintf(`mutation { subscribeTenant(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", consumerTenantID: "%s", region: "%s", subscriptionAppName: "%s")}`, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName)
 	gRequest := gcli.NewRequest(subscriptionMutation)
 	gRequest.Header.Set("tenant", subaccountID)
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {
