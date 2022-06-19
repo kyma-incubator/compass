@@ -33,6 +33,7 @@ type pgRepository struct {
 	deleter            repo.Deleter
 	pageableQuerier    repo.PageableQuerier
 	unionLister        repo.UnionLister
+	lister             repo.Lister
 	creator            repo.Creator
 	updater            repo.Updater
 	conv               entityConverter
@@ -53,6 +54,7 @@ func NewRepository(conv entityConverter) *pgRepository {
 		deleter:            repo.NewDeleter(runtimeContextsTable),
 		pageableQuerier:    repo.NewPageableQuerier(runtimeContextsTable, runtimeContextColumns),
 		unionLister:        repo.NewUnionLister(runtimeContextsTable, runtimeContextColumns),
+		lister:             repo.NewLister(runtimeContextsTable, runtimeContextColumns),
 		creator:            repo.NewCreator(runtimeContextsTable, runtimeContextColumns),
 		updater:            repo.NewUpdater(runtimeContextsTable, updatableColumns, []string{"id"}),
 		conv:               conv,
@@ -227,6 +229,28 @@ func (r *pgRepository) ListByRuntimeIDs(ctx context.Context, tenantID string, ru
 	return runtimeContextPages, nil
 }
 
+// ListAll retrieves all RuntimeContext objects from the database that are visible for `tenant`
+func (r *pgRepository) ListAll(ctx context.Context, tenant string) ([]*model.RuntimeContext, error) {
+	var entities RuntimeContextCollection
+
+	if err := r.lister.List(ctx, resource.RuntimeContext, tenant, &entities); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities), nil
+}
+
+// ListAllForRuntime retrieves all RuntimeContext objects for runtime with ID `runtimeID`  from the database that are visible for `tenant`
+func (r *pgRepository) ListAllForRuntime(ctx context.Context, tenant, runtimeID string) ([]*model.RuntimeContext, error) {
+	var entities RuntimeContextCollection
+
+	if err := r.lister.List(ctx, resource.RuntimeContext, tenant, &entities, repo.NewEqualCondition("runtime_id", runtimeID)); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities), nil
+}
+
 // Create stores RuntimeContext entity in the database using the values from `item`
 func (r *pgRepository) Create(ctx context.Context, tenant string, item *model.RuntimeContext) error {
 	if item == nil {
@@ -241,4 +265,14 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.Ru
 		return apperrors.NewInternalError("item can not be empty")
 	}
 	return r.updater.UpdateSingle(ctx, resource.RuntimeContext, tenant, r.conv.ToEntity(item))
+}
+
+func (r *pgRepository) multipleFromEntities(entities RuntimeContextCollection) []*model.RuntimeContext {
+	items := make([]*model.RuntimeContext, 0, len(entities))
+	for _, ent := range entities {
+		rtmCtx := r.conv.FromEntity(&ent)
+
+		items = append(items, rtmCtx)
+	}
+	return items
 }

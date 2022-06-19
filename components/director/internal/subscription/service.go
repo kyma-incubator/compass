@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// todo:: delete the whole file!! Double check the changes
 // Config is configuration for the tenant-runtime subscription flow
 type Config struct {
 	ProviderLabelKey                    string `envconfig:"APP_SUBSCRIPTION_PROVIDER_LABEL_KEY,default=subscriptionProviderId"`

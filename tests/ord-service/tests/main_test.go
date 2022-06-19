@@ -65,6 +65,9 @@ type config struct {
 	TestProviderSubaccountID         string
 	TestConsumerSubaccountID         string
 	TestConsumerTenantID             string
+	SelfRegDistinguishLabelKey       string // todo:: where is used?
+	SelfRegDistinguishLabelValue     string // todo:: where is used?
+	SelfRegRegion                    string
 }
 
 var conf config

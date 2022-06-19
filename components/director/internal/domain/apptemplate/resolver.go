@@ -3,8 +3,10 @@ package apptemplate
 import (
 	"context"
 	"encoding/json"
+	"regexp"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -29,7 +31,7 @@ type ApplicationTemplateService interface {
 	CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error)
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 	GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error)
-	List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
+	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 	Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error
 	Delete(ctx context.Context, id string) error
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
@@ -79,7 +81,8 @@ type WebhookConverter interface {
 // SelfRegisterManager missing godoc
 //go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SelfRegisterManager interface {
-	PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string) (map[string]interface{}, error)
+	IsSelfRegistrationFlow(ctx context.Context, labels map[string]interface{}) (bool, error)
+	PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string, validate func() error) (map[string]interface{}, error)
 	CleanupSelfRegistration(ctx context.Context, selfRegisterLabelValue, region string) error
 	GetSelfRegDistinguishingLabelKey() string
 }
@@ -145,7 +148,8 @@ func (r *Resolver) ApplicationTemplate(ctx context.Context, id string) (*graphql
 }
 
 // ApplicationTemplates missing godoc
-func (r *Resolver) ApplicationTemplates(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.ApplicationTemplatePage, error) {
+func (r *Resolver) ApplicationTemplates(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationTemplatePage, error) {
+	labelFilter := labelfilter.MultipleFromGraphQL(filter)
 	var cursor string
 	if after != nil {
 		cursor = string(*after)
@@ -162,7 +166,7 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, first *int, after *
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	appTemplatePage, err := r.appTemplateSvc.List(ctx, *first, cursor)
+	appTemplatePage, err := r.appTemplateSvc.List(ctx, labelFilter, *first, cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -213,8 +217,10 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 
 	selfRegID := r.uidService.Generate()
 	convertedIn.ID = &selfRegID
-
-	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID)
+	validate := func() error {
+		return validateAppTemplateForSelfReg(convertedIn.Name, convertedIn.Placeholders)
+	}
+	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validate)
 	if err != nil {
 		return nil, err
 	}
@@ -389,6 +395,26 @@ func (r *Resolver) UpdateApplicationTemplate(ctx context.Context, id string, in 
 		return nil, err
 	}
 
+	labels, err := r.appTemplateSvc.ListLabels(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	resultLabels := make(map[string]interface{}, len(labels))
+	for _, label := range labels {
+		resultLabels[label.Key] = label.Value
+	}
+
+	isSelfRegFlow, err := r.selfRegManager.IsSelfRegistrationFlow(ctx, resultLabels)
+	if err != nil {
+		return nil, err
+	}
+	if isSelfRegFlow {
+		if err := validateAppTemplateForSelfReg(convertedIn.Name, convertedIn.Placeholders); err != nil {
+			return nil, err
+		}
+	}
+
 	err = r.appTemplateSvc.Update(ctx, id, convertedIn)
 	if err != nil {
 		return nil, err
@@ -516,4 +542,25 @@ func (r *Resolver) cleanupAndLogOnError(ctx context.Context, id, region string) 
 	if err := r.selfRegManager.CleanupSelfRegistration(ctx, id, region); err != nil {
 		log.C(ctx).Errorf("An error occurred during cleanup of self-registered app template: %v", err)
 	}
+}
+
+func validateAppTemplateForSelfReg(name string, placeholders []model.ApplicationTemplatePlaceholder) error {
+	if len(placeholders) != 2 {
+		return errors.Errorf("expecting %q and %q placeholders", "name", "display-name")
+	}
+
+	for _, placeholder := range placeholders {
+		if !(placeholder.Name == "name") && !(placeholder.Name == "display-name") {
+			return errors.Errorf("unexpected placeholder with name %q found", placeholder.Name)
+		}
+	}
+
+	// Matches the following pattern - "SAP <product name>"
+	r := regexp.MustCompile(`(^SAP\s)([A-Za-z0-9()_\- ]*)`)
+	matches := r.FindStringSubmatch(name)
+	if len(matches) == 0 {
+		return errors.Errorf("application template name %q does not comply with the following naming convention: %q", name, "SAP <product name>")
+	}
+
+	return nil
 }

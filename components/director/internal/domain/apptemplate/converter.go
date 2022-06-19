@@ -52,13 +52,14 @@ func (c *converter) ToGraphQL(in *model.ApplicationTemplate) (*graphql.Applicati
 	}
 
 	return &graphql.ApplicationTemplate{
-		ID:               in.ID,
-		Name:             in.Name,
-		Description:      in.Description,
-		Webhooks:         webhooks,
-		ApplicationInput: gqlAppInput,
-		Placeholders:     c.placeholdersToGraphql(in.Placeholders),
-		AccessLevel:      graphql.ApplicationTemplateAccessLevel(in.AccessLevel),
+		ID:                   in.ID,
+		Name:                 in.Name,
+		Description:          in.Description,
+		ApplicationNamespace: in.ApplicationNamespace,
+		Webhooks:             webhooks,
+		ApplicationInput:     gqlAppInput,
+		Placeholders:         c.placeholdersToGraphql(in.Placeholders),
+		AccessLevel:          graphql.ApplicationTemplateAccessLevel(in.AccessLevel),
 	}, nil
 }
 
@@ -103,6 +104,7 @@ func (c *converter) InputFromGraphQL(in graphql.ApplicationTemplateInput) (model
 	return model.ApplicationTemplateInput{
 		Name:                 in.Name,
 		Description:          in.Description,
+		ApplicationNamespace: in.ApplicationNamespace,
 		ApplicationInputJSON: appCreateInput,
 		Placeholders:         c.placeholdersFromGraphql(in.Placeholders),
 		AccessLevel:          model.ApplicationTemplateAccessLevel(in.AccessLevel),
@@ -125,6 +127,7 @@ func (c *converter) UpdateInputFromGraphQL(in graphql.ApplicationTemplateUpdateI
 	return model.ApplicationTemplateUpdateInput{
 		Name:                 in.Name,
 		Description:          in.Description,
+		ApplicationNamespace: in.ApplicationNamespace,
 		ApplicationInputJSON: appCreateInput,
 		Placeholders:         c.placeholdersFromGraphql(in.Placeholders),
 		AccessLevel:          model.ApplicationTemplateAccessLevel(in.AccessLevel),
@@ -163,6 +166,7 @@ func (c *converter) ToEntity(in *model.ApplicationTemplate) (*Entity, error) {
 		ID:                   in.ID,
 		Name:                 in.Name,
 		Description:          repo.NewNullableString(in.Description),
+		ApplicationNamespace: repo.NewNullableString(in.ApplicationNamespace),
 		ApplicationInputJSON: in.ApplicationInputJSON,
 		PlaceholdersJSON:     placeholders,
 		AccessLevel:          string(in.AccessLevel),
@@ -184,6 +188,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.ApplicationTemplate, erro
 		ID:                   entity.ID,
 		Name:                 entity.Name,
 		Description:          repo.StringPtrFromNullableString(entity.Description),
+		ApplicationNamespace: repo.StringPtrFromNullableString(entity.ApplicationNamespace),
 		ApplicationInputJSON: entity.ApplicationInputJSON,
 		Placeholders:         placeholders,
 		AccessLevel:          model.ApplicationTemplateAccessLevel(entity.AccessLevel),

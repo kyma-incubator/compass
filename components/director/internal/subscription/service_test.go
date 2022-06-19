@@ -23,6 +23,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
+// todo:: delete the whole file!! Just double check the changes
 const (
 	tenantExtID  = "tenant-external-id"
 	tenantRegion = "myregion"

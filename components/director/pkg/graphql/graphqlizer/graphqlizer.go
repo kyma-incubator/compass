@@ -25,6 +25,9 @@ func (g *Graphqlizer) ApplicationRegisterInputToGQL(in graphql.ApplicationRegist
 		{{- if .Description }}
 		description: "{{ .Description }}",
 		{{- end }}
+		{{- if .LocalTenantID }}
+		localTenantID: "{{ .LocalTenantID }}",
+		{{- end }}
         {{- if .Labels }}
 		labels: {{ LabelsToGQL .Labels}},
 		{{- end }}
@@ -64,6 +67,9 @@ func (g *Graphqlizer) ApplicationUpdateInputToGQL(in graphql.ApplicationUpdateIn
 		{{- if .Description }}
 		description: "{{.Description}}",
 		{{- end }}
+		{{- if .LocalTenantID }}
+		localTenantID: "{{ .LocalTenantID }}",
+		{{- end }}
 		{{- if .HealthCheckURL }}
 		healthCheckURL: "{{ .HealthCheckURL }}",
 		{{- end }}
@@ -85,6 +91,9 @@ func (g *Graphqlizer) ApplicationTemplateInputToGQL(in graphql.ApplicationTempla
 		name: "{{.Name}}",
 		{{- if .Description }}
 		description: "{{.Description}}",
+		{{- end }}
+		{{- if .ApplicationNamespace }}
+		applicationNamespace: "{{.ApplicationNamespace}}",
 		{{- end }}
 		applicationInput: {{ ApplicationRegisterInputToGQL .ApplicationInput}},
 		{{- if .Placeholders }}
@@ -112,6 +121,9 @@ func (g *Graphqlizer) ApplicationTemplateUpdateInputToGQL(in graphql.Application
 		name: "{{.Name}}",
 		{{- if .Description }}
 		description: "{{.Description}}",
+		{{- end }}
+		{{- if .ApplicationNamespace }}
+		applicationNamespace: "{{.ApplicationNamespace}}",
 		{{- end }}
 		applicationInput: {{ ApplicationRegisterInputToGQL .ApplicationInput}},
 		{{- if .Placeholders }}

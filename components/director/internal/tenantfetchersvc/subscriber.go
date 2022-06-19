@@ -43,9 +43,9 @@ func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscr
 	var err error
 
 	if subscribe {
-		err = s.gqlClient.SubscribeTenantToRuntime(ctx, subscriptionProviderID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, appName)
+		err = s.gqlClient.SubscribeTenant(ctx, subscriptionProviderID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, appName)
 	} else {
-		err = s.gqlClient.UnsubscribeTenantFromRuntime(ctx, subscriptionProviderID, subaccountTenantID, providerSubaccountID, consumerTenantID, region)
+		err = s.gqlClient.UnsubscribeTenant(ctx, subscriptionProviderID, subaccountTenantID, providerSubaccountID, consumerTenantID, region)
 	}
 	return err
 }

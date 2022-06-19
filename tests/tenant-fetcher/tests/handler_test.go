@@ -24,6 +24,9 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 
 	"github.com/google/uuid"
@@ -31,10 +34,10 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+// todo:: double check/fix
 func TestRegionalOnboardingHandler(t *testing.T) {
 	t.Run("Regional account tenant creation", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
@@ -42,7 +45,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			providedTenant := tenantfetcher.Tenant{
 				TenantID:                    uuid.New().String(),
 				Subdomain:                   tenantfetcher.DefaultSubdomain,
-				SubscriptionProviderID:      uuid.New().String(),
+				SubscriptionProviderID:      config.SelfRegDistinguishLabelValue,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
@@ -66,7 +69,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				TenantID:                    uuid.New().String(),
 				Subdomain:                   tenantfetcher.DefaultSubdomain,
 				SubscriptionProviderID:      uuid.New().String(),
-				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
+				ProviderSubaccountID:        config.SelfRegDistinguishLabelValue,
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
 			}
@@ -74,7 +77,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				SubaccountID:                uuid.New().String(),
 				TenantID:                    parentTenant.TenantID,
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
-				SubscriptionProviderID:      uuid.New().String(),
+				SubscriptionProviderID:      config.SelfRegDistinguishLabelValue,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
@@ -109,7 +112,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				CustomerID:                  uuid.New().String(),
 				SubaccountID:                uuid.New().String(),
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
-				SubscriptionProviderID:      uuid.New().String(),
+				SubscriptionProviderID:      config.SelfRegDistinguishLabelValue,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
@@ -142,7 +145,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				TenantID:                    parentTenantId,
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID:      uuid.New().String(),
-				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
+				ProviderSubaccountID:        config.SelfRegDistinguishLabelValue,
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
 			}
@@ -150,7 +153,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				TenantID:                    parentTenantId,
 				SubaccountID:                uuid.New().String(),
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
-				SubscriptionProviderID:      uuid.New().String(),
+				SubscriptionProviderID:      config.SelfRegDistinguishLabelValue,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
@@ -185,7 +188,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				CustomerID:                  uuid.New().String(),
 				SubaccountID:                uuid.New().String(),
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
-				SubscriptionProviderID:      uuid.New().String(),
+				SubscriptionProviderID:      config.SelfRegDistinguishLabelValue,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
@@ -208,7 +211,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				TenantID:                    uuid.New().String(),
 				SubaccountID:                uuid.New().String(),
 				CustomerID:                  uuid.New().String(),
-				SubscriptionProviderID:      uuid.New().String(),
+				SubscriptionProviderID:      config.SelfRegDistinguishLabelValue,
 				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
@@ -254,7 +257,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				SubaccountID:                uuid.New().String(),
 				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
 				CustomerID:                  uuid.New().String(),
-				SubscriptionProviderID:      uuid.New().String(),
+				SubscriptionProviderID:      config.SelfRegDistinguishLabelValue,
 				ConsumerTenantID:            uuid.New().String(),
 				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
 			}
@@ -315,6 +318,93 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 			assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
 		})
 	})
+
+	t.Run("Application flows", func(t *testing.T) {
+		//GIVEN
+		tmplName := fmt.Sprintf("SAP %s (%s)", "app-flow-tmpl-name", config.SelfRegRegion)
+		ctx := context.TODO()
+		appTmplInput := fixAppTemplateInput(tmplName)
+		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTmplInput)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &appTemplate)
+		require.NoError(t, err)
+		require.NotEmpty(t, appTemplate.ID)
+
+		t.Run("Regional account tenant creation", func(t *testing.T) {
+			t.Run("Success", func(t *testing.T) {
+				// GIVEN
+				providedTenantIDs := tenantfetcher.Tenant{
+					TenantID:               uuid.New().String(),
+					Subdomain:              tenantfetcher.DefaultSubdomain,
+					SubscriptionProviderID: config.SelfRegDistinguishLabelValue,
+					ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
+					SubscriptionProviderAppName:    "app-name",
+				}
+
+				// WHEN
+				addRegionalTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
+
+				// THEN
+				tnt, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenantIDs.TenantID)
+				apps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID())
+				require.Greater(t, apps.TotalCount, 0)
+				appExists := false
+
+				var appID string
+				for _, v := range apps.Data {
+					if str.PtrStrToStr(v.ApplicationTemplateID) == appTemplate.ID {
+						appExists = true
+						appID = v.ID
+					}
+				}
+
+				defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appID)
+
+				require.True(t, appExists)
+				require.NoError(t, err)
+				assertTenant(t, tnt, providedTenantIDs.TenantID, providedTenantIDs.Subdomain)
+				require.Equal(t, tenantfetcher.RegionPathParamValue, tnt.Labels[tenantfetcher.RegionKey])
+			})
+		})
+
+		t.Run("Regional account tenant deletion", func(t *testing.T) {
+			t.Run("Success", func(t *testing.T) {
+				// GIVEN
+				providedTenantIDs := tenantfetcher.Tenant{
+					TenantID:               uuid.New().String(),
+					Subdomain:              tenantfetcher.DefaultSubdomain,
+					SubscriptionProviderID: config.SelfRegDistinguishLabelValue,
+					ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
+					SubscriptionProviderAppName:    "app-name",
+				}
+
+				addRegionalTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
+
+				apps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID())
+				require.Greater(t, apps.TotalCount, 0)
+
+				appExists := false
+				for _, v := range apps.Data {
+					if str.PtrStrToStr(v.ApplicationTemplateID) == appTemplate.ID {
+						appExists = true
+					}
+				}
+				require.True(t, appExists)
+
+				// WHEN
+				removeRegionalTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
+
+				// THEN
+				apps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID())
+				appExists = false
+				for _, v := range apps.Data {
+					if str.PtrStrToStr(v.ApplicationTemplateID) == appTemplate.ID {
+						appExists = true
+					}
+				}
+				require.False(t, appExists)
+			})
+		})
+	})
 }
 
 func TestGetDependenciesHandler(t *testing.T) {
@@ -346,14 +436,18 @@ func addRegionalTenantExpectStatusCode(t *testing.T, providedTenant tenantfetche
 	makeTenantRequestExpectStatusCode(t, providedTenant, http.MethodPut, config.TenantFetcherFullRegionalURL, expectedStatusCode)
 }
 
+func removeRegionalTenantExpectStatusCode(t *testing.T, providedTenant tenantfetcher.Tenant, expectedStatusCode int) {
+	makeTenantRequestExpectStatusCode(t, providedTenant, http.MethodDelete, config.TenantFetcherFullRegionalURL, expectedStatusCode)
+}
+
 func makeTenantRequestExpectStatusCode(t *testing.T, providedTenant tenantfetcher.Tenant, httpMethod, url string, expectedStatusCode int) {
 	tenantProperties := tenantfetcher.TenantIDProperties{
-		TenantIDProperty:                    config.TenantIDProperty,
-		SubaccountTenantIDProperty:          config.SubaccountTenantIDProperty,
-		CustomerIDProperty:                  config.CustomerIDProperty,
-		SubdomainProperty:                   config.SubdomainProperty,
-		SubscriptionProviderIDProperty:      config.SubscriptionProviderIDProperty,
-		ProviderSubaccountIdProperty:        config.ProviderSubaccountIDProperty,
+		TenantIDProperty:               config.TenantIDProperty,
+		SubaccountTenantIDProperty:     config.SubaccountTenantIDProperty,
+		CustomerIDProperty:             config.CustomerIDProperty,
+		SubdomainProperty:              config.SubdomainProperty,
+		SubscriptionProviderIDProperty: config.SubscriptionProviderIDProperty,
+		ProviderSubaccountIdProperty:   config.ProviderSubaccountIDProperty,
 		ConsumerTenantIDProperty:            config.ConsumerTenantIDProperty,
 		SubscriptionProviderAppNameProperty: config.SubscriptionProviderAppNameProperty,
 	}
@@ -371,4 +465,27 @@ func assertTenant(t *testing.T, tenant *directorSchema.Tenant, tenantID, subdoma
 	if len(subdomain) > 0 {
 		require.Equal(t, subdomain, tenant.Labels["subdomain"])
 	}
+}
+
+func fixRuntimeInput(name string) directorSchema.RuntimeRegisterInput {
+	input := fixtures.FixRuntimeRegisterInput(name)
+	input.Labels[config.SelfRegDistinguishLabelKey] = []interface{}{config.SelfRegDistinguishLabelValue}
+	input.Labels[tenantfetcher.RegionKey] = config.SelfRegRegion
+	delete(input.Labels, "placeholder")
+
+	return input
+}
+
+func fixAppTemplateInput(name string) directorSchema.ApplicationTemplateInput {
+	input := fixtures.FixApplicationTemplate(name)
+	input.Labels[config.SelfRegDistinguishLabelKey] = []interface{}{config.SelfRegDistinguishLabelValue}
+	input.Labels[tenantfetcher.RegionKey] = config.SelfRegRegion
+	input.ApplicationInput.Name = "{{name}}"
+	input.ApplicationInput.Description = str.Ptr("{{display-name}}")
+	input.Placeholders = []*directorSchema.PlaceholderDefinitionInput{
+		{Name: "name", Description: str.Ptr("description")},
+		{Name: "display-name", Description: str.Ptr("description")},
+	}
+
+	return input
 }

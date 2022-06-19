@@ -7,14 +7,13 @@ import (
 	"net/url"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/subscription"
 
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 
 	pkgadapters "github.com/kyma-incubator/compass/components/director/pkg/adapters"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/model"
-
-	"github.com/kyma-incubator/compass/components/director/internal/subscription"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
@@ -86,6 +85,7 @@ type RootResolver struct {
 	mpBundle           *bundleutil.Resolver
 	bundleInstanceAuth *bundleinstanceauth.Resolver
 	scenarioAssignment *scenarioassignment.Resolver
+	subscription       *subscription.Resolver
 	formationTemplate  *formationtemplate.Resolver
 }
 
@@ -180,7 +180,6 @@ func NewRootResolver(
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
-	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, uidSvc)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
@@ -190,11 +189,12 @@ func NewRootResolver(
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	timeService := time.NewService()
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo)
-	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, labelDefSvc, bundleSvc, uidSvc, formationSvc)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo, runtimeContextRepo)
+	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, labelDefSvc, bundleSvc, uidSvc, formationSvc, selfRegConfig.SelfRegisterDistinguishLabelKey)
+	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantSvc, webhookSvc, runtimeContextSvc, featuresConfig.ProtectedLabelPattern, featuresConfig.ImmutableLabelPattern)
 	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalFQDNHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdapters, timeService)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantSvc, webhookSvc, featuresConfig.ProtectedLabelPattern, featuresConfig.ImmutableLabelPattern)
-	subscriptionSvc := subscription.NewService(runtimeSvc, runtimeContextSvc, tenantSvc, labelSvc, uidSvc, subscriptionConfig.ConsumerSubaccountLabelKey, subscriptionConfig.SubscriptionLabelKey, subscriptionConfig.SubscriptionProviderAppNameLabelKey, subscriptionConfig.ProviderLabelKey)
+	subscriptionSvc := subscription.NewService(runtimeSvc, runtimeContextSvc, tenantSvc, labelSvc, appTemplateSvc, appConverter, appSvc, uidSvc, subscriptionConfig.ConsumerSubaccountLabelKey, subscriptionConfig.SubscriptionLabelKey, subscriptionConfig.SubscriptionProviderAppNameLabelKey, subscriptionConfig.ProviderLabelKey) // todo:: subscriptionConfig.ConsumerSubaccountIDsLabelKey
 	tenantOnDemandSvc := tenant.NewFetchOnDemandService(internalGatewayHTTPClient, tenantOnDemandAPIConfig)
 	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 	formationTemplateSvc := formationtemplate.NewService(formationTemplateRepo, uidSvc, formationTemplateConverter)
@@ -222,6 +222,7 @@ func NewRootResolver(
 		mpBundle:           bundleutil.NewResolver(transact, bundleSvc, bundleInstanceAuthSvc, bundleReferenceSvc, apiSvc, eventAPISvc, docSvc, bundleConverter, bundleInstanceAuthConv, apiConverter, eventAPIConverter, docConverter, specSvc),
 		bundleInstanceAuth: bundleinstanceauth.NewResolver(transact, bundleInstanceAuthSvc, bundleSvc, bundleInstanceAuthConv, bundleConverter),
 		scenarioAssignment: scenarioassignment.NewResolver(transact, scenarioAssignmentSvc, assignmentConv, tenantSvc, tenantOnDemandSvc, formationSvc),
+		subscription:       subscription.NewResolver(transact, subscriptionSvc),
 		formationTemplate:  formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc),
 	}, nil
 }
@@ -374,8 +375,8 @@ func (r *queryResolver) Application(ctx context.Context, id string) (*graphql.Ap
 }
 
 // ApplicationTemplates missing godoc
-func (r *queryResolver) ApplicationTemplates(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.ApplicationTemplatePage, error) {
-	return r.appTemplate.ApplicationTemplates(ctx, first, after)
+func (r *queryResolver) ApplicationTemplates(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationTemplatePage, error) {
+	return r.appTemplate.ApplicationTemplates(ctx, filter, first, after)
 }
 
 // ApplicationTemplate missing godoc
@@ -836,14 +837,14 @@ func (r *mutationResolver) DeleteTenants(ctx context.Context, in []string) (int,
 	return r.tenant.Delete(ctx, in)
 }
 
-// SubscribeTenantToRuntime subscribes given tenant to runtime
-func (r *mutationResolver) SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, appName string) (bool, error) {
-	return r.runtime.SubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, appName)
+// SubscribeTenant subscribes given tenant
+func (r *mutationResolver) SubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionAppName string) (bool, error) {
+	return r.subscription.SubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionAppName)
 }
 
-// UnsubscribeTenantFromRuntime unsubscribes given tenant from runtime
-func (r *mutationResolver) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region string) (bool, error) {
-	return r.runtime.UnsubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region)
+// UnsubscribeTenant unsubscribes given tenant
+func (r *mutationResolver) UnsubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region string) (bool, error) {
+	return r.subscription.UnsubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region)
 }
 
 func (r *mutationResolver) UpdateTenant(ctx context.Context, id string, in graphql.BusinessTenantMappingInput) (*graphql.Tenant, error) {
@@ -1049,7 +1050,7 @@ func (r *queryResolver) TenantByExternalID(ctx context.Context, id string) (*gra
 	return r.tenant.Tenant(ctx, id)
 }
 
-// TenantByInternalID returns а tenant by an internal ID
+// TenantByInternalID returns a tenant by an internal ID
 func (r *queryResolver) TenantByInternalID(ctx context.Context, id string) (*graphql.Tenant, error) {
 	return r.tenant.TenantByID(ctx, id)
 }

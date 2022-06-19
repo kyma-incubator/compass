@@ -19,7 +19,8 @@ type Entity struct {
 	IntegrationSystemID   sql.NullString `db:"integration_system_id"`
 	BaseURL               sql.NullString `db:"base_url"`
 	SystemNumber          sql.NullString `db:"system_number"`
-	Labels                sql.NullString `db:"labels"`
+	LocalTenantID         sql.NullString `db:"local_tenant_id"`
+	OrdLabels             sql.NullString `db:"labels"`
 	CorrelationIDs        sql.NullString `db:"correlation_ids"`
 	SystemStatus          sql.NullString `db:"system_status"`
 

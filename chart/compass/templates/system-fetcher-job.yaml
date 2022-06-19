@@ -123,6 +123,8 @@ spec:
                   value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
                 - name: APP_EXTERNAL_CLIENT_KEY_KEY
                   value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+                - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
+                  value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
               command:
                 - "/bin/sh"
               args:

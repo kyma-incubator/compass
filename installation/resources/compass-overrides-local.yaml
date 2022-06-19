@@ -81,7 +81,7 @@ global:
     http:
       client:
         skipSSLValidation: true
-    systemToTemplateMappings: '[{"Name": "temp1", "SourceKey": ["prop"], "SourceValue": ["val1"] }, {"Name": "temp2", "SourceKey": ["prop"], "SourceValue": ["val2"] }]'
+    systemToTemplateMappings: '[{"Name": "SAP temp1", "SourceKey": ["prop"], "SourceValue": ["val1"] }, {"Name": "SAP temp2", "SourceKey": ["prop"], "SourceValue": ["val2"] }]'
     systemsAPIEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/systemfetcher/systems"
     systemsAPIFilterCriteria: "no"
   tenantFetchers:

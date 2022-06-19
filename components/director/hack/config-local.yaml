@@ -89,8 +89,8 @@ graphql:
     writeTenants: ["tenant:write"]
     deleteTenants: ["tenant:write"]
     updateTenant: ["tenant:write"]
-    subscribeTenantToRuntime: ["tenant_subscription:write"]
-    unsubscribeTenantFromRuntime: ["tenant_subscription:write"]
+    subscribeTenant: ["tenant_subscription:write"]
+    unsubscribeTenant: ["tenant_subscription:write"]
     createFormationTemplate: [ "formation_template:write" ]
     deleteFormationTemplate: [ "formation_template:write" ]
     updateFormationTemplate: [ "formation_template:write" ]
@@ -121,6 +121,10 @@ graphql:
     integration_system:
       auths: ["integration_system.auths:read"]
 
+  input:
+    application:
+      localTenantID: [ "application.local_tenant_id:write" ]
+
 # Scopes assigned for every new Client Credentials by given object type (Runtime / Application / Integration System)
 clientCredentialsRegistrationScopes:
   runtime:
@@ -141,6 +145,7 @@ clientCredentialsRegistrationScopes:
   integration_system:
     - "application:read"
     - "application:write"
+    - "application.local_tenant_id:write"
     - "application_template:read"
     - "application_template:write"
     - "runtime:read"

@@ -19,11 +19,11 @@ import (
 )
 
 type regionalTenantCreationRequest struct {
-	SubaccountID                string `json:"subaccountTenantId"`
-	TenantID                    string `json:"tenantId"`
-	Subdomain                   string `json:"subdomain"`
-	SubscriptionProviderID      string `json:"subscriptionProviderId"`
-	ProviderSubaccountID        string `json:"providerSubaccountId"`
+	SubaccountID           string `json:"subaccountTenantId"`
+	TenantID               string `json:"tenantId"`
+	Subdomain              string `json:"subdomain"`
+	SubscriptionProviderID string `json:"subscriptionProviderId"`
+	ProviderSubaccountID   string `json:"providerSubaccountId"`
 	ConsumerTenantID            string `json:"consumerTenantID"`
 	SubscriptionProviderAppName string `json:"subscriptionProviderAppName"`
 }
@@ -101,6 +101,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		ConsumerTenantID:            consumerTenantID,
 		SubscriptionProviderAppName: subscriptionProviderAppName,
 	})
+	assert.NoError(t, err)
 
 	bodyWithMissingConsumerTenantID, err := json.Marshal(regionalTenantCreationRequest{
 		SubaccountID:                subaccountTenantExtID,
@@ -110,6 +111,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		ProviderSubaccountID:        providerSubaccountID,
 		SubscriptionProviderAppName: subscriptionProviderAppName,
 	})
+	assert.NoError(t, err)
 
 	bodyWithMissingSubscriptionProviderAppName, err := json.Marshal(regionalTenantCreationRequest{
 		SubaccountID:           subaccountTenantExtID,
@@ -119,7 +121,6 @@ func TestService_SubscriptionFlows(t *testing.T) {
 		ProviderSubaccountID:   providerSubaccountID,
 		ConsumerTenantID:       consumerTenantID,
 	})
-
 	assert.NoError(t, err)
 
 	validHandlerConfig := tenantfetchersvc.HandlerConfig{

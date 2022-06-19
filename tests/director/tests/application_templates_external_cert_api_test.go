@@ -32,7 +32,7 @@ func TestApplicationTemplateWithExternalCertificate(t *testing.T) {
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	name := "app-template-with-external-cert-name"
+	name := createAppTemplateName("app-template-with-external-cert-name")
 
 	t.Run("Create Application Template with external certificate", func(t *testing.T) {
 		// WHEN
