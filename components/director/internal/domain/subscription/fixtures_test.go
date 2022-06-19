@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/subscription/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
@@ -113,4 +114,20 @@ func fixModelApplicationCreateInputWithLabels(name, subscribedSubaccountID strin
 			scenarioassignment.SubaccountIDKey: subscribedSubaccountID,
 		},
 	}
+}
+
+func unusedLabelSvc() *automock.LabelService {
+	return &automock.LabelService{}
+}
+
+func unusedRuntimeSvc() *automock.RuntimeService {
+	return &automock.RuntimeService{}
+}
+
+func unusedRuntimeContextSvc() *automock.RuntimeCtxService {
+	return &automock.RuntimeCtxService{}
+}
+
+func unusedUUIDSvc() *automock.UidService {
+	return &automock.UidService{}
 }
