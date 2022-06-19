@@ -212,7 +212,7 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 		},
 		{
 			Name:               "not compliant placeholders",
-			NewAppTemplateName: fmt.Sprintf("SAP %s (%s)", "app-template-name", conf.SelfRegRegion),
+			NewAppTemplateName: fmt.Sprintf("SAP %s (%s)", "app-template-name", conf.SubscriptionConfig.SelfRegRegion),
 			NewAppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
 				{
 					Name:        "name",
