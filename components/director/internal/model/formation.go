@@ -1,5 +1,7 @@
 package model
 
+var DefaultTemplateName = "Side-by-side extensibility with Kyma"
+
 // Formation missing godoc
 type Formation struct {
 	ID                  string

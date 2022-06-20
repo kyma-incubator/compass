@@ -14,8 +14,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-var defaultTemplateName = "Side-by-side extensibility with Kyma"
-
 // Resolver missing godoc
 type Resolver struct {
 	conv          ModelConverter
@@ -87,7 +85,7 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 		return nil, errors.Wrap(err, "while parsing schema")
 	}
 	for _, f := range formations {
-		if _, err := r.formationsSrv.CreateFormation(ctx, tnt, model.Formation{Name: f}, &defaultTemplateName); err != nil {
+		if _, err := r.formationsSrv.CreateFormation(ctx, tnt, model.Formation{Name: f}, &model.DefaultTemplateName); err != nil {
 			return nil, errors.Wrapf(err, "while creating formation with name %s", f)
 		}
 	}
@@ -225,7 +223,7 @@ func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDe
 
 	for _, f := range inputFormations {
 		if _, ok := storedFormationsMap[f]; !ok {
-			if _, err := r.formationsSrv.CreateFormation(ctx, tnt, model.Formation{Name: f}, &defaultTemplateName); err != nil {
+			if _, err := r.formationsSrv.CreateFormation(ctx, tnt, model.Formation{Name: f}, &model.DefaultTemplateName); err != nil {
 				return nil, errors.Wrapf(err, "while creating formation with name %s", f)
 			}
 		}
