@@ -28,6 +28,8 @@ spec:
         metadata:
           labels:
             cronjob: tenant-fetcher
+          annotations:
+            cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         spec:
           serviceAccountName: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
           containers:

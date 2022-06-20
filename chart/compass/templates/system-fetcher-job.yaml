@@ -17,6 +17,8 @@ spec:
         metadata:
           labels:
             cronjob: {{ .Values.global.systemFetcher.name }}
+          annotations:
+            cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         spec:
           serviceAccountName: {{ $.Chart.Name }}-system-fetcher
           containers:
