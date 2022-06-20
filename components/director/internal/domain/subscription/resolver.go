@@ -64,7 +64,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 			return false, err
 		}
 	default:
-		log.C(ctx).Infof("Nothing to subscribe")
+		log.C(ctx).Infof("Nothing to subscribe to provider (%q) in region (%q)", providerID, region)
 	}
 
 	if err = tx.Commit(); err != nil {
