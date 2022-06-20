@@ -1283,7 +1283,7 @@ func TestDetermineSubscriptionFlow(t *testing.T) {
 				return runtimeSvc
 			},
 			Output:              "",
-			ExpectedErrorOutput: "both a runtime and application template exist with filter labels \"123-456\" and \"myregionaltenant\"",
+			ExpectedErrorOutput: fmt.Sprintf("both a runtime (%+v) and application template (%+v) exist with filter labels provider (%q) and region (%q)", modelRuntime, modelAppTemplate, providerSubaccountID, regionalTenantSubdomain),
 		},
 		{
 			Name: "Success when no runtime and app template exists",

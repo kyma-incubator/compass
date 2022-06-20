@@ -299,7 +299,7 @@ func (s *service) DetermineSubscriptionFlow(ctx context.Context, providerID, reg
 	}
 
 	if runtime != nil && appTemplate != nil {
-		return "", errors.Errorf("both a runtime (%q) and application template (%q) exist with filter labels provider (%q) and region (%q)", runtime, appTemplate, providerID, region)
+		return "", errors.Errorf("both a runtime (%+v) and application template (%+v) exist with filter labels provider (%q) and region (%q)", runtime, appTemplate, providerID, region)
 	}
 
 	return "", errors.Errorf("could not determine flow")
