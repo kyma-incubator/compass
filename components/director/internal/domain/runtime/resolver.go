@@ -813,49 +813,6 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Runti
 	return eventing.RuntimeEventingConfigurationToGraphQL(eventingCfg), nil
 }
 
-// SubscribeTenant subscribes tenant to runtime labeled with `providerID` and `region`
-func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, region string) (bool, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return false, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-	success, err := r.subscriptionSvc.SubscribeTenantToRuntime(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
-	if err != nil {
-		return false, err
-	}
-
-	if err = tx.Commit(); err != nil {
-		return false, err
-	}
-
-	return success, nil
-}
-
-// UnsubscribeTenant unsubscribes tenant to runtime labeled with `providerID` and `region`
-func (r *Resolver) UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return false, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	success, err := r.subscriptionSvc.UnsubscribeTenantFromRuntime(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
-	if err != nil {
-		return false, err
-	}
-
-	if err = tx.Commit(); err != nil {
-		return false, err
-	}
-
-	return success, nil
-}
-
 // deleteAssociatedScenarioAssignments ensures that scenario assignments which are responsible for creation of certain runtime labels are deleted,
 // if runtime doesn't have the scenarios label or is part of a scenario for which no scenario assignment exists => noop
 func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runtimeID string) error {

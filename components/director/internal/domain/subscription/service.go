@@ -275,14 +275,14 @@ func (s *service) DetermineSubscriptionFlow(ctx context.Context, providerID, reg
 	runtime, err := s.runtimeSvc.GetByFiltersGlobal(ctx, filters)
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
-			return "", errors.Wrapf(err, "while getting runtime with filter labels %q and %q", providerID, region)
+			return "", errors.Wrapf(err, "while getting runtime with filter labels provider (%q) and region (%q)", providerID, region)
 		}
 	}
 
 	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
-			return "", errors.Wrapf(err, "while getting app template with filter labels %q and %q", providerID, region)
+			return "", errors.Wrapf(err, "while getting app template with filter labels provider (%q) and region (%q)", providerID, region)
 		}
 	}
 
@@ -295,11 +295,11 @@ func (s *service) DetermineSubscriptionFlow(ctx context.Context, providerID, reg
 	}
 
 	if runtime == nil && appTemplate == nil {
-		return "", errors.Errorf("no runtime or application template exists with filter labels %q and %q", providerID, region)
+		return "", nil
 	}
 
 	if runtime != nil && appTemplate != nil {
-		return "", errors.Errorf("both a runtime and application template exist with filter labels %q and %q", providerID, region)
+		return "", errors.Errorf("both a runtime (%+v) and application template (%+v) exist with filter labels provider (%q) and region (%q)", runtime, appTemplate, providerID, region)
 	}
 
 	return "", errors.Errorf("could not determine flow")
