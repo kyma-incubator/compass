@@ -8,7 +8,7 @@ Based on their type we can process the formations differently depending on the F
 Each Formation Template provides a list of application types that are allowed to be assigned to a formation that is based on the template. Currently, every Formation Template allows exactly one runtime type to be included in a formation.
 
 The template also provides additional metadata fields such as `runtimeTypeDisplayName` and `runtimeArtifactKind`.
-The `runtimeTypeDisplayName` is the brand name representing this runtime. Unlike `runtimeType`, this value is suitable for UI visualizations and external documents where a brand name that customers are familiar with should be used. As for the runtime artifact kind, it's an enum with the following allowed values: `SUBSCRIPTION`, `SERVICE_INSTANCE`  and `ENVIRONMENT_INSTANCE`.
+The `runtimeTypeDisplayName` is the brand name representing this runtime. Unlike `runtimeType`, this value is suitable for UI visualizations and external documents where a brand name that customers are familiar with should be used. As for the `runtimeArtifactKind`, it's an enum with the following allowed values: `SUBSCRIPTION`, `SERVICE_INSTANCE`  and `ENVIRONMENT_INSTANCE`.
 
 ## GraphQL API
 Formation Templates are defined in the following way:
