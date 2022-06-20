@@ -36,8 +36,6 @@ spec:
               value: "{{ .Values.global.systemFetcher.paging.pageSize }}"
             - name: SYSTEM_FETCHER_CONTAINER_NAME
               value: "{{ .Values.global.systemFetcher.containerName }}"
-            - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
