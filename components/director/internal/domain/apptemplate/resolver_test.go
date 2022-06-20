@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate/apptmpltest"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/mock"
@@ -63,12 +65,8 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
 			ExpectedOutput: gqlAppTemplate,
 		},
 		{
@@ -79,17 +77,10 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, apperrors.NewNotFoundError(resource.ApplicationTemplate, "")).Once()
 				return appTemplateSvc
 			},
-			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
-				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				return appTemplateConv
-			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
-			ExpectedOutput: nil,
+			AppTemplateConvFn: UnusedAppTemplateConv,
+			WebhookConvFn:     UnusedWebhookConv,
+			WebhookSvcFn:      UnusedWebhookSvc,
+			ExpectedOutput:    nil,
 		},
 		{
 			Name: "Returns error when getting application template failed",
@@ -99,36 +90,19 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, testError).Once()
 				return appTemplateSvc
 			},
-			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
-				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				return appTemplateConv
-			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
-			ExpectedError: testError,
+			AppTemplateConvFn: UnusedAppTemplateConv,
+			WebhookConvFn:     UnusedWebhookConv,
+			WebhookSvcFn:      UnusedWebhookSvc,
+			ExpectedError:     testError,
 		},
 		{
-			Name: "Returns error when beginning transaction",
-			TxFn: txGen.ThatFailsOnBegin,
-			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
-				appTemplateSvc := &automock.ApplicationTemplateService{}
-				return appTemplateSvc
-			},
-			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
-				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				return appTemplateConv
-			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
-			ExpectedError: testError,
+			Name:              "Returns error when beginning transaction",
+			TxFn:              txGen.ThatFailsOnBegin,
+			AppTemplateSvcFn:  UnusedAppTemplateSvc,
+			AppTemplateConvFn: UnusedAppTemplateConv,
+			WebhookConvFn:     UnusedWebhookConv,
+			WebhookSvcFn:      UnusedWebhookSvc,
+			ExpectedError:     testError,
 		},
 		{
 			Name: "Returns error when committing transaction",
@@ -138,17 +112,10 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
 			},
-			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
-				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				return appTemplateConv
-			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
-			ExpectedError: testError,
+			AppTemplateConvFn: UnusedAppTemplateConv,
+			WebhookConvFn:     UnusedWebhookConv,
+			WebhookSvcFn:      UnusedWebhookSvc,
+			ExpectedError:     testError,
 		},
 		{
 			Name: "Returns error when can't convert application template to graphql",
@@ -163,12 +130,8 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(nil, testError).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn: UnusedWebhookConv,
+			WebhookSvcFn:  UnusedWebhookSvc,
 			ExpectedError: testError,
 		},
 	}
@@ -221,8 +184,15 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 	after := "test"
 	gqlAfter := graphql.PageCursor(after)
 
+	labelFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(RegionKey, "eu-1")}
+	labelFiltersEmpty := []*labelfilter.LabelFilter{}
+	gqlFilter := []*graphql.LabelFilter{
+		{Key: RegionKey, Query: str.Ptr("eu-1")},
+	}
+
 	testCases := []struct {
 		Name              string
+		LabelFilter       []*graphql.LabelFilter
 		TxFn              func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		AppTemplateSvcFn  func() *automock.ApplicationTemplateService
 		AppTemplateConvFn func() *automock.ApplicationTemplateConverter
@@ -232,11 +202,12 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 		ExpectedError     error
 	}{
 		{
-			Name: "Success",
-			TxFn: txGen.ThatSucceeds,
+			Name:        "Success",
+			LabelFilter: gqlFilter,
+			TxFn:        txGen.ThatSucceeds,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("List", txtest.CtxWithDBMatcher(), first, after).Return(modelPage, nil).Once()
+				appTemplateSvc.On("List", txtest.CtxWithDBMatcher(), labelFilters, first, after).Return(modelPage, nil).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
@@ -244,12 +215,8 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 				appTemplateConv.On("MultipleToGraphQL", modelAppTemplates).Return(gqlAppTemplates, nil).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
 			ExpectedOutput: &gqlPage,
 		},
 		{
@@ -257,66 +224,42 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("List", txtest.CtxWithDBMatcher(), first, after).Return(model.ApplicationTemplatePage{}, testError).Once()
+				appTemplateSvc.On("List", txtest.CtxWithDBMatcher(), labelFiltersEmpty, first, after).Return(model.ApplicationTemplatePage{}, testError).Once()
 				return appTemplateSvc
 			},
-			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
-				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				return appTemplateConv
-			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
-			ExpectedError: testError,
+			AppTemplateConvFn: UnusedAppTemplateConv,
+			WebhookConvFn:     UnusedWebhookConv,
+			WebhookSvcFn:      UnusedWebhookSvc,
+			ExpectedError:     testError,
 		},
 		{
-			Name: "Returns error when beginning transaction",
-			TxFn: txGen.ThatFailsOnBegin,
-			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
-				appTemplateSvc := &automock.ApplicationTemplateService{}
-				return appTemplateSvc
-			},
-			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
-				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				return appTemplateConv
-			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
-			ExpectedError: testError,
+			Name:              "Returns error when beginning transaction",
+			TxFn:              txGen.ThatFailsOnBegin,
+			AppTemplateSvcFn:  UnusedAppTemplateSvc,
+			AppTemplateConvFn: UnusedAppTemplateConv,
+			WebhookConvFn:     UnusedWebhookConv,
+			WebhookSvcFn:      UnusedWebhookSvc,
+			ExpectedError:     testError,
 		},
 		{
 			Name: "Returns error when committing transaction",
 			TxFn: txGen.ThatFailsOnCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("List", txtest.CtxWithDBMatcher(), first, after).Return(modelPage, nil).Once()
+				appTemplateSvc.On("List", txtest.CtxWithDBMatcher(), labelFiltersEmpty, first, after).Return(modelPage, nil).Once()
 				return appTemplateSvc
 			},
-			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
-				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				return appTemplateConv
-			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
-			ExpectedError: testError,
+			AppTemplateConvFn: UnusedAppTemplateConv,
+			WebhookConvFn:     UnusedWebhookConv,
+			WebhookSvcFn:      UnusedWebhookSvc,
+			ExpectedError:     testError,
 		},
 		{
 			Name: "Returns error when can't convert at least one of application templates to graphql",
 			TxFn: txGen.ThatSucceeds,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("List", txtest.CtxWithDBMatcher(), first, after).Return(modelPage, nil).Once()
+				appTemplateSvc.On("List", txtest.CtxWithDBMatcher(), labelFiltersEmpty, first, after).Return(modelPage, nil).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
@@ -324,12 +267,8 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 				appTemplateConv.On("MultipleToGraphQL", modelAppTemplates).Return(nil, testError).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn: UnusedWebhookConv,
+			WebhookSvcFn:  UnusedWebhookSvc,
 			ExpectedError: testError,
 		},
 	}
@@ -345,7 +284,7 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, nil)
 
 			// WHEN
-			result, err := resolver.ApplicationTemplates(ctx, &first, &gqlAfter)
+			result, err := resolver.ApplicationTemplates(ctx, testCase.LabelFilter, &first, &gqlAfter)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -421,14 +360,10 @@ func TestResolver_Webhooks(t *testing.T) {
 				transact.On("Begin").Return(nil, testErr).Once()
 				return transact
 			},
-			PersistenceFn: txtest.PersistenceContextThatDoesntExpectCommit,
-			WebhookServiceFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
-			WebhookConverterFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			ExpectedErr: testErr,
+			PersistenceFn:      txtest.PersistenceContextThatDoesntExpectCommit,
+			WebhookServiceFn:   UnusedWebhookSvc,
+			WebhookConverterFn: UnusedWebhookConv,
+			ExpectedErr:        testErr,
 		},
 		{
 			Name: "Returns error on committing transaction",
@@ -443,10 +378,8 @@ func TestResolver_Webhooks(t *testing.T) {
 				svc.On("ListForApplicationTemplate", txtest.CtxWithDBMatcher(), applicationTemplateID).Return(modelWebhooks, nil).Once()
 				return svc
 			},
-			WebhookConverterFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			ExpectedErr: testErr,
+			WebhookConverterFn: UnusedWebhookConv,
+			ExpectedErr:        testErr,
 		},
 	}
 
@@ -533,12 +466,8 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
 			ExpectedOutput:   gqlAppTemplate,
 		},
@@ -557,12 +486,8 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.NoopSelfRegManager,
 			ExpectedError:    testError,
 		},
@@ -590,12 +515,8 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
 			ExpectedError:    testError,
 		},
@@ -623,12 +544,8 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
 			ExpectedError:    testError,
 		},
@@ -647,12 +564,8 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.NoopSelfRegManager,
 			ExpectedError:    testError,
 		},
@@ -680,12 +593,8 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
 			ExpectedError:    testError,
 		},
@@ -713,12 +622,8 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(nil, testError).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
 			ExpectedError:    testError,
 		},
@@ -748,12 +653,8 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
 			ExpectedOutput:   gqlAppTemplate,
 		},
@@ -772,12 +673,8 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatReturnsErrorOnPrep,
 			ExpectedError:    errors.New(apptmpltest.SelfRegErrorMsg),
 		},
@@ -808,12 +705,8 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatReturnsNoErrors(labels),
 			ExpectedError:    testError,
 		},
@@ -842,12 +735,8 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labels),
 			ExpectedOutput:   gqlAppTemplate,
 		},
@@ -1074,43 +963,22 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv.On("ToGraphQL", &modelApplication).Return(&gqlApplication).Once()
 				return appConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
 			ExpectedOutput: &gqlApplication,
 			ExpectedError:  nil,
 		},
 		{
-			Name: "Returns error when transaction begin fails",
-			TxFn: txGen.ThatFailsOnBegin,
-			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
-				appTemplateSvc := &automock.ApplicationTemplateService{}
-
-				return appTemplateSvc
-			},
-			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
-				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				return appTemplateConv
-			},
-			AppSvcFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				return appSvc
-			},
-			AppConvFn: func() *automock.ApplicationConverter {
-				appConv := &automock.ApplicationConverter{}
-				return appConv
-			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
-			ExpectedOutput: nil,
-			ExpectedError:  testError,
+			Name:              "Returns error when transaction begin fails",
+			TxFn:              txGen.ThatFailsOnBegin,
+			AppTemplateSvcFn:  UnusedAppTemplateSvc,
+			AppTemplateConvFn: UnusedAppTemplateConv,
+			AppSvcFn:          UnusedAppSvc,
+			AppConvFn:         UnusedAppConv,
+			WebhookConvFn:     UnusedWebhookConv,
+			WebhookSvcFn:      UnusedWebhookSvc,
+			ExpectedOutput:    nil,
+			ExpectedError:     testError,
 		},
 		{
 			Name: "Returns error when getting Application Template fails",
@@ -1125,20 +993,10 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
 				return appTemplateConv
 			},
-			AppSvcFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				return appSvc
-			},
-			AppConvFn: func() *automock.ApplicationConverter {
-				appConv := &automock.ApplicationConverter{}
-				return appConv
-			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			AppSvcFn:       UnusedAppSvc,
+			AppConvFn:      UnusedAppConv,
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
 			ExpectedOutput: nil,
 			ExpectedError:  testError,
 		},
@@ -1156,20 +1014,10 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
 				return appTemplateConv
 			},
-			AppSvcFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				return appSvc
-			},
-			AppConvFn: func() *automock.ApplicationConverter {
-				appConv := &automock.ApplicationConverter{}
-				return appConv
-			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			AppSvcFn:       UnusedAppSvc,
+			AppConvFn:      UnusedAppConv,
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
 			ExpectedOutput: nil,
 			ExpectedError:  testError,
 		},
@@ -1187,21 +1035,14 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
 				return appTemplateConv
 			},
-			AppSvcFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				return appSvc
-			},
+			AppSvcFn: UnusedAppSvc,
 			AppConvFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
 				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(graphql.ApplicationRegisterInput{}, testError).Once()
 				return appConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
 			ExpectedOutput: nil,
 			ExpectedError:  testError,
 		},
@@ -1219,21 +1060,14 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
 				return appTemplateConv
 			},
-			AppSvcFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				return appSvc
-			},
+			AppSvcFn: UnusedAppSvc,
 			AppConvFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
 				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(graphql.ApplicationRegisterInput{}, nil).Once()
 				return appConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
 			ExpectedOutput: nil,
 			ExpectedError:  errors.New("name=cannot be blank"),
 		},
@@ -1262,12 +1096,8 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				return appConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
 			ExpectedOutput: nil,
 			ExpectedError:  testError,
 		},
@@ -1297,12 +1127,8 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				return appConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
 			ExpectedOutput: nil,
 			ExpectedError:  testError,
 		},
@@ -1332,12 +1158,8 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				return appConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
 			ExpectedOutput: nil,
 			ExpectedError:  testError,
 		},
@@ -1388,11 +1210,21 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
 	gqlAppTemplateUpdateInput := fixGQLAppTemplateUpdateInputWithPlaceholder(testName)
 
+	labels := map[string]*model.Label{
+		"test": {
+			Key:   "test key",
+			Value: "test value",
+		},
+	}
+	resultLabels := map[string]interface{}{
+		"test key": "test value",
+	}
 	testCases := []struct {
 		Name              string
 		TxFn              func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		AppTemplateSvcFn  func() *automock.ApplicationTemplateService
 		AppTemplateConvFn func() *automock.ApplicationTemplateConverter
+		SelfRegManagerFn  func() *automock.SelfRegisterManager
 		WebhookSvcFn      func() *automock.WebhookService
 		WebhookConvFn     func() *automock.WebhookConverter
 		ExpectedOutput    *graphql.ApplicationTemplate
@@ -1403,6 +1235,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
 				appTemplateSvc.On("Update", txtest.CtxWithDBMatcher(), testID, *modelAppTemplateInput).Return(nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
@@ -1413,39 +1246,86 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
+			SelfRegManagerFn: func() *automock.SelfRegisterManager {
+				srm := &automock.SelfRegisterManager{}
+				srm.On("IsSelfRegistrationFlow", txtest.CtxWithDBMatcher(), resultLabels).Return(false, nil).Once()
+				return srm
 			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
 			ExpectedOutput: gqlAppTemplate,
 		},
 		{
-			Name: "Returns error when can't convert input from graphql",
-			TxFn: txGen.ThatDoesntExpectCommit,
+			Name: "Success with self reg flow",
+			TxFn: txGen.ThatSucceeds,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				placeholders := []model.ApplicationTemplatePlaceholder{
+					{
+						Name:        "name",
+						Description: &testDescription,
+					},
+					{
+						Name:        "display-name",
+						Description: &testDescription,
+					},
+				}
+				modelAppTemplate := fixModelAppTemplateWithAppInputJSONAndPlaceholders(testID, "SAP app-template", appInputJSONString, fixModelApplicationTemplateWebhooks(testWebhookID, testID), placeholders)
+				modelAppTemplateInput := fixModelAppTemplateUpdateInputWithPlaceholders("SAP app-template", appInputJSONString, placeholders)
+
 				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
+				appTemplateSvc.On("Update", txtest.CtxWithDBMatcher(), testID, *modelAppTemplateInput).Return(nil).Once()
+				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
 			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				placeholders := []model.ApplicationTemplatePlaceholder{
+					{
+						Name:        "name",
+						Description: &testDescription,
+					},
+					{
+						Name:        "display-name",
+						Description: &testDescription,
+					},
+				}
+				modelAppTemplate := fixModelAppTemplateWithAppInputJSONAndPlaceholders(testID, "SAP app-template", appInputJSONString, fixModelApplicationTemplateWebhooks(testWebhookID, testID), placeholders)
+				modelAppTemplateInput := fixModelAppTemplateUpdateInputWithPlaceholders("SAP app-template", appInputJSONString, placeholders)
+
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
+				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
+				return appTemplateConv
+			},
+			SelfRegManagerFn: func() *automock.SelfRegisterManager {
+				srm := &automock.SelfRegisterManager{}
+				srm.On("IsSelfRegistrationFlow", txtest.CtxWithDBMatcher(), resultLabels).Return(true, nil).Once()
+				return srm
+			},
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
+			ExpectedOutput: gqlAppTemplate,
+		},
+		{
+			Name:             "Returns error when can't convert input from graphql",
+			TxFn:             txGen.ThatDoesntExpectCommit,
+			AppTemplateSvcFn: UnusedAppTemplateSvc,
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(model.ApplicationTemplateUpdateInput{}, testError).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
-			ExpectedError: testError,
+			SelfRegManagerFn: UnusedSelfRegManager,
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
+			ExpectedError:    testError,
 		},
 		{
 			Name: "Returns error when updating application template failed",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
 				appTemplateSvc.On("Update", txtest.CtxWithDBMatcher(), testID, *modelAppTemplateInput).Return(testError).Once()
 				return appTemplateSvc
 			},
@@ -1454,12 +1334,13 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
+			SelfRegManagerFn: func() *automock.SelfRegisterManager {
+				srm := &automock.SelfRegisterManager{}
+				srm.On("IsSelfRegistrationFlow", txtest.CtxWithDBMatcher(), resultLabels).Return(false, nil).Once()
+				return srm
 			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn: UnusedWebhookConv,
+			WebhookSvcFn:  UnusedWebhookSvc,
 			ExpectedError: testError,
 		},
 		{
@@ -1467,6 +1348,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
 				appTemplateSvc.On("Update", txtest.CtxWithDBMatcher(), testID, *modelAppTemplateInput).Return(nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, testError).Once()
 				return appTemplateSvc
@@ -1476,38 +1358,169 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
+			SelfRegManagerFn: func() *automock.SelfRegisterManager {
+				srm := &automock.SelfRegisterManager{}
+				srm.On("IsSelfRegistrationFlow", txtest.CtxWithDBMatcher(), resultLabels).Return(false, nil).Once()
+				return srm
 			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn: UnusedWebhookConv,
+			WebhookSvcFn:  UnusedWebhookSvc,
 			ExpectedError: testError,
 		},
 		{
-			Name: "Returns error when beginning transaction",
-			TxFn: txGen.ThatFailsOnBegin,
+			Name: "Returns error when list application template labels failed",
+			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(nil, testError).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
+			SelfRegManagerFn: UnusedSelfRegManager,
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
+			ExpectedError:    testError,
+		},
+		{
+			Name: "Returns error when self registration flow check failed",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
+				return appTemplateSvc
 			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
+				return appTemplateConv
 			},
+			SelfRegManagerFn: func() *automock.SelfRegisterManager {
+				srm := &automock.SelfRegisterManager{}
+				srm.On("IsSelfRegistrationFlow", txtest.CtxWithDBMatcher(), resultLabels).Return(false, testError).Once()
+				return srm
+			},
+			WebhookConvFn: UnusedWebhookConv,
+			WebhookSvcFn:  UnusedWebhookSvc,
 			ExpectedError: testError,
+		},
+		{
+			Name: "Returns error when validating app template placeholders length",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
+				return appTemplateConv
+			},
+			SelfRegManagerFn: func() *automock.SelfRegisterManager {
+				srm := &automock.SelfRegisterManager{}
+				srm.On("IsSelfRegistrationFlow", txtest.CtxWithDBMatcher(), resultLabels).Return(true, nil).Once()
+				return srm
+			},
+			WebhookConvFn: UnusedWebhookConv,
+			WebhookSvcFn:  UnusedWebhookSvc,
+			ExpectedError: errors.New("expecting \"name\" and \"display-name\" placeholders"),
+		},
+		{
+			Name: "Returns error when validating app template placeholders",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				modelAppTemplateInput := &model.ApplicationTemplateUpdateInput{
+					Name:                 "SAP app-template",
+					Description:          &testDescription,
+					ApplicationInputJSON: appInputJSONString,
+					Placeholders: []model.ApplicationTemplatePlaceholder{
+						{
+							Name:        "test",
+							Description: &testDescription,
+						},
+						{
+							Name:        "test2",
+							Description: &testDescription,
+						},
+					},
+					AccessLevel: model.GlobalApplicationTemplateAccessLevel,
+				}
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
+				return appTemplateConv
+			},
+			SelfRegManagerFn: func() *automock.SelfRegisterManager {
+				srm := &automock.SelfRegisterManager{}
+				srm.On("IsSelfRegistrationFlow", txtest.CtxWithDBMatcher(), resultLabels).Return(true, nil).Once()
+				return srm
+			},
+			WebhookConvFn: UnusedWebhookConv,
+			WebhookSvcFn:  UnusedWebhookSvc,
+			ExpectedError: errors.New("unexpected placeholder with name \"test\""),
+		},
+		{
+			Name: "Returns error when validating app template name",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				modelAppTemplateInput := &model.ApplicationTemplateUpdateInput{
+					Name:                 "not-valid-name",
+					Description:          &testDescription,
+					ApplicationInputJSON: appInputJSONString,
+					Placeholders: []model.ApplicationTemplatePlaceholder{
+						{
+							Name:        "name",
+							Description: &testDescription,
+						},
+						{
+							Name:        "display-name",
+							Description: &testDescription,
+						},
+					},
+					AccessLevel: model.GlobalApplicationTemplateAccessLevel,
+				}
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
+				return appTemplateConv
+			},
+			SelfRegManagerFn: func() *automock.SelfRegisterManager {
+				srm := &automock.SelfRegisterManager{}
+				srm.On("IsSelfRegistrationFlow", txtest.CtxWithDBMatcher(), resultLabels).Return(true, nil).Once()
+				return srm
+			},
+			WebhookConvFn: UnusedWebhookConv,
+			WebhookSvcFn:  UnusedWebhookSvc,
+			ExpectedError: errors.New("application template name \"not-valid-name\" does not comply with the following naming convention: \"SAP <product name>\""),
+		},
+		{
+			Name:              "Returns error when beginning transaction",
+			TxFn:              txGen.ThatFailsOnBegin,
+			AppTemplateSvcFn:  UnusedAppTemplateSvc,
+			AppTemplateConvFn: UnusedAppTemplateConv,
+			SelfRegManagerFn:  UnusedSelfRegManager,
+			WebhookConvFn:     UnusedWebhookConv,
+			WebhookSvcFn:      UnusedWebhookSvc,
+			ExpectedError:     testError,
 		},
 		{
 			Name: "Returns error when committing transaction",
 			TxFn: txGen.ThatFailsOnCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
 				appTemplateSvc.On("Update", txtest.CtxWithDBMatcher(), testID, *modelAppTemplateInput).Return(nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
@@ -1517,12 +1530,13 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("UpdateInputFromGraphQL", *gqlAppTemplateUpdateInput).Return(*modelAppTemplateInput, nil).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
+			SelfRegManagerFn: func() *automock.SelfRegisterManager {
+				srm := &automock.SelfRegisterManager{}
+				srm.On("IsSelfRegistrationFlow", txtest.CtxWithDBMatcher(), resultLabels).Return(false, nil).Once()
+				return srm
 			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn: UnusedWebhookConv,
+			WebhookSvcFn:  UnusedWebhookSvc,
 			ExpectedError: testError,
 		},
 		{
@@ -1530,6 +1544,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), testID).Return(labels, nil).Once()
 				appTemplateSvc.On("Update", txtest.CtxWithDBMatcher(), testID, *modelAppTemplateInput).Return(nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
@@ -1540,12 +1555,13 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(nil, testError).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
+			SelfRegManagerFn: func() *automock.SelfRegisterManager {
+				srm := &automock.SelfRegisterManager{}
+				srm.On("IsSelfRegistrationFlow", txtest.CtxWithDBMatcher(), resultLabels).Return(false, nil).Once()
+				return srm
 			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn: UnusedWebhookConv,
+			WebhookSvcFn:  UnusedWebhookSvc,
 			ExpectedError: testError,
 		},
 	}
@@ -1555,10 +1571,11 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			persist, transact := testCase.TxFn()
 			appTemplateSvc := testCase.AppTemplateSvcFn()
 			appTemplateConv := testCase.AppTemplateConvFn()
+			selfRegManager := testCase.SelfRegManagerFn()
 			webhookSvc := testCase.WebhookSvcFn()
 			webhookConverter := testCase.WebhookConvFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, nil)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, selfRegManager, nil)
 
 			// WHEN
 			result, err := resolver.UpdateApplicationTemplate(ctx, testID, *gqlAppTemplateUpdateInput)
@@ -1572,10 +1589,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			}
 			assert.Equal(t, testCase.ExpectedOutput, result)
 
-			persist.AssertExpectations(t)
-			transact.AssertExpectations(t)
-			appTemplateSvc.AssertExpectations(t)
-			appTemplateConv.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, persist, transact, appTemplateSvc, appTemplateConv, selfRegManager)
 		})
 	}
 
@@ -1648,12 +1662,8 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplate, nil).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
 			ExpectedOutput:   gqlAppTemplate,
 		},
@@ -1681,12 +1691,8 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.NoopSelfRegManager,
 			ExpectedError:    testError,
 		},
@@ -1715,12 +1721,8 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
 			ExpectedError:    testError,
 		},
@@ -1739,12 +1741,8 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.NoopSelfRegManager,
 			ExpectedError:    testError,
 		},
@@ -1764,12 +1762,8 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerReturnsDistinguishingLabel,
 			ExpectedError:    testError,
 		},
@@ -1799,12 +1793,8 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
 			ExpectedError:    testError,
 		},
@@ -1833,12 +1823,8 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(nil, testError).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
 			ExpectedError:    testError,
 		},
@@ -1858,12 +1844,8 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerReturnsDistinguishingLabel,
 			ExpectedError:    testError,
 		},
@@ -1883,12 +1865,8 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerReturnsDistinguishingLabel,
 			ExpectedError:    testError,
 		},
@@ -1919,12 +1897,8 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerReturnsDistinguishingLabel,
 			ExpectedOutput:   nil,
 		},
@@ -1955,12 +1929,8 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatReturnsErrorOnCleanup,
 			ExpectedError:    errors.New(apptmpltest.SelfRegErrorMsg),
 		},
@@ -1991,12 +1961,8 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn: func() *automock.WebhookConverter {
-				return &automock.WebhookConverter{}
-			},
-			WebhookSvcFn: func() *automock.WebhookService {
-				return &automock.WebhookService{}
-			},
+			WebhookConvFn:    UnusedWebhookConv,
+			WebhookSvcFn:     UnusedWebhookSvc,
 			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanupWithNoErrors,
 			ExpectedError:    testError,
 		},
@@ -2033,4 +1999,32 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 			selfRegManager.AssertExpectations(t)
 		})
 	}
+}
+
+func UnusedAppTemplateSvc() *automock.ApplicationTemplateService {
+	return &automock.ApplicationTemplateService{}
+}
+
+func UnusedAppTemplateConv() *automock.ApplicationTemplateConverter {
+	return &automock.ApplicationTemplateConverter{}
+}
+
+func UnusedAppSvc() *automock.ApplicationService {
+	return &automock.ApplicationService{}
+}
+
+func UnusedAppConv() *automock.ApplicationConverter {
+	return &automock.ApplicationConverter{}
+}
+
+func UnusedSelfRegManager() *automock.SelfRegisterManager {
+	return &automock.SelfRegisterManager{}
+}
+
+func UnusedWebhookConv() *automock.WebhookConverter {
+	return &automock.WebhookConverter{}
+}
+
+func UnusedWebhookSvc() *automock.WebhookService {
+	return &automock.WebhookService{}
 }

@@ -29,4 +29,6 @@ type Configuration struct {
 	JwksEndpoint             string `envconfig:"APP_JWKS_ENDPOINT"`
 
 	ReadyConfig healthz.ReadyConfig
+
+	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 }

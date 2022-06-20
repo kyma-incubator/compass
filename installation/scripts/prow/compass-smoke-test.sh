@@ -83,9 +83,9 @@ tar --extract --file adoptopenjdk11.tgz --directory "${JAVA_HOME}" --strip-compo
 rm adoptopenjdk11.tgz* 
 
 echo "Install maven"
-curl -fLSs -o apache-maven-3.8.6.tgz "https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz"
-tar --extract --file apache-maven-3.8.6.tgz --directory "${M2_HOME}" --strip-components 1 --no-same-owner
-rm apache-maven-3.8.6.tgz* 
+curl -fLSs -o apache-maven.tgz "https://archive.apache.org/dist/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz"
+tar --extract --file apache-maven.tgz --directory "${M2_HOME}" --strip-components 1 --no-same-owner
+rm apache-maven.tgz* 
 
 echo "Install migrate"
 curl -fLSs -o migrate.tgz "https://github.com/golang-migrate/migrate/releases/download/v4.15.2/migrate.linux-amd64.tar.gz"

@@ -19,13 +19,6 @@ spec:
       labels:
         app: {{ .Chart.Name }}-tenant-fetcher-tests-app
     spec:
-      {{ if .Values.global.isLocalEnv }}
-      hostAliases:
-        - ip: {{ .Values.global.minikubeIP }}
-          hostnames:
-            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
-      {{ end }}
       serviceAccountName: {{ .Chart.Name }}-e2e-tenant-fetcher
       containers:
         - name: tenant-fetcher-tests
@@ -49,6 +42,8 @@ spec:
               value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
             - name: APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY #The property which states the provider subaccount used in the tenant provider
               value: {{.Values.global.tenantFetcher.tenantProvider.providerSubaccountIdProperty }}
+            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_APP_NAME_PROPERTY
+              value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionAppNameProperty }}
             - name: APP_TENANT_FETCHER_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
             - name: APP_EXTERNAL_SERVICES_MOCK_URL
@@ -124,6 +119,12 @@ spec:
               value: "{{ .Values.global.tests.db.maxIdleConnections }}"
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
               value: "{{ .Values.global.tenantFetcher.requiredAuthScope }}"
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscriptionProviderIdValue | quote }}
+            - name: APP_SELF_REG_REGION
+              value: {{ .Values.global.tests.selfRegistration.region }}
       restartPolicy: Never
 ---
 apiVersion: v1

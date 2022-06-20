@@ -121,6 +121,7 @@ spec:
               - oauth2.{{ .Values.global.ingress.domainName }}:443
             paths:
               - /oauth2/token*
+              - /.well-known/*
     - from: # or anything other only if the request is authenticated via RequestAuthentication
         - source:
             requestPrincipals: ['*']

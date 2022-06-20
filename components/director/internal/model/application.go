@@ -19,8 +19,9 @@ type Application struct {
 	IntegrationSystemID   *string
 	ApplicationTemplateID *string
 	SystemNumber          *string
+	LocalTenantID         *string
 	BaseURL               *string         `json:"baseUrl"`
-	Labels                json.RawMessage `json:"labels"`
+	OrdLabels             json.RawMessage `json:"labels"`
 	CorrelationIDs        json.RawMessage `json:"correlationIds,omitempty"`
 	Type                  string          `json:"-"`
 	// SystemStatus shows whether the on-premise system is reachable or unreachable
@@ -58,14 +59,17 @@ func (app *Application) SetFromUpdateInput(update ApplicationUpdateInput, timest
 	if update.BaseURL != nil {
 		app.BaseURL = update.BaseURL
 	}
-	if update.Labels != nil {
-		app.Labels = update.Labels
+	if update.OrdLabels != nil {
+		app.OrdLabels = update.OrdLabels
 	}
 	if update.CorrelationIDs != nil {
 		app.CorrelationIDs = update.CorrelationIDs
 	}
 	if update.SystemStatus != nil {
 		app.SystemStatus = update.SystemStatus
+	}
+	if update.LocalTenantID != nil {
+		app.LocalTenantID = update.LocalTenantID
 	}
 	if update.DocumentationLabels != nil {
 		app.DocumentationLabels = update.DocumentationLabels
@@ -136,6 +140,7 @@ type ApplicationRegisterInput struct {
 	CorrelationIDs      json.RawMessage
 	SystemStatus        *string
 	DocumentationLabels json.RawMessage
+	LocalTenantID       *string
 }
 
 // ApplicationRegisterInputWithTemplate missing godoc
@@ -161,9 +166,10 @@ func (i *ApplicationRegisterInput) ToApplication(timestamp time.Time, id string)
 			Timestamp: timestamp,
 		},
 		BaseURL:             i.BaseURL,
-		Labels:              i.OrdLabels,
+		OrdLabels:           i.OrdLabels,
 		CorrelationIDs:      i.CorrelationIDs,
 		SystemNumber:        i.SystemNumber,
+		LocalTenantID:       i.LocalTenantID,
 		SystemStatus:        i.SystemStatus,
 		DocumentationLabels: i.DocumentationLabels,
 		BaseEntity: &BaseEntity{
@@ -190,10 +196,11 @@ type ApplicationUpdateInput struct {
 	IntegrationSystemID *string
 	StatusCondition     *ApplicationStatusCondition
 	BaseURL             *string
-	Labels              json.RawMessage
+	OrdLabels           json.RawMessage
 	CorrelationIDs      json.RawMessage
 	SystemStatus        *string
 	DocumentationLabels json.RawMessage
+	LocalTenantID       *string
 }
 
 // ApplicationWithLabel missing godoc

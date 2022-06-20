@@ -64,6 +64,8 @@ const (
 	EventDefinition Type = "eventDefinition"
 	// AutomaticScenarioAssigment type represents ASA resource.
 	AutomaticScenarioAssigment Type = "automaticScenarioAssigment"
+	// FormationTemplate type represents formation template resource.
+	FormationTemplate Type = "formationTemplate"
 	// Webhook type represents generic webhook resource. This resource does not assume the referenced resource type of the Webhook.
 	Webhook Type = "webhook"
 	// AppWebhook type represents application webhook resource.
