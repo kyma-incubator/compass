@@ -24,6 +24,8 @@ import (
 	"strings"
 	"time"
 
+	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
@@ -223,6 +225,8 @@ func createTenantsFetcherSvc(ctx context.Context, jobConfig tenantfetcher.JobCon
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
 	runtimeConverter := runtime.NewConverter(webhookConverter)
 	scenarioAssignConverter := scenarioassignment.NewConverter()
+	runtimeContextConverter := runtimectx.NewConverter()
+	tenantConverter := tenant.NewConverter()
 
 	webhookRepo := webhook.NewRepository(webhookConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
@@ -231,15 +235,18 @@ func createTenantsFetcherSvc(ctx context.Context, jobConfig tenantfetcher.JobCon
 	applicationRepo := application.NewRepository(appConverter)
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignConverter)
+	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConverter)
+	tenantRepo := tenant.NewRepository(tenantConverter)
 
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepo, labelSvc)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc)
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantStorageRepo, uidSvc, handlerCfg.Features.DefaultScenarioEnabled)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
-
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantStorageSvc, runtimeRepo)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantStorageSvc, webhookSvc, handlerCfg.Features.ProtectedLabelPattern, handlerCfg.Features.ImmutableLabelPattern)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo, runtimeContextRepo)
+	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantStorageSvc, webhookSvc, runtimeContextSvc, handlerCfg.Features.ProtectedLabelPattern, handlerCfg.Features.ImmutableLabelPattern)
 
 	kubeClient, err := tf.NewKubernetesClient(ctx, handlerCfg.Kubernetes)
 	exitOnError(err, "Failed to initialize Kubernetes client")
