@@ -43,6 +43,8 @@ spec:
   template:
     metadata:
       name: {{ template "fullname" . }}-registration
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
     spec:
       serviceAccountName: {{ template "fullname" . }}-registration
       restartPolicy: Never

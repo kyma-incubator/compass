@@ -25,6 +25,8 @@ spec:
       labels:
         app: {{ $jobName }}
         release: {{ .Release.Name }}
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
     spec:
       serviceAccountName: {{ template "fullname" . }}
       restartPolicy: Never

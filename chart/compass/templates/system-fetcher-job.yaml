@@ -17,6 +17,8 @@ spec:
         metadata:
           labels:
             cronjob: {{ .Values.global.systemFetcher.name }}
+          annotations:
+            cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         spec:
           serviceAccountName: {{ $.Chart.Name }}-system-fetcher
           containers:
@@ -123,6 +125,8 @@ spec:
                   value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
                 - name: APP_EXTERNAL_CLIENT_KEY_KEY
                   value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+                - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
+                  value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
               command:
                 - "/bin/sh"
               args:

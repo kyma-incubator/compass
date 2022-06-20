@@ -27,6 +27,7 @@ var (
 	fixedTimestamp     = time.Now()
 	legacyConnectorURL = "url.com"
 	systemNumber       = "123"
+	localTenantID      = "1337"
 	appName            = "appName"
 )
 
@@ -77,6 +78,7 @@ func fixModelApplicationWithAllUpdatableFields(id, name, description, url string
 		},
 		IntegrationSystemID: &intSysID,
 		Name:                name,
+		LocalTenantID:       &localTenantID,
 		Description:         &description,
 		HealthCheckURL:      &url,
 		ProviderName:        &providerName,
@@ -112,6 +114,7 @@ func fixDetailedModelApplication(t *testing.T, id, tenant, name, description str
 		},
 		HealthCheckURL:      &testURL,
 		SystemNumber:        &systemNumber,
+		LocalTenantID:       &localTenantID,
 		IntegrationSystemID: &intSysID,
 		BaseURL:             str.Ptr("base_url"),
 		OrdLabels:           json.RawMessage("[]"),
@@ -140,6 +143,7 @@ func fixDetailedGQLApplication(t *testing.T, id, name, description string) *grap
 		},
 		Name:                name,
 		SystemNumber:        &systemNumber,
+		LocalTenantID:       &localTenantID,
 		Description:         &description,
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
@@ -168,6 +172,7 @@ func fixDetailedEntityApplication(t *testing.T, id, tenant, name, description st
 		StatusCondition:     string(model.ApplicationStatusConditionInitial),
 		StatusTimestamp:     ts,
 		SystemNumber:        repo.NewValidNullableString(systemNumber),
+		LocalTenantID:       repo.NewValidNullableString(localTenantID),
 		HealthCheckURL:      repo.NewValidNullableString(testURL),
 		IntegrationSystemID: repo.NewNullableString(&intSysID),
 		BaseURL:             repo.NewValidNullableString("base_url"),
@@ -197,6 +202,7 @@ func fixModelApplicationRegisterInput(name, description string) model.Applicatio
 		},
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
+		LocalTenantID:       &localTenantID,
 		ProviderName:        &providerName,
 		Webhooks: []*model.WebhookInput{
 			{URL: stringPtr("webhook1.foo.bar")},
@@ -229,6 +235,7 @@ func fixModelApplicationUpdateInput(name, description, healthCheckURL, baseURL s
 		IntegrationSystemID: &intSysID,
 		ProviderName:        &providerName,
 		StatusCondition:     &statusCondition,
+		LocalTenantID:       &localTenantID,
 		BaseURL:             &baseURL,
 	}
 }
@@ -251,6 +258,7 @@ func fixGQLApplicationRegisterInput(name, description string) graphql.Applicatio
 		Labels:              labels,
 		HealthCheckURL:      &testURL,
 		IntegrationSystemID: &intSysID,
+		LocalTenantID:       &localTenantID,
 		ProviderName:        &providerName,
 		Webhooks: []*graphql.WebhookInput{
 			{URL: stringPtr("webhook1.foo.bar")},
@@ -281,63 +289,10 @@ func fixGQLApplicationUpdateInput(name, description, healthCheckURL, baseURL str
 		Description:         &description,
 		HealthCheckURL:      &healthCheckURL,
 		IntegrationSystemID: &intSysID,
+		LocalTenantID:       &localTenantID,
 		ProviderName:        &providerName,
 		StatusCondition:     &statusCondition,
 		BaseURL:             &baseURL,
-	}
-}
-
-var (
-	docKind  = "fookind"
-	docTitle = "footitle"
-	docData  = "foodata"
-	docCLOB  = graphql.CLOB(docData)
-)
-
-func fixModelDocument(bundleID, id string) *model.Document {
-	return &model.Document{
-		BundleID:   bundleID,
-		Title:      docTitle,
-		Format:     model.DocumentFormatMarkdown,
-		Kind:       &docKind,
-		Data:       &docData,
-		BaseEntity: &model.BaseEntity{ID: id},
-	}
-}
-
-func fixModelDocumentPage(documents []*model.Document) *model.DocumentPage {
-	return &model.DocumentPage{
-		Data: documents,
-		PageInfo: &pagination.Page{
-			StartCursor: "start",
-			EndCursor:   "end",
-			HasNextPage: false,
-		},
-		TotalCount: len(documents),
-	}
-}
-
-func fixGQLDocument(id string) *graphql.Document {
-	return &graphql.Document{
-		BaseEntity: &graphql.BaseEntity{
-			ID: id,
-		},
-		Title:  docTitle,
-		Format: graphql.DocumentFormatMarkdown,
-		Kind:   &docKind,
-		Data:   &docCLOB,
-	}
-}
-
-func fixGQLDocumentPage(documents []*graphql.Document) *graphql.DocumentPage {
-	return &graphql.DocumentPage{
-		Data: documents,
-		PageInfo: &graphql.PageInfo{
-			StartCursor: "start",
-			EndCursor:   "end",
-			HasNextPage: false,
-		},
-		TotalCount: len(documents),
 	}
 }
 
@@ -358,69 +313,6 @@ func fixGQLWebhook(id string) *graphql.Webhook {
 		Type: graphql.WebhookTypeConfigurationChanged,
 		URL:  stringPtr("foourl"),
 		Auth: &graphql.Auth{},
-	}
-}
-
-func fixEventAPIDefinitionPage(eventAPIDefinitions []*model.EventDefinition) *model.EventDefinitionPage {
-	return &model.EventDefinitionPage{
-		Data: eventAPIDefinitions,
-		PageInfo: &pagination.Page{
-			StartCursor: "start",
-			EndCursor:   "end",
-			HasNextPage: false,
-		},
-		TotalCount: len(eventAPIDefinitions),
-	}
-}
-
-func fixGQLEventDefinitionPage(eventAPIDefinitions []*graphql.EventDefinition) *graphql.EventDefinitionPage {
-	return &graphql.EventDefinitionPage{
-		Data: eventAPIDefinitions,
-		PageInfo: &graphql.PageInfo{
-			StartCursor: "start",
-			EndCursor:   "end",
-			HasNextPage: false,
-		},
-		TotalCount: len(eventAPIDefinitions),
-	}
-}
-
-func fixModelEventAPIDefinition(id string, appID, name, description string, group string) *model.EventDefinition {
-	return &model.EventDefinition{
-		Name:        name,
-		Description: &description,
-		Group:       &group,
-		BaseEntity:  &model.BaseEntity{ID: id},
-	}
-}
-func fixMinModelEventAPIDefinition(id, placeholder string) *model.EventDefinition {
-	return &model.EventDefinition{Name: placeholder, BaseEntity: &model.BaseEntity{ID: id}}
-}
-func fixGQLEventDefinition(id string, appID, bundleID string, name, description string, group string) *graphql.EventDefinition {
-	return &graphql.EventDefinition{
-		BaseEntity: &graphql.BaseEntity{
-			ID: id,
-		},
-		BundleID:    bundleID,
-		Name:        name,
-		Description: &description,
-		Group:       &group,
-	}
-}
-
-func fixFetchRequest(url string, objectType model.FetchRequestReferenceObjectType, timestamp time.Time) *model.FetchRequest {
-	return &model.FetchRequest{
-		ID:     "foo",
-		URL:    url,
-		Auth:   nil,
-		Mode:   "SINGLE",
-		Filter: nil,
-		Status: &model.FetchRequestStatus{
-			Condition: model.FetchRequestStatusConditionInitial,
-			Timestamp: timestamp,
-		},
-		ObjectType: objectType,
-		ObjectID:   "foo",
 	}
 }
 
@@ -503,7 +395,7 @@ func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
 }
 
 func fixAppColumns() []string {
-	return []string{"id", "app_template_id", "system_number", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "documentation_labels"}
+	return []string{"id", "app_template_id", "system_number", "local_tenant_id", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "documentation_labels"}
 }
 
 func fixApplicationLabels(appID, labelKey1, labelKey2 string, labelValue1 []interface{}, labelValue2 string) map[string]*model.Label {

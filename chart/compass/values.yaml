@@ -125,7 +125,7 @@ global:
       version: "PR-68"
     schema_migrator:
       dir:
-      version: "PR-2420"
+      version: "PR-2422"
     system_broker:
       dir:
       version: "PR-2383"
@@ -142,7 +142,7 @@ global:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2404"
+      version: "PR-2426"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -866,6 +866,7 @@ global:
       integration_system:
         - "application:read"
         - "application:write"
+        - "application.local_tenant_id:write"
         - "application_template:read"
         - "application_template:write"
         - "runtime:read"
