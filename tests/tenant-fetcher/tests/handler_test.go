@@ -24,9 +24,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 
 	"github.com/google/uuid"
@@ -34,385 +31,290 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRegionalOnboardingHandler(t *testing.T) {
-	t.Run("Runtime flows", func(t *testing.T) {
-		// GIVEN
-		ctx := context.TODO()
-		input := fixRuntimeInput("runtime-tf-e2e")
-		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &input)
-		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &runtime)
-		require.NoError(t, err)
+	t.Run("Regional account tenant creation", func(t *testing.T) {
+		t.Run("Success", func(t *testing.T) {
+			// GIVEN
+			providedTenant := tenantfetcher.Tenant{
+				TenantID:                    uuid.New().String(),
+				Subdomain:                   tenantfetcher.DefaultSubdomain,
+				SubscriptionProviderID:      uuid.New().String(),
+				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
+				ConsumerTenantID:            uuid.New().String(),
+				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
+			}
 
-		t.Run("Regional account tenant creation", func(t *testing.T) {
-			t.Run("Success", func(t *testing.T) {
-				// GIVEN
-				providedTenant := tenantfetcher.Tenant{
-					TenantID:                    uuid.New().String(),
-					Subdomain:                   tenantfetcher.DefaultSubdomain,
-					SubscriptionProviderID:      uuid.New().String(),
-					ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
-					ConsumerTenantID:            uuid.New().String(),
-					SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
-				}
+			// WHEN
+			addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusOK)
 
-				// WHEN
-				addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusOK)
-
-				// THEN
-				tenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenant.TenantID)
-				require.NoError(t, err)
-				assertTenant(t, tenant, providedTenant.TenantID, providedTenant.Subdomain)
-				require.Equal(t, tenantfetcher.RegionPathParamValue, tenant.Labels[tenantfetcher.RegionKey])
-			})
+			// THEN
+			tenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenant.TenantID)
+			require.NoError(t, err)
+			assertTenant(t, tenant, providedTenant.TenantID, providedTenant.Subdomain)
+			require.Equal(t, tenantfetcher.RegionPathParamValue, tenant.Labels[tenantfetcher.RegionKey])
 		})
-
-		t.Run("Regional subaccount tenant creation", func(t *testing.T) {
-			t.Run("Success when parent account tenant is pre-existing", func(t *testing.T) {
-				// GIVEN
-				parentTenant := tenantfetcher.Tenant{
-					TenantID:                    uuid.New().String(),
-					Subdomain:                   tenantfetcher.DefaultSubdomain,
-					SubscriptionProviderID:      uuid.New().String(),
-					ProviderSubaccountID:        config.SelfRegDistinguishLabelValue,
-					ConsumerTenantID:            uuid.New().String(),
-					SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
-				}
-				childTenant := tenantfetcher.Tenant{
-					SubaccountID:                uuid.New().String(),
-					TenantID:                    parentTenant.TenantID,
-					Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
-					SubscriptionProviderID:      config.SelfRegDistinguishLabelValue,
-					ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
-					ConsumerTenantID:            uuid.New().String(),
-					SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
-				}
-
-				addRegionalTenantExpectStatusCode(t, parentTenant, http.StatusOK)
-
-				parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, parentTenant.TenantID)
-				require.NoError(t, err)
-				assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
-				require.Equal(t, tenantfetcher.RegionPathParamValue, parent.Labels[tenantfetcher.RegionKey])
-
-				// WHEN
-				addRegionalTenantExpectStatusCode(t, childTenant, http.StatusOK)
-
-				// THEN
-				tenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, childTenant.SubaccountID)
-				require.NoError(t, err)
-				assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
-				require.Equal(t, tenantfetcher.RegionPathParamValue, tenant.Labels[tenantfetcher.RegionKey])
-
-				parentTenantAfterInsert, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, parentTenant.TenantID)
-				require.NoError(t, err)
-				assertTenant(t, parentTenantAfterInsert, parentTenant.TenantID, parentTenant.Subdomain)
-				require.Equal(t, tenantfetcher.RegionPathParamValue, parentTenantAfterInsert.Labels[tenantfetcher.RegionKey])
-			})
-
-			t.Run("Success when parent account tenant does not exist", func(t *testing.T) {
-				// GIVEN
-				providedTenant := tenantfetcher.Tenant{
-					TenantID:                    uuid.New().String(),
-					CustomerID:                  uuid.New().String(),
-					SubaccountID:                uuid.New().String(),
-					Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
-					SubscriptionProviderID:      config.SelfRegDistinguishLabelValue,
-					ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
-					ConsumerTenantID:            uuid.New().String(),
-					SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
-				}
-
-				// THEN
-				addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusOK)
-
-				// THEN
-				childTenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenant.SubaccountID)
-				require.NoError(t, err)
-				assertTenant(t, childTenant, providedTenant.SubaccountID, providedTenant.Subdomain)
-				require.Equal(t, tenantfetcher.RegionPathParamValue, childTenant.Labels[tenantfetcher.RegionKey])
-
-				parentTenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenant.TenantID)
-				require.NoError(t, err)
-				assertTenant(t, parentTenant, providedTenant.TenantID, "")
-				require.Empty(t, parentTenant.Labels)
-
-				customerTenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenant.CustomerID)
-				require.NoError(t, err)
-				assertTenant(t, customerTenant, providedTenant.CustomerID, "")
-				require.Empty(t, customerTenant.Labels)
-			})
-
-			t.Run("Should not fail when tenant already exists", func(t *testing.T) {
-				// GIVEN
-				parentTenantId := uuid.New().String()
-				parentTenant := tenantfetcher.Tenant{
-					TenantID:                    parentTenantId,
-					Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
-					SubscriptionProviderID:      uuid.New().String(),
-					ProviderSubaccountID:        config.SelfRegDistinguishLabelValue,
-					ConsumerTenantID:            uuid.New().String(),
-					SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
-				}
-				childTenant := tenantfetcher.Tenant{
-					TenantID:                    parentTenantId,
-					SubaccountID:                uuid.New().String(),
-					Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
-					SubscriptionProviderID:      config.SelfRegDistinguishLabelValue,
-					ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
-					ConsumerTenantID:            uuid.New().String(),
-					SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
-				}
-				oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
-				require.NoError(t, err)
-
-				addRegionalTenantExpectStatusCode(t, parentTenant, http.StatusOK)
-				parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, parentTenant.TenantID)
-				require.NoError(t, err)
-				assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
-
-				// WHEN
-				for i := 0; i < 10; i++ {
-					addRegionalTenantExpectStatusCode(t, childTenant, http.StatusOK)
-				}
-
-				tenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, childTenant.SubaccountID)
-				require.NoError(t, err)
-
-				tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
-				require.NoError(t, err)
-
-				// THEN
-				assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
-				assert.Equal(t, oldTenantState.TotalCount+2, tenants.TotalCount)
-			})
-
-			t.Run("Should fail when parent tenantID is not provided", func(t *testing.T) {
-				// GIVEN
-				providedTenant := tenantfetcher.Tenant{
-					CustomerID:                  uuid.New().String(),
-					SubaccountID:                uuid.New().String(),
-					Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
-					SubscriptionProviderID:      config.SelfRegDistinguishLabelValue,
-					ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
-					ConsumerTenantID:            uuid.New().String(),
-					SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
-				}
-				oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
-				require.NoError(t, err)
-
-				// WHEN
-				addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusBadRequest)
-
-				// THEN
-				tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
-				require.NoError(t, err)
-				assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
-			})
-
-			t.Run("Should fail when subdomain is not provided", func(t *testing.T) {
-				// GIVEN
-				providedTenant := tenantfetcher.Tenant{
-					TenantID:                    uuid.New().String(),
-					SubaccountID:                uuid.New().String(),
-					CustomerID:                  uuid.New().String(),
-					SubscriptionProviderID:      config.SelfRegDistinguishLabelValue,
-					ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
-					ConsumerTenantID:            uuid.New().String(),
-					SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
-				}
-				oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
-				require.NoError(t, err)
-
-				// WHEN
-				addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusBadRequest)
-
-				// THEN
-				tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
-				require.NoError(t, err)
-				assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
-			})
-
-			t.Run("Should fail when SubscriptionProviderID is not provided", func(t *testing.T) {
-				// GIVEN
-				providedTenant := tenantfetcher.Tenant{
-					TenantID:                    uuid.New().String(),
-					SubaccountID:                uuid.New().String(),
-					CustomerID:                  uuid.New().String(),
-					ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
-					ConsumerTenantID:            uuid.New().String(),
-					SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
-				}
-				oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
-				require.NoError(t, err)
-
-				// WHEN
-				addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusBadRequest)
-
-				// THEN
-				tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
-				require.NoError(t, err)
-				assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
-			})
-
-			t.Run("Should fail when providerSubaccountID is not provided", func(t *testing.T) {
-				// GIVEN
-				providedTenant := tenantfetcher.Tenant{
-					TenantID:                    uuid.New().String(),
-					SubaccountID:                uuid.New().String(),
-					Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
-					CustomerID:                  uuid.New().String(),
-					SubscriptionProviderID:      config.SelfRegDistinguishLabelValue,
-					ConsumerTenantID:            uuid.New().String(),
-					SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
-				}
-				oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
-				require.NoError(t, err)
-
-				// WHEN
-				addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusBadRequest)
-
-				// THEN
-				tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
-				require.NoError(t, err)
-				assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
-			})
-
-			t.Run("Should fail when consumerTenantID is not provided", func(t *testing.T) {
-				// GIVEN
-				providedTenant := tenantfetcher.Tenant{
-					TenantID:                    uuid.New().String(),
-					SubaccountID:                uuid.New().String(),
-					Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
-					CustomerID:                  uuid.New().String(),
-					SubscriptionProviderID:      uuid.New().String(),
-					ProviderSubaccountID:        uuid.New().String(),
-					SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
-				}
-				oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
-				require.NoError(t, err)
-
-				// WHEN
-				addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusBadRequest)
-
-				// THEN
-				tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
-				require.NoError(t, err)
-				assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
-			})
-
-			t.Run("Should fail when subscriptionProviderAppName is not provided", func(t *testing.T) {
-				// GIVEN
-				providedTenant := tenantfetcher.Tenant{
-					TenantID:               uuid.New().String(),
-					SubaccountID:           uuid.New().String(),
-					Subdomain:              tenantfetcher.DefaultSubaccountSubdomain,
-					CustomerID:             uuid.New().String(),
-					SubscriptionProviderID: uuid.New().String(),
-					ConsumerTenantID:       uuid.New().String(),
-				}
-				oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
-				require.NoError(t, err)
-
-				// WHEN
-				addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusBadRequest)
-
-				// THEN
-				tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
-				require.NoError(t, err)
-				assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
-			})
-		})
-
 	})
 
-	t.Run("Application flows", func(t *testing.T) {
-		//GIVEN
-		tmplName := fmt.Sprintf("SAP %s (%s)", "app-flow-tmpl-name", config.SelfRegRegion)
-		ctx := context.TODO()
-		appTmplInput := fixAppTemplateInput(tmplName)
-		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTmplInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &appTemplate)
-		require.NoError(t, err)
-		require.NotEmpty(t, appTemplate.ID)
+	t.Run("Regional subaccount tenant creation", func(t *testing.T) {
+		t.Run("Success when parent account tenant is pre-existing", func(t *testing.T) {
+			// GIVEN
+			parentTenant := tenantfetcher.Tenant{
+				TenantID:                    uuid.New().String(),
+				Subdomain:                   tenantfetcher.DefaultSubdomain,
+				SubscriptionProviderID:      uuid.New().String(),
+				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
+				ConsumerTenantID:            uuid.New().String(),
+				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
+			}
+			childTenant := tenantfetcher.Tenant{
+				SubaccountID:                uuid.New().String(),
+				TenantID:                    parentTenant.TenantID,
+				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
+				SubscriptionProviderID:      uuid.New().String(),
+				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
+				ConsumerTenantID:            uuid.New().String(),
+				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
+			}
 
-		t.Run("Regional account tenant creation", func(t *testing.T) {
-			t.Run("Success", func(t *testing.T) {
-				// GIVEN
-				providedTenantIDs := tenantfetcher.Tenant{
-					TenantID:                    uuid.New().String(),
-					Subdomain:                   tenantfetcher.DefaultSubdomain,
-					SubscriptionProviderID:      config.SelfRegDistinguishLabelValue,
-					ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
-					SubscriptionProviderAppName: "app-name",
-				}
+			addRegionalTenantExpectStatusCode(t, parentTenant, http.StatusOK)
 
-				// WHEN
-				addRegionalTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
+			parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, parentTenant.TenantID)
+			require.NoError(t, err)
+			assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
+			require.Equal(t, tenantfetcher.RegionPathParamValue, parent.Labels[tenantfetcher.RegionKey])
 
-				// THEN
-				tnt, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenantIDs.TenantID)
-				apps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID())
-				require.Greater(t, apps.TotalCount, 0)
-				appExists := false
+			// WHEN
+			addRegionalTenantExpectStatusCode(t, childTenant, http.StatusOK)
 
-				var appID string
-				for _, v := range apps.Data {
-					if str.PtrStrToStr(v.ApplicationTemplateID) == appTemplate.ID {
-						appExists = true
-						appID = v.ID
-					}
-				}
+			// THEN
+			tenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, childTenant.SubaccountID)
+			require.NoError(t, err)
+			assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
+			require.Equal(t, tenantfetcher.RegionPathParamValue, tenant.Labels[tenantfetcher.RegionKey])
 
-				defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appID)
-
-				require.True(t, appExists)
-				require.NoError(t, err)
-				assertTenant(t, tnt, providedTenantIDs.TenantID, providedTenantIDs.Subdomain)
-				require.Equal(t, tenantfetcher.RegionPathParamValue, tnt.Labels[tenantfetcher.RegionKey])
-			})
+			parentTenantAfterInsert, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, parentTenant.TenantID)
+			require.NoError(t, err)
+			assertTenant(t, parentTenantAfterInsert, parentTenant.TenantID, parentTenant.Subdomain)
+			require.Equal(t, tenantfetcher.RegionPathParamValue, parentTenantAfterInsert.Labels[tenantfetcher.RegionKey])
 		})
 
-		t.Run("Regional account tenant deletion", func(t *testing.T) {
-			t.Run("Success", func(t *testing.T) {
-				// GIVEN
-				providedTenantIDs := tenantfetcher.Tenant{
-					TenantID:                    uuid.New().String(),
-					Subdomain:                   tenantfetcher.DefaultSubdomain,
-					SubscriptionProviderID:      config.SelfRegDistinguishLabelValue,
-					ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
-					SubscriptionProviderAppName: "app-name",
-				}
+		t.Run("Success when parent account tenant does not exist", func(t *testing.T) {
+			// GIVEN
+			providedTenant := tenantfetcher.Tenant{
+				TenantID:                    uuid.New().String(),
+				CustomerID:                  uuid.New().String(),
+				SubaccountID:                uuid.New().String(),
+				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
+				SubscriptionProviderID:      uuid.New().String(),
+				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
+				ConsumerTenantID:            uuid.New().String(),
+				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
+			}
 
-				addRegionalTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
+			// THEN
+			addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusOK)
 
-				apps := fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID())
-				require.Greater(t, apps.TotalCount, 0)
+			// THEN
+			childTenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenant.SubaccountID)
+			require.NoError(t, err)
+			assertTenant(t, childTenant, providedTenant.SubaccountID, providedTenant.Subdomain)
+			require.Equal(t, tenantfetcher.RegionPathParamValue, childTenant.Labels[tenantfetcher.RegionKey])
 
-				appExists := false
-				for _, v := range apps.Data {
-					if str.PtrStrToStr(v.ApplicationTemplateID) == appTemplate.ID {
-						appExists = true
-					}
-				}
-				require.True(t, appExists)
+			parentTenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenant.TenantID)
+			require.NoError(t, err)
+			assertTenant(t, parentTenant, providedTenant.TenantID, "")
+			require.Empty(t, parentTenant.Labels)
 
-				// WHEN
-				removeRegionalTenantExpectStatusCode(t, providedTenantIDs, http.StatusOK)
-
-				// THEN
-				apps = fixtures.GetApplicationPage(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID())
-				appExists = false
-				for _, v := range apps.Data {
-					if str.PtrStrToStr(v.ApplicationTemplateID) == appTemplate.ID {
-						appExists = true
-					}
-				}
-				require.False(t, appExists)
-			})
+			customerTenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, providedTenant.CustomerID)
+			require.NoError(t, err)
+			assertTenant(t, customerTenant, providedTenant.CustomerID, "")
+			require.Empty(t, customerTenant.Labels)
 		})
+
+		t.Run("Should not fail when tenant already exists", func(t *testing.T) {
+			// GIVEN
+			parentTenantId := uuid.New().String()
+			parentTenant := tenantfetcher.Tenant{
+				TenantID:                    parentTenantId,
+				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
+				SubscriptionProviderID:      uuid.New().String(),
+				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
+				ConsumerTenantID:            uuid.New().String(),
+				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
+			}
+			childTenant := tenantfetcher.Tenant{
+				TenantID:                    parentTenantId,
+				SubaccountID:                uuid.New().String(),
+				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
+				SubscriptionProviderID:      uuid.New().String(),
+				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
+				ConsumerTenantID:            uuid.New().String(),
+				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
+			}
+			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
+			require.NoError(t, err)
+
+			addRegionalTenantExpectStatusCode(t, parentTenant, http.StatusOK)
+			parent, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, parentTenant.TenantID)
+			require.NoError(t, err)
+			assertTenant(t, parent, parentTenant.TenantID, parentTenant.Subdomain)
+
+			// WHEN
+			for i := 0; i < 10; i++ {
+				addRegionalTenantExpectStatusCode(t, childTenant, http.StatusOK)
+			}
+
+			tenant, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, childTenant.SubaccountID)
+			require.NoError(t, err)
+
+			tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
+			require.NoError(t, err)
+
+			// THEN
+			assertTenant(t, tenant, childTenant.SubaccountID, childTenant.Subdomain)
+			assert.Equal(t, oldTenantState.TotalCount+2, tenants.TotalCount)
+		})
+
+		t.Run("Should fail when parent tenantID is not provided", func(t *testing.T) {
+			// GIVEN
+			providedTenant := tenantfetcher.Tenant{
+				CustomerID:                  uuid.New().String(),
+				SubaccountID:                uuid.New().String(),
+				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
+				SubscriptionProviderID:      uuid.New().String(),
+				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
+				ConsumerTenantID:            uuid.New().String(),
+				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
+			}
+			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
+			require.NoError(t, err)
+
+			// WHEN
+			addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusBadRequest)
+
+			// THEN
+			tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
+			require.NoError(t, err)
+			assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
+		})
+
+		t.Run("Should fail when subdomain is not provided", func(t *testing.T) {
+			// GIVEN
+			providedTenant := tenantfetcher.Tenant{
+				TenantID:                    uuid.New().String(),
+				SubaccountID:                uuid.New().String(),
+				CustomerID:                  uuid.New().String(),
+				SubscriptionProviderID:      uuid.New().String(),
+				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
+				ConsumerTenantID:            uuid.New().String(),
+				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
+			}
+			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
+			require.NoError(t, err)
+
+			// WHEN
+			addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusBadRequest)
+
+			// THEN
+			tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
+			require.NoError(t, err)
+			assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
+		})
+
+		t.Run("Should fail when SubscriptionProviderID is not provided", func(t *testing.T) {
+			// GIVEN
+			providedTenant := tenantfetcher.Tenant{
+				TenantID:                    uuid.New().String(),
+				SubaccountID:                uuid.New().String(),
+				CustomerID:                  uuid.New().String(),
+				ProviderSubaccountID:        tenant.TestTenants.GetDefaultTenantID(),
+				ConsumerTenantID:            uuid.New().String(),
+				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
+			}
+			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
+			require.NoError(t, err)
+
+			// WHEN
+			addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusBadRequest)
+
+			// THEN
+			tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
+			require.NoError(t, err)
+			assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
+		})
+
+		t.Run("Should fail when providerSubaccountID is not provided", func(t *testing.T) {
+			// GIVEN
+			providedTenant := tenantfetcher.Tenant{
+				TenantID:                    uuid.New().String(),
+				SubaccountID:                uuid.New().String(),
+				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
+				CustomerID:                  uuid.New().String(),
+				SubscriptionProviderID:      uuid.New().String(),
+				ConsumerTenantID:            uuid.New().String(),
+				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
+			}
+			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
+			require.NoError(t, err)
+
+			// WHEN
+			addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusBadRequest)
+
+			// THEN
+			tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
+			require.NoError(t, err)
+			assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
+		})
+
+		t.Run("Should fail when consumerTenantID is not provided", func(t *testing.T) {
+			// GIVEN
+			providedTenant := tenantfetcher.Tenant{
+				TenantID:                    uuid.New().String(),
+				SubaccountID:                uuid.New().String(),
+				Subdomain:                   tenantfetcher.DefaultSubaccountSubdomain,
+				CustomerID:                  uuid.New().String(),
+				SubscriptionProviderID:      uuid.New().String(),
+				ProviderSubaccountID:        uuid.New().String(),
+				SubscriptionProviderAppName: tenantfetcher.SubscriptionProviderAppName,
+			}
+			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
+			require.NoError(t, err)
+
+			// WHEN
+			addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusBadRequest)
+
+			// THEN
+			tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
+			require.NoError(t, err)
+			assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
+		})
+
+		t.Run("Should fail when subscriptionProviderAppName is not provided", func(t *testing.T) {
+			// GIVEN
+			providedTenant := tenantfetcher.Tenant{
+				TenantID:               uuid.New().String(),
+				SubaccountID:           uuid.New().String(),
+				Subdomain:              tenantfetcher.DefaultSubaccountSubdomain,
+				CustomerID:             uuid.New().String(),
+				SubscriptionProviderID: uuid.New().String(),
+				ConsumerTenantID:       uuid.New().String(),
+			}
+			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
+			require.NoError(t, err)
+
+			// WHEN
+			addRegionalTenantExpectStatusCode(t, providedTenant, http.StatusBadRequest)
+
+			// THEN
+			tenants, err := fixtures.GetTenants(certSecuredGraphQLClient)
+			require.NoError(t, err)
+			assert.Equal(t, oldTenantState.TotalCount, tenants.TotalCount)
+		})
+
 	})
 }
 
@@ -445,10 +347,6 @@ func addRegionalTenantExpectStatusCode(t *testing.T, providedTenant tenantfetche
 	makeTenantRequestExpectStatusCode(t, providedTenant, http.MethodPut, config.TenantFetcherFullRegionalURL, expectedStatusCode)
 }
 
-func removeRegionalTenantExpectStatusCode(t *testing.T, providedTenant tenantfetcher.Tenant, expectedStatusCode int) {
-	makeTenantRequestExpectStatusCode(t, providedTenant, http.MethodDelete, config.TenantFetcherFullRegionalURL, expectedStatusCode)
-}
-
 func makeTenantRequestExpectStatusCode(t *testing.T, providedTenant tenantfetcher.Tenant, httpMethod, url string, expectedStatusCode int) {
 	tenantProperties := tenantfetcher.TenantIDProperties{
 		TenantIDProperty:                    config.TenantIDProperty,
@@ -474,27 +372,4 @@ func assertTenant(t *testing.T, tenant *directorSchema.Tenant, tenantID, subdoma
 	if len(subdomain) > 0 {
 		require.Equal(t, subdomain, tenant.Labels["subdomain"])
 	}
-}
-
-func fixRuntimeInput(name string) directorSchema.RuntimeRegisterInput {
-	input := fixtures.FixRuntimeRegisterInput(name)
-	input.Labels[config.SelfRegDistinguishLabelKey] = []interface{}{config.SelfRegDistinguishLabelValue}
-	input.Labels[tenantfetcher.RegionKey] = config.SelfRegRegion
-	delete(input.Labels, "placeholder")
-
-	return input
-}
-
-func fixAppTemplateInput(name string) directorSchema.ApplicationTemplateInput {
-	input := fixtures.FixApplicationTemplate(name)
-	input.Labels[config.SelfRegDistinguishLabelKey] = []interface{}{config.SelfRegDistinguishLabelValue}
-	input.Labels[tenantfetcher.RegionKey] = config.SelfRegRegion
-	input.ApplicationInput.Name = "{{name}}"
-	input.ApplicationInput.Description = str.Ptr("{{display-name}}")
-	input.Placeholders = []*directorSchema.PlaceholderDefinitionInput{
-		{Name: "name", Description: str.Ptr("description")},
-		{Name: "display-name", Description: str.Ptr("description")},
-	}
-
-	return input
 }

@@ -1189,10 +1189,10 @@ func TestDetermineSubscriptionFlow(t *testing.T) {
 				return runtimeSvc
 			},
 			Output:              "",
-			ExpectedErrorOutput: fmt.Sprintf("both a runtime and application template exist with filter labels %q and %q", providerSubaccountID, regionalTenantSubdomain),
+			ExpectedErrorOutput: fmt.Sprintf("both a runtime (%+v) and application template (%+v) exist with filter labels provider (%q) and region (%q)", modelRuntime, modelAppTemplate, providerSubaccountID, regionalTenantSubdomain),
 		},
 		{
-			Name: "Error when no runtime or app template exists",
+			Name: "Success when no runtime and app template exists",
 			AppTemplateFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("GetByFilters", context.TODO(), filters).Return(nil, nil).Once()
@@ -1203,8 +1203,7 @@ func TestDetermineSubscriptionFlow(t *testing.T) {
 				runtimeSvc.On("GetByFiltersGlobal", context.TODO(), filters).Return(nil, nil).Once()
 				return runtimeSvc
 			},
-			Output:              "",
-			ExpectedErrorOutput: fmt.Sprintf("no runtime or application template exists with filter labels %q and %q", providerSubaccountID, regionalTenantSubdomain),
+			Output: "",
 		},
 	}
 

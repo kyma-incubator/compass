@@ -50,18 +50,21 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 
 	var success bool
 
-	if flowType == resource.ApplicationTemplate {
+	switch flowType {
+	case resource.ApplicationTemplate:
 		log.C(ctx).Infof("Entering Application flow")
 		success, err = r.subscriptionSvc.SubscribeTenantToApplication(ctx, providerID, subaccountTenantID, providerSubaccountID, region, subscriptionAppName)
 		if err != nil {
 			return false, err
 		}
-	} else {
+	case resource.Runtime:
 		log.C(ctx).Infof("Entering Runtime flow")
 		success, err = r.subscriptionSvc.SubscribeTenantToRuntime(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName)
 		if err != nil {
 			return false, err
 		}
+	default:
+		log.C(ctx).Infof("Nothing to subscribe to provider (%q) in region (%q)", providerID, region)
 	}
 
 	if err = tx.Commit(); err != nil {
