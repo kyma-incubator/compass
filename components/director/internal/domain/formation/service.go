@@ -147,6 +147,7 @@ func (s *service) GetFormationsForObject(ctx context.Context, tnt string, objTyp
 
 // CreateFormation adds the provided formation to the scenario label definitions of the given tenant.
 // If the scenario label definition does not exist it will be created
+// Also, a new Formation entity is created based on the provided template name or the default one is used if it's not provided
 func (s *service) CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName *string) (*model.Formation, error) {
 	formationName := formation.Name
 	f, err := s.modifyFormations(ctx, tnt, formationName, addFormation)
@@ -173,6 +174,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 }
 
 // DeleteFormation removes the provided formation from the scenario label definitions of the given tenant.
+// Also, removes the Formation entity from the DB
 func (s *service) DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error) {
 	formationName := formation.Name
 	f, err := s.modifyFormations(ctx, tnt, formationName, deleteFormation)
