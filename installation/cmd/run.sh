@@ -130,7 +130,7 @@ function cleanup_trap() {
     set_oidc_config "" "" "$DEFAULT_OIDC_ADMIN_GROUPS"
   fi
 
-  pkill -P $$ # This MUST be at the end of the cleanup_trap function.
+  pkill -P $$ || true # This MUST be at the end of the cleanup_trap function.
 }
 
 trap cleanup_trap RETURN EXIT INT TERM
