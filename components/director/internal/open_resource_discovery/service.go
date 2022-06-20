@@ -2,6 +2,7 @@ package ord
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"sync"
 	"sync/atomic"
 
@@ -208,33 +209,38 @@ func (s *Service) processApp(ctx context.Context, app *model.Application, global
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-
-	tnt, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, app.ID)
+	internalTntID, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, app.ID)
 	if err != nil {
 		return err
 	}
 
-	ctx = tenant.SaveToContext(ctx, tnt, "")
+	tnt, err := s.tenantSvc.GetTenantByID(ctx, internalTntID)
+	if err != nil {
+		return err
+	}
+
+	ctx = tenant.SaveToContext(ctx, internalTntID, tnt.ExternalTenant)
 
 	if _, err := s.appSvc.GetForUpdate(ctx, app.ID); err != nil {
-		return errors.Wrapf(err, "error while locking app with id %q for update", app.ID)
+		return errors.Wrapf(err, "error while looking app with id %q for update", app.ID)
 	}
 
-	if app.ApplicationTemplateID != nil {
-		appTemplate := appTemplates[*app.ApplicationTemplateID]
-		appTemplateWebhooks := convertWebhooks(appTemplate.Webhooks)
-
-		if err := s.processWebhooksAndDocuments(ctx, tx, appTemplateWebhooks, app, globalResourcesOrdIDs); err != nil {
-			return err
-		}
-	}
-
+	webhookExecuted := false
 	appWebhooks, err := s.webhookSvc.ListForApplicationWithSelectForUpdate(ctx, app.ID)
 	if err != nil {
 		return errors.Wrapf(err, "error fetching webhooks for app with id %q", app.ID)
 	}
-	if err := s.processWebhooksAndDocuments(ctx, tx, appWebhooks, app, globalResourcesOrdIDs); err != nil {
+	if webhookExecuted, err = s.processWebhooksAndDocuments(ctx, tx, appWebhooks, app, globalResourcesOrdIDs); err != nil {
 		return err
+	}
+
+	if app.ApplicationTemplateID != nil && !webhookExecuted {
+		appTemplate := appTemplates[*app.ApplicationTemplateID]
+		appTemplateWebhooks := convertWebhooks(appTemplate.Webhooks)
+
+		if _, err := s.processWebhooksAndDocuments(ctx, tx, appTemplateWebhooks, app, globalResourcesOrdIDs); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -746,7 +752,7 @@ func (s *Service) fetchResources(ctx context.Context, appID string) (map[string]
 	return apiDataFromDB, eventDataFromDB, packageDataFromDB, nil
 }
 
-func (s *Service) processWebhooksAndDocuments(ctx context.Context, tx persistence.PersistenceTx, webhooks []*model.Webhook, app *model.Application, globalResourcesOrdIDs map[string]bool) error {
+func (s *Service) processWebhooksAndDocuments(ctx context.Context, tx persistence.PersistenceTx, webhooks []*model.Webhook, app *model.Application, globalResourcesOrdIDs map[string]bool) (bool, error) {
 	var documents Documents
 	var baseURL string
 	var err error
@@ -767,13 +773,13 @@ func (s *Service) processWebhooksAndDocuments(ctx context.Context, tx persistenc
 			log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
 		} else {
 			log.C(ctx).Info("Successfully processed ORD documents")
-			return tx.Commit()
+			return true, tx.Commit()
 		}
 	}
-	return nil
+	return false, nil
 }
 func (s *Service) getAppTemplates(ctx context.Context, pageSize int, pageCursor string) (map[string]*model.ApplicationTemplate, error) {
-	appTemplatePage, err := s.appTemplateSvc.List(ctx, nil, pageSize, pageCursor)
+	appTemplatePage, err := s.appTemplateSvc.List(ctx, []*labelfilter.LabelFilter{}, pageSize, pageCursor)
 	if err != nil {
 		return nil, err
 	}
