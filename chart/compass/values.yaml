@@ -110,7 +110,7 @@ global:
       version: "PR-2383"
     director:
       dir:
-      version: "PR-2415"
+      version: "PR-2430"
     hydrator:
       dir:
       version: "PR-2385"
@@ -142,7 +142,7 @@ global:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2426"
+      version: "PR-2430"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -492,8 +492,8 @@ global:
     auth:
       allowedConnectSrc: "https://*.ondemand.com"
       secretName: "cockpit-auth-secret"
-      idpHost: ""
-      clientID: ""
+      idpHost: "https://as5rzk3dn.accounts400.ondemand.com"
+      clientID: "996db76f-1660-4c53-8a12-8117b343ccca"
       scopes: "openid profile email"
       path: "/oauth2/certs"
   tenantFetcher:
