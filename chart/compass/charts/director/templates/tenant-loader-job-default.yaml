@@ -16,6 +16,8 @@ spec:
             labels:
                 app: {{ .Chart.Name }}-tenant-loader
                 release: {{ .Release.Name }}
+            annotations:
+                cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         spec:
             serviceAccountName: {{ template "fullname" . }}
             restartPolicy: Never
