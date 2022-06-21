@@ -64,7 +64,7 @@ func TestFetchOnDemand(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			httpClient := testCase.Client()
-			config := tenant.FetchOnDemandApiConfig{
+			config := tenant.FetchOnDemandAPIConfig{
 				TenantOnDemandURL: fetchTenantURL,
 				IsDisabled:        false,
 			}

@@ -3,9 +3,10 @@
 package automock
 
 import (
-	runtime "github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
-	model "github.com/kyma-incubator/compass/components/director/internal/model"
+	formation "github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 	mock "github.com/stretchr/testify/mock"
+
+	model "github.com/kyma-incubator/compass/components/director/internal/model"
 
 	testing "testing"
 )
@@ -16,15 +17,15 @@ type EntityConverter struct {
 }
 
 // FromEntity provides a mock function with given fields: entity
-func (_m *EntityConverter) FromEntity(entity *runtime.Runtime) *model.Runtime {
+func (_m *EntityConverter) FromEntity(entity *formation.Entity) *model.Formation {
 	ret := _m.Called(entity)
 
-	var r0 *model.Runtime
-	if rf, ok := ret.Get(0).(func(*runtime.Runtime) *model.Runtime); ok {
+	var r0 *model.Formation
+	if rf, ok := ret.Get(0).(func(*formation.Entity) *model.Formation); ok {
 		r0 = rf(entity)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Runtime)
+			r0 = ret.Get(0).(*model.Formation)
 		}
 	}
 
@@ -32,26 +33,19 @@ func (_m *EntityConverter) FromEntity(entity *runtime.Runtime) *model.Runtime {
 }
 
 // ToEntity provides a mock function with given fields: in
-func (_m *EntityConverter) ToEntity(in *model.Runtime) (*runtime.Runtime, error) {
+func (_m *EntityConverter) ToEntity(in *model.Formation) *formation.Entity {
 	ret := _m.Called(in)
 
-	var r0 *runtime.Runtime
-	if rf, ok := ret.Get(0).(func(*model.Runtime) *runtime.Runtime); ok {
+	var r0 *formation.Entity
+	if rf, ok := ret.Get(0).(func(*model.Formation) *formation.Entity); ok {
 		r0 = rf(in)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*runtime.Runtime)
+			r0 = ret.Get(0).(*formation.Entity)
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(*model.Runtime) error); ok {
-		r1 = rf(in)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // NewEntityConverter creates a new instance of EntityConverter. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
