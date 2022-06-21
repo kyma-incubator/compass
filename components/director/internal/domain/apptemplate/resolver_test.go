@@ -3,8 +3,9 @@ package apptemplate_test
 import (
 	"context"
 	"errors"
-	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
