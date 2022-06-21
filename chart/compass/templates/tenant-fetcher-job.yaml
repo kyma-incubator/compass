@@ -1,6 +1,6 @@
 {{ $outerScope := . }}
 {{- range $tenantFetcherName, $config := .Values.global.tenantFetchers -}}
-{{ if eq $config.enabled true }}
+{{ if eq $config.cron.enabled true }}
 {{ $configmapName := printf "%s-tenant-fetcher-%s-config" $.Chart.Name $tenantFetcherName }}
 ---
 apiVersion: batch/v1beta1
@@ -28,6 +28,8 @@ spec:
         metadata:
           labels:
             cronjob: tenant-fetcher
+          annotations:
+            cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         spec:
           serviceAccountName: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
           containers:

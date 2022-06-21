@@ -111,6 +111,7 @@ type ComplexityRoot struct {
 		ID                    func(childComplexity int) int
 		IntegrationSystemID   func(childComplexity int) int
 		Labels                func(childComplexity int, key *string) int
+		LocalTenantID         func(childComplexity int) int
 		Name                  func(childComplexity int) int
 		ProviderName          func(childComplexity int) int
 		Status                func(childComplexity int) int
@@ -372,7 +373,7 @@ type ComplexityRoot struct {
 		AssignFormation                               func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
 		CreateApplicationTemplate                     func(childComplexity int, in ApplicationTemplateInput) int
 		CreateAutomaticScenarioAssignment             func(childComplexity int, in AutomaticScenarioAssignmentSetInput) int
-		CreateFormation                               func(childComplexity int, formation FormationInput) int
+		CreateFormation                               func(childComplexity int, formation FormationInput, templateName *string) int
 		CreateFormationTemplate                       func(childComplexity int, in FormationTemplateInput) int
 		CreateLabelDefinition                         func(childComplexity int, in LabelDefinitionInput) int
 		DeleteAPIDefinition                           func(childComplexity int, id string) int
@@ -692,7 +693,7 @@ type MutationResolver interface {
 	RefetchEventDefinitionSpec(ctx context.Context, eventID string) (*EventSpec, error)
 	AddDocumentToBundle(ctx context.Context, bundleID string, in DocumentInput) (*Document, error)
 	DeleteDocument(ctx context.Context, id string) (*Document, error)
-	CreateFormation(ctx context.Context, formation FormationInput) (*Formation, error)
+	CreateFormation(ctx context.Context, formation FormationInput, templateName *string) (*Formation, error)
 	DeleteFormation(ctx context.Context, formation FormationInput) (*Formation, error)
 	AssignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
 	UnassignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
@@ -1071,6 +1072,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Labels(childComplexity, args["key"].(*string)), true
+
+	case "Application.localTenantID":
+		if e.complexity.Application.LocalTenantID == nil {
+			break
+		}
+
+		return e.complexity.Application.LocalTenantID(childComplexity), true
 
 	case "Application.name":
 		if e.complexity.Application.Name == nil {
@@ -2296,7 +2304,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateFormation(childComplexity, args["formation"].(FormationInput)), true
+		return e.complexity.Mutation.CreateFormation(childComplexity, args["formation"].(FormationInput), args["templateName"].(*string)), true
 
 	case "Mutation.createFormationTemplate":
 		if e.complexity.Mutation.CreateFormationTemplate == nil {
@@ -4086,7 +4094,7 @@ directive @hasScenario(applicationProvider: String!, idField: String!) on FIELD_
 """
 HasScopes directive is added automatically to every query and mutation by scopesdecorator plugin that is triggerred by gqlgen.sh script.
 """
-directive @hasScopes(path: String!) on FIELD_DEFINITION
+directive @hasScopes(path: String!) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 """
 Sanitize directive marks mutation arguments that will be validated.
 """
@@ -4369,6 +4377,7 @@ input ApplicationRegisterInput {
 	baseUrl: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
+	localTenantID: String @hasScopes(path: "graphql.input.application.localTenantID")
 	bundles: [BundleCreateInput!]
 }
 
@@ -4426,6 +4435,7 @@ input ApplicationUpdateInput {
 	baseUrl: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
+	localTenantID: String @hasScopes(path: "graphql.input.application.localTenantID")
 }
 
 input AuthInput {
@@ -4866,6 +4876,7 @@ type Application {
 	id: ID!
 	name: String!
 	systemNumber: String
+	localTenantID: String
 	baseUrl: String
 	providerName: String
 	description: String
@@ -5593,7 +5604,7 @@ type Mutation {
 	**Examples**
 	- [create formation](examples/create-formation/create-formation.graphql)
 	"""
-	createFormation(formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.createFormation")
+	createFormation(formation: FormationInput!, templateName: String): Formation! @hasScopes(path: "graphql.mutation.createFormation")
 	"""
 	**Examples**
 	- [delete formation](examples/delete-formation/delete-formation.graphql)
@@ -6348,6 +6359,14 @@ func (ec *executionContext) field_Mutation_createFormation_args(ctx context.Cont
 		}
 	}
 	args["formation"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["templateName"]; ok {
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["templateName"] = arg1
 	return args, nil
 }
 
@@ -9338,6 +9357,37 @@ func (ec *executionContext) _Application_systemNumber(ctx context.Context, field
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.SystemNumber, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Application_localTenantID(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LocalTenantID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -17753,7 +17803,7 @@ func (ec *executionContext) _Mutation_createFormation(ctx context.Context, field
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateFormation(rctx, args["formation"].(FormationInput))
+			return ec.resolvers.Mutation().CreateFormation(rctx, args["formation"].(FormationInput), args["templateName"].(*string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.createFormation")
@@ -25698,6 +25748,31 @@ func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
+		case "localTenantID":
+			var err error
+			directive0 := func(ctx context.Context) (interface{}, error) { return ec.unmarshalOString2ᚖstring(ctx, v) }
+			directive1 := func(ctx context.Context) (interface{}, error) {
+				path, err := ec.unmarshalNString2string(ctx, "graphql.input.application.localTenantID")
+				if err != nil {
+					return nil, err
+				}
+				if ec.directives.HasScopes == nil {
+					return nil, errors.New("directive hasScopes is not implemented")
+				}
+				return ec.directives.HasScopes(ctx, obj, directive0, path)
+			}
+
+			tmp, err := directive1(ctx)
+			if err != nil {
+				return it, err
+			}
+			if data, ok := tmp.(*string); ok {
+				it.LocalTenantID = data
+			} else if tmp == nil {
+				it.LocalTenantID = nil
+			} else {
+				return it, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
+			}
 		case "bundles":
 			var err error
 			it.Bundles, err = ec.unmarshalOBundleCreateInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInputᚄ(ctx, v)
@@ -25859,6 +25934,31 @@ func (ec *executionContext) unmarshalInputApplicationUpdateInput(ctx context.Con
 			it.StatusCondition, err = ec.unmarshalOApplicationStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx, v)
 			if err != nil {
 				return it, err
+			}
+		case "localTenantID":
+			var err error
+			directive0 := func(ctx context.Context) (interface{}, error) { return ec.unmarshalOString2ᚖstring(ctx, v) }
+			directive1 := func(ctx context.Context) (interface{}, error) {
+				path, err := ec.unmarshalNString2string(ctx, "graphql.input.application.localTenantID")
+				if err != nil {
+					return nil, err
+				}
+				if ec.directives.HasScopes == nil {
+					return nil, errors.New("directive hasScopes is not implemented")
+				}
+				return ec.directives.HasScopes(ctx, obj, directive0, path)
+			}
+
+			tmp, err := directive1(ctx)
+			if err != nil {
+				return it, err
+			}
+			if data, ok := tmp.(*string); ok {
+				it.LocalTenantID = data
+			} else if tmp == nil {
+				it.LocalTenantID = nil
+			} else {
+				return it, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 			}
 		}
 	}
@@ -27416,6 +27516,8 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			}
 		case "systemNumber":
 			out.Values[i] = ec._Application_systemNumber(ctx, field, obj)
+		case "localTenantID":
+			out.Values[i] = ec._Application_localTenantID(ctx, field, obj)
 		case "baseUrl":
 			out.Values[i] = ec._Application_baseUrl(ctx, field, obj)
 		case "providerName":
