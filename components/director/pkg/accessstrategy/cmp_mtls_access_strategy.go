@@ -3,7 +3,6 @@ package accessstrategy
 import (
 	"context"
 	"crypto/tls"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -15,12 +14,14 @@ const tenantHeader = "tenant"
 
 type cmpMTLSAccessStrategyExecutor struct {
 	certCache certloader.Cache
+	tenantProviderFunc func(ctx context.Context) (string, error)
 }
 
 // NewCMPmTLSAccessStrategyExecutor creates a new Executor for the CMP mTLS Access Strategy
-func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache) *cmpMTLSAccessStrategyExecutor {
+func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache, tenantProviderFunc func(ctx context.Context) (string, error)) *cmpMTLSAccessStrategyExecutor {
 	return &cmpMTLSAccessStrategyExecutor{
 		certCache: certCache,
+		tenantProviderFunc: tenantProviderFunc,
 	}
 }
 
@@ -48,12 +49,12 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		return nil, err
 	}
 
-	tenantPair, err := tenant.LoadTenantPairFromContext(ctx)
+	tenant, err := as.tenantProviderFunc(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set(tenantHeader, tenantPair.ExternalID)
+	req.Header.Set(tenantHeader, tenant)
 
 	return client.Do(req)
 }

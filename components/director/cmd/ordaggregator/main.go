@@ -99,13 +99,22 @@ func main() {
 	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	exitOnError(err, "Failed to initialize certificate loader")
 
-	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
+	accessStrategyExecutorProvider := accessstrategy.NewExecutorProviderWithTenant(certCache, ctxTenantProvider)
 
 	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg, transact, httpClient, accessStrategyExecutorProvider)
 	err = ordAggregator.SyncORDDocuments(ctx)
 	exitOnError(err, "Error while synchronizing Open Resource Discovery Documents")
 
 	log.C(ctx).Info("Successfully synchronized Open Resource Discovery Documents")
+}
+
+func ctxTenantProvider(ctx context.Context) (string, error) {
+	tenantPair, err := tenant.LoadTenantPairFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return tenantPair.ExternalID, nil
 }
 
 func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config, transact persistence.Transactioner, httpClient *http.Client, accessStrategyExecutorProvider *accessstrategy.Provider) *ord.Service {
