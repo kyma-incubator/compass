@@ -6,6 +6,10 @@ import (
 	"net/http"
 	"time"
 
+	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
@@ -132,7 +136,10 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
 	runtimeConverter := runtime.NewConverter(webhookConverter)
+	runtimeContextConverter := runtimectx.NewConverter()
 	scenarioAssignConverter := scenarioassignment.NewConverter()
+	formationConv := formation.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter()
 
 	webhookRepo := webhook.NewRepository(webhookConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
@@ -140,7 +147,10 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	tenantStorageRepo := tenant.NewRepository(tenantStorageConverter)
 	applicationRepo := application.NewRepository(appConverter)
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
+	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConverter)
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignConverter)
+	formationRepo := formation.NewRepository(formationConv)
+	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepo, labelSvc)
@@ -148,8 +158,9 @@ func createTenantFetcherSvc(cfg config, transact persistence.Transactioner, kube
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantStorageRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
 
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantStorageSvc, runtimeRepo)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantStorageSvc, webhookSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantStorageSvc, runtimeRepo, runtimeContextRepo)
+	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, formationSvc, tenantStorageSvc, uidSvc)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantStorageSvc, webhookSvc, runtimeContextSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
 
 	eventAPIClient, err := tenantfetcher.NewClient(cfg.OAuthConfig, cfg.AuthMode, cfg.APIConfig, cfg.ClientTimeout)
 	if nil != err {

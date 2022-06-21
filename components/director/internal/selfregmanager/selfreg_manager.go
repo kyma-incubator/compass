@@ -55,9 +55,30 @@ func NewSelfRegisterManager(cfg config.SelfRegConfig, provider ExternalSvcCaller
 	return &selfRegisterManager{cfg: cfg, callerProvider: provider}, nil
 }
 
+// IsSelfRegistrationFlow check if self registration flow is triggered
+func (s *selfRegisterManager) IsSelfRegistrationFlow(ctx context.Context, labels map[string]interface{}) (bool, error) {
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return false, errors.Wrapf(err, "while loading consumer")
+	}
+
+	if consumerInfo.Flow.IsCertFlow() {
+		if _, exists := labels[s.cfg.SelfRegisterDistinguishLabelKey]; !exists {
+			return false, errors.Errorf("missing %q label", s.cfg.SelfRegisterDistinguishLabelKey)
+		}
+
+		if _, _, err := s.retrieveRegionInstanceConfig(labels); err != nil {
+			return false, err
+		}
+
+		return true, nil
+	}
+	return false, nil
+}
+
 // PrepareForSelfRegistration executes the prerequisite calls for self-registration in case the runtime
 // is being self-registered
-func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string) (map[string]interface{}, error) {
+func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string, validate func() error) (map[string]interface{}, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
 		return labels, errors.Wrapf(err, "while loading consumer")
@@ -72,19 +93,13 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 			return labels, errors.Errorf("missing %q label", s.cfg.SelfRegisterDistinguishLabelKey)
 		}
 
-		regionValue, exists := labels[RegionLabel]
-		if !exists {
-			return labels, errors.Errorf("missing %q label", RegionLabel)
+		if err := validate(); err != nil {
+			return labels, err
 		}
 
-		region, ok := regionValue.(string)
-		if !ok {
-			return labels, errors.Errorf("region value should be of type %q", "string")
-		}
-
-		instanceConfig, exists := s.cfg.RegionToInstanceConfig[region]
-		if !exists {
-			return labels, errors.Errorf("missing configuration for region: %s", region)
+		region, instanceConfig, err := s.retrieveRegionInstanceConfig(labels)
+		if err != nil {
+			return labels, err
 		}
 
 		request, err := s.createSelfRegPrepRequest(id, consumerInfo.ConsumerID, instanceConfig.URL)
@@ -127,6 +142,16 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 
 // CleanupSelfRegistration executes cleanup calls for self-registered runtimes
 func (s *selfRegisterManager) CleanupSelfRegistration(ctx context.Context, resourceID, region string) error {
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading consumer")
+	}
+
+	if !consumerInfo.Flow.IsCertFlow() {
+		log.C(ctx).Infof("Not certificate flow, skipping clone deletion for resource %q", resourceID)
+		return nil
+	}
+
 	if resourceID == "" {
 		return nil
 	}
@@ -201,4 +226,23 @@ func (s *selfRegisterManager) createSelfRegDelRequest(resourceID, targetURL stri
 	request.Header.Set("Content-Type", "application/json")
 
 	return request, nil
+}
+
+func (s *selfRegisterManager) retrieveRegionInstanceConfig(labels map[string]interface{}) (string, config.InstanceConfig, error) {
+	regionValue, exists := labels[RegionLabel]
+	if !exists {
+		return "", config.InstanceConfig{}, errors.Errorf("missing %q label", RegionLabel)
+	}
+
+	region, ok := regionValue.(string)
+	if !ok {
+		return "", config.InstanceConfig{}, errors.Errorf("region value should be of type %q", "string")
+	}
+
+	instanceConfig, exists := s.cfg.RegionToInstanceConfig[region]
+	if !exists {
+		return "", config.InstanceConfig{}, errors.Errorf("missing configuration for region: %s", region)
+	}
+
+	return region, instanceConfig, nil
 }

@@ -44,6 +44,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				Subdomain:              tenantfetcher.DefaultSubdomain,
 				SubscriptionProviderID: uuid.New().String(),
 				ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
+				SubscriptionAppName:    "app-name",
 			}
 
 			// WHEN
@@ -65,6 +66,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				Subdomain:              tenantfetcher.DefaultSubdomain,
 				SubscriptionProviderID: uuid.New().String(),
 				ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
+				SubscriptionAppName:    "app-name",
 			}
 			childTenant := tenantfetcher.Tenant{
 				SubaccountID:           uuid.New().String(),
@@ -72,6 +74,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				Subdomain:              tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID: uuid.New().String(),
 				ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
+				SubscriptionAppName:    "app-name",
 			}
 
 			addRegionalTenantExpectStatusCode(t, parentTenant, http.StatusOK)
@@ -105,6 +108,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				Subdomain:              tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID: uuid.New().String(),
 				ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
+				SubscriptionAppName:    "app-name",
 			}
 
 			// THEN
@@ -135,6 +139,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				Subdomain:              tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID: uuid.New().String(),
 				ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
+				SubscriptionAppName:    "app-name",
 			}
 			childTenant := tenantfetcher.Tenant{
 				TenantID:               parentTenantId,
@@ -142,6 +147,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				Subdomain:              tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID: uuid.New().String(),
 				ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
+				SubscriptionAppName:    "app-name",
 			}
 			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 			require.NoError(t, err)
@@ -175,6 +181,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				Subdomain:              tenantfetcher.DefaultSubaccountSubdomain,
 				SubscriptionProviderID: uuid.New().String(),
 				ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
+				SubscriptionAppName:    "app-name",
 			}
 			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 			require.NoError(t, err)
@@ -196,6 +203,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				CustomerID:             uuid.New().String(),
 				SubscriptionProviderID: uuid.New().String(),
 				ProviderSubaccountID:   tenant.TestTenants.GetDefaultTenantID(),
+				SubscriptionAppName:    "app-name",
 			}
 			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 			require.NoError(t, err)
@@ -216,6 +224,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				SubaccountID:         uuid.New().String(),
 				CustomerID:           uuid.New().String(),
 				ProviderSubaccountID: tenant.TestTenants.GetDefaultTenantID(),
+				SubscriptionAppName:  "app-name",
 			}
 			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 			require.NoError(t, err)
@@ -237,6 +246,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 				Subdomain:              tenantfetcher.DefaultSubaccountSubdomain,
 				CustomerID:             uuid.New().String(),
 				SubscriptionProviderID: uuid.New().String(),
+				SubscriptionAppName:    "app-name",
 			}
 			oldTenantState, err := fixtures.GetTenants(certSecuredGraphQLClient)
 			require.NoError(t, err)
@@ -289,6 +299,7 @@ func makeTenantRequestExpectStatusCode(t *testing.T, providedTenantIDs tenantfet
 		SubdomainProperty:              config.SubdomainProperty,
 		SubscriptionProviderIDProperty: config.SubscriptionProviderIDProperty,
 		ProviderSubaccountIdProperty:   config.ProviderSubaccountIDProperty,
+		SubscriptionAppNameProperty:    config.SubscriptionAppNameProperty,
 	}
 
 	request := tenantfetcher.CreateTenantRequest(t, providedTenantIDs, tenantProperties, httpMethod, url, config.ExternalServicesMockURL, config.ClientID, config.ClientSecret)

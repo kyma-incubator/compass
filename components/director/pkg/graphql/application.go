@@ -12,6 +12,7 @@ type Application struct {
 	Status                *ApplicationStatus `json:"status"`
 	HealthCheckURL        *string            `json:"healthCheckURL"`
 	SystemNumber          *string            `json:"systemNumber"`
+	LocalTenantID         *string            `json:"localTenantID"`
 	SystemStatus          *string            `json:"systemStatus"`
 	BaseURL               *string            `json:"baseUrl"`
 	*BaseEntity

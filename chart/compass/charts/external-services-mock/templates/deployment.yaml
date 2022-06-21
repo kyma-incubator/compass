@@ -19,12 +19,6 @@ spec:
                 app: {{ .Chart.Name }}
                 release: {{ .Release.Name }}
         spec:
-            {{ if .Values.global.isLocalEnv }}
-            hostAliases:
-              - ip: {{ .Values.global.minikubeIP }}
-                hostnames:
-                  - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            {{ end }}
             containers:
             - name: {{ .Chart.Name }}
               image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.external_services_mock.dir }}compass-external-services-mock:{{ .Values.global.images.external_services_mock.version }}
@@ -108,6 +102,8 @@ spec:
                 value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
               - name: APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY #The property which states the provider subaccount used in the tenant provider
                 value: {{.Values.global.tenantFetcher.tenantProvider.providerSubaccountIdProperty }}
+              - name: APP_TENANT_PROVIDER_SUBSCRIPTION_APP_NAME_PROPERTY
+                value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionAppNameProperty }}
               - name: APP_TENANT_CONFIG_TENANT_FETCHER_URL
                 value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
               - name: APP_TENANT_CONFIG_ROOT_API

@@ -64,7 +64,11 @@ func TestFetchOnDemand(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			httpClient := testCase.Client()
-			svc := tenant.NewFetchOnDemandService(httpClient, fetchTenantURL)
+			config := tenant.FetchOnDemandAPIConfig{
+				TenantOnDemandURL: fetchTenantURL,
+				IsDisabled:        false,
+			}
+			svc := tenant.NewFetchOnDemandService(httpClient, config)
 
 			// WHEN
 			err := svc.FetchOnDemand(tenantID, parentTenantID)

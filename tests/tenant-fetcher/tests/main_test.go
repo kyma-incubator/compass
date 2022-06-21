@@ -39,6 +39,9 @@ type testConfig struct {
 	TenantFetcherFullRegionalURL     string `envconfig:"-"`
 	TenantFetcherFullDependenciesURL string `envconfig:"-"`
 	SkipSSLValidation                bool   `envconfig:"default=false"`
+	SelfRegDistinguishLabelKey       string
+	SelfRegDistinguishLabelValue     string
+	SelfRegRegion                    string
 	CertLoaderConfig                 certloader.Config
 }
 
@@ -49,6 +52,7 @@ type TenantProviderConfig struct {
 	SubdomainProperty              string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"`
 	SubscriptionProviderIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY"`
 	ProviderSubaccountIDProperty   string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY"`
+	SubscriptionAppNameProperty    string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_APP_NAME_PROPERTY"`
 }
 
 var config testConfig

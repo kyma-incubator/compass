@@ -80,7 +80,9 @@ func TestIntegrationSystemAccess(t *testing.T) {
 
 			t.Log(fmt.Sprintf("Trying to create application template in account tenant %s via client certificate", test.tenant))
 
-			appTmplInput := fixAppTemplateInput(fmt.Sprintf("app-template-%s", test.resourceSuffix))
+			name := fmt.Sprintf("app-template-%s", test.resourceSuffix)
+			appTemplateName := createAppTemplateName(name)
+			appTmplInput := fixAppTemplateInput(appTemplateName)
 			at, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, test.tenant, appTmplInput)
 			defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, test.tenant, &at)
 			if test.expectErr {

@@ -9,7 +9,7 @@ directive @hasScenario(applicationProvider: String!, idField: String!) on FIELD_
 """
 HasScopes directive is added automatically to every query and mutation by scopesdecorator plugin that is triggerred by gqlgen.sh script.
 """
-directive @hasScopes(path: String!) on FIELD_DEFINITION
+directive @hasScopes(path: String!) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 """
 Sanitize directive marks mutation arguments that will be validated.
 """
@@ -72,6 +72,12 @@ enum ApplicationTemplateAccessLevel {
 	GLOBAL
 }
 
+enum ArtifactType {
+	SUBSCRIPTION
+	SERVICE_INSTANCE
+	ENVIRONMENT_INSTANCE
+}
+
 enum BundleInstanceAuthSetStatusConditionInput {
 	SUCCEEDED
 	FAILED
@@ -114,6 +120,7 @@ enum FormationObjectType {
 	APPLICATION
 	TENANT
 	RUNTIME
+	RUNTIME_CONTEXT
 }
 
 enum HealthCheckStatusCondition {
@@ -285,6 +292,7 @@ input ApplicationRegisterInput {
 	baseUrl: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
+	localTenantID: String @hasScopes(path: "graphql.input.application.localTenantID")
 	bundles: [BundleCreateInput!]
 }
 
@@ -308,6 +316,7 @@ input ApplicationTemplateInput {
 	applicationInput: ApplicationRegisterInput!
 	placeholders: [PlaceholderDefinitionInput!]
 	accessLevel: ApplicationTemplateAccessLevel!
+	applicationNamespace: String
 }
 
 input ApplicationTemplateUpdateInput {
@@ -322,6 +331,7 @@ input ApplicationTemplateUpdateInput {
 	applicationInput: ApplicationRegisterInput!
 	placeholders: [PlaceholderDefinitionInput!]
 	accessLevel: ApplicationTemplateAccessLevel!
+	applicationNamespace: String
 }
 
 input ApplicationUpdateInput {
@@ -340,6 +350,7 @@ input ApplicationUpdateInput {
 	baseUrl: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
+	localTenantID: String @hasScopes(path: "graphql.input.application.localTenantID")
 }
 
 input AuthInput {
@@ -566,6 +577,14 @@ input FormationInput {
 	name: String!
 }
 
+input FormationTemplateInput {
+	name: String!
+	applicationTypes: [String!]!
+	runtimeType: String!
+	runtimeTypeDisplayName: String!
+	runtimeArtifactKind: ArtifactType!
+}
+
 input IntegrationSystemInput {
 	"""
 	**Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
@@ -772,6 +791,7 @@ type Application {
 	id: ID!
 	name: String!
 	systemNumber: String
+	localTenantID: String
 	baseUrl: String
 	providerName: String
 	description: String
@@ -816,6 +836,7 @@ type ApplicationTemplate {
 	placeholders: [PlaceholderDefinition!]!
 	labels(key: String): Labels
 	accessLevel: ApplicationTemplateAccessLevel!
+	applicationNamespace: String
 }
 
 type ApplicationTemplatePage implements Pageable {
@@ -1002,6 +1023,21 @@ type FetchRequestStatus {
 
 type Formation {
 	name: String!
+}
+
+type FormationTemplate {
+	id: ID!
+	name: String!
+	applicationTypes: [String!]!
+	runtimeType: String!
+	runtimeTypeDisplayName: String!
+	runtimeArtifactKind: ArtifactType!
+}
+
+type FormationTemplatePage implements Pageable {
+	data: [FormationTemplate!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
 }
 
 type HealthCheck {
@@ -1235,7 +1271,7 @@ type Query {
 	**Examples**
 	- [query application templates](examples/query-application-templates/query-application-templates.graphql)
 	"""
-	applicationTemplates(first: Int = 200, after: PageCursor): ApplicationTemplatePage! @hasScopes(path: "graphql.query.applicationTemplates")
+	applicationTemplates(filter: [LabelFilter!], first: Int = 200, after: PageCursor): ApplicationTemplatePage! @hasScopes(path: "graphql.query.applicationTemplates")
 	"""
 	**Examples**
 	- [query application template](examples/query-application-template/query-application-template.graphql)
@@ -1303,6 +1339,16 @@ type Query {
 	automaticScenarioAssignments(first: Int = 200, after: PageCursor): AutomaticScenarioAssignmentPage @hasScopes(path: "graphql.query.automaticScenarioAssignments")
 	systemAuth(id: ID!): SystemAuth @hasScopes(path: "graphql.query.systemAuth")
 	systemAuthByToken(token: String!): SystemAuth @hasScopes(path: "graphql.query.systemAuthByToken")
+	"""
+	**Examples**
+	- [query formation template](examples/query-formation-template/query-formation-template.graphql)
+	"""
+	formationTemplate(id: ID!): FormationTemplate @hasScopes(path: "graphql.query.formationTemplate")
+	"""
+	**Examples**
+	- [query formation templates](examples/query-formation-templates/query-formation-templates.graphql)
+	"""
+	formationTemplates(first: Int = 200, after: PageCursor): FormationTemplatePage! @hasScopes(path: "graphql.query.formationTemplates")
 }
 
 type Mutation {
@@ -1473,7 +1519,7 @@ type Mutation {
 	**Examples**
 	- [create formation](examples/create-formation/create-formation.graphql)
 	"""
-	createFormation(formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.createFormation")
+	createFormation(formation: FormationInput!, templateName: String): Formation! @hasScopes(path: "graphql.mutation.createFormation")
 	"""
 	**Examples**
 	- [delete formation](examples/delete-formation/delete-formation.graphql)
@@ -1482,6 +1528,7 @@ type Mutation {
 	"""
 	**Examples**
 	- [assign application to formation](examples/assign-formation/assign-application-to-formation.graphql)
+	- [assign runtime context to formation](examples/assign-formation/assign-runtime-context-to-formation.graphql)
 	- [assign runtime to formation](examples/assign-formation/assign-runtime-to-formation.graphql)
 	- [assign tenant to formation](examples/assign-formation/assign-tenant-to-formation.graphql)
 	"""
@@ -1489,6 +1536,7 @@ type Mutation {
 	"""
 	**Examples**
 	- [unassign application from formation](examples/unassign-formation/unassign-application-from-formation.graphql)
+	- [unassign runtime context from formation](examples/unassign-formation/unassign-runtime-context-from-formation.graphql)
 	- [unassign runtime from formation](examples/unassign-formation/unassign-runtime-from-formation.graphql)
 	- [unassign tenant from formation](examples/unassign-formation/unassign-tenant-from-formation.graphql)
 	"""
@@ -1588,7 +1636,22 @@ type Mutation {
 	writeTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.writeTenants")
 	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
 	updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")
-	subscribeTenantToRuntime(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenantToRuntime")
-	unsubscribeTenantFromRuntime(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenantFromRuntime")
+	subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!, subscriptionAppName: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
+	unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
+	"""
+	**Examples**
+	- [create formation template](examples/create-formation-template/create-formation-template.graphql)
+	"""
+	createFormationTemplate(in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.createFormationTemplate")
+	"""
+	**Examples**
+	- [delete formation template](examples/delete-formation-template/delete-formation-template.graphql)
+	"""
+	deleteFormationTemplate(id: ID!): FormationTemplate @hasScopes(path: "graphql.mutation.deleteFormationTemplate")
+	"""
+	**Examples**
+	- [update formation template](examples/update-formation-template/update-formation-template.graphql)
+	"""
+	updateFormationTemplate(id: ID!, in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.updateFormationTemplate")
 }
 

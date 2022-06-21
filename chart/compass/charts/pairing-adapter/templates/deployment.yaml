@@ -31,13 +31,6 @@ spec:
                 release: {{ $.Release.Name }}
                 system: {{ $adapterName }}
         spec:
-{{ if $.Values.global.isLocalEnv }}
-      # HostAliases are used by Pod to resolve kyma.local domain
-            hostAliases:
-              - ip: {{ $.Values.global.minikubeIP }}
-                hostnames:
-                  - "{{ $.Values.global.externalServicesMock.certSecuredHost }}.{{ $.Values.global.ingress.domainName }}"
-{{ end }}
             serviceAccountName: {{ $.Release.Name }}-pairing-adapter
             nodeSelector:
               {{- toYaml $.Values.deployment.nodeSelector | nindent 14 }}

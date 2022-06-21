@@ -21,52 +21,45 @@ import (
 	"crypto/tls"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
-
+	"github.com/gorilla/mux"
+	auth "github.com/kyma-incubator/compass/components/director/internal/authenticator"
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	authentication "github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	bundleutil "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
-
-	"github.com/vrischmann/envconfig"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
-	"github.com/kyma-incubator/compass/components/director/internal/metrics"
-
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
-	graphqlclient "github.com/kyma-incubator/compass/components/director/pkg/graphql_client"
-	gcli "github.com/machinebox/graphql"
-
-	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
-
-	auth "github.com/kyma-incubator/compass/components/director/internal/authenticator"
-	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
-	authentication "github.com/kyma-incubator/compass/components/director/internal/domain/auth"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"github.com/kyma-incubator/compass/components/director/pkg/executor"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
-
+	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
+	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	tf "github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 	tenantfetcher "github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
-
-	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/director/pkg/executor"
+	graphqlclient "github.com/kyma-incubator/compass/components/director/pkg/graphql_client"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
+	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
+	"github.com/vrischmann/envconfig"
 )
 
 const envPrefix = "APP"
@@ -113,16 +106,12 @@ func main() {
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Handler.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
-	defer func() {
-		err := closeFunc()
-		exitOnError(err, "Error while closing the connection to the database")
-	}()
-
 	envVars := tenantfetcher.ReadFromEnvironment(os.Environ())
 	jobNames := tenantfetcher.GetJobNames(envVars)
-	log.C(ctx).Infof("Tenant fetcher jobs are: %s", jobNames)
+	log.C(ctx).Infof("Tenant fetcher jobs are: %s", strings.Join(jobNames, ","))
 
-	dbCloseFunctions := make([]func() error, 0, len(jobNames))
+	dbCloseFunctions := make([]func() error, 0)
+	dbCloseFunctions = append(dbCloseFunctions, closeFunc)
 	defer func() {
 		for _, fn := range dbCloseFunctions {
 			err := fn()
@@ -137,8 +126,7 @@ func main() {
 			stopJobChannels = append(stopJobChannels, stopJob)
 
 			jobConfig := readJobConfig(ctx, job, envVars)
-			metricsReporter := createMetricsReporter(jobConfig)
-			closeFn := runTenantFetcherJob(ctx, jobConfig, metricsReporter, stopJob)
+			closeFn := runTenantFetcherJob(ctx, jobConfig, stopJob)
 			dbCloseFunctions = append(dbCloseFunctions, closeFn)
 		}
 	}()
@@ -175,7 +163,6 @@ func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig,
 	ticker := time.NewTicker(jobInterval)
 	jobName := jobConfig.JobName
 
-	log.C(ctx).Infof("Job %s database config: %+v", jobConfig.JobName, jobConfig.GetHandlerCgf().Database)
 	transact, closeFunc, err := persistence.Configure(ctx, jobConfig.GetHandlerCgf().Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
@@ -246,6 +233,10 @@ func createTenantsFetcherSvc(ctx context.Context, jobConfig tenantfetcher.JobCon
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
 	runtimeConverter := runtime.NewConverter(webhookConverter)
 	scenarioAssignConverter := scenarioassignment.NewConverter()
+	runtimeContextConverter := runtimectx.NewConverter()
+	tenantConverter := tenant.NewConverter()
+	formationConv := formation.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter()
 
 	webhookRepo := webhook.NewRepository(webhookConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
@@ -254,15 +245,20 @@ func createTenantsFetcherSvc(ctx context.Context, jobConfig tenantfetcher.JobCon
 	applicationRepo := application.NewRepository(appConverter)
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignConverter)
+	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConverter)
+	tenantRepo := tenant.NewRepository(tenantConverter)
+	formationRepo := formation.NewRepository(formationConv)
+	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepo, labelSvc)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc)
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantStorageRepo, uidSvc, handlerCfg.Features.DefaultScenarioEnabled)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
-
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantStorageSvc, runtimeRepo)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantStorageSvc, webhookSvc, handlerCfg.Features.ProtectedLabelPattern, handlerCfg.Features.ImmutableLabelPattern)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo, runtimeContextRepo)
+	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantStorageSvc, webhookSvc, runtimeContextSvc, handlerCfg.Features.ProtectedLabelPattern, handlerCfg.Features.ImmutableLabelPattern)
 
 	kubeClient, err := tf.NewKubernetesClient(ctx, handlerCfg.Kubernetes)
 	exitOnError(err, "Failed to initialize Kubernetes client")

@@ -164,6 +164,51 @@ func TestApplicationTemplateInput_Validate_Description(t *testing.T) {
 	}
 }
 
+func TestApplicationTemplateInput_Validate_ApplicationNamespace(t *testing.T) {
+	testCases := []struct {
+		Name  string
+		Value *string
+		Valid bool
+	}{
+		{
+			Name:  "Valid",
+			Value: str.Ptr("valid"),
+			Valid: true,
+		},
+		{
+			Name:  "Valid - Nil",
+			Value: (*string)(nil),
+			Valid: true,
+		},
+		{
+			Name:  "Valid - Empty",
+			Value: str.Ptr(inputvalidationtest.EmptyString),
+			Valid: true,
+		},
+		{
+			Name:  "Invalid - Too long",
+			Value: str.Ptr(inputvalidationtest.String257Long),
+			Valid: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			sut := fixValidApplicationTemplateInput()
+			sut.ApplicationNamespace = testCase.Value
+			// WHEN
+			err := sut.Validate()
+			// THEN
+			if testCase.Valid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
 func TestApplicationTemplateInput_Validate_Placeholders(t *testing.T) {
 	testPlaceholderName := "test"
 	testCases := []struct {

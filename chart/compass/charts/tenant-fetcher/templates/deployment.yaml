@@ -35,15 +35,6 @@ spec:
         reqlimit: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit2MBLabel }}
         release: {{ .Release.Name }}
     spec:
-      {{ if $.Values.global.isLocalEnv }}
-      # HostAliases are used by Pod to resolve kyma.local domain
-      hostAliases:
-        - ip: {{ $.Values.global.minikubeIP }}
-          hostnames:
-            # Used for calls to Director
-            - "{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}"
-            - "{{ $.Values.global.externalServicesMock.certSecuredHost }}.{{ $.Values.global.ingress.domainName }}"
-      {{ end }}
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
@@ -81,6 +72,8 @@ spec:
               value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
             - name: APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY #The property which states the provider subaccount used in the tenant provider
               value: {{.Values.global.tenantFetcher.tenantProvider.providerSubaccountIdProperty }}
+            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_APP_NAME_PROPERTY
+              value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionAppNameProperty }}
             - name: APP_DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: APP_LOG_FORMAT
@@ -107,6 +100,8 @@ spec:
               value: {{ .Values.global.tenantFetcher.fetchTenantAuthScope | quote }}
             - name: APP_DIRECTOR_GRAPHQL_ENDPOINT
               value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
+            - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
               value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
             - name: APP_DB_USER

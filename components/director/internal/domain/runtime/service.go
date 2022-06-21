@@ -76,12 +76,13 @@ type service struct {
 	repo      runtimeRepository
 	labelRepo labelRepository
 
-	labelUpsertService labelUpsertService
-	uidService         uidService
-	scenariosService   scenariosService
-	formationService   formationService
-	tenantSvc          tenantService
-	webhookService     WebhookService
+	labelUpsertService    labelUpsertService
+	uidService            uidService
+	scenariosService      scenariosService
+	formationService      formationService
+	tenantSvc             tenantService
+	webhookService        WebhookService
+	runtimeContextService RuntimeContextService
 
 	protectedLabelPattern string
 	immutableLabelPattern string
@@ -96,6 +97,7 @@ func NewService(repo runtimeRepository,
 	formationService formationService,
 	tenantService tenantService,
 	webhookService WebhookService,
+	runtimeContextService RuntimeContextService,
 	protectedLabelPattern string,
 	immutableLabelPattern string) *service {
 	return &service{
@@ -107,6 +109,7 @@ func NewService(repo runtimeRepository,
 		formationService:      formationService,
 		tenantSvc:             tenantService,
 		webhookService:        webhookService,
+		runtimeContextService: runtimeContextService,
 		protectedLabelPattern: protectedLabelPattern,
 		immutableLabelPattern: immutableLabelPattern,
 	}
@@ -349,11 +352,22 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeUpdateI
 	return nil
 }
 
-// Delete deletes Runtime and its labels
+// Delete deletes all RuntimeContexts associated with the runtime with ID `id` and then deletes the runtime and its labels
 func (s *service) Delete(ctx context.Context, id string) error {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	runtimeContexts, err := s.runtimeContextService.ListAllForRuntime(ctx, id)
+	if err != nil {
+		return errors.Wrapf(err, "while listing runtimeContexts for runtime with ID %q", id)
+	}
+
+	for _, rc := range runtimeContexts {
+		if err = s.runtimeContextService.Delete(ctx, rc.ID); err != nil {
+			return errors.Wrapf(err, "while deleting runtimeContext with ID %q", rc.ID)
+		}
 	}
 
 	if err = s.unassignRuntimeScenarios(ctx, rtmTenant, id); err != nil {
@@ -527,8 +541,8 @@ func (s *service) unassignRuntimeScenarios(ctx context.Context, rtmTenant, runti
 	return nil
 }
 
-func (s *service) updateScenariosLabel(ctx context.Context, rtmTenant, rtmId string, inputLabels map[string]interface{}) error {
-	mergedScenarios, err := s.formationService.MergeScenariosFromInputLabelsAndAssignments(ctx, inputLabels, rtmId)
+func (s *service) updateScenariosLabel(ctx context.Context, rtmTenant, rtmID string, inputLabels map[string]interface{}) error {
+	mergedScenarios, err := s.formationService.MergeScenariosFromInputLabelsAndAssignments(ctx, inputLabels, rtmID)
 	if err != nil {
 		return errors.Wrap(err, "while merging scenarios from input and assignments")
 	}
@@ -538,7 +552,7 @@ func (s *service) updateScenariosLabel(ctx context.Context, rtmTenant, rtmId str
 		return errors.Wrapf(err, "while converting merged scenarios: %+v to slice of strings", mergedScenarios)
 	}
 
-	currentRuntimeLabels, err := s.getCurrentLabelsForRuntime(ctx, rtmTenant, rtmId)
+	currentRuntimeLabels, err := s.getCurrentLabelsForRuntime(ctx, rtmTenant, rtmID)
 	if err != nil {
 		return err
 	}
@@ -565,16 +579,16 @@ func (s *service) updateScenariosLabel(ctx context.Context, rtmTenant, rtmId str
 
 	for scenario := range currentScenariosMap {
 		if _, found := mergedScenariosMap[scenario]; !found {
-			if _, err = s.formationService.UnassignFormation(ctx, rtmTenant, rtmId, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
-				return errors.Wrapf(err, "while unassigning formation %q from runtime with ID %q", scenario, rtmId)
+			if _, err = s.formationService.UnassignFormation(ctx, rtmTenant, rtmID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
+				return errors.Wrapf(err, "while unassigning formation %q from runtime with ID %q", scenario, rtmID)
 			}
 		}
 	}
 
 	for scenario := range mergedScenariosMap {
 		if _, found := currentScenariosMap[scenario]; !found {
-			if _, err = s.formationService.AssignFormation(ctx, rtmTenant, rtmId, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
-				return errors.Wrapf(err, "while assigning formation %q from runtime with ID %q", scenario, rtmId)
+			if _, err = s.formationService.AssignFormation(ctx, rtmTenant, rtmID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
+				return errors.Wrapf(err, "while assigning formation %q from runtime with ID %q", scenario, rtmID)
 			}
 		}
 	}

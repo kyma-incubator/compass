@@ -14,17 +14,15 @@ source $SCRIPTS_DIR/prom-mtls-patch.sh
 
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../..
 PATH_TO_VALUES="$CURRENT_DIR/../../chart/compass/values.yaml"
-PATH_TO_DIRECTOR_VALUES="$CURRENT_DIR/../../chart/compass/charts/director/values.yaml"
+PATH_TO_HYDRATOR_VALUES="$CURRENT_DIR/../../chart/compass/charts/hydrator/values.yaml"
 PATH_TO_COMPASS_OIDC_CONFIG_FILE="$HOME/.compass.yaml"
 MIGRATOR_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/migrator-job.yaml)
 UPDATE_EXPECTED_SCHEMA_VERSION_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/update-expected-schema-version-job.yaml)
 RESET_VALUES_YAML=true
 
-MINIKUBE_MEMORY=8192
-MINIKUBE_TIMEOUT=25m
-MINIKUBE_CPUS=5
-APISERVER_VERSION=1.19.16
-
+K3D_MEMORY=8192MB
+K3D_TIMEOUT=10m0s
+APISERVER_VERSION=1.20.11
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -43,16 +41,12 @@ do
             shift # past argument
             shift # past value
         ;;
-        --skip-minikube-start)
-            SKIP_MINIKUBE_START=true
+        --skip-k3d-start)
+            SKIP_K3D_START=true
             shift # past argument
         ;;
         --skip-kyma-start)
             SKIP_KYMA_START=true
-            shift # past argument
-        ;;
-        --docker-driver)
-            DOCKER_DRIVER=true
             shift # past argument
         ;;
         --dump-db)
@@ -60,21 +54,15 @@ do
             DUMP_IMAGE_TAG="dump"
             shift # past argument
         ;;
-        --minikube-cpus)
+        --k3d-memory)
             checkInputParameterValue "${2}"
-            MINIKUBE_CPUS="${2}"
+            K3D_MEMORY="${2}"
             shift # past argument
             shift # past value
         ;;
-        --minikube-memory)
+        --k3d-timeout)
             checkInputParameterValue "${2}"
-            MINIKUBE_MEMORY="${2}"
-            shift # past argument
-            shift # past value
-        ;;
-        --minikube-timeout)
-            checkInputParameterValue "${2}"
-            MINIKUBE_TIMEOUT="${2}"
+            K3D_TIMEOUT="${2}"
             shift # past argument
             shift # past value
         ;;
@@ -123,43 +111,50 @@ function set_oidc_config() {
   yq -i ".global.cockpit.auth.idpHost = \"$1\"" "$PATH_TO_VALUES"
   yq -i ".global.cockpit.auth.clientID = \"$2\"" "$PATH_TO_VALUES"
   if [[ -n ${3}  ]]; then
-   yq -i ".adminGroupNames = \"$3\"" "$PATH_TO_DIRECTOR_VALUES"
+   yq -i ".adminGroupNames = \"$3\"" "$PATH_TO_HYDRATOR_VALUES"
   fi
 }
 
+# NOTE: Only one trap per script is supported.
 function cleanup_trap() {
-  if [[ -f mk-ca.crt ]]; then
-    rm -f mk-ca.crt
+  if [[ -f k3d-ca.crt ]]; then
+    rm -f k3d-ca.crt
+  fi
+  if [[ -f ${COMPASS_CERT_PATH} ]]; then
+    rm -f "${COMPASS_CERT_PATH}"
   fi
   if [[ ${DUMP_DB} ]]; then
       revert_migrator_file
   fi
-  if $RESET_VALUES_YAML ; then
+  if [[ ${RESET_VALUES_YAML} ]] ; then
     set_oidc_config "" "" "$DEFAULT_OIDC_ADMIN_GROUPS"
   fi
+
+  pkill -P $$ || true # This MUST be at the end of the cleanup_trap function.
 }
 
-function mount_minikube_ca_to_oathkeeper() {
-  echo "Mounting minikube CA cert into oathkeeper's container..."
+trap cleanup_trap RETURN EXIT INT TERM
 
-  cat $HOME/.minikube/ca.crt > mk-ca.crt
+function mount_k3d_ca_to_oathkeeper() {
+  echo "Mounting k3d CA cert into oathkeeper's container..."
 
-  kubectl create configmap -n kyma-system minikube-ca --from-file mk-ca.crt --dry-run -o yaml | kubectl apply -f -
+  docker exec k3d-kyma-server-0 cat /var/lib/rancher/k3s/server/tls/server-ca.crt > k3d-ca.crt
+  kubectl create configmap -n kyma-system k3d-ca --from-file k3d-ca.crt --dry-run=client -o yaml | kubectl apply -f -
 
   OATHKEEPER_DEPLOYMENT_NAME=$(kubectl get deployment -n kyma-system | grep oathkeeper | awk '{print $1}')
   OATHKEEPER_CONTAINER_NAME=$(kubectl get deployment -n kyma-system "$OATHKEEPER_DEPLOYMENT_NAME" -o=jsonpath='{.spec.template.spec.containers[*].name}' | tr -s '[[:space:]]' '\n' | grep -v 'maester')
 
   kubectl -n kyma-system patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
- -p '{"spec":{"template":{"spec":{"volumes":[{"configMap":{"defaultMode": 420,"name": "minikube-ca"},"name": "minikube-ca-volume"}]}}}}'
+ -p '{"spec":{"template":{"spec":{"volumes":[{"configMap":{"defaultMode": 420,"name": "k3d-ca"},"name": "k3d-ca-volume"}]}}}}'
 
   kubectl -n kyma-system patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
- -p '{"spec":{"template":{"spec":{"containers":[{"name": "'$OATHKEEPER_CONTAINER_NAME'","volumeMounts": [{ "mountPath": "'/etc/ssl/certs/mk-ca.crt'","name": "minikube-ca-volume","subPath": "mk-ca.crt"}]}]}}}}'
+ -p '{"spec":{"template":{"spec":{"containers":[{"name": "'$OATHKEEPER_CONTAINER_NAME'","volumeMounts": [{ "mountPath": "'/etc/ssl/certs/k3d-ca.crt'","name": "k3d-ca-volume","subPath": "k3d-ca.crt"}]}]}}}}'
 }
 
 if [[ -z ${OIDC_HOST} || -z ${OIDC_CLIENT_ID} ]]; then
   if [[ -f ${PATH_TO_COMPASS_OIDC_CONFIG_FILE} ]]; then
     echo -e "${YELLOW}OIDC configuration not provided. Configuration from default config file will be used.${NC}"
-    DEFAULT_OIDC_ADMIN_GROUPS="$(yq ".adminGroupNames" "$PATH_TO_DIRECTOR_VALUES")"
+    DEFAULT_OIDC_ADMIN_GROUPS="$(yq ".adminGroupNames" "$PATH_TO_HYDRATOR_VALUES")"
     OIDC_HOST=$(yq ".idpHost" "$PATH_TO_COMPASS_OIDC_CONFIG_FILE")
     OIDC_CLIENT_ID=$(yq ".clientID" "$PATH_TO_COMPASS_OIDC_CONFIG_FILE")
     OIDC_GROUPS=$(yq ".adminGroupNames" "$PATH_TO_COMPASS_OIDC_CONFIG_FILE")
@@ -169,7 +164,7 @@ if [[ -z ${OIDC_HOST} || -z ${OIDC_CLIENT_ID} ]]; then
     RESET_VALUES_YAML=false
   fi
 else
-  DEFAULT_OIDC_ADMIN_GROUPS="$(yq ".adminGroupNames" "$PATH_TO_DIRECTOR_VALUES")"
+  DEFAULT_OIDC_ADMIN_GROUPS="$(yq ".adminGroupNames" "$PATH_TO_HYDRATOR_VALUES")"
   if [[ -z ${OIDC_ADMIN_GROUP} ]]; then
     echo -e "${GREEN}Using provided OIDC host and client-id.${NC}"
     echo -e "${YELLOW}OIDC admin group was not provided. Will use default values.${NC}"
@@ -180,8 +175,6 @@ else
     set_oidc_config "$OIDC_HOST" "$OIDC_CLIENT_ID" "$OIDC_GROUPS"
   fi
 fi
-
-trap "cleanup_trap" RETURN EXIT INT TERM
 
 if [ -z "$KYMA_RELEASE" ]; then
   KYMA_RELEASE=$(<"${ROOT_PATH}"/installation/resources/KYMA_VERSION)
@@ -195,11 +188,11 @@ if [[ ${DUMP_DB} ]]; then
     echo -e "${GREEN}DB dump will be used to prepopulate installation${NC}"
 
     if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines, reference issue: https://stackoverflow.com/questions/4247068/sed-command-with-i-option-failing-on-mac-but-works-on-linux
-        sed -i '' 's/image\:.*compass-schema-migrator.*/image\: compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/migrator-job.yaml
-        sed -i '' 's/image\:.*compass-schema-migrator.*/image\: compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/update-expected-schema-version-job.yaml
+        sed -i '' 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/migrator-job.yaml
+        sed -i '' 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/update-expected-schema-version-job.yaml
     else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
-        sed -i 's/image\:.*compass-schema-migrator.*/image\: compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/migrator-job.yaml
-        sed -i 's/image\:.*compass-schema-migrator.*/image\: compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/update-expected-schema-version-job.yaml
+        sed -i 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/migrator-job.yaml
+        sed -i 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/update-expected-schema-version-job.yaml
     fi
 
 
@@ -211,56 +204,76 @@ if [[ ${DUMP_DB} ]]; then
     fi
 fi
 
-if [[ ! ${SKIP_MINIKUBE_START} ]]; then
-  echo "Provisioning Minikube cluster..."
-  if [[ ! ${DOCKER_DRIVER} ]]; then
-    kyma provision minikube --cpus ${MINIKUBE_CPUS} --memory ${MINIKUBE_MEMORY} --timeout ${MINIKUBE_TIMEOUT} --kube-version ${APISERVER_VERSION}
-  else
-    kyma provision minikube --cpus ${MINIKUBE_CPUS} --memory ${MINIKUBE_MEMORY} --timeout ${MINIKUBE_TIMEOUT} --kube-version ${APISERVER_VERSION} --vm-driver docker --docker-ports 443:443 --docker-ports 80:80
-  fi
+if [[ ! ${SKIP_K3D_START} ]]; then
+  echo "Provisioning k3d cluster..."
+  # todo cpu limit
+  kyma provision k3d \
+  --k3s-arg '--kube-apiserver-arg=anonymous-auth=true@server:*' \
+  --k3s-arg '--kube-apiserver-arg=feature-gates=ServiceAccountIssuerDiscovery=true@server:*' \
+  --k3d-arg='--servers-memory '"${K3D_MEMORY}" \
+  --k3d-arg='--agents-memory '"${K3D_MEMORY}" \
+  --timeout "${K3D_TIMEOUT}" \
+  --kube-version "${APISERVER_VERSION}"
+  echo "Adding k3d registry entry to /etc/hosts..."
+  sudo sh -c "echo \"\n127.0.0.1 k3d-kyma-registry\" >> /etc/hosts"
 fi
 
-useMinikube
+usek3d
 
-echo "Label Minikube node for benchmark execution..."
-NODE=$(kubectl get nodes | tail -n 1 | cut -d ' ' -f 1)
-kubectl label node "$NODE" benchmark=true || true
+echo "Label k3d node for benchmark execution..."
+NODE=$(kubectl get nodes | grep agent | tail -n 1 | cut -d ' ' -f 1)
+kubectl label --overwrite node "$NODE" benchmark=true || true
 
 if [[ ${DUMP_DB} ]]; then
     echo -e "${YELLOW}DUMP_DB option is selected. Building an image for the schema-migrator using local files...${NC}"
     export DOCKER_TAG=$DUMP_IMAGE_TAG
-    make -C ${ROOT_PATH}/components/schema-migrator build-to-minikube
+    make -C ${ROOT_PATH}/components/schema-migrator build-for-k3d
 fi
 
 if [[ ! ${SKIP_KYMA_START} ]]; then
   LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh --kyma-release ${KYMA_RELEASE} --kyma-installation ${KYMA_INSTALLATION}
+  kubectl set image -n kyma-system cronjob/oathkeeper-jwks-rotator keys-generator=oryd/oathkeeper:v0.38.23
+  kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "*/1 * * * *"}}'
+  until [[ $(kubectl get cronjob -n kyma-system oathkeeper-jwks-rotator --output=jsonpath={.status.lastScheduleTime}) ]]; do
+      echo "Waiting for cronjob oathkeeper-jwks-rotator to be scheduled"
+      sleep 3
+  done
+  kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "0 0 1 * *"}}'
 fi
 
-if [[ `kubectl get TestDefinition logging -n kyma-system` ]]; then
-  # Patch logging TestDefinition
-  HOSTNAMES_TO=$(kubectl get TestDefinition logging -n kyma-system -o json |  jq -r '.spec.template.spec.hostAliases[0].hostnames += ["loki.kyma.local"]' | jq -r ".spec.template.spec.hostAliases[0].hostnames" | jq ". | unique")
-  IP_TO=$(kubectl get TestDefinition logging -n kyma-system -o json | jq '.spec.template.spec.hostAliases[0].ip')
-  PATCH_TO=$(cat "${ROOT_PATH}"/installation/resources/logging-test-definition-patch.json | jq -c ".spec.template.spec.hostAliases[0].hostnames += $HOSTNAMES_TO" | jq -c ".spec.template.spec.hostAliases[0].ip += $IP_TO")
-  kubectl patch TestDefinition logging -n kyma-system  --type='merge' -p "$PATCH_TO"
-fi
+mount_k3d_ca_to_oathkeeper
 
-if [[ `kubectl get TestDefinition dex-connection -n kyma-system` ]]; then
-  # Patch dex-connection TestDefinition
-  kubectl patch TestDefinition dex-connection -n kyma-system --type=json -p="[{\"op\": \"replace\", \"path\": \"/spec/template/spec/containers/0/image\", \"value\": \"eu.gcr.io/kyma-project/external/curlimages/curl:7.70.0\"}]"
-fi
+# Currently there is a problem fetching JWKS keys, used to validate JWT token send to hydra. The function bellow patches the RequestAuthentication istio resource
+# with the needed keys, by first getting them using kubectl
+function patchJWKS() {
+  JWKS="'$(kubectl get --raw '/openid/v1/jwks')'"
+  until [[ $(kubectl get requestauthentication kyma-internal-authn -n kyma-system 2>/dev/null) &&
+          $(kubectl get requestauthentication compass-internal-authn -n compass-system 2>/dev/null) ]]; do
+    echo "Waiting for requestauthentication resources to be created"
+    sleep 3
+  done
+  kubectl get requestauthentication kyma-internal-authn -n kyma-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | kubectl apply -f -
+  kubectl get requestauthentication compass-internal-authn -n compass-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | kubectl apply -f -
+}
+patchJWKS&
 
-mount_minikube_ca_to_oathkeeper
+echo 'Installing Compass'
+COMPASS_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
+bash "${ROOT_PATH}"/installation/scripts/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --timeout 30m0s
+STATUS=$(helm status compass -n compass-system -o json | jq .info.status)
+echo "Compass installation status ${STATUS}"
 
 prometheusMTLSPatch
 
-bash "${ROOT_PATH}"/installation/scripts/run-compass-installer.sh --kyma-installation ${KYMA_INSTALLATION}
-sleep 15
-bash "${ROOT_PATH}"/installation/scripts/is-installed.sh
+echo 'Adding compass certificate to keychain'
+COMPASS_CERT_PATH="${CURRENT_DIR}/../cmd/compass-cert.pem"
+echo -n | openssl s_client -showcerts -servername compass.local.kyma.dev -connect compass.local.kyma.dev:443 2>/dev/null | openssl x509 -inform pem > "${COMPASS_CERT_PATH}"
+if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines
+  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "${COMPASS_CERT_PATH}"
+else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
+  sudo cp "${COMPASS_CERT_PATH}" /etc/ssl/certs
+  sudo update-ca-certificates
+fi
 
 echo "Adding Compass entries to /etc/hosts..."
-
-MINIKUBE_IP=$(minikube ip)
-if [[ ${DOCKER_DRIVER} ]]; then
-    MINIKUBE_IP=127.0.0.1
-fi
-sudo sh -c "echo \"\n${MINIKUBE_IP} adapter-gateway.kyma.local adapter-gateway-mtls.kyma.local compass-gateway-mtls.kyma.local compass-gateway-xsuaa.kyma.local compass-gateway-sap-mtls.kyma.local compass-gateway-auth-oauth.kyma.local compass-gateway.kyma.local compass-gateway-int.kyma.local compass.kyma.local compass-mf.kyma.local kyma-env-broker.kyma.local director.kyma.local compass-external-services-mock.kyma.local compass-external-services-mock-sap-mtls.kyma.local compass-external-services-mock-sap-mtls-ord.kyma.local compass-external-services-mock-sap-mtls-global-ord-registry.kyma.local\" >> /etc/hosts"
+sudo sh -c "echo \"\n127.0.0.1 adapter-gateway.local.kyma.dev adapter-gateway-mtls.local.kyma.dev compass-gateway-mtls.local.kyma.dev compass-gateway-xsuaa.local.kyma.dev compass-gateway-sap-mtls.local.kyma.dev compass-gateway-auth-oauth.local.kyma.dev compass-gateway.local.kyma.dev compass-gateway-int.local.kyma.dev compass.local.kyma.dev compass-mf.local.kyma.dev kyma-env-broker.local.kyma.dev director.local.kyma.dev compass-external-services-mock.local.kyma.dev compass-external-services-mock-sap-mtls.local.kyma.dev compass-external-services-mock-sap-mtls-ord.local.kyma.dev compass-external-services-mock-sap-mtls-global-ord-registry.local.kyma.dev\" >> /etc/hosts"
