@@ -114,15 +114,15 @@ func (_m *ApplicationTemplateRepository) GetByFilters(ctx context.Context, filte
 }
 
 // GetByName provides a mock function with given fields: ctx, id
-func (_m *ApplicationTemplateRepository) GetByName(ctx context.Context, id string) (*model.ApplicationTemplate, error) {
+func (_m *ApplicationTemplateRepository) GetByName(ctx context.Context, id string) ([]*model.ApplicationTemplate, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 *model.ApplicationTemplate
-	if rf, ok := ret.Get(0).(func(context.Context, string) *model.ApplicationTemplate); ok {
+	var r0 []*model.ApplicationTemplate
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.ApplicationTemplate); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.ApplicationTemplate)
+			r0 = ret.Get(0).([]*model.ApplicationTemplate)
 		}
 	}
 

@@ -98,12 +98,35 @@ func (_m *ApplicationTemplateService) Get(ctx context.Context, id string) (*mode
 }
 
 // GetByName provides a mock function with given fields: ctx, name
-func (_m *ApplicationTemplateService) GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error) {
+func (_m *ApplicationTemplateService) GetByName(ctx context.Context, name string) ([]*model.ApplicationTemplate, error) {
 	ret := _m.Called(ctx, name)
 
-	var r0 *model.ApplicationTemplate
-	if rf, ok := ret.Get(0).(func(context.Context, string) *model.ApplicationTemplate); ok {
+	var r0 []*model.ApplicationTemplate
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.ApplicationTemplate); ok {
 		r0 = rf(ctx, name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.ApplicationTemplate)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetByNameAndRegion provides a mock function with given fields: ctx, name, region
+func (_m *ApplicationTemplateService) GetByNameAndRegion(ctx context.Context, name string, region interface{}) (*model.ApplicationTemplate, error) {
+	ret := _m.Called(ctx, name, region)
+
+	var r0 *model.ApplicationTemplate
+	if rf, ok := ret.Get(0).(func(context.Context, string, interface{}) *model.ApplicationTemplate); ok {
+		r0 = rf(ctx, name, region)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.ApplicationTemplate)
@@ -111,8 +134,31 @@ func (_m *ApplicationTemplateService) GetByName(ctx context.Context, name string
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, name)
+	if rf, ok := ret.Get(1).(func(context.Context, string, interface{}) error); ok {
+		r1 = rf(ctx, name, region)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetByNameAndSubaccount provides a mock function with given fields: ctx, name, subaccount
+func (_m *ApplicationTemplateService) GetByNameAndSubaccount(ctx context.Context, name string, subaccount string) (*model.ApplicationTemplate, error) {
+	ret := _m.Called(ctx, name, subaccount)
+
+	var r0 *model.ApplicationTemplate
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.ApplicationTemplate); ok {
+		r0 = rf(ctx, name, subaccount)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.ApplicationTemplate)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, name, subaccount)
 	} else {
 		r1 = ret.Error(1)
 	}

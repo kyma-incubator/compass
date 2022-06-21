@@ -7,8 +7,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -433,7 +431,6 @@ func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string
 
 		labelsMap[applicationTypeLabelKey] = applicationType
 		appInput["labels"] = labelsMap
-
 	} else {
 		appInput["labels"] = map[string]interface{}{applicationTypeLabelKey: applicationType}
 	}
