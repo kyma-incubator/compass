@@ -11,6 +11,8 @@ import (
 
 	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/subscription"
 
@@ -147,7 +149,7 @@ type config struct {
 
 	SubscriptionConfig subscription.Config
 
-	TenantOnDemandConfig tenant.FetchOnDemandApiConfig
+	TenantOnDemandConfig tenant.FetchOnDemandAPIConfig
 
 	SkipSSLValidation bool `envconfig:"default=false,APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"`
 }
@@ -592,6 +594,8 @@ func runtimeSvc(cfg config) claims.RuntimeService {
 	runtimeContextConverter := runtimectx.NewConverter()
 	runtimeConverter := runtime.NewConverter(webhookConverter)
 	tenantConverter := tenant.NewConverter()
+	formationConv := formation.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter()
 
 	asaRepo := scenarioassignment.NewRepository(asaConverter)
 	labelRepo := label.NewRepository(labelConverter)
@@ -599,13 +603,15 @@ func runtimeSvc(cfg config) claims.RuntimeService {
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConverter)
 	tenantRepo := tenant.NewRepository(tenantConverter)
+	formationRepo := formation.NewRepository(formationConv)
+	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
 	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo)
+	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo)
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 
 	return runtime.NewService(runtimeRepo, labelRepo, labelDefinitionSvc, labelSvc, uidSvc, formationSvc, tenantSvc, webhookService(), runtimeContextSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
