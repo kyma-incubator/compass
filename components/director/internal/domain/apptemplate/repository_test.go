@@ -173,12 +173,13 @@ func TestRepository_GetByName(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		webhooksModel := fixModelApplicationWebhooks(testWebhookID, testID)
-		appTemplateModel := fixModelApplicationTemplate(testID, testName, webhooksModel)
+		appTemplate := fixModelApplicationTemplate(testID, testName, webhooksModel)
+		appTemplates := []*model.ApplicationTemplate{appTemplate}
 		appTemplateEntity := fixEntityApplicationTemplate(t, testID, testName)
 
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("FromEntity", appTemplateEntity).Return(appTemplateModel, nil).Once()
+		mockConverter.On("FromEntity", appTemplateEntity).Return(appTemplate, nil).Once()
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
@@ -196,7 +197,7 @@ func TestRepository_GetByName(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, result)
-		assert.Equal(t, appTemplateModel, result)
+		assert.Equal(t, appTemplates, result)
 	})
 
 	t.Run("Error when getting", func(t *testing.T) {
