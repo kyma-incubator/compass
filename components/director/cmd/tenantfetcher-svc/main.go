@@ -126,7 +126,7 @@ func main() {
 			stopJobChannels = append(stopJobChannels, stopJob)
 
 			jobConfig := readJobConfig(ctx, job, envVars)
-			metricsReporter := createMetricsReporter(jobConfig)
+			metricsReporter := createMetricsReporter(ctx, jobConfig)
 			closeFn := runTenantFetcherJob(ctx, jobConfig, metricsReporter, stopJob)
 			dbCloseFunctions = append(dbCloseFunctions, closeFn)
 		}
@@ -199,17 +199,15 @@ func syncTenants(ctx context.Context, jobConfig tenantfetcher.JobConfig, metrics
 	}
 }
 
-func createMetricsReporter(jobConfig tenantfetcher.JobConfig) *metrics.MetricsReporter {
-	var metricsPusher *metrics.Pusher
+func createMetricsReporter(ctx context.Context, jobConfig tenantfetcher.JobConfig) *metrics.MetricsReporter {
 	pushEndpoint := jobConfig.GetEventsCgf().MetricsPushEndpoint
-	if pushEndpoint != "" {
-		metricsPusher = metrics.NewPusherPerJob(jobConfig.JobName, pushEndpoint, jobConfig.GetHandlerCgf().ClientTimeout)
+	if pushEndpoint == "" {
+		log.C(ctx).Warnf("No metrics endpoint provided for tenant fetcher job %q, metric reporting will be skipped...", jobConfig.JobName)
+		return &metrics.MetricsReporter{}
 	}
 
-	var metricsReporter metrics.MetricsReporter
-	if metricsPusher != nil {
-		metricsReporter = metrics.NewMetricsReporter(metricsPusher)
-	}
+	metricsPusher := metrics.NewPusherPerJob(jobConfig.JobName, pushEndpoint, jobConfig.GetHandlerCgf().ClientTimeout)
+	metricsReporter := metrics.NewMetricsReporter(metricsPusher)
 	return &metricsReporter
 }
 

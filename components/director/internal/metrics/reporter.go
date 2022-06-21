@@ -22,12 +22,13 @@ func NewMetricsReporter(pusher tenantfetcher.MetricsPusher) MetricsReporter {
 
 // ReportFailedSync reports failed tenant fetcher job
 func (r *MetricsReporter) ReportFailedSync(err error, ctx context.Context) {
-	log.C(ctx).WithError(err).Errorf("Report failed job sync: %v", err)
-	if err != nil {
-		if r.pusher != nil {
-			desc := tenantfetcher.GetErrorDesc(err)
-			r.pusher.RecordTenantsSyncJobFailure(http.MethodGet, 0, desc)
-			r.pusher.Push()
-		}
+	log.C(ctx).WithError(err).Errorf("Reporting failed job sync with error: %v", err)
+	if r.pusher == nil {
+		log.C(ctx).Error("Failed to report job sync falure: metrics reporter is not configured")
+		return
 	}
+
+	desc := tenantfetcher.GetErrorDesc(err)
+	r.pusher.RecordTenantsSyncJobFailure(http.MethodGet, 0, desc)
+	r.pusher.Push()
 }
