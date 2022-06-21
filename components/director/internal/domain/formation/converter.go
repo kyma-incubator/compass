@@ -22,3 +22,29 @@ func (c *converter) FromGraphQL(i graphql.FormationInput) model.Formation {
 func (c *converter) ToGraphQL(i *model.Formation) *graphql.Formation {
 	return &graphql.Formation{Name: i.Name}
 }
+
+func (c *converter) ToEntity(in *model.Formation) *Entity {
+	if in == nil {
+		return nil
+	}
+
+	return &Entity{
+		ID:                  in.ID,
+		TenantID:            in.TenantID,
+		FormationTemplateID: in.FormationTemplateID,
+		Name:                in.Name,
+	}
+}
+
+func (c *converter) FromEntity(entity *Entity) *model.Formation {
+	if entity == nil {
+		return nil
+	}
+
+	return &model.Formation{
+		ID:                  entity.ID,
+		TenantID:            entity.TenantID,
+		FormationTemplateID: entity.FormationTemplateID,
+		Name:                entity.Name,
+	}
+}

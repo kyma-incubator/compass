@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -42,6 +44,19 @@ type runtimeContextRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 }
 
+// FormationRepository represents the Formations repository layer
+//go:generate mockery --name=FormationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationRepository interface {
+	Create(ctx context.Context, item *model.Formation) error
+	DeleteByName(ctx context.Context, tenantID, name string) error
+}
+
+// FormationTemplateRepository represents the FormationTemplate repository layer
+//go:generate mockery --name=FormationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationTemplateRepository interface {
+	GetByName(ctx context.Context, templateName string) (*model.FormationTemplate, error)
+}
+
 //go:generate mockery --exported --name=labelDefService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type labelDefService interface {
 	CreateWithFormations(ctx context.Context, tnt string, formations []string) error
@@ -58,8 +73,8 @@ type labelService interface {
 	GetLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) (*model.Label, error)
 }
 
-//go:generate mockery --exported --name=uidService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type uidService interface {
+//go:generate mockery --exported --name=uuidService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type uuidService interface {
 	Generate() string
 }
 
@@ -83,31 +98,35 @@ type tenantService interface {
 }
 
 type service struct {
-	labelDefRepository labelDefRepository
-	labelRepository    labelRepository
-	labelService       labelService
-	labelDefService    labelDefService
-	asaService         automaticFormationAssignmentService
-	uuidService        uidService
-	tenantSvc          tenantService
-	repo               automaticFormationAssignmentRepository
-	runtimeRepo        runtimeRepository
-	runtimeContextRepo runtimeContextRepository
+	labelDefRepository          labelDefRepository
+	labelRepository             labelRepository
+	formationRepository         FormationRepository
+	formationTemplateRepository FormationTemplateRepository
+	labelService                labelService
+	labelDefService             labelDefService
+	asaService                  automaticFormationAssignmentService
+	uuidService                 uuidService
+	tenantSvc                   tenantService
+	repo                        automaticFormationAssignmentRepository
+	runtimeRepo                 runtimeRepository
+	runtimeContextRepo          runtimeContextRepository
 }
 
 // NewService creates formation service
-func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, labelService labelService, uuidService uidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository) *service {
+func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository) *service {
 	return &service{
-		labelDefRepository: labelDefRepository,
-		labelRepository:    labelRepository,
-		labelService:       labelService,
-		labelDefService:    labelDefService,
-		asaService:         asaService,
-		uuidService:        uuidService,
-		tenantSvc:          tenantSvc,
-		repo:               asaRepo,
-		runtimeRepo:        runtimeRepo,
-		runtimeContextRepo: runtimeContextRepo,
+		labelDefRepository:          labelDefRepository,
+		labelRepository:             labelRepository,
+		formationRepository:         formationRepository,
+		formationTemplateRepository: formationTemplateRepository,
+		labelService:                labelService,
+		labelDefService:             labelDefService,
+		asaService:                  asaService,
+		uuidService:                 uuidService,
+		tenantSvc:                   tenantSvc,
+		repo:                        asaRepo,
+		runtimeRepo:                 runtimeRepo,
+		runtimeContextRepo:          runtimeContextRepo,
 	}
 }
 
@@ -130,23 +149,48 @@ func (s *service) GetFormationsForObject(ctx context.Context, tnt string, objTyp
 
 // CreateFormation adds the provided formation to the scenario label definitions of the given tenant.
 // If the scenario label definition does not exist it will be created
-func (s *service) CreateFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error) {
-	f, err := s.modifyFormations(ctx, tnt, formation.Name, addFormation)
+// Also, a new Formation entity is created based on the provided template name or the default one is used if it's not provided
+func (s *service) CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName *string) (*model.Formation, error) {
+	formationName := formation.Name
+	f, err := s.modifyFormations(ctx, tnt, formationName, addFormation)
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			if err = s.labelDefService.CreateWithFormations(ctx, tnt, []string{formation.Name}); err != nil {
-				return nil, err
-			}
-			return &model.Formation{Name: formation.Name}, nil
+		if !apperrors.IsNotFoundError(err) {
+			return nil, err
 		}
+		if err = s.labelDefService.CreateWithFormations(ctx, tnt, []string{formationName}); err != nil {
+			return nil, err
+		}
+		// TODO:: Currently we need to support both mechanisms of formation creation/deletion(through label definitions and Formations entity) for backwards compatibility
+		if err = s.createFormation(ctx, tnt, *templateName, formationName); err != nil {
+			return nil, err
+		}
+		return &model.Formation{Name: formationName}, nil
+	}
+
+	// TODO:: Currently we need to support both mechanisms of formation creation/deletion(through label definitions and Formations entity) for backwards compatibility
+	if err := s.createFormation(ctx, tnt, *templateName, formationName); err != nil {
 		return nil, err
 	}
+
 	return f, nil
 }
 
 // DeleteFormation removes the provided formation from the scenario label definitions of the given tenant.
+// Also, removes the Formation entity from the DB
 func (s *service) DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error) {
-	return s.modifyFormations(ctx, tnt, formation.Name, deleteFormation)
+	formationName := formation.Name
+	f, err := s.modifyFormations(ctx, tnt, formationName, deleteFormation)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO:: Currently we need to support both mechanisms of formation creation/deletion(through label definitions and Formations entity) for backwards compatibility
+	if err = s.formationRepository.DeleteByName(ctx, tnt, formationName); err != nil {
+		log.C(ctx).Errorf("An error occurred while deleting formation with name: %q", formationName)
+		return nil, errors.Wrapf(err, "An error occurred while deleting formation with name: %q", formationName)
+	}
+
+	return f, nil
 }
 
 // AssignFormation assigns object based on graphql.FormationObjectType.
@@ -609,4 +653,26 @@ func (s *service) getAvailableScenarios(ctx context.Context, tenantID string) ([
 		return nil, errors.Wrap(err, "while getting available scenarios")
 	}
 	return out, nil
+}
+
+func (s *service) createFormation(ctx context.Context, tenant, templateName, formationName string) error {
+	fTmpl, err := s.formationTemplateRepository.GetByName(ctx, templateName)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting formation template by name: %q: %v", templateName, err)
+		return errors.Wrapf(err, "An error occurred while getting formation template by name: %q", templateName)
+	}
+
+	formation := &model.Formation{
+		ID:                  s.uuidService.Generate(),
+		TenantID:            tenant,
+		FormationTemplateID: fTmpl.ID,
+		Name:                formationName,
+	}
+	log.C(ctx).Debugf("Creating formation with name: %q and template ID: %q...", formationName, fTmpl.ID)
+	if err = s.formationRepository.Create(ctx, formation); err != nil {
+		log.C(ctx).Errorf("An error occurred while creating formation with name: %q and template ID: %q", formationName, fTmpl.ID)
+		return errors.Wrapf(err, "An error occurred while reating formation with name: %q and template ID: %q", formationName, fTmpl.ID)
+	}
+
+	return nil
 }

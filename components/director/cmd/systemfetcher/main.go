@@ -7,6 +7,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
@@ -16,7 +20,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationsystem"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
@@ -192,6 +195,8 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	runtimeConverter := runtime.NewConverter(webhookConverter)
 	bundleReferenceConv := bundlereferences.NewConverter()
 	runtimeContextConv := runtimectx.NewConverter()
+	formationConv := formation.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter()
 
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
@@ -207,6 +212,8 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	bundleRepo := bundleutil.NewRepository(bundleConverter)
 	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
 	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConv)
+	formationRepo := formation.NewRepository(formationConv)
+	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	assignmentConv := scenarioassignment.NewConverter()
@@ -221,7 +228,7 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegisterDistinguishLabelKey)
 	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConv)

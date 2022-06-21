@@ -373,7 +373,7 @@ type ComplexityRoot struct {
 		AssignFormation                               func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
 		CreateApplicationTemplate                     func(childComplexity int, in ApplicationTemplateInput) int
 		CreateAutomaticScenarioAssignment             func(childComplexity int, in AutomaticScenarioAssignmentSetInput) int
-		CreateFormation                               func(childComplexity int, formation FormationInput) int
+		CreateFormation                               func(childComplexity int, formation FormationInput, templateName *string) int
 		CreateFormationTemplate                       func(childComplexity int, in FormationTemplateInput) int
 		CreateLabelDefinition                         func(childComplexity int, in LabelDefinitionInput) int
 		DeleteAPIDefinition                           func(childComplexity int, id string) int
@@ -693,7 +693,7 @@ type MutationResolver interface {
 	RefetchEventDefinitionSpec(ctx context.Context, eventID string) (*EventSpec, error)
 	AddDocumentToBundle(ctx context.Context, bundleID string, in DocumentInput) (*Document, error)
 	DeleteDocument(ctx context.Context, id string) (*Document, error)
-	CreateFormation(ctx context.Context, formation FormationInput) (*Formation, error)
+	CreateFormation(ctx context.Context, formation FormationInput, templateName *string) (*Formation, error)
 	DeleteFormation(ctx context.Context, formation FormationInput) (*Formation, error)
 	AssignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
 	UnassignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
@@ -2304,7 +2304,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateFormation(childComplexity, args["formation"].(FormationInput)), true
+		return e.complexity.Mutation.CreateFormation(childComplexity, args["formation"].(FormationInput), args["templateName"].(*string)), true
 
 	case "Mutation.createFormationTemplate":
 		if e.complexity.Mutation.CreateFormationTemplate == nil {
@@ -5604,7 +5604,7 @@ type Mutation {
 	**Examples**
 	- [create formation](examples/create-formation/create-formation.graphql)
 	"""
-	createFormation(formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.createFormation")
+	createFormation(formation: FormationInput!, templateName: String): Formation! @hasScopes(path: "graphql.mutation.createFormation")
 	"""
 	**Examples**
 	- [delete formation](examples/delete-formation/delete-formation.graphql)
@@ -6359,6 +6359,14 @@ func (ec *executionContext) field_Mutation_createFormation_args(ctx context.Cont
 		}
 	}
 	args["formation"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["templateName"]; ok {
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["templateName"] = arg1
 	return args, nil
 }
 
@@ -17811,7 +17819,7 @@ func (ec *executionContext) _Mutation_createFormation(ctx context.Context, field
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateFormation(rctx, args["formation"].(FormationInput))
+			return ec.resolvers.Mutation().CreateFormation(rctx, args["formation"].(FormationInput), args["templateName"].(*string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.createFormation")
