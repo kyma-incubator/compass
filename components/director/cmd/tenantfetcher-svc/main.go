@@ -24,6 +24,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
+
 	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
@@ -227,6 +229,8 @@ func createTenantsFetcherSvc(ctx context.Context, jobConfig tenantfetcher.JobCon
 	scenarioAssignConverter := scenarioassignment.NewConverter()
 	runtimeContextConverter := runtimectx.NewConverter()
 	tenantConverter := tenant.NewConverter()
+	formationConv := formation.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter()
 
 	webhookRepo := webhook.NewRepository(webhookConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
@@ -237,6 +241,8 @@ func createTenantsFetcherSvc(ctx context.Context, jobConfig tenantfetcher.JobCon
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignConverter)
 	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConverter)
 	tenantRepo := tenant.NewRepository(tenantConverter)
+	formationRepo := formation.NewRepository(formationConv)
+	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepo, labelSvc)
@@ -244,7 +250,7 @@ func createTenantsFetcherSvc(ctx context.Context, jobConfig tenantfetcher.JobCon
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantStorageRepo, uidSvc, handlerCfg.Features.DefaultScenarioEnabled)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo, runtimeContextRepo)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo, runtimeContextRepo)
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantStorageSvc, webhookSvc, runtimeContextSvc, handlerCfg.Features.ProtectedLabelPattern, handlerCfg.Features.ImmutableLabelPattern)
 
