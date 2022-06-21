@@ -2,6 +2,7 @@ package apptemplate
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"strings"
@@ -89,26 +90,23 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 		appTemplateID = *in.ID
 	}
 
+	if in.Labels == nil {
+		in.Labels = map[string]interface{}{}
+	}
+
 	log.C(ctx).Debugf("ID %s generated for Application Template with name %s", appTemplateID, in.Name)
 
 	applicationType, err := s.createApplicationType(in.Name, in.Labels)
 	if err != nil {
 		return "", err
 	}
-	appType, exists := in.Labels[applicationTypeLabelKey]
-	if !exists {
-		in.Labels[applicationTypeLabelKey] = applicationType
-	} else {
-		appTypeValue, ok := appType.(string)
-		if !ok {
-			return "", fmt.Errorf("%q label value must be string", applicationTypeLabelKey)
-		}
-		if appTypeValue != applicationType {
-			return "", fmt.Errorf("%q label value does not follow %q schema", applicationTypeLabelKey, "<app_template_name> (<region>)")
-		}
+	appInputJson, err := enrichWithApplicationTypeLabel(in.ApplicationInputJSON, applicationType)
+	if err != nil {
+		return "", err
 	}
+	in.ApplicationInputJSON = appInputJson
 
-	exists, err = s.exists(ctx, in.Name, in.Labels[tenant.RegionLabelKey])
+	exists, err := s.exists(ctx, in.Name, in.Labels[tenant.RegionLabelKey])
 	if err != nil {
 		return "", errors.Wrapf(err, "while checking if application template with name %q exists", in.Name)
 	}
@@ -129,10 +127,6 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 	}
 	if err = s.webhookRepo.CreateMany(ctx, "", webhooks); err != nil {
 		return "", errors.Wrapf(err, "while creating Webhooks for applicationTemplate")
-	}
-
-	if in.Labels == nil {
-		in.Labels = map[string]interface{}{}
 	}
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, "", model.AppTemplateLabelableObject, appTemplateID, in.Labels)
@@ -301,12 +295,23 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 		return err
 	}
 
-	if oldAppTemplate.Name != in.Name {
-		region, err := s.retrieveLabel(ctx, id, tenant.RegionLabelKey)
-		if err != nil && !apperrors.IsNotFoundError(err) {
-			return err
-		}
+	region, err := s.retrieveLabel(ctx, id, tenant.RegionLabelKey)
+	if err != nil && !apperrors.IsNotFoundError(err) {
+		return err
+	}
 
+	applicationType, err := s.createApplicationTypeFromRegion(in.Name, region)
+	if err != nil {
+		return err
+	}
+
+	appInputJson, err := enrichWithApplicationTypeLabel(in.ApplicationInputJSON, applicationType)
+	if err != nil {
+		return err
+	}
+	in.ApplicationInputJSON = appInputJson
+
+	if oldAppTemplate.Name != in.Name {
 		exists, err := s.exists(ctx, in.Name, region)
 		if err != nil {
 			return errors.Wrapf(err, "while checking if application template with name %q exists", in.Name)
@@ -368,7 +373,6 @@ func (s *service) exists(ctx context.Context, inputName string, inputRegion inte
 	}
 
 	return false, nil
-
 }
 
 func (s *service) retrieveLabel(ctx context.Context, id string, labelKey string) (interface{}, error) {
@@ -385,9 +389,55 @@ func (s *service) createApplicationType(name string, labels map[string]interface
 		return name, nil
 	}
 
-	region, ok := regionValue.(string)
+	return s.createApplicationTypeFromRegion(name, regionValue)
+}
+
+func (s *service) createApplicationTypeFromRegion(name string, region interface{}) (string, error) {
+	if region == nil {
+		return name, nil
+	}
+
+	regionValue, ok := region.(string)
 	if !ok {
 		return "", fmt.Errorf("%q label value must be string", tenant.RegionLabelKey)
 	}
-	return fmt.Sprintf("%s (%s)", name, region), nil
+	return fmt.Sprintf("%s (%s)", name, regionValue), nil
+}
+
+func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string) (string, error) {
+	var appInput map[string]interface{}
+
+	if err := json.Unmarshal([]byte(applicationInputJSON), &appInput); err != nil {
+		return "", errors.Wrapf(err, "while unmarshaling application input json")
+	}
+
+	if labels, ok := appInput["labels"]; ok {
+		labelsMap, ok := labels.(map[string]interface{})
+		if !ok {
+			return "", fmt.Errorf("app input json labels are type %T instead of map[string]interface{}", labelsMap)
+		}
+
+		if appType, ok := labelsMap[applicationTypeLabelKey]; ok {
+			appTypeValue, ok := appType.(string)
+			if !ok {
+				return "", fmt.Errorf("%q label value must be string", applicationTypeLabelKey)
+			}
+			if appTypeValue != applicationType {
+				return "", fmt.Errorf("%q label value does not follow %q schema", applicationTypeLabelKey, "<app_template_name> (<region>)")
+			}
+			return applicationInputJSON, nil
+		}
+
+		labelsMap[applicationTypeLabelKey] = applicationType
+		appInput["labels"] = labelsMap
+
+	} else {
+		appInput["labels"] = map[string]interface{}{applicationTypeLabelKey: applicationType}
+	}
+
+	inputJson, err := json.Marshal(appInput)
+	if err != nil {
+		return "", errors.Wrapf(err, "while marshalling app input")
+	}
+	return string(inputJson), nil
 }
