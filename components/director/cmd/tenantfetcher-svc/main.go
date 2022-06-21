@@ -126,7 +126,8 @@ func main() {
 			stopJobChannels = append(stopJobChannels, stopJob)
 
 			jobConfig := readJobConfig(ctx, job, envVars)
-			closeFn := runTenantFetcherJob(ctx, jobConfig, stopJob)
+			metricsReporter := createMetricsReporter(jobConfig)
+			closeFn := runTenantFetcherJob(ctx, jobConfig, metricsReporter, stopJob)
 			dbCloseFunctions = append(dbCloseFunctions, closeFn)
 		}
 	}()
