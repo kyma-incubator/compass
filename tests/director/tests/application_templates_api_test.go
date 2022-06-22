@@ -55,11 +55,115 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 	appTemplateInput.Labels[conf.SelfRegLabelKey] = appTemplateOutput.Labels[conf.SelfRegLabelKey]
 	appTemplateInput.Labels["global_subaccount_id"] = conf.ConsumerID
+	appTemplateInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, conf.SelfRegRegion)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplateOutput)
 	assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
 	saveExample(t, getApplicationTemplateRequest.Query(), "query application template")
+}
+
+func TestCreateApplicationTemplate_SameNames(t *testing.T) {
+	testCases := []struct {
+		Name                 string
+		AppTemplateOneName   string
+		AppTemplateTwoName   string
+		AppTemplateOneRegion string
+		AppTemplateTwoRegion string
+		ExpectError          bool
+		ExpectedErrMessage   string
+	}{
+		{
+			Name:                 "Create two application templates with same name and region",
+			AppTemplateOneName:   "SAP app-template",
+			AppTemplateTwoName:   "SAP app-template",
+			AppTemplateOneRegion: conf.SelfRegRegion,
+			AppTemplateTwoRegion: conf.SelfRegRegion,
+			ExpectError:          true,
+			ExpectedErrMessage:   "application template name \"not-compliant-name\" does not comply with the following naming convention",
+		},
+		//{
+		//	Name:                 "Create two application templates with same name and without region",
+		//	AppTemplateOneName:   "SAP app-template",
+		//	AppTemplateTwoName:   "SAP app-template",
+		//	AppTemplateOneRegion: "",
+		//	AppTemplateTwoRegion: "",
+		//	ExpectError:          true,
+		//	ExpectedErrMessage:   "unexpected placeholder with name \"not-compliant\" found",
+		//},
+		{
+			Name:                 "Create two application templates with same name and different regions",
+			AppTemplateOneName:   "SAP app-template",
+			AppTemplateTwoName:   "SAP app-template",
+			AppTemplateOneRegion: conf.SelfRegRegion,
+			AppTemplateTwoRegion: conf.SelfRegRegion + "2",
+			ExpectError:          false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			ctx := context.Background()
+			appTemplateOneInput := fixAppTemplateInputWithRegion(testCase.AppTemplateOneName, testCase.AppTemplateOneRegion)
+			//if testCase.AppTemplateOneRegion == "" {
+			//	appTemplateOneInput = fixAppTemplateInputWithoutRegion(testCase.AppTemplateOneName)
+			//}
+
+			t.Log("Create first application template")
+			appTemplateOne, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOneInput)
+			defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &appTemplateOne)
+
+			//THEN
+			require.NoError(t, err)
+			require.NotEmpty(t, appTemplateOne.ID)
+			require.NotEmpty(t, appTemplateOne.Name)
+
+			t.Log("Check if application template one was created")
+			getApplicationTemplateRequest := fixtures.FixApplicationTemplateRequest(appTemplateOne.ID)
+			appTemplateOneOutput := graphql.ApplicationTemplate{}
+
+			appTemplateOneInput.Labels[conf.SelfRegLabelKey] = appTemplateOneOutput.Labels[conf.SelfRegLabelKey]
+			appTemplateOneInput.Labels["global_subaccount_id"] = conf.ConsumerID
+			appTemplateOneInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", testCase.AppTemplateOneName, testCase.AppTemplateOneRegion)
+			//if testCase.AppTemplateOneRegion == "" {
+			//	appTemplateOneInput.ApplicationInput.Labels["applicationType"] = testCase.AppTemplateOneName
+			//}
+
+			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getApplicationTemplateRequest, &appTemplateOneOutput)
+			require.NoError(t, err)
+			require.NotEmpty(t, appTemplateOneOutput)
+			assertions.AssertApplicationTemplate(t, appTemplateOneInput, appTemplateOneOutput)
+
+			appTemplateTwoInput := fixAppTemplateInputWithRegion(testCase.AppTemplateTwoName, testCase.AppTemplateTwoRegion)
+			//if testCase.AppTemplateTwoRegion == "" {
+			//	appTemplateTwoInput = fixAppTemplateInputWithoutRegion(testCase.AppTemplateTwoName)
+			//}
+
+			t.Log("Create second application template")
+			appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwoInput)
+			defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &appTemplateTwo)
+
+			if testCase.ExpectError {
+				require.NotNil(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			} else {
+				t.Log("Check if application template two was created")
+				getApplicationTemplateRequest = fixtures.FixApplicationTemplateRequest(appTemplateTwo.ID)
+				appTemplateTwoOutput := graphql.ApplicationTemplate{}
+
+				appTemplateTwoInput.Labels[conf.SelfRegLabelKey] = appTemplateTwoOutput.Labels[conf.SelfRegLabelKey]
+				appTemplateTwoInput.Labels["global_subaccount_id"] = conf.ConsumerID
+				appTemplateTwoInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", testCase.AppTemplateTwoName, testCase.AppTemplateTwoRegion)
+				//if testCase.AppTemplateTwoRegion == "" {
+				//	appTemplateTwoInput.ApplicationInput.Labels["applicationType"] = testCase.AppTemplateTwoName
+				//}
+				err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getApplicationTemplateRequest, &appTemplateTwoOutput)
+				require.NoError(t, err)
+				require.NotEmpty(t, appTemplateTwoOutput)
+				assertions.AssertApplicationTemplate(t, appTemplateTwoInput, appTemplateTwoOutput)
+			}
+		})
+	}
 }
 
 func TestCreateApplicationTemplate_NotValid(t *testing.T) {
@@ -513,9 +617,13 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 }
 
 func fixAppTemplateInput(name string) graphql.ApplicationTemplateInput {
+	return fixAppTemplateInputWithRegion(name, conf.SelfRegRegion)
+}
+
+func fixAppTemplateInputWithRegion(name, region string) graphql.ApplicationTemplateInput {
 	input := fixtures.FixApplicationTemplate(name)
 	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input.Labels[tenantfetcher.RegionKey] = conf.SelfRegRegion
+	input.Labels[tenantfetcher.RegionKey] = region
 
 	return input
 }

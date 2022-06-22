@@ -416,7 +416,7 @@ func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string
 	if labels, ok := appInput["labels"]; ok {
 		labelsMap, ok := labels.(map[string]interface{})
 		if !ok {
-			return "", fmt.Errorf("app input json labels are type %T instead of map[string]interface{}", labelsMap)
+			return "", fmt.Errorf("app input json labels are type %T instead of map[string]interface{}. %v", labelsMap, labels)
 		}
 
 		if appType, ok := labelsMap[applicationTypeLabelKey]; ok {
