@@ -88,6 +88,52 @@ func (_m *Service) DeleteFormation(ctx context.Context, tnt string, _a2 model.Fo
 	return r0, r1
 }
 
+// Get provides a mock function with given fields: ctx, id
+func (_m *Service) Get(ctx context.Context, id string) (*model.Formation, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.Formation
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Formation); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Formation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// List provides a mock function with given fields: ctx, pageSize, cursor
+func (_m *Service) List(ctx context.Context, pageSize int, cursor string) (*model.FormationPage, error) {
+	ret := _m.Called(ctx, pageSize, cursor)
+
+	var r0 *model.FormationPage
+	if rf, ok := ret.Get(0).(func(context.Context, int, string) *model.FormationPage); ok {
+		r0 = rf(ctx, pageSize, cursor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.FormationPage)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
+		r1 = rf(ctx, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // UnassignFormation provides a mock function with given fields: ctx, tnt, objectID, objectType, _a4
 func (_m *Service) UnassignFormation(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, _a4 model.Formation) (*model.Formation, error) {
 	ret := _m.Called(ctx, tnt, objectID, objectType, _a4)
