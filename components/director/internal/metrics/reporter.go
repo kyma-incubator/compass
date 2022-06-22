@@ -24,7 +24,7 @@ func NewMetricsReporter(pusher tenantfetcher.MetricsPusher) MetricsReporter {
 func (r *MetricsReporter) ReportFailedSync(err error, ctx context.Context) {
 	log.C(ctx).WithError(err).Errorf("Reporting failed job sync with error: %v", err)
 	if r.pusher == nil {
-		log.C(ctx).Error("Failed to report job sync falure: metrics reporter is not configured")
+		log.C(ctx).Error("Failed to report job sync failure: metrics pusher is not configured")
 		return
 	}
 

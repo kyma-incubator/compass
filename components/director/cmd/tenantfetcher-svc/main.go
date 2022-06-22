@@ -159,7 +159,7 @@ func readJobConfig(ctx context.Context, jobName string, environmentVars map[stri
 	return tenantfetcher.NewTenantFetcherJobEnvironment(ctx, jobName, environmentVars).ReadJobConfig()
 }
 
-func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig, metricsReporter *metrics.MetricsReporter, stopJob chan bool) func() error {
+func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig, metricsReporter metrics.MetricsReporter, stopJob chan bool) func() error {
 	jobInterval := jobConfig.GetHandlerCgf().TenantFetcherJobIntervalMins
 	ticker := time.NewTicker(jobInterval)
 	jobName := jobConfig.JobName
@@ -185,30 +185,26 @@ func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig,
 	return closeFunc
 }
 
-func syncTenants(ctx context.Context, jobConfig tenantfetcher.JobConfig, metricsReporter *metrics.MetricsReporter, transact persistence.Transactioner) {
+func syncTenants(ctx context.Context, jobConfig tenantfetcher.JobConfig, metricsReporter metrics.MetricsReporter, transact persistence.Transactioner) {
 	tenantsFetcherSvc, err := createTenantsFetcherSvc(ctx, jobConfig, transact)
 	exitOnError(err, "failed to create tenants fetcher service")
 
 	err = tenantsFetcherSvc.SyncTenants()
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Error while running tenant fetcher job %s: %v", jobConfig.JobName, err)
-
-		if metricsReporter != nil {
-			metricsReporter.ReportFailedSync(err, ctx)
-		}
+		metricsReporter.ReportFailedSync(err, ctx)
 	}
 }
 
-func createMetricsReporter(ctx context.Context, jobConfig tenantfetcher.JobConfig) *metrics.MetricsReporter {
+func createMetricsReporter(ctx context.Context, jobConfig tenantfetcher.JobConfig) metrics.MetricsReporter {
 	pushEndpoint := jobConfig.GetEventsCgf().MetricsPushEndpoint
 	if pushEndpoint == "" {
 		log.C(ctx).Warnf("No metrics endpoint provided for tenant fetcher job %q, metric reporting will be skipped...", jobConfig.JobName)
-		return &metrics.MetricsReporter{}
+		return metrics.MetricsReporter{}
 	}
 
 	metricsPusher := metrics.NewPusherPerJob(jobConfig.JobName, pushEndpoint, jobConfig.GetHandlerCgf().ClientTimeout)
-	metricsReporter := metrics.NewMetricsReporter(metricsPusher)
-	return &metricsReporter
+	return metrics.NewMetricsReporter(metricsPusher)
 }
 
 func createTenantsFetcherSvc(ctx context.Context, jobConfig tenantfetcher.JobConfig, transact persistence.Transactioner) (tf.TenantSyncService, error) {
