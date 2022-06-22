@@ -61,6 +61,7 @@ const (
 	ApplicationReference SystemAuthReferenceObjectType = "Application"
 	// IntegrationSystemReference missing godoc
 	IntegrationSystemReference SystemAuthReferenceObjectType = "Integration System"
+	TechnicalClientReference   SystemAuthReferenceObjectType = "Technical Client"
 )
 
 // IsIntegrationSystemNoTenantFlow missing godoc

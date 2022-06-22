@@ -283,15 +283,16 @@ func (d *ReqData) TenantAccessLevels() []tenantEntity.Type {
 
 // ConsumerType gets consumer type from body extra if it exists.
 func (d *ReqData) ConsumerType() model.SystemAuthReferenceObjectType {
-	defaultConsumerType := model.ExternalCertificateReference
-	if d.Body.Extra == nil {
-		return defaultConsumerType
-	}
-	consumerType, found := d.Body.Extra[cert.ConsumerTypeExtraField]
-	if !found {
-		return defaultConsumerType
-	}
-	return model.SystemAuthReferenceObjectType(fmt.Sprint(consumerType))
+	return model.TechnicalClientReference
+	//defaultConsumerType := model.ExternalCertificateReference
+	//if d.Body.Extra == nil {
+	//	return defaultConsumerType
+	//}
+	//consumerType, found := d.Body.Extra[cert.ConsumerTypeExtraField]
+	//if !found {
+	//	return defaultConsumerType
+	//}
+	//return model.SystemAuthReferenceObjectType(fmt.Sprint(consumerType))
 }
 
 // InternalConsumerID gets internal consumer id from body extra if it exists.

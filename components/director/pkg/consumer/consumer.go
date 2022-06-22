@@ -19,7 +19,8 @@ const (
 	// IntegrationSystem missing godoc
 	IntegrationSystem ConsumerType = "Integration System"
 	// User missing godoc
-	User ConsumerType = "Static User"
+	User            ConsumerType = "Static User"
+	TechnicalClient ConsumerType = "Aggregator"
 )
 
 // Consumer missing godoc
@@ -41,6 +42,8 @@ func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (Co
 		return Runtime, nil
 	case model.IntegrationSystemReference:
 		return IntegrationSystem, nil
+	case model.TechnicalClientReference:
+		return TechnicalClient, nil
 	}
 	return "", apperrors.NewInternalError("unknown reference object type")
 }

@@ -324,7 +324,7 @@ global:
     host: compass-hydrator.compass-system.svc.cluster.local
     port: 3000
     prefix: /hydrators
-    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"},{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}]'
+    subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}, {"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}, {"consumer_type": "Aggregator", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=82802d00-3c2d-47d8-a736-d595898540aa, O=SAP SE, OU=SAP Cloud Platform Clients, OU=2525c8c7-9dc6-461a-bc3b-19d52b715a36, CN=82802d00-3c2d-47d8-a736-d595898540aa"}]'
     certificateDataHeader: "Certificate-Data"
     http:
       client:
@@ -838,6 +838,9 @@ global:
   # and scopes mapped to a consumer with the given type, then that consumer is using a client certificate
   scopes:
     scopesPerConsumerType:
+      aggregator:
+        - "tenant:read"
+        - "tenant:write"
       runtime:
         - "runtime:read"
         - "runtime:write"
