@@ -342,6 +342,14 @@ type queryResolver struct {
 	*RootResolver
 }
 
+func (r *queryResolver) Formation(ctx context.Context, id string) (*graphql.Formation, error) {
+	return r.formation.Formation(ctx, id)
+}
+
+func (r *queryResolver) Formations(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.FormationPage, error) {
+	return r.formation.Formations(ctx, first, after)
+}
+
 func (r *queryResolver) FormationTemplate(ctx context.Context, id string) (*graphql.FormationTemplate, error) {
 	return r.formationTemplate.FormationTemplate(ctx, id)
 }

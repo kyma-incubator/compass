@@ -1022,7 +1022,15 @@ type FetchRequestStatus {
 }
 
 type Formation {
+	id: ID!
 	name: String!
+	formationTemplateId: ID!
+}
+
+type FormationPage implements Pageable {
+	data: [Formation!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
 }
 
 type FormationTemplate {
@@ -1339,6 +1347,8 @@ type Query {
 	automaticScenarioAssignments(first: Int = 200, after: PageCursor): AutomaticScenarioAssignmentPage @hasScopes(path: "graphql.query.automaticScenarioAssignments")
 	systemAuth(id: ID!): SystemAuth @hasScopes(path: "graphql.query.systemAuth")
 	systemAuthByToken(token: String!): SystemAuth @hasScopes(path: "graphql.query.systemAuthByToken")
+	formation(id: ID!): Formation @hasScopes(path: "graphql.query.formation")
+	formations(first: Int = 200, after: PageCursor): FormationPage! @hasScopes(path: "graphql.query.formations")
 	"""
 	**Examples**
 	- [query formation template](examples/query-formation-template/query-formation-template.graphql)

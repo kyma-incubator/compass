@@ -29,23 +29,25 @@ type EntityConverter interface {
 }
 
 type repository struct {
-	creator      repo.CreatorGlobal
-	getter       repo.SingleGetter
-	updater      repo.UpdaterGlobal
-	deleter      repo.Deleter
-	existQuerier repo.ExistQuerier
-	conv         EntityConverter
+	creator               repo.CreatorGlobal
+	getter                repo.SingleGetter
+	pageableQuerierGlobal repo.PageableQuerierGlobal
+	updater               repo.UpdaterGlobal
+	deleter               repo.Deleter
+	existQuerier          repo.ExistQuerier
+	conv                  EntityConverter
 }
 
 // NewRepository creates a new Formation repository
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
-		creator:      repo.NewCreatorGlobal(resource.Formations, tableName, tableColumns),
-		getter:       repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
-		updater:      repo.NewUpdaterWithEmbeddedTenant(resource.Formations, tableName, updatableTableColumns, tenantColumn, idTableColumns),
-		deleter:      repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
-		existQuerier: repo.NewExistQuerierWithEmbeddedTenant(tableName, tenantColumn),
-		conv:         conv,
+		creator:               repo.NewCreatorGlobal(resource.Formations, tableName, tableColumns),
+		getter:                repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
+		pageableQuerierGlobal: repo.NewPageableQuerierGlobal(resource.Formations, tableName, tableColumns),
+		updater:               repo.NewUpdaterWithEmbeddedTenant(resource.Formations, tableName, updatableTableColumns, tenantColumn, idTableColumns),
+		deleter:               repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
+		existQuerier:          repo.NewExistQuerierWithEmbeddedTenant(tableName, tenantColumn),
+		conv:                  conv,
 	}
 }
 
@@ -62,7 +64,7 @@ func (r *repository) Create(ctx context.Context, item *model.Formation) error {
 	return r.creator.Create(ctx, entity)
 }
 
-// Get returns a Formations by a given id
+// Get returns a Formation by a given id
 func (r *repository) Get(ctx context.Context, id, tenantID string) (*model.Formation, error) {
 	var entity Entity
 	if err := r.getter.Get(ctx, resource.Formations, tenantID, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
@@ -71,6 +73,39 @@ func (r *repository) Get(ctx context.Context, id, tenantID string) (*model.Forma
 	}
 
 	return r.conv.FromEntity(&entity), nil
+}
+
+// GetByName returns a Formations by a given name
+func (r *repository) GetByName(ctx context.Context, name, tenantID string) (*model.Formation, error) {
+	var entity Entity
+	if err := r.getter.Get(ctx, resource.Formations, tenantID, repo.Conditions{repo.NewEqualCondition("name", name)}, repo.NoOrderBy, &entity); err != nil {
+		log.C(ctx).Errorf("An error occurred while getting formation with name: %q", name)
+		return nil, errors.Wrapf(err, "An error occurred while getting formation with name: %q", name)
+	}
+
+	return r.conv.FromEntity(&entity), nil
+}
+
+// List returns all Formations sorted by id and paginated by the pageSize and cursor parameters
+func (r *repository) List(ctx context.Context, pageSize int, cursor string) (*model.FormationPage, error) {
+	var entityCollection EntityCollection
+	page, totalCount, err := r.pageableQuerierGlobal.ListGlobal(ctx, pageSize, cursor, "id", &entityCollection)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]*model.Formation, 0, entityCollection.Len())
+
+	for _, entity := range entityCollection {
+		formationModel := r.conv.FromEntity(entity)
+
+		items = append(items, formationModel)
+	}
+	return &model.FormationPage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page,
+	}, nil
 }
 
 // Update updates a Formation with the given input

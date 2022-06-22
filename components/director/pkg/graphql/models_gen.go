@@ -433,6 +433,14 @@ type FormationInput struct {
 	Name string `json:"name"`
 }
 
+type FormationPage struct {
+	Data       []*Formation `json:"data"`
+	PageInfo   *PageInfo    `json:"pageInfo"`
+	TotalCount int          `json:"totalCount"`
+}
+
+func (FormationPage) IsPageable() {}
+
 type FormationTemplate struct {
 	ID                     string       `json:"id"`
 	Name                   string       `json:"name"`
