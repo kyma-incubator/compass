@@ -136,7 +136,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2404"
+      version: "PR-2322"
     console:
       dir:
       version: "PR-68"
@@ -654,7 +654,11 @@ global:
     containerName: "system-fetcher"
   tenantFetchers:
     job1:
+      cron:
+        enabled: false
       enabled: false
+      job:
+        interval: "5m"
       configMapNamespace: "compass-system"
       manageSecrets: true
       providerName: "compass"

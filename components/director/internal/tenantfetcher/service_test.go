@@ -3,8 +3,12 @@ package tenantfetcher_test
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"reflect"
+	"sort"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -36,6 +40,11 @@ var (
 	tenantConverter = domainTenant.NewConverter()
 )
 
+var eventsToJSONArray = func(events ...[]byte) []byte {
+	eventsString := fmt.Sprintf(`[%s]`, bytes.Join(events, []byte(",")))
+	return []byte(strings.ReplaceAll(eventsString, ",}", "}"))
+}
+
 func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 	// GIVEN
 	const (
@@ -64,10 +73,6 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 		subaccountEvent1 []byte
 		subaccountEvent2 []byte
 	)
-
-	eventsToJSONArray := func(events ...[]byte) []byte {
-		return []byte(fmt.Sprintf(`[%s]`, bytes.Join(events, []byte(","))))
-	}
 
 	pageOneQueryParams := tenantfetcher.QueryParams{
 		"entityId": subaccountID,
@@ -479,9 +484,6 @@ func TestService_SyncAccountTenants(t *testing.T) {
 	event2 := fixEvent(t, "GlobalAccount", busTenant2.ExternalTenant, event2Fields)
 	event3 := fixEvent(t, "GlobalAccount", busTenant3.ExternalTenant, event3Fields)
 
-	eventsToJSONArray := func(events ...[]byte) []byte {
-		return []byte(fmt.Sprintf(`[%s]`, bytes.Join(events, []byte(","))))
-	}
 	tenantEvents := eventsToJSONArray(event1, event2, event3)
 
 	pageOneQueryParams := tenantfetcher.QueryParams{
@@ -527,7 +529,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEvents(event1, event2, event3))).Return(nil, nil).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -556,7 +558,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEventsArr(tenantEvents))).Return(nil, nil).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -591,7 +593,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				}
 
 				preExistingTenants = append(preExistingTenants, parentTenant2BusinessMapping, parentTenant3BusinessMapping)
-				svc.On("List", txtest.CtxWithDBMatcher()).Return(preExistingTenants, nil).Once()
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEventsArr(tenantEvents))).Return(preExistingTenants, nil).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -618,7 +620,8 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEventsArr(tenantEvents))).Return(nil, nil).Once()
 
 				return svc
 			},
@@ -648,7 +651,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return(businessTenantsBusinessMappingPointers, nil).Once()
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEventsArr(tenantEvents))).Return(businessTenantsBusinessMappingPointers, nil).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -686,8 +689,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{parentTenant1BusinessMapping}, nil).Once()
-
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEvents(event1))).Return([]*model.BusinessTenantMapping{parentTenant1BusinessMapping}, nil).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -716,7 +718,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEventsArr(tenantEvents))).Return(nil, nil).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -744,14 +746,12 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-
-				svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEventsArr(tenantEvents))).Return([]*model.BusinessTenantMapping{
 					businessTenant1BusinessMapping,
 					parentTenant1BusinessMapping,
 					parentTenant2BusinessMapping,
 					parentTenant3BusinessMapping,
 				}, nil).Once()
-
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -804,13 +804,12 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEventsArr(tenantEvents))).Return([]*model.BusinessTenantMapping{
 					businessTenant1BusinessMapping,
 					parentTenant1BusinessMapping,
 					parentTenant2BusinessMapping,
 					parentTenant3BusinessMapping,
 				}, nil).Once()
-
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -842,13 +841,12 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEventsArr(tenantEvents))).Return([]*model.BusinessTenantMapping{
 					businessTenant1BusinessMapping,
 					parentTenant1BusinessMapping,
 					parentTenant2BusinessMapping,
 					parentTenant3BusinessMapping,
 				}, nil).Once()
-
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -1015,8 +1013,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return(parentTenantsBusinessMappingPointers[0:1], nil).Once()
-
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEvents(event1))).Return(parentTenantsBusinessMappingPointers[0:1], nil).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -1040,8 +1037,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
-
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEvents(event1))).Return(nil, nil).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -1071,7 +1067,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return(businessTenantsBusinessMappingPointers, nil).Once()
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEventsArr(tenantEvents))).Return(businessTenantsBusinessMappingPointers, nil).Once()
 				return svc
 			},
 			KubeClientFn: func() *automock.KubeClient {
@@ -1174,13 +1170,13 @@ func TestService_SyncAccountTenants(t *testing.T) {
 		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedAccountType, pageOneQueryParams).Return(nil, nil).Once()
 
 		tenantStorageSvc := &automock.TenantStorageService{}
-		tenantStorageSvc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+		tenantStorageSvc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEvents(event1))).Return(nil, nil).Once()
 		kubeClient := &automock.KubeClient{}
 		kubeClient.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
 		kubeClient.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
 
 		gqlClient := &automock.DirectorGraphQLClient{}
-		tenantsToCreate := []model.BusinessTenantMappingInput{fixBusinessTenantMappingInput("foo", "1", provider, "subdomain-1", region, "", tenant.Subaccount)}
+		tenantsToCreate := []model.BusinessTenantMappingInput{parentTenants[0], fixBusinessTenantMappingInput("foo", "1", provider, "subdomain-1", region, "P1", tenant.Account)}
 		gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(tenantConverter.MultipleInputToGraphQLInput(tenantsToCreate))).Return(nil)
 		defer mock.AssertExpectationsForObjects(t, persist, transact, apiClient, tenantStorageSvc, kubeClient)
 
@@ -1201,6 +1197,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			SubdomainField:     "subdomain",
 			TotalPagesField:    "pages",
 			TotalResultsField:  "total",
+			EntityTypeField:    "type",
 		}, provider, region, apiClient, tenantStorageSvc, time.Hour, gqlClient, tenantInsertChunkSize, tenantConverter)
 
 		// WHEN
@@ -1408,7 +1405,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEvents(subaccountEvent1, subaccountEvent2, subaccountEvent3))).Return(nil, nil).Once()
 
 				// Moved tenants
 				svc.On("GetTenantByExternalID", mock.Anything, "target").Return(targetInternalTenant, nil).Once()
@@ -1466,7 +1463,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEvents(subaccountEvent1))).Return(nil, nil).Once()
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
@@ -1497,7 +1494,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEvents(subaccountEvent2))).Return(nil, nil).Once()
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
@@ -1527,7 +1524,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{businessSubaccount3BusinessMapping}, nil).Once()
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEvents(subaccountEvent3))).Return([]*model.BusinessTenantMapping{businessSubaccount3BusinessMapping}, nil).Once()
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
@@ -1568,7 +1565,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{parentTenant1BusinessMapping}, nil).Once()
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEvents(subaccountEvent1))).Return([]*model.BusinessTenantMapping{parentTenant1BusinessMapping}, nil).Once()
 
 				return svc
 			},
@@ -1600,7 +1597,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEventsArr(subaccountEvents))).Return(nil, nil).Once()
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
@@ -1632,7 +1629,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
 
-				svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEventsArr(subaccountEvents))).Return([]*model.BusinessTenantMapping{
 					parentTenant1BusinessMapping,
 					parentTenant2BusinessMapping,
 					parentTenant3BusinessMapping,
@@ -1744,7 +1741,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEventsArr(subaccountEvents))).Return([]*model.BusinessTenantMapping{
 					parentTenant1BusinessMapping,
 					parentTenant2BusinessMapping,
 					parentTenant3BusinessMapping,
@@ -1811,7 +1808,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEventsArr(subaccountEvents))).Return([]*model.BusinessTenantMapping{
 					parentTenant1BusinessMapping,
 					parentTenant2BusinessMapping,
 					parentTenant3BusinessMapping,
@@ -2066,7 +2063,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEvents(subaccountEvent1))).Return(nil, nil).Once()
 
 				return svc
 			},
@@ -2099,7 +2096,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEvents(subaccountEvent1))).Return(nil, nil).Once()
 
 				return svc
 			},
@@ -2132,7 +2129,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
-				svc.On("List", txtest.CtxWithDBMatcher()).Return(businessSubaccountsMappingPointers, nil).Once()
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEventsArr(subaccountEvents))).Return(businessSubaccountsMappingPointers, nil).Once()
 				return svc
 			},
 			RuntimeStorageSvcFn: UnusedRuntimeStorageSvc,
@@ -2488,7 +2485,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
 				svc := &automock.TenantStorageService{}
 
-				svc.On("List", txtest.CtxWithDBMatcher()).Return([]*model.BusinessTenantMapping{
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEventsArr(subaccountEvents))).Return([]*model.BusinessTenantMapping{
 					parentTenant1BusinessMapping,
 					parentTenant2BusinessMapping,
 					parentTenant3BusinessMapping,
@@ -2609,7 +2606,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 		apiClient.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(nil, nil).Once()
 
 		tenantStorageSvc := &automock.TenantStorageService{}
-		tenantStorageSvc.On("List", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+		tenantStorageSvc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEvents(subaccountEvent1))).Return(nil, nil).Once()
 		kubeClient := &automock.KubeClient{}
 		kubeClient.On("GetTenantFetcherConfigMapData", mock.Anything).Return("1", "1", nil).Once()
 		kubeClient.On("UpdateTenantFetcherConfigMapData", mock.Anything, mock.Anything, mock.Anything).Return(nil).Once()
@@ -2703,4 +2700,58 @@ func UnusedLabelSvc() *automock.LabelRepo {
 
 func UnusedGQLClient() *automock.DirectorGraphQLClient {
 	return &automock.DirectorGraphQLClient{}
+}
+
+func tenantIDsMatcher(ids []string) interface{} {
+	matcher := mock.MatchedBy(func(arguments []string) bool {
+		return containSameEelements(ids, arguments)
+	})
+	return matcher
+}
+
+func containSameEelements(arr1, arr2 []string) bool {
+	if len(arr1) != len(arr2) {
+		return false
+	}
+
+	arr1Copy := make([]string, len(arr1))
+	copy(arr1Copy, arr1)
+	sort.Strings(arr1Copy)
+
+	arr2Copy := make([]string, len(arr2))
+	copy(arr2Copy, arr2)
+	sort.Strings(arr2Copy)
+
+	return reflect.DeepEqual(arr1Copy, arr2Copy)
+}
+
+func getTenantsIDsFromEvents(events ...[]byte) []string {
+	return getTenantsIDsFromEventsArr(eventsToJSONArray(events...))
+}
+
+func getTenantsIDsFromEventsArr(events []byte) []string {
+	var tenantsIDs []string
+	var eventsList []map[string]interface{}
+	if err := json.Unmarshal(events, &eventsList); err != nil {
+		return tenantsIDs
+	}
+
+	for _, event := range eventsList {
+		if accountType, ok := event["type"].(string); ok {
+			if accountType == "Subaccount" {
+				if globalAccountGUID, ok := event["globalAccountGUID"].(string); ok {
+					tenantsIDs = append(tenantsIDs, globalAccountGUID)
+				}
+			}
+		}
+		if eventData, ok := event["eventData"].(map[string]interface{}); ok {
+			if parent, ok := eventData["customerId"].(string); ok {
+				tenantsIDs = append(tenantsIDs, parent)
+			}
+			if externalTenant, ok := eventData["id"].(string); ok {
+				tenantsIDs = append(tenantsIDs, externalTenant)
+			}
+		}
+	}
+	return tenantsIDs
 }
