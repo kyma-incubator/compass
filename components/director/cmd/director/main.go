@@ -626,6 +626,8 @@ func runtimeCtxSvc(cfg config) claims.RuntimeCtxService {
 	authConverter := auth.NewConverter()
 	webhookConverter := webhook.NewConverter(authConverter)
 	runtimeConverter := runtime.NewConverter(webhookConverter)
+	formationConv := formation.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter()
 
 	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConverter)
 	labelRepo := label.NewRepository(labelConverter)
@@ -633,13 +635,15 @@ func runtimeCtxSvc(cfg config) claims.RuntimeCtxService {
 	asaRepo := scenarioassignment.NewRepository(asaConverter)
 	tenantRepo := tenant.NewRepository(tenantConverter)
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
+	formationRepo := formation.NewRepository(formationConv)
+	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
 	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo)
+	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo)
 
 	return runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 }

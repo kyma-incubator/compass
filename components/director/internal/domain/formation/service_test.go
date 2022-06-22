@@ -1810,7 +1810,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				runtimeRepo := &automock.RuntimeRepository{}
-				runtimeRepo.On("ListOwnedRuntimes", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(nil, formation.FixError()).Once()
+				runtimeRepo.On("ListOwnedRuntimes", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(nil, formation.fixError()).Once()
 				return runtimeRepo
 			},
 			RuntimeContextRepoFn: unusedRuntimeContextRepo,
@@ -1975,7 +1975,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 		mockRepo.On("DeleteForTargetTenant", ctx, tenantID.String(), TargetTenantID).Return(nil).Once()
 
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("ListOwnedRuntimes", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(nil, formation.FixError())
+		runtimeRepo.On("ListOwnedRuntimes", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(nil, formation.fixError())
 		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo)
 
 		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, nil)
@@ -2097,7 +2097,7 @@ func TestService_DeleteForScenarioName(t *testing.T) {
 		mockRepo.On("DeleteForScenarioName", ctx, tenantID.String(), ScenarioName).Return(nil).Once()
 
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("ListOwnedRuntimes", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(nil, formation.FixError()).Once()
+		runtimeRepo.On("ListOwnedRuntimes", ctx, formation.TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(nil, formation.fixError()).Once()
 		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo)
 
 		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, nil)
