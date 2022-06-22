@@ -37,6 +37,8 @@ type DirectorConfig struct {
 	SelfRegDistinguishLabelValue string
 	SelfRegRegion                string
 	ConsumerID                   string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
+	RuntimeTypeLabelKey          string
+	KymaRuntimeTypeLabelValue    string
 }
 
 type BaseDirectorConfig struct {

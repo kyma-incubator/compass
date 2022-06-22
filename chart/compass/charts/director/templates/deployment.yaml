@@ -175,6 +175,10 @@ spec:
               value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
             - name: APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY
               value: {{ .Values.global.tenantFetcher.server.consumerSubaccountIdsLabelKey }}
+            - name: APP_RUNTIME_TYPE_LABEL_KEY
+              value: {{ .Values.global.director.runtimeTypeLabelKey }}
+            - name: APP_KYMA_RUNTIME_TYPE_LABEL_VALUE
+              value: {{ .Values.global.director.kymaRuntimeTypeLabelValue }}
             - name: APP_SELF_REGISTER_INSTANCE_CLIENT_ID_PATH
               value: {{ .Values.global.director.selfRegister.clientIdPath }}
             - name: APP_SELF_REGISTER_INSTANCE_CLIENT_SECRET_PATH

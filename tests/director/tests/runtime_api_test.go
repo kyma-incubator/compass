@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
+
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -724,6 +727,42 @@ func TestQuerySpecificRuntimeWithCertificate(t *testing.T) {
 		assert.Equal(t, createdRuntime.Name, queriedRuntime.Name)
 		assert.Equal(t, createdRuntime.Description, queriedRuntime.Description)
 	})
+}
+
+func TestRuntimeRegistrationWithIntegrationSystemCredentials(t *testing.T) {
+	ctx := context.Background()
+	tenantID := tenant.TestTenants.GetDefaultTenantID()
+	intSysName := "runtime-integration-system"
+
+	t.Logf("Creating integration system with name: %q", intSysName)
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSysName)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+	runtimeName := "runtime-with-int-sys-creds"
+	runtimeInput := fixRuntimeInput(runtimeName)
+
+	t.Logf("Registering runtime with name %q with integration system credentials...", runtimeName)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenantID, &runtimeInput)
+	defer fixtures.CleanupRuntime(t, ctx, oauthGraphQLClient, tenantID, &runtime)
+	require.NoError(t, err)
+	require.NotEmpty(t, runtime.ID)
+
+	runtimeTypeLabelValue, ok := runtime.Labels[conf.RuntimeTypeLabelKey].(string)
+	require.True(t, ok)
+	require.Equal(t, conf.KymaRuntimeTypeLabelValue, runtimeTypeLabelValue)
 }
 
 func fixRuntimeInput(name string) graphql.RuntimeRegisterInput {
