@@ -852,6 +852,7 @@ global:
         - "runtime:read"
         - "runtime:write"
         - "application:read"
+        - "application:write"
         - "runtime.auths:read"
         - "bundle.instance_auths:read"
         - "runtime.webhooks:read"
