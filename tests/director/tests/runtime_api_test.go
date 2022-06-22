@@ -760,6 +760,7 @@ func TestRuntimeRegistrationWithIntegrationSystemCredentials(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
+	t.Logf("Assert the %q label is available...", conf.RuntimeTypeLabelKey)
 	runtimeTypeLabelValue, ok := runtime.Labels[conf.RuntimeTypeLabelKey].(string)
 	require.True(t, ok)
 	require.Equal(t, conf.KymaRuntimeTypeLabelValue, runtimeTypeLabelValue)
