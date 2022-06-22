@@ -142,7 +142,7 @@ global:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2322"
+      version: "PR-2435"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -850,6 +850,7 @@ global:
         - "runtime:read"
         - "runtime:write"
         - "application:read"
+        - "application:write"
         - "runtime.auths:read"
         - "bundle.instance_auths:read"
         - "runtime.webhooks:read"
