@@ -28,9 +28,9 @@ The System Broker makes API calls to the Director component. Therefore, to use t
 Director component must be started, too. To do this, go to the `compass/components/director/` directory and run the `run.sh` 
 script.
 
-### Minikube
+### k3d
 
-The System Broker is a component that is part of the Compass installation, so it is enough to start Compass on `minikube`.
+The System Broker is a component that is part of the Compass installation, so it is enough to start Compass on `k3d`.
 
 To do this, perform the following procedure:
 
