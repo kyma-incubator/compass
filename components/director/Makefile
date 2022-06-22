@@ -33,7 +33,6 @@ install-tools:
 	@echo Installing tools from tools.go
 	cat tools/tools.go | grep _ | awk -F'"' '{print $$2}' | xargs -tI % go install %
 
-
 deploy-on-k3d: build-for-k3d
 	kubectl config use-context k3d-kyma
 	kubectl set image -n $(NAMESPACE) deployment/compass-director director=k3d-kyma-registry:5001/compass-director:latest
