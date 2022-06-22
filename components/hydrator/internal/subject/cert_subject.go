@@ -18,7 +18,7 @@ const (
 	IntegrationSystemType = "Integration System"
 	ApplicationType       = "Application"
 	SuperAdminType        = "Super Admin"
-	Aggregator            = "Aggregator"
+	TechnicalClient       = "TechnicalClient"
 )
 
 type CSRSubjectConfig struct {
@@ -52,14 +52,14 @@ func (s *subjectConsumerTypeMapping) validate() error {
 		IntegrationSystemType: true,
 		ApplicationType:       true,
 		SuperAdminType:        true,
-		Aggregator:            true,
+		TechnicalClient:       true,
 	}
 
 	supportedTenantTypes := map[string]bool{
 		string(tenantEntity.Customer):   true,
 		string(tenantEntity.Account):    true,
 		string(tenantEntity.Subaccount): true,
-		"Aggregator":                    true,
+		"TechnicalClient":               true,
 	}
 
 	if !supportedConsumerTypes[s.ConsumerType] {

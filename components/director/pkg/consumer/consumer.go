@@ -20,7 +20,7 @@ const (
 	IntegrationSystem ConsumerType = "Integration System"
 	// User missing godoc
 	User            ConsumerType = "Static User"
-	TechnicalClient ConsumerType = "Aggregator"
+	TechnicalClient ConsumerType = "TechnicalClient"
 )
 
 // Consumer missing godoc

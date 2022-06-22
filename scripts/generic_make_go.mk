@@ -15,7 +15,7 @@ endif
 ifneq ($(strip $(DOCKER_TAG)),)
 TAG := $(DOCKER_TAG)
 else
-TAG := "4.0"
+TAG := "latest"
 endif
 # BASE_PKG is a root packge of the component
 BASE_PKG := github.com/kyma-incubator/compass
