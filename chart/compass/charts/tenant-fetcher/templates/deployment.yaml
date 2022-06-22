@@ -192,9 +192,13 @@ spec:
               value: {{ .Values.global.tenantFetcher.fieldMapping.entityTypeField }}
             - name: APP_GLOBAL_ACCOUNT_KEY
               value: {{ default "gaID" .Values.global.tenantFetcher.fieldMapping.globalAccountID }}
+            {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
+            - name: APP_METRICS_PUSH_ENDPOINT
+              value: {{ $.Values.global.metrics.pushEndpoint }}
+            {{ end }}
             # Tenant fetchers job configurations
             {{- range $tenantFetcher, $config := .Values.global.tenantFetchers }}
-            {{- $tenantFetcherJobName := $tenantFetcher | upper }}}
+            {{- $tenantFetcherJobName := $tenantFetcher | upper }}
             {{- if eq $config.enabled true }}
             - name: APP_{{ $tenantFetcherJobName }}_JOB_NAME
               value: {{ $tenantFetcherJobName | quote }}
