@@ -272,13 +272,11 @@ func (r *pgRepository) listRuntimes(ctx context.Context, tenant string, filter [
 	}
 
 	if ownerCheck {
-		err = r.ownerLister.List(ctx, resource.Runtime, tenant, &entities, conditions...)
-		if err != nil {
+		if err = r.ownerLister.List(ctx, resource.Runtime, tenant, &entities, conditions...); err != nil {
 			return nil, err
 		}
 	} else {
-		err = r.lister.List(ctx, resource.Runtime, tenant, &entities, conditions...)
-		if err != nil {
+		if err = r.lister.List(ctx, resource.Runtime, tenant, &entities, conditions...); err != nil {
 			return nil, err
 		}
 	}
