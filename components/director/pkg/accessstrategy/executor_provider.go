@@ -2,6 +2,7 @@ package accessstrategy
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 )
 
@@ -36,7 +37,7 @@ func NewDefaultExecutorProvider(certCache certloader.Cache) *Provider {
 func NewExecutorProviderWithTenant(certCache certloader.Cache, tenantProviderFunc func(ctx context.Context) (string, error)) *Provider {
 	return &Provider{
 		executors: map[Type]Executor{
-			OpenAccessStrategy: &openAccessStrategyExecutor{},
+			OpenAccessStrategy:    &openAccessStrategyExecutor{},
 			CMPmTLSAccessStrategy: NewCMPmTLSAccessStrategyExecutor(certCache, tenantProviderFunc),
 		},
 	}

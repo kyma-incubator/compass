@@ -171,7 +171,7 @@ func TestService_HandleSpec(t *testing.T) {
 			Name: "Success with access strategy",
 			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
 				executor := &accessstrategyautomock.Executor{}
-				executor.On("Execute", mock.Anything, modelInputAccessStrategy.URL).Return(&http.Response{
+				executor.On("Execute", mock.Anything, mock.Anything, modelInputAccessStrategy.URL).Return(&http.Response{
 					StatusCode: http.StatusOK,
 					Body:       ioutil.NopCloser(bytes.NewBufferString(mockSpec)),
 				}, nil).Once()
@@ -204,7 +204,7 @@ func TestService_HandleSpec(t *testing.T) {
 			Name: "Fails when access strategy execution fail",
 			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
 				executor := &accessstrategyautomock.Executor{}
-				executor.On("Execute", mock.Anything, modelInputAccessStrategy.URL).Return(nil, testErr).Once()
+				executor.On("Execute",  mock.Anything, mock.Anything, modelInputAccessStrategy.URL).Return(nil, testErr).Once()
 
 				executorProvider := &accessstrategyautomock.ExecutorProvider{}
 				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Once()

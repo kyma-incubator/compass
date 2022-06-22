@@ -2,9 +2,10 @@ package ord
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"sync"
 	"sync/atomic"
+
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
