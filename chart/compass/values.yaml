@@ -110,7 +110,7 @@ global:
       version: "PR-2383"
     director:
       dir:
-      version: "PR-2322"
+      version: "PR-2381"
     hydrator:
       dir:
       version: "PR-2385"
