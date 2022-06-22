@@ -158,11 +158,6 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 		if err = s.labelDefService.CreateWithFormations(ctx, tnt, []string{formationName}); err != nil {
 			return nil, err
 		}
-		// TODO:: Currently we need to support both mechanisms of formation creation/deletion(through label definitions and Formations entity) for backwards compatibility
-		if err = s.createFormation(ctx, tnt, templateName, formationName); err != nil {
-			return nil, err
-		}
-		return &model.Formation{Name: formationName}, nil
 	}
 
 	// TODO:: Currently we need to support both mechanisms of formation creation/deletion(through label definitions and Formations entity) for backwards compatibility
@@ -671,7 +666,7 @@ func (s *service) createFormation(ctx context.Context, tenant, templateName, for
 	log.C(ctx).Debugf("Creating formation with name: %q and template ID: %q...", formationName, fTmpl.ID)
 	if err = s.formationRepository.Create(ctx, formation); err != nil {
 		log.C(ctx).Errorf("An error occurred while creating formation with name: %q and template ID: %q", formationName, fTmpl.ID)
-		return errors.Wrapf(err, "An error occurred while reating formation with name: %q and template ID: %q", formationName, fTmpl.ID)
+		return errors.Wrapf(err, "An error occurred while creating formation with name: %q and template ID: %q", formationName, fTmpl.ID)
 	}
 
 	return nil

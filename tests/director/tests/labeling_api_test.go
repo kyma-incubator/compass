@@ -417,7 +417,7 @@ func TestListLabelDefinitions(t *testing.T) {
 
 	jsonSchema := map[string]interface{}{
 		"items": map[string]interface{}{
-			"enum": []string{"DEFAULT", "test"},
+			"enum": []string{"test"},
 			"type": "string",
 		},
 		"type":        "array",
