@@ -150,7 +150,7 @@ func (s *service) GetFormationsForObject(ctx context.Context, tnt string, objTyp
 // Also, a new Formation entity is created based on the provided template name or the default one is used if it's not provided
 func (s *service) CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName string) (*model.Formation, error) {
 	formationName := formation.Name
-	f, err := s.modifyFormations(ctx, tnt, formationName, addFormation)
+	err := s.modifyFormations(ctx, tnt, formationName, addFormation)
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
 			return nil, err
@@ -165,14 +165,14 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 		return nil, err
 	}
 
-	return f, nil
+	return &model.Formation{Name: formationName}, nil
 }
 
 // DeleteFormation removes the provided formation from the scenario label definitions of the given tenant.
 // Also, removes the Formation entity from the DB
 func (s *service) DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error) {
 	formationName := formation.Name
-	f, err := s.modifyFormations(ctx, tnt, formationName, deleteFormation)
+	err := s.modifyFormations(ctx, tnt, formationName, deleteFormation)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		return nil, errors.Wrapf(err, "An error occurred while deleting formation with name: %q", formationName)
 	}
 
-	return f, nil
+	return &model.Formation{Name: formationName}, nil
 }
 
 // AssignFormation assigns object based on graphql.FormationObjectType.
@@ -482,32 +482,32 @@ func (s *service) isFormationComingFromASA(ctx context.Context, objectID, format
 	return false, nil
 }
 
-func (s *service) modifyFormations(ctx context.Context, tnt, formationName string, modificationFunc modificationFunc) (*model.Formation, error) {
+func (s *service) modifyFormations(ctx context.Context, tnt, formationName string, modificationFunc modificationFunc) error {
 	def, err := s.labelDefRepository.GetByKey(ctx, tnt, model.ScenariosKey)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting `%s` label definition", model.ScenariosKey)
+		return errors.Wrapf(err, "while getting `%s` label definition", model.ScenariosKey)
 	}
 	if def.Schema == nil {
-		return nil, fmt.Errorf("missing schema for `%s` label definition", model.ScenariosKey)
+		return fmt.Errorf("missing schema for `%s` label definition", model.ScenariosKey)
 	}
 
 	formations, err := labeldef.ParseFormationsFromSchema(def.Schema)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	formations = modificationFunc(formations, formationName)
 
 	schema, err := labeldef.NewSchemaForFormations(formations)
 	if err != nil {
-		return nil, errors.Wrap(err, "while parsing scenarios")
+		return errors.Wrap(err, "while parsing scenarios")
 	}
 
 	if err = s.labelDefService.ValidateExistingLabelsAgainstSchema(ctx, schema, tnt, model.ScenariosKey); err != nil {
-		return nil, err
+		return err
 	}
 	if err = s.labelDefService.ValidateAutomaticScenarioAssignmentAgainstSchema(ctx, schema, tnt, model.ScenariosKey); err != nil {
-		return nil, errors.Wrap(err, "while validating Scenario Assignments against a new schema")
+		return errors.Wrap(err, "while validating Scenario Assignments against a new schema")
 	}
 
 	if err = s.labelDefRepository.UpdateWithVersion(ctx, model.LabelDefinition{
@@ -517,9 +517,9 @@ func (s *service) modifyFormations(ctx context.Context, tnt, formationName strin
 		Schema:  &schema,
 		Version: def.Version,
 	}); err != nil {
-		return nil, err
+		return err
 	}
-	return &model.Formation{Name: formationName}, nil
+	return nil
 }
 
 func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID string, formation model.Formation, objectType model.LabelableObject, modificationFunc modificationFunc) (*model.Formation, error) {
