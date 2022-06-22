@@ -3,7 +3,10 @@ package tests
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -63,6 +66,38 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 	require.NotEmpty(t, actualApp.ID)
 	assertions.AssertApplication(t, in, actualApp)
 	assert.Equal(t, graphql.ApplicationStatusConditionInitial, actualApp.Status.Condition)
+}
+
+func TestRegisterApplicationWithExternalCertificate(t *testing.T) {
+	ctx := context.Background()
+
+	// We need an externally issued cert with a subject that is not part of the access level mappings
+	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
+		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
+		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
+		CertSvcInstanceTestSecretName:         conf.ExternalCertProviderConfig.CertSvcInstanceTestSecretName,
+		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
+		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
+		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, "integration-system-test", "external-cert", -1),
+		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
+		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
+	}
+
+	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig)
+	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
+
+	in := fixtures.FixSampleApplicationRegisterInputWithName("test", "register-app-with-external-cert")
+	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
+	require.NoError(t, err)
+
+	createRequest := fixtures.FixRegisterApplicationRequest(appInputGQL)
+	app := graphql.ApplicationExt{}
+
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, createRequest, &app)
+	defer fixtures.CleanupApplication(t, ctx, directorCertSecuredClient, "", &app)
+	require.NoError(t, err)
+	require.NotNil(t, app)
+	require.NotEmpty(t, app.ID)
 }
 
 // TODO: Uncomment the bellow test once the authentication for last operation is in place

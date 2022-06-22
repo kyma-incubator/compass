@@ -656,7 +656,11 @@ global:
     containerName: "system-fetcher"
   tenantFetchers:
     job1:
+      cron:
+        enabled: false
       enabled: false
+      job:
+        interval: "5m"
       configMapNamespace: "compass-system"
       manageSecrets: true
       providerName: "compass"
@@ -853,6 +857,7 @@ global:
         - "runtime:read"
         - "runtime:write"
         - "application:read"
+        - "application:write"
         - "runtime.auths:read"
         - "bundle.instance_auths:read"
         - "runtime.webhooks:read"
