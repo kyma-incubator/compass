@@ -125,7 +125,7 @@ global:
       version: "PR-68"
     schema_migrator:
       dir:
-      version: "PR-2423"
+      version: "PR-2432"
     system_broker:
       dir:
       version: "PR-2383"
@@ -136,13 +136,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2404"
+      version: "PR-2322"
     console:
       dir:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2430"
+      version: "PR-2435"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -652,7 +652,11 @@ global:
     containerName: "system-fetcher"
   tenantFetchers:
     job1:
+      cron:
+        enabled: false
       enabled: false
+      job:
+        interval: "5m"
       configMapNamespace: "compass-system"
       manageSecrets: true
       providerName: "compass"
@@ -846,6 +850,7 @@ global:
         - "runtime:read"
         - "runtime:write"
         - "application:read"
+        - "application:write"
         - "runtime.auths:read"
         - "bundle.instance_auths:read"
         - "runtime.webhooks:read"

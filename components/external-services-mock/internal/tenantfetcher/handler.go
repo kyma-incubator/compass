@@ -75,7 +75,7 @@ func (s *Handler) HandleFunc(eventType string) func(rw http.ResponseWriter, req 
 		resp := []byte("[]")
 		if isSpecificSubaccountBeingFetched(req, eventType) {
 			resp = getMockEventForSubaccount(req, s.tenantOnDemandID)
-		} else if events, found := s.mockedEvents[eventType]; found {
+		} else if events, found := s.mockedEvents[eventType]; found && len(events) > 0 {
 			resp = events[0]
 			events = events[1:]
 			s.mockedEvents[eventType] = events

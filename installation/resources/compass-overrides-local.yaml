@@ -85,6 +85,10 @@ global:
     systemsAPIFilterCriteria: "no"
   tenantFetchers:
     account-fetcher:
+      cron:
+        enabled: false
+      job:
+        interval: "10s"
       accountRegion: "local"
       dbPool:
         maxIdleConnections: "1"
@@ -133,6 +137,10 @@ global:
         oauthUrlKey: "url"
       shouldSyncSubaccounts: false
     subaccount-fetcher:
+      cron:
+        enabled: false
+      job:
+        interval: "10s"
       accountRegion: "local"
       dbPool:
         maxIdleConnections: "1"
