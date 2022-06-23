@@ -21,27 +21,34 @@ func TestCreateFormation(t *testing.T) {
 	formationInput := graphql.FormationInput{
 		Name: testFormationName,
 	}
+
+	testTemplateName := "test-template-name"
+	formationInputWithTemplateName := graphql.FormationInput{
+		Name:         testFormationName,
+		TemplateName: &testTemplateName,
+	}
+
 	tnt := "tenant"
 	externalTnt := "external-tenant"
 	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
-	t.Run("successfully created formation", func(t *testing.T) {
+	t.Run("successfully created formation with provided template name", func(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatSucceeds()
 
 		mockService := &automock.Service{}
 		mockConverter := &automock.Converter{}
-		mockService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testFormationName}, &model.DefaultTemplateName).Return(&model.Formation{Name: testFormationName}, nil)
+		mockService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testFormationName}, testTemplateName).Return(&model.Formation{Name: testFormationName}, nil)
 
-		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormationName})
+		mockConverter.On("FromGraphQL", formationInputWithTemplateName).Return(model.Formation{Name: testFormationName})
 		mockConverter.On("ToGraphQL", &model.Formation{Name: testFormationName}).Return(&graphql.Formation{Name: testFormationName})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil)
 
 		// WHEN
-		actual, err := sut.CreateFormation(ctx, formationInput, &model.DefaultTemplateName)
+		actual, err := sut.CreateFormation(ctx, formationInputWithTemplateName)
 
 		// THEN
 		require.NoError(t, err)
@@ -55,7 +62,7 @@ func TestCreateFormation(t *testing.T) {
 
 		mockService := &automock.Service{}
 		mockConverter := &automock.Converter{}
-		mockService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testFormationName}, &model.DefaultTemplateName).Return(&model.Formation{Name: testFormationName}, nil)
+		mockService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testFormationName}, model.DefaultTemplateName).Return(&model.Formation{Name: testFormationName}, nil)
 
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormationName})
 		mockConverter.On("ToGraphQL", &model.Formation{Name: testFormationName}).Return(&graphql.Formation{Name: testFormationName})
@@ -64,7 +71,7 @@ func TestCreateFormation(t *testing.T) {
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil)
 
 		// WHEN
-		actual, err := sut.CreateFormation(ctx, formationInput, nil)
+		actual, err := sut.CreateFormation(ctx, formationInput)
 
 		// THEN
 		require.NoError(t, err)
@@ -79,7 +86,7 @@ func TestCreateFormation(t *testing.T) {
 		sut := formation.NewResolver(nil, nil, nil, nil)
 
 		// WHEN
-		_, err := sut.CreateFormation(ctx, formationInput, &model.DefaultTemplateName)
+		_, err := sut.CreateFormation(ctx, formationInput)
 
 		// THEN
 		require.Error(t, err)
@@ -94,7 +101,7 @@ func TestCreateFormation(t *testing.T) {
 		sut := formation.NewResolver(transact, nil, nil, nil)
 
 		// WHEN
-		_, err := sut.CreateFormation(ctx, formationInput, &model.DefaultTemplateName)
+		_, err := sut.CreateFormation(ctx, formationInput)
 
 		// THEN
 		require.Error(t, err)
@@ -107,7 +114,7 @@ func TestCreateFormation(t *testing.T) {
 		persist, transact := txGen.ThatFailsOnCommit()
 
 		mockService := &automock.Service{}
-		mockService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testFormationName}, &model.DefaultTemplateName).Return(&model.Formation{Name: testFormationName}, nil)
+		mockService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testFormationName}, model.DefaultTemplateName).Return(&model.Formation{Name: testFormationName}, nil)
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormationName})
@@ -116,7 +123,7 @@ func TestCreateFormation(t *testing.T) {
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil)
 
 		// WHEN
-		_, err := sut.CreateFormation(ctx, formationInput, &model.DefaultTemplateName)
+		_, err := sut.CreateFormation(ctx, formationInput)
 
 		// THEN
 		require.Error(t, err)
@@ -129,7 +136,7 @@ func TestCreateFormation(t *testing.T) {
 		persist, transact := txGen.ThatDoesntExpectCommit()
 
 		mockService := &automock.Service{}
-		mockService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testFormationName}, &model.DefaultTemplateName).Return(nil, testErr)
+		mockService.On("CreateFormation", contextThatHasTenant(tnt), tnt, model.Formation{Name: testFormationName}, model.DefaultTemplateName).Return(nil, testErr)
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormationName})
@@ -138,7 +145,7 @@ func TestCreateFormation(t *testing.T) {
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil)
 
 		// WHEN
-		actual, err := sut.CreateFormation(ctx, formationInput, &model.DefaultTemplateName)
+		actual, err := sut.CreateFormation(ctx, formationInput)
 
 		// THEN
 		require.Error(t, err)
