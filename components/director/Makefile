@@ -40,8 +40,6 @@ deploy-on-k3d: build-for-k3d
 	kubectl rollout restart -n $(NAMESPACE) deployment/compass-ns-adapter
 	kubectl set image -n $(NAMESPACE) cronjob/compass-ord-aggregator aggregator=k3d-kyma-registry:5001/compass-director:latest
 	kubectl set image -n $(NAMESPACE) cronjob/compass-system-fetcher system-fetcher=k3d-kyma-registry:5001/compass-director:latest
-	kubectl set image -n $(NAMESPACE) cronjob/compass-tenant-fetcher-account-fetcher tenant-fetcher=k3d-kyma-registry:5001/compass-director:latest
-	kubectl set image -n $(NAMESPACE) cronjob/compass-tenant-fetcher-subaccount-fetcher tenant-fetcher=k3d-kyma-registry:5001/compass-director:latest
 	kubectl set image -n $(NAMESPACE) cronjob/compass-director-tenant-loader-external loader=k3d-kyma-registry:5001/compass-director:latest
 	kubectl get job -n $(NAMESPACE) compass-director-tenant-loader-default -o json  | jq "del(.spec.selector)" | jq "del(.spec.template.metadata.labels)" | jq "del(.status)" | kubectl patch -f - --patch '{"spec":  {"template":  {"spec":  {"containers": [{"name": "loader", "image": "k3d-kyma-registry:5001/compass-director:latest"}]}}}}' --dry-run=client -o yaml | kubectl replace --force -f -
 	kubectl get job -n $(NAMESPACE) compass-director-clients-scopes-synchronization -o json  | jq "del(.spec.selector)" | jq "del(.spec.template.metadata.labels)" | jq "del(.status)" | kubectl patch -f - --patch '{"spec":  {"template":  {"spec":  {"containers": [{"name": "sync", "image": "k3d-kyma-registry:5001/compass-director:latest"}]}}}}' --dry-run=client -o yaml | kubectl replace --force -f -
