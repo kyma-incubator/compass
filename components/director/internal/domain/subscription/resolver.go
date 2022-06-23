@@ -91,18 +91,21 @@ func (r *Resolver) UnsubscribeTenant(ctx context.Context, providerID, subaccount
 
 	var success bool
 
-	if flowType == resource.ApplicationTemplate {
+	switch flowType {
+	case resource.ApplicationTemplate:
 		log.C(ctx).Infof("Entering Application flow")
 		success, err = r.subscriptionSvc.UnsubscribeTenantFromApplication(ctx, providerID, providerSubaccountID, region)
 		if err != nil {
 			return false, err
 		}
-	} else {
+	case resource.Runtime:
 		log.C(ctx).Infof("Entering Runtime flow")
 		success, err = r.subscriptionSvc.UnsubscribeTenantFromRuntime(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region)
 		if err != nil {
 			return false, err
 		}
+	default:
+		log.C(ctx).Infof("Nothing to unsubscribe to provider (%q) in region (%q)", providerID, region)
 	}
 
 	if err = tx.Commit(); err != nil {
