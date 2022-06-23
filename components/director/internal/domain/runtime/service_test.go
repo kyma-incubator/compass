@@ -51,9 +51,6 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 		"protected_defaultEventing": "true",
 		"consumer_subaccount_ids":   []string{"subaccountID-1", "subaccountID-2"},
 	}
-	//labelsForDBMock := map[string]interface{}{
-	//	runtime.IsNormalizedLabel: "true",
-	//}
 
 	webhookInput := model.WebhookInput{
 		Type: "type",
@@ -155,7 +152,6 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 	ctxWithSubaccount := tenant.SaveToContext(ctx, subaccountID, extSubaccountID)
 	ctxWithSubaccountAndIntSys := consumer.SaveToContext(ctxWithSubaccount, IntSysConsumer)
-	//ctxWithSubaccountAndIntSysNew := tenant.SaveToContext(ctxWithSubaccountAndIntSys, subaccountID, extSubaccountID)
 	ctxWithIntSysConsumer := consumer.SaveToContext(ctx, IntSysConsumer)
 
 	ctxWithSubaccountMatcher := mock.MatchedBy(func(ctx context.Context) bool {
@@ -334,7 +330,6 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			ExpectedErr: nil,
 		},
 		{
-			// todo::
 			Name: "Success with Subaccount label when caller and label are the same",
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
