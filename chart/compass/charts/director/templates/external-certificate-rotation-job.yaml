@@ -18,6 +18,8 @@ spec:
         metadata:
           labels:
             cronjob: {{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
+          annotations:
+            cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         spec:
           serviceAccountName: {{ $.Chart.Name }}-{{ .Values.global.externalCertConfiguration.rotationCronjob.name }}
           restartPolicy: Never

@@ -115,24 +115,30 @@ function set_oidc_config() {
   fi
 }
 
+# NOTE: Only one trap per script is supported.
 function cleanup_trap() {
-  if [[ -f mk-ca.crt ]]; then
-    rm -f mk-ca.crt
+  if [[ -f k3d-ca.crt ]]; then
+    rm -f k3d-ca.crt
+  fi
+  if [[ -f ${COMPASS_CERT_PATH} ]]; then
+    rm -f "${COMPASS_CERT_PATH}"
   fi
   if [[ ${DUMP_DB} ]]; then
       revert_migrator_file
   fi
-  if [[ $RESET_VALUES_YAML ]] ; then
+  if [[ ${RESET_VALUES_YAML} ]] ; then
     set_oidc_config "" "" "$DEFAULT_OIDC_ADMIN_GROUPS"
   fi
+
+  pkill -P $$ || true # This MUST be at the end of the cleanup_trap function.
 }
+
+trap cleanup_trap RETURN EXIT INT TERM
 
 function mount_k3d_ca_to_oathkeeper() {
   echo "Mounting k3d CA cert into oathkeeper's container..."
 
   docker exec k3d-kyma-server-0 cat /var/lib/rancher/k3s/server/tls/server-ca.crt > k3d-ca.crt
-  trap "rm -f k3d-ca.crt" RETURN EXIT INT TERM
-
   kubectl create configmap -n kyma-system k3d-ca --from-file k3d-ca.crt --dry-run=client -o yaml | kubectl apply -f -
 
   OATHKEEPER_DEPLOYMENT_NAME=$(kubectl get deployment -n kyma-system | grep oathkeeper | awk '{print $1}')
@@ -144,9 +150,6 @@ function mount_k3d_ca_to_oathkeeper() {
   kubectl -n kyma-system patch deployment "$OATHKEEPER_DEPLOYMENT_NAME" \
  -p '{"spec":{"template":{"spec":{"containers":[{"name": "'$OATHKEEPER_CONTAINER_NAME'","volumeMounts": [{ "mountPath": "'/etc/ssl/certs/k3d-ca.crt'","name": "k3d-ca-volume","subPath": "k3d-ca.crt"}]}]}}}}'
 }
-
-trap 'pkill -P $$' EXIT INT TERM
-#trap 'kill $(jobs -p)' EXIT
 
 if [[ -z ${OIDC_HOST} || -z ${OIDC_CLIENT_ID} ]]; then
   if [[ -f ${PATH_TO_COMPASS_OIDC_CONFIG_FILE} ]]; then
@@ -172,8 +175,6 @@ else
     set_oidc_config "$OIDC_HOST" "$OIDC_CLIENT_ID" "$OIDC_GROUPS"
   fi
 fi
-
-trap "cleanup_trap" RETURN EXIT INT TERM
 
 if [ -z "$KYMA_RELEASE" ]; then
   KYMA_RELEASE=$(<"${ROOT_PATH}"/installation/resources/KYMA_VERSION)
@@ -267,7 +268,6 @@ prometheusMTLSPatch
 echo 'Adding compass certificate to keychain'
 COMPASS_CERT_PATH="${CURRENT_DIR}/../cmd/compass-cert.pem"
 echo -n | openssl s_client -showcerts -servername compass.local.kyma.dev -connect compass.local.kyma.dev:443 2>/dev/null | openssl x509 -inform pem > "${COMPASS_CERT_PATH}"
-trap "rm -f ${COMPASS_CERT_PATH}" EXIT INT TERM
 if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines
   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "${COMPASS_CERT_PATH}"
 else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
