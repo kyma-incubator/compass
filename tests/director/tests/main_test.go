@@ -35,16 +35,17 @@ type DirectorConfig struct {
 	ConsumerID                     string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
 	CertLoaderConfig               certloader.Config
 	certprovider.ExternalCertProviderConfig
-	SubscriptionConfig                  subscription.Config
-	TestProviderSubaccountID            string
-	TestConsumerSubaccountID            string
-	TestConsumerTenantID                string
-	ExternalServicesMockBaseURL         string
-	TokenPath                           string
-	SubscriptionProviderAppNameLabelKey string
-	SubscriptionProviderAppNameValue    string
-	ConsumerSubaccountLabelKey          string
-	SubscriptionLabelKey                string
+	SubscriptionConfig               subscription.Config
+	TestProviderSubaccountID         string
+	TestConsumerSubaccountID         string
+	TestConsumerTenantID             string
+	ExternalServicesMockBaseURL      string
+	TokenPath                        string
+	SubscriptionProviderAppNameValue string
+	ConsumerSubaccountLabelKey       string
+	SubscriptionLabelKey             string
+	RuntimeTypeLabelKey              string
+	KymaRuntimeTypeLabelValue        string
 }
 
 type BaseDirectorConfig struct {

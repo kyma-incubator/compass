@@ -23,10 +23,10 @@ import (
 
 // Config is configuration for the tenant subscription flow
 type Config struct {
-	ProviderLabelKey                    string `envconfig:"APP_SUBSCRIPTION_PROVIDER_LABEL_KEY,default=subscriptionProviderId"`
-	ConsumerSubaccountLabelKey          string `envconfig:"APP_CONSUMER_SUBACCOUNT_LABEL_KEY,default=consumer_subaccount_id"`
-	SubscriptionLabelKey                string `envconfig:"APP_SUBSCRIPTION_LABEL_KEY,default=subscription"`
-	SubscriptionProviderAppNameLabelKey string `envconfig:"APP_SUBSCRIPTION_PROVIDER_APP_NAME_LABEL_KEY,default=runtimeType"`
+	ProviderLabelKey           string `envconfig:"APP_SUBSCRIPTION_PROVIDER_LABEL_KEY,default=subscriptionProviderId"`
+	ConsumerSubaccountLabelKey string `envconfig:"APP_CONSUMER_SUBACCOUNT_LABEL_KEY,default=consumer_subaccount_id"`
+	SubscriptionLabelKey       string `envconfig:"APP_SUBSCRIPTION_LABEL_KEY,default=subscription"`
+	RuntimeTypeLabelKey        string `envconfig:"APP_RUNTIME_TYPE_LABEL_KEY,default=runtimeType"`
 }
 
 // RuntimeService is responsible for Runtime operations
@@ -100,13 +100,13 @@ type service struct {
 	uidSvc                       uidService
 	consumerSubaccountLabelKey   string
 	subscriptionLabelKey         string
-	subscriptionAppNameLabelKey  string
+	runtimeTypeLabelKey          string
 	subscriptionProviderLabelKey string
 }
 
 // NewService returns a new object responsible for service-layer Subscription operations.
 func NewService(runtimeSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, tenantSvc TenantService, labelSvc LabelService, appTemplateSvc ApplicationTemplateService, appConv ApplicationConverter, appSvc ApplicationService, uidService uidService,
-	consumerSubaccountLabelKey, subscriptionLabelKey, subscriptionAppNameLabelKey, subscriptionProviderLabelKey string) *service {
+	consumerSubaccountLabelKey, subscriptionLabelKey, runtimeTypeLabelKey, subscriptionProviderLabelKey string) *service {
 	return &service{
 		runtimeSvc:                   runtimeSvc,
 		runtimeCtxSvc:                runtimeCtxSvc,
@@ -118,7 +118,7 @@ func NewService(runtimeSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, tena
 		uidSvc:                       uidService,
 		consumerSubaccountLabelKey:   consumerSubaccountLabelKey,
 		subscriptionLabelKey:         subscriptionLabelKey,
-		subscriptionAppNameLabelKey:  subscriptionAppNameLabelKey,
+		runtimeTypeLabelKey:          runtimeTypeLabelKey,
 		subscriptionProviderLabelKey: subscriptionProviderLabelKey,
 	}
 }
@@ -152,12 +152,12 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 		}
 
 		if err := s.labelSvc.UpsertLabel(ctx, tnt, &model.LabelInput{
-			Key:        s.subscriptionAppNameLabelKey,
+			Key:        s.runtimeTypeLabelKey,
 			Value:      subscriptionAppName,
 			ObjectType: model.RuntimeLabelableObject,
 			ObjectID:   runtime.ID,
 		}); err != nil {
-			log.C(ctx).Errorf("An error occurred while upserting label with key: %q and value: %q for object type: %q and ID: %q: %v", s.subscriptionAppNameLabelKey, subscriptionAppName, model.RuntimeLabelableObject, runtime.ID, err)
+			log.C(ctx).Errorf("An error occurred while upserting label with key: %q and value: %q for object type: %q and ID: %q: %v", s.runtimeTypeLabelKey, subscriptionAppName, model.RuntimeLabelableObject, runtime.ID, err)
 			return false, err
 		}
 

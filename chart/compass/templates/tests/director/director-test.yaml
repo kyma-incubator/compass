@@ -110,6 +110,10 @@ spec:
               value: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
             - name: EXTERNAL_CERT_CRONJOB_CONTAINER_NAME
               value: {{ .Values.global.externalCertConfiguration.rotationCronjob.containerName }}
+            - name: APP_RUNTIME_TYPE_LABEL_KEY
+              value: {{ .Values.global.director.runtimeTypeLabelKey }}
+            - name: APP_KYMA_RUNTIME_TYPE_LABEL_VALUE
+              value: {{ .Values.global.director.kymaRuntimeTypeLabelValue }}
             - name: APP_SUBSCRIPTION_CONFIG_URL
               value: {{ .Values.global.tests.subscription.subscriptionURL }}
             - name: APP_SUBSCRIPTION_CONFIG_TOKEN_URL
@@ -149,8 +153,6 @@ spec:
               value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080"
             - name: APP_TOKEN_PATH
               value: {{ .Values.global.externalServicesMock.oauthSecret.oauthTokenPath }}
-            - name: APP_SUBSCRIPTION_PROVIDER_APP_NAME_LABEL_KEY
-              value: {{ .Values.global.director.subscription.subscriptionProviderAppNameLabelKey }}
             - name: APP_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
               value: {{ .Values.global.tests.subscription.subscriptionProviderAppNameValue }}
             - name: APP_CONSUMER_SUBACCOUNT_LABEL_KEY

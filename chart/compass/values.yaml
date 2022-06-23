@@ -207,7 +207,6 @@ global:
       subscriptionProviderLabelKey: "subscriptionProviderId"
       consumerSubaccountLabelKey: "consumer_subaccount_id"
       subscriptionLabelKey: "subscription"
-      subscriptionProviderAppNameLabelKey: "runtimeType"
     selfRegister:
       secret:
         name: "region-instances-credentials"
@@ -238,6 +237,8 @@ global:
       requestBodyPattern: '{"key": "%s"}'
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
+    runtimeTypeLabelKey: "runtimeType"
+    kymaRuntimeTypeLabelValue: "kyma"
     fetchTenantEndpoint: '{{ printf "https://%s.%s%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host .Values.global.ingress.domainName .Values.global.tenantFetcher.prefix }}'
   auditlog:
     configMapName: "compass-gateway-auditlog-config"

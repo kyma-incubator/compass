@@ -175,10 +175,12 @@ spec:
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_CONSUMER_SUBACCOUNT_LABEL_KEY
               value: {{ .Values.global.director.subscription.consumerSubaccountLabelKey }}
-            - name: APP_SUBSCRIPTION_LABEL_KEY
+            - name: APP_SUBSCRIPTION_LABEL_KEY # todo:: remove/adapt
               value: {{ .Values.global.director.subscription.subscriptionLabelKey }}
-            - name: APP_SUBSCRIPTION_PROVIDER_APP_NAME_LABEL_KEY
-              value: {{ .Values.global.director.subscription.subscriptionProviderAppNameLabelKey }}
+            - name: APP_RUNTIME_TYPE_LABEL_KEY
+              value: {{ .Values.global.director.runtimeTypeLabelKey }}
+            - name: APP_KYMA_RUNTIME_TYPE_LABEL_VALUE
+              value: {{ .Values.global.director.kymaRuntimeTypeLabelValue }}
             - name: APP_SELF_REGISTER_INSTANCE_CLIENT_ID_PATH
               value: {{ .Values.global.director.selfRegister.clientIdPath }}
             - name: APP_SELF_REGISTER_INSTANCE_CLIENT_SECRET_PATH
@@ -198,7 +200,7 @@ spec:
             - name: APP_SELF_REGISTER_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.label }}
             - name: APP_SELF_REGISTER_LABEL_KEY_PATTERN
-              value: "^{{ .Values.global.director.selfRegister.label }}$|^{{ .Values.global.director.subscription.subscriptionProviderAppNameLabelKey }}$"
+              value: "^{{ .Values.global.director.selfRegister.label }}$|^{{ .Values.global.director.runtimeTypeLabelKey }}$"
             - name: APP_SELF_REGISTER_LABEL_VALUE_PREFIX
               value: {{ .Values.global.director.selfRegister.labelValuePrefix }}
             - name: APP_SELF_REGISTER_RESPONSE_KEY

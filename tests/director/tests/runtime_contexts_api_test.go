@@ -244,7 +244,7 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		require.Equal(t, consumerSubaccountRuntimes.Data[0].ID, providerRuntime.ID)
 
 		t.Log("Assert subscription provider application name label of the provider runtime exists and it is the correct one")
-		subProviderAppNameValue, ok := consumerSubaccountRuntimes.Data[0].Labels[conf.SubscriptionProviderAppNameLabelKey].(string)
+		subProviderAppNameValue, ok := consumerSubaccountRuntimes.Data[0].Labels[conf.RuntimeTypeLabelKey].(string)
 		require.True(t, ok)
 		require.Equal(t, conf.SubscriptionProviderAppNameValue, subProviderAppNameValue)
 

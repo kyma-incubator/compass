@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
+
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -539,7 +542,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
-		runtimeTypeLabelKey := conf.SubscriptionProviderAppNameLabelKey
+		runtimeTypeLabelKey := conf.RuntimeTypeLabelKey
 		runtimeTypeLabelValue := conf.SubscriptionProviderAppNameValue
 
 		runtimeInput := fixRuntimeWithSelfRegLabelsInput("runtime-create-update-delete")
@@ -704,6 +707,66 @@ func TestQuerySpecificRuntimeWithCertificate(t *testing.T) {
 		assert.Equal(t, createdRuntime.ID, queriedRuntime.ID)
 		assert.Equal(t, createdRuntime.Name, queriedRuntime.Name)
 		assert.Equal(t, createdRuntime.Description, queriedRuntime.Description)
+	})
+}
+
+func TestsRuntimeTypeLabels(t *testing.T) {
+	ctx := context.Background()
+	runtimeName := "runtime-with-int-sys-creds"
+	runtimeInput := fixRuntimeInput(runtimeName)
+
+	t.Run(fmt.Sprintf("Validate runtime type label - %q is added when runtime is registered with integration system credentials", conf.RuntimeTypeLabelKey), func(t *testing.T) {
+		tenantID := tenant.TestTenants.GetDefaultTenantID()
+		intSysName := "runtime-integration-system"
+
+		t.Logf("Creating integration system with name: %q", intSysName)
+		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSysName)
+		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSys)
+		require.NoError(t, err)
+		require.NotEmpty(t, intSys.ID)
+
+		intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSys.ID)
+		require.NotEmpty(t, intSysAuth)
+		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+		intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+		require.True(t, ok)
+
+		t.Log("Issue a Hydra token with Client Credentials")
+		accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+		t.Logf("Registering runtime with name %q with integration system credentials...", runtimeName)
+		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenantID, &runtimeInput)
+		defer fixtures.CleanupRuntime(t, ctx, oauthGraphQLClient, tenantID, &runtime)
+		require.NoError(t, err)
+		require.NotEmpty(t, runtime.ID)
+
+		t.Logf("Validate the %q label is available...", conf.RuntimeTypeLabelKey)
+		runtimeTypeLabelValue, ok := runtime.Labels[conf.RuntimeTypeLabelKey].(string)
+		require.True(t, ok)
+		require.Equal(t, conf.KymaRuntimeTypeLabelValue, runtimeTypeLabelValue)
+	})
+
+	t.Run(fmt.Sprintf("Validate runtime type label - %q is missing when runtime is NOT registered with integration system credentials", conf.RuntimeTypeLabelKey), func(t *testing.T) {
+		runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(runtimeInput)
+		require.NoError(t, err)
+		actualRuntime := graphql.RuntimeExt{}
+
+		// WHEN
+		registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, registerReq, &actualRuntime)
+		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &actualRuntime)
+
+		//THEN
+		require.NoError(t, err)
+		require.NotEmpty(t, actualRuntime.ID)
+		assertions.AssertRuntime(t, runtimeInput, actualRuntime, conf.DefaultScenarioEnabled, true)
+
+		t.Logf("Validate %q label is not added when runtime is registered without integration system credentials...", conf.RuntimeTypeLabelKey)
+		runtimeTypeLabelValue, ok := actualRuntime.Labels[conf.RuntimeTypeLabelKey].(string)
+		require.False(t, ok)
+		require.Empty(t, runtimeTypeLabelValue)
 	})
 }
 
