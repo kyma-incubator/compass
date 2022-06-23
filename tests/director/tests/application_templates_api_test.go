@@ -74,7 +74,7 @@ func TestCreateApplicationTemplate_SameNames(t *testing.T) {
 		ExpectedErrMessage   string
 	}{
 		{
-			Name:                 "Create two application templates with same name and region",
+			Name:                 "Create two application templates with same names and region",
 			AppTemplateOneName:   "SAP app-template",
 			AppTemplateTwoName:   "SAP app-template",
 			AppTemplateOneRegion: conf.SelfRegRegion,
@@ -82,17 +82,8 @@ func TestCreateApplicationTemplate_SameNames(t *testing.T) {
 			ExpectError:          true,
 			ExpectedErrMessage:   "application template name \"not-compliant-name\" does not comply with the following naming convention",
 		},
-		//{
-		//	Name:                 "Create two application templates with same name and without region",
-		//	AppTemplateOneName:   "SAP app-template",
-		//	AppTemplateTwoName:   "SAP app-template",
-		//	AppTemplateOneRegion: "",
-		//	AppTemplateTwoRegion: "",
-		//	ExpectError:          true,
-		//	ExpectedErrMessage:   "unexpected placeholder with name \"not-compliant\" found",
-		//},
 		{
-			Name:                 "Create two application templates with same name and different regions",
+			Name:                 "Create two application templates with same names and different regions",
 			AppTemplateOneName:   "SAP app-template",
 			AppTemplateTwoName:   "SAP app-template",
 			AppTemplateOneRegion: conf.SelfRegRegion,
@@ -105,9 +96,6 @@ func TestCreateApplicationTemplate_SameNames(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			ctx := context.Background()
 			appTemplateOneInput := fixAppTemplateInputWithRegion(testCase.AppTemplateOneName, testCase.AppTemplateOneRegion)
-			//if testCase.AppTemplateOneRegion == "" {
-			//	appTemplateOneInput = fixAppTemplateInputWithoutRegion(testCase.AppTemplateOneName)
-			//}
 
 			t.Log("Create first application template")
 			appTemplateOne, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOneInput)
@@ -122,22 +110,16 @@ func TestCreateApplicationTemplate_SameNames(t *testing.T) {
 			getApplicationTemplateRequest := fixtures.FixApplicationTemplateRequest(appTemplateOne.ID)
 			appTemplateOneOutput := graphql.ApplicationTemplate{}
 
+			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getApplicationTemplateRequest, &appTemplateOneOutput)
 			appTemplateOneInput.Labels[conf.SelfRegLabelKey] = appTemplateOneOutput.Labels[conf.SelfRegLabelKey]
 			appTemplateOneInput.Labels["global_subaccount_id"] = conf.ConsumerID
 			appTemplateOneInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", testCase.AppTemplateOneName, testCase.AppTemplateOneRegion)
-			//if testCase.AppTemplateOneRegion == "" {
-			//	appTemplateOneInput.ApplicationInput.Labels["applicationType"] = testCase.AppTemplateOneName
-			//}
 
-			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getApplicationTemplateRequest, &appTemplateOneOutput)
 			require.NoError(t, err)
 			require.NotEmpty(t, appTemplateOneOutput)
 			assertions.AssertApplicationTemplate(t, appTemplateOneInput, appTemplateOneOutput)
 
 			appTemplateTwoInput := fixAppTemplateInputWithRegion(testCase.AppTemplateTwoName, testCase.AppTemplateTwoRegion)
-			//if testCase.AppTemplateTwoRegion == "" {
-			//	appTemplateTwoInput = fixAppTemplateInputWithoutRegion(testCase.AppTemplateTwoName)
-			//}
 
 			t.Log("Create second application template")
 			appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwoInput)
@@ -151,13 +133,11 @@ func TestCreateApplicationTemplate_SameNames(t *testing.T) {
 				getApplicationTemplateRequest = fixtures.FixApplicationTemplateRequest(appTemplateTwo.ID)
 				appTemplateTwoOutput := graphql.ApplicationTemplate{}
 
+				err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getApplicationTemplateRequest, &appTemplateTwoOutput)
 				appTemplateTwoInput.Labels[conf.SelfRegLabelKey] = appTemplateTwoOutput.Labels[conf.SelfRegLabelKey]
 				appTemplateTwoInput.Labels["global_subaccount_id"] = conf.ConsumerID
 				appTemplateTwoInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", testCase.AppTemplateTwoName, testCase.AppTemplateTwoRegion)
-				//if testCase.AppTemplateTwoRegion == "" {
-				//	appTemplateTwoInput.ApplicationInput.Labels["applicationType"] = testCase.AppTemplateTwoName
-				//}
-				err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getApplicationTemplateRequest, &appTemplateTwoOutput)
+
 				require.NoError(t, err)
 				require.NotEmpty(t, appTemplateTwoOutput)
 				assertions.AssertApplicationTemplate(t, appTemplateTwoInput, appTemplateTwoOutput)

@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -52,6 +53,7 @@ func TestApplicationTemplateWithExternalCertificate(t *testing.T) {
 		// Enhance input to match the newly created labels
 		appTemplateInput.Labels[conf.SelfRegLabelKey] = appTemplateOutput.Labels[conf.SelfRegLabelKey]
 		appTemplateInput.Labels["global_subaccount_id"] = conf.ConsumerID
+		appTemplateInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", name, conf.SelfRegRegion)
 		assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
 	})
 
