@@ -175,7 +175,7 @@ spec:
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_CONSUMER_SUBACCOUNT_LABEL_KEY
               value: {{ .Values.global.director.subscription.consumerSubaccountLabelKey }}
-            - name: APP_SUBSCRIPTION_LABEL_KEY # todo:: remove/adapt
+            - name: APP_SUBSCRIPTION_LABEL_KEY
               value: {{ .Values.global.director.subscription.subscriptionLabelKey }}
             - name: APP_RUNTIME_TYPE_LABEL_KEY
               value: {{ .Values.global.director.runtimeTypeLabelKey }}
