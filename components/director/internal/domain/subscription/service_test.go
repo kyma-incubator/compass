@@ -1021,6 +1021,99 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 	}
 }
 
+func TestSubscribeTenantToApplicationIsIdempotent(t *testing.T) {
+	appTmplName := "test-app-tmpl"
+	appTmplAppName := "{{name}}"
+	appTmplID := "123-456-789"
+	repeats := 5
+
+	jsonAppCreateInput := fixJSONApplicationCreateInput(appTmplAppName)
+	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(appTmplID, appTmplName, jsonAppCreateInput)
+	modelAppFromTemplateInput := fixModelApplicationFromTemplateInput(appTmplName, subscriptionAppName)
+	gqlAppCreateInput := fixGQLApplicationCreateInput(appTmplName)
+	modelAppCreateInput := fixModelApplicationCreateInput(appTmplName)
+	modelAppCreateInputWithLabels := fixModelApplicationCreateInputWithLabels(appTmplName, subscribedSubaccountID)
+
+	testCases := []struct {
+		Name                   string
+		Region                 string
+		SubscriptionAppName    string
+		SubscriptionProviderID string
+		AppTemplateServiceFn   func() *automock.ApplicationTemplateService
+		LabelServiceFn         func() *automock.LabelService
+		UIDServiceFn           func() *automock.UidService
+		TenantSvcFn            func() *automock.TenantService
+		AppConverterFn         func() *automock.ApplicationConverter
+		AppSvcFn               func() *automock.ApplicationService
+		ExpectedErrorOutput    string
+		IsSuccessful           bool
+	}{
+		{
+			Name:   "Succeeds",
+			Region: tenantRegion,
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return(modelAppTemplate, nil).Times(repeats)
+				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Times(repeats)
+				return appTemplateSvc
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Times(repeats)
+				return tenantSvc
+			},
+			AppConverterFn: func() *automock.ApplicationConverter {
+				appConv := &automock.ApplicationConverter{}
+				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Times(repeats)
+				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Times(repeats)
+
+				return appConv
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("CreateFromTemplate", CtxWithTenantMatcher(providerInternalID), modelAppCreateInputWithLabels, &appTmplID).Return(appTmplID, nil).Once()
+
+				return appSvc
+			},
+			LabelServiceFn: emptyLabelSvcFn,
+			UIDServiceFn:   emptyUIDSvcFn,
+			IsSuccessful:   true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			appTemplateSvc := testCase.AppTemplateServiceFn()
+			labelSvc := testCase.LabelServiceFn()
+			appConv := testCase.AppConverterFn()
+			appSvc := testCase.AppSvcFn()
+			uuidSvc := testCase.UIDServiceFn()
+			tenantSvc := &automock.TenantService{}
+			if testCase.TenantSvcFn != nil {
+				tenantSvc = testCase.TenantSvcFn()
+			}
+
+			service := subscription.NewService(nil, tenantSvc, labelSvc, appTemplateSvc, appConv, appSvc, uuidSvc, subscriptionConsumerLabelKey, consumerSubaccountIDsLabelKey)
+
+			for count := 0; count < repeats; count++ {
+				// WHEN
+				isSubscribeSuccessful, err := service.SubscribeTenantToApplication(context.TODO(), subscriptionProviderID, subscribedSubaccountID, providerSubaccountID, testCase.Region, subscriptionAppName)
+
+				// THEN
+				if len(testCase.ExpectedErrorOutput) > 0 {
+					assert.Error(t, err)
+					assert.Contains(t, err.Error(), testCase.ExpectedErrorOutput)
+				} else {
+					assert.NoError(t, err)
+				}
+
+				assert.Equal(t, testCase.IsSuccessful, isSubscribeSuccessful)
+			}
+
+			mock.AssertExpectationsForObjects(t, appTemplateSvc, labelSvc, uuidSvc, tenantSvc, appConv, appSvc)
+		})
+	}
+}
 func TestUnsubscribeTenantFromApplication(t *testing.T) {
 	appTmplAppName := "app-name"
 	appTmplName := "app-tmpl-name"
