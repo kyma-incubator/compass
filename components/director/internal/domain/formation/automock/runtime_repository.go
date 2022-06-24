@@ -40,8 +40,8 @@ func (_m *RuntimeRepository) Exists(ctx context.Context, tenant string, id strin
 	return r0, r1
 }
 
-// ListAll provides a mock function with given fields: ctx, tenant, filter
-func (_m *RuntimeRepository) ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
+// ListOwnedRuntimes provides a mock function with given fields: ctx, tenant, filter
+func (_m *RuntimeRepository) ListOwnedRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
 	ret := _m.Called(ctx, tenant, filter)
 
 	var r0 []*model.Runtime

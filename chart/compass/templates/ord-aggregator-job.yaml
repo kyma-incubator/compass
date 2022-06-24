@@ -90,7 +90,7 @@ spec:
                 - name: APP_ORD_MAX_PARALLEL_DOWNLOADS
                   value: "{{ .Values.global.ordAggregator.maxOrdParallelDownloads }}"
                 - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
-                  value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+                  value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
               command:
                 - "/bin/sh"
               args:

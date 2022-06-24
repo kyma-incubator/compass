@@ -1637,8 +1637,8 @@ type Mutation {
 	writeTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.writeTenants")
 	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
 	updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")
-	subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!, subscriptionAppName: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
-	unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
+	subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!, subscriptionAppName: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
+	unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
 	"""
 	**Examples**
 	- [create formation template](examples/create-formation-template/create-formation-template.graphql)

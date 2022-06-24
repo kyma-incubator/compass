@@ -83,10 +83,10 @@ func (d *Director) UpdateTenant(ctx context.Context, id string, tenant graphql.B
 }
 
 // SubscribeTenant makes graphql query tenant subscription
-func (d *Director) SubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region, appName string) error {
+func (d *Director) SubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName string) error {
 	var res map[string]interface{}
 
-	subscriptionMutation := fmt.Sprintf(`mutation { subscribeTenant(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", region: "%s", subscriptionAppName: "%s")}`, providerID, subaccountID, providerSubaccountID, region, appName)
+	subscriptionMutation := fmt.Sprintf(`mutation { subscribeTenant(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", consumerTenantID: "%s", region: "%s", subscriptionAppName: "%s")}`, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName)
 	gRequest := gcli.NewRequest(subscriptionMutation)
 	gRequest.Header.Set("tenant", subaccountID)
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {
@@ -96,10 +96,10 @@ func (d *Director) SubscribeTenant(ctx context.Context, providerID string, subac
 }
 
 // UnsubscribeTenant makes graphql query tenant unsubscription
-func (d *Director) UnsubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) error {
+func (d *Director) UnsubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region string) error {
 	var res map[string]interface{}
 
-	unsubscriptionMutation := fmt.Sprintf(`mutation { unsubscribeTenant(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", region: "%s")}`, providerID, subaccountID, providerSubaccountID, region)
+	unsubscriptionMutation := fmt.Sprintf(`mutation { unsubscribeTenant(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", consumerTenantID: "%s", region: "%s")}`, providerID, subaccountID, providerSubaccountID, consumerTenantID, region)
 	gRequest := gcli.NewRequest(unsubscriptionMutation)
 	gRequest.Header.Set("tenant", subaccountID)
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {

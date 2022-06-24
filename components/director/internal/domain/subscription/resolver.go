@@ -12,8 +12,8 @@ import (
 // SubscriptionService responsible for service-layer Subscription operations
 //go:generate mockery --name=SubscriptionService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SubscriptionService interface {
-	SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error)
-	UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error)
+	SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName string) (bool, error)
+	UnsubscribeTenantFromRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region string) (bool, error)
 	SubscribeTenantToApplication(ctx context.Context, subaccountTenantID, subscribedSubaccountID, providerSubaccountID, region, subscribedAppName string) (bool, error)
 	UnsubscribeTenantFromApplication(ctx context.Context, subaccountTenantID, providerSubaccountID, region string) (bool, error)
 	DetermineSubscriptionFlow(ctx context.Context, providerID, region string) (resource.Type, error)
@@ -34,7 +34,7 @@ func NewResolver(transact persistence.Transactioner, subscriptionSvc Subscriptio
 }
 
 // SubscribeTenant subscribes tenant to runtime labeled with `providerID` and `region`
-func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, region, subscriptionAppName string) (bool, error) {
+func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName string) (bool, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return false, err
@@ -59,7 +59,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 		}
 	case resource.Runtime:
 		log.C(ctx).Infof("Entering Runtime flow")
-		success, err = r.subscriptionSvc.SubscribeTenantToRuntime(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
+		success, err = r.subscriptionSvc.SubscribeTenantToRuntime(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName)
 		if err != nil {
 			return false, err
 		}
@@ -75,7 +75,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 }
 
 // UnsubscribeTenant unsubscribes tenant to runtime labeled with `providerID` and `region`
-func (r *Resolver) UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
+func (r *Resolver) UnsubscribeTenant(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region string) (bool, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return false, err
@@ -100,7 +100,7 @@ func (r *Resolver) UnsubscribeTenant(ctx context.Context, providerID string, sub
 		}
 	case resource.Runtime:
 		log.C(ctx).Infof("Entering Runtime flow")
-		success, err = r.subscriptionSvc.UnsubscribeTenantFromRuntime(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
+		success, err = r.subscriptionSvc.UnsubscribeTenantFromRuntime(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region)
 		if err != nil {
 			return false, err
 		}
