@@ -16,11 +16,12 @@ const (
 	tenantExtID  = "tenant-external-id"
 	tenantRegion = "myregion"
 
-	regionalTenantSubdomain = "myregionaltenant"
-	subaccountTenantExtID   = "subaccount-tenant-external-id"
-	subscriptionProviderID  = "123"
-	providerSubaccountID    = "123-456"
-	subscriptionAppName     = "my-app"
+	regionalTenantSubdomain     = "myregionaltenant"
+	subaccountTenantExtID       = "subaccount-tenant-external-id"
+	subscriptionProviderID      = "123"
+	providerSubaccountID        = "123-456"
+	consumerTenantID            = "3ba66f44-dc27-11ec-9d64-0242ac120002"
+	subscriptionProviderAppName = "subscription-provider-test-app-name"
 
 	tenantProviderTenantIDProperty           = "tenantId"
 	tenantProviderCustomerIDProperty         = "customerId"
@@ -28,7 +29,8 @@ const (
 	tenantProviderSubaccountTenantIDProperty = "subaccountTenantId"
 	subscriptionProviderIDProperty           = "subscriptionProviderId"
 	providerSubaccountIDProperty             = "providerSubaccountId"
-	subscriptionAppNameProperty              = "subscriptionAppName"
+	consumerTenantIDProperty                 = "consumerTenantID"
+	subscriptionProviderAppNameProperty      = "subscriptionProviderAppName"
 
 	compassURL = "https://github.com/kyma-incubator/compass"
 )
@@ -40,13 +42,14 @@ var (
 func TestSubscribeRegionalTenant(t *testing.T) {
 	// GIVEN
 	regionalTenant := tenantfetchersvc.TenantSubscriptionRequest{
-		SubaccountTenantID:     subaccountTenantExtID,
-		AccountTenantID:        tenantExtID,
-		Subdomain:              regionalTenantSubdomain,
-		Region:                 tenantRegion,
-		SubscriptionProviderID: subscriptionProviderID,
-		ProviderSubaccountID:   providerSubaccountID,
-		SubscriptionAppName:    subscriptionAppName,
+		SubaccountTenantID:          subaccountTenantExtID,
+		AccountTenantID:             tenantExtID,
+		Subdomain:                   regionalTenantSubdomain,
+		Region:                      tenantRegion,
+		SubscriptionProviderID:      subscriptionProviderID,
+		ProviderSubaccountID:        providerSubaccountID,
+		ConsumerTenantID:            consumerTenantID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
 	}
 
 	// Subscribe flow
@@ -66,7 +69,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			},
 			DirectorClient: func() *automock.DirectorGraphQLClient {
 				directorClient := &automock.DirectorGraphQLClient{}
-				directorClient.On("SubscribeTenant", context.TODO(), regionalTenant.SubscriptionProviderID, regionalTenant.SubaccountTenantID, providerSubaccountID, regionalTenant.Region, subscriptionAppName).Return(nil).Once()
+				directorClient.On("SubscribeTenant", context.TODO(), regionalTenant.SubscriptionProviderID, regionalTenant.SubaccountTenantID, regionalTenant.ProviderSubaccountID, regionalTenant.ConsumerTenantID, regionalTenant.Region, regionalTenant.SubscriptionProviderAppName).Return(nil).Once()
 				return directorClient
 			},
 			TenantSubscriptionRequest: regionalTenant,
@@ -93,7 +96,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			},
 			DirectorClient: func() *automock.DirectorGraphQLClient {
 				directorClient := &automock.DirectorGraphQLClient{}
-				directorClient.On("SubscribeTenant", context.TODO(), regionalTenant.SubscriptionProviderID, regionalTenant.SubaccountTenantID, providerSubaccountID, regionalTenant.Region, subscriptionAppName).Return(testError).Once()
+				directorClient.On("SubscribeTenant", context.TODO(), regionalTenant.SubscriptionProviderID, regionalTenant.SubaccountTenantID, regionalTenant.ProviderSubaccountID, regionalTenant.ConsumerTenantID, regionalTenant.Region, regionalTenant.SubscriptionProviderAppName).Return(testError).Once()
 				return directorClient
 			},
 			TenantSubscriptionRequest: regionalTenant,
@@ -127,12 +130,14 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 	// GIVEN
 
 	regionalTenant := tenantfetchersvc.TenantSubscriptionRequest{
-		SubaccountTenantID:     subaccountTenantExtID,
-		AccountTenantID:        tenantExtID,
-		Subdomain:              regionalTenantSubdomain,
-		Region:                 tenantRegion,
-		SubscriptionProviderID: subscriptionProviderID,
-		ProviderSubaccountID:   providerSubaccountID,
+		SubaccountTenantID:          subaccountTenantExtID,
+		AccountTenantID:             tenantExtID,
+		Subdomain:                   regionalTenantSubdomain,
+		Region:                      tenantRegion,
+		SubscriptionProviderID:      subscriptionProviderID,
+		ProviderSubaccountID:        providerSubaccountID,
+		ConsumerTenantID:            consumerTenantID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
 	}
 
 	testCases := []struct {
@@ -149,7 +154,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			},
 			DirectorClient: func() *automock.DirectorGraphQLClient {
 				directorClient := &automock.DirectorGraphQLClient{}
-				directorClient.On("UnsubscribeTenant", context.TODO(), regionalTenant.SubscriptionProviderID, regionalTenant.SubaccountTenantID, providerSubaccountID, regionalTenant.Region).Return(nil).Once()
+				directorClient.On("UnsubscribeTenant", context.TODO(), regionalTenant.SubscriptionProviderID, regionalTenant.SubaccountTenantID, regionalTenant.ProviderSubaccountID, regionalTenant.ConsumerTenantID, regionalTenant.Region).Return(nil).Once()
 				return directorClient
 			},
 			TenantSubscriptionRequest: regionalTenant,
@@ -161,7 +166,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			},
 			DirectorClient: func() *automock.DirectorGraphQLClient {
 				directorClient := &automock.DirectorGraphQLClient{}
-				directorClient.On("UnsubscribeTenant", context.TODO(), regionalTenant.SubscriptionProviderID, regionalTenant.SubaccountTenantID, providerSubaccountID, regionalTenant.Region).Return(testError).Once()
+				directorClient.On("UnsubscribeTenant", context.TODO(), regionalTenant.SubscriptionProviderID, regionalTenant.SubaccountTenantID, regionalTenant.ProviderSubaccountID, regionalTenant.ConsumerTenantID, regionalTenant.Region).Return(testError).Once()
 				return directorClient
 			},
 			TenantSubscriptionRequest: regionalTenant,

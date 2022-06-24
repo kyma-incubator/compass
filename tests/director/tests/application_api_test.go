@@ -1896,7 +1896,7 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	// THEN
 	require.Error(t, err)
 	require.NotNil(t, err.Error())
-	require.Contains(t, err.Error(), fmt.Sprintf("app template: %s has label %s", *outputSrcApp.ApplicationTemplateID, conf.SelfRegDistinguishLabelKey))
+	require.Contains(t, err.Error(), fmt.Sprintf("app template: %s has label %s", *outputSrcApp.ApplicationTemplateID, conf.SubscriptionConfig.SelfRegDistinguishLabelKey))
 
 	srcApp := graphql.ApplicationExt{}
 	getSrcAppReq := fixtures.FixGetApplicationRequest(outputSrcApp.ID)

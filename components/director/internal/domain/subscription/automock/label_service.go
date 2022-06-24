@@ -67,6 +67,20 @@ func (_m *LabelService) UpdateLabel(ctx context.Context, tenant string, id strin
 	return r0
 }
 
+// UpsertLabel provides a mock function with given fields: ctx, tenant, labelInput
+func (_m *LabelService) UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error {
+	ret := _m.Called(ctx, tenant, labelInput)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.LabelInput) error); ok {
+		r0 = rf(ctx, tenant, labelInput)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // NewLabelService creates a new instance of LabelService. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
 func NewLabelService(t testing.TB) *LabelService {
 	mock := &LabelService{}

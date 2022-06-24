@@ -177,11 +177,11 @@ func (j *job) getMovedSubaccountsFieldMapping() MovedSubaccountsFieldMapping {
 
 func (j *job) getFeaturesConfig() features.Config {
 	return features.Config{
-		DefaultScenarioEnabled:        parseBool(j.getEnvValueForKey("true", "APP_DEFAULT_SCENARIO_ENABLED")),
-		ProtectedLabelPattern:         j.getEnvValueForKey(".*_defaultEventing|^consumer_subaccount_ids$", emptyValue),
-		ImmutableLabelPattern:         j.getEnvValueForKey("^xsappnameCMPClone$", "APP_SELF_REGISTER_LABEL_KEY_PATTERN"),
-		SubscriptionProviderLabelKey:  j.getEnvValueForKey("subscriptionProviderId", "APP_SUBSCRIPTION_PROVIDER_LABEL_KEY"),
-		ConsumerSubaccountIDsLabelKey: j.getEnvValueForKey("consumer_subaccount_ids", "APP_CONSUMER_SUBACCOUNT_IDS_LABEL_KEY"),
+		DefaultScenarioEnabled:       parseBool(j.getEnvValueForKey("true", "APP_DEFAULT_SCENARIO_ENABLED")),
+		ProtectedLabelPattern:        j.getEnvValueForKey(".*_defaultEventing|^consumer_subaccount_ids$", emptyValue),
+		ImmutableLabelPattern:        j.getEnvValueForKey("^xsappnameCMPClone$", "APP_SELF_REGISTER_LABEL_KEY_PATTERN"),
+		SubscriptionProviderLabelKey: j.getEnvValueForKey("subscriptionProviderId", "APP_SUBSCRIPTION_PROVIDER_LABEL_KEY"),
+		ConsumerSubaccountLabelKey:   j.getEnvValueForKey("consumer_subaccount_id", "APP_CONSUMER_SUBACCOUNT_LABEL_KEY"),
 	}
 }
 

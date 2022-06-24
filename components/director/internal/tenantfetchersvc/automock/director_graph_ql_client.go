@@ -35,8 +35,8 @@ func (_m *DirectorGraphQLClient) SubscribeTenant(ctx context.Context, providerID
 	ret := _m.Called(ctx, providerID, subaccountID, providerSubaccountID, region, appName)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string) error); ok {
-		r0 = rf(ctx, providerID, subaccountID, providerSubaccountID, region, appName)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string) error); ok {
+		r0 = rf(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -44,13 +44,13 @@ func (_m *DirectorGraphQLClient) SubscribeTenant(ctx context.Context, providerID
 	return r0
 }
 
-// UnsubscribeTenant provides a mock function with given fields: ctx, providerID, subaccountID, providerSubaccountID, region
-func (_m *DirectorGraphQLClient) UnsubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) error {
-	ret := _m.Called(ctx, providerID, subaccountID, providerSubaccountID, region)
+// UnsubscribeTenant provides a mock function with given fields: ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region
+func (_m *DirectorGraphQLClient) UnsubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string) error {
+	ret := _m.Called(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) error); ok {
-		r0 = rf(ctx, providerID, subaccountID, providerSubaccountID, region)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string) error); ok {
+		r0 = rf(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -31,14 +31,15 @@ type TenantConverter interface {
 // TenantSubscriptionRequest represents the information provided during tenant provisioning request in Compass, which includes tenant IDs, subdomain, and region of the tenant.
 // The tenant which triggered the provisioning request is only one, and one of the tenant IDs in the request is its external ID, where the other tenant IDs are external IDs from its parents hierarchy.
 type TenantSubscriptionRequest struct {
-	AccountTenantID        string
-	SubaccountTenantID     string
-	CustomerTenantID       string
-	Subdomain              string
-	Region                 string
-	SubscriptionProviderID string
-	ProviderSubaccountID   string
-	SubscriptionAppName    string
+	AccountTenantID             string
+	SubaccountTenantID          string
+	CustomerTenantID            string
+	Subdomain                   string
+	Region                      string
+	SubscriptionProviderID      string
+	ProviderSubaccountID        string
+	ConsumerTenantID            string
+	SubscriptionProviderAppName string
 }
 
 // MainTenantID is used to determine the external tenant ID of the tenant for which the provisioning request was triggered.
