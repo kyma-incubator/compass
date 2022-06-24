@@ -117,7 +117,7 @@ global:
         timeout: "2m"
       manageSecrets: true
       oauth:
-        client: "subscriptionProviderId"
+        client: "client_id"
         secret: "client_secret"
         tokenPath: "/secured/oauth/token"
         tokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
@@ -170,7 +170,7 @@ global:
         timeout: "2m"
       manageSecrets: true
       oauth:
-        client: "subscriptionProviderId"
+        client: "client_id"
         secret: "client_secret"
         tokenPath: "/cert/token"
         tokenURL: '{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'

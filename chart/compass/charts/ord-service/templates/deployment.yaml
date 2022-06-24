@@ -93,6 +93,8 @@ spec:
                   key: postgresql-director-db-name
             - name: SUBSCRIPTION_PROVIDER_LABEL_KEY
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
+            - name: SUBSCRIPTION_TOKEN_PREFIX
+              value: {{ .Values.global.director.subscription.tokenPrefix }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}

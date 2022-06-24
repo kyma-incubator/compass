@@ -3,6 +3,7 @@ package claims
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
@@ -42,10 +43,11 @@ type validator struct {
 	intSystemSvc                 IntegrationSystemService
 	subscriptionProviderLabelKey string
 	consumerSubaccountLabelKey   string
+	tokenPrefix                  string
 }
 
 // NewValidator creates new claims validator
-func NewValidator(transact persistence.Transactioner, runtimesSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, intSystemSvc IntegrationSystemService, subscriptionProviderLabelKey, consumerSubaccountLabelKey string) *validator {
+func NewValidator(transact persistence.Transactioner, runtimesSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, intSystemSvc IntegrationSystemService, subscriptionProviderLabelKey, consumerSubaccountLabelKey, tokenPrefix string) *validator {
 	return &validator{
 		transact:                     transact,
 		runtimesSvc:                  runtimesSvc,
@@ -53,6 +55,7 @@ func NewValidator(transact persistence.Transactioner, runtimesSvc RuntimeService
 		intSystemSvc:                 intSystemSvc,
 		subscriptionProviderLabelKey: subscriptionProviderLabelKey,
 		consumerSubaccountLabelKey:   consumerSubaccountLabelKey,
+		tokenPrefix:                  tokenPrefix,
 	}
 }
 
@@ -100,8 +103,9 @@ func (v *validator) validateRuntimeConsumer(ctx context.Context, claims Claims) 
 		return apperrors.NewUnauthorizedError("could not determine token's region")
 	}
 
+	tokenClientID := strings.TrimPrefix(claims.TokenClientID, v.tokenPrefix)
 	filters := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(v.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", claims.TokenClientID)),
+		labelfilter.NewForKeyWithQuery(v.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", tokenClientID)),
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", claims.Region)),
 	}
 
@@ -109,13 +113,13 @@ func (v *validator) validateRuntimeConsumer(ctx context.Context, claims Claims) 
 	providerExternalTenantID := claims.Tenant[tenantmapping.ProviderExternalTenantKey]
 	ctxWithProviderTenant := tenant.SaveToContext(ctx, providerInternalTenantID, providerExternalTenantID)
 
-	log.C(ctx).Infof("Listing runtimes in provider tenant %s for labels %s: %s and %s: %s", providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, claims.TokenClientID)
+	log.C(ctx).Infof("Listing runtimes in provider tenant %s for labels %s: %s and %s: %s", providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, tokenClientID)
 	runtimes, err := v.runtimesSvc.ListByFilters(ctxWithProviderTenant, filters)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Error while listing runtimes in provider tenant %s for labels %s: %s and %s: %s: %v", providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, claims.TokenClientID, err)
-		return errors.Wrapf(err, "failed to get runtimes in tenant %s for labels %s: %s and %s: %s", providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, claims.TokenClientID)
+		log.C(ctx).WithError(err).Errorf("Error while listing runtimes in provider tenant %s for labels %s: %s and %s: %s: %v", providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, tokenClientID, err)
+		return errors.Wrapf(err, "failed to get runtimes in tenant %s for labels %s: %s and %s: %s", providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, tokenClientID)
 	}
-	log.C(ctx).Infof("Found %d runtimes in provider tenant %s for labels %s: %s and %s: %s", len(runtimes), providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, claims.TokenClientID)
+	log.C(ctx).Infof("Found %d runtimes in provider tenant %s for labels %s: %s and %s: %s", len(runtimes), providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, tokenClientID)
 
 	consumerInternalTenantID := claims.Tenant[tenantmapping.ConsumerTenantKey]
 	consumerExternalTenantID := claims.Tenant[tenantmapping.ExternalTenantKey]

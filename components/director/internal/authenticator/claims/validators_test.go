@@ -44,6 +44,7 @@ const (
 func TestValidator_Validate(t *testing.T) {
 	providerLabelKey := "providerName"
 	consumerSubaccountLabelKey := "consumer_subaccount_id"
+	tokenPrefix := "prefix-"
 	testErr := errors.New("test")
 
 	runtimes := []*model.Runtime{
@@ -288,7 +289,7 @@ func TestValidator_Validate(t *testing.T) {
 				transactionerMock = testCase.TransactionerFn(persistTxMock)
 			}
 
-			validator := claims.NewValidator(transactionerMock, runtimeSvc, runtimeCtxSvc, intSysSvc, providerLabelKey, consumerSubaccountLabelKey)
+			validator := claims.NewValidator(transactionerMock, runtimeSvc, runtimeCtxSvc, intSysSvc, providerLabelKey, consumerSubaccountLabelKey, tokenPrefix)
 			err := validator.Validate(context.TODO(), testCase.Claims)
 
 			if len(testCase.ExpectedErr) > 0 {
