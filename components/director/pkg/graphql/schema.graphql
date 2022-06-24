@@ -1270,6 +1270,7 @@ type Query {
 	- [query applications for runtime](examples/query-applications-for-runtime/query-applications-for-runtime.graphql)
 	"""
 	applicationsForRuntime(runtimeID: ID!, first: Int = 200, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsForRuntime")
+	applicationForTenant: Application @hasScenario(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
 	"""
 	Maximum `first` parameter value is 100
 	

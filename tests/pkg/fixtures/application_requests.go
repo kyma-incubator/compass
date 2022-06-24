@@ -258,6 +258,16 @@ func FixApplicationForRuntimeRequestWithPageSize(runtimeID string, pageSize int)
 			}`, runtimeID, pageSize, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForApplication())))
 }
 
+func FixGetApplicationForTenantRequest() *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				result: applicationForTenant {
+						%s
+					}
+				}`,
+			testctx.Tc.GQLFieldsProvider.ForApplication()))
+}
+
 func FixGetApplicationsRequestWithPagination() *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
