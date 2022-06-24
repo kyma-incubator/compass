@@ -13,6 +13,7 @@ type Formation struct {
 	Name                string
 }
 
+// FormationPage contains Formation data with page info
 type FormationPage struct {
 	Data       []*Formation
 	PageInfo   *pagination.Page
