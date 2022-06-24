@@ -765,6 +765,7 @@ global:
       client:
         skipSSLValidation: false
     director:
+      skipPattern: ""
       externalClientCertTestSecretName: "external-client-certificate-integration-system-test-secret"
       externalClientCertTestSecretNamespace: "compass-system"
       externalCertIntSystemCN: "integration-system-test"
@@ -774,10 +775,10 @@ global:
     ordService:
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
       skipPattern: ""
-    selfRegistration:
-      region: "eu-1"
     externalServicesMock:
       skipPattern: ""
+    selfRegistration:
+      region: "eu-1"
     subscription:
       tenants:
         consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
