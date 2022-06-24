@@ -11,15 +11,16 @@ import (
 
 func FixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 	appTemplateDesc := "app-template-desc"
-	placeholderDesc := "new-placeholder-desc"
+	placeholderDisplayName := "new-placeholder-display-name"
+	appInputName := "app"
 	providerName := "compass-tests"
 	appTemplateInput := graphql.ApplicationTemplateInput{
 		Name:        name,
 		Description: &appTemplateDesc,
 		ApplicationInput: &graphql.ApplicationRegisterInput{
-			Name:         "app",
+			Name:         "{{name}}",
 			ProviderName: &providerName,
-			Description:  ptr.String("test {{new-placeholder}}"),
+			Description:  ptr.String("test {{display-name}}"),
 			Labels: graphql.Labels{
 				"a": []string{"b", "c"},
 				"d": []string{"e", "f"},
@@ -32,8 +33,12 @@ func FixApplicationTemplate(name string) graphql.ApplicationTemplateInput {
 		},
 		Placeholders: []*graphql.PlaceholderDefinitionInput{
 			{
-				Name:        "new-placeholder",
-				Description: &placeholderDesc,
+				Name:        "name",
+				Description: &appInputName,
+			},
+			{
+				Name:        "display-name",
+				Description: &placeholderDisplayName,
 			},
 		},
 		Labels: graphql.Labels{

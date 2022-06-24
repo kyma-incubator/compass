@@ -15,7 +15,7 @@ endif
 ifneq ($(strip $(DOCKER_TAG)),)
 TAG := $(DOCKER_TAG)
 else
-TAG := "latest"
+TAG := latest
 endif
 # BASE_PKG is a root packge of the component
 BASE_PKG := github.com/kyma-incubator/compass
@@ -110,8 +110,9 @@ MOUNT_TARGETS = build check-imports imports check-fmt fmt errcheck vet generate 
 $(foreach t,$(MOUNT_TARGETS),$(eval $(call buildpack-mount,$(t))))
 
 # Builds new Docker image into Minikube's Docker Registry
-build-to-minikube: pull-licenses-local
-	@eval $$(minikube docker-env) && docker build -t $(IMG_NAME):$(TAG) .
+build-for-k3d: pull-licenses-local
+	docker build -t k3d-kyma-registry:5001/$(IMG_NAME):$(TAG) .
+	docker push k3d-kyma-registry:5001/$(IMG_NAME):$(TAG)
 
 build-local:
 	env CGO_ENABLED=0 go build -o $(APP_NAME) ./$(ENTRYPOINT)
@@ -195,8 +196,8 @@ exec:
     		-v $(COMPONENT_DIR):$(WORKSPACE_COMPONENT_DIR):delegated \
     		$(DOCKER_CREATE_OPTS) bash
 
-# Sets locally built image for a given component in Minikube cluster 
-deploy-on-minikube: build-to-minikube
-	kubectl config use-context minikube
-	kubectl set image -n $(NAMESPACE) deployment/$(DEPLOYMENT_NAME) $(COMPONENT_NAME)=$(DEPLOYMENT_NAME):latest
+# Sets locally built image for a given component in k3d cluster
+deploy-on-k3d: build-for-k3d
+	kubectl config use-context k3d-kyma
+	kubectl set image -n $(NAMESPACE) deployment/$(DEPLOYMENT_NAME) $(COMPONENT_NAME)=k3d-kyma-registry:5001/$(DEPLOYMENT_NAME):$(TAG)
 	kubectl rollout restart -n $(NAMESPACE) deployment/$(DEPLOYMENT_NAME)

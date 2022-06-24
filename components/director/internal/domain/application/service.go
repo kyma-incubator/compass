@@ -148,24 +148,27 @@ type service struct {
 	bndlService        BundleService
 	timestampGen       timestamp.Generator
 	formationService   FormationService
+
+	selfRegisterDistinguishLabelKey string
 }
 
 // NewService missing godoc
-func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, bndlService BundleService, uidService UIDService, formationService FormationService) *service {
+func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, bndlService BundleService, uidService UIDService, formationService FormationService, selfRegisterDistinguishLabelKey string) *service {
 	return &service{
-		appNameNormalizer:  appNameNormalizer,
-		appHideCfgProvider: appHideCfgProvider,
-		appRepo:            app,
-		webhookRepo:        webhook,
-		runtimeRepo:        runtimeRepo,
-		labelRepo:          labelRepo,
-		intSystemRepo:      intSystemRepo,
-		labelUpsertService: labelUpsertService,
-		scenariosService:   scenariosService,
-		bndlService:        bndlService,
-		uidService:         uidService,
-		timestampGen:       timestamp.DefaultGenerator,
-		formationService:   formationService,
+		appNameNormalizer:               appNameNormalizer,
+		appHideCfgProvider:              appHideCfgProvider,
+		appRepo:                         app,
+		webhookRepo:                     webhook,
+		runtimeRepo:                     runtimeRepo,
+		labelRepo:                       labelRepo,
+		intSystemRepo:                   intSystemRepo,
+		labelUpsertService:              labelUpsertService,
+		scenariosService:                scenariosService,
+		bndlService:                     bndlService,
+		uidService:                      uidService,
+		timestampGen:                    timestamp.DefaultGenerator,
+		formationService:                formationService,
+		selfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
 	}
 }
 
@@ -181,6 +184,16 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 	}
 
 	return s.appRepo.List(ctx, appTenant, filter, pageSize, cursor)
+}
+
+// ListAll lists tenant scoped applications
+func (s *service) ListAll(ctx context.Context) ([]*model.Application, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	return s.appRepo.ListAll(ctx, appTenant)
 }
 
 // ListGlobal missing godoc
@@ -794,6 +807,15 @@ func (s *service) Merge(ctx context.Context, destID, srcID string) (*model.Appli
 		return nil, errors.Errorf("Application templates are not the same. Destination app template: %s. Source app template: %s", destTemplateID, srcTemplateID)
 	}
 
+	appTemplateLabels, err := s.labelRepo.ListForObject(ctx, appTenant, model.AppTemplateLabelableObject, srcTemplateID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting labels for app template with id %s", srcTemplateID)
+	}
+
+	if _, exists := appTemplateLabels[s.selfRegisterDistinguishLabelKey]; exists {
+		log.C(ctx).Infof("applications should not be merged, because an application template with id %s has label %s", srcTemplateID, s.selfRegisterDistinguishLabelKey)
+		return nil, errors.Errorf("app template: %s has label %s", srcTemplateID, s.selfRegisterDistinguishLabelKey)
+	}
 	if srcApp.Status == nil {
 		return nil, errors.Errorf("Could not determine status of source application with id %s", srcID)
 	}

@@ -26,6 +26,7 @@
 /components/director/cmd/tenantfetcher-svc @kyma-incubator/team-dragon
 /components/director/cmd/tenantloader @kyma-incubator/team-raptor @kyma-incubator/team-dragon @kyma-incubator/team-falcon
 /components/director/internal/domain/formation @kyma-incubator/team-raptor
+/components/director/internal/domain/formationtemplate @kyma-incubator/team-raptor
 /components/director/internal/info @kyma-incubator/team-raptor
 /components/director/internal/nsadapter @kyma-incubator/team-falcon
 /components/director/internal/open_resource_discovery @kyma-incubator/team-falcon
@@ -44,6 +45,7 @@
 /components/schema-migrator @kyma-incubator/team-falcon @kyma-incubator/team-raptor @kyma-incubator/team-dragon
 /installation/cmd @kyma-incubator/team-raptor
 /installation/scripts @kyma-incubator/team-raptor
+/installation/scripts/prow @kyma-incubator/team-raptor @kyma-incubator/team-falcon
 /tests/connectivity-adapter @kyma-incubator/team-falcon
 /tests/connector @kyma-incubator/team-raptor
 /tests/gateway @kyma-incubator/team-raptor

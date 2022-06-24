@@ -471,7 +471,8 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixAppTemplateInput("validation-test-app-tpl")
+	appTemplateName := createAppTemplateName("validation-test-app-tpl")
+	input := fixAppTemplateInput(appTemplateName)
 
 	appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, input)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTpl)
@@ -504,7 +505,8 @@ func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	input := fixAppTemplateInput("validation-app")
+	appTemplateName := createAppTemplateName("validation-app")
+	input := fixAppTemplateInput(appTemplateName)
 
 	tmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, input)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &tmpl)

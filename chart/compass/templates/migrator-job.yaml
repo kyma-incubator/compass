@@ -11,6 +11,8 @@ spec:
       labels:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
     spec:
         serviceAccountName: {{ $.Chart.Name }}-migrator-job
         {{- if eq .Values.global.migratorJob.nodeSelectorEnabled true }}

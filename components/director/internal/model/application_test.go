@@ -39,6 +39,7 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 				IntegrationSystemID: &intSysID,
 				ProviderName:        &providerName,
 				StatusCondition:     &statusCondition,
+				LocalTenantID:       str.Ptr("localTenantID"),
 			},
 			Expected: &model.Application{
 				Name:                "Foo",
@@ -46,6 +47,7 @@ func TestApplicationCreateInput_ToApplication(t *testing.T) {
 				HealthCheckURL:      &url,
 				IntegrationSystemID: &intSysID,
 				ProviderName:        &providerName,
+				LocalTenantID:       str.Ptr("localTenantID"),
 				Status: &model.ApplicationStatus{
 					Timestamp: timestamp,
 					Condition: model.ApplicationStatusConditionInitial,
@@ -91,6 +93,7 @@ func TestApplicationUpdateInput_UpdateApplication(t *testing.T) {
 			HealthCheckURL:      str.Ptr(healthCheckURL),
 			IntegrationSystemID: str.Ptr(intSysID),
 			StatusCondition:     &statusCondition,
+			LocalTenantID:       str.Ptr("localTenantID"),
 		}
 		app := model.Application{}
 
@@ -103,6 +106,7 @@ func TestApplicationUpdateInput_UpdateApplication(t *testing.T) {
 		assert.Equal(t, filledAppUpdate.IntegrationSystemID, app.IntegrationSystemID)
 		assert.Equal(t, filledAppUpdate.ProviderName, app.ProviderName)
 		assert.Equal(t, *filledAppUpdate.StatusCondition, app.Status.Condition)
+		assert.Equal(t, filledAppUpdate.LocalTenantID, app.LocalTenantID)
 	})
 
 	t.Run("does not override values when input is missing", func(t *testing.T) {

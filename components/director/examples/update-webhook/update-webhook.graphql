@@ -3,7 +3,7 @@ mutation {
   result: updateWebhook(
     webhookID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
     in: {
-      type: UNREGISTER_APPLICATION
+      type: CONFIGURATION_CHANGED
       url: "http://updated-webhook.url"
       outputTemplate: "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
     }

@@ -50,7 +50,7 @@ type Service interface {
 
 //go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationService interface {
-	CreateFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
+	CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName string) (*model.Formation, error)
 	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
 }
 
@@ -85,7 +85,7 @@ func (r *Resolver) CreateLabelDefinition(ctx context.Context, in graphql.LabelDe
 		return nil, errors.Wrap(err, "while parsing schema")
 	}
 	for _, f := range formations {
-		if _, err := r.formationsSrv.CreateFormation(ctx, tnt, model.Formation{Name: f}); err != nil {
+		if _, err := r.formationsSrv.CreateFormation(ctx, tnt, model.Formation{Name: f}, model.DefaultTemplateName); err != nil {
 			return nil, errors.Wrapf(err, "while creating formation with name %s", f)
 		}
 	}
@@ -223,7 +223,7 @@ func (r *Resolver) UpdateLabelDefinition(ctx context.Context, in graphql.LabelDe
 
 	for _, f := range inputFormations {
 		if _, ok := storedFormationsMap[f]; !ok {
-			if _, err := r.formationsSrv.CreateFormation(ctx, tnt, model.Formation{Name: f}); err != nil {
+			if _, err := r.formationsSrv.CreateFormation(ctx, tnt, model.Formation{Name: f}, model.DefaultTemplateName); err != nil {
 				return nil, errors.Wrapf(err, "while creating formation with name %s", f)
 			}
 		}
