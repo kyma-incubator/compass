@@ -56,15 +56,10 @@ func (d *directive) Validate(ctx context.Context, _ interface{}, next gqlgen.Res
 	if !d.isExternalCertificateFlow(consumerInfo) {
 		logger.Infof("Flow is not external certificate. Continue with next handler.")
 		return next(ctx)
-
 	}
 
 	tenantID, ok := ctx.Value(TenantHeader).(string)
-	if !ok {
-		return "", apperrors.NewCannotReadTenantError()
-	}
-
-	if tenantID == "" {
+	if !ok || tenantID == "" {
 		logger.Infof("Missing tenant header. Continue with next handler.")
 		return next(ctx)
 	}

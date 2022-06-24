@@ -19,7 +19,7 @@ func NewHandler() *handler {
 }
 
 // Handler adds the tenant header to the context
-func (u *handler) Handler() func(next http.Handler) http.Handler {
+func (h *handler) Handler() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), TenantHeader, r.Header.Get("Tenant"))
