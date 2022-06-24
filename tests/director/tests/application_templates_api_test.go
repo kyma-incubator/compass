@@ -745,7 +745,7 @@ func fixAppTemplateInput(name string) graphql.ApplicationTemplateInput {
 
 func fixAppTemplateInputWithRegion(name, region string) graphql.ApplicationTemplateInput {
 	input := fixtures.FixApplicationTemplate(name)
-  input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SubscriptionConfig.SelfRegDistinguishLabelValue}
+	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SubscriptionConfig.SelfRegDistinguishLabelValue}
 	input.Labels[tenantfetcher.RegionKey] = region
 
 	return input
