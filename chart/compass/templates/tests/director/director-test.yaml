@@ -159,6 +159,8 @@ spec:
               value: {{ .Values.global.director.subscription.consumerSubaccountLabelKey }}
             - name: APP_SUBSCRIPTION_LABEL_KEY
               value: {{ .Values.global.director.subscription.subscriptionLabelKey }}
+            - name: SKIP_TESTS_REGEX
+              value: {{ .Values.global.tests.director.skipPattern }}
           {{ if .Values.global.isLocalEnv }}
           volumeMounts:
             - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"
