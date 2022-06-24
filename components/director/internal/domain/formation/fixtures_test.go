@@ -74,6 +74,10 @@ func unusedUUIDService() *automock.UuidService {
 	return &automock.UuidService{}
 }
 
+func unusedFormationRepo() *automock.FormationRepository {
+	return &automock.FormationRepository{}
+}
+
 func fixCtxWithTenant() context.Context {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID.String(), externalTenantID.String())
