@@ -184,7 +184,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, config.GlobalRegistryConfig, vendorSvc, productSvc, ordClient)
 
-	ordConfig := ord.NewServiceConfig(config.MaxParallelApplicationsProcessors)
+	ordConfig := ord.NewServiceConfig(config.MaxParallelApplicationProcessors)
 	return ord.NewAggregatorService(ordConfig, transact, labelRepo, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClient)
 }
 
