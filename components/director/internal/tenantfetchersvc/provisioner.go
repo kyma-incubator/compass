@@ -17,8 +17,8 @@ type DirectorGraphQLClient interface {
 	WriteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
 	DeleteTenants(ctx context.Context, tenants []graphql.BusinessTenantMappingInput) error
 	UpdateTenant(ctx context.Context, id string, tenant graphql.BusinessTenantMappingInput) error
-	SubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, region, appName string) error
-	UnsubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, region string) error
+	SubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName string) error
+	UnsubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region string) error
 }
 
 // TenantConverter expects tenant converter implementation
