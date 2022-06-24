@@ -4085,6 +4085,10 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	&ast.Source{Name: "schema.graphql", Input: `"""
+appMetadataValidation directive is added to application metadata mutations to protect them
+"""
+directive @appMetadataValidation on FIELD_DEFINITION
+"""
 Async directive is added to mutations which are capable of being executed in asynchronious matter
 """
 directive @async(operationType: OperationType!, webhookType: WebhookType, idField: String) on FIELD_DEFINITION
@@ -4100,10 +4104,6 @@ directive @hasScopes(path: String!) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 Sanitize directive marks mutation arguments that will be validated.
 """
 directive @sanitize(path: String!) on FIELD_DEFINITION
-"""
-appMetadataValidation directive is added to application metadata mutations to protect them
-"""
-directive @appMetadataValidation on FIELD_DEFINITION
 """
 Validate directive marks mutation arguments that will be validated.
 """
@@ -19059,8 +19059,14 @@ func (ec *executionContext) _Mutation_deleteBundle(ctx context.Context, field gr
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.AppMetadataValidation == nil {
+				return nil, errors.New("directive appMetadataValidation is not implemented")
+			}
+			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -19248,14 +19254,8 @@ func (ec *executionContext) _Mutation_deleteAutomaticScenarioAssignmentsForSelec
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.AppMetadataValidation == nil {
-				return nil, errors.New("directive appMetadataValidation is not implemented")
-			}
-			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}
