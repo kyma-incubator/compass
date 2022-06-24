@@ -175,7 +175,7 @@ func (s *service) GetFormationsForObject(ctx context.Context, tnt string, objTyp
 // CreateFormation adds the provided formation to the scenario label definitions of the given tenant.
 // If the scenario label definition does not exist it will be created
 // Also, a new Formation entity is created based on the provided template name or the default one is used if it's not provided
-func (s *service) CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName *string) (*model.Formation, error) {
+func (s *service) CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName string) (*model.Formation, error) {
 	formationName := formation.Name
 	if err := s.modifyFormations(ctx, tnt, formationName, addFormation); err != nil {
 		if !apperrors.IsNotFoundError(err) {
@@ -184,8 +184,6 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 		if err = s.labelDefService.CreateWithFormations(ctx, tnt, []string{formationName}); err != nil {
 			return nil, err
 		}
-		// TODO:: Currently we need to support both mechanisms of formation creation/deletion(through label definitions and Formations entity) for backwards compatibility
-		return s.createFormation(ctx, tnt, *templateName, formationName)
 	}
 
 	// TODO:: Currently we need to support both mechanisms of formation creation/deletion(through label definitions and Formations entity) for backwards compatibility

@@ -575,6 +575,7 @@ input FetchRequestInput {
 
 input FormationInput {
 	name: String!
+	templateName: String
 }
 
 input FormationTemplateInput {
@@ -1529,7 +1530,7 @@ type Mutation {
 	**Examples**
 	- [create formation](examples/create-formation/create-formation.graphql)
 	"""
-	createFormation(formation: FormationInput!, templateName: String): Formation! @hasScopes(path: "graphql.mutation.createFormation")
+	createFormation(formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.createFormation")
 	"""
 	**Examples**
 	- [delete formation](examples/delete-formation/delete-formation.graphql)
