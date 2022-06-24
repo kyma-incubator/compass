@@ -110,11 +110,7 @@ global:
       version: "PR-2383"
     director:
       dir:
-<<<<<<< HEAD
       version: "PR-2403"
-=======
-      version: "PR-2391"
->>>>>>> main
     hydrator:
       dir:
       version: "PR-2391"
@@ -140,21 +136,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-<<<<<<< HEAD
       version: "PR-2403"
-=======
-      version: "PR-2391"
->>>>>>> main
     console:
       dir:
       version: "PR-68"
     e2e_tests:
       dir:
-<<<<<<< HEAD
       version: "PR-2403"
-=======
-      version: "PR-2391"
->>>>>>> main
   isLocalEnv: false
   isForTesting: false
   oauth2:
