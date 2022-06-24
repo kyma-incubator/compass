@@ -17,13 +17,13 @@ type FormationService struct {
 	mock.Mock
 }
 
-// CreateFormation provides a mock function with given fields: ctx, tnt, formation
-func (_m *FormationService) CreateFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error) {
-	ret := _m.Called(ctx, tnt, formation)
+// CreateFormation provides a mock function with given fields: ctx, tnt, formation, templateName
+func (_m *FormationService) CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName string) (*model.Formation, error) {
+	ret := _m.Called(ctx, tnt, formation, templateName)
 
 	var r0 *model.Formation
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.Formation) *model.Formation); ok {
-		r0 = rf(ctx, tnt, formation)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.Formation, string) *model.Formation); ok {
+		r0 = rf(ctx, tnt, formation, templateName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.Formation)
@@ -31,8 +31,8 @@ func (_m *FormationService) CreateFormation(ctx context.Context, tnt string, for
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.Formation) error); ok {
-		r1 = rf(ctx, tnt, formation)
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.Formation, string) error); ok {
+		r1 = rf(ctx, tnt, formation, templateName)
 	} else {
 		r1 = ret.Error(1)
 	}

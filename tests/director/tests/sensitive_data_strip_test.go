@@ -28,7 +28,8 @@ func TestSensitiveDataStrip(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Creating application template")
-	appTmpInput := fixAppTemplateWithWebhookInput("app-template-test")
+	appTemplateName := createAppTemplateName("app-template-test")
+	appTmpInput := fixAppTemplateWithWebhookInput(appTemplateName)
 
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmpInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate)
@@ -308,8 +309,8 @@ func appWithAPIsAndEvents(name string) graphql.ApplicationRegisterInput {
 
 func fixAppTemplateWithWebhookInput(name string) graphql.ApplicationTemplateInput {
 	input := fixtures.FixApplicationTemplateWithWebhook(name)
-	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input.Labels[tenantfetcher.RegionKey] = conf.SelfRegRegion
+	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SubscriptionConfig.SelfRegDistinguishLabelValue}
+	input.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
 
 	return input
 }

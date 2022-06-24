@@ -9,15 +9,18 @@ import (
 	"os"
 	"time"
 
+	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/subscription"
 
 	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
-
-	"github.com/kyma-incubator/compass/components/director/internal/subscription"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
@@ -146,7 +149,7 @@ type config struct {
 
 	SubscriptionConfig subscription.Config
 
-	TenantOnDemandURL string `envconfig:"optional,APP_FETCH_TENANT_URL"`
+	TenantOnDemandConfig tenant.FetchOnDemandAPIConfig
 
 	SkipSSLValidation bool `envconfig:"default=false,APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"`
 }
@@ -242,7 +245,7 @@ func main() {
 		adminURL,
 		accessStrategyExecutorProvider,
 		cfg.SubscriptionConfig,
-		cfg.TenantOnDemandURL,
+		cfg.TenantOnDemandConfig,
 	)
 	exitOnError(err, "Failed to initialize root resolver")
 
@@ -258,7 +261,7 @@ func main() {
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
-	claimsValidator := claims.NewValidator(runtimeSvc(cfg), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountIDsLabelKey)
+	claimsValidator := claims.NewValidator(transact, runtimeSvc(cfg), runtimeCtxSvc(cfg), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey, cfg.Features.TokenPrefix)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
 	authMiddleware := mp_authenticator.New(httpClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claimsValidator)
@@ -583,33 +586,66 @@ func appUpdaterFunc(appRepo application.ApplicationRepository) operation.Resourc
 }
 
 func runtimeSvc(cfg config) claims.RuntimeService {
-	uidSvc := uid.NewService()
-
+	asaConverter := scenarioassignment.NewConverter()
 	authConverter := auth.NewConverter()
-
 	webhookConverter := webhook.NewConverter(authConverter)
-	rtConverter := runtime.NewConverter(webhookConverter)
-	rtRepo := runtime.NewRepository(rtConverter)
+	labelConverter := label.NewConverter()
+	labelDefinitionConverter := labeldef.NewConverter()
+	runtimeContextConverter := runtimectx.NewConverter()
+	runtimeConverter := runtime.NewConverter(webhookConverter)
+	tenantConverter := tenant.NewConverter()
+	formationConv := formation.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter()
 
-	lblRepo := label.NewRepository(label.NewConverter())
+	asaRepo := scenarioassignment.NewRepository(asaConverter)
+	labelRepo := label.NewRepository(labelConverter)
+	labelDefinitionRepo := labeldef.NewRepository(labelDefinitionConverter)
+	runtimeRepo := runtime.NewRepository(runtimeConverter)
+	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConverter)
+	tenantRepo := tenant.NewRepository(tenantConverter)
+	formationRepo := formation.NewRepository(formationConv)
+	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 
-	assignmentConv := scenarioassignment.NewConverter()
-	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
+	uidSvc := uid.NewService()
+	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
+	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
+	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo)
+	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 
-	tenantRepo := tenant.NewRepository(tenant.NewConverter())
+	return runtime.NewService(runtimeRepo, labelRepo, labelDefinitionSvc, labelSvc, uidSvc, formationSvc, tenantSvc, webhookService(), runtimeContextSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern, cfg.Features.RuntimeTypeLabelKey, cfg.Features.KymaRuntimeTypeLabelValue)
+}
 
-	labelDefRepo := labeldef.NewRepository(labeldef.NewConverter())
-	labelDefSvc := labeldef.NewService(labelDefRepo, lblRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+func runtimeCtxSvc(cfg config) claims.RuntimeCtxService {
+	runtimeContextConverter := runtimectx.NewConverter()
+	labelConverter := label.NewConverter()
+	labelDefinitionConverter := labeldef.NewConverter()
+	asaConverter := scenarioassignment.NewConverter()
+	tenantConverter := tenant.NewConverter()
+	authConverter := auth.NewConverter()
+	webhookConverter := webhook.NewConverter(authConverter)
+	runtimeConverter := runtime.NewConverter(webhookConverter)
+	formationConv := formation.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter()
 
-	labelSvc := label.NewLabelService(lblRepo, labelDefRepo, uidSvc)
+	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConverter)
+	labelRepo := label.NewRepository(labelConverter)
+	labelDefinitionRepo := labeldef.NewRepository(labelDefinitionConverter)
+	asaRepo := scenarioassignment.NewRepository(asaConverter)
+	tenantRepo := tenant.NewRepository(tenantConverter)
+	runtimeRepo := runtime.NewRepository(runtimeConverter)
+	formationRepo := formation.NewRepository(formationConv)
+	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 
-	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
+	uidSvc := uid.NewService()
+	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
+	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
+	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo)
 
-	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, lblRepo, labelSvc)
-
-	formationSvc := formation.NewService(labelDefRepo, lblRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, rtRepo)
-
-	return runtime.NewService(rtRepo, lblRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantSvc, webhookService(), cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern)
+	return runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 }
 
 func intSystemSvc() claims.IntegrationSystemService {

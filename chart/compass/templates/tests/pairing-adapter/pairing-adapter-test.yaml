@@ -19,12 +19,6 @@ spec:
       labels:
         app: {{ .Chart.Name }}-pairing-adapter-tests-app
     spec:
-      {{ if .Values.global.isLocalEnv }}
-      hostAliases:
-        - ip: {{ .Values.global.minikubeIP }}
-          hostnames:
-            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
-      {{ end }}
       serviceAccountName: {{ $.Chart.Name }}-e2e-pairing-adapter
       containers:
         {{if eq .Values.global.database.embedded.enabled false}}
@@ -90,9 +84,9 @@ spec:
             - name: APP_CLIENT_ID_HTTP_HEADER
               value: {{ $.Values.global.director.clientIDHeaderKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
-              value: {{ $.Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+              value: {{ $.Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
-              value: {{ $.Values.global.tests.subscriptionProviderIdValue | quote }}
+              value: {{ $.Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
             - name: APP_SELF_REG_REGION
               value: {{ $.Values.global.tests.selfRegistration.region }}
             - name: APP_SELF_REG_LABEL_KEY

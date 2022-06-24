@@ -104,6 +104,7 @@ type ApplicationRegisterInput struct {
 	BaseURL             *string                     `json:"baseUrl"`
 	IntegrationSystemID *string                     `json:"integrationSystemID"`
 	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
+	LocalTenantID       *string                     `json:"localTenantID"`
 	Bundles             []*BundleCreateInput        `json:"bundles"`
 }
 
@@ -120,10 +121,11 @@ type ApplicationTemplateInput struct {
 	Webhooks    []*WebhookInput `json:"webhooks"`
 	Description *string         `json:"description"`
 	// **Validation:** label key is alphanumeric with underscore
-	Labels           Labels                         `json:"labels"`
-	ApplicationInput *ApplicationRegisterInput      `json:"applicationInput"`
-	Placeholders     []*PlaceholderDefinitionInput  `json:"placeholders"`
-	AccessLevel      ApplicationTemplateAccessLevel `json:"accessLevel"`
+	Labels               Labels                         `json:"labels"`
+	ApplicationInput     *ApplicationRegisterInput      `json:"applicationInput"`
+	Placeholders         []*PlaceholderDefinitionInput  `json:"placeholders"`
+	AccessLevel          ApplicationTemplateAccessLevel `json:"accessLevel"`
+	ApplicationNamespace *string                        `json:"applicationNamespace"`
 }
 
 type ApplicationTemplatePage struct {
@@ -138,10 +140,11 @@ type ApplicationTemplateUpdateInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
 	// **Validation:** max=2000
-	Description      *string                        `json:"description"`
-	ApplicationInput *ApplicationRegisterInput      `json:"applicationInput"`
-	Placeholders     []*PlaceholderDefinitionInput  `json:"placeholders"`
-	AccessLevel      ApplicationTemplateAccessLevel `json:"accessLevel"`
+	Description          *string                        `json:"description"`
+	ApplicationInput     *ApplicationRegisterInput      `json:"applicationInput"`
+	Placeholders         []*PlaceholderDefinitionInput  `json:"placeholders"`
+	AccessLevel          ApplicationTemplateAccessLevel `json:"accessLevel"`
+	ApplicationNamespace *string                        `json:"applicationNamespace"`
 }
 
 type ApplicationUpdateInput struct {
@@ -154,6 +157,7 @@ type ApplicationUpdateInput struct {
 	BaseURL             *string                     `json:"baseUrl"`
 	IntegrationSystemID *string                     `json:"integrationSystemID"`
 	StatusCondition     *ApplicationStatusCondition `json:"statusCondition"`
+	LocalTenantID       *string                     `json:"localTenantID"`
 }
 
 type Auth struct {
@@ -426,8 +430,34 @@ type FetchRequestStatus struct {
 }
 
 type FormationInput struct {
-	Name string `json:"name"`
+	Name         string  `json:"name"`
+	TemplateName *string `json:"templateName"`
 }
+
+type FormationTemplate struct {
+	ID                     string       `json:"id"`
+	Name                   string       `json:"name"`
+	ApplicationTypes       []string     `json:"applicationTypes"`
+	RuntimeType            string       `json:"runtimeType"`
+	RuntimeTypeDisplayName string       `json:"runtimeTypeDisplayName"`
+	RuntimeArtifactKind    ArtifactType `json:"runtimeArtifactKind"`
+}
+
+type FormationTemplateInput struct {
+	Name                   string       `json:"name"`
+	ApplicationTypes       []string     `json:"applicationTypes"`
+	RuntimeType            string       `json:"runtimeType"`
+	RuntimeTypeDisplayName string       `json:"runtimeTypeDisplayName"`
+	RuntimeArtifactKind    ArtifactType `json:"runtimeArtifactKind"`
+}
+
+type FormationTemplatePage struct {
+	Data       []*FormationTemplate `json:"data"`
+	PageInfo   *PageInfo            `json:"pageInfo"`
+	TotalCount int                  `json:"totalCount"`
+}
+
+func (FormationTemplatePage) IsPageable() {}
 
 type HealthCheck struct {
 	Type      HealthCheckType            `json:"type"`
@@ -840,6 +870,49 @@ func (e ApplicationTemplateAccessLevel) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type ArtifactType string
+
+const (
+	ArtifactTypeSubscription        ArtifactType = "SUBSCRIPTION"
+	ArtifactTypeServiceInstance     ArtifactType = "SERVICE_INSTANCE"
+	ArtifactTypeEnvironmentInstance ArtifactType = "ENVIRONMENT_INSTANCE"
+)
+
+var AllArtifactType = []ArtifactType{
+	ArtifactTypeSubscription,
+	ArtifactTypeServiceInstance,
+	ArtifactTypeEnvironmentInstance,
+}
+
+func (e ArtifactType) IsValid() bool {
+	switch e {
+	case ArtifactTypeSubscription, ArtifactTypeServiceInstance, ArtifactTypeEnvironmentInstance:
+		return true
+	}
+	return false
+}
+
+func (e ArtifactType) String() string {
+	return string(e)
+}
+
+func (e *ArtifactType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ArtifactType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ArtifactType", str)
+	}
+	return nil
+}
+
+func (e ArtifactType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type BundleInstanceAuthSetStatusConditionInput string
 
 const (
@@ -1095,20 +1168,22 @@ func (e FetchRequestStatusCondition) MarshalGQL(w io.Writer) {
 type FormationObjectType string
 
 const (
-	FormationObjectTypeApplication FormationObjectType = "APPLICATION"
-	FormationObjectTypeTenant      FormationObjectType = "TENANT"
-	FormationObjectTypeRuntime     FormationObjectType = "RUNTIME"
+	FormationObjectTypeApplication    FormationObjectType = "APPLICATION"
+	FormationObjectTypeTenant         FormationObjectType = "TENANT"
+	FormationObjectTypeRuntime        FormationObjectType = "RUNTIME"
+	FormationObjectTypeRuntimeContext FormationObjectType = "RUNTIME_CONTEXT"
 )
 
 var AllFormationObjectType = []FormationObjectType{
 	FormationObjectTypeApplication,
 	FormationObjectTypeTenant,
 	FormationObjectTypeRuntime,
+	FormationObjectTypeRuntimeContext,
 }
 
 func (e FormationObjectType) IsValid() bool {
 	switch e {
-	case FormationObjectTypeApplication, FormationObjectTypeTenant, FormationObjectTypeRuntime:
+	case FormationObjectTypeApplication, FormationObjectTypeTenant, FormationObjectTypeRuntime, FormationObjectTypeRuntimeContext:
 		return true
 	}
 	return false

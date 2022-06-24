@@ -23,14 +23,9 @@ spec:
         metadata:
           labels:
             cronjob: {{ .Values.global.ordAggregator.name }}
+          annotations:
+            cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         spec:
-          {{ if .Values.global.isLocalEnv }}
-          hostAliases:
-            - ip: {{ .Values.global.minikubeIP }}
-              hostnames:
-                - "{{ .Values.global.externalServicesMock.ordCertSecuredHost }}.{{ .Values.global.ingress.domainName }}"
-                - "{{ .Values.global.externalServicesMock.ordGlobalCertSecuredHost }}.{{ .Values.global.ingress.domainName }}"
-          {{ end }}
           serviceAccountName: {{ $.Chart.Name }}-ord-aggregator
           containers:
             - name: aggregator
@@ -94,6 +89,8 @@ spec:
                   value: "{{ .Values.global.ordAggregator.globalRegistryUrl }}"
                 - name: APP_ORD_MAX_PARALLEL_DOWNLOADS
                   value: "{{ .Values.global.ordAggregator.maxOrdParallelDownloads }}"
+                - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
+                  value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
               command:
                 - "/bin/sh"
               args:

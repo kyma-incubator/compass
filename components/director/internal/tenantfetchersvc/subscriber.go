@@ -31,21 +31,21 @@ func (s *subscriber) Subscribe(ctx context.Context, tenantSubscriptionRequest *T
 		return err
 	}
 
-	return s.applyRuntimesSubscriptionChange(ctx, tenantSubscriptionRequest.SubscriptionProviderID, tenantSubscriptionRequest.SubaccountTenantID, tenantSubscriptionRequest.ProviderSubaccountID, tenantSubscriptionRequest.Region, true)
+	return s.applyRuntimesSubscriptionChange(ctx, tenantSubscriptionRequest.SubscriptionProviderID, tenantSubscriptionRequest.SubaccountTenantID, tenantSubscriptionRequest.ProviderSubaccountID, tenantSubscriptionRequest.ConsumerTenantID, tenantSubscriptionRequest.Region, tenantSubscriptionRequest.SubscriptionProviderAppName, true)
 }
 
 // Unsubscribe unsubscribes tenant from runtime.
 func (s *subscriber) Unsubscribe(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest) error {
-	return s.applyRuntimesSubscriptionChange(ctx, tenantSubscriptionRequest.SubscriptionProviderID, tenantSubscriptionRequest.SubaccountTenantID, tenantSubscriptionRequest.ProviderSubaccountID, tenantSubscriptionRequest.Region, false)
+	return s.applyRuntimesSubscriptionChange(ctx, tenantSubscriptionRequest.SubscriptionProviderID, tenantSubscriptionRequest.SubaccountTenantID, tenantSubscriptionRequest.ProviderSubaccountID, tenantSubscriptionRequest.ConsumerTenantID, tenantSubscriptionRequest.Region, tenantSubscriptionRequest.SubscriptionProviderAppName, false)
 }
 
-func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscriptionProviderID, subaccountTenantID, providerSubaccountID, region string, subscribe bool) error {
+func (s *subscriber) applyRuntimesSubscriptionChange(ctx context.Context, subscriptionProviderID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName string, subscribe bool) error {
 	var err error
 
 	if subscribe {
-		err = s.gqlClient.SubscribeTenantToRuntime(ctx, subscriptionProviderID, subaccountTenantID, providerSubaccountID, region)
+		err = s.gqlClient.SubscribeTenant(ctx, subscriptionProviderID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName)
 	} else {
-		err = s.gqlClient.UnsubscribeTenantFromRuntime(ctx, subscriptionProviderID, subaccountTenantID, providerSubaccountID, region)
+		err = s.gqlClient.UnsubscribeTenant(ctx, subscriptionProviderID, subaccountTenantID, providerSubaccountID, consumerTenantID, region)
 	}
 	return err
 }

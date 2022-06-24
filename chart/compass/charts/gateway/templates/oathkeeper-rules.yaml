@@ -376,6 +376,8 @@ spec:
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.authenticationMappingServices.subscriber.cfg | indent 4 }}
+  - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
   - handler: id_token
     config:

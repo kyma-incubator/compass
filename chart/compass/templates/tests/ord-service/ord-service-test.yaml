@@ -19,14 +19,6 @@ spec:
       labels:
         app: {{ .Chart.Name }}-ord-service-tests-app
     spec:
-      {{ if .Values.global.isLocalEnv }}
-      hostAliases:
-        - ip: {{ .Values.global.minikubeIP }}
-          hostnames:
-            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
-            - "oauth2.{{ .Values.global.ingress.domainName }}"
-      {{ end }}
       serviceAccountName: {{ .Chart.Name }}-e2e-ord-service
       containers:
         - name: ord-service-tests
@@ -50,7 +42,7 @@ spec:
             - name: SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
             - name: CONSUMER_TOKEN_URL
-              value: {{ .Values.global.tests.ordService.consumerTokenURL }}
+              value: {{ .Values.global.tests.subscription.consumerTokenURL }}
             - name: TOKEN_PATH
               value: {{ .Values.global.externalServicesMock.oauthSecret.oauthTokenPath }}
             - name: PROVIDER_CLIENT_ID
@@ -63,39 +55,45 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
                   key: {{ .Values.global.externalServicesMock.oauthSecret.clientSecretKey }}
-            - name: SUBSCRIPTION_CONFIG_URL
-              value: {{ .Values.global.tests.subscriptionURL }}
-            - name: SUBSCRIPTION_CONFIG_TOKEN_URL
+            - name: APP_SUBSCRIPTION_CONFIG_URL
+              value: {{ .Values.global.tests.subscription.subscriptionURL }}
+            - name: APP_SUBSCRIPTION_CONFIG_TOKEN_URL
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.tests.ordService.subscriptionOauthSecret.name }}
-                  key: {{ .Values.global.tests.ordService.subscriptionOauthSecret.oauthUrlKey }}
-            - name: SUBSCRIPTION_CONFIG_CLIENT_ID
+                  name: {{ .Values.global.tests.subscription.oauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.oauthSecret.oauthUrlKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_CLIENT_ID
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.tests.ordService.subscriptionOauthSecret.name }}
-                  key: {{ .Values.global.tests.ordService.subscriptionOauthSecret.clientIdKey }}
-            - name: SUBSCRIPTION_CONFIG_CLIENT_SECRET
+                  name: {{ .Values.global.tests.subscription.oauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.oauthSecret.clientIdKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.global.tests.ordService.subscriptionOauthSecret.name }}
-                  key: {{ .Values.global.tests.ordService.subscriptionOauthSecret.clientSecretKey }}
-            - name: SUBSCRIPTION_CONFIG_PROVIDER_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
-            - name: SUBSCRIPTION_CONFIG_PROVIDER_ID
-              value: "{{ .Values.global.tests.subscriptionProviderIdValue }}"
-            - name: TENANT_CONFIG_TENANT_FETCHER_URL
-              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - name: TENANT_CONFIG_ROOT_API
-              value: "{{ .Values.global.tenantFetcher.prefix }}"
-            - name: TENANT_CONFIG_REGIONAL_HANDLER_ENDPOINT
-              value: "{{ .Values.global.tenantFetcher.server.regionalHandlerEndpoint }}"
-            - name: TENANT_CONFIG_TENANT_PATH_PARAM
-              value: "{{ .Values.global.tenantFetcher.server.tenantPathParam }}"
-            - name: TENANT_CONFIG_REGION_PATH_PARAM
-              value: "{{ .Values.global.tenantFetcher.server.regionPathParam }}"
-            - name: TENANT_CONFIG_REGION
+                  name: {{ .Values.global.tests.subscription.oauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.oauthSecret.clientSecretKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_REGION
               value: {{ .Values.global.tests.selfRegistration.region }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_KEY
+              value: {{ .Values.global.director.selfRegister.label }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_VALUE_PREFIX
+              value: {{ .Values.global.director.selfRegister.labelValuePrefix }}
+            - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
+              value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TF_CONFIG_URL
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - name: APP_TF_CONFIG_ROOT_API
+              value: "{{ .Values.global.tenantFetcher.prefix }}"
+            - name: APP_TF_CONFIG_REGIONAL_HANDLER_ENDPOINT
+              value: "{{ .Values.global.tenantFetcher.server.regionalHandlerEndpoint }}"
+            - name: APP_TF_CONFIG_TENANT_PATH_PARAM
+              value: "{{ .Values.global.tenantFetcher.server.tenantPathParam }}"
+            - name: APP_TF_CONFIG_REGION_PATH_PARAM
+              value: "{{ .Values.global.tenantFetcher.server.regionPathParam }}"
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:
@@ -128,22 +126,16 @@ spec:
                   key: postgresql-sslMode
             - name: APP_DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
-            - name: SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_KEY
-              value: {{ .Values.global.director.selfRegister.label }}
-            - name: SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_VALUE_PREFIX
-              value: {{ .Values.global.director.selfRegister.labelValuePrefix }}
-            - name: SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
-              value: {{ .Values.global.tests.ordService.propagatedProviderSubaccountHeader }}
             - name: TEST_EXTERNAL_CERT_SUBJECT
-              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.ordService.providerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
+              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.subscription.tenants.providerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
             - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME
-              value: {{ .Values.global.tests.ordService.externalClientCertTestSecretName }}
+              value: {{ .Values.global.tests.subscription.externalClientCertTestSecretName }}
             - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE
-              value: {{ .Values.global.tests.ordService.externalClientCertTestSecretNamespace }}
+              value: {{ .Values.global.tests.subscription.externalClientCertTestSecretNamespace }}
             - name: EXTERNAL_CERT_TEST_JOB_NAME
-              value: {{ .Values.global.tests.ordService.externalCertTestJobName }}
+              value: {{ .Values.global.tests.subscription.externalCertTestJobName }}
             - name: CERT_SVC_INSTANCE_TEST_SECRET_NAME
-              value: {{ .Values.global.tests.ordService.certSvcInstanceTestSecretName }}
+              value: {{ .Values.global.tests.subscription.certSvcInstanceTestSecretName }}
             - name: EXTERNAL_CERT_CRONJOB_CONTAINER_NAME
               value: {{ .Values.global.externalCertConfiguration.rotationCronjob.containerName }}
             - name: BASIC_USERNAME
@@ -167,17 +159,15 @@ spec:
             - name: APP_EXTERNAL_CLIENT_KEY_KEY
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: TEST_CONSUMER_ACCOUNT_ID
-              value: {{ .Values.global.tests.ordService.consumerAccountID }}
+              value: {{ .Values.global.tests.subscription.tenants.consumerAccountID }}
             - name: TEST_PROVIDER_SUBACCOUNT_ID
-              value: {{ .Values.global.tests.ordService.providerSubaccountID }}
+              value: {{ .Values.global.tests.subscription.tenants.providerSubaccountID }}
             - name: TEST_CONSUMER_SUBACCOUNT_ID
-              value: {{ .Values.global.tests.ordService.consumerSubaccountID }}
+              value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountID }}
             - name: TEST_CONSUMER_TENANT_ID
-              value: {{ .Values.global.tests.ordService.consumerTenantID }}
+              value: {{ .Values.global.tests.subscription.tenants.consumerTenantID }}
             - name: SKIP_TESTS_REGEX
               value: {{ .Values.global.tests.ordService.skipPattern }}
-            - name: SELF_REG_REGION
-              value: {{ .Values.global.tests.selfRegistration.region }}
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
@@ -242,11 +232,11 @@ rules:
   verbs: ["get"]
 - apiGroups: ["*"]
   resources: ["secrets"]
-  resourceNames: ["{{ .Values.global.tests.ordService.externalClientCertTestSecretName }}"]
+  resourceNames: ["{{ .Values.global.tests.subscription.externalClientCertTestSecretName }}"]
   verbs: ["get", "delete"]
 - apiGroups: ["*"]
   resources: ["jobs"]
-  resourceNames: [{{ .Values.global.tests.ordService.externalCertTestJobName }}]
+  resourceNames: [{{ .Values.global.tests.subscription.externalCertTestJobName }}]
   verbs: ["get", "delete"]
 - apiGroups: ["*"]
   resources: ["jobs"]

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ###
-# Following script installs necessary tooling for Debian, deploys Kyma with Compass on Minikube, and runs the integrations tests.
+# Following script installs necessary tooling for Debian, deploys Kyma with Compass on k3d, and runs the integrations tests.
 #
 
 set -o errexit
@@ -36,9 +36,9 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 
 if [[ ${DUMP_DB} ]]; then
-    sudo ${INSTALLATION_DIR}/cmd/run.sh --minikube-cpus 7 --minikube-memory 12288 --dump-db 
+    sudo ${INSTALLATION_DIR}/cmd/run.sh --k3d-memory 12288MB --dump-db
 else
-    sudo ${INSTALLATION_DIR}/cmd/run.sh --minikube-cpus 7 --minikube-memory 12288
+    sudo ${INSTALLATION_DIR}/cmd/run.sh --k3d-memory 12288MB
 fi
 
 if [[ ${DUMP_DB} ]]; then

@@ -1,0 +1,213 @@
+connector:
+  http:
+    client:
+      skipSSLValidation: true
+gateway:
+  gateway:
+    auditlog:
+      authMode: "oauth-mtls"
+      enabled: true
+global:
+  isForTesting: true
+  auditlog:
+    skipSSLValidation: true
+  adminPassword: ""
+  connector:
+    caCertificate: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUYwakNDQTdxZ0F3SUJBZ0lKQUtudzEwQi9zejJUTUEwR0NTcUdTSWIzRFFFQkN3VUFNRTB4Q3pBSkJnTlYKQkFZVEFrSkhNUTR3REFZRFZRUUlEQVZzYjJOaGJERU9NQXdHQTFVRUJ3d0ZiRzlqWVd3eERqQU1CZ05WQkFvTQpCV3h2WTJGc01RNHdEQVlEVlFRRERBVnNiMk5oYkRBZ0Z3MHlNakF5TWpVeE16VTFNVEJhR0E4eU1USXlNREl3Ck1URXpOVFV4TUZvd1RURUxNQWtHQTFVRUJoTUNRa2N4RGpBTUJnTlZCQWdNQld4dlkyRnNNUTR3REFZRFZRUUgKREFWc2IyTmhiREVPTUF3R0ExVUVDZ3dGYkc5allXd3hEakFNQmdOVkJBTU1CV3h2WTJGc01JSUNJakFOQmdrcQpoa2lHOXcwQkFRRUZBQU9DQWc4QU1JSUNDZ0tDQWdFQW9UOXdxSE9kVUVqNitGbWhnbHJFYXNQY2l3dzBwSzQvCjA3cDc2MVZXN0JjVk5zWXJ3eXQ3UFB4cW1sSTg3RzZPVGEzN0pRSk9IOXIxSnlVdlRJejBta3ZxazBNWmtLQk8KdjZTTER5Q3BwOGc0TUd6Q0tHcldOWUJIRmNyMHdLS2w1b1V0WG45dDBHOFNXOG1NRjFxWk9pOWlMZEVZeE9kbgpHcmFvWno5RTZ0TFRQU0FDdEJHOVBSdENwb0VQOVl5di9XSjA3ZzlMeG1LL3NZVW1wSjB6RWdscDliYVRETjU1CkNyaFA0TnNxS2R1L0tHd3ArOElTNzFwZ3BYS2hhZ2t5M3JYVVZ5bmNkbXBIS1g0bkE0R0h0S0xSMkE1OVByK1oKVlkrbFBXYXB0Tnh3WEZ6RkNBUVJSbTVib1FIRUhTUmhNbXByL3phemdaUzBobm0zSS9taUZOZjg5L3NFSWpaZwpBYjV4WnpUU0MzNUs4WkV3a3dEOS9hdUVGRHdwby9EYktySzNtSTc4cFlqd2xNKzB6d09rZE5sVHVaUVY2VmFTCkJSekw0L2lBd0tnQ1dJTTNkb1RGczZiVHcrVXlWK2xuLzdkcDFBZWxrbm5TNVpkMFhtUkh4NXVlcmhRQUZDY1kKdzlKT25BWTk1by9RUGp4RWhWaS9tS2R2Z1A2VVg5T1orVHZ1UFB6TnlmK05KeDlFTk90UDVMVk5wUHVSZzJrTQp4NlZ4bnZUeUo4LzBSNTFGOW5qZ3ZxdzF0NDRyZ0J5L3E0VWlrK1h2QUw0dVY0aWcycFUrcEVieW1qekoyZTNpCjNBSkpXQ05hZUdGa3c2YUFpTlhOZmk4VGk1RjdteDgwS2J5S0FmVlMwNDJqRUhtMHYvY3pNN2lxNXdRWkVFSUYKUDZxZDk4M0daazhDQXdFQUFhT0JzakNCcnpBUEJnTlZIUk1CQWY4RUJUQURBUUgvTUIwR0ExVWREZ1FXQkJUbwprMzBXVzhCRUxnMEZBWEZscjNnYnpkektvVEI5QmdOVkhTTUVkakIwZ0JUb2szMFdXOEJFTGcwRkFYRmxyM2diCnpkektvYUZScEU4d1RURUxNQWtHQTFVRUJoTUNRa2N4RGpBTUJnTlZCQWdNQld4dlkyRnNNUTR3REFZRFZRUUgKREFWc2IyTmhiREVPTUF3R0ExVUVDZ3dGYkc5allXd3hEakFNQmdOVkJBTU1CV3h2WTJGc2dna0FxZkRYUUgregpQWk13RFFZSktvWklodmNOQVFFTEJRQURnZ0lCQUpkbHNtR2k0d1hvSlZ4SnlKVzlDWEZPejhZWkhTWlhicEdsClJXcmI4QkZIMy9SNFhPTTQ5Y3Y4UzErYUZvQ3hJd0taRGFhZVIwNVIxK05jVXNPSnhZL2tGWXNHN3kvMTJFRVIKTi90anVRTGhPNnEzT1piZTUwUFErS2pxbmxURnQrT1ptV1ZQc3NzbUU2WWNhWXBOc09FcmVWZWxNWHNybDBndgpLZ3hLUXFJQ3hJTThNTG1QeUUxSURsS3RSL0RrTkNqNDQybmgvNVlwaUFoOG1BTUE5QjFtcE1uSTZpZFB0RzRhCm5uSGxiVlZaMUE4UWF2bXlCNGRueVZwNlB3QnhSMXJjN0xoV3VBT3V2WkNWWGpxUVZLMkREdEJ0Q3RGcUUrQlQKa1I4MnFjMGtKR2IwYTFkRWRubmJEdU1BQzA0WnRrQnpQTlV6RzNqSkNKVkZhVEsyMVhZQjNkMUR4UTVSUFJyTQptZmVXUlM5cytmdlplOTZmb1BIMmZuREN0aFJkOXI5UXdWSmhZMkRlTzlQOVd0TW9QMWhMempHSnQ1czB2RmpRClE2RDdZaXFHajkvTXhoc1BqZjlucjhCL3ZUVzFWV1hackh2NDBlR01tM1kwRXUvMlA0bFR5YnEyUlp2enhlQTgKTmlXL0lEa3VrbmlMaU95UnZKL1RWVXFsYllhbm9qeUVlbzJaTnp0RTVadTRYUndabnZIeVIzNFVrMldTYjdOSAp4Tk53TUt6ZHdROFpQQnM1OCtZUjByUGlGN2V4WXprVnFOdHNydEYwUjVPRm5kZjN4Yi9GeC8rRTBhd1UyUlZSClNiTzUxM1JIMTFZZ3RneWlMM0kxRjk3NGFDZTRhYkJuWHdmWDA1eUl2a2dEbFAvdXA5T25WRjV6eU8xSkRmUDAKSlFqY20zbGsKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo="
+    caKey: "LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlKS1FJQkFBS0NBZ0VBb1Q5d3FIT2RVRWo2K0ZtaGdsckVhc1BjaXd3MHBLNC8wN3A3NjFWVzdCY1ZOc1lyCnd5dDdQUHhxbWxJODdHNk9UYTM3SlFKT0g5cjFKeVV2VEl6MG1rdnFrME1aa0tCT3Y2U0xEeUNwcDhnNE1HekMKS0dyV05ZQkhGY3Iwd0tLbDVvVXRYbjl0MEc4U1c4bU1GMXFaT2k5aUxkRVl4T2RuR3Jhb1p6OUU2dExUUFNBQwp0Qkc5UFJ0Q3BvRVA5WXl2L1dKMDdnOUx4bUsvc1lVbXBKMHpFZ2xwOWJhVERONTVDcmhQNE5zcUtkdS9LR3dwCis4SVM3MXBncFhLaGFna3kzclhVVnluY2RtcEhLWDRuQTRHSHRLTFIyQTU5UHIrWlZZK2xQV2FwdE54d1hGekYKQ0FRUlJtNWJvUUhFSFNSaE1tcHIvemF6Z1pTMGhubTNJL21pRk5mODkvc0VJalpnQWI1eFp6VFNDMzVLOFpFdwprd0Q5L2F1RUZEd3BvL0RiS3JLM21JNzhwWWp3bE0rMHp3T2tkTmxUdVpRVjZWYVNCUnpMNC9pQXdLZ0NXSU0zCmRvVEZzNmJUdytVeVYrbG4vN2RwMUFlbGtublM1WmQwWG1SSHg1dWVyaFFBRkNjWXc5Sk9uQVk5NW8vUVBqeEUKaFZpL21LZHZnUDZVWDlPWitUdnVQUHpOeWYrTkp4OUVOT3RQNUxWTnBQdVJnMmtNeDZWeG52VHlKOC8wUjUxRgo5bmpndnF3MXQ0NHJnQnkvcTRVaWsrWHZBTDR1VjRpZzJwVStwRWJ5bWp6SjJlM2kzQUpKV0NOYWVHRmt3NmFBCmlOWE5maThUaTVGN214ODBLYnlLQWZWUzA0MmpFSG0wdi9jek03aXE1d1FaRUVJRlA2cWQ5ODNHWms4Q0F3RUEKQVFLQ0FnRUFqUDBpYlRmQjZrd1ZuUWNKOENlYkxGc2JRRDBvM29FNWI5RFR2ejQ4Sld3OWNVb3ZRNVNHU2huTwp3Q1o5L0tEaUxrdWNsNHgvY04wTGsvR3dmTGVXdkQ3NjJVNUhVU3pLRGtrNkNiMGVlb1RYbElmVDhIRVI0Vy9MCk4rUGd3M3F6b203NTczRnVQRnlSNmMyOWYwSUpUbFhWKzRlanA2OUplSk1UaGt0TTRDSDg3NnBJa3RnYjVnMHEKNXRsY2NmQlVoVElNV1lib1U0dE9YMUswS2lVRlhaVDdvQXZHWWU4NFdNWTFtYjhvQzdlSFdqblJMNzlPdlJnQgovMGZPbVI5MzZrR0VhNzQvZFE2U01GYU1tRVV1dWlQUFphR3RveXIyVUZpc081YkRkazkwczEydUxjY1lyOE9ZCnZKd0Z0UkYxSnhia1hSK2dMd0l1SXBMVUxsRjhoR2ZEb3QvWUZvZGJBM3A0dlM1MEc4c212YWlROVhnVXdGdFoKMFdpWU5iQ2JKdlY1d0w2aXlPcTRqakFGeExqU2lqc20ybFpVcTZiVDY5YVFpR0xmbXJDYnJDRnJFSkNpU1F3WgpGenVrMGlXYnM4ZXRySWFnNjdtY0kvTlF4RkVQbXB2ZEdQTllGZ0RwUDdEMnlhUnA4MzVjeWJVd04vcUE2RnBGCkJHSEQ0ZWl6OWd0WlhwT25NYzBibk9KcG5qMlNpaUUwaS95a0NuTlZvRm1SeXladVY0YVlQd29laWpOZ1NjZWIKQTY1TThHaWtUdmdiemFaL3YvOVdlWElURGJVWjcvQTBwYlRDTjZZZ0xscjBpQlJPMUFmeGhNNkVmems4QlFUSQpidWJ5U3ZwQWhiRk83aTZLVVAvZW03eVV0ckxBekdOR2dnTFJMVEpRWGdYUWNSeUdVWkVDZ2dFQkFNOUVhZW5nCm9peE1QaE5jTlN0dENEekhER2RDSFRWcDN2U0s0bkNHRFhGY3N2aytqMGRRM2pQYWx2V3dDMjBYOTZWQlR1bzAKTFhhcGgwZ0xHYloyS3JWQ0tPOWZrZXpQVWMwOWMzNmp1OExFZ3NBZ0dGOUpXeDVlMUVleUIzS0w0RnIreXVVVwpLbDc0azltYmZVK1dRcG1vc3hKdW41ZjBqbzhoclRucGtqR2FqUHhTL05GaE1YVHpGdjl6dEhVblZhTzJVYzI3ClB1WUJNSkxGdTQ2Y2xxWG53RTQxUTVwVHFLZGwxaUw0dFRrVER5ekFNUHZucW9HSld4Q1ZidjR3b2Z1WXBrY0gKSG50SlVEMVhhSnI1N0xoSU4zeDRCN2pFU3JYTUwrOVVIcWgzTDRna2FwV0VTTDlsY1d3aWxlcHhYdG5RdDI3NgprK0NXVVpuY09TUklVM2NDZ2dFQkFNY3BGRGdBWHVYS040b0Z3TC9lRkkvUWVSeXBDakQ2LytidVdCV2F0SXdQCnprQ1h6ODNaY256NmQ4YUlHc2I1bi9tbFYwaHBCdkdtZzBkN0ZHbHZoWDVhZDRzeXFLZWZJajZtWG1PMDRrQ3gKa29kZkErUVh5Q1EwWlFSRi9TenRyNWxWQi9yYnhhYzdCVlplQUxvVUtSSzdUMFhCOHczVXN1SnNyNGR0QVkwZQpDUDlmQlRybFowYjBFSnROWXlVbGFSNWRkaFVuYnJFeHFkUzg5Yk8ybUxBUjVDTVJJRXZScTRseGlQYzRTTXhYCmhUY2FSTmpBU2M3WE5NUUI1WVpXeUxaYzN1RndQaXRHK0sxTGMwNWs1VFpWeEtNdmVhOXBiZkRHLysyQm9IcHIKOEFHVXVKVlk2bCtGTzNleXlmenRPVGtpMUkwNmlxU2dURzVrbzJ0bXlla0NnZ0VBUjVYZWFzdU4xM1RodjdnSwpHUnlJU3MySXFDVTZoMWN3alE5bTAreEl1azJFOXZhM2I2OHJmNGRRdWp4NlJjeVFXTUFzckZFbkhxUEF1STQwCjdFTDF6ekt4aHJOZ2FBVFd3T2NuZTZhN1U3S2hZZy96dXYxUC9qWk1aUkxFNWJnUDNmM0FQODBmQnp3ZGZIdnEKbE5GVjRWSlZ2dGo4UC9SVVJIVWlLaTFVczlNb1BJSEJGZVBXdkFpMWViY1JyYURQUUVMWkVCQkswZys1SWdndgpGanRaQUtZQlVrR3RQcUVFVUFTcEo5ejBZbWtGeGJQL2R4RjFYMVg4WU1icjFka2dLUkI0NVhFOUF1RzRWK2RYCmxxY1pMakNyRVU4M2c0WXdNNGY1U2xTb1hoRUVGcVpWTlp6QnIzRXU4bVVqbUJ4ZDRTYm9JK2xocDZEalFCdkMKbEpoeVV3S0NBUUI4QUpyREo0L3VtVkt0VUZtcjNQV0dlYkgrNDAwaUpCWFRUbEZ2Mml4U0RNRkp2SHc1V2d1TAp2MU4yUEdZWHYzTVl1QmE1VWhOdHdGUjYzQ3BnWDN5SnFJQklIaG1lakZtQkVvc3duMzVEODR3ZFYwNlA1VExMClFBZ3BlZjVoeS9nS2kwUDFzSUxIVmR0RDVER2xxa25Nak8yVnJHWE9GY0h2Y3VaemRxNkJrOUxjVmVobXZGRHEKZjZvYldEckQ5U0FYTlBBQnlkU0U1VHd0NWgxQmNRNXVpaVUycEVJc2t2YXdGQTNJaDdYajdSWlhzYlp1RW9PaQpFcUthNitkaUZvVFA3dEVqSW9UQzQyU1FXYXNJZzQrbm5nMVo0WVJ0Y0VKd3FTYk9WV2g2OE51MTBFaUJUS1JaCkp4Wll0K3hGMjlwR05lYUxySWlJYWZwTXZjSjJhOENKQW9JQkFRRE5Nbk43M1k4UWNwSld4eTk4SmNLSklrTTQKY3BIeUM1U2dva2QvRWdBZzdMdW96a0grQWtWREZTUmcxdmRDSjdSMU9yTXNxeUVyYy9xV0pDYWpqVWJ6UlVyOApJQlN5b2Y1Zko3UHZ1VFc2WkV6RUR2WEw5WW90VExLM1VnUWpGc0N6c3dIUVhOaEE1QVBHWWZZa2hsTnlubVdpCnpyYlFYU1Q2RkxDeSt3UW9UQ3NzVHF4NW8yOEZiZ21RSTZvQzdmQ0ViTzZNL2dCTUxtbjhFNW03dWJVWE9wZmYKaEhsVGcwaVpKU0lDTDNRK25aZ0J4dVNSZ1hsMjJkUjZNYndiRDR6TTltNFhjTjNLTkNGMFY2bkJuQ0dnQ2hNaQp3aWpnS0w5RU1LemZFN0N4K05ZR0x5em9icVBXWDdMak81UjlPUWlpa3FBNmxxTldlN1g0b2NacFZ6c28KLS0tLS1FTkQgUlNBIFBSSVZBVEUgS0VZLS0tLS0K"
+  pairingAdapter:
+    configMap:
+      manage: true
+  domainName: "local.kyma.dev"
+  director:
+    subscription:
+      subscriptionProviderLabelKey: "subscriptionProviderId"
+  externalCertConfiguration:
+    secrets:
+      externalCertSvcSecret:
+        manage: true
+  externalServicesMock:
+    auditlog:
+      applyMockConfiguration: true
+    enabled: true
+    oauthSecret:
+      manage: true
+    regionInstancesCredentials:
+      manage: true
+  http:
+    client:
+      skipSSLValidation: true
+  ingress:
+    domainName: "local.kyma.dev"
+    tlsCrt: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUZSVENDQXkyZ0F3SUJBZ0lVSElnSzhaaXFoeUIxazZaTzFyNGg2ZWV1aUdvd0RRWUpLb1pJaHZjTkFRRUwKQlFBd0d6RVpNQmNHQTFVRUF3d1FLaTVzYjJOaGJDNXJlVzFoTG1SbGRqQWVGdzB5TWpBek1EUXhOVFV5TVRsYQpGdzB6TWpBek1ERXhOVFV5TVRsYU1Cc3hHVEFYQmdOVkJBTU1FQ291Ykc5allXd3VhM2x0WVM1a1pYWXdnZ0lpCk1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQ0R3QXdnZ0lLQW9JQ0FRRExVUDVQQ3BNVHNUZ2E4Y3lPYjlnWXJvTFkKTFhvZ3Z1RlJZRy9SSGlMcmdFeUlXaDQ0U2szdHhDZkFscnZMNmE5REVpYnF5Tmk4Yk9DM1ZVZGdkL2xDcjV3WgozakRvNjgzNXhXV05jRnRVMFJJVTgyNUFHbHoxQXcrYkFpMVp5Z0xJTDVNY0g0QzRPL01qbjJqSWZlNXNzNmo1CmlGZTNkNVVpdGJENURNeVA5dkN5WFR0MjR3NmZJRVZ4ZEhlTUJ5Rk5Ld053UmkyS2ZwK0xSR3dKclFIa01Wd1IKaTAzOFNyV0hack1pTExZZXA2SXRTZ1BuaSsxWjJZb20yYzlGNTNJSVJzQVRxOCtRUlZIV3V2NmM5eGRLS3ZubApGYmFvR2NxcGxqV3YwSUR3SzF4ZmJiaU15SzkrbjZoOHhZRTJXNUppNitqU3VKdUhTN1RIL3lzNCtueE5VWHFkCklrSjlWcFBsbDcvZ21RWFVhbE84c2JrV0R5ejloUllsbTBjQkdvNVl3VExmRGI4VzRlT2tWSGtUamI0VDVwRHMKSnVhVjhnTGpRZmVGaHBvUlVZVjUxUjFldkNxVWtsUHNlVDMwcmhlNGg2MjU0S2VmbjJoY1hvUHRmN2h6a0MzdwphVlhTcHgzMnJHbFlRS3dBWCtBdFJxUlJUSWFLeUJ4K2xhUWNlYzhaKzRPN2RnUUNnOTVWc0dBVmdyaDNLbjZLCnVkYlhwQ3lkRmU0eU1BK2tZVSsvazhVWERCMnhmTVlnaC9yeWcvOW9XeWJBbFFVOXFpUkRnbUNZZTMyUThhcFIKdHF3dktBSXFCQ1MvRXhIY2dHeEVKMUdmOC9JY3RpU3M0WkFzamxCUzBFN0k0OGgzemM5WHJQRE5sMGZocmJhSgpyOCtrMmE1UGVPWnVkQzE3MHdJREFRQUJvNEdBTUg0d0hRWURWUjBPQkJZRUZCMndFREpSN2FGeXZrR04rUVh6CmhQdnd5b05tTUI4R0ExVWRJd1FZTUJhQUZCMndFREpSN2FGeXZrR04rUVh6aFB2d3lvTm1NQThHQTFVZEV3RUIKL3dRRk1BTUJBZjh3S3dZRFZSMFJCQ1F3SW9JT2JHOWpZV3d1YTNsdFlTNWtaWGFDRUNvdWJHOWpZV3d1YTNsdApZUzVrWlhZd0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dJQkFIZldDWDdqeG5CMW9SbmpVOVR3eTJwRnkvVVFuaGlmCndMc2toNFdTOWNFNnRUalVtdHNwL0JLVjNwQnhYMW5xanhEdTlabDUwcmVtN3hmWURyYXdIaUFnV0owaWk0VHIKbXhUN2NCZE1uMmJjUkZ3eE5naE9YTGhiMFdNWTB2Mkp2RnA4TEpXcXJPOUZKOE50ZEFPd0JDOGlGclJuSWtBZwo3cFVQYWJMWTcrMFhMbVhFVHhIcVpPV3kyei9YeUNsZ2V3WS9pZlNabzFGZjl2MmloWmVlaTkzRHNDUEpkVW91Cml2clJpUXRSc2dieDE5dFVOTko5dmYwbVZFdUdnczRNSEFQQzFkWE5VVDU5NG5USEpRZWQvaGR1bmJ1Wkc4OFUKSjcxV2E4Q0dRV29RYmRVeUwwWWduemtKRndYNDhaejZrQm55WlZ3enBsaDRlS0t1b0RRWitodGYrakIvQlJmMwp3eXR5UFRkWHczancvNVZRNUx6SU1Xc21EdTlEcjhqOE1CSDNmWk9JdFdNSGZGa3E1dXB6L0xNRkNpMlhOVElXCm11SWZWMUxIR2dyQ1ZQN2hsbXpYVUdJN3ZabEpOZFBLV3FyZmRMQ1EvYlBpeXNZdDlXTDk4NFBEMEdtZmdnTFMKTHRHcDVIVGxaajV2dVNEVW5IQ3kvVk4wbTE3dUJFSmRvTXlLZHFQTmlCSEZBamVwRDA2NWZrK3ovOW9XMWIzUgpMOVNvY284L2x4Rk9tc0g2UDBLY3htdWRPdkdaSFVEWENXTVo1NEdTUEJ5MTN1NWdJQ2tKRTFyeVYzSHJPRWp2CnZCRm5IV3Zldk0xd3BkZFJrQXJnNkNNWmJkbW1sU1NPYnhrd3g3NmZlbE5GNEJadXNtRDF0NytWTHhHdytaRGYKdmZucDlLS0QxQm00Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K"
+    tlsKey: "LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUpRd0lCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQ1Mwd2dna3BBZ0VBQW9JQ0FRRExVUDVQQ3BNVHNUZ2EKOGN5T2I5Z1lyb0xZTFhvZ3Z1RlJZRy9SSGlMcmdFeUlXaDQ0U2szdHhDZkFscnZMNmE5REVpYnF5Tmk4Yk9DMwpWVWRnZC9sQ3I1d1ozakRvNjgzNXhXV05jRnRVMFJJVTgyNUFHbHoxQXcrYkFpMVp5Z0xJTDVNY0g0QzRPL01qCm4yaklmZTVzczZqNWlGZTNkNVVpdGJENURNeVA5dkN5WFR0MjR3NmZJRVZ4ZEhlTUJ5Rk5Ld053UmkyS2ZwK0wKUkd3SnJRSGtNVndSaTAzOFNyV0hack1pTExZZXA2SXRTZ1BuaSsxWjJZb20yYzlGNTNJSVJzQVRxOCtRUlZIVwp1djZjOXhkS0t2bmxGYmFvR2NxcGxqV3YwSUR3SzF4ZmJiaU15SzkrbjZoOHhZRTJXNUppNitqU3VKdUhTN1RICi95czQrbnhOVVhxZElrSjlWcFBsbDcvZ21RWFVhbE84c2JrV0R5ejloUllsbTBjQkdvNVl3VExmRGI4VzRlT2sKVkhrVGpiNFQ1cERzSnVhVjhnTGpRZmVGaHBvUlVZVjUxUjFldkNxVWtsUHNlVDMwcmhlNGg2MjU0S2VmbjJoYwpYb1B0ZjdoemtDM3dhVlhTcHgzMnJHbFlRS3dBWCtBdFJxUlJUSWFLeUJ4K2xhUWNlYzhaKzRPN2RnUUNnOTVWCnNHQVZncmgzS242S3VkYlhwQ3lkRmU0eU1BK2tZVSsvazhVWERCMnhmTVlnaC9yeWcvOW9XeWJBbFFVOXFpUkQKZ21DWWUzMlE4YXBSdHF3dktBSXFCQ1MvRXhIY2dHeEVKMUdmOC9JY3RpU3M0WkFzamxCUzBFN0k0OGgzemM5WApyUERObDBmaHJiYUpyOCtrMmE1UGVPWnVkQzE3MHdJREFRQUJBb0lDQUFxcFgvZEJIMTZrVW03Y25kVEhwS3RXCnEySFpXMUxRUlB5QmRCdWhNRVR0TmhZekNPdjhGQzRUQ29xYzNPZzFMdUx6Z1dXYWRxaHdMOXN0UzZXUlpRUWgKaXF3SWwyNnFGRGtKZlpQTWY5MlRhOEZSZi9IalJWdEx6U0VISE4yeWdZYlhNbjJ0QytaSUE5aXJDVkdmZzVzMgpVMHdTakVHclhGUzA5bWQ0OWxrdVRUSkNsVld4L20yZ2JFUFF6d2EyeGxaSG1ueU92RFgyVnpqSnM3MzdlK0tTCjBXTW5kNXJIOHREN2lsL21adjUxM1VQeFlsY0lEV3J0YjIzWXlpSm85VXFJZTBDM2ZSWkhBYUw0VjFXMUxMRjYKVGg4UjQ4R0RrMlJsT01JcGRZN05RZlloeU5CZWVHVjBJSXBsSGxZb0RkQncwb1Zmb2poQlkyVFd5cXR5NXpCYwpKOXUyR2pUQnpGKzc2R1hoUm9jTW9TeVhJV29SZWkvU1orWFJGM3pjdFl5d3FMNVFDMzhLNUkzNGJ0d3Uzd3UxCkp3NlNKZFhFZ0ZqVVJqRDQzVkl3YkYvSHcrdWxRSFFjOVVNZE8wcHFuaVpQRGFSK054SkhGZTQwdWx6TVVBcFEKU3RGbEtoQkhVZStQaU42MWFOM2ZZZjdlT0tPVXN1UDFDVGZ2RkZSdlU1dTlIVm40QzlrMUp2bWVhN3Q1RWFabApRSlpCQzFQMlJDTVNNM0hodzByTVE0MHVOeWVkVDVIV1Z5ODZobVdPa0JVM3U2dTJFdG1TQmdtY2o1VW5lZDNmCjJaekNacmNQaGxqQ3YxQXN2Vzk4MEs2bHVGakQybW1icXBHM211R0NnNDB5cy9rSVFoNnZaK3VqSHdJVzVQOGQKMUswQWJkRlJ5OTFIMzhqeGVrVmhBb0lCQVFEYk9OS3pZV2c5ZE5rbTEzalAwSkRWR3A5UUU3ZTlwYXF1T2pLcApkT3A4SXFXelVSQms0VUNJWHBTMzdiUE5GaUkrMzJKd3UzYzd0a2VPSlFXL1B0dUt0V1VubU9GMFFlZWxGVmhrCmNJVXZGUkFmbWxvOHQySnRsUmp0RnBjdW5sNDdQb0lOdWR2eUhhNTluRWEzMFVqZ2t1d21TWWV5OGdPbVVLdGYKMjl3eFlCUVA2M0tqaGJ5MDc1eGo2K0RnSG4rOVM0d1VNc1ZyNzlQSUFPcmkwK1hHckt4WWxCOUc5T3dnTGZzSgp0eGw3cjlqSXY1aGpwKy84cDhPTTlDd3JPYzB6SyswcGhZVkR5REN2Ni9ZRllBMElCSE5uVE5ENHN2aG9STCtpCmhwOG9vR25QYWNnS0Jzd01UZHBDUHo2VGFJT3NnL2NrR0ljU3N0d3NIaEVyTWN6NUFvSUJBUUR0YlE0UzNVczYKVDBFUGFoVzRzTDdhZTU1Z2RDbzFNLzdySkR6MjQxK25vSHZROE81VmdESWtuSlhlb1dDZDVzVmtpNUYzM1NqRQpwSUh1bUE0Z1lESnJNbVM0WGFZcDIxMDNQRW5tdkswdWF6azU4ZFk5aFc2bEVtS1VzWUc0THpFcW83alpsckVICmtoRytvckNnUnE2OUNpVHo1VUY2NTQraEl6UjVEWGJpclJHdmhoUGhHMmVOZDJHK0UyelhRZHZscHZCc0JDT1UKMk5IRmE5dG1FMVFxT3E0d2ZVSlRXVFFwT0Frb29PZlBPbDlFRW1EVEtwT3ZBVjV4WXZXTHlBSmpHMSs3dU5ySwpETUwzOG5KeEMyNUVHYkNXK1l5U0J4RElJQzhJa0poM2lSamJkbTNXbDMwUGh1eXRsb0M0VzNmUThXZk9HWnlqCmxkMHlGZExXT2Y0ckFvSUJBUURBREE2aHNQTEY3QWlVZTIxTitUUDRUTU5HUG8vWDV6c1lPTW5MSkM2TG96cXcKVlpMY0hXMFFTbk5Va2p2U3JkSkFiQ2ZzQkg3VzQ3L1o2ZHNZQ0hRQ0Z4bFAwQ0dxWEZZWGpCU01vUG84SGVLcgpIT2h5aW1FRENQdjJMN1V2MVBOT1NWdGJ0UGZYS21PRGpSVnkwVGhiN0xwT2JGb2h6TnlmcGNvTVJ5cW1Zcm9RCm5ENG92Tzl0UHdBdGxTWENrVlZzdXJNenVxcXkvVDMxMTcvdUNKNGlKNEV3ZEVyV09aaG1OSUhZcC92K0hEWDQKMzhnYmZiTEREeUZENldDTVdhM0haM0x6emhIS0tLVm1hSHQxaUFqQ2ZrdXZNbDlia0VZSDZqcExvazNxSkdXdAptOGp2NTdaNERQZm8wMGo1a0RUU1BDV1ZESnZBS01xekozLzQ3RDdaQW9JQkFBbEJsaW5nSEwyeU4wd2RpNmsrCm9zSXJ6Wm5mRFlJemU3MjVGUE5mRyt5U0VpR3NNdTU4Wi9nTGJzQldORWtUcFNCdFhJZDZ4TXNkeXI3OWlKZDAKaUtLclBVZit4cXFkRmI1QWlIVUphQXNHUFIzb01yMEZSYklEekhvVmpZUWJ1dVA1ckF3M2xzRS96WmRNQ216RgpOS3pFQjNyR3RrM1BWMGNsOHpiQThxQ1Z0TG5PRlZwU1VqQXV0azNOdmhHS1RNTmdSY0ZBVEE3U2dTTWNPRnA3CmFHMlpDZzl6NHJFVEtqaHRLZFkrcDZycGtLczd1RENqV1V5YVZnOC9sMmtTckIwbkJRMXhnSDRlRHovUllPck4KVWtndlpEWU9sbzllM1NXZ001VTI1ZXJMR24vNzF2NWx1NGR1Y0MyNFQxNWdtb1EzMVI4dzJtMTZPenhubzJlYwpyUzhDZ2dFQkFKbWtWQWJiWjk2aGJiakJ6N3BQd0V5M0hqbFZET2pMUjVDRlZHUDYveGJDSGdVbWRndmlTS1IxClE4RE9nZ2Nzd3ZOYk5rT2Z3YjVkMjFxYU84ZXR4ZmptMEpUcmhrOGtFSncyc0cvSmdpc01xT0owUklsQnk1bkQKT3phSmVUZGptajVvUTQzeURMa3R1WDh1cDVudGtvMkhXL2dVOHUyMDgwNHc2OWJCV2NiYndLSVp5cTd3QmNQbgoxUHFzL29YWSsybFhoNitsK0ZOTzE4M0NZVEFLSS9YMlFhMTBpNlk5MFVIRC9Ec0RaQktUNjkycmRaYXUzY2EvCngzdEhIcm8vcFRyUzJkNXMvRHlIenlueEdPQTdnMnhBRUhOLzF3VmprTDRlcE1LSmFIR3NLd3RDbmVRWUdjVDYKMjVDZUJYVFVYVkVLVk01U3dxOW4xQ0FMdWVBUFlyRT0KLS0tLS1FTkQgUFJJVkFURSBLRVktLS0tLQo="
+  isLocalEnv: true
+  oathkeeper:
+    mutators:
+      authenticationMappingServices:
+        subscriber:
+          authenticator:
+            enabled: true
+        tenant-fetcher:
+          authenticator:
+            enabled: true
+        nsadapter:
+          authenticator:
+            enabled: true
+  ordAggregator:
+    http:
+      client:
+        skipSSLValidation: true
+  hydrator:
+    http:
+      client:
+        skipSSLValidation: true
+  tenantFetcher:
+    fieldMapping:
+      idField: "guid"
+      nameField: "displayName"
+      customerIdField: "customerId"
+      discriminatorField: ""
+      discriminatorValue: ""
+      totalPagesField: "totalPages"
+      totalResultsField: "totalResults"
+      tenantEventsField: "events"
+      detailsField: "eventData"
+      entityTypeField: "type"
+    endpoints:
+      subaccountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-create"
+  systemFetcher:
+    enabled: true
+    http:
+      client:
+        skipSSLValidation: true
+    systemToTemplateMappings: '[{"Name": "SAP temp1", "SourceKey": ["prop"], "SourceValue": ["val1"] }, {"Name": "SAP temp2", "SourceKey": ["prop"], "SourceValue": ["val2"] }]'
+    systemsAPIEndpoint: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/systemfetcher/systems"
+    systemsAPIFilterCriteria: "no"
+  tenantFetchers:
+    account-fetcher:
+      cron:
+        enabled: false
+      job:
+        interval: "10s"
+      accountRegion: "local"
+      dbPool:
+        maxIdleConnections: "1"
+        maxOpenConnections: "1"
+      enabled: true
+      endpoints:
+        accountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/global-account-create"
+        accountDeleted: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/global-account-delete"
+        accountUpdated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/global-account-update"
+      fieldMapping:
+        customerIdField: "customerId"
+        detailsField: "eventData"
+        discriminatorField: ""
+        discriminatorValue: ""
+        entityTypeField: "type"
+        idField: "guid"
+        nameField: "displayName"
+        tenantEventsField: "events"
+        totalPagesField: "totalPages"
+        totalResultsField: "totalResults"
+      kubernetes:
+        configMapNamespace: "compass-system"
+        pollInterval: "2s"
+        pollTimeout: "1m"
+        timeout: "2m"
+      manageSecrets: true
+      oauth:
+        client: "client_id"
+        secret: "client_secret"
+        tokenPath: "/secured/oauth/token"
+        tokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+      providerName: "external-svc-mock"
+      query:
+        pageSize: "1000"
+        startPage: "1"
+      queryMapping:
+        pageNumField: "page"
+        pageSizeField: "resultsPerPage"
+        timestampField: "ts"
+      schedule: "0 23 * * *"
+      secret:
+        clientIdKey: "client-id"
+        clientSecretKey: "client-secret"
+        name: "compass-account-fetcher-secret"
+        oauthMode: "standard"
+        oauthUrlKey: "url"
+      shouldSyncSubaccounts: false
+    subaccount-fetcher:
+      cron:
+        enabled: false
+      job:
+        interval: "10s"
+      accountRegion: "local"
+      dbPool:
+        maxIdleConnections: "1"
+        maxOpenConnections: "1"
+      enabled: true
+      endpoints:
+        subaccountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-create"
+        subaccountDeleted: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-delete"
+        subaccountMoved: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-move"
+        subaccountUpdated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-update"
+      fieldMapping:
+        customerIdField: "customerId"
+        detailsField: "eventData"
+        discriminatorField: ""
+        discriminatorValue: ""
+        entityTypeField: "type"
+        idField: "guid"
+        nameField: "displayName"
+        tenantEventsField: "events"
+        totalPagesField: "totalPages"
+        totalResultsField: "totalResults"
+      kubernetes:
+        configMapNamespace: "compass-system"
+        pollInterval: "2s"
+        pollTimeout: "1m"
+        timeout: "2m"
+      manageSecrets: true
+      oauth:
+        client: "client_id"
+        secret: "client_secret"
+        tokenPath: "/cert/token"
+        tokenURL: '{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'
+      providerName: "subaccount-fetcher"
+      query:
+        pageSize: "1000"
+        startPage: "1"
+      queryMapping:
+        pageNumField: "page"
+        pageSizeField: "resultsPerPage"
+        timestampField: "ts"
+      schedule: "0 23 * * *"
+      secret:
+        clientCertKey: "client-cert"
+        clientIdKey: "client-id"
+        clientKeyKey: "client-key"
+        clientSecretKey: "client-secret"
+        name: "compass-subaccount-fetcher-secret"
+        oauthMode: "oauth-mtls"
+        oauthUrlKey: "url"
+        skipSSLValidation: true
+      shouldSyncSubaccounts: true
+      subaccountRegions: "test"
+  tests:
+    basicCredentials:
+      manage: true
+    http:
+      client:
+        skipSSLValidation: true
+    subscription:
+      oauthSecret:
+        manage: true
+operations-controller:
+  http:
+    client:
+      skipSSLValidation: true
+system-broker:
+  http:
+    client:
+      skipSSLValidation: true

@@ -32,7 +32,7 @@ func TestApplicationTemplateWithExternalCertificate(t *testing.T) {
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	name := "app-template-with-external-cert-name"
+	name := createAppTemplateName("app-template-with-external-cert-name")
 
 	t.Run("Create Application Template with external certificate", func(t *testing.T) {
 		// WHEN
@@ -50,7 +50,7 @@ func TestApplicationTemplateWithExternalCertificate(t *testing.T) {
 		require.NotEmpty(t, appTemplateOutput)
 
 		// Enhance input to match the newly created labels
-		appTemplateInput.Labels[conf.SelfRegLabelKey] = appTemplateOutput.Labels[conf.SelfRegLabelKey]
+		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
 		appTemplateInput.Labels["global_subaccount_id"] = conf.ConsumerID
 		assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
 	})

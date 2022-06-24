@@ -20,19 +20,6 @@ spec:
       labels:
         app: {{ .Chart.Name }}-external-services-mock-tests-app
     spec:
-      {{ if .Values.global.isLocalEnv }}
-      hostAliases:
-        - ip: {{ .Values.global.minikubeIP }}
-          hostnames:
-            - "{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "oauth2.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.mtls.host }}.{{ .Values.global.ingress.domainName }}"
-            - "{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}"
-            - "compass-external-services-mock.compass-system.svc.cluster.local"
-            - "{{ .Values.global.externalServicesMock.certSecuredHost }}.{{.Values.global.ingress.domainName}}"
-            - "{{ .Values.global.externalServicesMock.ordGlobalCertSecuredHost }}.{{.Values.global.ingress.domainName}}"
-      {{ end }}
       containers:
         - name: external-services-mock-tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
@@ -112,9 +99,9 @@ spec:
             - name: SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
             - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
-              value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
+              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
-              value: {{ .Values.global.tests.subscriptionProviderIdValue | quote }}
+              value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
             - name: APP_SELF_REG_REGION
               value: {{ .Values.global.tests.selfRegistration.region }}
       restartPolicy: Never

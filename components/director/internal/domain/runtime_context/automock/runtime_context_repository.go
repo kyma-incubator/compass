@@ -67,29 +67,6 @@ func (_m *RuntimeContextRepository) Exists(ctx context.Context, tenant string, i
 	return r0, r1
 }
 
-// GetByFiltersGlobal provides a mock function with given fields: ctx, filter
-func (_m *RuntimeContextRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.RuntimeContext, error) {
-	ret := _m.Called(ctx, filter)
-
-	var r0 *model.RuntimeContext
-	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) *model.RuntimeContext); ok {
-		r0 = rf(ctx, filter)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.RuntimeContext)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter) error); ok {
-		r1 = rf(ctx, filter)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetByID provides a mock function with given fields: ctx, tenant, id
 func (_m *RuntimeContextRepository) GetByID(ctx context.Context, tenant string, id string) (*model.RuntimeContext, error) {
 	ret := _m.Called(ctx, tenant, id)
@@ -152,6 +129,29 @@ func (_m *RuntimeContextRepository) List(ctx context.Context, runtimeID string, 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, []*labelfilter.LabelFilter, int, string) error); ok {
 		r1 = rf(ctx, runtimeID, tenant, filter, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListAllForRuntime provides a mock function with given fields: ctx, tenant, runtimeID
+func (_m *RuntimeContextRepository) ListAllForRuntime(ctx context.Context, tenant string, runtimeID string) ([]*model.RuntimeContext, error) {
+	ret := _m.Called(ctx, tenant, runtimeID)
+
+	var r0 []*model.RuntimeContext
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.RuntimeContext); ok {
+		r0 = rf(ctx, tenant, runtimeID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.RuntimeContext)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, runtimeID)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -103,10 +103,22 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
 		defer cancel()
 		appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
 		appTemplateName := fmt.Sprintf("test-app-tmpl-%s", time.Now().Format("060102150405"))
+		appTemplateName = fmt.Sprintf("SAP %s", appTemplateName)
 		appTemplateInput := graphql.ApplicationTemplateInput{
 			Name: appTemplateName,
 			ApplicationInput: &graphql.ApplicationRegisterInput{
-				Name: appName,
+				Name:        "{{name}}",
+				Description: ptr.String("test {{display-name}}"),
+			},
+			Placeholders: []*graphql.PlaceholderDefinitionInput{
+				{
+					Name:        "name",
+					Description: &appName,
+				},
+				{
+					Name:        "display-name",
+					Description: ptr.String("display-name"),
+				},
 			},
 			Labels: graphql.Labels{
 				testConfig.AppSelfRegDistinguishLabelKey: []interface{}{testConfig.AppSelfRegDistinguishLabelValue},
@@ -131,6 +143,16 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
 		t.Log(fmt.Sprintf("Registering application from template: %s", appTemplateName))
 		appFromAppTemplateInput := graphql.ApplicationFromTemplateInput{
 			TemplateName: appTemplateName,
+			Values: []*graphql.TemplateValueInput{
+				{
+					Placeholder: "name",
+					Value:       appName,
+				},
+				{
+					Placeholder: "display-name",
+					Value:       "display-name",
+				},
+			},
 		}
 		appFromTemplateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromAppTemplateInput)
 		require.NoError(t, err)
@@ -156,10 +178,22 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 		defer cancel()
 		appName := fmt.Sprintf("app-async-del-%s", time.Now().Format("060102150405"))
 		appTemplateName := fmt.Sprintf("test-app-tmpl-%s", time.Now().Format("060102150405"))
+		appTemplateName = fmt.Sprintf("SAP %s", appTemplateName)
 		appTemplateInput := graphql.ApplicationTemplateInput{
 			Name: appTemplateName,
 			ApplicationInput: &graphql.ApplicationRegisterInput{
-				Name: appName,
+				Name:        "{{name}}",
+				Description: ptr.String("test {{display-name}}"),
+			},
+			Placeholders: []*graphql.PlaceholderDefinitionInput{
+				{
+					Name:        "name",
+					Description: &appName,
+				},
+				{
+					Name:        "display-name",
+					Description: ptr.String("display-name"),
+				},
 			},
 			Labels: graphql.Labels{
 				testConfig.AppSelfRegDistinguishLabelKey: []interface{}{testConfig.AppSelfRegDistinguishLabelValue},
@@ -184,6 +218,16 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 		t.Log(fmt.Sprintf("Registering application from template: %s", appName))
 		appFromAppTemplateInput := graphql.ApplicationFromTemplateInput{
 			TemplateName: appTemplateName,
+			Values: []*graphql.TemplateValueInput{
+				{
+					Placeholder: "name",
+					Value:       appName,
+				},
+				{
+					Placeholder: "display-name",
+					Value:       "display-name",
+				},
+			},
 		}
 		appFromTemplateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromAppTemplateInput)
 		require.NoError(t, err)

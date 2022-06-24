@@ -64,63 +64,59 @@ func TestSystemBrokerAuthentication(t *testing.T) {
 
 	securedClient, configuration, certChain := getSecuredClientByContext(t, testCtx, runtime.ID)
 
-	t.Run("Should successfully call catalog endpoint with certificate secured client", func(t *testing.T) {
-		req := createCatalogRequest(t, testCtx)
+	t.Log("Should successfully call catalog endpoint with certificate secured client")
+	req := createCatalogRequest(t, testCtx)
 
-		resp, err := securedClient.Do(req)
-		require.NoError(t, err)
-		require.NotNil(t, resp)
-		require.Equal(t, resp.StatusCode, http.StatusOK)
-		body, err := ioutil.ReadAll(resp.Body)
-		require.NoError(t, err)
+	resp, err := securedClient.Do(req)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.Equal(t, resp.StatusCode, http.StatusOK)
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
 
-		require.Contains(t, string(body), "services")
-	})
+	require.Contains(t, string(body), "services")
 
-	t.Run("Should fail calling catalog endpoint without certificate", func(t *testing.T) {
-		req := createCatalogRequest(t, testCtx)
+	t.Log("Should fail calling catalog endpoint without certificate")
+	req = createCatalogRequest(t, testCtx)
 
-		client := http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: true,
-				},
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
 			},
-		}
-		_, err := client.Do(req)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "tls: certificate required")
-	})
+		},
+	}
+	_, err = client.Do(req)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "tls: certificate required")
 
-	t.Run("Should fail calling catalog endpoint with revoked cert", func(t *testing.T) {
-		logrus.Infof("revoking cert for runtime with id: %s", runtime.ID)
-		connectorClient := clients.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, testCtx.ClientKey, certChain...)
-		ok, err := connectorClient.RevokeCertificate()
-		require.NoError(t, err)
-		require.Equal(t, ok, true)
+	t.Log("Should fail calling catalog endpoint with revoked cert")
+	logrus.Infof("revoking cert for runtime with id: %s", runtime.ID)
+	connectorClient := clients.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, testCtx.ClientKey, certChain...)
+	ok, err := connectorClient.RevokeCertificate()
+	require.NoError(t, err)
+	require.Equal(t, ok, true)
 
-		req := createCatalogRequest(t, testCtx)
+	req = createCatalogRequest(t, testCtx)
 
-		resp, err := securedClient.Do(req)
+	resp, err = securedClient.Do(req)
 
-		require.NoError(t, err)
-		require.NotNil(t, resp)
-		body, err := ioutil.ReadAll(resp.Body)
-		require.NoError(t, err)
-		require.Contains(t, string(body), "unauthorized: insufficient scopes")
-	})
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	body, err = ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+	require.Contains(t, string(body), "unauthorized: insufficient scopes")
 
-	t.Run("Should fail calling catalog endpoint with invalid certificate", func(t *testing.T) {
-		req := createCatalogRequest(t, testCtx)
+	t.Log("Should fail calling catalog endpoint with invalid certificate")
+	req = createCatalogRequest(t, testCtx)
 
-		fakedClientKey, err := certs.GenerateKey()
-		require.NoError(t, err)
-		client := authentication.CreateCertClient(fakedClientKey, certChain...)
+	fakedClientKey, err := certs.GenerateKey()
+	require.NoError(t, err)
+	client = authentication.CreateCertClient(fakedClientKey, certChain...)
 
-		_, err = client.Do(req)
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "tls: error decrypting message")
-	})
+	_, err = client.Do(req)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "tls: error decrypting message")
 }
 
 func TestCallingORDServiceWithCert(t *testing.T) {
@@ -141,47 +137,44 @@ func TestCallingORDServiceWithCert(t *testing.T) {
 
 	securedClient, configuration, certChain := getSecuredClientByContext(t, testCtx, runtime.ID)
 
-	t.Run("Should succeed calling ORD service with the same cert used for calling catalog", func(t *testing.T) {
-		req := createCatalogRequest(t, testCtx)
-		resp, err := securedClient.Do(req)
+	t.Log("Should succeed calling ORD service with the same cert used for calling catalog")
+	req := createCatalogRequest(t, testCtx)
+	resp, err := securedClient.Do(req)
 
-		require.NoError(t, err)
-		require.NotNil(t, resp)
-		require.Equal(t, resp.StatusCode, http.StatusOK)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.Equal(t, resp.StatusCode, http.StatusOK)
 
-		body, err := ioutil.ReadAll(resp.Body)
-		require.NoError(t, err)
-		require.Contains(t, string(body), "services")
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+	require.Contains(t, string(body), "services")
 
-		reqORD := createORDServiceRequest(t, testCtx, api.ID, api.Spec.ID)
-		respORD, err := securedClient.Do(reqORD)
+	reqORD := createORDServiceRequest(t, testCtx, api.ID, api.Spec.ID)
+	respORD, err := securedClient.Do(reqORD)
 
-		require.NoError(t, err)
-		require.NotNil(t, respORD)
-		require.Equal(t, http.StatusOK, respORD.StatusCode)
-	})
+	require.NoError(t, err)
+	require.NotNil(t, respORD)
+	require.Equal(t, http.StatusOK, respORD.StatusCode)
 
-	t.Run("Should fail calling ORD service with revoked cert", func(t *testing.T) {
+	t.Log("Should fail calling ORD service with revoked cert")
 
-		logrus.Infof("revoking cert for runtime with id: %s", runtime.ID)
-		connectorClient := clients.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, testCtx.ClientKey, certChain...)
-		ok, err := connectorClient.RevokeCertificate()
-		require.NoError(t, err)
-		require.Equal(t, ok, true)
+	logrus.Infof("revoking cert for runtime with id: %s", runtime.ID)
+	connectorClient := clients.NewCertificateSecuredConnectorClient(*configuration.ManagementPlaneInfo.CertificateSecuredConnectorURL, testCtx.ClientKey, certChain...)
+	ok, err := connectorClient.RevokeCertificate()
+	require.NoError(t, err)
+	require.Equal(t, ok, true)
 
-		req := createORDServiceRequest(t, testCtx, api.ID, api.Spec.ID)
+	req = createORDServiceRequest(t, testCtx, api.ID, api.Spec.ID)
 
-		resp, err := securedClient.Do(req)
+	resp, err = securedClient.Do(req)
 
-		require.NoError(t, err)
-		require.NotNil(t, resp)
-		require.Equal(t, http.StatusBadRequest, resp.StatusCode) //oathkeeper cannot be configured to return 401 the way we use it
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode) //oathkeeper cannot be configured to return 401 the way we use it
 
-		body, err := ioutil.ReadAll(resp.Body)
-		require.NoError(t, err)
-		require.Contains(t, string(body), "invalid tenantID")
-	})
-
+	body, err = ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+	require.Contains(t, string(body), "invalid tenantID")
 }
 
 func getSecuredClientByContext(t *testing.T, ctx *broker.SystemBrokerTestContext, runtimeID string) (*http.Client, externalschema.Configuration, []*x509.Certificate) {

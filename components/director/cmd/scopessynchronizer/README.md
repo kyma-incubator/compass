@@ -23,4 +23,4 @@ The Scopes Synchronizer requires access to:
 1. Up and running ORY Hydra.
 
 ### Run
-This component requires ORY Hydra and for this reason its local run is cumbersome. It is recommended to start a local Minikube installation and deploy Compass on it. The Scopes Synchronizer job is a post-install job that runs at the end of the Helm installation.
+This component requires ORY Hydra and for this reason its local run is cumbersome. It is recommended to start a local k3d installation and deploy Compass on it. The Scopes Synchronizer job is a post-install job that runs at the end of the Helm installation.

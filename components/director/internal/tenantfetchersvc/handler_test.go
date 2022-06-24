@@ -19,11 +19,13 @@ import (
 )
 
 type regionalTenantCreationRequest struct {
-	SubaccountID           string `json:"subaccountTenantId"`
-	TenantID               string `json:"tenantId"`
-	Subdomain              string `json:"subdomain"`
-	SubscriptionProviderID string `json:"subscriptionProviderId"`
-	ProviderSubaccountID   string `json:"providerSubaccountId"`
+	SubaccountID                string `json:"subaccountTenantId"`
+	TenantID                    string `json:"tenantId"`
+	Subdomain                   string `json:"subdomain"`
+	SubscriptionProviderID      string `json:"subscriptionProviderId"`
+	ProviderSubaccountID        string `json:"providerSubaccountId"`
+	ConsumerTenantID            string `json:"consumerTenantID"`
+	SubscriptionProviderAppName string `json:"subscriptionProviderAppName"`
 }
 
 type errReader int
@@ -40,83 +42,120 @@ func TestService_SubscriptionFlows(t *testing.T) {
 	txtest.CtxWithDBMatcher()
 
 	validRequestBody, err := json.Marshal(regionalTenantCreationRequest{
-		SubaccountID:           subaccountTenantExtID,
-		TenantID:               tenantExtID,
-		Subdomain:              regionalTenantSubdomain,
-		SubscriptionProviderID: subscriptionProviderID,
-		ProviderSubaccountID:   providerSubaccountID,
+		SubaccountID:                subaccountTenantExtID,
+		TenantID:                    tenantExtID,
+		Subdomain:                   regionalTenantSubdomain,
+		SubscriptionProviderID:      subscriptionProviderID,
+		ProviderSubaccountID:        providerSubaccountID,
+		ConsumerTenantID:            consumerTenantID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMissingParent, err := json.Marshal(regionalTenantCreationRequest{
-		SubaccountID:           subaccountTenantExtID,
-		Subdomain:              regionalTenantSubdomain,
-		SubscriptionProviderID: subscriptionProviderID,
-		ProviderSubaccountID:   providerSubaccountID,
+		SubaccountID:                subaccountTenantExtID,
+		Subdomain:                   regionalTenantSubdomain,
+		SubscriptionProviderID:      subscriptionProviderID,
+		ProviderSubaccountID:        providerSubaccountID,
+		ConsumerTenantID:            consumerTenantID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMissingTenantSubdomain, err := json.Marshal(regionalTenantCreationRequest{
-		SubaccountID:           subaccountTenantExtID,
-		TenantID:               tenantExtID,
-		SubscriptionProviderID: subscriptionProviderID,
-		ProviderSubaccountID:   providerSubaccountID,
+		SubaccountID:                subaccountTenantExtID,
+		TenantID:                    tenantExtID,
+		SubscriptionProviderID:      subscriptionProviderID,
+		ProviderSubaccountID:        providerSubaccountID,
+		ConsumerTenantID:            consumerTenantID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMissingSubscriptionConsumerID, err := json.Marshal(regionalTenantCreationRequest{
-		SubaccountID:         subaccountTenantExtID,
-		TenantID:             tenantExtID,
-		Subdomain:            regionalTenantSubdomain,
-		ProviderSubaccountID: providerSubaccountID,
+		SubaccountID:                subaccountTenantExtID,
+		TenantID:                    tenantExtID,
+		Subdomain:                   regionalTenantSubdomain,
+		ProviderSubaccountID:        providerSubaccountID,
+		ConsumerTenantID:            consumerTenantID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMatchingAccountAndSubaccountIDs, err := json.Marshal(regionalTenantCreationRequest{
-		TenantID:               tenantExtID,
-		SubaccountID:           tenantExtID,
-		Subdomain:              regionalTenantSubdomain,
-		SubscriptionProviderID: subscriptionProviderID,
-		ProviderSubaccountID:   providerSubaccountID,
+		TenantID:                    tenantExtID,
+		SubaccountID:                tenantExtID,
+		Subdomain:                   regionalTenantSubdomain,
+		SubscriptionProviderID:      subscriptionProviderID,
+		ProviderSubaccountID:        providerSubaccountID,
+		ConsumerTenantID:            consumerTenantID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
 	})
 	assert.NoError(t, err)
 
 	bodyWithMissingProviderSubaccountID, err := json.Marshal(regionalTenantCreationRequest{
+		SubaccountID:                subaccountTenantExtID,
+		TenantID:                    tenantExtID,
+		Subdomain:                   regionalTenantSubdomain,
+		SubscriptionProviderID:      subscriptionProviderID,
+		ConsumerTenantID:            consumerTenantID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
+	})
+	assert.NoError(t, err)
+
+	bodyWithMissingConsumerTenantID, err := json.Marshal(regionalTenantCreationRequest{
+		SubaccountID:                subaccountTenantExtID,
+		TenantID:                    tenantExtID,
+		Subdomain:                   regionalTenantSubdomain,
+		SubscriptionProviderID:      subscriptionProviderID,
+		ProviderSubaccountID:        providerSubaccountID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
+	})
+	assert.NoError(t, err)
+
+	bodyWithMissingSubscriptionProviderAppName, err := json.Marshal(regionalTenantCreationRequest{
+		SubaccountID:           subaccountTenantExtID,
 		TenantID:               tenantExtID,
-		SubaccountID:           tenantExtID,
 		Subdomain:              regionalTenantSubdomain,
 		SubscriptionProviderID: subscriptionProviderID,
+		ProviderSubaccountID:   providerSubaccountID,
+		ConsumerTenantID:       consumerTenantID,
 	})
-
 	assert.NoError(t, err)
 
 	validHandlerConfig := tenantfetchersvc.HandlerConfig{
 		RegionPathParam: "region",
 		TenantProviderConfig: tenantfetchersvc.TenantProviderConfig{
-			TenantProvider:                 testProviderName,
-			TenantIDProperty:               tenantProviderTenantIDProperty,
-			SubaccountTenantIDProperty:     tenantProviderSubaccountTenantIDProperty,
-			CustomerIDProperty:             tenantProviderCustomerIDProperty,
-			SubdomainProperty:              tenantProviderSubdomainProperty,
-			SubscriptionProviderIDProperty: subscriptionProviderIDProperty,
-			ProviderSubaccountIDProperty:   providerSubaccountIDProperty,
+			TenantProvider:                      testProviderName,
+			TenantIDProperty:                    tenantProviderTenantIDProperty,
+			SubaccountTenantIDProperty:          tenantProviderSubaccountTenantIDProperty,
+			CustomerIDProperty:                  tenantProviderCustomerIDProperty,
+			SubdomainProperty:                   tenantProviderSubdomainProperty,
+			SubscriptionProviderIDProperty:      subscriptionProviderIDProperty,
+			ProviderSubaccountIDProperty:        providerSubaccountIDProperty,
+			ConsumerTenantIDProperty:            consumerTenantIDProperty,
+			SubscriptionProviderAppNameProperty: subscriptionProviderAppNameProperty,
 		},
 	}
 	regionalTenant := tenantfetchersvc.TenantSubscriptionRequest{
-		SubaccountTenantID:     subaccountTenantExtID,
-		AccountTenantID:        tenantExtID,
-		Subdomain:              regionalTenantSubdomain,
-		Region:                 region,
-		SubscriptionProviderID: subscriptionProviderID,
-		ProviderSubaccountID:   providerSubaccountID,
+		SubaccountTenantID:          subaccountTenantExtID,
+		AccountTenantID:             tenantExtID,
+		Subdomain:                   regionalTenantSubdomain,
+		Region:                      region,
+		SubscriptionProviderID:      subscriptionProviderID,
+		ProviderSubaccountID:        providerSubaccountID,
+		ConsumerTenantID:            consumerTenantID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
 	}
 	regionalTenantWithMatchingParentID := tenantfetchersvc.TenantSubscriptionRequest{
-		SubaccountTenantID:     "",
-		AccountTenantID:        tenantExtID,
-		Subdomain:              regionalTenantSubdomain,
-		Region:                 region,
-		SubscriptionProviderID: subscriptionProviderID,
-		ProviderSubaccountID:   providerSubaccountID,
+		SubaccountTenantID:          "",
+		AccountTenantID:             tenantExtID,
+		Subdomain:                   regionalTenantSubdomain,
+		Region:                      region,
+		SubscriptionProviderID:      subscriptionProviderID,
+		ProviderSubaccountID:        providerSubaccountID,
+		ConsumerTenantID:            consumerTenantID,
+		SubscriptionProviderAppName: subscriptionProviderAppName,
 	}
 
 	// Subscribe flow
@@ -183,6 +222,22 @@ func TestService_SubscriptionFlows(t *testing.T) {
 			Region:              region,
 			ExpectedStatusCode:  http.StatusBadRequest,
 			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", providerSubaccountIDProperty),
+		},
+		{
+			Name:                "Returns error when consumerTenantIDProperty is not found in body",
+			TenantSubscriberFn:  func() *automock.TenantSubscriber { return &automock.TenantSubscriber{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingConsumerTenantID)),
+			Region:              region,
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", consumerTenantIDProperty),
+		},
+		{
+			Name:                "Returns error when subscriptionProviderAppNameProperty is not found in body",
+			TenantSubscriberFn:  func() *automock.TenantSubscriber { return &automock.TenantSubscriber{} },
+			Request:             httptest.NewRequest(http.MethodPut, target, bytes.NewBuffer(bodyWithMissingSubscriptionProviderAppName)),
+			Region:              region,
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: fmt.Sprintf("mandatory property %q is missing from request body", subscriptionProviderAppNameProperty),
 		},
 		{
 			Name:                "Returns error when request body doesn't contain tenant subdomain",

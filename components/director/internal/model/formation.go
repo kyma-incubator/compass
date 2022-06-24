@@ -1,6 +1,12 @@
 package model
 
+// DefaultTemplateName will be used as default formation templane name if no other options are provided
+const DefaultTemplateName = "Side-by-side extensibility with Kyma"
+
 // Formation missing godoc
 type Formation struct {
-	Name string `json:"name"`
+	ID                  string
+	TenantID            string
+	FormationTemplateID string
+	Name                string
 }

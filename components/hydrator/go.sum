@@ -295,7 +295,6 @@ github.com/huandu/xstrings v1.3.2/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/imdario/mergo v0.3.5/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
 github.com/imdario/mergo v0.3.10/go.mod h1:jmQim1M+e3UYxmgPu/WyfjB3N3VflVyUjjjwH0dnCYA=
-github.com/imdario/mergo v0.3.11 h1:3tnifQM4i+fbajXKBHXWEH+KvNHqojZ778UH75j3bGA=
 github.com/imdario/mergo v0.3.11/go.mod h1:jmQim1M+e3UYxmgPu/WyfjB3N3VflVyUjjjwH0dnCYA=
 github.com/imdario/mergo v0.3.12 h1:b6R2BslTbIEToALKP7LxUvijTsNI9TAe80pLWN2g/HU=
 github.com/imdario/mergo v0.3.12/go.mod h1:jmQim1M+e3UYxmgPu/WyfjB3N3VflVyUjjjwH0dnCYA=
@@ -331,14 +330,10 @@ github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-2022032
 github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220327143459-11b81bddcce9/go.mod h1:EPQuWKlrkBDEK2Fj4G3qrnPCQhAvM48z7JzbWD2dUts=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20220420124254-ee69592dca21 h1:pKLxRxdUTmgaokmtYrmCVw+bkhmcDJH+l2UWH1el/84=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20220420124254-ee69592dca21/go.mod h1:PjDqFO3ukQNSzxIEMXP3nb4Qf762LGnvUexur2TkBss=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220420124254-ee69592dca21 h1:9g6gtTTaUnumDGXb3aCzOusQUwccwBtUAPtDn6f23SU=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220420124254-ee69592dca21/go.mod h1:TKcQyHQo86FAY7VUkc7MJYtAokHKACGrTer8DDFvfcw=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220523120707-99f1bd06fe3f h1:9PTxcv2/1qxySJAgKytY+ofLaLIJaEUClrx4bBfWrKg=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220523120707-99f1bd06fe3f/go.mod h1:1JpDQxhDqDkz0UTOx4mDgAbzKk4oTqogFh2YvTKmtS8=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220523135527-f0b26cb8b04a h1:dC4xW+7UJkVeZhfyV7IMan6j2Zgn2gWkanIVfHXQpDI=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220523135527-f0b26cb8b04a/go.mod h1:1JpDQxhDqDkz0UTOx4mDgAbzKk4oTqogFh2YvTKmtS8=
 github.com/kyma-incubator/compass/components/director v0.0.0-20220523135904-3a0cf70b6bde h1:M9XtXPrgBfJXWCRumh/bTdwnsuJKGXFlDmrVGIMDZUU=
 github.com/kyma-incubator/compass/components/director v0.0.0-20220523135904-3a0cf70b6bde/go.mod h1:1JpDQxhDqDkz0UTOx4mDgAbzKk4oTqogFh2YvTKmtS8=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220610093239-38fed73f540e h1:+trhZrg8hgl8PZtpyexZReFDc+N4OZaCgkQrKn+ctjM=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220610093239-38fed73f540e/go.mod h1:IUlFyONxb8YHJyB3unZNVMGoFeOXlaoijuvI65I6NCA=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459-11b81bddcce9 h1:WftrXM5d9PtBBo4J+eyCnwNEoFi8KDtINUD7jSp0jCA=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459-11b81bddcce9/go.mod h1:M30JDO6D3wgLgJ6leIFawaH1tv8k0m+GuroKv+0o38Y=
 github.com/lestrrat-go/backoff/v2 v2.0.8 h1:oNb5E5isby2kiro9AgdHLv5N5tint1AnDVVf2E2un5A=
@@ -583,8 +578,6 @@ golang.org/x/crypto v0.0.0-20200414173820-0848c9571904/go.mod h1:LzIPMQfyMNhhGPh
 golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
 golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0/go.mod h1:LzIPMQfyMNhhGPhUkYOs5KpL4U8rLKemX1yGLhDgUto=
 golang.org/x/crypto v0.0.0-20201217014255-9d1352758620/go.mod h1:jdWPYTVW3xRLrWPugEBEK3UY2ZEsg3UU495nc5E+M+I=
-golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 h1:HWj/xjIHfjYU5nVXpTM0s39J9CbLn7Cc5a7IC5rwsMQ=
-golang.org/x/crypto v0.0.0-20210817164053-32db794688a5/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 h1:7I4JAnoQBe7ZtJcBaYHi5UtiO8tQHbUSXxL+pnGRANg=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/exp v0.0.0-20190121172915-509febef88a4/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=

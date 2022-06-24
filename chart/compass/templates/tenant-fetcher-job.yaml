@@ -1,6 +1,6 @@
 {{ $outerScope := . }}
 {{- range $tenantFetcherName, $config := .Values.global.tenantFetchers -}}
-{{ if eq $config.enabled true }}
+{{ if eq $config.cron.enabled true }}
 {{ $configmapName := printf "%s-tenant-fetcher-%s-config" $.Chart.Name $tenantFetcherName }}
 ---
 apiVersion: batch/v1beta1
@@ -28,16 +28,9 @@ spec:
         metadata:
           labels:
             cronjob: tenant-fetcher
+          annotations:
+            cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         spec:
-          {{ if $.Values.global.isLocalEnv }}
-          # HostAliases are used by Pod to resolve kyma.local domain
-          hostAliases:
-            - ip: {{ $.Values.global.minikubeIP }}
-              hostnames:
-                # Used for calls to Director
-                - "{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}"
-                - "{{ $.Values.global.externalServicesMock.certSecuredHost }}.{{ $.Values.global.ingress.domainName }}"
-          {{ end }}
           serviceAccountName: {{ $.Chart.Name }}-tenant-fetcher-job-{{ $tenantFetcherName }}
           containers:
           - name: {{ $.Values.global.tenantFetcher.containerName }}
@@ -204,7 +197,7 @@ spec:
                 value: "{{ $.Values.global.http.client.skipSSLValidation }}"
             {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
               - name: APP_METRICS_PUSH_ENDPOINT
-                value: {{ $.Values.global.metrics.pushEndpoint}}
+                value: {{ $.Values.global.metrics.pushEndpoint }}
             {{ end }}
             command:
               - "/bin/sh"

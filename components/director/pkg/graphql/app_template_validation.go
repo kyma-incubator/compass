@@ -22,6 +22,7 @@ func (i ApplicationTemplateInput) Validate() error {
 		"placeholders":           validation.Validate(i.Placeholders, validation.Each(validation.Required)),
 		"accessLevel":            validation.Validate(i.AccessLevel, validation.Required, validation.In(ApplicationTemplateAccessLevelGlobal)),
 		"webhooks":               validation.Validate(i.Webhooks, validation.By(webhooksRuleFunc)),
+		"applicationNamespace":   validation.Validate(i.ApplicationNamespace, validation.Length(1, longStringLengthLimit)),
 	}.Filter()
 }
 
@@ -34,6 +35,7 @@ func (i ApplicationTemplateUpdateInput) Validate() error {
 		"description":            validation.Validate(i.Description, validation.RuneLength(0, descriptionStringLengthLimit)),
 		"placeholders":           validation.Validate(i.Placeholders, validation.Each(validation.Required)),
 		"accessLevel":            validation.Validate(i.AccessLevel, validation.Required, validation.In(ApplicationTemplateAccessLevelGlobal)),
+		"applicationNamespace":   validation.Validate(i.ApplicationNamespace, validation.Length(1, longStringLengthLimit)),
 	}.Filter()
 }
 
