@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -84,8 +86,10 @@ type service struct {
 	webhookService        WebhookService
 	runtimeContextService RuntimeContextService
 
-	protectedLabelPattern string
-	immutableLabelPattern string
+	protectedLabelPattern     string
+	immutableLabelPattern     string
+	runtimeTypeLabelKey       string
+	kymaRuntimeTypeLabelValue string
 }
 
 // NewService missing godoc
@@ -98,20 +102,21 @@ func NewService(repo runtimeRepository,
 	tenantService tenantService,
 	webhookService WebhookService,
 	runtimeContextService RuntimeContextService,
-	protectedLabelPattern string,
-	immutableLabelPattern string) *service {
+	protectedLabelPattern, immutableLabelPattern, runtimeTypeLabelKey, kymaRuntimeTypeLabelValue string) *service {
 	return &service{
-		repo:                  repo,
-		labelRepo:             labelRepo,
-		scenariosService:      scenariosService,
-		labelUpsertService:    labelUpsertService,
-		uidService:            uidService,
-		formationService:      formationService,
-		tenantSvc:             tenantService,
-		webhookService:        webhookService,
-		runtimeContextService: runtimeContextService,
-		protectedLabelPattern: protectedLabelPattern,
-		immutableLabelPattern: immutableLabelPattern,
+		repo:                      repo,
+		labelRepo:                 labelRepo,
+		scenariosService:          scenariosService,
+		labelUpsertService:        labelUpsertService,
+		uidService:                uidService,
+		formationService:          formationService,
+		tenantSvc:                 tenantService,
+		webhookService:            webhookService,
+		runtimeContextService:     runtimeContextService,
+		protectedLabelPattern:     protectedLabelPattern,
+		immutableLabelPattern:     immutableLabelPattern,
+		runtimeTypeLabelKey:       runtimeTypeLabelKey,
+		kymaRuntimeTypeLabelValue: kymaRuntimeTypeLabelValue,
 	}
 }
 
@@ -267,6 +272,15 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 		}
 
 		delete(in.Labels, model.ScenariosKey)
+	}
+
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading consumer")
+	}
+
+	if consumerInfo.ConsumerType == consumer.IntegrationSystem {
+		in.Labels[s.runtimeTypeLabelKey] = s.kymaRuntimeTypeLabelValue
 	}
 
 	if err = s.labelUpsertService.UpsertMultipleLabels(ctx, rtmTenant, model.RuntimeLabelableObject, id, in.Labels); err != nil {
