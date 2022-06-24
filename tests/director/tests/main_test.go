@@ -36,6 +36,7 @@ type DirectorConfig struct {
 	SelfRegDistinguishLabelKey   string
 	SelfRegDistinguishLabelValue string
 	SelfRegRegion                string
+	SelfRegRegion2               string
 	ConsumerID                   string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
 }
 

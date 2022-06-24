@@ -22,6 +22,8 @@ type ExternalCertProviderConfig struct {
 	ExternalCertCronjobContainerName      string `envconfig:"EXTERNAL_CERT_CRONJOB_CONTAINER_NAME"`
 	ExternalCertTestJobName               string `envconfig:"EXTERNAL_CERT_TEST_JOB_NAME"`
 	TestExternalCertSubject               string `envconfig:"TEST_EXTERNAL_CERT_SUBJECT"`
+	TestExternalCertCN                    string `envconfig:"TEST_EXTERNAL_CERT_CN"`
+	TestExternalCertOU                    string `envconfig:"TEST_EXTERNAL_CERT_OU"`
 	ExternalClientCertCertKey             string `envconfig:"APP_EXTERNAL_CLIENT_CERT_KEY"`
 	ExternalClientCertKeyKey              string `envconfig:"APP_EXTERNAL_CLIENT_KEY_KEY"`
 }

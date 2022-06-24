@@ -786,6 +786,7 @@ global:
         oauthUrlKey: url
     selfRegistration:
       region: "eu-1"
+      region2: "eu-2"
     externalServicesMock:
       skipPattern: ""
     namespace: kyma-system

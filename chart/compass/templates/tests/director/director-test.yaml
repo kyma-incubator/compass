@@ -98,8 +98,14 @@ spec:
               value: {{ .Values.global.tests.subscriptionProviderIdValue | quote }}
             - name: APP_SELF_REG_REGION
               value: {{ .Values.global.tests.selfRegistration.region }}
+            - name: APP_SELF_REG_REGION2
+              value: {{ .Values.global.tests.selfRegistration.region2 }}
             - name: APP_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
+            - name: TEST_EXTERNAL_CERT_CN
+              value: {{ .Values.global.tests.director.externalCertIntSystemCN }}
+            - name: TEST_EXTERNAL_CERT_OU
+              value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
             - name: TEST_EXTERNAL_CERT_SUBJECT
               value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.externalCertConfiguration.ouCertSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.tests.director.externalCertIntSystemCN }}
             - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME
