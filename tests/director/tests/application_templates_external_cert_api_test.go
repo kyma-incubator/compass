@@ -2,7 +2,6 @@ package tests
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -24,7 +23,7 @@ func TestApplicationTemplateWithExternalCertificate(t *testing.T) {
 		CertSvcInstanceTestSecretName:         conf.ExternalCertProviderConfig.CertSvcInstanceTestSecretName,
 		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
 		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "external-cert", -1),
+		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, "integration-system-test", "external-cert", -1),
 		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
 		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
 	}
@@ -53,7 +52,6 @@ func TestApplicationTemplateWithExternalCertificate(t *testing.T) {
 		// Enhance input to match the newly created labels
 		appTemplateInput.Labels[conf.SelfRegLabelKey] = appTemplateOutput.Labels[conf.SelfRegLabelKey]
 		appTemplateInput.Labels["global_subaccount_id"] = conf.ConsumerID
-		appTemplateInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", name, conf.SelfRegRegion)
 		assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
 	})
 
