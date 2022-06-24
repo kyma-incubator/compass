@@ -77,7 +77,8 @@ type config struct {
 	Handler   tenantfetcher.HandlerConfig
 	EventsCfg tenantfetcher.EventsConfig
 
-	SecurityConfig securityConfig
+	SecurityConfig        securityConfig
+	TenantOnDemandRegions []tf.RegionDetails `envconfig:"APP_REGION_DETAILS"`
 }
 
 type securityConfig struct {
@@ -300,7 +301,7 @@ func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, tr
 
 	tenantsOnDemandAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, tenantsOnDemandAPIRouter, cfg.SecurityConfig, cfg.SecurityConfig.FetchTenantOnDemandScope)
-	registerTenantsOnDemandHandler(ctx, tenantsOnDemandAPIRouter, cfg.EventsCfg, cfg.Handler, transact)
+	registerTenantsOnDemandHandler(ctx, tenantsOnDemandAPIRouter, cfg.EventsCfg, cfg.Handler, transact, cfg.TenantOnDemandRegions)
 
 	healthCheckRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
 	logger.Infof("Registering readiness endpoint...")
@@ -384,8 +385,8 @@ func registerTenantsHandler(ctx context.Context, router *mux.Router, cfg tenantf
 	router.HandleFunc(cfg.DependenciesEndpoint, tenantHandler.Dependencies).Methods(http.MethodGet)
 }
 
-func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, eventsCfg tenantfetcher.EventsConfig, tenantHandlerCfg tenantfetcher.HandlerConfig, transact persistence.Transactioner) {
-	onDemandSvc, err := createTenantFetcherOnDemandSvc(eventsCfg, tenantHandlerCfg, transact)
+func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, eventsCfg tenantfetcher.EventsConfig, tenantHandlerCfg tenantfetcher.HandlerConfig, transact persistence.Transactioner, regionDetails []tf.RegionDetails) {
+	onDemandSvc, err := createTenantFetcherOnDemandSvc(eventsCfg, tenantHandlerCfg, transact, regionDetails)
 	exitOnError(err, "failed to create tenant fetcher on-demand service")
 
 	fetcher := tenantfetcher.NewTenantFetcher(*onDemandSvc)
@@ -395,7 +396,7 @@ func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, eve
 	router.HandleFunc(tenantHandlerCfg.TenantOnDemandHandlerEndpoint, tenantHandler.FetchTenantOnDemand).Methods(http.MethodPost)
 }
 
-func createTenantFetcherOnDemandSvc(eventsCfg tenantfetcher.EventsConfig, handlerCfg tenantfetcher.HandlerConfig, transact persistence.Transactioner) (*tf.SubaccountOnDemandService, error) {
+func createTenantFetcherOnDemandSvc(eventsCfg tenantfetcher.EventsConfig, handlerCfg tenantfetcher.HandlerConfig, transact persistence.Transactioner, regionDetails []tf.RegionDetails) (*tf.SubaccountOnDemandService, error) {
 	eventAPIClient, err := tf.NewClient(eventsCfg.OAuthConfig, eventsCfg.AuthMode, eventsCfg.APIConfig, handlerCfg.ClientTimeout)
 	if nil != err {
 		return nil, err
@@ -417,7 +418,7 @@ func createTenantFetcherOnDemandSvc(eventsCfg tenantfetcher.EventsConfig, handle
 	gqlClient := newInternalGraphQLClient(handlerCfg.DirectorGraphQLEndpoint, handlerCfg.ClientTimeout, handlerCfg.HTTPClientSkipSslValidation)
 	directorClient := graphqlclient.NewDirector(gqlClient)
 
-	return tf.NewSubaccountOnDemandService(eventsCfg.QueryConfig, eventsCfg.TenantFieldMapping, eventAPIClient, transact, tenantStorageSvc, directorClient, handlerCfg.TenantProvider, tenantStorageConv), nil
+	return tf.NewSubaccountOnDemandService(eventsCfg.QueryConfig, eventsCfg.TenantFieldMapping, eventAPIClient, transact, tenantStorageSvc, directorClient, handlerCfg.TenantProvider, tenantStorageConv, regionDetails), nil
 }
 
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {

@@ -73,7 +73,7 @@ func (j *job) ReadJobConfig() JobConfig {
 func (j *job) readEventsConfig() EventsConfig {
 	return EventsConfig{
 		AccountsRegion:    j.getEnvValueForKey("central", "APP_"+j.name+"_ACCOUNT_REGION"),
-		SubaccountRegions: getRegions(j.getEnvValueForKey("central", "APP_"+j.name+"_SUBACCOUNT_REGIONS")),
+		SubaccountRegions: getRegions(j.getEnvValueForKey("{central, \"\"}", "APP_"+j.name+"_SUBACCOUNT_REGIONS")),
 
 		AuthMode:    oauth.AuthMode(j.getEnvValueForKey("standard", "APP_"+j.name+"_OAUTH_AUTH_MODE")),
 		OAuthConfig: j.getOAuth2Config(),

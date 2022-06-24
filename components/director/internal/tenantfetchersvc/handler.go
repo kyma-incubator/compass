@@ -7,10 +7,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
-	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/internal/features"

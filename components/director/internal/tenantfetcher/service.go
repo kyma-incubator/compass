@@ -80,6 +80,11 @@ type PageConfig struct {
 	PageNumField      string
 }
 
+type RegionDetails struct {
+	Name   string `json:"name"`
+	Prefix string `json:"prefix"`
+}
+
 // TenantStorageService missing godoc
 //go:generate mockery --name=TenantStorageService --output=automock --outpkg=automock --case=underscore --unroll-variadic=False --disable-version-string
 type TenantStorageService interface {
@@ -153,6 +158,7 @@ type SubaccountOnDemandService struct {
 	gqlClient            DirectorGraphQLClient
 	providerName         string
 	tenantConverter      TenantConverter
+	tenantsRegions       []RegionDetails
 }
 
 // GlobalAccountService missing godoc
@@ -203,7 +209,8 @@ func NewSubaccountOnDemandService(
 	tenantStorageService TenantStorageService,
 	gqlClient DirectorGraphQLClient,
 	providerName string,
-	tenantConverter TenantConverter) *SubaccountOnDemandService {
+	tenantConverter TenantConverter,
+	tenantsRegions []RegionDetails) *SubaccountOnDemandService {
 	return &SubaccountOnDemandService{
 		queryConfig:    queryConfig,
 		fieldMapping:   fieldMapping,
@@ -221,6 +228,7 @@ func NewSubaccountOnDemandService(
 		gqlClient:            gqlClient,
 		providerName:         providerName,
 		tenantConverter:      tenantConverter,
+		tenantsRegions:       tenantsRegions,
 	}
 }
 
@@ -450,10 +458,14 @@ func (s *SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID
 	}
 
 	var tenantsToCreate = []model.BusinessTenantMappingInput{*tenantToCreate}
-	if len(tenantToCreate.Region) > 3 {
-		tenantToCreate.Region = "cf-" + tenantToCreate.Region
+	fullRegionName := tenantToCreate.Region
+	for _, detail := range s.tenantsRegions {
+		if detail.Name == fullRegionName {
+			fullRegionName = detail.Prefix + detail.Name
+			break
+		}
 	}
-	if err := createTenants(ctx, s.gqlClient, parentTenantDetails, tenantsToCreate, tenantToCreate.Region, s.providerName, chunkSizeForTenantOnDemand, s.tenantConverter); err != nil {
+	if err := createTenants(ctx, s.gqlClient, parentTenantDetails, tenantsToCreate, fullRegionName, s.providerName, chunkSizeForTenantOnDemand, s.tenantConverter); err != nil {
 		return errors.Wrapf(err, "while creating missing tenants from tenant hierarchy of subaccount tenant with ID %s", subaccountID)
 	}
 
