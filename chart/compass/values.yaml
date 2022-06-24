@@ -241,7 +241,6 @@ global:
     runtimeTypeLabelKey: "runtimeType"
     kymaRuntimeTypeLabelValue: "kyma"
     fetchTenantEndpoint: '{{ printf "https://%s.%s%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host .Values.global.ingress.domainName .Values.global.tenantFetcher.prefix }}'
-
   auditlog:
     configMapName: "compass-gateway-auditlog-config"
     mtlsTokenPath: "/cert/token"
