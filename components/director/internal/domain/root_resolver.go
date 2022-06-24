@@ -196,7 +196,7 @@ func NewRootResolver(
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantSvc, webhookSvc, runtimeContextSvc, featuresConfig.ProtectedLabelPattern, featuresConfig.ImmutableLabelPattern, featuresConfig.RuntimeTypeLabelKey, featuresConfig.KymaRuntimeTypeLabelValue)
 	tokenSvc := onetimetoken.NewTokenService(systemAuthSvc, appSvc, appConverter, tenantSvc, internalFQDNHTTPClient, onetimetoken.NewTokenGenerator(tokenLength), oneTimeTokenCfg, pairingAdapters, timeService)
-	subscriptionSvc := subscription.NewService(runtimeSvc, tenantSvc, labelSvc, appTemplateSvc, appConverter, appSvc, uidSvc, subscriptionConfig.ProviderLabelKey, subscriptionConfig.ConsumerSubaccountIDsLabelKey)
+	subscriptionSvc := subscription.NewService(runtimeSvc, runtimeContextSvc, tenantSvc, labelSvc, appTemplateSvc, appConverter, appSvc, uidSvc, subscriptionConfig.ConsumerSubaccountLabelKey, subscriptionConfig.SubscriptionLabelKey, subscriptionConfig.RuntimeTypeLabelKey, subscriptionConfig.ProviderLabelKey)
 	tenantOnDemandSvc := tenant.NewFetchOnDemandService(internalGatewayHTTPClient, tenantOnDemandAPIConfig)
 	formationTemplateSvc := formationtemplate.NewService(formationTemplateRepo, uidSvc, formationTemplateConverter)
 
@@ -847,13 +847,13 @@ func (r *mutationResolver) DeleteTenants(ctx context.Context, in []string) (int,
 }
 
 // SubscribeTenant subscribes given tenant
-func (r *mutationResolver) SubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, region, subscriptionAppName string) (bool, error) {
-	return r.subscription.SubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, region, subscriptionAppName)
+func (r *mutationResolver) SubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionAppName string) (bool, error) {
+	return r.subscription.SubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionAppName)
 }
 
 // UnsubscribeTenant unsubscribes given tenant
-func (r *mutationResolver) UnsubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, region string) (bool, error) {
-	return r.subscription.UnsubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, region)
+func (r *mutationResolver) UnsubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region string) (bool, error) {
+	return r.subscription.UnsubscribeTenant(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region)
 }
 
 func (r *mutationResolver) UpdateTenant(ctx context.Context, id string, in graphql.BusinessTenantMappingInput) (*graphql.Tenant, error) {

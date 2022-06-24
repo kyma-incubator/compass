@@ -35,6 +35,7 @@ type universalLister struct {
 	selectedColumns string
 	tenantColumn    *string
 	resourceType    resource.Type
+	ownerCheck      bool
 
 	orderByParams OrderByParams
 }
@@ -54,6 +55,16 @@ func NewLister(tableName string, selectedColumns []string) Lister {
 	return &universalLister{
 		tableName:       tableName,
 		selectedColumns: strings.Join(selectedColumns, ", "),
+		orderByParams:   NoOrderBy,
+	}
+}
+
+// NewOwnerLister is a constructor for Lister about entities with externally managed tenant accesses (m2m table or view) with owner access check
+func NewOwnerLister(tableName string, selectedColumns []string, ownerCheck bool) Lister {
+	return &universalLister{
+		tableName:       tableName,
+		selectedColumns: strings.Join(selectedColumns, ", "),
+		ownerCheck:      ownerCheck,
 		orderByParams:   NoOrderBy,
 	}
 }
@@ -100,7 +111,7 @@ func (l *universalLister) listWithTenantScope(ctx context.Context, resourceType 
 	}
 
 	tenantIsolation, err :=
-		newTenantIsolationConditionWithPlaceholder(resourceType, tenant, false, true)
+		newTenantIsolationConditionWithPlaceholder(resourceType, tenant, l.ownerCheck, true)
 	if err != nil {
 		return err
 	}

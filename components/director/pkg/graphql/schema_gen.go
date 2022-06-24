@@ -422,14 +422,14 @@ type ComplexityRoot struct {
 		SetBundleInstanceAuth                         func(childComplexity int, authID string, in BundleInstanceAuthSetInput) int
 		SetDefaultEventingForApplication              func(childComplexity int, appID string, runtimeID string) int
 		SetRuntimeLabel                               func(childComplexity int, runtimeID string, key string, value interface{}) int
-		SubscribeTenant                               func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, region string, subscriptionAppName string) int
+		SubscribeTenant                               func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionAppName string) int
 		UnassignFormation                             func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
 		UnpairApplication                             func(childComplexity int, id string, mode *OperationMode) int
 		UnregisterApplication                         func(childComplexity int, id string, mode *OperationMode) int
 		UnregisterIntegrationSystem                   func(childComplexity int, id string) int
 		UnregisterRuntime                             func(childComplexity int, id string) int
 		UnregisterRuntimeContext                      func(childComplexity int, id string) int
-		UnsubscribeTenant                             func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, region string) int
+		UnsubscribeTenant                             func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string) int
 		UpdateAPIDefinition                           func(childComplexity int, id string, in APIDefinitionInput) int
 		UpdateApplication                             func(childComplexity int, id string, in ApplicationUpdateInput) int
 		UpdateApplicationTemplate                     func(childComplexity int, id string, in ApplicationTemplateUpdateInput) int
@@ -728,8 +728,8 @@ type MutationResolver interface {
 	WriteTenants(ctx context.Context, in []*BusinessTenantMappingInput) (int, error)
 	DeleteTenants(ctx context.Context, in []string) (int, error)
 	UpdateTenant(ctx context.Context, id string, in BusinessTenantMappingInput) (*Tenant, error)
-	SubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string, subscriptionAppName string) (bool, error)
-	UnsubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) (bool, error)
+	SubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionAppName string) (bool, error)
+	UnsubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string) (bool, error)
 	CreateFormationTemplate(ctx context.Context, in FormationTemplateInput) (*FormationTemplate, error)
 	DeleteFormationTemplate(ctx context.Context, id string) (*FormationTemplate, error)
 	UpdateFormationTemplate(ctx context.Context, id string, in FormationTemplateInput) (*FormationTemplate, error)
@@ -2843,7 +2843,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SubscribeTenant(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string), args["subscriptionAppName"].(string)), true
+		return e.complexity.Mutation.SubscribeTenant(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["consumerTenantID"].(string), args["region"].(string), args["subscriptionAppName"].(string)), true
 
 	case "Mutation.unassignFormation":
 		if e.complexity.Mutation.UnassignFormation == nil {
@@ -2927,7 +2927,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UnsubscribeTenant(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string)), true
+		return e.complexity.Mutation.UnsubscribeTenant(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["consumerTenantID"].(string), args["region"].(string)), true
 
 	case "Mutation.updateAPIDefinition":
 		if e.complexity.Mutation.UpdateAPIDefinition == nil {
@@ -5803,8 +5803,8 @@ type Mutation {
 	writeTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.writeTenants")
 	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
 	updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")
-	subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!, subscriptionAppName: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
-	unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
+	subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!, subscriptionAppName: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
+	unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
 	"""
 	**Examples**
 	- [create formation template](examples/create-formation-template/create-formation-template.graphql)
@@ -7265,21 +7265,29 @@ func (ec *executionContext) field_Mutation_subscribeTenant_args(ctx context.Cont
 	}
 	args["providerSubaccountID"] = arg2
 	var arg3 string
-	if tmp, ok := rawArgs["region"]; ok {
+	if tmp, ok := rawArgs["consumerTenantID"]; ok {
 		arg3, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["region"] = arg3
+	args["consumerTenantID"] = arg3
 	var arg4 string
-	if tmp, ok := rawArgs["subscriptionAppName"]; ok {
+	if tmp, ok := rawArgs["region"]; ok {
 		arg4, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["subscriptionAppName"] = arg4
+	args["region"] = arg4
+	var arg5 string
+	if tmp, ok := rawArgs["subscriptionAppName"]; ok {
+		arg5, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["subscriptionAppName"] = arg5
 	return args, nil
 }
 
@@ -7427,13 +7435,21 @@ func (ec *executionContext) field_Mutation_unsubscribeTenant_args(ctx context.Co
 	}
 	args["providerSubaccountID"] = arg2
 	var arg3 string
-	if tmp, ok := rawArgs["region"]; ok {
+	if tmp, ok := rawArgs["consumerTenantID"]; ok {
 		arg3, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["region"] = arg3
+	args["consumerTenantID"] = arg3
+	var arg4 string
+	if tmp, ok := rawArgs["region"]; ok {
+		arg4, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["region"] = arg4
 	return args, nil
 }
 
@@ -19730,7 +19746,7 @@ func (ec *executionContext) _Mutation_subscribeTenant(ctx context.Context, field
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().SubscribeTenant(rctx, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string), args["subscriptionAppName"].(string))
+			return ec.resolvers.Mutation().SubscribeTenant(rctx, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["consumerTenantID"].(string), args["region"].(string), args["subscriptionAppName"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.subscribeTenant")
@@ -19795,7 +19811,7 @@ func (ec *executionContext) _Mutation_unsubscribeTenant(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UnsubscribeTenant(rctx, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string))
+			return ec.resolvers.Mutation().UnsubscribeTenant(rctx, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["consumerTenantID"].(string), args["region"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.unsubscribeTenant")
