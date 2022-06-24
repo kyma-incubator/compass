@@ -88,7 +88,7 @@ spec:
                 - name: APP_GLOBAL_REGISTRY_URL
                   value: "{{ .Values.global.ordAggregator.globalRegistryUrl }}"
                 - name: APP_MAX_PARALLEL_APPLICATION_PROCESSORS
-                  value: "{{ .Values.global.ordAggregator.maxOrdParallelDownloads }}"
+                  value: "{{ .Values.global.ordAggregator.maxParallelApplicationProcessors }}"
                 - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
                   value: {{ .Values.global.tenantFetcher.server.subscriptionProviderLabelKey }}
               command:
