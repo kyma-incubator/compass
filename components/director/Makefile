@@ -1,6 +1,7 @@
 APP_NAME = compass-director
 APP_PATH = components/director
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
+NAMESPACE="compass-system"
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
 export GO111MODULE = on
 export SKIP_STEP_MESSAGE = "Do nothing for Go modules project"

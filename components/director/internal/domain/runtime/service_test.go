@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
-	oathkeeper "github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
@@ -30,7 +30,7 @@ import (
 var (
 	labelsWithNormalization   = map[string]interface{}{runtime.IsNormalizedLabel: "true"}
 	protectedLabelPattern     = ".*_defaultEventing$|^consumer_subaccount_ids$"
-	immutableLabelPattern     = "^xsappnameCMPClone$"
+	immutableLabelPattern     = "^xsappnameCMPClone$|^runtimeType$"
 	runtimeTypeLabelKey       = "runtimeType"
 	kymaRuntimeTypeLabelValue = "kyma"
 	testUUID                  = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
@@ -44,12 +44,13 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 	subaccountID := "subaccountID"
 	xsappNameCMPClone := "xsappnameCMPClone"
 	xsappNameCMPCloneValue := "xsappnameCMPCloneValue"
+	//runtimeTypeLabelKey := "runtimeType"
+	//runtimeTypeLabelValue := "runtimeTypeValue"
 
 	desc := "Lorem ipsum"
 	labels := map[string]interface{}{
 		model.ScenariosKey:          []interface{}{"DEFAULT"},
 		"protected_defaultEventing": "true",
-		"consumer_subaccount_ids":   []string{"subaccountID-1", "subaccountID-2"},
 	}
 
 	webhookInput := model.WebhookInput{
@@ -112,7 +113,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 		scenarioassignment.SubaccountIDKey: extSubaccountID,
 	}
 
-	labelsForDBMockWithXsappName := map[string]interface{}{
+	labelsForDBMockWithMandatoryLabels := map[string]interface{}{
 		runtime.IsNormalizedLabel: "true",
 		xsappNameCMPClone:         xsappNameCMPCloneValue,
 		runtimeTypeLabelKey:       kymaRuntimeTypeLabelValue,
@@ -221,7 +222,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
-				repo.On("UpsertMultipleLabels", ctxWithIntSysConsumer, "tenant", model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithXsappName).Return(nil).Once()
+				repo.On("UpsertMultipleLabels", ctxWithIntSysConsumer, "tenant", model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithMandatoryLabels).Return(nil).Once()
 				return repo
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -244,6 +245,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			MandatoryLabels: func() map[string]interface{} {
 				mandatoryLabels := make(map[string]interface{})
 				mandatoryLabels[xsappNameCMPClone] = xsappNameCMPCloneValue
+				mandatoryLabels[runtimeTypeLabelKey] = kymaRuntimeTypeLabelValue
 				return mandatoryLabels
 			},
 			Context:     ctxWithIntSysConsumer,
@@ -263,7 +265,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
-				repo.On("UpsertMultipleLabels", ctxWithIntSysConsumer, "tenant", model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithXsappName).Return(nil).Once()
+				repo.On("UpsertMultipleLabels", ctxWithIntSysConsumer, "tenant", model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithMandatoryLabels).Return(nil).Once()
 				return repo
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -282,6 +284,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			MandatoryLabels: func() map[string]interface{} {
 				mandatoryLabels := make(map[string]interface{})
 				mandatoryLabels[xsappNameCMPClone] = xsappNameCMPCloneValue
+				mandatoryLabels[runtimeTypeLabelKey] = kymaRuntimeTypeLabelValue
 				return mandatoryLabels
 			},
 			Context:     ctxWithIntSysConsumer,
@@ -577,7 +580,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
-				repo.On("UpsertMultipleLabels", ctxWithIntSysConsumer, "tenant", model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithXsappName).Return(nil).Once()
+				repo.On("UpsertMultipleLabels", ctxWithIntSysConsumer, "tenant", model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithMandatoryLabels).Return(nil).Once()
 				return repo
 			},
 			TenantSvcFn:  unusedTenantService,
@@ -596,6 +599,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			MandatoryLabels: func() map[string]interface{} {
 				mandatoryLabels := make(map[string]interface{})
 				mandatoryLabels[xsappNameCMPClone] = xsappNameCMPCloneValue
+				mandatoryLabels[runtimeTypeLabelKey] = kymaRuntimeTypeLabelValue
 				return mandatoryLabels
 			},
 			Context:     ctxWithIntSysConsumer,
@@ -699,6 +703,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			MandatoryLabels: func() map[string]interface{} {
 				mandatoryLabels := make(map[string]interface{})
 				mandatoryLabels[xsappNameCMPClone] = xsappNameCMPCloneValue
+				mandatoryLabels[runtimeTypeLabelKey] = kymaRuntimeTypeLabelValue
 				return mandatoryLabels
 			},
 			Context:     ctx,
@@ -909,7 +914,6 @@ func TestService_Update(t *testing.T) {
 	}
 	protectedLabels := map[string]interface{}{
 		"protected_defaultEventing": "true",
-		"consumer_subaccount_ids":   []string{"subaccountID-1", "subaccountID-2"},
 		"label1":                    "val1",
 	}
 	modelInput := model.RuntimeUpdateInput{
@@ -2106,15 +2110,7 @@ func TestService_ListLabels(t *testing.T) {
 		ObjectType: model.RuntimeLabelableObject,
 	}
 
-	secondProtectedModelLabel := &model.Label{
-		ID:         "5d23d9d9-3d04-4fa9-95e6-d22e1ae62c13",
-		Key:        "consumer_subaccount_ids",
-		Value:      labelValue,
-		ObjectID:   runtimeID,
-		ObjectType: model.RuntimeLabelableObject,
-	}
-
-	labels := map[string]*model.Label{"protected_defaultEventing": protectedModelLabel, "consumer_subaccount_ids": secondProtectedModelLabel, "first": modelLabel, "second": modelLabel}
+	labels := map[string]*model.Label{"protected_defaultEventing": protectedModelLabel, "first": modelLabel, "second": modelLabel}
 	expectedLabelWithoutProtected := map[string]*model.Label{"first": modelLabel, "second": modelLabel}
 	testCases := []struct {
 		Name               string
@@ -2235,7 +2231,6 @@ func TestService_SetLabel(t *testing.T) {
 
 	labelKey := "key"
 	protectedLabelKey := "protected_defaultEventing"
-	secondProtectedLabelKey := "consumer_subaccount_ids"
 
 	modelLabelInput := model.LabelInput{
 		Key:        labelKey,
@@ -2247,13 +2242,6 @@ func TestService_SetLabel(t *testing.T) {
 	modelProtectedLabelInput := model.LabelInput{
 		Key:        protectedLabelKey,
 		Value:      []string{"value1"},
-		ObjectID:   runtimeID,
-		ObjectType: model.RuntimeLabelableObject,
-	}
-
-	secondModelProtectedLabelInput := model.LabelInput{
-		Key:        secondProtectedLabelKey,
-		Value:      []string{"value1", "value2"},
 		ObjectID:   runtimeID,
 		ObjectType: model.RuntimeLabelableObject,
 	}
@@ -2603,20 +2591,6 @@ func TestService_SetLabel(t *testing.T) {
 			InputLabel:           &modelProtectedLabelInput,
 			ExpectedErrMessage:   "could not set unmodifiable label with key protected_defaultEventing",
 		},
-		{
-			Name: "Returns an error when trying to set consumer_subaccount_ids protected label",
-			RepositoryFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("Exists", ctx, tnt, runtimeID).Return(true, nil).Once()
-				return repo
-			},
-			LabelUpsertServiceFn: unusedLabelUpsertService,
-			LabelRepositoryFn:    unusedLabelRepository,
-			FormationServiceFn:   unusedFormationService,
-			InputRuntimeID:       runtimeID,
-			InputLabel:           &secondModelProtectedLabelInput,
-			ExpectedErrMessage:   "could not set unmodifiable label with key consumer_subaccount_ids",
-		},
 	}
 
 	for _, testCase := range testCases {
@@ -2666,7 +2640,6 @@ func TestService_DeleteLabel(t *testing.T) {
 
 	labelKey := "key"
 	protectedLabelKey := "protected_defaultEventing"
-	secondProtectedLabelKey := "consumer_subaccount_ids"
 	labelValue := "val"
 	scenario := "SCENARIO"
 	secondScenario := "SECOND_SCENARIO"
@@ -2848,19 +2821,6 @@ func TestService_DeleteLabel(t *testing.T) {
 			InputRuntimeID:     runtimeID,
 			InputKey:           protectedLabelKey,
 			ExpectedErrMessage: "could not delete unmodifiable label with key protected_defaultEventing",
-		},
-		{
-			Name: "Returns an error when trying to delete consumer_subaccount_ids protected label",
-			RepositoryFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("Exists", ctx, tnt, runtimeID).Return(true, nil).Once()
-				return repo
-			},
-			LabelRepositoryFn:  unusedLabelRepository,
-			FormationServiceFn: unusedFormationService,
-			InputRuntimeID:     runtimeID,
-			InputKey:           secondProtectedLabelKey,
-			ExpectedErrMessage: "could not delete unmodifiable label with key consumer_subaccount_ids",
 		},
 	}
 

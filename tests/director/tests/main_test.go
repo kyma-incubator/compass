@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/subscription"
+
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
@@ -29,17 +31,21 @@ type DirectorConfig struct {
 	DefaultNormalizationPrefix     string `envconfig:"default=mp-"`
 	GatewayOauth                   string
 	DirectorExternalCertSecuredURL string
-	SkipSSLValidation              bool `envconfig:"default=false"`
+	SkipSSLValidation              bool   `envconfig:"default=false"`
+	ConsumerID                     string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
 	CertLoaderConfig               certloader.Config
 	certprovider.ExternalCertProviderConfig
-	SelfRegLabelKey              string `envconfig:"APP_SELF_REGISTER_LABEL_KEY"`
-	SelfRegDistinguishLabelKey   string
-	SelfRegDistinguishLabelValue string
-	SelfRegRegion                string
-	SelfRegRegion2               string
-	ConsumerID                   string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
-	RuntimeTypeLabelKey          string
-	KymaRuntimeTypeLabelValue    string
+	SubscriptionConfig               subscription.Config
+	TestProviderSubaccountID         string
+	TestConsumerSubaccountID         string
+	TestConsumerTenantID             string
+	ExternalServicesMockBaseURL      string
+	TokenPath                        string
+	SubscriptionProviderAppNameValue string
+	ConsumerSubaccountLabelKey       string
+	SubscriptionLabelKey             string
+	RuntimeTypeLabelKey              string
+	KymaRuntimeTypeLabelValue        string
 }
 
 type BaseDirectorConfig struct {
