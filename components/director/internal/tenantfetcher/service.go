@@ -371,7 +371,7 @@ func (s SubaccountService) SyncTenants() error {
 
 		// Order of event processing matters
 		if len(tenantsToCreate) > 0 {
-			fullRegionName := regionName + regionPrefix
+			fullRegionName := regionPrefix + regionName
 			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, fullRegionName, s.providerName, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
 				return errors.Wrap(err, "while storing subaccounts")
 			}
