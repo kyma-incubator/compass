@@ -192,7 +192,7 @@ global:
         oauthUrlKey: "url"
         skipSSLValidation: true
       shouldSyncSubaccounts: true
-      subaccountRegions: "test"
+      subaccountRegions: "[{\"name\":\"test\",\"prefix\":\"cf-\"}]"
   tests:
     basicCredentials:
       manage: true

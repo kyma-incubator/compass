@@ -2,6 +2,7 @@ package tenantfetchersvc
 
 import (
 	"context"
+	"encoding/json"
 	"regexp"
 	"strconv"
 	"strings"
@@ -72,7 +73,7 @@ func (j *job) ReadJobConfig() JobConfig {
 func (j *job) readEventsConfig() EventsConfig {
 	return EventsConfig{
 		AccountsRegion:    j.getEnvValueForKey("central", "APP_"+j.name+"_ACCOUNT_REGION"),
-		SubaccountRegions: strings.Split(j.getEnvValueForKey("central", "APP_"+j.name+"_SUBACCOUNT_REGIONS"), ","),
+		SubaccountRegions: getRegions(j.getEnvValueForKey("central", "APP_"+j.name+"_SUBACCOUNT_REGIONS")),
 
 		AuthMode:    oauth.AuthMode(j.getEnvValueForKey("standard", "APP_"+j.name+"_OAUTH_AUTH_MODE")),
 		OAuthConfig: j.getOAuth2Config(),
@@ -287,4 +288,22 @@ func GetJobNames(envVars map[string]string) []string {
 	}
 
 	return jobNames
+}
+
+// returns map of region name as key and its prefix as value
+func getRegions(regionNames string) map[string]string {
+	regionsWithPrefixes := make(map[string]string)
+	var arr []struct {
+		Name   string `json:"name"`
+		Prefix string `json:"prefix"`
+	}
+
+	err := json.Unmarshal([]byte(regionNames), &arr)
+	if err != nil {
+		log.D().Errorf("Error while parsing %s as region names", regionNames)
+	}
+	for _, region := range arr {
+		regionsWithPrefixes[region.Name] = region.Prefix
+	}
+	return regionsWithPrefixes
 }

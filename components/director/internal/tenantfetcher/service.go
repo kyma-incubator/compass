@@ -182,7 +182,7 @@ type SubaccountService struct {
 	tenantStorageService         TenantStorageService
 	runtimeStorageService        RuntimeService
 	providerName                 string
-	tenantsRegions               []string
+	tenantsRegions               map[string]string
 	fieldMapping                 TenantFieldMapping
 	movedSubaccountsFieldMapping MovedSubaccountsFieldMapping
 	labelRepo                    LabelRepo
@@ -266,7 +266,7 @@ func NewSubaccountService(queryConfig QueryConfig,
 	fieldMapping TenantFieldMapping,
 	movRuntime MovedSubaccountsFieldMapping,
 	providerName string,
-	regionNames []string,
+	regionNames map[string]string,
 	client EventAPIClient,
 	tenantStorageService TenantStorageService,
 	runtimeStorageService RuntimeService,
@@ -325,24 +325,24 @@ func (s SubaccountService) SyncTenants() error {
 		newLastResyncTimestamp = convertTimeToUnixMilliSecondString(startTime)
 	}
 
-	for _, region := range s.tenantsRegions {
-		tenantsToCreate, err := s.getSubaccountsToCreateForRegion(lastConsumedTenantTimestamp, region)
+	for regionName, regionPrefix := range s.tenantsRegions {
+		tenantsToCreate, err := s.getSubaccountsToCreateForRegion(lastConsumedTenantTimestamp, regionName)
 		if err != nil {
 			return err
 		}
-		log.C(ctx).Printf("Got subaccount to create for region: %s", region)
+		log.C(ctx).Printf("Got subaccount to create for region: %s", regionName)
 
-		tenantsToDelete, err := s.getSubaccountsToDeleteForRegion(lastConsumedTenantTimestamp, region)
+		tenantsToDelete, err := s.getSubaccountsToDeleteForRegion(lastConsumedTenantTimestamp, regionName)
 		if err != nil {
 			return err
 		}
-		log.C(ctx).Printf("Got subaccount to delete for region: %s", region)
+		log.C(ctx).Printf("Got subaccount to delete for region: %s", regionName)
 
-		subaccountsToMove, err := s.getSubaccountsToMove(lastConsumedTenantTimestamp, region)
+		subaccountsToMove, err := s.getSubaccountsToMove(lastConsumedTenantTimestamp, regionName)
 		if err != nil {
 			return err
 		}
-		log.C(ctx).Printf("Got subaccount to move for region: %s", region)
+		log.C(ctx).Printf("Got subaccount to move for region: %s", regionName)
 
 		tenantsToCreate = dedupeTenants(tenantsToCreate)
 		tenantsToCreate = excludeTenants(tenantsToCreate, tenantsToDelete)
@@ -371,7 +371,8 @@ func (s SubaccountService) SyncTenants() error {
 
 		// Order of event processing matters
 		if len(tenantsToCreate) > 0 {
-			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, region, s.providerName, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
+			fullRegionName := regionName + regionPrefix
+			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, fullRegionName, s.providerName, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
 				return errors.Wrap(err, "while storing subaccounts")
 			}
 		}
@@ -386,7 +387,7 @@ func (s SubaccountService) SyncTenants() error {
 			}
 		}
 
-		log.C(ctx).Printf("Processed new events for region: %s", region)
+		log.C(ctx).Printf("Processed new events for region: %s", regionName)
 
 		if err = tx.Commit(); err != nil {
 			return err
@@ -449,6 +450,9 @@ func (s *SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID
 	}
 
 	var tenantsToCreate = []model.BusinessTenantMappingInput{*tenantToCreate}
+	if len(tenantToCreate.Region) > 3 {
+		tenantToCreate.Region = "cf-" + tenantToCreate.Region
+	}
 	if err := createTenants(ctx, s.gqlClient, parentTenantDetails, tenantsToCreate, tenantToCreate.Region, s.providerName, chunkSizeForTenantOnDemand, s.tenantConverter); err != nil {
 		return errors.Wrapf(err, "while creating missing tenants from tenant hierarchy of subaccount tenant with ID %s", subaccountID)
 	}
