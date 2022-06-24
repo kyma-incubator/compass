@@ -81,7 +81,7 @@ type PageConfig struct {
 }
 
 // TenantStorageService missing godoc
-//go:generate mockery --name=TenantStorageService --output=automock --outpkg=automock --case=underscore --unroll-variadic=False --disable-version-string
+//go:generate mockery --name=TenantStorageService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantStorageService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)

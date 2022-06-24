@@ -65,15 +65,17 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		TestConsumerSubaccountID:           "consumberSubaccountID",
 		TestConsumerTenantID:               "consumerTenantID",
 		PropagatedProviderSubaccountHeader: "X-Propagated-Provider",
+		SubscriptionProviderAppNameValue:   "subscriptionProviderAppNameValue",
 	}
 
 	providerCfg := ProviderConfig{
-		TenantIDProperty:               "tenantProperty",
-		SubaccountTenantIDProperty:     "subaccountProperty",
-		SubdomainProperty:              "subdomainProperty",
-		SubscriptionProviderIDProperty: "subscriptionProviderProperty",
-		ProviderSubaccountIDProperty:   "providerSubaccountIDProperty",
-		SubscriptionAppNameProperty:    "subscriptionAppNameProperty",
+		TenantIDProperty:                    "tenantProperty",
+		SubaccountTenantIDProperty:          "subaccountProperty",
+		SubdomainProperty:                   "subdomainProperty",
+		SubscriptionProviderIDProperty:      "subscriptionProviderProperty",
+		ProviderSubaccountIDProperty:        "providerSubaccountIDProperty",
+		ConsumerTenantIDProperty:            "consumerTenantIdProperty",
+		SubscriptionProviderAppNameProperty: "subscriptionProviderAppNameProperty",
 	}
 
 	t.Run("Error when missing authorization header", func(t *testing.T) {
