@@ -187,7 +187,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	// TODO:: Currently we need to support both mechanisms of formation creation/deletion(through label definitions and Formations entity) for backwards compatibility
-	return s.createFormation(ctx, tnt, *templateName, formationName)
+	return s.createFormation(ctx, tnt, templateName, formationName)
 }
 
 // DeleteFormation removes the provided formation from the scenario label definitions of the given tenant.
