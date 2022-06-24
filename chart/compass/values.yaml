@@ -779,6 +779,7 @@ global:
       skipPattern: ""
     selfRegistration:
       region: "eu-1"
+      region2: "eu-2"
     subscription:
       tenants:
         consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
