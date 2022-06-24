@@ -173,9 +173,9 @@ Compass as a Central Management Plane cluster requires minimal Kyma installation
     source <(curl -s "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/is-installed.sh")
     ```
 
-### Local Minikube installation
+### Local k3d installation
 
-For local development, install Compass with the minimal Kyma installation on Minikube from the `main` branch. To do so, run the following script:
+For local development, install Compass with the minimal Kyma installation on k3d from the `main` branch. To do so, run the following script:
 
 ```bash
 ./installation/cmd/run.sh --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID} --oidc-admin-group {OIDC_ADMIN_GROUP}
@@ -202,7 +202,7 @@ Note that using this flag also results in building a new `schema-migrator` image
 >**NOTE:** The versions of the components that are installed depend on their tag versions listed in the `values.yaml` file in the Helm charts.
 If you want to build and deploy the local source code version of a component (for example, Director), you can run the following command in the component directory:
   ```bash
-  make deploy-on-minikube
+  make deploy-on-k3d
   ```
 
 > **_NOTE:_**  
@@ -257,9 +257,9 @@ To install Compass and Runtime components on a single cluster, follow these step
 
 Once Compass is installed, Runtime Agent will be configured to fetch the Runtime configuration from the Compass installation within the same cluster.
 
-### Local Minikube installation
+### Local k3d installation
 
-To install Compass and Runtime components on Minikube, run the command below. Kyma source code will be picked up according to the KYMA_VERSION file and Compass source code will be picked up from the local sources (locally checked out branch).
+To install Compass and Runtime components on k3d, run the command below. Kyma source code will be picked up according to the KYMA_VERSION file and Compass source code will be picked up from the local sources (locally checked out branch).
 
 ```bash
 ./installation/cmd/run.sh --kyma-installation full --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID}
@@ -268,7 +268,7 @@ To install Compass and Runtime components on Minikube, run the command below. Ky
 >**NOTE:** The versions of the components that are installed depend on their tag versions listed in the `values.yaml` file in the Helm charts.
 If you want to build and deploy the local source code version of a component (for example, Director), you can run the following command in the component directory:
   ```bash
-  make deploy-on-minikube
+  make deploy-on-k3d
   ```
 
 > **Note:** To reduce memory and CPU usage, from the `installer-cr-kyma.yaml` file, comment out the components you don't want to use, such as `monitoring`, `tracing`, `logging`, or `kiali`.

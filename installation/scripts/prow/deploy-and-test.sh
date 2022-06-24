@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ###
-# Following script installs necessary tooling for Debian, deploys Kyma with Compass on Minikube, and runs the integrations tests.
+# Following script installs necessary tooling for Debian, deploys Kyma with Compass on k3d, and runs the integrations tests.
 #
 
 set -o errexit
