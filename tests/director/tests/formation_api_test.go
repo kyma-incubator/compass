@@ -47,6 +47,11 @@ func TestGetFormation(t *testing.T) {
 }
 
 func TestListFormations(t *testing.T) {
+	// Pre-cleanup because the formations table may be dirty by previous tests in the director,
+	// which delete their created formations after the end of all director tests.
+	tenantID := tenant.TestTenants.GetDefaultTenantID()
+	tenant.TestTenants.CleanupTenant(tenantID)
+
 	ctx := context.Background()
 
 	firstFormationName := "formation1"
@@ -71,7 +76,6 @@ func TestListFormations(t *testing.T) {
 	expectedFormations = 2
 	t.Logf("List should return %d formations", expectedFormations)
 	formationPage2 := fixtures.ListFormations(t, ctx, certSecuredGraphQLClient, first, expectedFormations)
-
 	require.NotNil(t, formationPage2)
 	assert.Equal(t, expectedFormations, formationPage2.TotalCount)
 	assert.Subset(t, formationPage2.Data, []*graphql.Formation{
