@@ -187,7 +187,7 @@ User logs in to Compass UI
 1. ORY Oathkeeper authenticator validates the token using keys provided by the identity service. 
 2. If the token is valid, Oathkeeper sends the request to ORY mutator hydrator.
 3. Mutator hydrator calls Tenant Mapping Handler hosted by the `Hydrator` component.
-4. Tenant Mapping Handler calls `Director` using GraphQL API which, in production environment, returns **the same** authentication session (as the `tenant` is already in place) even for local development. For more information on how to configure OIDC Authentication Server, see [Installation](https://github.com/kyma-incubator/compass/blob/main/docs/compass/04-01-installation.md#local-minikube-installation).
+4. Tenant Mapping Handler calls `Director` using GraphQL API which, in production environment, returns **the same** authentication session (as the `tenant` is already in place) even for local development. For more information on how to configure OIDC Authentication Server, see [Installation](https://github.com/kyma-incubator/compass/blob/main/docs/compass/04-01-installation.md#local-k3d-installation).
 5. Hydrator component passes response to ID_Token mutator which constructs a JWT token with scopes and `tenant` in the payload.
 6. The request is then forwarded to the desired component (such as `Director` or `Connector`) through the `Gateway` component.
 
