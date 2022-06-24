@@ -58,7 +58,7 @@ func TestServiceCreateFormation(t *testing.T) {
 		LabelDefServiceFn       func() *automock.LabelDefService
 		FormationTemplateRepoFn func() *automock.FormationTemplateRepository
 		FormationRepoFn         func() *automock.FormationRepository
-		TemplateName            *string
+		TemplateName            string
 		ExpectedFormation       *model.Formation
 		ExpectedErrMessage      string
 	}{
@@ -89,7 +89,7 @@ func TestServiceCreateFormation(t *testing.T) {
 				formationRepoMock.On("Create", ctx, fixFormationModel()).Return(nil).Once()
 				return formationRepoMock
 			},
-			TemplateName:       &templateName,
+			TemplateName:       templateName,
 			ExpectedFormation:  expected,
 			ExpectedErrMessage: "",
 		},
@@ -122,7 +122,7 @@ func TestServiceCreateFormation(t *testing.T) {
 				formationRepoMock.On("Create", ctx, fixFormationModel()).Return(nil).Once()
 				return formationRepoMock
 			},
-			TemplateName:       &templateName,
+			TemplateName:       templateName,
 			ExpectedFormation:  expected,
 			ExpectedErrMessage: "",
 		},
@@ -157,7 +157,7 @@ func TestServiceCreateFormation(t *testing.T) {
 				formationTemplateRepoMock.On("GetByName", ctx, templateName).Return(nil, testErr).Once()
 				return formationTemplateRepoMock
 			},
-			TemplateName:       &templateName,
+			TemplateName:       templateName,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
@@ -244,7 +244,7 @@ func TestServiceCreateFormation(t *testing.T) {
 				formationTemplateRepoMock.On("GetByName", ctx, templateName).Return(nil, testErr).Once()
 				return formationTemplateRepoMock
 			},
-			TemplateName:       &templateName,
+			TemplateName:       templateName,
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
@@ -276,7 +276,7 @@ func TestServiceCreateFormation(t *testing.T) {
 				formationRepoMock.On("Create", ctx, fixFormationModel()).Return(testErr).Once()
 				return formationRepoMock
 			},
-			TemplateName:       &templateName,
+			TemplateName:       templateName,
 			ExpectedErrMessage: testErr.Error(),
 		},
 	}

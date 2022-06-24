@@ -430,7 +430,8 @@ type FetchRequestStatus struct {
 }
 
 type FormationInput struct {
-	Name string `json:"name"`
+	Name         string  `json:"name"`
+	TemplateName *string `json:"templateName"`
 }
 
 type FormationTemplate struct {
