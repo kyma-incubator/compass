@@ -91,15 +91,3 @@ func TestFetcher_FetchTenantOnDemand(t *testing.T) {
 		})
 	}
 }
-
-//func UnusedTenantStorageSvc() *tfautomock.TenantStorageService {
-//	return &tfautomock.TenantStorageService{}
-//}
-//
-//func UnusedEventAPIClient() *tfautomock.EventAPIClient {
-//	return &tfautomock.EventAPIClient{}
-//}
-//
-//func UnusedGQLClient() *tfautomock.DirectorGraphQLClient {
-//	return &tfautomock.DirectorGraphQLClient{}
-//}
