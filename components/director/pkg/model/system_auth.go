@@ -61,6 +61,8 @@ const (
 	ApplicationReference SystemAuthReferenceObjectType = "Application"
 	// IntegrationSystemReference missing godoc
 	IntegrationSystemReference SystemAuthReferenceObjectType = "Integration System"
+	// SuperAdminReference missing godoc
+	SuperAdminReference SystemAuthReferenceObjectType = "Super Admin"
 )
 
 // IsIntegrationSystemNoTenantFlow missing godoc

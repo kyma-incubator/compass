@@ -122,10 +122,10 @@ global:
       version: "PR-2383"
     ord_service:
       dir:
-      version: "PR-68"
+      version: "PR-70"
     schema_migrator:
       dir:
-      version: "PR-2434"
+      version: "PR-2391"
     system_broker:
       dir:
       version: "PR-2383"
@@ -136,7 +136,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2322"
+      version: "PR-2391"
     console:
       dir:
       version: "PR-68"
@@ -203,6 +203,11 @@ global:
       lastOperationPath: "/last_operation"
     info:
       path: "/v1/info"
+    subscription:
+      subscriptionProviderLabelKey: "subscriptionProviderId"
+      consumerSubaccountLabelKey: "consumer_subaccount_id"
+      subscriptionLabelKey: "subscription"
+      tokenPrefix: "sb-"
     selfRegister:
       secret:
         name: "region-instances-credentials"
@@ -465,8 +470,8 @@ global:
             enabled: false
             createRule: false
             gatewayHost: "compass-gateway-sap-mtls"
-            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http"}]'
-            attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" } }'
+            trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http", "region": "eu-1"}]'
+            attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" }, "clientid": { "key": "client_id" } }'
             path: /<.*>
             checkSuffix: false
       tenantMappingService:
@@ -515,15 +520,14 @@ global:
       name: "provider"
       subscriptionProviderIdProperty: "subscriptionProviderIdProperty"
       providerSubaccountIdProperty: "providerSubaccountIdProperty"
-      subscriptionAppNameProperty: "subscriptionAppNameProperty"
+      consumerTenantIdProperty: "consumerTenantIdProperty"
+      subscriptionProviderAppNameProperty: "subscriptionProviderAppNameProperty"
     server:
       fetchTenantEndpoint: "/v1/fetch/{parentTenantId}/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
       dependenciesEndpoint: "/v1/dependencies"
       tenantPathParam: "tenantId"
       regionPathParam: "region"
-      subscriptionProviderLabelKey: "subscriptionProviderId"
-      consumerSubaccountIdsLabelKey: "consumer_subaccount_ids"
     containerName: "tenant-fetcher"
     oauth:
       client: "client_id"
@@ -769,27 +773,32 @@ global:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
     ordService:
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
-      consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
-      providerSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd" # TestProviderSubaccount from our testing tenants
-      consumerSubaccountID: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae" # randomly chosen
-      consumerTenantID: "ba49f1aa-ddc1-43ff-943c-fe949857a34a" # randomly chosen
+      skipPattern: ""
+    selfRegistration:
+      region: "eu-1"
+    externalServicesMock:
+      skipPattern: ""
+    subscription:
+      tenants:
+        consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
+        providerSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd" # TestProviderSubaccount from our testing tenants
+        consumerSubaccountID: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae" # randomly chosen
+        consumerTenantID: "ba49f1aa-ddc1-43ff-943c-fe949857a34a" # randomly chosen
+      oauthSecret:
+        manage: false
+        name: compass-subscription-secret
+        clientIdKey: client-id
+        clientSecretKey: client-secret
+        oauthUrlKey: url
       propagatedProviderSubaccountHeader: "X-Provider-Subaccount"
       externalClientCertTestSecretName: "external-client-certificate-test-secret"
       externalClientCertTestSecretNamespace: "compass-system"
       externalCertTestJobName: "external-certificate-rotation-test-job"
       certSvcInstanceTestSecretName: "cert-svc-secret"
       consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
-      skipPattern: ""
-      subscriptionOauthSecret:
-        manage: false
-        name: compass-subscription-secret
-        clientIdKey: client-id
-        clientSecretKey: client-secret
-        oauthUrlKey: url
-    selfRegistration:
-      region: "eu-1"
-    externalServicesMock:
-      skipPattern: ""
+      subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
+      subscriptionProviderIdValue: "id-value!t12345"
+      subscriptionProviderAppNameValue: "subscriptionProviderAppNameValue"
     namespace: kyma-system
     connectivityAdapterFQDN: http://compass-connectivity-adapter.compass-system.svc.cluster.local
     externalServicesMockFQDN: http://compass-external-services-mock.compass-system.svc.cluster.local
@@ -800,8 +809,6 @@ global:
     basicCredentials:
       manage: false
       secretName: "test-basic-credentials-secret"
-    subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
-    subscriptionProviderIdValue: "id-value!t12345"
     db:
       maxOpenConnections: 3
       maxIdleConnections: 1

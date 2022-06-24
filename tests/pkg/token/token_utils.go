@@ -176,9 +176,7 @@ func GetToken(t *testing.T, ctx context.Context, tokenURL, clientID, clientSecre
 
 func GetTokenWithClient(t *testing.T, ctx context.Context, client *http.Client, oauthConfig OauthConfig) string {
 	req, err := http.NewRequest(http.MethodPost, oauthConfig.TokenURL, bytes.NewBuffer([]byte(oauthConfig.Data.Encode())))
-	if err != nil {
-		fmt.Println(err)
-	}
+	require.NoError(t, err)
 
 	if oauthConfig.Data.Get(userNameKey) != "" && oauthConfig.Data.Get(passwordKey) != "" {
 		req.SetBasicAuth(oauthConfig.ClientID, oauthConfig.ClientSecret)
