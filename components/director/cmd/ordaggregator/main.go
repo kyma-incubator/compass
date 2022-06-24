@@ -67,7 +67,7 @@ type config struct {
 
 	GlobalRegistryConfig ord.GlobalRegistryConfig
 
-	MaxParallelOrdDownloads int `envconfig:"APP_ORD_MAX_PARALLEL_DOWNLOADS,default=1"`
+	MaxParallelApplicationProcessors int `envconfig:"APP_MAX_PARALLEL_APPLICATION_PROCESSORS,default=1"`
 
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 }
@@ -184,7 +184,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, config.GlobalRegistryConfig, vendorSvc, productSvc, ordClient)
 
-	ordConfig := ord.NewServiceConfig(config.MaxParallelOrdDownloads)
+	ordConfig := ord.NewServiceConfig(config.MaxParallelApplicationsProcessors)
 	return ord.NewAggregatorService(ordConfig, transact, labelRepo, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClient)
 }
 
