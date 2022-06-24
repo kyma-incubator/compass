@@ -108,11 +108,10 @@ func TestApplicationTemplateWithExternalCertificate(t *testing.T) {
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	name := createAppTemplateName("app-template-with-external-cert-name")
-
 	t.Run("Create Application Template with external certificate", func(t *testing.T) {
 		// WHEN
 		t.Log("Create application template")
+		name := createAppTemplateName("create-app-template-with-external-cert-name")
 		appTemplateInput := fixAppTemplateInput(name)
 		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenantId, appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertSecuredClient, tenantId, &appTemplate)
@@ -133,6 +132,7 @@ func TestApplicationTemplateWithExternalCertificate(t *testing.T) {
 
 	t.Run("Delete Application Template with external certificate", func(t *testing.T) {
 		t.Log("Create application template")
+		name := createAppTemplateName("delete-app-template-with-external-cert-name")
 		appTemplateInput := fixAppTemplateInput(name)
 		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenantId, appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertSecuredClient, tenantId, &appTemplate)
@@ -162,11 +162,10 @@ func TestAddBundleToApplicationWithExternalCertificate(t *testing.T) {
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	name := "app-template-with-external-cert-name"
+	name := createAppTemplateName("app-template-with-external-cert-name")
 
 	t.Log("Create application template")
 	appTemplateInput := fixAppTemplateInput(name)
-	appTemplateInput.Placeholders = nil
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenantId, appTemplateInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertSecuredClient, tenantId, &appTemplate)
 
@@ -174,7 +173,7 @@ func TestAddBundleToApplicationWithExternalCertificate(t *testing.T) {
 	require.NotEmpty(t, appTemplate.ID)
 
 	// Register application from app template
-	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: name, Values: []*graphql.TemplateValueInput{}}
+	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: name, Values: []*graphql.TemplateValueInput{{Placeholder: "name", Value: "test-name"}, {Placeholder: "display-name", Value: "test-name"}}}
 	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
 	require.NoError(t, err)
 	createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
