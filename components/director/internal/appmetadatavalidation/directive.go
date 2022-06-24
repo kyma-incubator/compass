@@ -70,7 +70,6 @@ func (d *directive) Validate(ctx context.Context, _ interface{}, next gqlgen.Res
 	if err != nil {
 		logger.WithError(err).Errorf("An error has occurred while opening transaction: %v", err)
 		return nil, apperrors.InternalErrorFrom(err, "while opening db transaction")
-
 	}
 	defer d.transact.RollbackUnlessCommitted(ctx, tx)
 

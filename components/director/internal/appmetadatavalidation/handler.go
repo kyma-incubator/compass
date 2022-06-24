@@ -7,6 +7,7 @@ import (
 
 type contextKey string
 
+// TenantHeader is a context key for the tenantID in the headers
 const TenantHeader contextKey = "tenantHeaderKey"
 
 // Handler is an object with dependencies

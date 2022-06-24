@@ -270,6 +270,6 @@ func ctxWithTenant(tenantID, consumerID string, consumerType consumer.ConsumerTy
 func ctxWithTenantAndEmptyHeader(consumerID string, consumerType consumer.ConsumerType, flow oathkeeper.AuthFlow) context.Context {
 	apiConsumer := consumer.Consumer{ConsumerID: consumerID, ConsumerType: consumerType, Flow: flow}
 	ctx := context.TODO()
-	context.WithValue(ctx, appmetadatavalidation.TenantHeader, "")
+	ctx = context.WithValue(ctx, appmetadatavalidation.TenantHeader, "")
 	return consumer.SaveToContext(ctx, apiConsumer)
 }
