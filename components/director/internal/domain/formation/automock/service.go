@@ -42,13 +42,13 @@ func (_m *Service) AssignFormation(ctx context.Context, tnt string, objectID str
 	return r0, r1
 }
 
-// CreateFormation provides a mock function with given fields: ctx, tnt, _a2
-func (_m *Service) CreateFormation(ctx context.Context, tnt string, _a2 model.Formation) (*model.Formation, error) {
-	ret := _m.Called(ctx, tnt, _a2)
+// CreateFormation provides a mock function with given fields: ctx, tnt, _a2, templateName
+func (_m *Service) CreateFormation(ctx context.Context, tnt string, _a2 model.Formation, templateName string) (*model.Formation, error) {
+	ret := _m.Called(ctx, tnt, _a2, templateName)
 
 	var r0 *model.Formation
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.Formation) *model.Formation); ok {
-		r0 = rf(ctx, tnt, _a2)
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.Formation, string) *model.Formation); ok {
+		r0 = rf(ctx, tnt, _a2, templateName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.Formation)
@@ -56,8 +56,8 @@ func (_m *Service) CreateFormation(ctx context.Context, tnt string, _a2 model.Fo
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.Formation) error); ok {
-		r1 = rf(ctx, tnt, _a2)
+	if rf, ok := ret.Get(1).(func(context.Context, string, model.Formation, string) error); ok {
+		r1 = rf(ctx, tnt, _a2, templateName)
 	} else {
 		r1 = ret.Error(1)
 	}

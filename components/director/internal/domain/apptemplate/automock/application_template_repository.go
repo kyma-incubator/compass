@@ -5,8 +5,10 @@ package automock
 import (
 	context "context"
 
-	model "github.com/kyma-incubator/compass/components/director/internal/model"
+	labelfilter "github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	mock "github.com/stretchr/testify/mock"
+
+	model "github.com/kyma-incubator/compass/components/director/internal/model"
 
 	testing "testing"
 )
@@ -88,6 +90,29 @@ func (_m *ApplicationTemplateRepository) Get(ctx context.Context, id string) (*m
 	return r0, r1
 }
 
+// GetByFilters provides a mock function with given fields: ctx, filter
+func (_m *ApplicationTemplateRepository) GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 *model.ApplicationTemplate
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) *model.ApplicationTemplate); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.ApplicationTemplate)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetByName provides a mock function with given fields: ctx, id
 func (_m *ApplicationTemplateRepository) GetByName(ctx context.Context, id string) (*model.ApplicationTemplate, error) {
 	ret := _m.Called(ctx, id)
@@ -111,20 +136,20 @@ func (_m *ApplicationTemplateRepository) GetByName(ctx context.Context, id strin
 	return r0, r1
 }
 
-// List provides a mock function with given fields: ctx, pageSize, cursor
-func (_m *ApplicationTemplateRepository) List(ctx context.Context, pageSize int, cursor string) (model.ApplicationTemplatePage, error) {
-	ret := _m.Called(ctx, pageSize, cursor)
+// List provides a mock function with given fields: ctx, filter, pageSize, cursor
+func (_m *ApplicationTemplateRepository) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error) {
+	ret := _m.Called(ctx, filter, pageSize, cursor)
 
 	var r0 model.ApplicationTemplatePage
-	if rf, ok := ret.Get(0).(func(context.Context, int, string) model.ApplicationTemplatePage); ok {
-		r0 = rf(ctx, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, int, string) model.ApplicationTemplatePage); ok {
+		r0 = rf(ctx, filter, pageSize, cursor)
 	} else {
 		r0 = ret.Get(0).(model.ApplicationTemplatePage)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
-		r1 = rf(ctx, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter, int, string) error); ok {
+		r1 = rf(ctx, filter, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

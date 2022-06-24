@@ -33,9 +33,9 @@ func fixEvent(t require.TestingT, eventType, ga string, fields map[string]string
 func wrapIntoEventPageJSON(eventData, eventType, ga string) []byte {
 	return []byte(fmt.Sprintf(`{
 		"id":        "%s",
-		"type" "%s",
+		"type": "%s",
         "globalAccountGUID": "%s",
-		"eventData": %s,
+		"eventData": %s
 	}`, fixID(), eventType, ga, eventData))
 }
 

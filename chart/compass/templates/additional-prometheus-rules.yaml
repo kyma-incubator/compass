@@ -11,20 +11,24 @@ spec:
       rules:
         - alert: CompassTenantFetcherCIS1JobFailure
           annotations:
-            description: No successful compass-tenant-fetcher-cis1 job finish since 15
+            description: Failure for cis1 tenant fetcher job
               minutes
-          expr: absent(topk(3, kube_job_status_start_time{job="kube-state-metrics", namespace="compass-system",
-            job_name=~"compass-tenant-fetcher-cis1.*"}) * ON(job_name) GROUP_RIGHT() kube_job_complete{condition="true"})
-          for: 15m
+          expr: max(delta(compass_tenantfetcher_cis1_job_sync_failure_number[1m])) >= 1
+          for: 1m
           labels:
             severity: critical
         - alert: CompassTenantFetcherCIS2JobFailure
           annotations:
-            description: No successful compass-tenant-fetcher-cis2 job finish since 15
-              minutes
-          expr: absent(topk(3, kube_job_status_start_time{job="kube-state-metrics", namespace="compass-system",
-            job_name=~"compass-tenant-fetcher-cis2.*"}) * ON(job_name) GROUP_RIGHT() kube_job_complete{condition="true"})
-          for: 15m
+            description: Failure for cis2 tenant fetcher job
+          expr: max(delta(compass_tenantfetcher_cis2_job_sync_failure_number[1m])) >= 1
+          for: 1m
+          labels:
+            severity: critical
+        - alert: CompassTenantFetcherCIS2SubaccountsJobFailure
+          annotations:
+            description: Failure for cis2 subaccounts tenant fetcher job
+          expr: max(delta(compass_tenantfetcher_cis2_subaccounts_job_sync_failure_number[1m])) >= 1
+          for: 1m
           labels:
             severity: critical
         - alert: IstioRequests-WorkloadFailures-5xx

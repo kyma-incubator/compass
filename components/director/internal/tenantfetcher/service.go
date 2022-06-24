@@ -58,8 +58,8 @@ type TenantFieldMapping struct {
 // MovedSubaccountsFieldMapping missing godoc
 type MovedSubaccountsFieldMapping struct {
 	LabelValue   string `envconfig:"APP_MAPPING_FIELD_ID"`
-	SourceTenant string `envconfig:"APP_MOVED_SUBACCOUNT_SOURCE_TENANT_FIELD"`
-	TargetTenant string `envconfig:"APP_MOVED_SUBACCOUNT_TARGET_TENANT_FIELD"`
+	SourceTenant string `envconfig:"optional,APP_MOVED_SUBACCOUNT_SOURCE_TENANT_FIELD"`
+	TargetTenant string `envconfig:"optional,APP_MOVED_SUBACCOUNT_TARGET_TENANT_FIELD"`
 }
 
 // QueryConfig contains the name of query parameters fields and default/start values
@@ -85,6 +85,7 @@ type PageConfig struct {
 type TenantStorageService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+	ListsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error)
 }
 
 // LabelRepo missing godoc
@@ -361,7 +362,8 @@ func (s SubaccountService) SyncTenants() error {
 
 		currentTenants := make(map[string]string)
 		if len(tenantsToCreate) > 0 || len(tenantsToDelete) > 0 {
-			currentTenants, err = getCurrentTenants(ctx, s.tenantStorageService)
+			currentTenantsIDs := getTenantsIDs(tenantsToCreate, tenantsToDelete)
+			currentTenants, err = getCurrentTenants(ctx, s.tenantStorageService, currentTenantsIDs)
 			if err != nil {
 				return err
 			}
@@ -396,6 +398,21 @@ func (s SubaccountService) SyncTenants() error {
 	}
 
 	return nil
+}
+
+func getTenantsIDs(allTenants ...[]model.BusinessTenantMappingInput) []string {
+	var currentTenantsIDs []string
+	for _, tenantsList := range allTenants {
+		for _, tenant := range tenantsList {
+			if len(tenant.Parent) > 0 {
+				currentTenantsIDs = append(currentTenantsIDs, tenant.Parent)
+			}
+			if len(tenant.ExternalTenant) > 0 {
+				currentTenantsIDs = append(currentTenantsIDs, tenant.ExternalTenant)
+			}
+		}
+	}
+	return currentTenantsIDs
 }
 
 // SyncTenant fetches creation events for a subaccount and creates a subaccount tenant in case it doesn't exist
@@ -492,7 +509,8 @@ func (s GlobalAccountService) SyncTenants() error {
 
 	currentTenants := make(map[string]string)
 	if len(tenantsToCreate) > 0 || len(tenantsToDelete) > 0 {
-		currentTenants, err = getCurrentTenants(ctx, s.tenantStorageService)
+		currentTenantsIDs := getTenantsIDs(tenantsToCreate, tenantsToDelete)
+		currentTenants, err = getCurrentTenants(ctx, s.tenantStorageService, currentTenantsIDs)
 		if err != nil {
 			return err
 		}
@@ -956,8 +974,8 @@ func excludeTenants(source, target []model.BusinessTenantMappingInput) []model.B
 	return result
 }
 
-func getCurrentTenants(ctx context.Context, tenantStorage TenantStorageService) (map[string]string, error) {
-	currentTenants, listErr := tenantStorage.List(ctx)
+func getCurrentTenants(ctx context.Context, tenantStorage TenantStorageService, tenantsIDs []string) (map[string]string, error) {
+	currentTenants, listErr := tenantStorage.ListsByExternalIDs(ctx, tenantsIDs)
 	if listErr != nil {
 		return nil, errors.Wrap(listErr, "while listing tenants")
 	}

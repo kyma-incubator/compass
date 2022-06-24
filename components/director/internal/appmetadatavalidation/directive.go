@@ -3,6 +3,7 @@ package appmetadatavalidation
 import (
 	"context"
 	"fmt"
+
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	tnt "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -106,16 +107,16 @@ func (d *directive) Validate(ctx context.Context, _ interface{}, next gqlgen.Res
 	return next(ctx)
 }
 
-func (h *directive) getTenantRegionLabelValue(ctx context.Context, tenantID string) (interface{}, error) {
+func (d *directive) getTenantRegionLabelValue(ctx context.Context, tenantID string) (interface{}, error) {
 	logger := log.C(ctx)
 
-	tenantModel, err := h.tenantSvc.GetTenantByExternalID(ctx, tenantID)
+	tenantModel, err := d.tenantSvc.GetTenantByExternalID(ctx, tenantID)
 	if err != nil {
 		logger.WithError(err).Errorf("An error has occurred while fetching tenant by external ID %q: %v", tenantID, err)
 		return nil, errors.Wrapf(err, "while fetching tenant by external ID %q", tenantID)
 	}
 
-	tenantRegionLabel, err := h.labelSvc.GetByKey(ctx, tenantModel.ID, model.TenantLabelableObject, tenantModel.ID, tnt.RegionLabelKey)
+	tenantRegionLabel, err := d.labelSvc.GetByKey(ctx, tenantModel.ID, model.TenantLabelableObject, tenantModel.ID, tnt.RegionLabelKey)
 	if err != nil {
 		logger.WithError(err).Errorf("An error has occurred while fetching %q label for tenant ID %q: %v", tnt.RegionLabelKey, tenantID, err)
 		return nil, errors.Wrapf(err, "while fetching %q label tenant by external ID %q", tnt.RegionLabelKey, tenantID)
@@ -124,6 +125,6 @@ func (h *directive) getTenantRegionLabelValue(ctx context.Context, tenantID stri
 	return tenantRegionLabel.Value, nil
 }
 
-func (h *directive) isExternalCertificateFlow(consumerInfo consumer.Consumer) bool {
+func (d *directive) isExternalCertificateFlow(consumerInfo consumer.Consumer) bool {
 	return consumerInfo.Flow.IsCertFlow() && consumerInfo.ConsumerType == consumer.ExternalCertificate
 }

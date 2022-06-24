@@ -5,6 +5,7 @@ package automock
 import (
 	context "context"
 
+	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
 
 	testing "testing"
@@ -15,15 +16,17 @@ type ExternalTenantsService struct {
 	mock.Mock
 }
 
-// GetExternalTenant provides a mock function with given fields: ctx, id
-func (_m *ExternalTenantsService) GetExternalTenant(ctx context.Context, id string) (string, error) {
+// GetTenantByID provides a mock function with given fields: ctx, id
+func (_m *ExternalTenantsService) GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
 	ret := _m.Called(ctx, id)
 
-	var r0 string
-	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+	var r0 *model.BusinessTenantMapping
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMapping); ok {
 		r0 = rf(ctx, id)
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.BusinessTenantMapping)
+		}
 	}
 
 	var r1 error

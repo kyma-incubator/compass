@@ -159,6 +159,29 @@ func (_m *RuntimeContextRepository) List(ctx context.Context, runtimeID string, 
 	return r0, r1
 }
 
+// ListAllForRuntime provides a mock function with given fields: ctx, tenant, runtimeID
+func (_m *RuntimeContextRepository) ListAllForRuntime(ctx context.Context, tenant string, runtimeID string) ([]*model.RuntimeContext, error) {
+	ret := _m.Called(ctx, tenant, runtimeID)
+
+	var r0 []*model.RuntimeContext
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.RuntimeContext); ok {
+		r0 = rf(ctx, tenant, runtimeID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.RuntimeContext)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, runtimeID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListByRuntimeIDs provides a mock function with given fields: ctx, tenantID, runtimeIDs, pageSize, cursor
 func (_m *RuntimeContextRepository) ListByRuntimeIDs(ctx context.Context, tenantID string, runtimeIDs []string, pageSize int, cursor string) ([]*model.RuntimeContextPage, error) {
 	ret := _m.Called(ctx, tenantID, runtimeIDs, pageSize, cursor)

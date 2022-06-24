@@ -47,14 +47,21 @@ type HandlerConfig struct {
 	ParentTenantPathParam         string `envconfig:"APP_PARENT_TENANT_PATH_PARAM,default=parentTenantId"`
 	RegionPathParam               string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
 
+	Features features.Config
+
+	TenantFetcherJobIntervalMins time.Duration `envconfig:"default=5m"`
+	FullResyncInterval           time.Duration `envconfig:"default=12h"`
+	ShouldSyncSubaccounts        bool          `envconfig:"default=false"`
+
+	Kubernetes tenantfetcher.KubeConfig
+	Database   persistence.DatabaseConfig
+
 	DirectorGraphQLEndpoint     string        `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
 	ClientTimeout               time.Duration `envconfig:"default=60s"`
 	HTTPClientSkipSslValidation bool          `envconfig:"APP_HTTP_CLIENT_SKIP_SSL_VALIDATION,default=false"`
 
+	TenantInsertChunkSize int `envconfig:"default=500"`
 	TenantProviderConfig
-	features.Config
-
-	Database persistence.DatabaseConfig
 }
 
 // TenantProviderConfig includes the configuration for tenant providers - the tenant ID json property names, the subdomain property name, and the tenant provider name.
@@ -66,15 +73,23 @@ type TenantProviderConfig struct {
 	TenantProvider                 string `envconfig:"APP_TENANT_PROVIDER,default=external-provider"`
 	SubscriptionProviderIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY,default=subscriptionProviderId"`
 	ProviderSubaccountIDProperty   string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY,default=providerSubaccountId"`
+	SubscriptionAppNameProperty    string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_APP_NAME_PROPERTY,default=subscriptionAppName"`
 }
 
 // EventsConfig contains configuration for Events API requests
 type EventsConfig struct {
-	OAuthConfig        tenantfetcher.OAuth2Config
-	APIConfig          tenantfetcher.APIConfig
-	AuthMode           oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
-	QueryConfig        tenantfetcher.QueryConfig
-	TenantFieldMapping tenantfetcher.TenantFieldMapping
+	AccountsRegion    string   `envconfig:"default=central"`
+	SubaccountRegions []string `envconfig:"default=central"`
+
+	AuthMode    oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
+	OAuthConfig tenantfetcher.OAuth2Config
+	APIConfig   tenantfetcher.APIConfig
+	QueryConfig tenantfetcher.QueryConfig
+
+	TenantFieldMapping          tenantfetcher.TenantFieldMapping
+	MovedSubaccountFieldMapping tenantfetcher.MovedSubaccountsFieldMapping
+
+	MetricsPushEndpoint string `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
 }
 
 type handler struct {
@@ -199,6 +214,7 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		h.config.CustomerIDProperty:             false,
 		h.config.SubscriptionProviderIDProperty: true,
 		h.config.ProviderSubaccountIDProperty:   true,
+		h.config.SubscriptionAppNameProperty:    true,
 	})
 	if err != nil {
 		return nil, err
@@ -211,6 +227,7 @@ func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSub
 		Subdomain:              properties[h.config.SubdomainProperty],
 		SubscriptionProviderID: properties[h.config.SubscriptionProviderIDProperty],
 		ProviderSubaccountID:   properties[h.config.ProviderSubaccountIDProperty],
+		SubscriptionAppName:    properties[h.config.SubscriptionAppNameProperty],
 		Region:                 region,
 	}
 
