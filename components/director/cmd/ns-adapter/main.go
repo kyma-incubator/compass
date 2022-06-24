@@ -204,7 +204,7 @@ func registerAppTemplate(ctx context.Context, transact persistence.Transactioner
 									"name": "{{name}}",
 									"description": "{{description}}",
 									"providerName": "SAP",
-									"labels": {"scc": {"Subaccount":"{{subaccount}}", "LocationID":"{{location-id}}", "Host":"{{host}}"}, "applicationType":"{{system-type}}", "systemProtocol": "{{protocol}}" },
+									"labels": {"scc": {"Subaccount":"{{subaccount}}", "LocationID":"{{location-id}}", "Host":"{{host}}"}, "systemType":"{{system-type}}", "systemProtocol": "{{protocol}}" },
 									"systemNumber": "{{system-number}}",
 									"systemStatus": "{{system-status}}"
 								}`,

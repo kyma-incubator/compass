@@ -571,7 +571,7 @@ func createApplicationFromTemplateInput(name, templateName, description, subacco
 }
 
 func validateApplication(t *testing.T, app *graphql.ApplicationExt, appType, systemProtocol, description string, label map[string]interface{}, systemStatus string) {
-	require.Equal(t, appType, app.Labels["applicationType"])
+	require.Equal(t, appType, app.Labels["systemType"])
 	require.Equal(t, systemProtocol, app.Labels["systemProtocol"])
 	require.Equal(t, description, *app.Description)
 	require.Equal(t, label, app.Labels["scc"])

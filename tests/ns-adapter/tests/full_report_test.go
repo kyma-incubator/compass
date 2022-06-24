@@ -72,7 +72,7 @@ func TestFullReport(stdT *testing.T) {
 
 		protocol, ok := app.Labels["systemProtocol"].(string)
 		require.True(stdT, ok)
-		systemType, ok := app.Labels["applicationType"].(string)
+		systemType, ok := app.Labels["systemType"].(string)
 		require.True(stdT, ok)
 
 		system := System{
