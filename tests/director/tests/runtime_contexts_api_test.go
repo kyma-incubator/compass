@@ -264,10 +264,18 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		require.Equal(t, consumerAccountRuntimes.Data[0].ID, providerRuntime.ID)
 		require.Len(t, consumerSubaccountRuntimes.Data[0].RuntimeContexts.Data, 1)
 
-		t.Log("Assert the consumer cannot modify(create, update or delete) the provider runtime(owner false check)")
+		t.Log("Assert the consumer cannot update the provider runtime(owner false check)")
 		consumerRuntimeUpdateInput := fixRuntimeUpdateInput("consumerUpdatedRuntime")
 		rtm, err := fixtures.UpdateRuntimeWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, providerRuntime.ID, consumerRuntimeUpdateInput)
 		require.Empty(t, rtm)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Owner access is needed for resource modification")
+
+		t.Log("Assert the consumer cannot delete the provider runtime(owner false check)")
+		deleteRuntimeReq := fixtures.FixUnregisterRuntimeRequest(providerRuntime.ID)
+		rtmExt := graphql.RuntimeExt{}
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, deleteRuntimeReq, &rtmExt)
+		require.Empty(t, rtmExt)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "Owner access is needed for resource modification")
 
