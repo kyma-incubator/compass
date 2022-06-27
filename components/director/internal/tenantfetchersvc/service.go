@@ -1,4 +1,4 @@
-package tenantfetcher
+package tenantfetchersvc
 
 import (
 	"context"
@@ -80,13 +80,14 @@ type PageConfig struct {
 	PageNumField      string
 }
 
+// RegionDetails contains region name and the prefix which should be appended to the name, when storing this region in the DB
 type RegionDetails struct {
 	Name   string `json:"name"`
 	Prefix string `json:"prefix"`
 }
 
 // TenantStorageService missing godoc
-//go:generate mockery --name=TenantStorageService --output=automock --outpkg=automock --case=underscore --unroll-variadic=False --disable-version-string
+//go:generate mockery --name=TenantStorageService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantStorageService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
@@ -117,25 +118,10 @@ type TenantSyncService interface {
 	SyncTenants() error
 }
 
-// DirectorGraphQLClient expects graphql implementation
-//go:generate mockery --name=DirectorGraphQLClient --output=automock --outpkg=automock --case=underscore --disable-version-string
-type DirectorGraphQLClient interface {
-	WriteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
-	DeleteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
-	UpdateTenant(context.Context, string, graphql.BusinessTenantMappingInput) error
-}
-
 // LabelDefConverter missing godoc
 //go:generate mockery --name=LabelDefConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelDefConverter interface {
 	ToGraphQLInput(definition model.LabelDefinition) (graphql.LabelDefinitionInput, error)
-}
-
-// TenantConverter expects tenant converter implementation
-//go:generate mockery --name=TenantConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
-type TenantConverter interface {
-	MultipleInputToGraphQLInput([]model.BusinessTenantMappingInput) []graphql.BusinessTenantMappingInput
-	ToGraphQLInput(model.BusinessTenantMappingInput) graphql.BusinessTenantMappingInput
 }
 
 const (

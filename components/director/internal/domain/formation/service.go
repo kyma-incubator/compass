@@ -34,7 +34,7 @@ type labelRepository interface {
 
 //go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeRepository interface {
-	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
+	ListOwnedRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 }
 
@@ -129,6 +129,8 @@ func NewService(labelDefRepository labelDefRepository, labelRepository labelRepo
 		runtimeContextRepo:          runtimeContextRepo,
 	}
 }
+
+type processScenarioFunc func(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)
 
 // GetFormationsForObject returns slice of formations for entity with ID objID and type objType
 func (s *service) GetFormationsForObject(ctx context.Context, tnt string, objType model.LabelableObject, objID string) ([]string, error) {
@@ -313,16 +315,14 @@ func (s *service) RemoveAssignedScenario(ctx context.Context, in model.Automatic
 	return s.processScenario(ctx, in, s.UnassignFormation, "unassigning")
 }
 
-type processingFunc func(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)
-
-func (s *service) processScenario(ctx context.Context, in model.AutomaticScenarioAssignment, processingFunc processingFunc, processingType string) error {
-	runtimes, err := s.runtimeRepo.ListAll(ctx, in.TargetTenantID, nil)
+func (s *service) processScenario(ctx context.Context, in model.AutomaticScenarioAssignment, processScenarioFunc processScenarioFunc, processingType string) error {
+	runtimes, err := s.runtimeRepo.ListOwnedRuntimes(ctx, in.TargetTenantID, nil)
 	if err != nil {
 		return errors.Wrapf(err, "while fetching runtimes in target tenant: %s", in.TargetTenantID)
 	}
 
 	for _, r := range runtimes {
-		if _, err = processingFunc(ctx, in.Tenant, r.ID, graphql.FormationObjectTypeRuntime, model.Formation{Name: in.ScenarioName}); err != nil {
+		if _, err = processScenarioFunc(ctx, in.Tenant, r.ID, graphql.FormationObjectTypeRuntime, model.Formation{Name: in.ScenarioName}); err != nil {
 			return errors.Wrapf(err, "while %s runtime with id %s from formation %s coming from ASA", processingType, r.ID, in.ScenarioName)
 		}
 	}
@@ -333,7 +333,7 @@ func (s *service) processScenario(ctx context.Context, in model.AutomaticScenari
 	}
 
 	for _, rc := range runtimeContexts {
-		if _, err = processingFunc(ctx, in.Tenant, rc.ID, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: in.ScenarioName}); err != nil {
+		if _, err = processScenarioFunc(ctx, in.Tenant, rc.ID, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: in.ScenarioName}); err != nil {
 			return errors.Wrapf(err, "while %s runtime context with id %s from formation %s coming from ASA", processingType, rc.ID, in.ScenarioName)
 		}
 	}

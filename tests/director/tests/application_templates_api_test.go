@@ -53,7 +53,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getApplicationTemplateRequest, &appTemplateOutput)
 
-	appTemplateInput.Labels[conf.SelfRegLabelKey] = appTemplateOutput.Labels[conf.SelfRegLabelKey]
+	appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
 	appTemplateInput.Labels["global_subaccount_id"] = conf.ConsumerID
 
 	require.NoError(t, err)
@@ -212,7 +212,7 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 		},
 		{
 			Name:               "not compliant placeholders",
-			NewAppTemplateName: fmt.Sprintf("SAP %s (%s)", "app-template-name", conf.SelfRegRegion),
+			NewAppTemplateName: fmt.Sprintf("SAP %s (%s)", "app-template-name", conf.SubscriptionConfig.SelfRegRegion),
 			NewAppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
 				{
 					Name:        "name",
@@ -514,8 +514,8 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 
 func fixAppTemplateInput(name string) graphql.ApplicationTemplateInput {
 	input := fixtures.FixApplicationTemplate(name)
-	input.Labels[conf.SelfRegDistinguishLabelKey] = []interface{}{conf.SelfRegDistinguishLabelValue}
-	input.Labels[tenantfetcher.RegionKey] = conf.SelfRegRegion
+	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SubscriptionConfig.SelfRegDistinguishLabelValue}
+	input.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
 
 	return input
 }

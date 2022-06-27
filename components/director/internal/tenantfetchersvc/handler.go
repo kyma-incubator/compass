@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
@@ -52,7 +51,7 @@ type HandlerConfig struct {
 	FullResyncInterval           time.Duration `envconfig:"default=12h"`
 	ShouldSyncSubaccounts        bool          `envconfig:"default=false"`
 
-	Kubernetes tenantfetcher.KubeConfig
+	Kubernetes KubeConfig
 	Database   persistence.DatabaseConfig
 
 	DirectorGraphQLEndpoint     string        `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
@@ -65,14 +64,15 @@ type HandlerConfig struct {
 
 // TenantProviderConfig includes the configuration for tenant providers - the tenant ID json property names, the subdomain property name, and the tenant provider name.
 type TenantProviderConfig struct {
-	TenantIDProperty               string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY,default=tenantId"`
-	SubaccountTenantIDProperty     string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY,default=subaccountTenantId"`
-	CustomerIDProperty             string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY,default=customerId"`
-	SubdomainProperty              string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY,default=subdomain"`
-	TenantProvider                 string `envconfig:"APP_TENANT_PROVIDER,default=external-provider"`
-	SubscriptionProviderIDProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY,default=subscriptionProviderId"`
-	ProviderSubaccountIDProperty   string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY,default=providerSubaccountId"`
-	SubscriptionAppNameProperty    string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_APP_NAME_PROPERTY,default=subscriptionAppName"`
+	TenantIDProperty                    string `envconfig:"APP_TENANT_PROVIDER_TENANT_ID_PROPERTY,default=tenantId"`
+	SubaccountTenantIDProperty          string `envconfig:"APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY,default=subaccountTenantId"`
+	CustomerIDProperty                  string `envconfig:"APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY,default=customerId"`
+	SubdomainProperty                   string `envconfig:"APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY,default=subdomain"`
+	TenantProvider                      string `envconfig:"APP_TENANT_PROVIDER,default=external-provider"`
+	SubscriptionProviderIDProperty      string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY,default=subscriptionProviderIdProperty"`
+	ProviderSubaccountIDProperty        string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY,default=providerSubaccountIdProperty"`
+	ConsumerTenantIDProperty            string `envconfig:"APP_TENANT_PROVIDER_CONSUMER_TENANT_ID_PROPERTY,default=consumerTenantIdProperty"`
+	SubscriptionProviderAppNameProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY,default=subscriptionProviderAppNameProperty"`
 }
 
 // EventsConfig contains configuration for Events API requests
@@ -81,12 +81,12 @@ type EventsConfig struct {
 	SubaccountRegions map[string]string
 
 	AuthMode    oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
-	OAuthConfig tenantfetcher.OAuth2Config
-	APIConfig   tenantfetcher.APIConfig
-	QueryConfig tenantfetcher.QueryConfig
+	OAuthConfig OAuth2Config
+	APIConfig   APIConfig
+	QueryConfig QueryConfig
 
-	TenantFieldMapping          tenantfetcher.TenantFieldMapping
-	MovedSubaccountFieldMapping tenantfetcher.MovedSubaccountsFieldMapping
+	TenantFieldMapping          TenantFieldMapping
+	MovedSubaccountFieldMapping MovedSubaccountsFieldMapping
 
 	MetricsPushEndpoint string `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
 }
@@ -207,27 +207,29 @@ func (h *handler) applySubscriptionChange(writer http.ResponseWriter, request *h
 
 func (h *handler) getSubscriptionRequest(body []byte, region string) (*TenantSubscriptionRequest, error) {
 	properties, err := getProperties(body, map[string]bool{
-		h.config.TenantIDProperty:               true,
-		h.config.SubaccountTenantIDProperty:     false,
-		h.config.SubdomainProperty:              true,
-		h.config.CustomerIDProperty:             false,
-		h.config.SubscriptionProviderIDProperty: true,
-		h.config.ProviderSubaccountIDProperty:   true,
-		h.config.SubscriptionAppNameProperty:    true,
+		h.config.TenantIDProperty:                    true,
+		h.config.SubaccountTenantIDProperty:          false,
+		h.config.SubdomainProperty:                   true,
+		h.config.CustomerIDProperty:                  false,
+		h.config.SubscriptionProviderIDProperty:      true,
+		h.config.ProviderSubaccountIDProperty:        true,
+		h.config.ConsumerTenantIDProperty:            true,
+		h.config.SubscriptionProviderAppNameProperty: true,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	req := &TenantSubscriptionRequest{
-		AccountTenantID:        properties[h.config.TenantIDProperty],
-		SubaccountTenantID:     properties[h.config.SubaccountTenantIDProperty],
-		CustomerTenantID:       properties[h.config.CustomerIDProperty],
-		Subdomain:              properties[h.config.SubdomainProperty],
-		SubscriptionProviderID: properties[h.config.SubscriptionProviderIDProperty],
-		ProviderSubaccountID:   properties[h.config.ProviderSubaccountIDProperty],
-		SubscriptionAppName:    properties[h.config.SubscriptionAppNameProperty],
-		Region:                 region,
+		AccountTenantID:             properties[h.config.TenantIDProperty],
+		SubaccountTenantID:          properties[h.config.SubaccountTenantIDProperty],
+		CustomerTenantID:            properties[h.config.CustomerIDProperty],
+		Subdomain:                   properties[h.config.SubdomainProperty],
+		SubscriptionProviderID:      properties[h.config.SubscriptionProviderIDProperty],
+		ProviderSubaccountID:        properties[h.config.ProviderSubaccountIDProperty],
+		ConsumerTenantID:            properties[h.config.ConsumerTenantIDProperty],
+		SubscriptionProviderAppName: properties[h.config.SubscriptionProviderAppNameProperty],
+		Region:                      region,
 	}
 
 	if req.AccountTenantID == req.SubaccountTenantID {
