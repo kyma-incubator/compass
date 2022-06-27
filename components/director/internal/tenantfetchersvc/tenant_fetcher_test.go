@@ -6,13 +6,12 @@ import (
 
 	domainTenant "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/stretchr/testify/require"
 
-	tfautomock "github.com/kyma-incubator/compass/components/director/internal/tenantfetcher/automock"
+	tfautomock "github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc/automock"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -20,7 +19,7 @@ import (
 )
 
 var (
-	tenantConverter = domainTenant.NewConverter()
+	tenantCnv = domainTenant.NewConverter()
 )
 
 func TestFetcher_FetchTenantOnDemand(t *testing.T) {
@@ -75,7 +74,7 @@ func TestFetcher_FetchTenantOnDemand(t *testing.T) {
 
 			defer mock.AssertExpectationsForObjects(t, persist, tenantStorageSvc, apiClient, gqlClient)
 
-			onDemandSvc := tenantfetcher.NewSubaccountOnDemandService(tenantfetcher.QueryConfig{}, tenantfetcher.TenantFieldMapping{}, apiClient, transact, tenantStorageSvc, gqlClient, provider, tenantConverter)
+			onDemandSvc := tenantfetchersvc.NewSubaccountOnDemandService(tenantfetchersvc.QueryConfig{}, tenantfetchersvc.TenantFieldMapping{}, apiClient, transact, tenantStorageSvc, gqlClient, provider, tenantCnv)
 
 			tf := tenantfetchersvc.NewTenantFetcher(*onDemandSvc)
 
@@ -91,16 +90,4 @@ func TestFetcher_FetchTenantOnDemand(t *testing.T) {
 			}
 		})
 	}
-}
-
-func UnusedTenantStorageSvc() *tfautomock.TenantStorageService {
-	return &tfautomock.TenantStorageService{}
-}
-
-func UnusedEventAPIClient() *tfautomock.EventAPIClient {
-	return &tfautomock.EventAPIClient{}
-}
-
-func UnusedGQLClient() *tfautomock.DirectorGraphQLClient {
-	return &tfautomock.DirectorGraphQLClient{}
 }
