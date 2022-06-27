@@ -28,7 +28,7 @@ func TestList(t *testing.T) {
 
 	t.Run("lists all items successfully", func(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
-		ctx := mockListDBSelect(mock, m2mTable, db, repo.NoLock)
+		ctx := mockListDBSelect(mock, m2mTable, db, repo.NoLock, false)
 		defer mock.AssertExpectations(t)
 
 		var dest AppCollection
@@ -41,7 +41,7 @@ func TestList(t *testing.T) {
 
 	t.Run("lists all items successfully with additional parameters", func(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
-		ctx := mockListDBSelectWithAdditionalParameters(mock, m2mTable, db, repo.NoLock)
+		ctx := mockListDBSelectWithAdditionalParameters(mock, m2mTable, db, repo.NoLock, false)
 		defer mock.AssertExpectations(t)
 
 		var dest AppCollection
@@ -91,6 +91,37 @@ func TestList(t *testing.T) {
 		err := sut.List(ctx, resourceType, tenantID, &dest)
 		require.EqualError(t, err, "Internal Server Error: Maximum processing timeout reached")
 	})
+
+	t.Run("lists all items successfully with owner check", func(t *testing.T) {
+		ownerLister := repo.NewOwnerLister(appTableName, appColumns, true)
+		db, mock := testdb.MockDatabase(t)
+		ctx := mockListDBSelect(mock, m2mTable, db, repo.NoLock, true)
+		defer mock.AssertExpectations(t)
+
+		var dest AppCollection
+		err := ownerLister.List(ctx, resourceType, tenantID, &dest)
+		require.NoError(t, err)
+		assert.Len(t, dest, 2)
+		assert.Contains(t, dest, *fixApp)
+		assert.Contains(t, dest, *fixApp2)
+	})
+
+	t.Run("lists all items successfully with additional parameters and owner check", func(t *testing.T) {
+		ownerLister := repo.NewOwnerLister(appTableName, appColumns, true)
+		db, mock := testdb.MockDatabase(t)
+		ctx := mockListDBSelectWithAdditionalParameters(mock, m2mTable, db, repo.NoLock, true)
+		defer mock.AssertExpectations(t)
+
+		var dest AppCollection
+		conditions := repo.Conditions{
+			repo.NewEqualCondition("name", appName),
+			repo.NewNotEqualCondition("description", appDescription2),
+		}
+
+		err := ownerLister.List(ctx, resourceType, tenantID, &dest, conditions...)
+		require.NoError(t, err)
+		assert.Len(t, dest, 1)
+	})
 }
 
 func TestListWithSelectForUpdate(t *testing.T) {
@@ -101,7 +132,7 @@ func TestListWithSelectForUpdate(t *testing.T) {
 
 	t.Run("lists all items successfully", func(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
-		ctx := mockListDBSelect(mock, m2mTable, db, repo.ForUpdateLock)
+		ctx := mockListDBSelect(mock, m2mTable, db, repo.ForUpdateLock, false)
 		defer mock.AssertExpectations(t)
 
 		var dest AppCollection
@@ -114,7 +145,7 @@ func TestListWithSelectForUpdate(t *testing.T) {
 
 	t.Run("lists all items successfully with additional parameters", func(t *testing.T) {
 		db, mock := testdb.MockDatabase(t)
-		ctx := mockListDBSelectWithAdditionalParameters(mock, m2mTable, db, repo.ForUpdateLock)
+		ctx := mockListDBSelectWithAdditionalParameters(mock, m2mTable, db, repo.ForUpdateLock, false)
 		defer mock.AssertExpectations(t)
 
 		var dest AppCollection
@@ -166,21 +197,31 @@ func TestListWithSelectForUpdate(t *testing.T) {
 	})
 }
 
-func mockListDBSelect(mock testdb.DBMock, m2mTable string, db *sqlx.DB, lockClause string) context.Context {
+func mockListDBSelect(mock testdb.DBMock, m2mTable string, db *sqlx.DB, lockClause string, ownerCheck bool) context.Context {
 	rows := sqlmock.NewRows(appColumns).
 		AddRow(appID, appName, appDescription).
 		AddRow(appID2, appName2, appDescription2)
-	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id, name, description FROM %s WHERE %s%s", appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$1"), PrepareLockClause(lockClause)))).
-		WithArgs(tenantID).WillReturnRows(rows)
+	if ownerCheck {
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id, name, description FROM %s WHERE %s%s", appTableName, fmt.Sprintf(tenantIsolationConditionWithOwnerCheckFmt, m2mTable, "$1"), PrepareLockClause(lockClause)))).
+			WithArgs(tenantID).WillReturnRows(rows)
+	} else {
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id, name, description FROM %s WHERE %s%s", appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$1"), PrepareLockClause(lockClause)))).
+			WithArgs(tenantID).WillReturnRows(rows)
+	}
 	ctx := persistence.SaveToContext(context.TODO(), db)
 	return ctx
 }
 
-func mockListDBSelectWithAdditionalParameters(mock testdb.DBMock, m2mTable string, db *sqlx.DB, lockClause string) context.Context {
+func mockListDBSelectWithAdditionalParameters(mock testdb.DBMock, m2mTable string, db *sqlx.DB, lockClause string, ownerCheck bool) context.Context {
 	rows := sqlmock.NewRows(appColumns).
 		AddRow(appID, appName, appDescription)
-	mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id, name, description FROM %s WHERE name = $1 AND description != $2 AND %s%s", appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$3"), PrepareLockClause(lockClause)))).
-		WithArgs(appName, appDescription2, tenantID).WillReturnRows(rows)
+	if ownerCheck {
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id, name, description FROM %s WHERE name = $1 AND description != $2 AND %s%s", appTableName, fmt.Sprintf(tenantIsolationConditionWithOwnerCheckFmt, m2mTable, "$3"), PrepareLockClause(lockClause)))).
+			WithArgs(appName, appDescription2, tenantID).WillReturnRows(rows)
+	} else {
+		mock.ExpectQuery(regexp.QuoteMeta(fmt.Sprintf("SELECT id, name, description FROM %s WHERE name = $1 AND description != $2 AND %s%s", appTableName, fmt.Sprintf(tenantIsolationConditionWithoutOwnerCheckFmt, m2mTable, "$3"), PrepareLockClause(lockClause)))).
+			WithArgs(appName, appDescription2, tenantID).WillReturnRows(rows)
+	}
 	ctx := persistence.SaveToContext(context.TODO(), db)
 	return ctx
 }
