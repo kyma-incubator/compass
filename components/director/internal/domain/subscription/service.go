@@ -277,6 +277,18 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 		return false, errors.Wrapf(err, "while getting application template with filter labels %q and %q", providerID, region)
 	}
 
+	applications, err := s.appSvc.ListAll(ctx)
+	if err != nil {
+		return false, errors.Wrapf(err, "while listing applications")
+	}
+
+	for _, app := range applications {
+		if str.PtrStrToStr(app.ApplicationTemplateID) == appTemplate.ID {
+			// Already subscribed
+			return true, nil
+		}
+	}
+
 	if err := s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, subscribedAppName); err != nil {
 		return false, err
 	}
