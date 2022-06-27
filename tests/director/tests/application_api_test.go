@@ -1922,7 +1922,6 @@ func TestApplicationForTenant(t *testing.T) {
 
 	t.Log("Create application template")
 	appTemplateInput := fixAppTemplateInput(name)
-	appTemplateInput.Placeholders = nil
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenantId, appTemplateInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertSecuredClient, tenantId, &appTemplate)
 
@@ -1930,7 +1929,10 @@ func TestApplicationForTenant(t *testing.T) {
 	require.NotEmpty(t, appTemplate.ID)
 
 	// Register application from app template
-	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: name, Values: []*graphql.TemplateValueInput{}}
+	appFromTmpl := graphql.ApplicationFromTemplateInput{
+		TemplateName: name,
+		Values:       []*graphql.TemplateValueInput{{Placeholder: "name", Value: "app-name"}, {Placeholder: "display-name", Value: "display-name"}},
+	}
 	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
 	require.NoError(t, err)
 	createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
