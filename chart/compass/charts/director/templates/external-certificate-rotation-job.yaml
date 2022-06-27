@@ -111,8 +111,7 @@ spec:
                     "$CERT_SVC_OAUTH_URL$CERT_SVC_TOKEN_PATH" \
                     -H "Content-Type: application/x-www-form-urlencoded" \
                     -H "Accept: application/json" \
-                    -d "grant_type=client_credentials&token_format=bearer&client_id=$CERT_SVC_CLIENT_ID" \
-                    | jq -r .access_token
+                    -d "grant_type=client_credentials&token_format=bearer&client_id=$CERT_SVC_CLIENT_ID"
 
                   echo -e "${YELLOW}Generating an encrypted private key... ${NC}"
                   PASS_PHRASE=$(openssl rand -base64 32)
