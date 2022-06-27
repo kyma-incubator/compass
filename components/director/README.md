@@ -86,7 +86,6 @@ You can find examples of GraphQL calls at: [Examples](examples/README.md).
 
 The Director's source code is also used by other Compass's components. For this reason, the code comprises different binaries, located in the `cmd` directory. To configure it and run it locally, you can see the following documentation sources:
 - [ORD Aggregator](./cmd/ordaggregator/README.md)
-- [Tenant Fetcher (Job)](./cmd/tenantfetcher-job/README.md)
 - [Tenant Fetcher (Deployment)](./cmd/tenantfetcher-svc/README.md)
 - [Tenant Loader](./cmd/tenantloader/README.md)
 - [System Fetcher](./cmd/systemfetcher/README.md)

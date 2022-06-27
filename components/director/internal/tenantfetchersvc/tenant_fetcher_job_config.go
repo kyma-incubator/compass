@@ -13,8 +13,6 @@ import (
 	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
-	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 )
 
 const (
@@ -106,8 +104,8 @@ func (j *job) readHandlerConfig() HandlerConfig {
 	}
 }
 
-func (j *job) getOAuth2Config() tenantfetcher.OAuth2Config {
-	return tenantfetcher.OAuth2Config{
+func (j *job) getOAuth2Config() OAuth2Config {
+	return OAuth2Config{
 		ClientID:           j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_CLIENT_ID"),
 		ClientSecret:       j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_CLIENT_SECRET"),
 		OAuthTokenEndpoint: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_OAUTH_TOKEN_ENDPOINT"),
@@ -120,8 +118,8 @@ func (j *job) getOAuth2Config() tenantfetcher.OAuth2Config {
 	}
 }
 
-func (j *job) getAPIConfig() tenantfetcher.APIConfig {
-	return tenantfetcher.APIConfig{
+func (j *job) getAPIConfig() APIConfig {
+	return APIConfig{
 		EndpointTenantCreated:     j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_ENDPOINT_TENANT_CREATED"),
 		EndpointTenantDeleted:     j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_ENDPOINT_TENANT_DELETED"),
 		EndpointTenantUpdated:     j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_ENDPOINT_TENANT_UPDATED"),
@@ -132,8 +130,8 @@ func (j *job) getAPIConfig() tenantfetcher.APIConfig {
 	}
 }
 
-func (j *job) getQueryConfig() tenantfetcher.QueryConfig {
-	return tenantfetcher.QueryConfig{
+func (j *job) getQueryConfig() QueryConfig {
+	return QueryConfig{
 		PageNumField:    j.getEnvValueForKey("pageNum", "APP_"+j.name+"_QUERY_PAGE_NUM_FIELD"),
 		PageSizeField:   j.getEnvValueForKey("pageSize", "APP_"+j.name+"_QUERY_PAGE_SIZE_FIELD"),
 		TimestampField:  j.getEnvValueForKey("timestamp", "APP_"+j.name+"_QUERY_TIMESTAMP_FIELD"),
@@ -144,8 +142,8 @@ func (j *job) getQueryConfig() tenantfetcher.QueryConfig {
 	}
 }
 
-func (j *job) getTenantFieldMapping() tenantfetcher.TenantFieldMapping {
-	return tenantfetcher.TenantFieldMapping{
+func (j *job) getTenantFieldMapping() TenantFieldMapping {
+	return TenantFieldMapping{
 		TotalPagesField:   j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_TENANT_TOTAL_PAGES_FIELD"),
 		TotalResultsField: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_TENANT_TOTAL_RESULTS_FIELD"),
 		EventsField:       j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_TENANT_EVENTS_FIELD"),
@@ -169,8 +167,8 @@ func (j *job) getTenantFieldMapping() tenantfetcher.TenantFieldMapping {
 	}
 }
 
-func (j *job) getMovedSubaccountsFieldMapping() tenantfetcher.MovedSubaccountsFieldMapping {
-	return tenantfetcher.MovedSubaccountsFieldMapping{
+func (j *job) getMovedSubaccountsFieldMapping() MovedSubaccountsFieldMapping {
+	return MovedSubaccountsFieldMapping{
 		LabelValue:   j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_MAPPING_FIELD_ID"),
 		SourceTenant: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_MOVED_SUBACCOUNT_SOURCE_TENANT_FIELD"),
 		TargetTenant: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_MOVED_SUBACCOUNT_TARGET_TENANT_FIELD"),
@@ -187,8 +185,8 @@ func (j *job) getFeaturesConfig() features.Config {
 	}
 }
 
-func (j *job) getKubeConfig() tenantfetcher.KubeConfig {
-	return tenantfetcher.KubeConfig{
+func (j *job) getKubeConfig() KubeConfig {
+	return KubeConfig{
 		UseKubernetes:                 j.getEnvValueForKey("true", "APP_"+j.name+"_USE_KUBERNETES"),
 		ConfigMapNamespace:            j.getEnvValueForKey("compass-system", "APP_"+j.name+"_CONFIGMAP_NAMESPACE"),
 		ConfigMapName:                 j.getEnvValueForKey("tenant-fetcher-config", "APP_"+j.name+"_LAST_EXECUTION_TIME_CONFIG_MAP_NAME"),

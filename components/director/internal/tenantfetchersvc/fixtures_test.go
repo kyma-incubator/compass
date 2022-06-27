@@ -1,8 +1,10 @@
-package tenantfetcher_test
+package tenantfetchersvc_test
 
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
 
 	"github.com/stretchr/testify/require"
 
@@ -11,11 +13,10 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 )
 
-func fixTenantEventsResponse(events []byte, total, pages int) tenantfetcher.TenantEventsResponse {
-	return tenantfetcher.TenantEventsResponse(fmt.Sprintf(`{
+func fixTenantEventsResponse(events []byte, total, pages int) tenantfetchersvc.TenantEventsResponse {
+	return tenantfetchersvc.TenantEventsResponse(fmt.Sprintf(`{
 		"events":       %s,
 		"total": %d,
 		"pages":   %d,
