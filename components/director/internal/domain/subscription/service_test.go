@@ -669,8 +669,8 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("ListAll", CtxWithTenantMatcher(providerInternalID)).Return([]*model.Application{}, nil).Once()
-				appSvc.On("CreateFromTemplate", CtxWithTenantMatcher(providerInternalID), modelAppCreateInputWithLabels, &appTmplID).Return(appTmplID, nil).Once()
+				appSvc.On("ListAll", ctxWithTenantMatcher(providerInternalID)).Return([]*model.Application{}, nil).Once()
+				appSvc.On("CreateFromTemplate", ctxWithTenantMatcher(providerInternalID), modelAppCreateInputWithLabels, &appTmplID).Return(appTmplID, nil).Once()
 
 				return appSvc
 			},
@@ -804,7 +804,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("ListAll", CtxWithTenantMatcher(providerInternalID)).Return([]*model.Application{}, nil).Once()
+				appSvc.On("ListAll", ctxWithTenantMatcher(providerInternalID)).Return([]*model.Application{}, nil).Once()
 				appSvc.AssertNotCalled(t, "CreateFromTemplate")
 
 				return appSvc
@@ -839,7 +839,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("ListAll", CtxWithTenantMatcher(providerInternalID)).Return([]*model.Application{}, nil).Once()
+				appSvc.On("ListAll", ctxWithTenantMatcher(providerInternalID)).Return([]*model.Application{}, nil).Once()
 				appSvc.AssertNotCalled(t, "CreateFromTemplate")
 
 				return appSvc
@@ -872,7 +872,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("ListAll", CtxWithTenantMatcher(providerInternalID)).Return([]*model.Application{}, nil).Once()
+				appSvc.On("ListAll", ctxWithTenantMatcher(providerInternalID)).Return([]*model.Application{}, nil).Once()
 				appSvc.AssertNotCalled(t, "CreateFromTemplate")
 				return appSvc
 			},
@@ -904,8 +904,8 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("ListAll", CtxWithTenantMatcher(providerInternalID)).Return([]*model.Application{}, nil).Once()
-				appSvc.On("CreateFromTemplate", CtxWithTenantMatcher(providerInternalID), modelAppCreateInputWithLabels, &appTmplID).Return("", testError).Once()
+				appSvc.On("ListAll", ctxWithTenantMatcher(providerInternalID)).Return([]*model.Application{}, nil).Once()
+				appSvc.On("CreateFromTemplate", ctxWithTenantMatcher(providerInternalID), modelAppCreateInputWithLabels, &appTmplID).Return("", testError).Once()
 				return appSvc
 			},
 			LabelServiceFn:      unusedLabelSvc,
@@ -919,7 +919,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			Region: tenantRegion,
 			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return(modelAppTemplate, nil).Times(repeats)
+				appTemplateSvc.On("GetByFilters", ctxWithTenantMatcher(providerInternalID), regionalFilters).Return(modelAppTemplate, nil).Times(repeats)
 				appTemplateSvc.AssertNotCalled(t, "PrepareApplicationCreateInputJSON")
 
 				return appTemplateSvc
@@ -938,13 +938,13 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("ListAll", CtxWithTenantMatcher(providerInternalID)).Return(modelApps, nil).Times(repeats)
+				appSvc.On("ListAll", ctxWithTenantMatcher(providerInternalID)).Return(modelApps, nil).Times(repeats)
 				appSvc.AssertNotCalled(t, "CreateFromTemplate")
 
 				return appSvc
 			},
-			LabelServiceFn: emptyLabelSvcFn,
-			UIDServiceFn:   emptyUIDSvcFn,
+			LabelServiceFn: unusedLabelSvc,
+			UIDServiceFn:   unusedUUIDSvc,
 			IsSuccessful:   true,
 			Repeats:        repeats,
 		},
