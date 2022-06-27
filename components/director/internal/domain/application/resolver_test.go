@@ -3,11 +3,12 @@ package application_test
 import (
 	"context"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
-	"testing"
-	"time"
 
 	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 

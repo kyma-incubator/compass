@@ -3,10 +3,11 @@ package application
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"strings"
 
 	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
