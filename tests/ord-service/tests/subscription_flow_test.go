@@ -210,7 +210,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
 		// In case there isn't subscription it will fail-safe without error
-		subscription.BuildAndExecuteUnsubscribeRequest(t, runtime, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+		subscription.BuildAndExecuteUnsubscribeRequest(t, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
 		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, runtime.Name, runtime.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
@@ -224,7 +224,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
 
-		defer subscription.BuildAndExecuteUnsubscribeRequest(t, runtime, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+		defer subscription.BuildAndExecuteUnsubscribeRequest(t, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
 		subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
 		require.NotEmpty(t, subJobStatusPath)
@@ -252,7 +252,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
-		certHttpClient := createHttpClientWithCert(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+		certHttpClient := CreateHttpClientWithCert(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		t.Log("Getting consumer application using both provider and consumer credentials...")
@@ -261,7 +261,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Equal(t, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 		t.Log("Successfully fetched consumer application using both provider and consumer credentials")
 
-		subscription.BuildAndExecuteUnsubscribeRequest(t, runtime, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+		subscription.BuildAndExecuteUnsubscribeRequest(t, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
 		t.Log("Validating no application is returned after successful unsubscription request...")
 		respBody = makeRequestWithHeaders(t, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
@@ -275,6 +275,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		t.Log("Successfully validated an error is returned during claims validation after unsubscribe request")
 	})
 }
+
+// for localEnv
+// ext-svc-mock -> initiMultiTenantServer
 
 func assignToFormation(t *testing.T, ctx context.Context, objectID, objectType, formationName, tenantID string) {
 	assignReq := fixtures.FixAssignFormationRequest(objectID, objectType, formationName)
