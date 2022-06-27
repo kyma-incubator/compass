@@ -275,7 +275,7 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 
 	consumerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, subscribedSubaccountID)
 	if err != nil {
-		log.C(ctx).Errorf("An error occurred while getting tenant by external ID: %q during subscription: %v", subscribedSubaccountID, err)
+		log.C(ctx).Errorf("An error occurred while getting tenant by external ID: %q during application subscription: %v", subscribedSubaccountID, err)
 		return false, errors.Wrapf(err, "while getting tenant with external ID: %q", subscribedSubaccountID)
 	}
 
@@ -317,7 +317,7 @@ func (s *service) UnsubscribeTenantFromApplication(ctx context.Context, provider
 
 	consumerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, subscribedSubaccountID)
 	if err != nil {
-		log.C(ctx).Errorf("An error occurred while getting tenant by external ID: %q during subscription: %v", subscribedSubaccountID, err)
+		log.C(ctx).Errorf("An error occurred while getting tenant by external ID: %q during application unsubscription: %v", subscribedSubaccountID, err)
 		return false, errors.Wrapf(err, "while getting tenant with external ID: %q", subscribedSubaccountID)
 	}
 
