@@ -6,7 +6,7 @@ Compass tests comprise end-to-end tests for the Compass project, as follows:
 
 ## Prerequisites
 
-To run the tests, it is required a running Minikube instance with installed Kyma and Compass.
+To run the tests, it is required a running k3d instance with installed Kyma and Compass.
 
 ## Usage
 
@@ -19,7 +19,7 @@ The tests are run via Octopus. The Octopus test definitions can be found in `kym
 ### Global Makefile
 The global Makefile is located in the root tests directory `compass/tests/Makefile`, and supports the following commands:
 
-- `deploy-tests-on-minikube` - Pushes a new image version of the tests into the Minikube cluster.
+- `deploy-tests-on-k3d` - Pushes a new image version of the tests into the k3d cluster.
 - `e2e-test` - Creates a new cluster-test-suite matching all test-definitions. Then, runs the tests and provides information about the current status. Finally, cleans up after the test is carried out.
 - `e2e-test-clean` - In case of early termination of the `e2e-test`, the command cleans up the `cluster-test-suite` and `test-definition` created by the `e2e-test` after the test is carried out.
 

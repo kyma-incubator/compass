@@ -20,7 +20,7 @@ If you want to modify the database schema used by compass, add migration files t
 
 In case you changed the `schema-migrator` component in your pull request, a new image of the migrator will be produced. It contains all migration files, so make sure that you bump the component version value in the compass chart.
 
-`Note:` During local installation, if you specified the `--dump-db` flag then in the local minikube docker registry a new image will be built based on the local files. The new image will be used for schema-migrator component.
+`Note:` During local installation, if you specified the `--dump-db` flag then in the local k3d docker registry a new image will be built based on the local files. The new image will be used for schema-migrator component.
 
 To test if migration files are correct, run:
 ```
