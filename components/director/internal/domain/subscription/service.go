@@ -260,14 +260,10 @@ func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, 
 }
 
 // SubscribeTenantToApplication fetches model.ApplicationTemplate by region and provider and registers an Application from that template
-func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, subscribedSubaccountID, providerSubaccountID, region, subscribedAppName string) (bool, error) {
-	providerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, providerSubaccountID)
-	if err != nil {
-		return false, errors.Wrapf(err, "while getting provider subaccount internal ID: %q", providerSubaccountID)
+func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, subscribedSubaccountID, region, subscribedAppName string) (bool, error) {
+	filters := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
 	}
-	ctx = tenant.SaveToContext(ctx, providerInternalTenant, providerSubaccountID)
-
-	filters := s.buildLabelFilters(providerID, region)
 	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
@@ -276,6 +272,14 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 
 		return false, errors.Wrapf(err, "while getting application template with filter labels %q and %q", providerID, region)
 	}
+
+	consumerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, subscribedSubaccountID)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting tenant by external ID: %q during subscription: %v", subscribedSubaccountID, err)
+		return false, errors.Wrapf(err, "while getting tenant with external ID: %q", subscribedSubaccountID)
+	}
+
+	ctx = tenant.SaveToContext(ctx, consumerInternalTenant, subscribedSubaccountID)
 
 	applications, err := s.appSvc.ListAll(ctx)
 	if err != nil {
@@ -297,16 +301,11 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 }
 
 // UnsubscribeTenantFromApplication fetches model.ApplicationTemplate by region and provider, lists all applications for
-// the providerSubaccountID tenant and deletes them synchronously
-func (s *service) UnsubscribeTenantFromApplication(ctx context.Context, providerID, providerSubaccountID, region string) (bool, error) {
-	providerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, providerSubaccountID)
-	if err != nil {
-		return false, errors.Wrapf(err, "while getting provider subaccount internal ID: %q", providerSubaccountID)
+// the subscribedSubaccountID tenant and deletes them synchronously
+func (s *service) UnsubscribeTenantFromApplication(ctx context.Context, providerID, subscribedSubaccountID, region string) (bool, error) {
+	filters := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
 	}
-
-	ctx = tenant.SaveToContext(ctx, providerInternalTenant, providerSubaccountID)
-
-	filters := s.buildLabelFilters(providerID, region)
 	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
@@ -315,6 +314,14 @@ func (s *service) UnsubscribeTenantFromApplication(ctx context.Context, provider
 
 		return false, errors.Wrapf(err, "while getting application template with filter labels %q and %q", providerID, region)
 	}
+
+	consumerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, subscribedSubaccountID)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting tenant by external ID: %q during subscription: %v", subscribedSubaccountID, err)
+		return false, errors.Wrapf(err, "while getting tenant with external ID: %q", subscribedSubaccountID)
+	}
+
+	ctx = tenant.SaveToContext(ctx, consumerInternalTenant, subscribedSubaccountID)
 
 	if err := s.deleteApplicationsByAppTemplateID(ctx, appTemplate.ID); err != nil {
 		return false, err
