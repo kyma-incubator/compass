@@ -43,12 +43,28 @@ func TestCertServiceContextProvider(t *testing.T) {
 			cert.InternalConsumerIDField: internalConsumerID,
 		}},
 	}
+	tenantHeader := "111-222-333-444"
+	reqDataWithTenantHeader := oathkeeper.ReqData{
+		Body: oathkeeper.ReqBody{Extra: map[string]interface{}{
+			cert.InternalConsumerIDField: internalConsumerID,
+		}},
+		Header: http.Header{
+			textproto.CanonicalMIMEHeaderKey("tenant"): []string{tenantHeader},
+		},
+	}
 
 	internalSubaccount := "internalSubaccountID"
+	internalSubaccountFromHeader := "internalSubaccountID-from-header"
 
 	testSubaccount := &graphql.Tenant{
 		ID:         "externalTestSubaccount",
 		InternalID: internalSubaccount,
+		Name:       str.Ptr("testSubaccount"),
+		Type:       "subaccount",
+	}
+	testSubaccountFromHeader := &graphql.Tenant{
+		ID:         "externalTestSubaccount",
+		InternalID: internalSubaccountFromHeader,
 		Name:       str.Ptr("testSubaccount"),
 		Type:       "subaccount",
 	}
@@ -61,6 +77,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 		AuthDetailsInput   oathkeeper.AuthDetails
 		ExpectedScopes     string
 		ExpectedInternalID string
+		ExpectedExternalID string
 		ExpectedConsumerID string
 		ExpectedErr        error
 	}{
@@ -80,6 +97,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 			AuthDetailsInput:   authDetails,
 			ExpectedScopes:     scopesString,
 			ExpectedInternalID: "",
+			ExpectedExternalID: tenantID,
 			ExpectedErr:        nil,
 		},
 		{
@@ -98,6 +116,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 			AuthDetailsInput:   authDetails,
 			ExpectedScopes:     "",
 			ExpectedInternalID: "",
+			ExpectedExternalID: tenantID,
 			ExpectedErr:        testError,
 		},
 		{
@@ -116,6 +135,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 			AuthDetailsInput:   authDetails,
 			ExpectedScopes:     scopesString,
 			ExpectedInternalID: internalSubaccount,
+			ExpectedExternalID: tenantID,
 			ExpectedErr:        nil,
 		},
 		{
@@ -135,6 +155,27 @@ func TestCertServiceContextProvider(t *testing.T) {
 			ExpectedScopes:     scopesString,
 			ExpectedInternalID: internalSubaccount,
 			ExpectedConsumerID: internalConsumerID,
+			ExpectedExternalID: tenantID,
+			ExpectedErr:        nil,
+		},
+		{
+			Name: "Success when tenant header is provided",
+			DirectorClient: func() *automock.DirectorClient {
+				client := &automock.DirectorClient{}
+				client.On("GetTenantByExternalID", mock.Anything, tenantHeader).Return(testSubaccountFromHeader, nil).Once()
+				return client
+			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.external_certificate").Return(scopes, nil)
+				return scopesGetter
+			},
+			ReqDataInput:       reqDataWithTenantHeader,
+			AuthDetailsInput:   authDetails,
+			ExpectedScopes:     scopesString,
+			ExpectedInternalID: internalSubaccountFromHeader,
+			ExpectedConsumerID: internalConsumerID,
+			ExpectedExternalID: tenantHeader,
 			ExpectedErr:        nil,
 		},
 		{
@@ -145,9 +186,10 @@ func TestCertServiceContextProvider(t *testing.T) {
 				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.external_certificate").Return(nil, testError)
 				return scopesGetter
 			},
-			ReqDataInput:     reqData,
-			AuthDetailsInput: authDetails,
-			ExpectedErr:      errors.New("failed to extract scopes"),
+			ReqDataInput:       reqData,
+			AuthDetailsInput:   authDetails,
+			ExpectedExternalID: tenantID,
+			ExpectedErr:        errors.New("failed to extract scopes"),
 		},
 	}
 	for _, testCase := range testCases {
@@ -168,7 +210,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 				require.Equal(t, consumer.ExternalCertificate, objectCtx.ConsumerType)
 				require.Equal(t, testCase.ExpectedConsumerID, objectCtx.ConsumerID)
 				require.Equal(t, testCase.ExpectedInternalID, objectCtx.TenantContext.TenantID)
-				require.Equal(t, tenantID, objectCtx.TenantContext.ExternalTenantID)
+				require.Equal(t, testCase.ExpectedExternalID, objectCtx.TenantContext.ExternalTenantID)
 				require.Equal(t, testCase.ExpectedScopes, objectCtx.Scopes)
 			} else {
 				require.Error(t, err)
