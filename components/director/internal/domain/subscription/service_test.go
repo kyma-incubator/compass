@@ -1029,10 +1029,13 @@ func TestSubscribeTenantToApplicationIsIdempotent(t *testing.T) {
 
 	jsonAppCreateInput := fixJSONApplicationCreateInput(appTmplAppName)
 	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(appTmplID, appTmplName, jsonAppCreateInput)
-	modelAppFromTemplateInput := fixModelApplicationFromTemplateInput(appTmplName, subscriptionAppName)
-	gqlAppCreateInput := fixGQLApplicationCreateInput(appTmplName)
-	modelAppCreateInput := fixModelApplicationCreateInput(appTmplName)
-	modelAppCreateInputWithLabels := fixModelApplicationCreateInputWithLabels(appTmplName, subscribedSubaccountID)
+	// modelAppFromTemplateInput := fixModelApplicationFromTemplateInput(appTmplName, subscriptionAppName)
+	// gqlAppCreateInput := fixGQLApplicationCreateInput(appTmplName)
+	// modelAppCreateInput := fixModelApplicationCreateInput(appTmplName)
+	// modelAppCreateInputWithLabels := fixModelApplicationCreateInputWithLabels(appTmplName, subscribedSubaccountID)
+	modelApps := []*model.Application{
+		fixModelApplication(appTmplID, appTmplName, appTmplID),
+	}
 
 	testCases := []struct {
 		Name                   string
@@ -1049,12 +1052,14 @@ func TestSubscribeTenantToApplicationIsIdempotent(t *testing.T) {
 		IsSuccessful           bool
 	}{
 		{
-			Name:   "Succeeds",
+			Name:   "Succeeds on rery and not creates new",
 			Region: tenantRegion,
 			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("GetByFilters", CtxWithTenantMatcher(providerInternalID), regionalFilters).Return(modelAppTemplate, nil).Times(repeats)
-				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Times(repeats)
+				appTemplateSvc.AssertNotCalled(t, "PrepareApplicationCreateInputJSON")
+
+				// appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
 				return appTemplateSvc
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -1064,22 +1069,25 @@ func TestSubscribeTenantToApplicationIsIdempotent(t *testing.T) {
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
 				appConv := &automock.ApplicationConverter{}
-				appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Times(repeats)
-				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Times(repeats)
+				// appConv.On("CreateInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
+				// appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
+				appConv.AssertNotCalled(t, "CreateInputJSONToGQL")
+				appConv.AssertNotCalled(t, "CreateInputFromGraphQL")
 
 				return appConv
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("CreateFromTemplate", CtxWithTenantMatcher(providerInternalID), modelAppCreateInputWithLabels, &appTmplID).Return(appTmplID, nil).Once()
+				appSvc.On("ListAll", CtxWithTenantMatcher(providerInternalID)).Return(modelApps, nil).Times(repeats)
+				// appSvc.On("CreateFromTemplate", CtxWithTenantMatcher(providerInternalID), modelAppCreateInputWithLabels, &appTmplID).Return(appTmplID, nil).Once()
+				appSvc.AssertNotCalled(t, "CreateFromTemplate")
 
 				return appSvc
 			},
 			LabelServiceFn: emptyLabelSvcFn,
 			UIDServiceFn:   emptyUIDSvcFn,
 			IsSuccessful:   true,
-		},
-	}
+		}}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
