@@ -49,7 +49,7 @@ type runtimeContextRepository interface {
 type FormationRepository interface {
 	Get(ctx context.Context, id, tenantID string) (*model.Formation, error)
 	GetByName(ctx context.Context, name, tenantID string) (*model.Formation, error)
-	List(ctx context.Context, pageSize int, cursor string) (*model.FormationPage, error)
+	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.FormationPage, error)
 	Create(ctx context.Context, item *model.Formation) error
 	DeleteByName(ctx context.Context, tenantID, name string) error
 }
@@ -137,11 +137,16 @@ type processScenarioFunc func(context.Context, string, string, graphql.Formation
 
 // List returns paginated Formations based on pageSize and cursor
 func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model.FormationPage, error) {
+	formationTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
 	if pageSize < 1 || pageSize > 200 {
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	return s.formationRepository.List(ctx, pageSize, cursor)
+	return s.formationRepository.List(ctx, formationTenant, pageSize, cursor)
 }
 
 // Get returns the Formation by its id

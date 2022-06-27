@@ -31,7 +31,7 @@ type EntityConverter interface {
 type repository struct {
 	creator               repo.CreatorGlobal
 	getter                repo.SingleGetter
-	pageableQuerierGlobal repo.PageableQuerierGlobal
+	pageableQuerierGlobal repo.PageableQuerier
 	updater               repo.UpdaterGlobal
 	deleter               repo.Deleter
 	existQuerier          repo.ExistQuerier
@@ -43,7 +43,7 @@ func NewRepository(conv EntityConverter) *repository {
 	return &repository{
 		creator:               repo.NewCreatorGlobal(resource.Formations, tableName, tableColumns),
 		getter:                repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
-		pageableQuerierGlobal: repo.NewPageableQuerierGlobal(resource.Formations, tableName, tableColumns),
+		pageableQuerierGlobal: repo.NewPageableQuerierWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		updater:               repo.NewUpdaterWithEmbeddedTenant(resource.Formations, tableName, updatableTableColumns, tenantColumn, idTableColumns),
 		deleter:               repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
 		existQuerier:          repo.NewExistQuerierWithEmbeddedTenant(tableName, tenantColumn),
@@ -87,9 +87,9 @@ func (r *repository) GetByName(ctx context.Context, name, tenantID string) (*mod
 }
 
 // List returns all Formations sorted by id and paginated by the pageSize and cursor parameters
-func (r *repository) List(ctx context.Context, pageSize int, cursor string) (*model.FormationPage, error) {
+func (r *repository) List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.FormationPage, error) {
 	var entityCollection EntityCollection
-	page, totalCount, err := r.pageableQuerierGlobal.ListGlobal(ctx, pageSize, cursor, "id", &entityCollection)
+	page, totalCount, err := r.pageableQuerierGlobal.List(ctx, resource.Formations, tenant, pageSize, cursor, "id", &entityCollection)
 	if err != nil {
 		return nil, err
 	}
