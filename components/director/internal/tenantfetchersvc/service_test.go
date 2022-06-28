@@ -365,7 +365,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 			tenantStorageSvc := testCase.TenantStorageSvcFn()
 			apiClient := testCase.APIClientFn()
 			gqlClient := testCase.GqlClientFn()
-			regionDetails := []tenantfetchersvc.RegionDetails{{Name: region}}
+			regionDetails := map[string]tenantfetchersvc.RegionDetails{region: {Name: region}}
 			svc := tenantfetchersvc.NewSubaccountOnDemandService(tenantfetchersvc.QueryConfig{
 				PageNumField:    "pageNum",
 				PageSizeField:   "pageSize",

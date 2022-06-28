@@ -144,7 +144,7 @@ type SubaccountOnDemandService struct {
 	gqlClient            DirectorGraphQLClient
 	providerName         string
 	tenantConverter      TenantConverter
-	tenantsRegions       []RegionDetails
+	tenantsRegions       map[string]RegionDetails
 }
 
 // GlobalAccountService missing godoc
@@ -196,7 +196,7 @@ func NewSubaccountOnDemandService(
 	gqlClient DirectorGraphQLClient,
 	providerName string,
 	tenantConverter TenantConverter,
-	tenantsRegions []RegionDetails) *SubaccountOnDemandService {
+	tenantsRegions map[string]RegionDetails) *SubaccountOnDemandService {
 	return &SubaccountOnDemandService{
 		queryConfig:    queryConfig,
 		fieldMapping:   fieldMapping,
@@ -445,12 +445,10 @@ func (s *SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID
 
 	var tenantsToCreate = []model.BusinessTenantMappingInput{*tenantToCreate}
 	fullRegionName := tenantToCreate.Region
-	for _, detail := range s.tenantsRegions {
-		if detail.Name == fullRegionName {
-			fullRegionName = detail.Prefix + detail.Name
-			break
-		}
+	if detail, ok := s.tenantsRegions[fullRegionName]; ok {
+		fullRegionName = detail.Prefix + detail.Name
 	}
+
 	if err := createTenants(ctx, s.gqlClient, parentTenantDetails, tenantsToCreate, fullRegionName, s.providerName, chunkSizeForTenantOnDemand, s.tenantConverter); err != nil {
 		return errors.Wrapf(err, "while creating missing tenants from tenant hierarchy of subaccount tenant with ID %s", subaccountID)
 	}

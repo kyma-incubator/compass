@@ -385,7 +385,7 @@ func registerTenantsHandler(ctx context.Context, router *mux.Router, cfg tenantf
 }
 
 func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, eventsCfg tenantfetcher.EventsConfig, tenantHandlerCfg tenantfetcher.HandlerConfig, transact persistence.Transactioner, regionDetails []tenantfetcher.RegionDetails) {
-	onDemandSvc, err := createTenantFetcherOnDemandSvc(eventsCfg, tenantHandlerCfg, transact, regionDetails)
+	onDemandSvc, err := createTenantFetcherOnDemandSvc(eventsCfg, tenantHandlerCfg, transact, regionDetailsToMap(regionDetails))
 	exitOnError(err, "failed to create tenant fetcher on-demand service")
 
 	fetcher := tenantfetcher.NewTenantFetcher(*onDemandSvc)
@@ -395,7 +395,15 @@ func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, eve
 	router.HandleFunc(tenantHandlerCfg.TenantOnDemandHandlerEndpoint, tenantHandler.FetchTenantOnDemand).Methods(http.MethodPost)
 }
 
-func createTenantFetcherOnDemandSvc(eventsCfg tenantfetcher.EventsConfig, handlerCfg tenantfetcher.HandlerConfig, transact persistence.Transactioner, regionDetails []tenantfetcher.RegionDetails) (*tenantfetcher.SubaccountOnDemandService, error) {
+func regionDetailsToMap(regionDetails []tenantfetcher.RegionDetails) map[string]tenantfetcher.RegionDetails {
+	regionDetailsMap := make(map[string]tenantfetcher.RegionDetails, 0)
+	for _, region := range regionDetails {
+		regionDetailsMap[region.Name] = region
+	}
+	return regionDetailsMap
+}
+
+func createTenantFetcherOnDemandSvc(eventsCfg tenantfetcher.EventsConfig, handlerCfg tenantfetcher.HandlerConfig, transact persistence.Transactioner, regionDetails map[string]tenantfetcher.RegionDetails) (*tenantfetcher.SubaccountOnDemandService, error) {
 	eventAPIClient, err := tenantfetcher.NewClient(eventsCfg.OAuthConfig, eventsCfg.AuthMode, eventsCfg.APIConfig, handlerCfg.ClientTimeout)
 	if nil != err {
 		return nil, err
