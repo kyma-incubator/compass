@@ -3,10 +3,11 @@ package fetchrequest
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/retry"
 	"io/ioutil"
 	"net/http"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/retry"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
@@ -90,7 +91,7 @@ func (s *service) fetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 	if fr.Auth != nil && fr.Auth.AccessStrategy != nil && len(*fr.Auth.AccessStrategy) > 0 {
 		log.C(ctx).Infof("Fetch Request with id %s is configured with %s access strategy.", fr.ID, *fr.Auth.AccessStrategy)
 		var executor accessstrategy.Executor
-		executor, err = s.accessStrategyExecutorProvider.Provide(*fr.Auth.AccessStrategy)
+		executor, err = s.accessStrategyExecutorProvider.Provide(accessstrategy.Type(*fr.Auth.AccessStrategy))
 		if err != nil {
 			log.C(ctx).WithError(err).Errorf("Cannot find executor for access strategy %q as part of fetch request %s processing: %v", *fr.Auth.AccessStrategy, fr.ID, err)
 			return nil, FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching Spec: %s", err.Error())), s.timestampGen())

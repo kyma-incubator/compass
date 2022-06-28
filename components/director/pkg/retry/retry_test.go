@@ -1,11 +1,12 @@
 package retry
 
 import (
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
 )
 
 var defaultConfig = Config{
