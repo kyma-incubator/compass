@@ -98,8 +98,7 @@ func (r *Resolver) Formations(ctx context.Context, first *int, after *graphql.Pa
 	if err != nil {
 		return nil, err
 	}
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
