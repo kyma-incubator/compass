@@ -29,6 +29,9 @@ var (
 		FormationTemplateID: FormationTemplateID,
 		Name:                testFormationName,
 	}
+	defaultFormation = model.Formation{
+		Name: model.DefaultScenario,
+	}
 )
 
 const (
