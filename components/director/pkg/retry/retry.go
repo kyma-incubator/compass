@@ -12,6 +12,7 @@ import (
 // ExecutableHTTPFunc defines a generic HTTP function to be executed
 type ExecutableHTTPFunc func() (*http.Response, error)
 
+// Config configuration for the HTTPExecutor
 type Config struct {
 	Attempts uint          `envconfig:"APP_HTTP_RETRY_ATTEMPTS"`
 	Delay    time.Duration `envconfig:"APP_HTTP_RETRY_DELAY"`
@@ -24,6 +25,7 @@ type HTTPExecutor struct {
 	acceptableStatusCodes []int
 }
 
+// NewHTTPExecutor constructs an HTTPExecutor based on the provided Config
 func NewHTTPExecutor(config *Config) *HTTPExecutor {
 	return &HTTPExecutor{
 		attempts:              config.Attempts,
