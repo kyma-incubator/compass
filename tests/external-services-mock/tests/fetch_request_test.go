@@ -59,6 +59,12 @@ func TestRefetchAPISpecDifferentSpec(stdT *testing.T) {
 					},
 				},
 			},
+			{
+				Name: "Success when spec server is flapping",
+				FetchRequest: &graphql.FetchRequestInput{
+					URL: testConfig.ExternalServicesMockORDServerUnsecuredURL + "external-api/spec/flapping",
+				},
+			},
 		}
 		for _, testCase := range testCases {
 			t.Run(fmt.Sprintf("%s", testCase.Name), func(t *testing.T) {
