@@ -276,9 +276,6 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 	})
 }
 
-// for localEnv
-// ext-svc-mock -> initiMultiTenantServer
-
 func assignToFormation(t *testing.T, ctx context.Context, objectID, objectType, formationName, tenantID string) {
 	assignReq := fixtures.FixAssignFormationRequest(objectID, objectType, formationName)
 	executeGQLRequest(t, ctx, assignReq, formationName, tenantID)
