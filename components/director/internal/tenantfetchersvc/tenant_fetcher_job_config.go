@@ -2,23 +2,21 @@ package tenantfetchersvc
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
+	"github.com/kelseyhightower/envconfig"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
-	"github.com/kyma-incubator/compass/components/director/internal/features"
-	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+	"github.com/pkg/errors"
 )
 
 const (
-	emptyValue     = ""
-	jobNamePattern = "^APP_(.*)_JOB_NAME$"
+	jobNamePattern          = "^APP_(.*)_JOB_NAME$"
+	regionNamePatternFormat = "^APP_%s_REGIONAL_CONFIG_(.*)_REGION_NAME$"
 )
 
 type job struct {
@@ -30,19 +28,43 @@ type job struct {
 
 // JobConfig contains tenant fetcher job configuration read from environment
 type JobConfig struct {
-	JobName       string
-	eventsConfig  EventsConfig
-	handlerConfig HandlerConfig
+	EventsConfig
+	ResyncConfig
+	KubeConfig
+
+	JobName        string      `envconfig:"JOB_NAME"`
+	TenantProvider string      `envconfig:"TENANT_PROVIDER"`
+	TenantType     tenant.Type `envconfig:"TENANT_TYPE"`
 }
 
-// GetEventsCgf get configuration for reading events for tenants
-func (cfg *JobConfig) GetEventsCgf() EventsConfig {
-	return cfg.eventsConfig
+// EventsConfig contains configuration for Events API requests
+type EventsConfig struct {
+	QueryConfig
+	TenantFieldMapping
+	MovedSubaccountsFieldMapping
+
+	RegionalAPIConfigs    map[string]EventAPIRegionalConfig `ignored:"true"`
+	UniversalClientConfig APIClientConfig                   `envconfig:"UNIVERSAL_CLIENT"`
+	TenantInsertChunkSize int                               `envconfig:"TENANT_INSERT_CHUNK_SIZE" default:"500"`
+	RetryAttempts         uint                              `envconfig:"RETRY_ATTEMPTS" default:"7"`
 }
 
-// GetHandlerCgf get configuration for handling tenants synchronization
-func (cfg *JobConfig) GetHandlerCgf() HandlerConfig {
-	return cfg.handlerConfig
+type EventAPIRegionalConfig struct {
+	APIClientConfig
+	UniversalClientEnabled bool   `envconfig:"UNIVERSAL_CLIENT_ENABLED"` // weather the universal client should also fetch events for that region
+	RegionName             string `envconfig:"REGION_NAME"`
+	RegionPrefix           string `envconfig:"REGION_PREFIX"`
+}
+
+type APIClientConfig struct {
+	AuthMode    oauth.AuthMode `envconfig:"AUTH_MODE"`
+	OAuthConfig OAuth2Config   `envconfig:"OAUTH_CONFIG"`
+	APIConfig   APIConfig      `envconfig:"API_CONFIG"`
+}
+
+type ResyncConfig struct {
+	TenantFetcherJobIntervalMins time.Duration `default:"5m" envconfig:"TENANT_FETCHER_JOB_INTERVAL"`
+	FullResyncInterval           time.Duration `default:"12h" envconfig:"FULL_RESYNC_INTERVAL"`
 }
 
 // NewTenantFetcherJobEnvironment used for job configuration read from environment
@@ -56,208 +78,37 @@ func NewTenantFetcherJobEnvironment(ctx context.Context, name string, environmen
 }
 
 // ReadJobConfig reads job configuration from environment
-func (j *job) ReadJobConfig() JobConfig {
+func (j *job) ReadJobConfig() (*JobConfig, error) {
 	if j.jobConfig != nil {
-		return *j.jobConfig
+		return j.jobConfig, nil
 	}
-	j.jobConfig = &JobConfig{
-		JobName:       j.name,
-		eventsConfig:  j.readEventsConfig(),
-		handlerConfig: j.readHandlerConfig(),
+
+	jobConfigPrefix := fmt.Sprintf("APP_%s", j.name)
+	jc := JobConfig{}
+	if err := envconfig.Process(jobConfigPrefix, &jc); err != nil {
+		return nil, errors.Wrapf(err, "while initializing job config with prefix %s", jobConfigPrefix)
 	}
-	return *j.jobConfig
+
+	jc.RegionalAPIConfigs = j.readRegionalEventsConfig()
+	j.jobConfig = &jc
+	return j.jobConfig, nil
 }
 
-func (j *job) readEventsConfig() EventsConfig {
-	return EventsConfig{
-		AccountsRegion:    j.getEnvValueForKey("central", "APP_"+j.name+"_ACCOUNT_REGION"),
-		SubaccountRegions: j.getRegions(j.getEnvValueForKey("{central, \"\"}", "APP_"+j.name+"_SUBACCOUNT_REGIONS")),
+func (j *job) readRegionalEventsConfig() map[string]EventAPIRegionalConfig {
+	regEventsConfig := map[string]EventAPIRegionalConfig{}
+	for _, region := range j.jobRegions() {
+		regionalConfigEnvPrefix := fmt.Sprintf("APP_%s_API_CLIENT_CONFIG_%s", j.name, strings.ToUpper(region))
+		newCfg := &EventAPIRegionalConfig{}
+		if err := envconfig.Process(regionalConfigEnvPrefix, newCfg); err != nil {
+			// TODO throw error
+			log.D().Errorf("Failed to read config: %v", err)
+			return nil
+		}
 
-		AuthMode:    oauth.AuthMode(j.getEnvValueForKey("standard", "APP_"+j.name+"_OAUTH_AUTH_MODE")),
-		OAuthConfig: j.getOAuth2Config(),
-		APIConfig:   j.getAPIConfig(),
-		QueryConfig: j.getQueryConfig(),
-
-		TenantFieldMapping:          j.getTenantFieldMapping(),
-		MovedSubaccountFieldMapping: j.getMovedSubaccountsFieldMapping(),
-
-		MetricsPushEndpoint: j.getEnvValueForKey(emptyValue, "APP_METRICS_PUSH_ENDPOINT"),
+		regEventsConfig[strings.ToLower(region)] = *newCfg
 	}
-}
 
-func (j *job) readHandlerConfig() HandlerConfig {
-	return HandlerConfig{
-		Features: j.getFeaturesConfig(),
-
-		TenantFetcherJobIntervalMins: parseDuration(j.getEnvValueForKey("1m", "APP_"+j.name+"_TENANT_FETCHER_JOB_INTERVAL")),
-		FullResyncInterval:           parseDuration(j.getEnvValueForKey("12h", emptyValue)),
-		ShouldSyncSubaccounts:        parseBool(j.getEnvValueForKey("false", "APP_"+j.name+"_SYNC_SUBACCOUNTS")),
-
-		Kubernetes: j.getKubeConfig(),
-		Database:   j.getDatabaseConfig(),
-
-		DirectorGraphQLEndpoint:     j.getEnvValueForKey(emptyValue, "APP_DIRECTOR_GRAPHQL_ENDPOINT"),
-		ClientTimeout:               parseDuration(j.getEnvValueForKey("60s", emptyValue)),
-		HTTPClientSkipSslValidation: parseBool(j.getEnvValueForKey("false", "APP_HTTP_CLIENT_SKIP_SSL_VALIDATION")),
-
-		TenantInsertChunkSize: parseInt(j.getEnvValueForKey("500", "APP_"+j.name+"_TENANT_INSERT_CHUNK_SIZE")),
-		TenantProviderConfig:  j.getTenantProviderConfig(),
-	}
-}
-
-func (j *job) getOAuth2Config() OAuth2Config {
-	return OAuth2Config{
-		ClientID:           j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_CLIENT_ID"),
-		ClientSecret:       j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_CLIENT_SECRET"),
-		OAuthTokenEndpoint: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_OAUTH_TOKEN_ENDPOINT"),
-		TokenPath:          j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_OAUTH_TOKEN_PATH"),
-		SkipSSLValidation:  parseBool(j.getEnvValueForKey("false", "APP_"+j.name+"_OAUTH_SKIP_SSL_VALIDATION")),
-		X509Config: oauth.X509Config{
-			Cert: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_OAUTH_X509_CERT"),
-			Key:  j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_OAUTH_X509_KEY"),
-		},
-	}
-}
-
-func (j *job) getAPIConfig() APIConfig {
-	return APIConfig{
-		EndpointTenantCreated:     j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_ENDPOINT_TENANT_CREATED"),
-		EndpointTenantDeleted:     j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_ENDPOINT_TENANT_DELETED"),
-		EndpointTenantUpdated:     j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_ENDPOINT_TENANT_UPDATED"),
-		EndpointSubaccountCreated: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_ENDPOINT_SUBACCOUNT_CREATED"),
-		EndpointSubaccountDeleted: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_ENDPOINT_SUBACCOUNT_DELETED"),
-		EndpointSubaccountUpdated: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_ENDPOINT_SUBACCOUNT_UPDATED"),
-		EndpointSubaccountMoved:   j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_ENDPOINT_SUBACCOUNT_MOVED"),
-	}
-}
-
-func (j *job) getQueryConfig() QueryConfig {
-	return QueryConfig{
-		PageNumField:    j.getEnvValueForKey("pageNum", "APP_"+j.name+"_QUERY_PAGE_NUM_FIELD"),
-		PageSizeField:   j.getEnvValueForKey("pageSize", "APP_"+j.name+"_QUERY_PAGE_SIZE_FIELD"),
-		TimestampField:  j.getEnvValueForKey("timestamp", "APP_"+j.name+"_QUERY_TIMESTAMP_FIELD"),
-		RegionField:     j.getEnvValueForKey("region", "APP_"+j.name+"_QUERY_REGION_FIELD"),
-		PageStartValue:  j.getEnvValueForKey("0", "APP_"+j.name+"_QUERY_PAGE_START"),
-		PageSizeValue:   j.getEnvValueForKey("150", "APP_"+j.name+"_QUERY_PAGE_SIZE"),
-		SubaccountField: j.getEnvValueForKey("entityId", "APP_"+j.name+"_QUERY_ENTITY_FIELD"),
-	}
-}
-
-func (j *job) getTenantFieldMapping() TenantFieldMapping {
-	return TenantFieldMapping{
-		TotalPagesField:   j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_TENANT_TOTAL_PAGES_FIELD"),
-		TotalResultsField: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_TENANT_TOTAL_RESULTS_FIELD"),
-		EventsField:       j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_TENANT_EVENTS_FIELD"),
-
-		NameField:              j.getEnvValueForKey("name", "APP_"+j.name+"_MAPPING_FIELD_NAME"),
-		IDField:                j.getEnvValueForKey("id", "APP_"+j.name+"_MAPPING_FIELD_ID"),
-		GlobalAccountGUIDField: j.getEnvValueForKey("globalAccountGUID", emptyValue),
-		SubaccountIDField:      j.getEnvValueForKey("subaccountId", emptyValue),
-		SubaccountGUIDField:    j.getEnvValueForKey("subaccountGuid", emptyValue),
-		CustomerIDField:        j.getEnvValueForKey("customerId", "APP_"+j.name+"_MAPPING_FIELD_CUSTOMER_ID"),
-		SubdomainField:         j.getEnvValueForKey("subdomain", "APP_"+j.name+"_MAPPING_FIELD_SUBDOMAIN"),
-		DetailsField:           j.getEnvValueForKey("details", "APP_"+j.name+"_MAPPING_FIELD_DETAILS"),
-		DiscriminatorField:     j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_MAPPING_FIELD_DISCRIMINATOR"),
-		DiscriminatorValue:     j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_MAPPING_VALUE_DISCRIMINATOR"),
-
-		RegionField:     j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_MAPPING_FIELD_REGION"),
-		EntityIDField:   j.getEnvValueForKey("entityId", "APP_"+j.name+"_MAPPING_FIELD_ENTITY_ID"),
-		EntityTypeField: j.getEnvValueForKey("entityType", "APP_"+j.name+"_MAPPING_FIELD_ENTITY_TYPE"),
-
-		GlobalAccountKey: j.getEnvValueForKey("gaID", "APP_"+j.name+"_GLOBAL_ACCOUNT_KEY"),
-	}
-}
-
-func (j *job) getMovedSubaccountsFieldMapping() MovedSubaccountsFieldMapping {
-	return MovedSubaccountsFieldMapping{
-		LabelValue:   j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_MAPPING_FIELD_ID"),
-		SourceTenant: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_MOVED_SUBACCOUNT_SOURCE_TENANT_FIELD"),
-		TargetTenant: j.getEnvValueForKey(emptyValue, "APP_"+j.name+"_MOVED_SUBACCOUNT_TARGET_TENANT_FIELD"),
-	}
-}
-
-func (j *job) getFeaturesConfig() features.Config {
-	return features.Config{
-		DefaultScenarioEnabled:       parseBool(j.getEnvValueForKey("true", "APP_DEFAULT_SCENARIO_ENABLED")),
-		ProtectedLabelPattern:        j.getEnvValueForKey(".*_defaultEventing|^consumer_subaccount_ids$", emptyValue),
-		ImmutableLabelPattern:        j.getEnvValueForKey("^xsappnameCMPClone$", "APP_SELF_REGISTER_LABEL_KEY_PATTERN"),
-		SubscriptionProviderLabelKey: j.getEnvValueForKey("subscriptionProviderId", "APP_SUBSCRIPTION_PROVIDER_LABEL_KEY"),
-		ConsumerSubaccountLabelKey:   j.getEnvValueForKey("consumer_subaccount_id", "APP_CONSUMER_SUBACCOUNT_LABEL_KEY"),
-	}
-}
-
-func (j *job) getKubeConfig() KubeConfig {
-	return KubeConfig{
-		UseKubernetes:                 j.getEnvValueForKey("true", "APP_"+j.name+"_USE_KUBERNETES"),
-		ConfigMapNamespace:            j.getEnvValueForKey("compass-system", "APP_"+j.name+"_CONFIGMAP_NAMESPACE"),
-		ConfigMapName:                 j.getEnvValueForKey("tenant-fetcher-config", "APP_"+j.name+"_LAST_EXECUTION_TIME_CONFIG_MAP_NAME"),
-		ConfigMapTimestampField:       j.getEnvValueForKey("lastConsumedTenantTimestamp", "APP_"+j.name+"_CONFIGMAP_TIMESTAMP_FIELD"),
-		ConfigMapResyncTimestampField: j.getEnvValueForKey("lastFullResyncTimestamp", "APP_"+j.name+"_CONFIGMAP_RESYNC_TIMESTAMP_FIELD"),
-		ClientConfig: kube.Config{
-			PollInterval: parseDuration(j.getEnvValueForKey("2s", "APP_"+j.name+"_KUBERNETES_POLL_INTERVAL")),
-			PollTimeout:  parseDuration(j.getEnvValueForKey("1m", "APP_"+j.name+"_KUBERNETES_POLL_TIMEOUT")),
-			Timeout:      parseDuration(j.getEnvValueForKey("2m", "APP_"+j.name+"_KUBERNETES_TIMEOUT")),
-		},
-	}
-}
-
-func (j *job) getDatabaseConfig() persistence.DatabaseConfig {
-	return persistence.DatabaseConfig{
-		User:               j.getEnvValueForKey("postgres", "APP_DB_USER"),
-		Password:           j.getEnvValueForKey("pgsql@12345", "APP_DB_PASSWORD"),
-		Host:               j.getEnvValueForKey("localhost", "APP_DB_HOST"),
-		Port:               j.getEnvValueForKey("5432", "APP_DB_PORT"),
-		Name:               j.getEnvValueForKey("compass", "APP_DB_NAME"),
-		SSLMode:            j.getEnvValueForKey("disable", "APP_DB_SSL"),
-		MaxOpenConnections: parseInt(j.getEnvValueForKey("2", "APP_"+j.name+"_DB_MAX_OPEN_CONNECTIONS")),
-		MaxIdleConnections: parseInt(j.getEnvValueForKey("2", "APP_"+j.name+"_DB_MAX_IDLE_CONNECTIONS")),
-		ConnMaxLifetime:    parseDuration(j.getEnvValueForKey("30m", "APP_DB_CONNECTION_MAX_LIFETIME")),
-	}
-}
-
-func (j *job) getTenantProviderConfig() TenantProviderConfig {
-	return TenantProviderConfig{
-		TenantIDProperty:               j.getEnvValueForKey("tenantId", "APP_TENANT_PROVIDER_TENANT_ID_PROPERTY"),
-		SubaccountTenantIDProperty:     j.getEnvValueForKey("subaccountTenantId", "APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY"),
-		CustomerIDProperty:             j.getEnvValueForKey("customerId", "APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY"),
-		SubdomainProperty:              j.getEnvValueForKey("subdomain", "APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY"),
-		TenantProvider:                 j.getEnvValueForKey("external-provider", "APP_"+j.name+"_TENANT_PROVIDER"),
-		SubscriptionProviderIDProperty: j.getEnvValueForKey("subscriptionProviderId", "APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY"),
-	}
-}
-
-func (j *job) getEnvValueForKey(defaultVal string, key string) string {
-	if val, ok := j.environmentVars[key]; ok {
-		return val
-	}
-	return defaultVal
-}
-
-func parseBool(value string) bool {
-	v, err := strconv.ParseBool(value)
-	if err != nil {
-		log.D().Errorf("Error while parsing %s to bool", value)
-		return false
-	}
-	return v
-}
-
-func parseInt(value string) int {
-	v, err := strconv.Atoi(value)
-	if err != nil {
-		log.D().Errorf("Error while parsing %s to time duration", value)
-		return 0
-	}
-	return v
-}
-
-func parseDuration(value string) time.Duration {
-	v, err := time.ParseDuration(value)
-	if err != nil {
-		log.D().Errorf("Error while parsing %s to time duration", value)
-		return 1 * time.Minute
-	}
-	return v
+	return regEventsConfig
 }
 
 // ReadFromEnvironment returns a key-value map of environment variables
@@ -288,17 +139,18 @@ func GetJobNames(envVars map[string]string) []string {
 	return jobNames
 }
 
-// returns map of region name as key and its prefix as value
-func (j *job) getRegions(regionNames string) map[string]string {
-	regionsWithPrefixes := make(map[string]string)
-	var arr []RegionDetails
+// jobRegions retrieves the names of the tenant fetchers job regions
+func (j *job) jobRegions() []string {
+	searchPattern := regexp.MustCompile(fmt.Sprintf(regionNamePatternFormat, j.name))
 
-	err := json.Unmarshal([]byte(regionNames), &arr)
-	if err != nil {
-		log.D().Errorf("Error while parsing %s as region names for tenant fetcher job %q", regionNames, j.name)
+	var regionNames []string
+	for key := range j.environmentVars {
+		matches := searchPattern.FindStringSubmatch(key)
+		if len(matches) > 0 {
+			regionName := matches[1]
+			regionNames = append(regionNames, regionName)
+		}
 	}
-	for _, region := range arr {
-		regionsWithPrefixes[region.Name] = region.Prefix
-	}
-	return regionsWithPrefixes
+
+	return regionNames
 }

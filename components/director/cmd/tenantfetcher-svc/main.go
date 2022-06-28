@@ -19,14 +19,22 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/cloudflare/cfssl/auth"
 	"github.com/gorilla/mux"
-	auth "github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
+	tenant2 "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
+	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	authentication "github.com/kyma-incubator/compass/components/director/internal/domain/auth"
@@ -73,8 +81,8 @@ type config struct {
 
 	TenantsRootAPI string `envconfig:"APP_ROOT_API,default=/tenants"`
 
-	Handler   tenantfetcher.HandlerConfig
-	EventsCfg tenantfetcher.EventsConfig
+	Handler tenantfetcher.HandlerConfig
+	//EventsCfg tenantfetcher.EventsConfig
 
 	SecurityConfig        securityConfig
 	TenantOnDemandRegions []tenantfetcher.RegionDetails `envconfig:"APP_REGION_DETAILS"`
@@ -106,8 +114,8 @@ func main() {
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Handler.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
-	envVars := tenantfetcher.ReadFromEnvironment(os.Environ())
-	jobNames := tenantfetcher.GetJobNames(envVars)
+	envVars := tf.ReadFromEnvironment(os.Environ())
+	jobNames := tf.GetJobNames(envVars)
 	log.C(ctx).Infof("Tenant fetcher jobs are: %s", strings.Join(jobNames, ","))
 
 	dbCloseFunctions := make([]func() error, 0)
@@ -119,15 +127,20 @@ func main() {
 		}
 	}()
 
+	jobConfigs := make([]*tf.JobConfig, 0)
+	for _, job := range jobNames {
+		jobConfig, err := tf.NewTenantFetcherJobEnvironment(ctx, job, envVars).ReadJobConfig()
+		exitOnError(err, fmt.Sprintf("Error while reading job config for job %s", job))
+		jobConfigs = append(jobConfigs, jobConfig)
+	}
+
 	stopJobChannels := make([]chan bool, 0, len(jobNames))
 	go func() {
-		for _, job := range jobNames {
+		for _, jobCfg := range jobConfigs {
 			stopJob := make(chan bool, 1)
 			stopJobChannels = append(stopJobChannels, stopJob)
 
-			jobConfig := readJobConfig(ctx, job, envVars)
-			metricsReporter := createMetricsReporter(ctx, jobConfig)
-			closeFn := runTenantFetcherJob(ctx, jobConfig, metricsReporter, stopJob)
+			closeFn := runTenantFetcherJob(ctx, cfg.Handler, jobCfg, stopJob)
 			dbCloseFunctions = append(dbCloseFunctions, closeFn)
 		}
 	}()
@@ -155,16 +168,12 @@ func main() {
 	runMainSrv()
 }
 
-func readJobConfig(ctx context.Context, jobName string, environmentVars map[string]string) tenantfetcher.JobConfig {
-	return tenantfetcher.NewTenantFetcherJobEnvironment(ctx, jobName, environmentVars).ReadJobConfig()
-}
-
-func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig, metricsReporter metrics.MetricsReporter, stopJob chan bool) func() error {
-	jobInterval := jobConfig.GetHandlerCgf().TenantFetcherJobIntervalMins
+func runTenantFetcherJob(ctx context.Context, taConfig tenantfetcher.HandlerConfig, jobConfig *tf.JobConfig, stopJob chan bool) func() error {
+	jobInterval := jobConfig.ResyncConfig.TenantFetcherJobIntervalMins
 	ticker := time.NewTicker(jobInterval)
 	jobName := jobConfig.JobName
 
-	transact, closeFunc, err := persistence.Configure(ctx, jobConfig.GetHandlerCgf().Database)
+	transact, closeFunc, err := persistence.Configure(ctx, taConfig.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
 	go func() {
@@ -172,7 +181,7 @@ func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig,
 			select {
 			case <-ticker.C:
 				log.C(ctx).Infof("Scheduled tenant fetcher job %s will be executed, job interval is %s", jobName, jobInterval)
-				syncTenants(ctx, jobConfig, metricsReporter, transact)
+				syncTenants(ctx, taConfig, jobConfig, transact)
 			case <-ctx.Done():
 				log.C(ctx).Errorf("Context is canceled and scheduled tenant fetcher job %s will be stopped", jobName)
 				stopTenantFetcherJobTicker(ctx, ticker, jobName)
@@ -185,8 +194,8 @@ func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig,
 	return closeFunc
 }
 
-func syncTenants(ctx context.Context, jobConfig tenantfetcher.JobConfig, metricsReporter metrics.MetricsReporter, transact persistence.Transactioner) {
-	tenantsFetcherSvc, err := createTenantsFetcherSvc(ctx, jobConfig, transact)
+func syncTenants(ctx context.Context, taConfig tenantfetcher.HandlerConfig, jobConfig *tf.JobConfig, transact persistence.Transactioner) {
+	tenantsFetcherSvc, err := createTenantsFetcherSvc(ctx, taConfig, jobConfig, transact)
 	exitOnError(err, "failed to create tenants fetcher service")
 
 	err = tenantsFetcherSvc.SyncTenants()
@@ -196,20 +205,8 @@ func syncTenants(ctx context.Context, jobConfig tenantfetcher.JobConfig, metrics
 	}
 }
 
-func createMetricsReporter(ctx context.Context, jobConfig tenantfetcher.JobConfig) metrics.MetricsReporter {
-	pushEndpoint := jobConfig.GetEventsCgf().MetricsPushEndpoint
-	if pushEndpoint == "" {
-		log.C(ctx).Warnf("No metrics endpoint provided for tenant fetcher job %q, metric reporting will be skipped...", jobConfig.JobName)
-		return metrics.MetricsReporter{}
-	}
-
-	metricsPusher := metrics.NewPusherPerJob(jobConfig.JobName, pushEndpoint, jobConfig.GetHandlerCgf().ClientTimeout)
-	return metrics.NewMetricsReporter(metricsPusher)
-}
-
-func createTenantsFetcherSvc(ctx context.Context, jobConfig tenantfetcher.JobConfig, transact persistence.Transactioner) (tenantfetcher.TenantSyncService, error) {
-	eventsCfg := jobConfig.GetEventsCgf()
-	handlerCfg := jobConfig.GetHandlerCgf()
+func createTenantsFetcherSvc(ctx context.Context, taConfig tenantfetcher.HandlerConfig, jobConfig *tf.JobConfig, transact persistence.Transactioner) (tf.TenantSyncService, error) {
+	eventsCfg := jobConfig.EventsConfig
 
 	uidSvc := uid.NewService()
 
@@ -248,42 +245,71 @@ func createTenantsFetcherSvc(ctx context.Context, jobConfig tenantfetcher.JobCon
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepo, labelSvc)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc)
-	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantStorageRepo, uidSvc, handlerCfg.Features.DefaultScenarioEnabled)
+	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantStorageRepo, uidSvc, taConfig.Features.DefaultScenarioEnabled)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
 	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo, runtimeContextRepo)
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
-	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantStorageSvc, webhookSvc, runtimeContextSvc, handlerCfg.Features.ProtectedLabelPattern, handlerCfg.Features.ImmutableLabelPattern, handlerCfg.Features.RuntimeTypeLabelKey, handlerCfg.Features.KymaRuntimeTypeLabelValue)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantStorageSvc, webhookSvc, runtimeContextSvc, taConfig.Features.ProtectedLabelPattern, taConfig.Features.ImmutableLabelPattern)
 
-	kubeClient, err := tenantfetcher.NewKubernetesClient(ctx, handlerCfg.Kubernetes)
+	kubeClient, err := tf.NewKubernetesClient(ctx, taConfig.Kubernetes)
 	exitOnError(err, "Failed to initialize Kubernetes client")
 
-	eventAPIClient, err := tenantfetcher.NewClient(eventsCfg.OAuthConfig, eventsCfg.AuthMode, eventsCfg.APIConfig, handlerCfg.ClientTimeout)
-	if nil != err {
+	var metricsPusher *metrics.Pusher
+	if taConfig.MetricsPushEndpoint != "" {
+		metricsPusher = metrics.NewPusher(taConfig.MetricsPushEndpoint, taConfig.ClientTimeout)
+	}
+
+	universalEventAPIClient, additionalRegionalEventAPIClients, err := jobEventAPIClients(eventsCfg, taConfig, metricsPusher)
+	if err != nil {
 		return nil, err
 	}
 
-	var metricsPusher *metrics.Pusher
-	if eventsCfg.MetricsPushEndpoint != "" {
-		metricsPusher = metrics.NewPusher(eventsCfg.MetricsPushEndpoint, handlerCfg.ClientTimeout)
-	}
-
-	if metricsPusher != nil {
-		eventAPIClient.SetMetricsPusher(metricsPusher)
-	}
-
-	gqlClient := newInternalGraphQLClient(handlerCfg.DirectorGraphQLEndpoint, handlerCfg.ClientTimeout, handlerCfg.HTTPClientSkipSslValidation)
+	gqlClient := newInternalGraphQLClient(taConfig.DirectorGraphQLEndpoint, taConfig.ClientTimeout, taConfig.HTTPClientSkipSslValidation)
 	gqlClient.Log = func(s string) {
 		log.D().Debug(s)
 	}
 	directorClient := graphqlclient.NewDirector(gqlClient)
 
-	if handlerCfg.ShouldSyncSubaccounts {
-		return tenantfetcher.NewSubaccountService(eventsCfg.QueryConfig, transact, kubeClient, eventsCfg.TenantFieldMapping, eventsCfg.MovedSubaccountFieldMapping, handlerCfg.TenantProvider, eventsCfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeSvc, labelRepo, handlerCfg.FullResyncInterval, directorClient, handlerCfg.TenantInsertChunkSize, tenantStorageConverter), nil
+	switch jobConfig.TenantType {
+	case tenant2.Subaccount:
+		return tf.NewSubaccountService(transact, kubeClient, universalEventAPIClient, additionalRegionalEventAPIClients, tenantStorageSvc, runtimeSvc, labelRepo, directorClient, tenantStorageConverter, *jobConfig), nil
+	case tenant2.Account:
+		//return tf.NewGlobalAccountService(eventsCfg.QueryConfig, transact, kubeClient, eventsCfg.TenantFieldMapping, handlerCfg.TenantProvider, eventsCfg.AccountsRegion, eventAPIClient, tenantStorageSvc, handlerCfg.FullResyncInterval, directorClient, handlerCfg.TenantInsertChunkSize, tenantStorageConverter), nil
+		return nil, nil
+	default:
+		return nil, nil
+
 	}
-	return tenantfetcher.NewGlobalAccountService(eventsCfg.QueryConfig, transact, kubeClient, eventsCfg.TenantFieldMapping, handlerCfg.TenantProvider, eventsCfg.AccountsRegion, eventAPIClient, tenantStorageSvc, handlerCfg.FullResyncInterval, directorClient, handlerCfg.TenantInsertChunkSize, tenantStorageConverter), nil
 }
 
+func jobEventAPIClients(eventsCfg tf.EventsConfig, taConfig tenantfetcher.HandlerConfig, metricsPusher *metrics.Pusher) (tf.EventAPIClient, map[string]tf.EventAPIClient, error) {
+	var universalEventAPIClient tf.EventAPIClient
+	additionalRegionalEventAPIClients := map[string]tf.EventAPIClient{}
+
+	for _, config := range eventsCfg.RegionalAPIConfigs {
+		eventAPIClient, err := tf.NewClient(config.OAuthConfig, config.AuthMode, config.APIConfig, taConfig.ClientTimeout)
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "F=failed to create a regional Event API client for region %s", region)
+		}
+		if metricsPusher != nil {
+			eventAPIClient.SetMetricsPusher(metricsPusher)
+		}
+
+		if !config.IsUniversalClient {
+			config.SupportedRegions
+			additionalRegionalEventAPIClients[region] = eventAPIClient
+			continue
+		}
+
+		if universalEventAPIClient != nil {
+			return nil, nil, errors.New("only one universal client is supported")
+		}
+		universalEventAPIClient = eventAPIClient
+	}
+
+	return universalEventAPIClient, additionalRegionalEventAPIClients, nil
+}
 func stopTenantFetcherJobTicker(ctx context.Context, tenantFetcherJobTicker *time.Ticker, jobName string) {
 	tenantFetcherJobTicker.Stop()
 	log.C(ctx).Infof("Ticker for tenant fetcher job %s is stopped", jobName)
@@ -300,7 +326,7 @@ func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, tr
 
 	tenantsOnDemandAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, tenantsOnDemandAPIRouter, cfg.SecurityConfig, cfg.SecurityConfig.FetchTenantOnDemandScope)
-	registerTenantsOnDemandHandler(ctx, tenantsOnDemandAPIRouter, cfg.EventsCfg, cfg.Handler, transact, cfg.TenantOnDemandRegions)
+	//registerTenantsOnDemandHandler(ctx, tenantsOnDemandAPIRouter, cfg.EventsCfg, cfg.Handler, transact)
 
 	healthCheckRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
 	logger.Infof("Registering readiness endpoint...")
@@ -384,8 +410,8 @@ func registerTenantsHandler(ctx context.Context, router *mux.Router, cfg tenantf
 	router.HandleFunc(cfg.DependenciesEndpoint, tenantHandler.Dependencies).Methods(http.MethodGet)
 }
 
-func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, eventsCfg tenantfetcher.EventsConfig, tenantHandlerCfg tenantfetcher.HandlerConfig, transact persistence.Transactioner, regionDetails []tenantfetcher.RegionDetails) {
-	onDemandSvc, err := createTenantFetcherOnDemandSvc(eventsCfg, tenantHandlerCfg, transact, regionDetailsToMap(regionDetails))
+func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, eventsCfg tf.EventsConfig, tenantHandlerCfg tenantfetcher.HandlerConfig, transact persistence.Transactioner) {
+	onDemandSvc, err := createTenantFetcherOnDemandSvc(eventsCfg, tenantHandlerCfg, transact)
 	exitOnError(err, "failed to create tenant fetcher on-demand service")
 
 	fetcher := tenantfetcher.NewTenantFetcher(*onDemandSvc)
@@ -395,37 +421,30 @@ func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, eve
 	router.HandleFunc(tenantHandlerCfg.TenantOnDemandHandlerEndpoint, tenantHandler.FetchTenantOnDemand).Methods(http.MethodPost)
 }
 
-func regionDetailsToMap(regionDetails []tenantfetcher.RegionDetails) map[string]tenantfetcher.RegionDetails {
-	regionDetailsMap := make(map[string]tenantfetcher.RegionDetails)
-	for _, region := range regionDetails {
-		regionDetailsMap[region.Name] = region
-	}
-	return regionDetailsMap
-}
-
-func createTenantFetcherOnDemandSvc(eventsCfg tenantfetcher.EventsConfig, handlerCfg tenantfetcher.HandlerConfig, transact persistence.Transactioner, regionDetails map[string]tenantfetcher.RegionDetails) (*tenantfetcher.SubaccountOnDemandService, error) {
-	eventAPIClient, err := tenantfetcher.NewClient(eventsCfg.OAuthConfig, eventsCfg.AuthMode, eventsCfg.APIConfig, handlerCfg.ClientTimeout)
-	if nil != err {
-		return nil, err
-	}
-
-	tenantStorageConv := tenant.NewConverter()
-	uidSvc := uid.NewService()
-
-	labelDefConverter := labeldef.NewConverter()
-	labelDefRepository := labeldef.NewRepository(labelDefConverter)
-
-	labelConverter := label.NewConverter()
-	labelRepository := label.NewRepository(labelConverter)
-	labelService := label.NewLabelService(labelRepository, labelDefRepository, uidSvc)
-
-	tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
-	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepository, labelService)
-
-	gqlClient := newInternalGraphQLClient(handlerCfg.DirectorGraphQLEndpoint, handlerCfg.ClientTimeout, handlerCfg.HTTPClientSkipSslValidation)
-	directorClient := graphqlclient.NewDirector(gqlClient)
-
-	return tenantfetcher.NewSubaccountOnDemandService(eventsCfg.QueryConfig, eventsCfg.TenantFieldMapping, eventAPIClient, transact, tenantStorageSvc, directorClient, handlerCfg.TenantProvider, tenantStorageConv, regionDetails), nil
+func createTenantFetcherOnDemandSvc(eventsCfg tf.EventsConfig, handlerCfg tenantfetcher.HandlerConfig, transact persistence.Transactioner) (*tf.SubaccountOnDemandService, error) {
+	//eventAPIClient, err := tf.NewClient(eventsCfg.OAuthConfig, eventsCfg.AuthMode, eventsCfg.APIConfig, handlerCfg.ClientTimeout)
+	//if nil != err {
+	//	return nil, err
+	//}
+	//
+	//tenantStorageConv := tenant.NewConverter()
+	//uidSvc := uid.NewService()
+	//
+	//labelDefConverter := labeldef.NewConverter()
+	//labelDefRepository := labeldef.NewRepository(labelDefConverter)
+	//
+	//labelConverter := label.NewConverter()
+	//labelRepository := label.NewRepository(labelConverter)
+	//labelService := label.NewLabelService(labelRepository, labelDefRepository, uidSvc)
+	//
+	//tenantStorageRepo := tenant.NewRepository(tenantStorageConv)
+	//tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepository, labelService)
+	//
+	//gqlClient := newInternalGraphQLClient(handlerCfg.DirectorGraphQLEndpoint, handlerCfg.ClientTimeout, handlerCfg.HTTPClientSkipSslValidation)
+	//directorClient := graphqlclient.NewDirector(gqlClient)
+	//
+	//return tf.NewSubaccountOnDemandService(eventsCfg.QueryConfig, eventsCfg.TenantFieldMapping, eventAPIClient, transact, tenantStorageSvc, directorClient, handlerCfg.TenantProvider, tenantStorageConv), nil
+	return nil, nil
 }
 
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {

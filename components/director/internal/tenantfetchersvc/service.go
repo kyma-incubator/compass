@@ -8,10 +8,9 @@ import (
 	"strings"
 	"time"
 
-	tnt "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-
 	"github.com/avast/retry-go"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	tnt "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -32,45 +31,45 @@ const (
 
 // TenantFieldMapping missing godoc
 type TenantFieldMapping struct {
-	TotalPagesField   string `envconfig:"APP_TENANT_TOTAL_PAGES_FIELD"`
-	TotalResultsField string `envconfig:"APP_TENANT_TOTAL_RESULTS_FIELD"`
-	EventsField       string `envconfig:"APP_TENANT_EVENTS_FIELD"`
+	TotalPagesField   string `envconfig:"TENANT_TOTAL_PAGES_FIELD"`
+	TotalResultsField string `envconfig:"TENANT_TOTAL_RESULTS_FIELD"`
+	EventsField       string `envconfig:"TENANT_EVENTS_FIELD"`
 
-	NameField              string `envconfig:"default=name,APP_MAPPING_FIELD_NAME"`
-	IDField                string `envconfig:"default=id,APP_MAPPING_FIELD_ID"`
-	GlobalAccountGUIDField string `envconfig:"optional,default=globalAccountGUID"`
-	SubaccountIDField      string `envconfig:"optional,default=subaccountId"`
-	SubaccountGUIDField    string `envconfig:"optional,default=subaccountGuid"`
-	CustomerIDField        string `envconfig:"default=customerId,APP_MAPPING_FIELD_CUSTOMER_ID"`
-	SubdomainField         string `envconfig:"default=subdomain,APP_MAPPING_FIELD_SUBDOMAIN"`
-	DetailsField           string `envconfig:"default=details,APP_MAPPING_FIELD_DETAILS"`
-	DiscriminatorField     string `envconfig:"optional,APP_MAPPING_FIELD_DISCRIMINATOR"`
-	DiscriminatorValue     string `envconfig:"optional,APP_MAPPING_VALUE_DISCRIMINATOR"`
+	NameField              string `envconfig:"MAPPING_FIELD_NAME"`
+	IDField                string `envconfig:"MAPPING_FIELD_ID"`
+	GlobalAccountGUIDField string `envconfig:"MAPPING_FIELD_GLOBAL_ACCOUNT_GUID" default:"globalAccountGUID"`
+	SubaccountIDField      string `envconfig:"MAPPING_FIELD_SUBACCOUNT_ID"`
+	SubaccountGUIDField    string `envconfig:"MAPPING_FIELD_SUBACCOUNT_GUID"`
+	CustomerIDField        string `envconfig:"MAPPING_FIELD_CUSTOMER_ID"`
+	SubdomainField         string `envconfig:"MAPPING_FIELD_SUBDOMAIN"`
+	DetailsField           string `envconfig:"MAPPING_FIELD_DETAILS"`
+	DiscriminatorField     string `envconfig:"MAPPING_FIELD_DISCRIMINATOR"`
+	DiscriminatorValue     string `envconfig:"MAPPING_VALUE_DISCRIMINATOR"`
 
-	RegionField     string `envconfig:"APP_MAPPING_FIELD_REGION"`
-	EntityIDField   string `envconfig:"default=entityId,APP_MAPPING_FIELD_ENTITY_ID"`
-	EntityTypeField string `envconfig:"default=entityType,APP_MAPPING_FIELD_ENTITY_TYPE"`
+	RegionField     string `envconfig:"MAPPING_FIELD_REGION"`
+	EntityIDField   string `envconfig:"MAPPING_FIELD_ENTITY_ID"`
+	EntityTypeField string `envconfig:"MAPPING_FIELD_ENTITY_TYPE"`
 
 	// This is not a value from the actual event but the key under which the GlobalAccountGUIDField will be stored to avoid collisions
-	GlobalAccountKey string `envconfig:"default=gaID,APP_GLOBAL_ACCOUNT_KEY"`
+	GlobalAccountKey string `envconfig:"default=gaID,GLOBAL_ACCOUNT_KEY"`
 }
 
 // MovedSubaccountsFieldMapping missing godoc
 type MovedSubaccountsFieldMapping struct {
-	LabelValue   string `envconfig:"APP_MAPPING_FIELD_ID"`
-	SourceTenant string `envconfig:"optional,APP_MOVED_SUBACCOUNT_SOURCE_TENANT_FIELD"`
-	TargetTenant string `envconfig:"optional,APP_MOVED_SUBACCOUNT_TARGET_TENANT_FIELD"`
+	LabelValue   string `envconfig:"MAPPING_FIELD_ID"`
+	SourceTenant string `envconfig:"MOVED_SUBACCOUNT_SOURCE_TENANT_FIELD"`
+	TargetTenant string `envconfig:"MOVED_SUBACCOUNT_TARGET_TENANT_FIELD"`
 }
 
 // QueryConfig contains the name of query parameters fields and default/start values
 type QueryConfig struct {
-	PageNumField    string `envconfig:"default=pageNum,APP_QUERY_PAGE_NUM_FIELD"`
-	PageSizeField   string `envconfig:"default=pageSize,APP_QUERY_PAGE_SIZE_FIELD"`
-	TimestampField  string `envconfig:"default=timestamp,APP_QUERY_TIMESTAMP_FIELD"`
-	RegionField     string `envconfig:"default=region,APP_QUERY_REGION_FIELD"`
-	PageStartValue  string `envconfig:"default=0,APP_QUERY_PAGE_START"`
-	PageSizeValue   string `envconfig:"default=150,APP_QUERY_PAGE_SIZE"`
-	SubaccountField string `envconfig:"default=entityId,APP_QUERY_ENTITY_FIELD"`
+	PageNumField    string `envconfig:"QUERY_PAGE_NUM_FIELD"`
+	PageSizeField   string `envconfig:"QUERY_PAGE_SIZE_FIELD"`
+	TimestampField  string `envconfig:"QUERY_TIMESTAMP_FIELD"`
+	RegionField     string `envconfig:"QUERY_REGION_FIELD"`
+	PageStartValue  string `envconfig:"QUERY_PAGE_START"`
+	PageSizeValue   string `envconfig:"QUERY_PAGE_SIZE"`
+	SubaccountField string `envconfig:"QUERY_ENTITY_FIELD"`
 }
 
 // PageConfig missing godoc
@@ -80,10 +79,9 @@ type PageConfig struct {
 	PageNumField      string
 }
 
-// RegionDetails contains region name and the prefix which should be appended to the name, when storing this region in the DB
-type RegionDetails struct {
-	Name   string `json:"name"`
-	Prefix string `json:"prefix"`
+type RegionConfig struct {
+	EventAPIRegionalConfig
+	RegionalClient EventAPIClient
 }
 
 // TenantStorageService missing godoc
@@ -147,43 +145,50 @@ type SubaccountOnDemandService struct {
 	tenantsRegions       map[string]RegionDetails
 }
 
+type TenantAggregationService struct {
+	config   JobConfig
+	transact persistence.Transactioner
+
+	kubeClient      KubeClient
+	eventAPIClients map[string]EventAPIClient
+	gqlClient       DirectorGraphQLClient
+
+	tenantConverter      TenantConverter
+	tenantStorageService TenantStorageService
+	toEventsPage         func([]byte) *eventsPage
+}
+
 // GlobalAccountService missing godoc
 type GlobalAccountService struct {
-	queryConfig           QueryConfig
-	transact              persistence.Transactioner
-	kubeClient            KubeClient
-	eventAPIClient        EventAPIClient
-	tenantStorageService  TenantStorageService
-	providerName          string
-	tenantsRegion         string
-	fieldMapping          TenantFieldMapping
-	retryAttempts         uint
-	fullResyncInterval    time.Duration
-	toEventsPage          func([]byte) *eventsPage
-	gqlClient             DirectorGraphQLClient
-	tenantInsertChunkSize int
-	tenantConverter       TenantConverter
+	config   JobConfig
+	transact persistence.Transactioner
+
+	kubeClient      KubeClient
+	universalClient EventAPIClient
+	regionalConfigs []RegionConfig
+	gqlClient       DirectorGraphQLClient
+
+	tenantConverter      TenantConverter
+	tenantStorageService TenantStorageService
+	toEventsPage         func([]byte) *eventsPage
 }
 
 // SubaccountService missing godoc
 type SubaccountService struct {
-	queryConfig                  QueryConfig
-	transact                     persistence.Transactioner
-	kubeClient                   KubeClient
-	eventAPIClient               EventAPIClient
-	tenantStorageService         TenantStorageService
-	runtimeStorageService        RuntimeService
-	providerName                 string
-	tenantsRegions               map[string]string
-	fieldMapping                 TenantFieldMapping
-	movedSubaccountsFieldMapping MovedSubaccountsFieldMapping
-	labelRepo                    LabelRepo
-	retryAttempts                uint
-	fullResyncInterval           time.Duration
-	toEventsPage                 func([]byte) *eventsPage
-	gqlClient                    DirectorGraphQLClient
-	tenantInsertChunkSize        int
-	tenantConverter              TenantConverter
+	config   JobConfig
+	transact persistence.Transactioner
+
+	kubeClient      KubeClient
+	universalClient EventAPIClient
+	regionalConfigs []RegionConfig
+	gqlClient       DirectorGraphQLClient
+
+	tenantConverter       TenantConverter
+	tenantStorageService  TenantStorageService
+	runtimeStorageService RuntimeService
+	labelRepo             LabelRepo
+
+	toEventsPage func([]byte) *eventsPage
 }
 
 // NewSubaccountOnDemandService missing godoc
@@ -219,27 +224,16 @@ func NewSubaccountOnDemandService(
 }
 
 // NewGlobalAccountService missing godoc
-func NewGlobalAccountService(queryConfig QueryConfig,
-	transact persistence.Transactioner,
-	kubeClient KubeClient,
-	fieldMapping TenantFieldMapping,
-	providerName string, regionName string, client EventAPIClient,
-	tenantStorageService TenantStorageService,
-	fullResyncInterval time.Duration,
-	gqlClient DirectorGraphQLClient,
-	tenantInsertChunkSize int,
-	tenantConverter TenantConverter) *GlobalAccountService {
+func NewGlobalAccountService(transact persistence.Transactioner, kubeClient KubeClient, fieldMapping TenantFieldMapping, providerName string, universalClient EventAPIClient, regionalConfigs []RegionConfig, tenantStorageService TenantStorageService, gqlClient DirectorGraphQLClient, tenantConverter TenantConverter, config JobConfig) *GlobalAccountService {
 	return &GlobalAccountService{
+		config:               config,
 		transact:             transact,
 		kubeClient:           kubeClient,
-		fieldMapping:         fieldMapping,
-		providerName:         providerName,
-		tenantsRegion:        regionName,
-		eventAPIClient:       client,
+		universalClient:      universalClient,
+		regionalConfigs:      regionalConfigs,
+		gqlClient:            gqlClient,
+		tenantConverter:      tenantConverter,
 		tenantStorageService: tenantStorageService,
-		queryConfig:          queryConfig,
-		retryAttempts:        RetryAttempts,
-		fullResyncInterval:   fullResyncInterval,
 		toEventsPage: func(bytes []byte) *eventsPage {
 			return &eventsPage{
 				fieldMapping: fieldMapping,
@@ -247,86 +241,60 @@ func NewGlobalAccountService(queryConfig QueryConfig,
 				providerName: providerName,
 			}
 		},
-		gqlClient:             gqlClient,
-		tenantInsertChunkSize: tenantInsertChunkSize,
-		tenantConverter:       tenantConverter,
 	}
 }
 
 // NewSubaccountService missing godoc
-func NewSubaccountService(queryConfig QueryConfig,
+func NewSubaccountService(
 	transact persistence.Transactioner,
 	kubeClient KubeClient,
-	fieldMapping TenantFieldMapping,
-	movRuntime MovedSubaccountsFieldMapping,
-	providerName string,
-	regionNames map[string]string,
-	client EventAPIClient,
+	universalClient EventAPIClient,
+	regionalConfigs []RegionConfig,
 	tenantStorageService TenantStorageService,
 	runtimeStorageService RuntimeService,
 	labelRepo LabelRepo,
-	fullResyncInterval time.Duration,
 	gqlClient DirectorGraphQLClient,
-	tenantInsertChunkSize int,
-	tenantConverter TenantConverter) *SubaccountService {
+	tenantConverter TenantConverter,
+	config JobConfig) *SubaccountService {
 	return &SubaccountService{
-		transact:                     transact,
-		kubeClient:                   kubeClient,
-		fieldMapping:                 fieldMapping,
-		providerName:                 providerName,
-		tenantsRegions:               regionNames,
-		eventAPIClient:               client,
-		tenantStorageService:         tenantStorageService,
-		runtimeStorageService:        runtimeStorageService,
-		queryConfig:                  queryConfig,
-		movedSubaccountsFieldMapping: movRuntime,
-		retryAttempts:                RetryAttempts,
-		labelRepo:                    labelRepo,
-		fullResyncInterval:           fullResyncInterval,
+		transact:              transact,
+		kubeClient:            kubeClient,
+		universalClient:       universalClient,
+		regionalConfigs:       regionalConfigs,
+		tenantStorageService:  tenantStorageService,
+		runtimeStorageService: runtimeStorageService,
+		labelRepo:             labelRepo,
 		toEventsPage: func(bytes []byte) *eventsPage {
 			return &eventsPage{
-				fieldMapping:                 fieldMapping,
-				movedSubaccountsFieldMapping: movRuntime,
+				fieldMapping:                 config.TenantFieldMapping,
+				movedSubaccountsFieldMapping: config.MovedSubaccountsFieldMapping,
 				payload:                      bytes,
-				providerName:                 providerName,
+				providerName:                 config.TenantProvider,
 			}
 		},
-		gqlClient:             gqlClient,
-		tenantInsertChunkSize: tenantInsertChunkSize,
-		tenantConverter:       tenantConverter,
+		gqlClient:       gqlClient,
+		tenantConverter: tenantConverter,
+		config:          config,
 	}
 }
 
 // SyncTenants missing godoc
 func (s SubaccountService) SyncTenants() error {
 	ctx := context.Background()
-	startTime := time.Now()
-
-	lastConsumedTenantTimestamp, lastResyncTimestamp, err := s.kubeClient.GetTenantFetcherConfigMapData(ctx)
+	startTime, lastConsumedTenantTimestamp, lastResyncTimestamp, err := resyncTimestamps(ctx, s.kubeClient, s.config.FullResyncInterval)
 	if err != nil {
 		return err
 	}
 
-	shouldFullResync, err := shouldFullResync(lastResyncTimestamp, s.fullResyncInterval)
-	if err != nil {
-		return err
-	}
-
-	newLastResyncTimestamp := lastResyncTimestamp
-	if shouldFullResync {
-		log.C(ctx).Infof("Last full resync was %s ago. Will perform a full resync.", s.fullResyncInterval)
-		lastConsumedTenantTimestamp = "1"
-		newLastResyncTimestamp = convertTimeToUnixMilliSecondString(startTime)
-	}
-
-	for regionName, regionPrefix := range s.tenantsRegions {
-		tenantsToCreate, err := s.getSubaccountsToCreateForRegion(lastConsumedTenantTimestamp, regionName)
+	for _, regionalConfig := range s.regionalConfigs {
+		region := regionalConfig.RegionName
+		tenantsToCreate, err := s.getSubaccountsToCreateForRegion(lastConsumedTenantTimestamp, regionalConfig)
 		if err != nil {
 			return err
 		}
 		log.C(ctx).Printf("Got subaccount to create for region: %s", regionName)
 
-		tenantsToDelete, err := s.getSubaccountsToDeleteForRegion(lastConsumedTenantTimestamp, regionName)
+		tenantsToDelete, err := s.getSubaccountsToDeleteForRegion(lastConsumedTenantTimestamp, regionalConfig)
 		if err != nil {
 			return err
 		}
@@ -342,7 +310,7 @@ func (s SubaccountService) SyncTenants() error {
 		tenantsToCreate = excludeTenants(tenantsToCreate, tenantsToDelete)
 
 		totalNewEvents := len(tenantsToCreate) + len(tenantsToDelete) + len(subaccountsToMove)
-		log.C(ctx).Printf("Amount of new events: %d", totalNewEvents)
+		log.C(ctx).Printf("Amount of new events for region %s: %d", region, totalNewEvents)
 		if totalNewEvents == 0 {
 			continue
 		}
@@ -365,8 +333,8 @@ func (s SubaccountService) SyncTenants() error {
 
 		// Order of event processing matters
 		if len(tenantsToCreate) > 0 {
-			fullRegionName := regionPrefix + regionName
-			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, fullRegionName, s.providerName, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
+			fullRegionName := regionalConfig.RegionPrefix + regionalConfig.RegionName
+			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, fullRegionName, s.config.TenantProvider, s.config.TenantInsertChunkSize, s.tenantConverter); err != nil {
 				return errors.Wrap(err, "while storing subaccounts")
 			}
 		}
@@ -376,38 +344,19 @@ func (s SubaccountService) SyncTenants() error {
 			}
 		}
 		if len(tenantsToDelete) > 0 {
-			if err := deleteTenants(ctx, s.gqlClient, currentTenants, tenantsToDelete, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
+			if err := deleteTenants(ctx, s.gqlClient, currentTenants, tenantsToDelete, s.config.TenantInsertChunkSize, s.tenantConverter); err != nil {
 				return errors.Wrap(err, "while deleting subaccounts")
 			}
 		}
 
-		log.C(ctx).Printf("Processed new events for region: %s", regionName)
-
 		if err = tx.Commit(); err != nil {
 			return err
 		}
+
+		log.C(ctx).Printf("Processed all new events for region: %s", region)
 	}
 
-	if err = s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixMilliSecondString(startTime), newLastResyncTimestamp); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func getTenantsIDs(allTenants ...[]model.BusinessTenantMappingInput) []string {
-	var currentTenantsIDs []string
-	for _, tenantsList := range allTenants {
-		for _, tenant := range tenantsList {
-			if len(tenant.Parent) > 0 {
-				currentTenantsIDs = append(currentTenantsIDs, tenant.Parent)
-			}
-			if len(tenant.ExternalTenant) > 0 {
-				currentTenantsIDs = append(currentTenantsIDs, tenant.ExternalTenant)
-			}
-		}
-	}
-	return currentTenantsIDs
+	return s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixMilliSecondString(*startTime), lastResyncTimestamp)
 }
 
 // SyncTenant fetches creation events for a subaccount and creates a subaccount tenant in case it doesn't exist
@@ -460,83 +409,106 @@ func (s *SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID
 // SyncTenants missing godoc
 func (s GlobalAccountService) SyncTenants() error {
 	ctx := context.Background()
-	startTime := time.Now()
-
-	lastConsumedTenantTimestamp, lastResyncTimestamp, err := s.kubeClient.GetTenantFetcherConfigMapData(ctx)
+	startTime, lastConsumedTenantTimestamp, lastResyncTimestamp, err := resyncTimestamps(ctx, s.kubeClient, s.config.FullResyncInterval)
 	if err != nil {
 		return err
 	}
 
-	shouldFullResync, err := shouldFullResync(lastResyncTimestamp, s.fullResyncInterval)
-	if err != nil {
-		return err
-	}
-
-	newLastResyncTimestamp := lastResyncTimestamp
-	if shouldFullResync {
-		log.C(ctx).Infof("Last full resync was %s ago. Will perform a full resync.", s.fullResyncInterval)
-		lastConsumedTenantTimestamp = "1"
-		newLastResyncTimestamp = convertTimeToUnixMilliSecondString(startTime)
-	}
-
-	tenantsToCreate, err := s.getAccountsToCreate(lastConsumedTenantTimestamp)
-	if err != nil {
-		return err
-	}
-	log.C(ctx).Printf("Got accounts to create")
-
-	tenantsToDelete, err := s.getAccountsToDelete(lastConsumedTenantTimestamp)
-	if err != nil {
-		return err
-	}
-	log.C(ctx).Printf("Got accounts to delete")
-
-	tenantsToCreate = dedupeTenants(tenantsToCreate)
-	tenantsToCreate = excludeTenants(tenantsToCreate, tenantsToDelete)
-
-	totalNewEvents := len(tenantsToCreate) + len(tenantsToDelete)
-	log.C(ctx).Printf("Amount of new events: %d", totalNewEvents)
-	if totalNewEvents == 0 {
-		return nil
-	}
-
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	currentTenants := make(map[string]string)
-	if len(tenantsToCreate) > 0 || len(tenantsToDelete) > 0 {
-		currentTenantsIDs := getTenantsIDs(tenantsToCreate, tenantsToDelete)
-		currentTenants, err = getCurrentTenants(ctx, s.tenantStorageService, currentTenantsIDs)
+	for _, regionalConfig := range s.regionalConfigs {
+		region := regionalConfig.RegionName
+		tenantsToCreate, err := s.getAccountsToCreateForRegion(lastConsumedTenantTimestamp, regionalConfig)
 		if err != nil {
 			return err
 		}
+		log.C(ctx).Printf("Got accounts to create for region: %s", region)
+
+		tenantsToDelete, err := s.getAccountsToDeleteForRegion(lastConsumedTenantTimestamp, regionalConfig)
+		if err != nil {
+			return err
+		}
+		log.C(ctx).Printf("Got accounts to delete for region: %s", region)
+
+		tenantsToCreate = dedupeTenants(tenantsToCreate)
+		tenantsToCreate = excludeTenants(tenantsToCreate, tenantsToDelete)
+
+		totalNewEvents := len(tenantsToCreate) + len(tenantsToDelete)
+		log.C(ctx).Printf("Amount of new events for region %s: %d", region, totalNewEvents)
+		if totalNewEvents == 0 {
+			continue
+		}
+
+		tx, err := s.transact.Begin()
+		if err != nil {
+			return err
+		}
+		defer s.transact.RollbackUnlessCommitted(ctx, tx)
+		ctx = persistence.SaveToContext(ctx, tx)
+
+		currentTenants := make(map[string]string)
+		if len(tenantsToCreate) > 0 || len(tenantsToDelete) > 0 {
+			currentTenantsIDs := getTenantsIDs(tenantsToCreate, tenantsToDelete)
+			currentTenants, err = getCurrentTenants(ctx, s.tenantStorageService, currentTenantsIDs)
+			if err != nil {
+				return err
+			}
+		}
+
+		if err = tx.Commit(); err != nil {
+			return err
+		}
+
+		// Order of event processing matters
+		if len(tenantsToCreate) > 0 {
+			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, region, s.config.TenantProvider, s.config.TenantInsertChunkSize, s.tenantConverter); err != nil {
+				return errors.Wrapf(err, "while storing accounts from region %s", region)
+			}
+		}
+		if len(tenantsToDelete) > 0 {
+			if err := deleteTenants(ctx, s.gqlClient, currentTenants, tenantsToDelete, s.config.TenantInsertChunkSize, s.tenantConverter); err != nil {
+				return errors.Wrapf(err, "moving deleting accounts from region %s", region)
+			}
+		}
+
+		log.C(ctx).Printf("Processed new events for region: %s", region)
 	}
 
-	if err = tx.Commit(); err != nil {
-		return err
+	return s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixMilliSecondString(*startTime), lastResyncTimestamp)
+}
+
+func resyncTimestamps(ctx context.Context, client KubeClient, fullResyncInterval time.Duration) (*time.Time, string, string, error) {
+	startTime := time.Now()
+
+	lastConsumedTenantTimestamp, lastResyncTimestamp, err := client.GetTenantFetcherConfigMapData(ctx)
+	if err != nil {
+		return nil, "", "", err
 	}
 
-	// Order of event processing matters
-	if len(tenantsToCreate) > 0 {
-		if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, s.tenantsRegion, s.providerName, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
-			return errors.Wrap(err, "while storing accounts")
+	shouldFullResync, err := shouldFullResync(lastResyncTimestamp, fullResyncInterval)
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	if shouldFullResync {
+		log.C(ctx).Infof("Last full resync was %s ago. Will perform a full resync.", fullResyncInterval)
+		lastConsumedTenantTimestamp = "1"
+		lastResyncTimestamp = convertTimeToUnixMilliSecondString(startTime)
+	}
+	return &startTime, lastConsumedTenantTimestamp, lastResyncTimestamp, nil
+}
+
+func getTenantsIDs(allTenants ...[]model.BusinessTenantMappingInput) []string {
+	var currentTenantsIDs []string
+	for _, tenantsList := range allTenants {
+		for _, tenant := range tenantsList {
+			if len(tenant.Parent) > 0 {
+				currentTenantsIDs = append(currentTenantsIDs, tenant.Parent)
+			}
+			if len(tenant.ExternalTenant) > 0 {
+				currentTenantsIDs = append(currentTenantsIDs, tenant.ExternalTenant)
+			}
 		}
 	}
-	if len(tenantsToDelete) > 0 {
-		if err := deleteTenants(ctx, s.gqlClient, currentTenants, tenantsToDelete, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
-			return errors.Wrap(err, "moving deleting accounts")
-		}
-	}
-
-	if err = s.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixMilliSecondString(startTime), newLastResyncTimestamp); err != nil {
-		return err
-	}
-
-	return nil
+	return currentTenantsIDs
 }
 
 func createTenants(ctx context.Context, gqlClient DirectorGraphQLClient, currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, region string, provider string, maxChunkSize int, converter TenantConverter) error {
@@ -616,7 +588,7 @@ func getTenantParentType(tenantType string) string {
 func (s SubaccountService) moveSubaccounts(ctx context.Context, movedSubaccountMappings []model.MovedSubaccountMappingInput) error {
 	for _, mapping := range movedSubaccountMappings {
 		if _, err := s.moveSubaccount(ctx, mapping); err != nil {
-			return errors.Wrap(err, "while moving subaccount")
+			return errors.Wrapf(err, "while moving subaccount with ID %s", mapping.SubaccountID)
 		}
 	}
 
@@ -676,66 +648,74 @@ func deleteTenants(ctx context.Context, gqlClient DirectorGraphQLClient, currTen
 	}, maxChunkSize)
 }
 
-func (s GlobalAccountService) getAccountsToCreate(fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
-	var tenantsToCreate []model.BusinessTenantMappingInput
-
-	configProvider := func() (QueryParams, PageConfig) {
-		return QueryParams{
-				s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
-				s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
-				s.queryConfig.TimestampField: fromTimestamp,
-			}, PageConfig{
-				TotalPagesField:   s.fieldMapping.TotalPagesField,
-				TotalResultsField: s.fieldMapping.TotalResultsField,
-				PageNumField:      s.queryConfig.PageNumField,
-			}
-	}
-
-	createdTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, CreatedAccountType, configProvider, s.toEventsPage)
-	if err != nil {
-		return nil, err
-	}
-	tenantsToCreate = append(tenantsToCreate, createdTenants...)
-
-	updatedTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, UpdatedAccountType, configProvider, s.toEventsPage)
-	if err != nil {
-		return nil, err
-	}
-
-	tenantsToCreate = append(tenantsToCreate, updatedTenants...)
-
-	return tenantsToCreate, nil
+func (s GlobalAccountService) getAccountsToCreateForRegion(fromTimestamp string, config RegionConfig) ([]model.BusinessTenantMappingInput, error) {
+	configProvider := eventsQueryConfigProvider(s.config, fromTimestamp)
+	return fetchCreatedTenantsWithRetries(config.RegionalClient, s.config.RetryAttempts, s.supportedEventTypes, configProvider, s.toEventsPage)
 }
 
-func (s SubaccountService) getSubaccountsToCreateForRegion(fromTimestamp string, region string) ([]model.BusinessTenantMappingInput, error) {
+func fetchCreatedTenantsWithRetries(eventAPIClient EventAPIClient, retryNumber uint, supportedEventsProvider func() supportedEvents, configProvider func() (QueryParams, PageConfig), toEventsPage func([]byte) *eventsPage) ([]model.BusinessTenantMappingInput, error) {
+	supportedEvents := supportedEventsProvider()
+
 	var fetchedTenants []model.BusinessTenantMappingInput
 
-	configProvider := func() (QueryParams, PageConfig) {
-		return QueryParams{
-				s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
-				s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
-				s.queryConfig.TimestampField: fromTimestamp,
-				s.queryConfig.RegionField:    region,
-			}, PageConfig{
-				TotalPagesField:   s.fieldMapping.TotalPagesField,
-				TotalResultsField: s.fieldMapping.TotalResultsField,
-				PageNumField:      s.queryConfig.PageNumField,
-			}
-	}
-	createdTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, CreatedSubaccountType, configProvider, s.toEventsPage)
+	createdTenants, err := fetchTenantsWithRetries(eventAPIClient, retryNumber, supportedEvents.createdTenantEvent, configProvider, toEventsPage)
 	if err != nil {
-		return nil, fmt.Errorf("while fetching created subaccounts: %v", err)
+		return nil, fmt.Errorf("while fetching created tenants: %v", err)
 	}
 	fetchedTenants = append(fetchedTenants, createdTenants...)
 
-	updatedTenants, err := fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, UpdatedSubaccountType, configProvider, s.toEventsPage)
+	updatedTenants, err := fetchTenantsWithRetries(eventAPIClient, retryNumber, supportedEvents.updatedTenantEvent, configProvider, toEventsPage)
 	if err != nil {
-		return nil, fmt.Errorf("while fetching updated subaccounts: %v", err)
+		return nil, fmt.Errorf("while fetching updated tenants: %v", err)
 	}
 
 	fetchedTenants = append(fetchedTenants, updatedTenants...)
+	return fetchedTenants, nil
+}
+
+func (s SubaccountService) getSubaccountsToCreateForRegion(fromTimestamp string, regionalConfig RegionConfig) ([]model.BusinessTenantMappingInput, error) {
+	var fetchedTenants []model.BusinessTenantMappingInput
+
+	if regionalConfig.UniversalClientEnabled {
+		var err error
+		configProvider := eventsQueryConfigProviderWithRegion(s.config, fromTimestamp, regionalConfig.RegionName)
+		fetchedTenants, err = fetchCreatedTenantsWithRetries(s.universalClient, s.config.RetryAttempts, s.supportedEventTypes, configProvider, s.toEventsPage)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	configProvider := eventsQueryConfigProvider(s.config, fromTimestamp)
+	createdRegionalTenants, err := fetchCreatedTenantsWithRetries(regionalConfig.RegionalClient, s.config.RetryAttempts, s.supportedEventTypes, configProvider, s.toEventsPage)
+	if err != nil {
+		return nil, fmt.Errorf("while fetching created subaccounts: %v", err)
+	}
+	createdRegionalTenants = excludeTenants(createdRegionalTenants, fetchedTenants)
+	fetchedTenants = append(fetchedTenants, createdRegionalTenants...)
 
 	return fetchedTenants, nil
+}
+
+func (s SubaccountService) supportedEventTypes() supportedEvents {
+	return supportedEvents{
+		createdTenantEvent: CreatedSubaccountType,
+		updatedTenantEvent: UpdatedSubaccountType,
+		deletedTenantEvent: DeletedSubaccountType,
+	}
+}
+
+func (s GlobalAccountService) supportedEventTypes() supportedEvents {
+	return supportedEvents{
+		createdTenantEvent: CreatedAccountType,
+		updatedTenantEvent: UpdatedAccountType,
+		deletedTenantEvent: DeletedAccountType,
+	}
+}
+
+type supportedEvents struct {
+	createdTenantEvent EventsType
+	updatedTenantEvent EventsType
+	deletedTenantEvent EventsType
 }
 
 func (s SubaccountOnDemandService) getSubaccountToCreate(ctx context.Context, subaccountID string, parentID string) (*model.BusinessTenantMappingInput, bool, error) {
@@ -773,51 +753,37 @@ func (s SubaccountOnDemandService) getSubaccountToCreate(ctx context.Context, su
 	return &fetchedTenants[0], true, nil
 }
 
-func (s GlobalAccountService) getAccountsToDelete(fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
-	configProvider := func() (QueryParams, PageConfig) {
-		return QueryParams{
-				s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
-				s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
-				s.queryConfig.TimestampField: fromTimestamp,
-			}, PageConfig{
-				TotalPagesField:   s.fieldMapping.TotalPagesField,
-				TotalResultsField: s.fieldMapping.TotalResultsField,
-				PageNumField:      s.queryConfig.PageNumField,
-			}
-	}
-	return fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, DeletedAccountType, configProvider, s.toEventsPage)
+func (s GlobalAccountService) getAccountsToDeleteForRegion(fromTimestamp string, config RegionConfig) ([]model.BusinessTenantMappingInput, error) {
+	configProvider := eventsQueryConfigProvider(s.config, fromTimestamp)
+	return fetchTenantsWithRetries(config.RegionalClient, s.config.RetryAttempts, DeletedAccountType, configProvider, s.toEventsPage)
 }
 
-func (s SubaccountService) getSubaccountsToDeleteForRegion(fromTimestamp string, region string) ([]model.BusinessTenantMappingInput, error) {
-	configProvider := func() (QueryParams, PageConfig) {
-		return QueryParams{
-				s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
-				s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
-				s.queryConfig.TimestampField: fromTimestamp,
-				s.queryConfig.RegionField:    region,
-			}, PageConfig{
-				TotalPagesField:   s.fieldMapping.TotalPagesField,
-				TotalResultsField: s.fieldMapping.TotalResultsField,
-				PageNumField:      s.queryConfig.PageNumField,
-			}
+func (s SubaccountService) getSubaccountsToDeleteForRegion(fromTimestamp string, config RegionConfig) ([]model.BusinessTenantMappingInput, error) {
+	var fetchedTenants []model.BusinessTenantMappingInput
+
+	if config.UniversalClientEnabled {
+		var err error
+		configProvider := eventsQueryConfigProviderWithRegion(s.config, fromTimestamp, config.RegionName)
+		fetchedTenants, err = fetchTenantsWithRetries(s.universalClient, s.config.RetryAttempts, DeletedSubaccountType, configProvider, s.toEventsPage)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return fetchTenantsWithRetries(s.eventAPIClient, s.retryAttempts, DeletedSubaccountType, configProvider, s.toEventsPage)
+
+	configProvider := eventsQueryConfigProvider(s.config, fromTimestamp)
+	fetchedRegionalTenants, err := fetchTenantsWithRetries(config.RegionalClient, s.config.RetryAttempts, DeletedSubaccountType, configProvider, s.toEventsPage)
+	if err != nil {
+		return nil, fmt.Errorf("while fetching created subaccounts: %v", err)
+	}
+	fetchedRegionalTenants = excludeTenants(fetchedRegionalTenants, fetchedTenants)
+	fetchedTenants = append(fetchedTenants, fetchedRegionalTenants...)
+
+	return fetchedTenants, nil
 }
 
 func (s SubaccountService) getSubaccountsToMove(fromTimestamp string, region string) ([]model.MovedSubaccountMappingInput, error) {
-	configProvider := func() (QueryParams, PageConfig) {
-		return QueryParams{
-				s.queryConfig.PageNumField:   s.queryConfig.PageStartValue,
-				s.queryConfig.PageSizeField:  s.queryConfig.PageSizeValue,
-				s.queryConfig.TimestampField: fromTimestamp,
-				s.queryConfig.RegionField:    region,
-			}, PageConfig{
-				TotalPagesField:   s.fieldMapping.TotalPagesField,
-				TotalResultsField: s.fieldMapping.TotalResultsField,
-				PageNumField:      s.queryConfig.PageNumField,
-			}
-	}
-	return fetchMovedSubaccountsWithRetries(s.eventAPIClient, s.retryAttempts, configProvider, s.toEventsPage)
+	configProvider := eventsQueryConfigProviderWithRegion(s.config, fromTimestamp, region)
+	return fetchMovedSubaccountsWithRetries(s.universalClient, s.config.RetryAttempts, configProvider, s.toEventsPage)
 }
 
 func fetchTenantsWithRetries(eventAPIClient EventAPIClient, retryNumber uint, eventsType EventsType, configProvider func() (QueryParams, PageConfig), toEventsPage func([]byte) *eventsPage) ([]model.BusinessTenantMappingInput, error) {
@@ -896,6 +862,29 @@ func fetchMovedSubaccounts(eventAPIClient EventAPIClient, configProvider func() 
 	return allMappings, nil
 }
 
+func eventsQueryConfigProvider(config JobConfig, fromTimestamp string) func() (QueryParams, PageConfig) {
+	return eventsQueryConfigProviderWithRegion(config, fromTimestamp, "")
+}
+
+func eventsQueryConfigProviderWithRegion(config JobConfig, fromTimestamp string, region string) func() (QueryParams, PageConfig) {
+	return func() (QueryParams, PageConfig) {
+		qp := QueryParams{
+			config.QueryConfig.PageNumField:   config.QueryConfig.PageStartValue,
+			config.QueryConfig.PageSizeField:  config.QueryConfig.PageSizeValue,
+			config.QueryConfig.TimestampField: fromTimestamp,
+		}
+		if len(region) > 0 {
+			qp[config.QueryConfig.RegionField] = region
+		}
+
+		pc := PageConfig{
+			TotalPagesField:   config.TenantFieldMapping.TotalPagesField,
+			TotalResultsField: config.TenantFieldMapping.TotalResultsField,
+			PageNumField:      config.QueryConfig.PageNumField,
+		}
+		return qp, pc
+	}
+}
 func walkThroughPages(eventAPIClient EventAPIClient, eventsType EventsType, configProvider func() (QueryParams, PageConfig), toEventsPage func([]byte) *eventsPage, applyFunc func(*eventsPage) error) error {
 	params, pageConfig := configProvider()
 	firstPage, err := eventAPIClient.FetchTenantEventsPage(eventsType, params)
@@ -1011,7 +1000,7 @@ func (s *SubaccountService) moveSubaccount(ctx context.Context, mapping model.Mo
 			Subdomain:      "", // it is not available when event is for moving a subaccount
 			Region:         "",
 			Type:           tenant.TypeToStr(tenant.Account),
-			Provider:       s.providerName,
+			Provider:       s.config.TenantProvider,
 		}
 		tenantsToCreateGQL := s.tenantConverter.MultipleInputToGraphQLInput([]model.BusinessTenantMappingInput{parentTenant})
 		if err := s.gqlClient.WriteTenants(ctx, tenantsToCreateGQL); err != nil {

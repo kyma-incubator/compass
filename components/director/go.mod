@@ -19,6 +19,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jmoiron/sqlx v1.3.4
+	github.com/kelseyhightower/envconfig v1.3.0
 	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20220420124254-ee69592dca21
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220225101454-1e11cf2f8a9b
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459-11b81bddcce9
@@ -87,7 +88,6 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/tests v0.0.0-20220601144746-743a35267d22 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
 	github.com/lestrrat-go/httpcc v1.0.0 // indirect

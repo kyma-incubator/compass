@@ -27,23 +27,23 @@ const (
 
 // OAuth2Config missing godoc
 type OAuth2Config struct {
-	ClientID           string `envconfig:"APP_CLIENT_ID"`
-	ClientSecret       string `envconfig:"optional,APP_CLIENT_SECRET"`
-	OAuthTokenEndpoint string `envconfig:"APP_OAUTH_TOKEN_ENDPOINT"`
-	TokenPath          string `envconfig:"optional,APP_OAUTH_TOKEN_PATH"`
-	SkipSSLValidation  bool   `envconfig:"APP_OAUTH_SKIP_SSL_VALIDATION,default=false"`
+	ClientID           string `envconfig:"CLIENT_ID" json:"client_id"`
+	ClientSecret       string `envconfig:"CLIENT_SECRET" json:"client_secret"`
+	OAuthTokenEndpoint string `envconfig:"OAUTH_TOKEN_ENDPOINT" json:"oauth_token_endpoint"`
+	TokenPath          string `envconfig:"OAUTH_TOKEN_PATH" json:"token_path"`
+	SkipSSLValidation  bool   `envconfig:"OAUTH_SKIP_SSL_VALIDATION,default=false" json:"skip_ssl_validation"`
 	X509Config         oauth.X509Config
 }
 
 // APIConfig missing godoc
 type APIConfig struct {
-	EndpointTenantCreated     string `envconfig:"optional,APP_ENDPOINT_TENANT_CREATED"`
-	EndpointTenantDeleted     string `envconfig:"optional,APP_ENDPOINT_TENANT_DELETED"`
-	EndpointTenantUpdated     string `envconfig:"optional,APP_ENDPOINT_TENANT_UPDATED"`
-	EndpointSubaccountCreated string `envconfig:"optional,APP_ENDPOINT_SUBACCOUNT_CREATED"`
-	EndpointSubaccountDeleted string `envconfig:"optional,APP_ENDPOINT_SUBACCOUNT_DELETED"`
-	EndpointSubaccountUpdated string `envconfig:"optional,APP_ENDPOINT_SUBACCOUNT_UPDATED"`
-	EndpointSubaccountMoved   string `envconfig:"optional,APP_ENDPOINT_SUBACCOUNT_MOVED"`
+	EndpointTenantCreated     string `envconfig:"ENDPOINT_TENANT_CREATED"`
+	EndpointTenantDeleted     string `envconfig:"ENDPOINT_TENANT_DELETED"`
+	EndpointTenantUpdated     string `envconfig:"ENDPOINT_TENANT_UPDATED"`
+	EndpointSubaccountCreated string `envconfig:"ENDPOINT_SUBACCOUNT_CREATED"`
+	EndpointSubaccountDeleted string `envconfig:"ENDPOINT_SUBACCOUNT_DELETED"`
+	EndpointSubaccountUpdated string `envconfig:"ENDPOINT_SUBACCOUNT_UPDATED"`
+	EndpointSubaccountMoved   string `envconfig:"ENDPOINT_SUBACCOUNT_MOVED"`
 }
 
 func (c APIConfig) isUnassignedOptionalProperty(eventsType EventsType) bool {

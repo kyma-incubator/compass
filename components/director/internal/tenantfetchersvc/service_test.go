@@ -1141,8 +1141,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				TotalPagesField:    "pages",
 				TotalResultsField:  "total",
 				EntityTypeField:    "type",
-			}, provider, region, apiClient, tenantStorageSvc, time.Hour, gqlClient, tenantInsertChunkSize,
-				tenantConverter)
+			}, provider, apiClient, tenantStorageSvc, gqlClient, tenantConverter)
 			svc.SetRetryAttempts(1)
 
 			// WHEN
@@ -1199,7 +1198,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TotalPagesField:    "pages",
 			TotalResultsField:  "total",
 			EntityTypeField:    "type",
-		}, provider, region, apiClient, tenantStorageSvc, time.Hour, gqlClient, tenantInsertChunkSize, tenantConverter)
+		}, provider, apiClient, tenantStorageSvc, gqlClient, tenantConverter)
 
 		// WHEN
 		err := svc.SyncTenants()
