@@ -73,6 +73,10 @@ spec:
                   value: "{{ .Values.global.ordAggregator.dbPool.maxIdleConnections }}"
                 - name: APP_SKIP_SSL_VALIDATION
                   value: "{{ .Values.global.ordAggregator.http.client.skipSSLValidation }}"
+                - name: APP_HTTP_RETRY_ATTEMPTS
+                  value: "{{ .Values.global.ordAggregator.http.retry.attempts }}"
+                - name: APP_HTTP_RETRY_DELAY
+                  value: "{{ .Values.global.ordAggregator.http.retry.delay }}"
                 - name: APP_LOG_FORMAT
                   value: {{ .Values.global.log.format | quote }}
                 {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}

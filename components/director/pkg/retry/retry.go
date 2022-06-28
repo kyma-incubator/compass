@@ -10,8 +10,8 @@ import (
 type ExecutableHTTPFunc func() (*http.Response, error)
 
 type Config struct {
-	Attempts uint          `envconfig:"APP_HTTP_RETRY_ATTEMPTS,default=3"`
-	Delay    time.Duration `envconfig:"APP_HTTP_RETRY_DELAY,default=100ms"`
+	Attempts uint          `envconfig:"APP_HTTP_RETRY_ATTEMPTS"`
+	Delay    time.Duration `envconfig:"APP_HTTP_RETRY_DELAY"`
 }
 
 // HTTPExecutor is capable of executing HTTP requests with a leveraged retry mechanism for more resilience

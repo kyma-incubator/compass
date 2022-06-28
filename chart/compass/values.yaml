@@ -110,7 +110,7 @@ global:
       version: "PR-2383"
     director:
       dir:
-      version: "PR-2403"
+      version: "PR-2453"
     hydrator:
       dir:
       version: "PR-2408"
@@ -603,6 +603,9 @@ global:
     http:
       client:
         skipSSLValidation: false
+      retry:
+        attempts: 3
+        delay: 100ms
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
