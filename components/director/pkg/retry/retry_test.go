@@ -15,13 +15,13 @@ var defaultConfig = Config{
 }
 
 var mockedErr = errors.New("error")
+var mockedResp = &http.Response{StatusCode: http.StatusOK}
 
 func TestExecuteSuccessfulWhenNoErrors(t *testing.T) {
 	t.Run("should finish successfully when there are no errors when executing the http request", func(t *testing.T) {
 		retryExecutor := NewHTTPExecutor(&defaultConfig)
 
 		invocations := 0
-		mockedResp := &http.Response{}
 		resp, err := retryExecutor.Execute(func() (*http.Response, error) {
 			defer func() {
 				invocations++
@@ -41,7 +41,6 @@ func TestExecuteFailsInitiallyButSucceedsOnLastTryWithNoErrors(t *testing.T) {
 		retryExecutor := NewHTTPExecutor(&defaultConfig)
 
 		invocations := 0
-		mockedResp := &http.Response{}
 		resp, err := retryExecutor.Execute(func() (*http.Response, error) {
 			defer func() {
 				invocations++
@@ -60,7 +59,7 @@ func TestExecuteFailsInitiallyButSucceedsOnLastTryWithNoErrors(t *testing.T) {
 	})
 }
 
-func TestExecuteFailsWhenAllRetryAttemptsFinishWithFailure(t *testing.T) {
+func TestExecuteFailsWhenAllRetryAttemptsFinishWithFailureDueToError(t *testing.T) {
 	t.Run("should finish with failure when all retry attempts fail", func(t *testing.T) {
 		retryExecutor := NewHTTPExecutor(&defaultConfig)
 
@@ -73,6 +72,25 @@ func TestExecuteFailsWhenAllRetryAttemptsFinishWithFailure(t *testing.T) {
 		})
 
 		require.Nil(t, resp)
+		require.Error(t, err)
+		require.Equal(t, int(defaultConfig.Attempts), invocations)
+	})
+}
+
+func TestExecuteFailsWhenAllRetryAttemptsFinishWithFailureDueToUnexpectedStatusCode(t *testing.T) {
+	t.Run("should finish with failure when all retry attempts fail", func(t *testing.T) {
+		retryExecutor := NewHTTPExecutor(&defaultConfig)
+
+		invocations := 0
+		mockedErrResp := http.Response{StatusCode: http.StatusInternalServerError}
+		resp, err := retryExecutor.Execute(func() (*http.Response, error) {
+			defer func() {
+				invocations++
+			}()
+			return &mockedErrResp, nil
+		})
+
+		require.Equal(t, &mockedErrResp, resp)
 		require.Error(t, err)
 		require.Equal(t, int(defaultConfig.Attempts), invocations)
 	})
