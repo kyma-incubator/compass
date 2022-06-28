@@ -261,9 +261,7 @@ func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, 
 
 // SubscribeTenantToApplication fetches model.ApplicationTemplate by region and provider and registers an Application from that template
 func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, subscribedSubaccountID, region, subscribedAppName string) (bool, error) {
-	filters := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
-	}
+	filters := s.buildLabelFilters(providerID, region)
 	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
@@ -303,9 +301,7 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 // UnsubscribeTenantFromApplication fetches model.ApplicationTemplate by region and provider, lists all applications for
 // the subscribedSubaccountID tenant and deletes them synchronously
 func (s *service) UnsubscribeTenantFromApplication(ctx context.Context, providerID, subscribedSubaccountID, region string) (bool, error) {
-	filters := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
-	}
+	filters := s.buildLabelFilters(providerID, region)
 	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
