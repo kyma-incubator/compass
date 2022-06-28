@@ -195,7 +195,7 @@ spec:
             - name: APP_GLOBAL_ACCOUNT_KEY
               value: {{ default "gaID" .Values.global.tenantFetcher.fieldMapping.globalAccountID }}
             - name: APP_REGION_DETAILS
-              value: {{ .Values.global.tenantFetcher.regionDetails }}
+              value: {{ .Values.global.tenantFetcher.regionDetails | quote }}
             {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
             - name: APP_METRICS_PUSH_ENDPOINT
               value: {{ $.Values.global.metrics.pushEndpoint }}
