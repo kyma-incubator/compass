@@ -107,8 +107,8 @@ type SelfRegisterManager interface {
 // SubscriptionService is responsible for service layer operations for subscribing a tenant to a runtime
 //go:generate mockery --name=SubscriptionService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SubscriptionService interface {
-	SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error)
-	UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error)
+	SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName string) (bool, error)
+	UnsubscribeTenantFromRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region string) (bool, error)
 }
 
 // TenantFetcher calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
@@ -811,49 +811,6 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Runti
 	}
 
 	return eventing.RuntimeEventingConfigurationToGraphQL(eventingCfg), nil
-}
-
-// SubscribeTenant subscribes tenant to runtime labeled with `providerID` and `region`
-func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, region string) (bool, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return false, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-	success, err := r.subscriptionSvc.SubscribeTenantToRuntime(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
-	if err != nil {
-		return false, err
-	}
-
-	if err = tx.Commit(); err != nil {
-		return false, err
-	}
-
-	return success, nil
-}
-
-// UnsubscribeTenant unsubscribes tenant to runtime labeled with `providerID` and `region`
-func (r *Resolver) UnsubscribeTenant(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, region string) (bool, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return false, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	success, err := r.subscriptionSvc.UnsubscribeTenantFromRuntime(ctx, providerID, subaccountTenantID, providerSubaccountID, region)
-	if err != nil {
-		return false, err
-	}
-
-	if err = tx.Commit(); err != nil {
-		return false, err
-	}
-
-	return success, nil
 }
 
 // deleteAssociatedScenarioAssignments ensures that scenario assignments which are responsible for creation of certain runtime labels are deleted,

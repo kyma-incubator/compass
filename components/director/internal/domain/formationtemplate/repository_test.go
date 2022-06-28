@@ -44,6 +44,36 @@ func TestRepository_Get(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestRepository_GetByName(t *testing.T) {
+	suite := testdb.RepoGetTestSuite{
+		Name:       "Get Formation Template By name",
+		MethodName: "GetByName",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, name, application_types, runtime_type, runtime_type_display_name, runtime_artifact_kind FROM public.formation_templates WHERE name = $1`),
+				Args:     []driver.Value{formationTemplateName},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(formationTemplateEntity.ID, formationTemplateEntity.Name, formationTemplateEntity.ApplicationTypes, formationTemplateEntity.RuntimeType, formationTemplateEntity.RuntimeTypeDisplayName, formationTemplateEntity.RuntimeArtifactKind)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       formationtemplate.NewRepository,
+		ExpectedModelEntity:       &formationTemplateModel,
+		ExpectedDBEntity:          &formationTemplateEntity,
+		MethodArgs:                []interface{}{formationTemplateName},
+		DisableConverterErrorTest: false,
+	}
+
+	suite.Run(t)
+}
+
 func TestRepository_Create(t *testing.T) {
 	suite := testdb.RepoCreateTestSuite{
 		Name:       "Create Formation Template",

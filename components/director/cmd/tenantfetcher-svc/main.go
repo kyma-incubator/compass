@@ -21,32 +21,42 @@ import (
 	"crypto/tls"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
-	graphqlclient "github.com/kyma-incubator/compass/components/director/pkg/graphql_client"
-	gcli "github.com/machinebox/graphql"
-
-	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
-
+	"github.com/gorilla/mux"
 	auth "github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	authentication "github.com/kyma-incubator/compass/components/director/internal/domain/auth"
+	bundleutil "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
+	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"github.com/kyma-incubator/compass/components/director/pkg/executor"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
-
-	tf "github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
+	"github.com/kyma-incubator/compass/components/director/internal/metrics"
 	tenantfetcher "github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
-
-	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/director/pkg/executor"
+	graphqlclient "github.com/kyma-incubator/compass/components/director/pkg/graphql_client"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
+	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 )
@@ -95,10 +105,35 @@ func main() {
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Handler.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 
+	envVars := tenantfetcher.ReadFromEnvironment(os.Environ())
+	jobNames := tenantfetcher.GetJobNames(envVars)
+	log.C(ctx).Infof("Tenant fetcher jobs are: %s", strings.Join(jobNames, ","))
+
+	dbCloseFunctions := make([]func() error, 0)
+	dbCloseFunctions = append(dbCloseFunctions, closeFunc)
 	defer func() {
-		err := closeFunc()
-		exitOnError(err, "Error while closing the connection to the database")
+		for _, fn := range dbCloseFunctions {
+			err := fn()
+			exitOnError(err, "Error while closing the connection to the database")
+		}
 	}()
+
+	stopJobChannels := make([]chan bool, 0, len(jobNames))
+	go func() {
+		for _, job := range jobNames {
+			stopJob := make(chan bool, 1)
+			stopJobChannels = append(stopJobChannels, stopJob)
+
+			jobConfig := readJobConfig(ctx, job, envVars)
+			metricsReporter := createMetricsReporter(ctx, jobConfig)
+			closeFn := runTenantFetcherJob(ctx, jobConfig, metricsReporter, stopJob)
+			dbCloseFunctions = append(dbCloseFunctions, closeFn)
+		}
+	}()
+
+	for _, stopJob := range stopJobChannels {
+		<-stopJob
+	}
 
 	httpClient := &http.Client{
 		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
@@ -117,6 +152,140 @@ func main() {
 	}()
 
 	runMainSrv()
+}
+
+func readJobConfig(ctx context.Context, jobName string, environmentVars map[string]string) tenantfetcher.JobConfig {
+	return tenantfetcher.NewTenantFetcherJobEnvironment(ctx, jobName, environmentVars).ReadJobConfig()
+}
+
+func runTenantFetcherJob(ctx context.Context, jobConfig tenantfetcher.JobConfig, metricsReporter metrics.MetricsReporter, stopJob chan bool) func() error {
+	jobInterval := jobConfig.GetHandlerCgf().TenantFetcherJobIntervalMins
+	ticker := time.NewTicker(jobInterval)
+	jobName := jobConfig.JobName
+
+	transact, closeFunc, err := persistence.Configure(ctx, jobConfig.GetHandlerCgf().Database)
+	exitOnError(err, "Error while establishing the connection to the database")
+
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				log.C(ctx).Infof("Scheduled tenant fetcher job %s will be executed, job interval is %s", jobName, jobInterval)
+				syncTenants(ctx, jobConfig, metricsReporter, transact)
+			case <-ctx.Done():
+				log.C(ctx).Errorf("Context is canceled and scheduled tenant fetcher job %s will be stopped", jobName)
+				stopTenantFetcherJobTicker(ctx, ticker, jobName)
+				stopJob <- true
+				return
+			}
+		}
+	}()
+
+	return closeFunc
+}
+
+func syncTenants(ctx context.Context, jobConfig tenantfetcher.JobConfig, metricsReporter metrics.MetricsReporter, transact persistence.Transactioner) {
+	tenantsFetcherSvc, err := createTenantsFetcherSvc(ctx, jobConfig, transact)
+	exitOnError(err, "failed to create tenants fetcher service")
+
+	err = tenantsFetcherSvc.SyncTenants()
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Error while running tenant fetcher job %s: %v", jobConfig.JobName, err)
+		metricsReporter.ReportFailedSync(err, ctx)
+	}
+}
+
+func createMetricsReporter(ctx context.Context, jobConfig tenantfetcher.JobConfig) metrics.MetricsReporter {
+	pushEndpoint := jobConfig.GetEventsCgf().MetricsPushEndpoint
+	if pushEndpoint == "" {
+		log.C(ctx).Warnf("No metrics endpoint provided for tenant fetcher job %q, metric reporting will be skipped...", jobConfig.JobName)
+		return metrics.MetricsReporter{}
+	}
+
+	metricsPusher := metrics.NewPusherPerJob(jobConfig.JobName, pushEndpoint, jobConfig.GetHandlerCgf().ClientTimeout)
+	return metrics.NewMetricsReporter(metricsPusher)
+}
+
+func createTenantsFetcherSvc(ctx context.Context, jobConfig tenantfetcher.JobConfig, transact persistence.Transactioner) (tenantfetcher.TenantSyncService, error) {
+	eventsCfg := jobConfig.GetEventsCgf()
+	handlerCfg := jobConfig.GetHandlerCgf()
+
+	uidSvc := uid.NewService()
+
+	labelDefConverter := labeldef.NewConverter()
+	tenantStorageConverter := tenant.NewConverter()
+	labelConverter := label.NewConverter()
+	authConverter := authentication.NewConverter()
+	webhookConverter := webhook.NewConverter(authConverter)
+	frConverter := fetchrequest.NewConverter(authConverter)
+	versionConverter := version.NewConverter()
+	specConverter := spec.NewConverter(frConverter)
+	docConverter := document.NewConverter(frConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	appConverter := application.NewConverter(webhookConverter, bundleConverter)
+	runtimeConverter := runtime.NewConverter(webhookConverter)
+	scenarioAssignConverter := scenarioassignment.NewConverter()
+	runtimeContextConverter := runtimectx.NewConverter()
+	tenantConverter := tenant.NewConverter()
+	formationConv := formation.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter()
+
+	webhookRepo := webhook.NewRepository(webhookConverter)
+	labelDefRepo := labeldef.NewRepository(labelDefConverter)
+	labelRepo := label.NewRepository(labelConverter)
+	tenantStorageRepo := tenant.NewRepository(tenantStorageConverter)
+	applicationRepo := application.NewRepository(appConverter)
+	runtimeRepo := runtime.NewRepository(runtimeConverter)
+	scenarioAssignmentRepo := scenarioassignment.NewRepository(scenarioAssignConverter)
+	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConverter)
+	tenantRepo := tenant.NewRepository(tenantConverter)
+	formationRepo := formation.NewRepository(formationConv)
+	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
+
+	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
+	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepo, labelSvc)
+	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc)
+	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantStorageRepo, uidSvc, handlerCfg.Features.DefaultScenarioEnabled)
+	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
+	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo, runtimeContextRepo)
+	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
+	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantStorageSvc, webhookSvc, runtimeContextSvc, handlerCfg.Features.ProtectedLabelPattern, handlerCfg.Features.ImmutableLabelPattern, handlerCfg.Features.RuntimeTypeLabelKey, handlerCfg.Features.KymaRuntimeTypeLabelValue)
+
+	kubeClient, err := tenantfetcher.NewKubernetesClient(ctx, handlerCfg.Kubernetes)
+	exitOnError(err, "Failed to initialize Kubernetes client")
+
+	eventAPIClient, err := tenantfetcher.NewClient(eventsCfg.OAuthConfig, eventsCfg.AuthMode, eventsCfg.APIConfig, handlerCfg.ClientTimeout)
+	if nil != err {
+		return nil, err
+	}
+
+	var metricsPusher *metrics.Pusher
+	if eventsCfg.MetricsPushEndpoint != "" {
+		metricsPusher = metrics.NewPusher(eventsCfg.MetricsPushEndpoint, handlerCfg.ClientTimeout)
+	}
+
+	if metricsPusher != nil {
+		eventAPIClient.SetMetricsPusher(metricsPusher)
+	}
+
+	gqlClient := newInternalGraphQLClient(handlerCfg.DirectorGraphQLEndpoint, handlerCfg.ClientTimeout, handlerCfg.HTTPClientSkipSslValidation)
+	gqlClient.Log = func(s string) {
+		log.D().Debug(s)
+	}
+	directorClient := graphqlclient.NewDirector(gqlClient)
+
+	if handlerCfg.ShouldSyncSubaccounts {
+		return tenantfetcher.NewSubaccountService(eventsCfg.QueryConfig, transact, kubeClient, eventsCfg.TenantFieldMapping, eventsCfg.MovedSubaccountFieldMapping, handlerCfg.TenantProvider, eventsCfg.SubaccountRegions, eventAPIClient, tenantStorageSvc, runtimeSvc, labelRepo, handlerCfg.FullResyncInterval, directorClient, handlerCfg.TenantInsertChunkSize, tenantStorageConverter), nil
+	}
+	return tenantfetcher.NewGlobalAccountService(eventsCfg.QueryConfig, transact, kubeClient, eventsCfg.TenantFieldMapping, handlerCfg.TenantProvider, eventsCfg.AccountsRegion, eventAPIClient, tenantStorageSvc, handlerCfg.FullResyncInterval, directorClient, handlerCfg.TenantInsertChunkSize, tenantStorageConverter), nil
+}
+
+func stopTenantFetcherJobTicker(ctx context.Context, tenantFetcherJobTicker *time.Ticker, jobName string) {
+	tenantFetcherJobTicker.Stop()
+	log.C(ctx).Infof("Ticker for tenant fetcher job %s is stopped", jobName)
 }
 
 func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, transact persistence.Transactioner) http.Handler {
@@ -225,8 +394,8 @@ func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, eve
 	router.HandleFunc(tenantHandlerCfg.TenantOnDemandHandlerEndpoint, tenantHandler.FetchTenantOnDemand).Methods(http.MethodPost)
 }
 
-func createTenantFetcherOnDemandSvc(eventsCfg tenantfetcher.EventsConfig, handlerCfg tenantfetcher.HandlerConfig, transact persistence.Transactioner) (*tf.SubaccountOnDemandService, error) {
-	eventAPIClient, err := tf.NewClient(eventsCfg.OAuthConfig, eventsCfg.AuthMode, eventsCfg.APIConfig, handlerCfg.ClientTimeout)
+func createTenantFetcherOnDemandSvc(eventsCfg tenantfetcher.EventsConfig, handlerCfg tenantfetcher.HandlerConfig, transact persistence.Transactioner) (*tenantfetcher.SubaccountOnDemandService, error) {
+	eventAPIClient, err := tenantfetcher.NewClient(eventsCfg.OAuthConfig, eventsCfg.AuthMode, eventsCfg.APIConfig, handlerCfg.ClientTimeout)
 	if nil != err {
 		return nil, err
 	}
@@ -247,7 +416,7 @@ func createTenantFetcherOnDemandSvc(eventsCfg tenantfetcher.EventsConfig, handle
 	gqlClient := newInternalGraphQLClient(handlerCfg.DirectorGraphQLEndpoint, handlerCfg.ClientTimeout, handlerCfg.HTTPClientSkipSslValidation)
 	directorClient := graphqlclient.NewDirector(gqlClient)
 
-	return tf.NewSubaccountOnDemandService(eventsCfg.QueryConfig, eventsCfg.TenantFieldMapping, eventAPIClient, transact, tenantStorageSvc, directorClient, handlerCfg.TenantProvider, tenantStorageConv), nil
+	return tenantfetcher.NewSubaccountOnDemandService(eventsCfg.QueryConfig, eventsCfg.TenantFieldMapping, eventAPIClient, transact, tenantStorageSvc, directorClient, handlerCfg.TenantProvider, tenantStorageConv), nil
 }
 
 func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {

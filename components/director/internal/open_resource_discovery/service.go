@@ -24,13 +24,13 @@ const applicationTypeLabel = "applicationType"
 
 // ServiceConfig contains configuration for the ORD aggregator service
 type ServiceConfig struct {
-	MaxParallelDownloads int
+	maxParallelApplicationProcessors int
 }
 
 // NewServiceConfig creates new ServiceConfig from the supplied parameters
-func NewServiceConfig(maxParallelDownloads int) ServiceConfig {
+func NewServiceConfig(maxParallelApplicationProcessors int) ServiceConfig {
 	return ServiceConfig{
-		MaxParallelDownloads: maxParallelDownloads,
+		maxParallelApplicationProcessors: maxParallelApplicationProcessors,
 	}
 }
 
@@ -109,15 +109,15 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 	appErrors := int32(0)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(s.config.MaxParallelDownloads)
+	wg.Add(s.config.maxParallelApplicationProcessors)
 
 	appTemplates, err := s.getAppTemplates(ctx, pageSize, pageCursor)
 	if err != nil {
 		return err
 	}
 
-	log.C(ctx).Infof("Starting %d workers...", s.config.MaxParallelDownloads)
-	for i := 0; i < s.config.MaxParallelDownloads; i++ {
+	log.C(ctx).Infof("Starting %d workers...", s.config.maxParallelApplicationProcessors)
+	for i := 0; i < s.config.maxParallelApplicationProcessors; i++ {
 		go func() {
 			defer wg.Done()
 

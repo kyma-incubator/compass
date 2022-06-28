@@ -12,7 +12,7 @@ For simplicity reasons, use the available Order Service as the sample external A
 - [`order-service`](./assets/order-service.yaml) file that contains the service definition, deployment, and its API
 - [API specification](./assets/order-service-api-spec.yaml) of `order-service`
 - [Function](./assets/function.yaml) that calls `order-service` for orders
-- [Compass cluster with all Kyma components installed](./04-01-installation.md#single-cluster-with-compass-and-runtime-agent). This tutorial won't work on local Minikube installation.
+- [Compass cluster with all Kyma components installed](./04-01-installation.md#single-cluster-with-compass-and-runtime-agent). This tutorial won't work on local k3d installation.
 
 >**NOTE:** Read [this](./04-01-installation.md) document to learn how to install Kyma with the Compass module.
 

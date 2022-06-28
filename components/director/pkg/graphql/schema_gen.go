@@ -52,11 +52,12 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
-	Async       func(ctx context.Context, obj interface{}, next graphql.Resolver, operationType OperationType, webhookType *WebhookType, idField *string) (res interface{}, err error)
-	HasScenario func(ctx context.Context, obj interface{}, next graphql.Resolver, applicationProvider string, idField string) (res interface{}, err error)
-	HasScopes   func(ctx context.Context, obj interface{}, next graphql.Resolver, path string) (res interface{}, err error)
-	Sanitize    func(ctx context.Context, obj interface{}, next graphql.Resolver, path string) (res interface{}, err error)
-	Validate    func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
+	AppMetadataValidation func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
+	Async                 func(ctx context.Context, obj interface{}, next graphql.Resolver, operationType OperationType, webhookType *WebhookType, idField *string) (res interface{}, err error)
+	HasScenario           func(ctx context.Context, obj interface{}, next graphql.Resolver, applicationProvider string, idField string) (res interface{}, err error)
+	HasScopes             func(ctx context.Context, obj interface{}, next graphql.Resolver, path string) (res interface{}, err error)
+	Sanitize              func(ctx context.Context, obj interface{}, next graphql.Resolver, path string) (res interface{}, err error)
+	Validate              func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -111,6 +112,7 @@ type ComplexityRoot struct {
 		ID                    func(childComplexity int) int
 		IntegrationSystemID   func(childComplexity int) int
 		Labels                func(childComplexity int, key *string) int
+		LocalTenantID         func(childComplexity int) int
 		Name                  func(childComplexity int) int
 		ProviderName          func(childComplexity int) int
 		Status                func(childComplexity int) int
@@ -413,14 +415,14 @@ type ComplexityRoot struct {
 		SetBundleInstanceAuth                         func(childComplexity int, authID string, in BundleInstanceAuthSetInput) int
 		SetDefaultEventingForApplication              func(childComplexity int, appID string, runtimeID string) int
 		SetRuntimeLabel                               func(childComplexity int, runtimeID string, key string, value interface{}) int
-		SubscribeTenant                               func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, region string, subscriptionAppName string) int
+		SubscribeTenant                               func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionAppName string) int
 		UnassignFormation                             func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
 		UnpairApplication                             func(childComplexity int, id string, mode *OperationMode) int
 		UnregisterApplication                         func(childComplexity int, id string, mode *OperationMode) int
 		UnregisterIntegrationSystem                   func(childComplexity int, id string) int
 		UnregisterRuntime                             func(childComplexity int, id string) int
 		UnregisterRuntimeContext                      func(childComplexity int, id string) int
-		UnsubscribeTenant                             func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, region string) int
+		UnsubscribeTenant                             func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string) int
 		UpdateAPIDefinition                           func(childComplexity int, id string, in APIDefinitionInput) int
 		UpdateApplication                             func(childComplexity int, id string, in ApplicationUpdateInput) int
 		UpdateApplicationTemplate                     func(childComplexity int, id string, in ApplicationTemplateUpdateInput) int
@@ -717,8 +719,8 @@ type MutationResolver interface {
 	WriteTenants(ctx context.Context, in []*BusinessTenantMappingInput) (int, error)
 	DeleteTenants(ctx context.Context, in []string) (int, error)
 	UpdateTenant(ctx context.Context, id string, in BusinessTenantMappingInput) (*Tenant, error)
-	SubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string, subscriptionAppName string) (bool, error)
-	UnsubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, region string) (bool, error)
+	SubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionAppName string) (bool, error)
+	UnsubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string) (bool, error)
 	CreateFormationTemplate(ctx context.Context, in FormationTemplateInput) (*FormationTemplate, error)
 	DeleteFormationTemplate(ctx context.Context, id string) (*FormationTemplate, error)
 	UpdateFormationTemplate(ctx context.Context, id string, in FormationTemplateInput) (*FormationTemplate, error)
@@ -1071,6 +1073,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Labels(childComplexity, args["key"].(*string)), true
+
+	case "Application.localTenantID":
+		if e.complexity.Application.LocalTenantID == nil {
+			break
+		}
+
+		return e.complexity.Application.LocalTenantID(childComplexity), true
 
 	case "Application.name":
 		if e.complexity.Application.Name == nil {
@@ -2788,7 +2797,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SubscribeTenant(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string), args["subscriptionAppName"].(string)), true
+		return e.complexity.Mutation.SubscribeTenant(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["consumerTenantID"].(string), args["region"].(string), args["subscriptionAppName"].(string)), true
 
 	case "Mutation.unassignFormation":
 		if e.complexity.Mutation.UnassignFormation == nil {
@@ -2872,7 +2881,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UnsubscribeTenant(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string)), true
+		return e.complexity.Mutation.UnsubscribeTenant(childComplexity, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["consumerTenantID"].(string), args["region"].(string)), true
 
 	case "Mutation.updateAPIDefinition":
 		if e.complexity.Mutation.UpdateAPIDefinition == nil {
@@ -4076,6 +4085,10 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	&ast.Source{Name: "schema.graphql", Input: `"""
+appMetadataValidation directive is added to application metadata mutations to protect them
+"""
+directive @appMetadataValidation on FIELD_DEFINITION
+"""
 Async directive is added to mutations which are capable of being executed in asynchronious matter
 """
 directive @async(operationType: OperationType!, webhookType: WebhookType, idField: String) on FIELD_DEFINITION
@@ -4086,7 +4099,7 @@ directive @hasScenario(applicationProvider: String!, idField: String!) on FIELD_
 """
 HasScopes directive is added automatically to every query and mutation by scopesdecorator plugin that is triggerred by gqlgen.sh script.
 """
-directive @hasScopes(path: String!) on FIELD_DEFINITION
+directive @hasScopes(path: String!) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 """
 Sanitize directive marks mutation arguments that will be validated.
 """
@@ -4369,6 +4382,7 @@ input ApplicationRegisterInput {
 	baseUrl: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
+	localTenantID: String @hasScopes(path: "graphql.input.application.localTenantID")
 	bundles: [BundleCreateInput!]
 }
 
@@ -4426,6 +4440,7 @@ input ApplicationUpdateInput {
 	baseUrl: String
 	integrationSystemID: ID
 	statusCondition: ApplicationStatusCondition
+	localTenantID: String @hasScopes(path: "graphql.input.application.localTenantID")
 }
 
 input AuthInput {
@@ -4650,6 +4665,7 @@ input FetchRequestInput {
 
 input FormationInput {
 	name: String!
+	templateName: String
 }
 
 input FormationTemplateInput {
@@ -4866,6 +4882,7 @@ type Application {
 	id: ID!
 	name: String!
 	systemNumber: String
+	localTenantID: String
 	baseUrl: String
 	providerName: String
 	description: String
@@ -5537,17 +5554,17 @@ type Mutation {
 	**Examples**
 	- [add api definition to bundle](examples/add-api-definition-to-bundle/add-api-definition-to-bundle.graphql)
 	"""
-	addAPIDefinitionToBundle(bundleID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToBundle")
+	addAPIDefinitionToBundle(bundleID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToBundle") @appMetadataValidation
 	"""
 	**Examples**
 	- [update api definition](examples/update-api-definition/update-api-definition.graphql)
 	"""
-	updateAPIDefinition(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPIDefinition")
+	updateAPIDefinition(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPIDefinition") @appMetadataValidation
 	"""
 	**Examples**
 	- [delete api definition](examples/delete-api-definition/delete-api-definition.graphql)
 	"""
-	deleteAPIDefinition(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPIDefinition")
+	deleteAPIDefinition(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPIDefinition") @appMetadataValidation
 	"""
 	**Examples**
 	- [refetch api spec](examples/refetch-api-spec/refetch-api-spec.graphql)
@@ -5567,17 +5584,17 @@ type Mutation {
 	**Examples**
 	- [add event definition to bundle](examples/add-event-definition-to-bundle/add-event-definition-to-bundle.graphql)
 	"""
-	addEventDefinitionToBundle(bundleID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToBundle")
+	addEventDefinitionToBundle(bundleID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToBundle") @appMetadataValidation
 	"""
 	**Examples**
 	- [update event definition](examples/update-event-definition/update-event-definition.graphql)
 	"""
-	updateEventDefinition(id: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.updateEventDefinition")
+	updateEventDefinition(id: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.updateEventDefinition") @appMetadataValidation
 	"""
 	**Examples**
 	- [delete event definition](examples/delete-event-definition/delete-event-definition.graphql)
 	"""
-	deleteEventDefinition(id: ID!): EventDefinition! @hasScopes(path: "graphql.mutation.deleteEventDefinition")
+	deleteEventDefinition(id: ID!): EventDefinition! @hasScopes(path: "graphql.mutation.deleteEventDefinition") @appMetadataValidation
 	refetchEventDefinitionSpec(eventID: ID!): EventSpec! @hasScopes(path: "graphql.mutation.refetchEventDefinitionSpec")
 	"""
 	**Examples**
@@ -5681,17 +5698,17 @@ type Mutation {
 	**Examples**
 	- [add bundle](examples/add-bundle/add-bundle.graphql)
 	"""
-	addBundle(applicationID: ID!, in: BundleCreateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.addBundle")
+	addBundle(applicationID: ID!, in: BundleCreateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.addBundle") @appMetadataValidation
 	"""
 	**Examples**
 	- [update bundle](examples/update-bundle/update-bundle.graphql)
 	"""
-	updateBundle(id: ID!, in: BundleUpdateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.updateBundle")
+	updateBundle(id: ID!, in: BundleUpdateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.updateBundle") @appMetadataValidation
 	"""
 	**Examples**
 	- [delete bundle](examples/delete-bundle/delete-bundle.graphql)
 	"""
-	deleteBundle(id: ID!): Bundle! @hasScopes(path: "graphql.mutation.deleteBundle")
+	deleteBundle(id: ID!): Bundle! @hasScopes(path: "graphql.mutation.deleteBundle") @appMetadataValidation
 	"""
 	**Examples**
 	- [create automatic scenario assignment](examples/create-automatic-scenario-assignment/create-automatic-scenario-assignment.graphql)
@@ -5710,8 +5727,8 @@ type Mutation {
 	writeTenants(in: [BusinessTenantMappingInput!]): Int! @hasScopes(path: "graphql.mutation.writeTenants")
 	deleteTenants(in: [String!]): Int! @hasScopes(path: "graphql.mutation.deleteTenants")
 	updateTenant(id: ID!, in: BusinessTenantMappingInput!): Tenant! @hasScopes(path: "graphql.mutation.updateTenant")
-	subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!, subscriptionAppName: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
-	unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
+	subscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!, subscriptionAppName: String!): Boolean! @hasScopes(path: "graphql.mutation.subscribeTenant")
+	unsubscribeTenant(providerID: String!, subaccountID: String!, providerSubaccountID: String!, consumerTenantID: String!, region: String!): Boolean! @hasScopes(path: "graphql.mutation.unsubscribeTenant")
 	"""
 	**Examples**
 	- [create formation template](examples/create-formation-template/create-formation-template.graphql)
@@ -7172,21 +7189,29 @@ func (ec *executionContext) field_Mutation_subscribeTenant_args(ctx context.Cont
 	}
 	args["providerSubaccountID"] = arg2
 	var arg3 string
-	if tmp, ok := rawArgs["region"]; ok {
+	if tmp, ok := rawArgs["consumerTenantID"]; ok {
 		arg3, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["region"] = arg3
+	args["consumerTenantID"] = arg3
 	var arg4 string
-	if tmp, ok := rawArgs["subscriptionAppName"]; ok {
+	if tmp, ok := rawArgs["region"]; ok {
 		arg4, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["subscriptionAppName"] = arg4
+	args["region"] = arg4
+	var arg5 string
+	if tmp, ok := rawArgs["subscriptionAppName"]; ok {
+		arg5, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["subscriptionAppName"] = arg5
 	return args, nil
 }
 
@@ -7334,13 +7359,21 @@ func (ec *executionContext) field_Mutation_unsubscribeTenant_args(ctx context.Co
 	}
 	args["providerSubaccountID"] = arg2
 	var arg3 string
-	if tmp, ok := rawArgs["region"]; ok {
+	if tmp, ok := rawArgs["consumerTenantID"]; ok {
 		arg3, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["region"] = arg3
+	args["consumerTenantID"] = arg3
+	var arg4 string
+	if tmp, ok := rawArgs["region"]; ok {
+		arg4, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["region"] = arg4
 	return args, nil
 }
 
@@ -9338,6 +9371,37 @@ func (ec *executionContext) _Application_systemNumber(ctx context.Context, field
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.SystemNumber, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Application_localTenantID(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Application",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LocalTenantID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -16465,8 +16529,14 @@ func (ec *executionContext) _Mutation_addAPIDefinitionToBundle(ctx context.Conte
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.AppMetadataValidation == nil {
+				return nil, errors.New("directive appMetadataValidation is not implemented")
+			}
+			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -16530,8 +16600,14 @@ func (ec *executionContext) _Mutation_updateAPIDefinition(ctx context.Context, f
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.AppMetadataValidation == nil {
+				return nil, errors.New("directive appMetadataValidation is not implemented")
+			}
+			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -16595,8 +16671,14 @@ func (ec *executionContext) _Mutation_deleteAPIDefinition(ctx context.Context, f
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.AppMetadataValidation == nil {
+				return nil, errors.New("directive appMetadataValidation is not implemented")
+			}
+			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -17375,8 +17457,14 @@ func (ec *executionContext) _Mutation_addEventDefinitionToBundle(ctx context.Con
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.AppMetadataValidation == nil {
+				return nil, errors.New("directive appMetadataValidation is not implemented")
+			}
+			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -17440,8 +17528,14 @@ func (ec *executionContext) _Mutation_updateEventDefinition(ctx context.Context,
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.AppMetadataValidation == nil {
+				return nil, errors.New("directive appMetadataValidation is not implemented")
+			}
+			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -17505,8 +17599,14 @@ func (ec *executionContext) _Mutation_deleteEventDefinition(ctx context.Context,
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.AppMetadataValidation == nil {
+				return nil, errors.New("directive appMetadataValidation is not implemented")
+			}
+			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -18833,8 +18933,14 @@ func (ec *executionContext) _Mutation_addBundle(ctx context.Context, field graph
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.AppMetadataValidation == nil {
+				return nil, errors.New("directive appMetadataValidation is not implemented")
+			}
+			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -18898,8 +19004,14 @@ func (ec *executionContext) _Mutation_updateBundle(ctx context.Context, field gr
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.AppMetadataValidation == nil {
+				return nil, errors.New("directive appMetadataValidation is not implemented")
+			}
+			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -18963,8 +19075,14 @@ func (ec *executionContext) _Mutation_deleteBundle(ctx context.Context, field gr
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
+		directive2 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.AppMetadataValidation == nil {
+				return nil, errors.New("directive appMetadataValidation is not implemented")
+			}
+			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
+		}
 
-		tmp, err := directive1(rctx)
+		tmp, err := directive2(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -19400,7 +19518,7 @@ func (ec *executionContext) _Mutation_subscribeTenant(ctx context.Context, field
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().SubscribeTenant(rctx, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string), args["subscriptionAppName"].(string))
+			return ec.resolvers.Mutation().SubscribeTenant(rctx, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["consumerTenantID"].(string), args["region"].(string), args["subscriptionAppName"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.subscribeTenant")
@@ -19465,7 +19583,7 @@ func (ec *executionContext) _Mutation_unsubscribeTenant(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UnsubscribeTenant(rctx, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["region"].(string))
+			return ec.resolvers.Mutation().UnsubscribeTenant(rctx, args["providerID"].(string), args["subaccountID"].(string), args["providerSubaccountID"].(string), args["consumerTenantID"].(string), args["region"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.unsubscribeTenant")
@@ -25698,6 +25816,31 @@ func (ec *executionContext) unmarshalInputApplicationRegisterInput(ctx context.C
 			if err != nil {
 				return it, err
 			}
+		case "localTenantID":
+			var err error
+			directive0 := func(ctx context.Context) (interface{}, error) { return ec.unmarshalOString2ᚖstring(ctx, v) }
+			directive1 := func(ctx context.Context) (interface{}, error) {
+				path, err := ec.unmarshalNString2string(ctx, "graphql.input.application.localTenantID")
+				if err != nil {
+					return nil, err
+				}
+				if ec.directives.HasScopes == nil {
+					return nil, errors.New("directive hasScopes is not implemented")
+				}
+				return ec.directives.HasScopes(ctx, obj, directive0, path)
+			}
+
+			tmp, err := directive1(ctx)
+			if err != nil {
+				return it, err
+			}
+			if data, ok := tmp.(*string); ok {
+				it.LocalTenantID = data
+			} else if tmp == nil {
+				it.LocalTenantID = nil
+			} else {
+				return it, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
+			}
 		case "bundles":
 			var err error
 			it.Bundles, err = ec.unmarshalOBundleCreateInput2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐBundleCreateInputᚄ(ctx, v)
@@ -25859,6 +26002,31 @@ func (ec *executionContext) unmarshalInputApplicationUpdateInput(ctx context.Con
 			it.StatusCondition, err = ec.unmarshalOApplicationStatusCondition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationStatusCondition(ctx, v)
 			if err != nil {
 				return it, err
+			}
+		case "localTenantID":
+			var err error
+			directive0 := func(ctx context.Context) (interface{}, error) { return ec.unmarshalOString2ᚖstring(ctx, v) }
+			directive1 := func(ctx context.Context) (interface{}, error) {
+				path, err := ec.unmarshalNString2string(ctx, "graphql.input.application.localTenantID")
+				if err != nil {
+					return nil, err
+				}
+				if ec.directives.HasScopes == nil {
+					return nil, errors.New("directive hasScopes is not implemented")
+				}
+				return ec.directives.HasScopes(ctx, obj, directive0, path)
+			}
+
+			tmp, err := directive1(ctx)
+			if err != nil {
+				return it, err
+			}
+			if data, ok := tmp.(*string); ok {
+				it.LocalTenantID = data
+			} else if tmp == nil {
+				it.LocalTenantID = nil
+			} else {
+				return it, fmt.Errorf(`unexpected type %T from directive, should be *string`, tmp)
 			}
 		}
 	}
@@ -26483,6 +26651,12 @@ func (ec *executionContext) unmarshalInputFormationInput(ctx context.Context, ob
 		case "name":
 			var err error
 			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "templateName":
+			var err error
+			it.TemplateName, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -27416,6 +27590,8 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			}
 		case "systemNumber":
 			out.Values[i] = ec._Application_systemNumber(ctx, field, obj)
+		case "localTenantID":
+			out.Values[i] = ec._Application_localTenantID(ctx, field, obj)
 		case "baseUrl":
 			out.Values[i] = ec._Application_baseUrl(ctx, field, obj)
 		case "providerName":

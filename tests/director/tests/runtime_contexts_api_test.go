@@ -1,14 +1,27 @@
 package tests
 
 import (
+	"bytes"
 	"context"
+	"crypto/tls"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/ptr"
+	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 )
 
@@ -144,4 +157,136 @@ func TestDeleteRuntimeContext(t *testing.T) {
 	require.Equal(t, "deleteRuntimeContext", rtmCtxGql.Value)
 
 	saveExample(t, rtmCtxDeleteReq.Query(), "delete runtime context")
+}
+
+func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
+	t := testingx.NewT(stdT)
+	t.Run("Runtime Contexts subscription flows", func(t *testing.T) {
+		ctx := context.Background()
+		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID // the parent is testDefaultTenant
+		subscriptionConsumerAccountID := tenant.TestTenants.GetIDByName(t, tenant.ApplicationsForRuntimeTenantName)
+		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID // the parent is ApplicationsForRuntimeTenantName
+		subscriptionConsumerTenantID := conf.TestConsumerTenantID
+
+		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
+		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
+		providerRuntimeInput := graphql.RuntimeRegisterInput{
+			Name:        "providerRuntime",
+			Description: ptr.String("providerRuntime-description"),
+			Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue, tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
+		}
+
+		providerRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntimeInput)
+		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntime)
+		require.NotEmpty(t, providerRuntime.ID)
+
+		selfRegLabelValue, ok := providerRuntime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
+		require.True(t, ok)
+		require.Contains(t, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+providerRuntime.ID)
+
+		httpClient := &http.Client{
+			Timeout: 10 * time.Second,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation},
+			},
+		}
+
+		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+		require.NoError(t, err)
+		response, err := httpClient.Do(depConfigureReq)
+		require.NoError(t, err)
+		defer func() {
+			if err := response.Body.Close(); err != nil {
+				t.Logf("Could not close response body %s", err)
+			}
+		}()
+		require.Equal(t, http.StatusOK, response.StatusCode)
+
+		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
+		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
+		require.NoError(t, err)
+		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+		subscribeReq.Header.Add(subscription.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
+		subscribeReq.Header.Add(subscription.ContentTypeHeader, subscription.ContentTypeApplicationJson)
+		subscribeReq.Header.Add(conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
+
+		// unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
+		// In case there isn't subscription it will fail-safe without error
+		subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
+		resp, err := httpClient.Do(subscribeReq)
+		require.NoError(t, err)
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				t.Logf("Could not close response body %s", err)
+			}
+		}()
+		body, err := ioutil.ReadAll(resp.Body)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
+
+		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+		subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
+		require.NotEmpty(t, subJobStatusPath)
+		subJobStatusURL := conf.SubscriptionConfig.URL + subJobStatusPath
+		require.Eventually(t, func() bool {
+			return subscription.GetSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == subscription.JobSucceededStatus
+		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
+		t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
+
+		t.Log("Assert provider runtime is visible in the consumer's subaccount after successful subscription")
+		consumerSubaccountRuntimes := fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
+		require.Len(t, consumerSubaccountRuntimes.Data, 1)
+		require.Equal(t, consumerSubaccountRuntimes.Data[0].ID, providerRuntime.ID)
+
+		t.Log("Assert subscription provider application name label of the provider runtime exists and it is the correct one")
+		subProviderAppNameValue, ok := consumerSubaccountRuntimes.Data[0].Labels[conf.RuntimeTypeLabelKey].(string)
+		require.True(t, ok)
+		require.Equal(t, conf.SubscriptionProviderAppNameValue, subProviderAppNameValue)
+
+		t.Log("Assert there is a runtime context(subscription) as part of the provider runtime")
+		require.Len(t, consumerSubaccountRuntimes.Data[0].RuntimeContexts.Data, 1)
+		require.Equal(t, conf.SubscriptionLabelKey, consumerSubaccountRuntimes.Data[0].RuntimeContexts.Data[0].Key)
+		require.Equal(t, subscriptionConsumerTenantID, consumerSubaccountRuntimes.Data[0].RuntimeContexts.Data[0].Value)
+
+		t.Log("Assert the runtime context has label containing consumer subaccount ID")
+		consumerSubaccountFromRtmCtxLabel, ok := consumerSubaccountRuntimes.Data[0].RuntimeContexts.Data[0].Labels[conf.ConsumerSubaccountLabelKey].(string)
+		require.True(t, ok)
+		require.Equal(t, subscriptionConsumerSubaccountID, consumerSubaccountFromRtmCtxLabel)
+
+		t.Log("Assert provider runtime is visible in the consumer's account after successful subscription")
+		consumerAccountRuntimes := fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID)
+		require.Len(t, consumerAccountRuntimes.Data, 1)
+		require.Equal(t, consumerAccountRuntimes.Data[0].ID, providerRuntime.ID)
+		require.Len(t, consumerSubaccountRuntimes.Data[0].RuntimeContexts.Data, 1)
+
+		t.Log("Assert the consumer cannot update the provider runtime(owner false check)")
+		consumerRuntimeUpdateInput := fixRuntimeUpdateInput("consumerUpdatedRuntime")
+		rtm, err := fixtures.UpdateRuntimeWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, providerRuntime.ID, consumerRuntimeUpdateInput)
+		require.Empty(t, rtm)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Owner access is needed for resource modification")
+
+		t.Log("Assert the consumer cannot delete the provider runtime(owner false check)")
+		deleteRuntimeReq := fixtures.FixUnregisterRuntimeRequest(providerRuntime.ID)
+		rtmExt := graphql.RuntimeExt{}
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, deleteRuntimeReq, &rtmExt)
+		require.Empty(t, rtmExt)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Owner access is needed for resource modification")
+
+		subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+		t.Log("List runtimes(and runtime contexts) after successful unsubscribe request")
+		consumerSubaccountRtms := fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
+		require.Len(t, consumerSubaccountRtms.Data, 1)
+		require.Equal(t, consumerSubaccountRtms.Data[0].ID, providerRuntime.ID)
+
+		t.Log("Assert there is no runtime context(subscription) after successful unsubscribe request")
+		require.Len(t, consumerSubaccountRtms.Data[0].RuntimeContexts.Data, 0)
+	})
 }

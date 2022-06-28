@@ -23,6 +23,8 @@ spec:
         metadata:
           labels:
             cronjob: {{ .Values.global.ordAggregator.name }}
+          annotations:
+            cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         spec:
           serviceAccountName: {{ $.Chart.Name }}-ord-aggregator
           containers:
@@ -85,8 +87,10 @@ spec:
                   value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
                 - name: APP_GLOBAL_REGISTRY_URL
                   value: "{{ .Values.global.ordAggregator.globalRegistryUrl }}"
-                - name: APP_ORD_MAX_PARALLEL_DOWNLOADS
-                  value: "{{ .Values.global.ordAggregator.maxOrdParallelDownloads }}"
+                - name: APP_MAX_PARALLEL_APPLICATION_PROCESSORS
+                  value: "{{ .Values.global.ordAggregator.maxParallelApplicationProcessors }}"
+                - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
+                  value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
               command:
                 - "/bin/sh"
               args:

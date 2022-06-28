@@ -8,6 +8,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
@@ -67,7 +69,9 @@ type config struct {
 
 	GlobalRegistryConfig ord.GlobalRegistryConfig
 
-	MaxParallelOrdDownloads int `envconfig:"APP_ORD_MAX_PARALLEL_DOWNLOADS,default=1"`
+	MaxParallelApplicationProcessors int `envconfig:"APP_MAX_PARALLEL_APPLICATION_PROCESSORS,default=1"`
+
+	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 }
 
 func main() {
@@ -140,6 +144,8 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	bundleReferenceConv := bundlereferences.NewConverter()
 	runtimeContextConv := runtimectx.NewConverter()
 	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
+	formationConv := formation.NewConverter()
+	formationTemplateConverter := formationtemplate.NewConverter()
 
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
@@ -159,6 +165,8 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	tombstoneRepo := tombstone.NewRepository(tombstoneConverter)
 	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
 	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConv)
+	formationRepo := formation.NewRepository(formationConv)
+	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConv)
 
 	uidSvc := uid.NewService()
@@ -177,8 +185,8 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc, formationSvc)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc, formationSvc, config.SelfRegisterDistinguishLabelKey)
 	packageSvc := ordpackage.NewService(pkgRepo, uidSvc)
 	productSvc := product.NewService(productRepo, uidSvc)
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
@@ -190,7 +198,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, config.GlobalRegistryConfig, vendorSvc, productSvc, ordClient)
 
-	ordConfig := ord.NewServiceConfig(config.MaxParallelOrdDownloads)
+	ordConfig := ord.NewServiceConfig(config.MaxParallelApplicationProcessors)
 	return ord.NewAggregatorService(ordConfig, transact, labelRepo, appSvc, appTemplateSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClient)
 }
 

@@ -15,7 +15,7 @@ endif
 ifneq ($(strip $(DOCKER_TAG)),)
 TAG := $(DOCKER_TAG)
 else
-TAG := "latest"
+TAG := latest
 endif
 # BASE_PKG is a root packge of the component
 BASE_PKG := github.com/kyma-incubator/compass
@@ -109,7 +109,7 @@ docker-create-opts:
 MOUNT_TARGETS = build check-imports imports check-fmt fmt errcheck vet generate pull-licenses gqlgen lint
 $(foreach t,$(MOUNT_TARGETS),$(eval $(call buildpack-mount,$(t))))
 
-# Builds new Docker image into Minikube's Docker Registry
+# Builds new Docker image into k3d's Docker Registry
 build-for-k3d: pull-licenses-local
 	docker build -t k3d-kyma-registry:5001/$(IMG_NAME):$(TAG) .
 	docker push k3d-kyma-registry:5001/$(IMG_NAME):$(TAG)

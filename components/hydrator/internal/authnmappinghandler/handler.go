@@ -131,7 +131,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 
 	reqData, err := h.reqDataParser.Parse(req)
 	if err != nil {
-		h.logError(ctx, err, "An error has occurred while parsing the request.")
+		h.logError(ctx, err, "An error has occurred while parsing the request")
 		http.Error(writer, "Unable to parse request data", http.StatusOK)
 		return
 	}
@@ -139,7 +139,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	matchedAuthenticator, ok := vars["authenticator"]
 	if !ok {
-		h.logError(ctx, errors.New("authenticator not found in path"), "An error has occurred while extracting authenticator name.")
+		h.logError(ctx, errors.New("authenticator not found in path"), "An error has occurred while extracting authenticator name")
 		reqData.Body.Extra["error"] = authenticationError{Message: "Missing authenticator"}
 		h.respond(ctx, writer, reqData.Body)
 		return
@@ -149,7 +149,7 @@ func (h *Handler) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
 
 	claims, authCoordinates, err := h.verifyToken(ctx, reqData, matchedAuthenticator)
 	if err != nil {
-		h.logError(ctx, err, "An error has occurred while processing the request.")
+		h.logError(ctx, err, "An error has occurred while processing the request")
 		reqData.Body.Extra["error"] = authenticationError{Message: "Token validation failed"}
 		h.respond(ctx, writer, reqData.Body)
 		return
@@ -278,7 +278,7 @@ func (h *Handler) respond(ctx context.Context, writer http.ResponseWriter, body 
 	writer.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(writer).Encode(body)
 	if err != nil {
-		h.logError(ctx, err, "An error has occurred while encoding data.")
+		h.logError(ctx, err, "An error has occurred while encoding data")
 	}
 }
 
