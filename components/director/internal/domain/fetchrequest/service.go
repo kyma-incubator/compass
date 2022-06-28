@@ -3,6 +3,7 @@ package fetchrequest
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/retry"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -29,6 +30,7 @@ type service struct {
 	client                         *http.Client
 	timestampGen                   timestamp.Generator
 	accessStrategyExecutorProvider accessstrategy.ExecutorProvider
+	retryHTTPFuncExecutor          *retry.HTTPExecutor
 }
 
 // FetchRequestRepository missing godoc
@@ -44,6 +46,17 @@ func NewService(repo FetchRequestRepository, client *http.Client, executorProvid
 		client:                         client,
 		timestampGen:                   timestamp.DefaultGenerator,
 		accessStrategyExecutorProvider: executorProvider,
+	}
+}
+
+// NewServiceWithRetry creates a FetchRequest service which is able to retry failed HTTP requests
+func NewServiceWithRetry(repo FetchRequestRepository, client *http.Client, executorProvider accessstrategy.ExecutorProvider, retryHTTPExecutor *retry.HTTPExecutor) *service {
+	return &service{
+		repo:                           repo,
+		client:                         client,
+		timestampGen:                   timestamp.DefaultGenerator,
+		accessStrategyExecutorProvider: executorProvider,
+		retryHTTPFuncExecutor:          retryHTTPExecutor,
 	}
 }
 
@@ -73,20 +86,34 @@ func (s *service) fetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 		return nil, FixStatus(model.FetchRequestStatusConditionInitial, str.Ptr(err.Error()), s.timestampGen())
 	}
 
-	var resp *http.Response
+	var doRequest retry.ExecutableHTTPFunc
 	if fr.Auth != nil && fr.Auth.AccessStrategy != nil && len(*fr.Auth.AccessStrategy) > 0 {
 		log.C(ctx).Infof("Fetch Request with id %s is configured with %s access strategy.", fr.ID, *fr.Auth.AccessStrategy)
 		var executor accessstrategy.Executor
-		executor, err = s.accessStrategyExecutorProvider.Provide(accessstrategy.Type(*fr.Auth.AccessStrategy))
+		executor, err = s.accessStrategyExecutorProvider.Provide(*fr.Auth.AccessStrategy)
 		if err != nil {
 			log.C(ctx).WithError(err).Errorf("Cannot find executor for access strategy %q as part of fetch request %s processing: %v", *fr.Auth.AccessStrategy, fr.ID, err)
 			return nil, FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching Spec: %s", err.Error())), s.timestampGen())
 		}
-		resp, err = executor.Execute(s.client, fr.URL)
+
+		doRequest = func() (*http.Response, error) {
+			return executor.Execute(s.client, fr.URL)
+		}
 	} else if fr.Auth != nil {
-		resp, err = httputil.GetRequestWithCredentials(ctx, s.client, fr.URL, fr.Auth)
+		doRequest = func() (*http.Response, error) {
+			return httputil.GetRequestWithCredentials(ctx, s.client, fr.URL, fr.Auth)
+		}
 	} else {
-		resp, err = httputil.GetRequestWithoutCredentials(s.client, fr.URL)
+		doRequest = func() (*http.Response, error) {
+			return httputil.GetRequestWithoutCredentials(s.client, fr.URL)
+		}
+	}
+
+	var resp *http.Response
+	if s.retryHTTPFuncExecutor != nil {
+		resp, err = s.retryHTTPFuncExecutor.Execute(doRequest)
+	} else {
+		resp, err = doRequest()
 	}
 
 	if err != nil {
