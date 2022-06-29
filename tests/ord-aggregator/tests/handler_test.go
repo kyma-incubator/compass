@@ -5,14 +5,15 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/subscription"
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/subscription"
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	gcli "github.com/machinebox/graphql"
@@ -520,7 +521,7 @@ func TestORDAggregator(t *testing.T) {
 		subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
 		subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
 		subscriptionConsumerTenantID := testConfig.TestConsumerTenantID
-		
+
 		appTemplateName := createAppTemplateName("ORD-aggregator-test-app-template")
 		appTemplateInput := fixAppTemplateInput(appTemplateName, testConfig.ExternalServicesMockUnsecuredMultiTenantURL)
 		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplateInput)
@@ -530,8 +531,7 @@ func TestORDAggregator(t *testing.T) {
 
 		selfRegLabelValue, ok := appTemplate.Labels[testConfig.SubscriptionConfig.SelfRegisterLabelKey].(string)
 		require.True(t, ok)
-		require.Contains(t, selfRegLabelValue, testConfig.SubscriptionConfig.SelfRegisterLabelValuePrefix + appTemplate.ID)
-
+		require.Contains(t, selfRegLabelValue, testConfig.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTemplate.ID)
 
 		//============================ makes subscription
 		httpClient := &http.Client{

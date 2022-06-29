@@ -74,7 +74,7 @@ type ORDServers struct {
 	OauthPort                   int `envconfig:"default=8085"`
 	GlobalRegistryCertPort      int `envconfig:"default=8086"`
 	GlobalRegistryUnsecuredPort int `envconfig:"default=8087"`
-	UnsecuredMultiTenantPort	int `envconfig:"default=8088"`
+	UnsecuredMultiTenantPort    int `envconfig:"default=8088"`
 	CertSecuredBaseURL          string
 	CertSecuredGlobalBaseURL    string
 }
@@ -352,7 +352,6 @@ func initMultiTenantORDServer(cfg config) *http.Server {
 		Handler: router,
 	}
 }
-
 
 func initUnsecuredGlobalRegistryORDServer(cfg config) *http.Server {
 	router := mux.NewRouter()

@@ -555,7 +555,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:            "Returns error when app templates list fails",
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
-			appTemplateSvcFn:  func() *automock.ApplicationTemplateService {
+			appTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("List", context.TODO(), []*labelfilter.LabelFilter{}, 200, "").Return(model.ApplicationTemplatePage{}, testErr).Once()
 				return appTemplateSvc
@@ -750,7 +750,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
-			ExpectedErr: errors.New("failed to process 1 applications"),
+			ExpectedErr:       errors.New("failed to process 1 applications"),
 		},
 		{
 			Name:             "Skips app when ORD documents fetch fails",

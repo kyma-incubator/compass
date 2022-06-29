@@ -18,10 +18,11 @@ package tests
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
