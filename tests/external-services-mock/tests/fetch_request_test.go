@@ -92,8 +92,6 @@ func TestRefetchAPISpecDifferentSpec(stdT *testing.T) {
 					},
 				}
 
-				assert.Equal(t, "http://compass-external-services-mock.compass-system.svc.cluster.local/external-api/spec/flapping", testCase.FetchRequest)
-
 				bndl := fixtures.CreateBundleWithInput(t, ctx, certSecuredGraphQLClient, tenant, application.ID, bndlInput)
 				defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenant, bndl.ID)
 				bndlID := bndl.ID

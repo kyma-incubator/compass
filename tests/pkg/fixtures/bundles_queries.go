@@ -21,8 +21,6 @@ func CreateBundleWithInput(t require.TestingT, ctx context.Context, gqlClient *g
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &resp)
 	require.NoError(t, err)
 
-	fmt.Println(">>>> BUNDLE RESP >>>>: ", resp)
-
 	return resp
 }
 
