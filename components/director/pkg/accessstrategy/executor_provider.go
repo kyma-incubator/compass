@@ -34,6 +34,7 @@ func NewDefaultExecutorProvider(certCache certloader.Cache) *Provider {
 	}
 }
 
+// NewExecutorProviderWithTenant returns a new access strategy executor provider by given tenant provider function
 func NewExecutorProviderWithTenant(certCache certloader.Cache, tenantProviderFunc func(ctx context.Context) (string, error)) *Provider {
 	return &Provider{
 		executors: map[Type]Executor{
