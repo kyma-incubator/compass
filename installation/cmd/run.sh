@@ -209,21 +209,6 @@ if [[ ${DUMP_DB} ]]; then
        done
     done
 
-# todo:: remove
-#    LATEST_LOCAL_SCHEMA_VERSION=$(ls migrations/director | tail -n 1 | grep -o -E '^[0-9]+' | sed -e 's/^0\+//')
-#    echo -e "${YELLOW}Check if there is DB dump in GCS bucket with migration number: $LATEST_LOCAL_SCHEMA_VERSION...${NC}"
-#    gsutil -q stat gs://sap-cp-cmp-dev-db-dump/dump-"${LATEST_LOCAL_SCHEMA_VERSION}".sql
-#    STATUS=$?
-#
-#    if [[ ! $STATUS ]]; then
-#      echo -e "${YELLOW}There is no DB dump with migration number: $LATEST_LOCAL_SCHEMA_VERSION in the bucket. Will get the latest available one...${NC}"
-#      LATEST_DB_DUMP_VERSION=$(gsutil ls -R gs://sap-cp-cmp-dev-db-dump/ | tail -n 1 | grep -o -E '[0-9]+' | sed -e 's/^0\+//')
-#      SCHEMA_VERSION=$LATEST_DB_DUMP_VERSION
-#    else
-#      echo -e "${GREEN}DB dump with migration number: $LATEST_LOCAL_SCHEMA_VERSION exists in the bucket. Will use it...${NC}"
-#      SCHEMA_VERSION=$LATEST_LOCAL_SCHEMA_VERSION
-#    fi
-
     echo -e "${YELLOW}Check if there is DB dump in GCS bucket with migration number: $SCHEMA_VERSION...${NC}"
     gsutil -q stat gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}".sql
     STATUS=$?
