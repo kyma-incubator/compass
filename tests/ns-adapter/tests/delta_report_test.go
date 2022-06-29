@@ -576,6 +576,8 @@ func validateApplication(t *testing.T, app *graphql.ApplicationExt, appType, sys
 	require.Equal(t, description, *app.Description)
 	require.Equal(t, label, app.Labels["scc"])
 	require.Equal(t, systemStatus, *app.SystemStatus)
+	require.Equal(t, appType, app.Labels["applicationType"])
+	require.Equal(t, appType, app.Labels["systemType"])
 }
 
 func retrieveApps(t *testing.T, ctx context.Context, labelFilter graphql.LabelFilter) ([]*graphql.ApplicationExt, error) {
