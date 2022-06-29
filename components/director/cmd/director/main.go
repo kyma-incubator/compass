@@ -4,11 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/retry"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/retry"
 
 	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 

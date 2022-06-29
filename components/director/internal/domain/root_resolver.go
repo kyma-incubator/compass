@@ -3,9 +3,10 @@ package domain
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/retry"
 	"net/http"
 	"net/url"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/retry"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/subscription"
