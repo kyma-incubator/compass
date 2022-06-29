@@ -626,7 +626,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 	modelAppFromTemplateInput := fixModelApplicationFromTemplateInput(appTmplName, subscriptionAppName)
 	gqlAppCreateInput := fixGQLApplicationCreateInput(appTmplName)
 	modelAppCreateInput := fixModelApplicationCreateInput(appTmplName)
-	modelAppCreateInputWithLabels := fixModelApplicationCreateInputWithLabels(appTmplName, subscribedSubaccountID)
+	modelAppCreateInputWithLabels := fixModelApplicationCreateInputWithLabels(appTmplName, subaccountTenantExtID)
 	modelApps := []*model.Application{
 		fixModelApplication(appTmplID, appTmplName, appTmplID),
 	}
@@ -657,7 +657,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetInternalTenant", context.TODO(), subscribedSubaccountID).Return(subaccountTenantInternalID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Once()
 				return tenantSvc
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
@@ -690,7 +690,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetInternalTenant", context.TODO(), subscribedSubaccountID).Return("", testError).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), subaccountTenantExtID).Return("", testError).Once()
 				return tenantSvc
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
@@ -792,7 +792,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetInternalTenant", context.TODO(), subscribedSubaccountID).Return(subaccountTenantInternalID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Once()
 				return tenantSvc
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
@@ -827,7 +827,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetInternalTenant", context.TODO(), subscribedSubaccountID).Return(subaccountTenantInternalID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Once()
 				return tenantSvc
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
@@ -861,7 +861,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetInternalTenant", context.TODO(), subscribedSubaccountID).Return(subaccountTenantInternalID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Once()
 				return tenantSvc
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
@@ -893,7 +893,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetInternalTenant", context.TODO(), subscribedSubaccountID).Return(subaccountTenantInternalID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Once()
 				return tenantSvc
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
@@ -926,7 +926,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetInternalTenant", context.TODO(), subscribedSubaccountID).Return(subaccountTenantInternalID, nil).Times(repeats)
+				tenantSvc.On("GetInternalTenant", context.TODO(), subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Times(repeats)
 				return tenantSvc
 			},
 			AppConverterFn: func() *automock.ApplicationConverter {
@@ -966,7 +966,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 
 			for count := 0; count < testCase.Repeats; count++ {
 				// WHEN
-				isSubscribeSuccessful, err := service.SubscribeTenantToApplication(context.TODO(), subscriptionProviderID, subscribedSubaccountID, testCase.Region, subscriptionAppName)
+				isSubscribeSuccessful, err := service.SubscribeTenantToApplication(context.TODO(), subscriptionProviderID, subaccountTenantExtID, testCase.Region, subscriptionAppName)
 
 				// THEN
 				if len(testCase.ExpectedErrorOutput) > 0 {
@@ -1019,7 +1019,7 @@ func TestUnsubscribeTenantFromApplication(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetInternalTenant", context.TODO(), subscribedSubaccountID).Return(subaccountTenantInternalID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Once()
 				return tenantSvc
 			},
 			IsSuccessful: true,
@@ -1039,7 +1039,7 @@ func TestUnsubscribeTenantFromApplication(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetInternalTenant", context.TODO(), subscribedSubaccountID).Return("", testError).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), subaccountTenantExtID).Return("", testError).Once()
 				return tenantSvc
 			},
 			IsSuccessful:        false,
@@ -1101,7 +1101,7 @@ func TestUnsubscribeTenantFromApplication(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetInternalTenant", context.TODO(), subscribedSubaccountID).Return(subaccountTenantInternalID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Once()
 				return tenantSvc
 			},
 			IsSuccessful:        false,
@@ -1123,7 +1123,7 @@ func TestUnsubscribeTenantFromApplication(t *testing.T) {
 			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
-				tenantSvc.On("GetInternalTenant", context.TODO(), subscribedSubaccountID).Return(subaccountTenantInternalID, nil).Once()
+				tenantSvc.On("GetInternalTenant", context.TODO(), subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Once()
 				return tenantSvc
 			},
 			IsSuccessful:        false,
@@ -1139,7 +1139,7 @@ func TestUnsubscribeTenantFromApplication(t *testing.T) {
 			service := subscription.NewService(nil, nil, tenantSvc, nil, appTemplateSvc, nil, appSvc, nil, consumerSubaccountLabelKey, subscriptionLabelKey, subscriptionAppNameLabelKey, subscriptionProviderIDLabelKey)
 
 			// WHEN
-			successful, err := service.UnsubscribeTenantFromApplication(context.TODO(), subscriptionProviderID, subscribedSubaccountID, tenantRegion)
+			successful, err := service.UnsubscribeTenantFromApplication(context.TODO(), subscriptionProviderID, subaccountTenantExtID, tenantRegion)
 
 			// THEN
 			if len(testCase.ExpectedErrorOutput) > 0 {
