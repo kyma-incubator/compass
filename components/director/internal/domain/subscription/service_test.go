@@ -619,6 +619,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 	appTmplName := "test-app-tmpl"
 	appTmplAppName := "{{name}}"
 	appTmplID := "123-456-789"
+	repeats := 5
 
 	jsonAppCreateInput := fixJSONApplicationCreateInput(appTmplAppName)
 	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(appTmplID, appTmplName, jsonAppCreateInput)
@@ -626,6 +627,9 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 	gqlAppCreateInput := fixGQLApplicationCreateInput(appTmplName)
 	modelAppCreateInput := fixModelApplicationCreateInput(appTmplName)
 	modelAppCreateInputWithLabels := fixModelApplicationCreateInputWithLabels(appTmplName, subscribedSubaccountID)
+	modelApps := []*model.Application{
+		fixModelApplication(appTmplID, appTmplName, appTmplID),
+	}
 
 	testCases := []struct {
 		Name                   string
@@ -640,6 +644,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 		AppSvcFn               func() *automock.ApplicationService
 		ExpectedErrorOutput    string
 		IsSuccessful           bool
+		Repeats                int
 	}{
 		{
 			Name:   "Succeeds",
@@ -664,6 +669,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
+				appSvc.On("ListAll", ctxWithTenantMatcher(providerInternalID)).Return([]*model.Application{}, nil).Once()
 				appSvc.On("CreateFromTemplate", ctxWithTenantMatcher(providerInternalID), modelAppCreateInputWithLabels, &appTmplID).Return(appTmplID, nil).Once()
 
 				return appSvc
@@ -671,6 +677,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			LabelServiceFn: unusedLabelSvc,
 			UIDServiceFn:   unusedUUIDSvc,
 			IsSuccessful:   true,
+			Repeats:        1,
 		},
 		{
 			Name:   "Returns an error when can't find internal provider tenant",
@@ -695,6 +702,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
+				appSvc.AssertNotCalled(t, "ListAll")
 				appSvc.AssertNotCalled(t, "CreateFromTemplate")
 
 				return appSvc
@@ -703,6 +711,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			UIDServiceFn:        unusedUUIDSvc,
 			ExpectedErrorOutput: testError.Error(),
 			IsSuccessful:        false,
+			Repeats:             1,
 		},
 		{
 			Name:   "Returns an error when can't find app template",
@@ -727,6 +736,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
+				appSvc.AssertNotCalled(t, "ListAll")
 				appSvc.AssertNotCalled(t, "CreateFromTemplate")
 
 				return appSvc
@@ -734,6 +744,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			LabelServiceFn: unusedLabelSvc,
 			UIDServiceFn:   unusedUUIDSvc,
 			IsSuccessful:   false,
+			Repeats:        1,
 		},
 		{
 			Name:   "Returns an error when fails finding app template",
@@ -758,6 +769,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
+				appSvc.AssertNotCalled(t, "ListAll")
 				appSvc.AssertNotCalled(t, "CreateFromTemplate")
 
 				return appSvc
@@ -766,6 +778,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			UIDServiceFn:        unusedUUIDSvc,
 			ExpectedErrorOutput: testError.Error(),
 			IsSuccessful:        false,
+			Repeats:             1,
 		},
 		{
 			Name:   "Returns an error when preparing application input json",
@@ -791,6 +804,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
+				appSvc.On("ListAll", ctxWithTenantMatcher(providerInternalID)).Return([]*model.Application{}, nil).Once()
 				appSvc.AssertNotCalled(t, "CreateFromTemplate")
 
 				return appSvc
@@ -799,6 +813,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			UIDServiceFn:        unusedUUIDSvc,
 			ExpectedErrorOutput: testError.Error(),
 			IsSuccessful:        false,
+			Repeats:             1,
 		},
 		{
 			Name:   "Returns an error when creating graphql input from json",
@@ -824,6 +839,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
+				appSvc.On("ListAll", ctxWithTenantMatcher(providerInternalID)).Return([]*model.Application{}, nil).Once()
 				appSvc.AssertNotCalled(t, "CreateFromTemplate")
 
 				return appSvc
@@ -832,6 +848,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			UIDServiceFn:        unusedUUIDSvc,
 			ExpectedErrorOutput: testError.Error(),
 			IsSuccessful:        false,
+			Repeats:             1,
 		},
 		{
 			Name:   "Returns an error when creating input from graphql",
@@ -855,6 +872,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
+				appSvc.On("ListAll", ctxWithTenantMatcher(providerInternalID)).Return([]*model.Application{}, nil).Once()
 				appSvc.AssertNotCalled(t, "CreateFromTemplate")
 				return appSvc
 			},
@@ -862,6 +880,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			UIDServiceFn:        unusedUUIDSvc,
 			ExpectedErrorOutput: testError.Error(),
 			IsSuccessful:        false,
+			Repeats:             1,
 		},
 		{
 			Name:   "Returns an error when creating app from app template",
@@ -885,6 +904,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
+				appSvc.On("ListAll", ctxWithTenantMatcher(providerInternalID)).Return([]*model.Application{}, nil).Once()
 				appSvc.On("CreateFromTemplate", ctxWithTenantMatcher(providerInternalID), modelAppCreateInputWithLabels, &appTmplID).Return("", testError).Once()
 				return appSvc
 			},
@@ -892,6 +912,41 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 			UIDServiceFn:        unusedUUIDSvc,
 			ExpectedErrorOutput: testError.Error(),
 			IsSuccessful:        false,
+			Repeats:             1,
+		},
+		{
+			Name:   "Succeeds on on multiple calls",
+			Region: tenantRegion,
+			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", ctxWithTenantMatcher(providerInternalID), regionalFilters).Return(modelAppTemplate, nil).Times(repeats)
+				appTemplateSvc.AssertNotCalled(t, "PrepareApplicationCreateInputJSON")
+
+				return appTemplateSvc
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", context.TODO(), providerSubaccountID).Return(providerInternalID, nil).Times(repeats)
+				return tenantSvc
+			},
+			AppConverterFn: func() *automock.ApplicationConverter {
+				appConv := &automock.ApplicationConverter{}
+				appConv.AssertNotCalled(t, "CreateInputJSONToGQL")
+				appConv.AssertNotCalled(t, "CreateInputFromGraphQL")
+
+				return appConv
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("ListAll", ctxWithTenantMatcher(providerInternalID)).Return(modelApps, nil).Times(repeats)
+				appSvc.AssertNotCalled(t, "CreateFromTemplate")
+
+				return appSvc
+			},
+			LabelServiceFn: unusedLabelSvc,
+			UIDServiceFn:   unusedUUIDSvc,
+			IsSuccessful:   true,
+			Repeats:        repeats,
 		},
 	}
 
@@ -909,24 +964,25 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 
 			service := subscription.NewService(nil, nil, tenantSvc, labelSvc, appTemplateSvc, appConv, appSvc, uuidSvc, consumerSubaccountLabelKey, subscriptionLabelKey, subscriptionAppNameLabelKey, subscriptionProviderIDLabelKey)
 
-			// WHEN
-			isSubscribeSuccessful, err := service.SubscribeTenantToApplication(context.TODO(), subscriptionProviderID, subscribedSubaccountID, providerSubaccountID, testCase.Region, subscriptionAppName)
+			for count := 0; count < testCase.Repeats; count++ {
+				// WHEN
+				isSubscribeSuccessful, err := service.SubscribeTenantToApplication(context.TODO(), subscriptionProviderID, subscribedSubaccountID, providerSubaccountID, testCase.Region, subscriptionAppName)
 
-			// THEN
-			if len(testCase.ExpectedErrorOutput) > 0 {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedErrorOutput)
-			} else {
-				assert.NoError(t, err)
+				// THEN
+				if len(testCase.ExpectedErrorOutput) > 0 {
+					assert.Error(t, err)
+					assert.Contains(t, err.Error(), testCase.ExpectedErrorOutput)
+				} else {
+					assert.NoError(t, err)
+				}
+
+				assert.Equal(t, testCase.IsSuccessful, isSubscribeSuccessful)
 			}
-
-			assert.Equal(t, testCase.IsSuccessful, isSubscribeSuccessful)
 
 			mock.AssertExpectationsForObjects(t, appTemplateSvc, labelSvc, uuidSvc, tenantSvc, appConv, appSvc)
 		})
 	}
 }
-
 func TestUnsubscribeTenantFromApplication(t *testing.T) {
 	appTmplAppName := "app-name"
 	appTmplName := "app-tmpl-name"
