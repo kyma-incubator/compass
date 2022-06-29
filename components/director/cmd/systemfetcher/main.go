@@ -73,6 +73,7 @@ type config struct {
 
 type appTemplateConfig struct {
 	SystemToTemplateMappingsString string `envconfig:"APP_SYSTEM_INFORMATION_SYSTEM_TO_TEMPLATE_MAPPINGS"`
+	TemplateRegion                 string `envconfig:"APP_SYSTEM_INFORMATION_TEMPLATE_REGION"`
 	OverrideApplicationInput       string `envconfig:"APP_TEMPLATE_OVERRIDE_APPLICATION_INPUT"`
 	PlaceholderToSystemKeyMappings string `envconfig:"APP_TEMPLATE_PLACEHOLDER_TO_SYSTEM_KEY_MAPPINGS"`
 }
@@ -156,8 +157,13 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 	defer transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	var region interface{}
+	region = cfg.TemplateConfig.TemplateRegion
+	if region == "" {
+		region = nil
+	}
 	for index, tm := range systemToTemplateMappings {
-		appTemplate, err := appTemplateSvc.GetByNameAndRegion(ctx, tm.Name, nil)
+		appTemplate, err := appTemplateSvc.GetByNameAndRegion(ctx, tm.Name, region)
 		if err != nil && !apperrors.IsNotFoundError(err) {
 			return err
 		}

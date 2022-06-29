@@ -835,7 +835,7 @@ func fixApplicationTemplate(name string) directorSchema.ApplicationTemplateInput
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
 		Labels: directorSchema.Labels{
 			cfg.SelfRegDistinguishLabelKey: []interface{}{cfg.SelfRegDistinguishLabelValue},
-			tenantfetcher.RegionKey:        cfg.SelfRegRegion,
+			tenantfetcher.RegionKey:        cfg.SystemFetcherTemplateRegion,
 		},
 	}
 
