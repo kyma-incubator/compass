@@ -26,7 +26,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 	t := testingx.NewT(stdT)
 	ctx := context.Background()
 
-	// WHEN
+	// GIVEN
 	subscriptionProviderSubaccountID := conf.TestProviderSubaccountID
 	subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID
 	subscriptionConsumerTenantID := conf.TestConsumerTenantID
@@ -34,6 +34,9 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
 	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, conf.ExternalCertProviderConfig)
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
+	apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
+	subscriptionToken := token.GetClientCredentialsToken(stdT, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
 	// Create Application Template
 	appTemplateName := createAppTemplateName("app-template-name-subscription")
@@ -67,30 +70,11 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 	require.Equal(t, http.StatusOK, response.StatusCode)
 
 	t.Run("Subscribe tenant to Application flow", func(t *testing.T) {
-		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
-		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
-		require.NoError(t, err)
-		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
-		subscribeReq.Header.Add(subscription.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
-		subscribeReq.Header.Add(subscription.ContentTypeHeader, subscription.ContentTypeApplicationJson)
-		subscribeReq.Header.Add(conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
+		// WHEN
+		createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
+		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
-		//unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
-		//In case there isn't subscription it will fail-safe without error
-		subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-
-		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTmpl.Name, appTmpl.ID, subscriptionProviderSubaccountID)
-		resp, err := httpClient.Do(subscribeReq)
-		require.NoError(t, err)
-		defer func() {
-			if err := resp.Body.Close(); err != nil {
-				t.Logf("Could not close response body %s", err)
-			}
-		}()
-		body, err := ioutil.ReadAll(resp.Body)
-		require.NoError(t, err)
-		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
-
+		// THEN
 		actualAppPage := graphql.ApplicationPage{}
 		getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
@@ -98,42 +82,11 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 
 		require.Len(t, actualAppPage.Data, 1)
 		require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
-
-		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-
-		subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
-		require.NotEmpty(t, subJobStatusPath)
-		subJobStatusURL := conf.SubscriptionConfig.URL + subJobStatusPath
-		require.Eventually(t, func() bool {
-			return subscription.GetSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == subscription.JobSucceededStatus
-		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
-		t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTmpl.Name, appTmpl.ID, subscriptionProviderSubaccountID)
 	})
 
 	t.Run("Unsubscribe tenant to Application flow", func(t *testing.T) {
-		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
-		subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
-		require.NoError(t, err)
-		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
-		subscribeReq.Header.Add(subscription.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
-		subscribeReq.Header.Add(subscription.ContentTypeHeader, subscription.ContentTypeApplicationJson)
-		subscribeReq.Header.Add(conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
-
-		//unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
-		//In case there isn't subscription it will fail-safe without error
-		subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-
-		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTmpl.Name, appTmpl.ID, subscriptionProviderSubaccountID)
-		resp, err := httpClient.Do(subscribeReq)
-		require.NoError(t, err)
-		defer func() {
-			if err := resp.Body.Close(); err != nil {
-				t.Logf("Could not close response body %s", err)
-			}
-		}()
-		body, err := ioutil.ReadAll(resp.Body)
-		require.NoError(t, err)
-		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
+		// GIVEN
+		createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
 
 		actualAppPage := graphql.ApplicationPage{}
 		getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
@@ -143,20 +96,54 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 		require.Len(t, actualAppPage.Data, 1)
 		require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
 
-		subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
-		require.NotEmpty(t, subJobStatusPath)
-		subJobStatusURL := conf.SubscriptionConfig.URL + subJobStatusPath
-		require.Eventually(t, func() bool {
-			return subscription.GetSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == subscription.JobSucceededStatus
-		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
-		t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTmpl.Name, appTmpl.ID, subscriptionProviderSubaccountID)
-
+		// WHEN
 		subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
+		// THEN
 		actualAppPage = graphql.ApplicationPage{}
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
 		require.NoError(t, err)
 
 		require.Len(t, actualAppPage.Data, 0)
 	})
+}
+
+func createSubscription(t *testing.T, ctx context.Context, httpClient *http.Client, appTmpl graphql.ApplicationTemplate, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID string) {
+	subscribeReq := buildSubscriptionRequest(t, ctx, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+	//unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
+	//In case there isn't subscription it will fail-safe without error
+	subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+	t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTmpl.Name, appTmpl.ID, subscriptionProviderSubaccountID)
+	resp, err := httpClient.Do(subscribeReq)
+	require.NoError(t, err)
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			t.Logf("Could not close response body %s", err)
+		}
+	}()
+	body, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
+
+	subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
+	require.NotEmpty(t, subJobStatusPath)
+	subJobStatusURL := conf.SubscriptionConfig.URL + subJobStatusPath
+	require.Eventually(t, func() bool {
+		return subscription.GetSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == subscription.JobSucceededStatus
+	}, subscription.EventuallyTimeout, subscription.EventuallyTick)
+	t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTmpl.Name, appTmpl.ID, subscriptionProviderSubaccountID)
+}
+
+func buildSubscriptionRequest(t *testing.T, ctx context.Context, subscriptionConsumerTenantID, subscriptionProviderSubaccountID string) *http.Request {
+	apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
+	subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
+	require.NoError(t, err)
+	subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+	subscribeReq.Header.Add(subscription.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
+	subscribeReq.Header.Add(subscription.ContentTypeHeader, subscription.ContentTypeApplicationJson)
+	subscribeReq.Header.Add(conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
+
+	return subscribeReq
 }
