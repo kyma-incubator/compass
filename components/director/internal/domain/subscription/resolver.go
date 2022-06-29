@@ -14,8 +14,8 @@ import (
 type SubscriptionService interface {
 	SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName string) (bool, error)
 	UnsubscribeTenantFromRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region string) (bool, error)
-	SubscribeTenantToApplication(ctx context.Context, subaccountTenantID, subscribedSubaccountID, providerSubaccountID, region, subscribedAppName string) (bool, error)
-	UnsubscribeTenantFromApplication(ctx context.Context, subaccountTenantID, providerSubaccountID, region string) (bool, error)
+	SubscribeTenantToApplication(ctx context.Context, providerID, subaccountTenantID, region, subscribedAppName string) (bool, error)
+	UnsubscribeTenantFromApplication(ctx context.Context, providerID, subaccountTenantID, region string) (bool, error)
 	DetermineSubscriptionFlow(ctx context.Context, providerID, region string) (resource.Type, error)
 }
 
@@ -53,7 +53,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 	switch flowType {
 	case resource.ApplicationTemplate:
 		log.C(ctx).Infof("Entering Application flow")
-		success, err = r.subscriptionSvc.SubscribeTenantToApplication(ctx, providerID, subaccountTenantID, providerSubaccountID, region, subscriptionAppName)
+		success, err = r.subscriptionSvc.SubscribeTenantToApplication(ctx, providerID, subaccountTenantID, region, subscriptionAppName)
 		if err != nil {
 			return false, err
 		}
@@ -94,7 +94,7 @@ func (r *Resolver) UnsubscribeTenant(ctx context.Context, providerID, subaccount
 	switch flowType {
 	case resource.ApplicationTemplate:
 		log.C(ctx).Infof("Entering Application flow")
-		success, err = r.subscriptionSvc.UnsubscribeTenantFromApplication(ctx, providerID, providerSubaccountID, region)
+		success, err = r.subscriptionSvc.UnsubscribeTenantFromApplication(ctx, providerID, subaccountTenantID, region)
 		if err != nil {
 			return false, err
 		}
