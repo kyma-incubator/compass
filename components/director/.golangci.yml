@@ -1,4 +1,7 @@
 run:
+  # Use Go 1.17 because of https://github.com/golangci/golangci-lint/issues/2649
+  go: '1.17'
+
   # default concurrency is a available CPU number
   concurrency: 4
 
