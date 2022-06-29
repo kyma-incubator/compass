@@ -40,7 +40,6 @@ const (
 	consumerTenantID           = "ddf290d5-31c2-457e-a14d-461d3df95ac9"
 	runtimeCtxID               = "cf226ea8-31f8-475d-bd28-5cba3df9c199"
 	providerRuntimeID          = "96c85d13-22ee-4555-9b41-f5e364070c20"
-	subscribedSubaccountID     = "7f53c1b7-1ef1-42e5-8260-24ea802ff3b8"
 	runtimeM2MTableName        = "tenant_runtimes"
 
 	subscriptionProviderIDLabelKey = "subscriptionProviderId"
