@@ -18,6 +18,7 @@ PATH_TO_HYDRATOR_VALUES="$CURRENT_DIR/../../chart/compass/charts/hydrator/values
 PATH_TO_COMPASS_OIDC_CONFIG_FILE="$HOME/.compass.yaml"
 MIGRATOR_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/migrator-job.yaml)
 UPDATE_EXPECTED_SCHEMA_VERSION_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/update-expected-schema-version-job.yaml)
+SCHEMA_MIGRATOR_COMPONENT_PATH=${ROOT_PATH}/components/schema-migrator
 RESET_VALUES_YAML=true
 
 K3D_MEMORY=8192MB
@@ -195,12 +196,50 @@ if [[ ${DUMP_DB} ]]; then
         sed -i 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/update-expected-schema-version-job.yaml
     fi
 
+    REMOTE_VERSIONS=($(gsutil ls -R gs://sap-cp-cmp-dev-db-dump/ | grep -o -E '[0-9]+' | sed -e 's/^0\+//' | sort -r))
+    LOCAL_VERSIONS=($(ls migrations/director | grep -o -E '^[0-9]+' | sed -e 's/^0\+//' | sort -ru))
 
-    if [[ ! -f ${ROOT_PATH}/components/schema-migrator/seeds/dump.sql ]]; then
-        echo -e "${YELLOW}Will pull DB dump from GCR bucket${NC}"
-        gsutil cp gs://sap-cp-cmp-dev-db-dump/dump.sql ${ROOT_PATH}/components/schema-migrator/seeds/dump.sql
+    SCHEMA_VERSION=""
+    for r in "${REMOTE_VERSIONS[@]}"; do
+       for l in "${LOCAL_VERSIONS[@]}"; do
+          if [[ "$r" == "$l" ]]; then
+            SCHEMA_VERSION=$r
+            break 2;
+          fi
+       done
+    done
+
+# todo:: remove
+#    LATEST_LOCAL_SCHEMA_VERSION=$(ls migrations/director | tail -n 1 | grep -o -E '^[0-9]+' | sed -e 's/^0\+//')
+#    echo -e "${YELLOW}Check if there is DB dump in GCS bucket with migration number: $LATEST_LOCAL_SCHEMA_VERSION...${NC}"
+#    gsutil -q stat gs://sap-cp-cmp-dev-db-dump/dump-"${LATEST_LOCAL_SCHEMA_VERSION}".sql
+#    STATUS=$?
+#
+#    if [[ ! $STATUS ]]; then
+#      echo -e "${YELLOW}There is no DB dump with migration number: $LATEST_LOCAL_SCHEMA_VERSION in the bucket. Will get the latest available one...${NC}"
+#      LATEST_DB_DUMP_VERSION=$(gsutil ls -R gs://sap-cp-cmp-dev-db-dump/ | tail -n 1 | grep -o -E '[0-9]+' | sed -e 's/^0\+//')
+#      SCHEMA_VERSION=$LATEST_DB_DUMP_VERSION
+#    else
+#      echo -e "${GREEN}DB dump with migration number: $LATEST_LOCAL_SCHEMA_VERSION exists in the bucket. Will use it...${NC}"
+#      SCHEMA_VERSION=$LATEST_LOCAL_SCHEMA_VERSION
+#    fi
+
+    echo -e "${YELLOW}Check if there is DB dump in GCS bucket with migration number: $SCHEMA_VERSION...${NC}"
+    gsutil -q stat gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}".sql
+    STATUS=$?
+
+    if [[ $STATUS ]]; then
+      echo -e "${GREEN}DB dump with migration number: $SCHEMA_VERSION exists in the bucket. Will use it...${NC}"
     else
-        echo -e "${GREEN}DB dump already exists on system, will reuse it${NC}"
+      echo -e "${RED}There is no DB dump with migration number: $SCHEMA_VERSION in the bucket.${NC}"
+      exit 1
+    fi
+
+    if [[ ! -f ${SCHEMA_MIGRATOR_COMPONENT_PATH}/seeds/dump-${SCHEMA_VERSION}.sql ]]; then
+        echo -e "${YELLOW}There is no dump with number: $SCHEMA_VERSION locally. Will pull the DB dump from GCR bucket...${NC}"
+        gsutil cp gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}".sql "$SCHEMA_MIGRATOR_COMPONENT_PATH"/seeds/dump-"${SCHEMA_VERSION}".sql
+    else
+        echo -e "${GREEN}DB dump already exists on the local system, will reuse it${NC}"
     fi
 fi
 
