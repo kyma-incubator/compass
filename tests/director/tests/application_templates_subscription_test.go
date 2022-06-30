@@ -24,7 +24,7 @@ import (
 
 func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 	t := testingx.NewT(stdT)
-	t.Run("Success", func(t *testing.T) {
+	t.Run("When creating app template with a certificate", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
