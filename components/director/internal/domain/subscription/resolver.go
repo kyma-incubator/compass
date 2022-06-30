@@ -14,7 +14,7 @@ import (
 type SubscriptionService interface {
 	SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName string) (bool, error)
 	UnsubscribeTenantFromRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region string) (bool, error)
-	SubscribeTenantToApplication(ctx context.Context, providerID, subaccountTenantID, region, subscribedAppName string) (bool, error)
+	SubscribeTenantToApplication(ctx context.Context, providerID, subaccountTenantID, consumerTenantID, region, subscribedAppName string) (bool, error)
 	UnsubscribeTenantFromApplication(ctx context.Context, providerID, subaccountTenantID, region string) (bool, error)
 	DetermineSubscriptionFlow(ctx context.Context, providerID, region string) (resource.Type, error)
 }
@@ -53,7 +53,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 	switch flowType {
 	case resource.ApplicationTemplate:
 		log.C(ctx).Infof("Entering Application flow")
-		success, err = r.subscriptionSvc.SubscribeTenantToApplication(ctx, providerID, subaccountTenantID, region, subscriptionAppName)
+		success, err = r.subscriptionSvc.SubscribeTenantToApplication(ctx, providerID, subaccountTenantID, consumerTenantID, region, subscriptionAppName)
 		if err != nil {
 			return false, err
 		}
