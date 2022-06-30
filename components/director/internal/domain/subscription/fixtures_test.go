@@ -3,6 +3,8 @@ package subscription_test
 import (
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/subscription/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -109,6 +111,7 @@ func fixModelApplicationCreateInputWithLabels(name, subscribedSubaccountID strin
 		Name:           name,
 		Description:    &testDescription,
 		HealthCheckURL: &testURL,
+		LocalTenantID:  str.Ptr(consumerTenantID),
 		Labels: map[string]interface{}{
 			"managed":                          "false",
 			scenarioassignment.SubaccountIDKey: subscribedSubaccountID,
