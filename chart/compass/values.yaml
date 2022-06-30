@@ -558,6 +558,7 @@ global:
       entityTypeField: "entityType"
       globalAccountID: "gaID"
       regionField: "region"
+    regionDetails: '[{"central", ""}]'
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     issuerLocality: "local" # In local setup we have manually created connector CA certificate with 'local' Locality property
