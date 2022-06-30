@@ -61,7 +61,9 @@ func TestListFormations(t *testing.T) {
 
 	expectedFormations := 0
 	t.Logf("List should return %d formations", expectedFormations)
-	formationPage1 := fixtures.ListFormations(t, ctx, certSecuredGraphQLClient, first, expectedFormations)
+	listFormationsReq := fixtures.FixListFormationsRequestWithPageSize(first)
+	saveExample(t, listFormationsReq.Query(), "query formations")
+	formationPage1 := fixtures.ListFormations(t, ctx, certSecuredGraphQLClient, listFormationsReq, expectedFormations)
 	require.NotNil(t, formationPage1)
 	require.Equal(t, expectedFormations, formationPage1.TotalCount)
 
@@ -75,7 +77,7 @@ func TestListFormations(t *testing.T) {
 
 	expectedFormations = 2
 	t.Logf("List should return %d formations", expectedFormations)
-	formationPage2 := fixtures.ListFormations(t, ctx, certSecuredGraphQLClient, first, expectedFormations)
+	formationPage2 := fixtures.ListFormations(t, ctx, certSecuredGraphQLClient, listFormationsReq, expectedFormations)
 	require.NotNil(t, formationPage2)
 	assert.Equal(t, expectedFormations, formationPage2.TotalCount)
 	assert.ElementsMatch(t, formationPage2.Data, []*graphql.Formation{
