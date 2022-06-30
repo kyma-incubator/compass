@@ -102,11 +102,11 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 	if err != nil {
 		return "", err
 	}
-	appInputJson, err := enrichWithApplicationTypeLabel(in.ApplicationInputJSON, applicationType)
+	appInputJSON, err := enrichWithApplicationTypeLabel(in.ApplicationInputJSON, applicationType)
 	if err != nil {
 		return "", err
 	}
-	in.ApplicationInputJSON = appInputJson
+	in.ApplicationInputJSON = appInputJSON
 
 	exists, err := s.exists(ctx, in.Name, in.Labels[tenant.RegionLabelKey])
 	if err != nil {
@@ -307,11 +307,11 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 		return err
 	}
 
-	appInputJson, err := enrichWithApplicationTypeLabel(in.ApplicationInputJSON, applicationType)
+	appInputJSON, err := enrichWithApplicationTypeLabel(in.ApplicationInputJSON, applicationType)
 	if err != nil {
 		return err
 	}
-	in.ApplicationInputJSON = appInputJson
+	in.ApplicationInputJSON = appInputJSON
 
 	if oldAppTemplate.Name != in.Name {
 		exists, err := s.exists(ctx, in.Name, region)
