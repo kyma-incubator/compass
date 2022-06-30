@@ -127,7 +127,6 @@ func TestApplicationTemplateWithExternalCertificate(t *testing.T) {
 		// Enhance input to match the newly created labels
 		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
 		appTemplateInput.Labels["global_subaccount_id"] = conf.ConsumerID
-		appTemplateInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", name, conf.SubscriptionConfig.SelfRegRegion)
 		assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
 	})
 
