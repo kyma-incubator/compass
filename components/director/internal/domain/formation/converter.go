@@ -33,12 +33,12 @@ func (c *converter) MultipleToGraphQL(in []*model.Formation) []*graphql.Formatio
 		return nil
 	}
 	formations := make([]*graphql.Formation, 0, len(in))
-	for _, r := range in {
-		if r == nil {
+	for _, f := range in {
+		if f == nil {
 			continue
 		}
 
-		formations = append(formations, c.ToGraphQL(r))
+		formations = append(formations, c.ToGraphQL(f))
 	}
 
 	return formations

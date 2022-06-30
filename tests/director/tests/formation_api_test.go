@@ -24,7 +24,6 @@ func TestGetFormation(t *testing.T) {
 
 	t.Logf("Should create formation: %q", formationName)
 	formation := fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, formationName)
-	require.Equal(t, formationName, formation.Name)
 	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formationName)
 
 	t.Logf("Should get formation %q by id %q", formationName, formation.ID)
@@ -78,7 +77,7 @@ func TestListFormations(t *testing.T) {
 	formationPage2 := fixtures.ListFormations(t, ctx, certSecuredGraphQLClient, first, expectedFormations)
 	require.NotNil(t, formationPage2)
 	assert.Equal(t, expectedFormations, formationPage2.TotalCount)
-	assert.Subset(t, formationPage2.Data, []*graphql.Formation{
+	assert.ElementsMatch(t, formationPage2.Data, []*graphql.Formation{
 		&firstFormation,
 		&secondFormation,
 	})
