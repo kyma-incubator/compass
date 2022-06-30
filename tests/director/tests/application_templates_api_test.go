@@ -3,6 +3,8 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
+	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
@@ -581,65 +583,62 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 	saveExample(t, createAppFromTmplRequest.Query(), "register application from template")
 }
 
-//func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
-//	//GIVEN
-//	ctx := context.TODO()
-//	appTemplateName := createAppTemplateName("template")
-//	appTmplInput := fixAppTemplateInput(appTemplateName)
-//	appTmplInput.ApplicationInput.Description = ptr.String("test {{display-name}}")
-//	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
-//		{
-//			Name:        "name",
-//			Description: ptr.String("name"),
-//		},
-//		{
-//			Name:        "display-name",
-//			Description: ptr.String("display-name"),
-//		},
-//	}
-//
-//	tenantId := tenant.TestTenants.GetDefaultTenantID()
-//
-//	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
-//	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTmpl)
-//	require.NoError(t, err)
-//
-//	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
-//		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
-//		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-//		CertSvcInstanceTestSecretName:         conf.ExternalCertProviderConfig.CertSvcInstanceTestSecretName,
-//		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
-//		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-//		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertOU, "random-account", -1),
-//		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
-//		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
-//	}
-//	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig)
-//	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
-//
-//	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: appTemplateName, Values: []*graphql.TemplateValueInput{
-//		{
-//			Placeholder: "name",
-//			Value:       "new-name",
-//		},
-//		{
-//			Placeholder: "display-name",
-//			Value:       "new-display-name",
-//		}}}
-//	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
-//	require.NoError(t, err)
-//	createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
-//	outputApp := graphql.ApplicationExt{}
-//	//WHEN
-//	err = testctx.Tc.RunOperation(ctx, directorCertSecuredClient, createAppFromTmplRequest, &outputApp)
-//
-//	//THEN
-//	require.NoError(t, err)
-//	fixtures.UnregisterApplication(t, ctx, directorCertSecuredClient, tenantId, outputApp.ID)
-//	require.NotEmpty(t, outputApp)
-//	require.NotNil(t, outputApp.Application.Description)
-//	require.Equal(t, "test new-display-name", *outputApp.Application.Description)
-//}
+func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+	appTemplateName := createAppTemplateName("template")
+	appTmplInput := fixAppTemplateInput(appTemplateName)
+	appTmplInput.ApplicationInput.Description = ptr.String("test {{display-name}}")
+	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+		{
+			Name:        "name",
+			Description: ptr.String("name"),
+		},
+		{
+			Name:        "display-name",
+			Description: ptr.String("display-name"),
+		},
+	}
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTmpl)
+	require.NoError(t, err)
+
+	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
+		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
+		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
+		CertSvcInstanceTestSecretName:         conf.ExternalCertProviderConfig.CertSvcInstanceTestSecretName,
+		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
+		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
+		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertOU, conf.ExternalCertProviderConfig.TestExternalCertOU2, -1),
+		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
+		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
+	}
+	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig)
+	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
+
+	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: appTemplateName, Values: []*graphql.TemplateValueInput{
+		{
+			Placeholder: "name",
+			Value:       "new-name",
+		},
+		{
+			Placeholder: "display-name",
+			Value:       "new-display-name",
+		}}}
+	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
+	require.NoError(t, err)
+	createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
+	outputApp := graphql.ApplicationExt{}
+	// WHEN
+	err = testctx.Tc.RunOperation(ctx, directorCertSecuredClient, createAppFromTmplRequest, &outputApp)
+
+	// THEN
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Object not found [object=applicationTemplate]")
+}
 
 func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	// GIVEN
