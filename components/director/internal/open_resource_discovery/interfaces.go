@@ -20,6 +20,8 @@ type labelRepository interface {
 type WebhookService interface {
 	ListForApplication(ctx context.Context, applicationID string) ([]*model.Webhook, error)
 	ListForApplicationWithSelectForUpdate(ctx context.Context, applicationID string) ([]*model.Webhook, error)
+	//ListForApplicationTemplate(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
+	ListForApplicationTemplates(ctx context.Context) ([]*model.Webhook, error)
 }
 
 // ApplicationService is responsible for the service-layer Application operations.

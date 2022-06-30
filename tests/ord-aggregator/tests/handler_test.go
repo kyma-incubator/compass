@@ -5,6 +5,8 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -135,7 +137,7 @@ func TestORDAggregator(t *testing.T) {
 	//accessStrategyConfigSecurity := &fixtures.ORDConfigSecurity{
 	//	AccessStrategy: "sap:cmp-mtls:v1",
 	//}
-	//
+
 	//var appInput, secondAppInput, thirdAppInput, fourthAppInput, fifthAppInput, sixthAppInput directorSchema.ApplicationRegisterInput
 	//t.Run("Verifying ORD Document to be valid", func(t *testing.T) {
 	//	// Unsecured config endpoint with full absolute URL in the webhook; unsecured document; doc baseURL from the webhook
@@ -525,7 +527,7 @@ func TestORDAggregator(t *testing.T) {
 		appTemplateName := createAppTemplateName("ORD-aggregator-test-app-template")
 		appTemplateInput := fixAppTemplateInput(appTemplateName, testConfig.ExternalServicesMockUnsecuredMultiTenantURL)
 		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
+		//defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
 		require.NoError(t, err)
 		require.NotEmpty(t, appTemplate)
 
@@ -584,7 +586,7 @@ func TestORDAggregator(t *testing.T) {
 		require.Len(t, actualAppPage.Data, 1)
 		require.Equal(t, appTemplate.ID, *actualAppPage.Data[0].ApplicationTemplateID)
 
-		defer subscription.BuildAndExecuteUnsubscribeRequest1(t, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+		//defer subscription.BuildAndExecuteUnsubscribeRequest1(t, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
 		subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
 		require.NotEmpty(t, subJobStatusPath)
@@ -603,6 +605,36 @@ func TestORDAggregator(t *testing.T) {
 
 		err = verifyORDDocument(defaultCheckInterval, defaultTestTimeout, func() bool {
 			var respBody string
+
+			t.Log("Create integration system")
+			intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", "test-int-system")
+			defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSys)
+			require.NoError(t, err)
+			require.NotEmpty(t, intSys.ID)
+
+			intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSys.ID)
+			defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSystemCredentials.ID)
+
+			unsecuredHttpClient := http.DefaultClient
+			unsecuredHttpClient.Transport = &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: true,
+				},
+			}
+
+			oauthCredentialData, ok := intSystemCredentials.Auth.Credential.(*directorSchema.OAuthCredentialData)
+			require.True(t, ok)
+
+			cfgWithInternalVisibilityScope := &clientcredentials.Config{
+				ClientID:     oauthCredentialData.ClientID,
+				ClientSecret: oauthCredentialData.ClientSecret,
+				TokenURL:     oauthCredentialData.URL,
+				Scopes:       []string{internalVisibilityScope},
+			}
+
+			ctx = context.WithValue(ctx, oauth2.HTTPClient, unsecuredHttpClient)
+			httpClient := cfgWithInternalVisibilityScope.Client(ctx)
+			httpClient.Timeout = 20 * time.Second
 
 			// Verify system instances
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/systemInstances?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})

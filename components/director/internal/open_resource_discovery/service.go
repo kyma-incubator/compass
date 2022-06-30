@@ -2,6 +2,7 @@ package ord
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -111,7 +112,12 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 	wg := &sync.WaitGroup{}
 	wg.Add(s.config.maxParallelApplicationProcessors)
 
-	appTemplates, err := s.getAppTemplates(ctx, pageSize, pageCursor)
+	//appTemplates, err := s.getAppTemplates(ctx, pageSize, pageCursor)
+	//if err != nil {
+	//	return err
+	//}
+
+	appTemplatesWebhooks, err := s.getAppTemplatesWebhooks(ctx)
 	if err != nil {
 		return err
 	}
@@ -122,7 +128,7 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 			defer wg.Done()
 
 			for app := range queue {
-				if err := s.processApp(ctx, app, globalResourcesOrdIDs, appTemplates); err != nil {
+				if err := s.processApp(ctx, app, globalResourcesOrdIDs, appTemplatesWebhooks); err != nil {
 					log.C(ctx).WithError(err).Errorf("error while processing app %q", app.ID)
 					atomic.AddInt32(&appErrors, 1)
 				}
@@ -200,13 +206,13 @@ func (s *Service) listAppPage(ctx context.Context, pageSize int, cursor string) 
 	return page, tx.Commit()
 }
 
-func (s *Service) processApp(ctx context.Context, app *model.Application, globalResourcesOrdIDs map[string]bool, appTemplates map[string]*model.ApplicationTemplate) error {
+func (s *Service) processApp(ctx context.Context, app *model.Application, globalResourcesOrdIDs map[string]bool, appTemplatesWebhooks map[string][]*model.Webhook) error {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return err
 	}
 
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	//defer s.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -235,9 +241,12 @@ func (s *Service) processApp(ctx context.Context, app *model.Application, global
 		return err
 	}
 
+	fmt.Printf("1. TemplateID %s, webhookExecuted %v", *app.ApplicationTemplateID, webhookExecuted)
 	if app.ApplicationTemplateID != nil && !webhookExecuted {
-		appTemplate := appTemplates[*app.ApplicationTemplateID]
-		appTemplateWebhooks := convertWebhooks(appTemplate.Webhooks)
+		appTemplateWebhooks := appTemplatesWebhooks[*app.ApplicationTemplateID]
+		fmt.Printf("4.appTemplate webhooks len %v", len(appTemplateWebhooks))
+		//appTemplateWebhooks, err := s.webhookSvc.ListForApplicationTemplate()
+		//appTemplateWebhooks := convertWebhooks(appTemplate.Webhooks)
 
 		if _, err := s.processWebhooksAndDocuments(ctx, tx, appTemplateWebhooks, app, globalResourcesOrdIDs); err != nil {
 			return err
@@ -757,10 +766,14 @@ func (s *Service) processWebhooksAndDocuments(ctx context.Context, tx persistenc
 	var documents Documents
 	var baseURL string
 	var err error
+	fmt.Printf("2. webhooks len %v, ", len(webhooks))
+
 	for _, wh := range webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
 			ctx = addFieldToLogger(ctx, "app_id", app.ID)
 			documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, wh)
+			fmt.Printf("3. documents len %v, ", len(documents))
+
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("error fetching ORD document for webhook with id %q: %v", wh.ID, err)
 			}
@@ -780,13 +793,52 @@ func (s *Service) processWebhooksAndDocuments(ctx context.Context, tx persistenc
 	return false, nil
 }
 func (s *Service) getAppTemplates(ctx context.Context, pageSize int, pageCursor string) (map[string]*model.ApplicationTemplate, error) {
-	appTemplatePage, err := s.appTemplateSvc.List(ctx, []*labelfilter.LabelFilter{}, pageSize, pageCursor)
+	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	appTemplatePage, err := s.appTemplateSvc.List(ctx, []*labelfilter.LabelFilter{}, pageSize, pageCursor)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing application templates")
 	}
 	appTemplates := make(map[string]*model.ApplicationTemplate)
 	for _, appTmpl := range appTemplatePage.Data {
 		appTemplates[appTmpl.ID] = appTmpl
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return appTemplates, nil
+}
+
+func (s *Service) getAppTemplatesWebhooks(ctx context.Context) (map[string][]*model.Webhook, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	appTemplatesWebhooks, err := s.webhookSvc.ListForApplicationTemplates(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing application templates")
+	}
+	appTemplates := make(map[string][]*model.Webhook)
+	for _, appTmplWebhook := range appTemplatesWebhooks {
+		if _ , ok := appTemplates[appTmplWebhook.ObjectID] ; !ok {
+			appTemplates[appTmplWebhook.ObjectID] = []*model.Webhook{appTmplWebhook}
+			continue
+		}
+		appTemplates[appTmplWebhook.ObjectID] = append(appTemplates[appTmplWebhook.ObjectID], appTmplWebhook)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
 	}
 
 	return appTemplates, nil
