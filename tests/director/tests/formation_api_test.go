@@ -29,6 +29,7 @@ func TestGetFormation(t *testing.T) {
 	t.Logf("Should get formation %q by id %q", formationName, formation.ID)
 	var gotFormation graphql.Formation
 	getFormationReq := fixtures.FixGetFormationRequest(formation.ID)
+	saveExample(t, getFormationReq.Query(), "query formation")
 	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getFormationReq, &gotFormation)
 	require.NoError(t, err)
 	require.Equal(t, formation, gotFormation)
