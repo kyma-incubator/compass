@@ -28,6 +28,12 @@ do
             shift
             shift
         ;;
+        --benchmark)
+            checkInputParameterValue "${2}"
+            BENCHMARK="$2"
+            shift
+            shift
+        ;;
         --*)
             echo "Unknown flag ${1}"
             exit 1
@@ -42,6 +48,7 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 suiteName="compass-e2e-tests"
 testDefinitionName=$1
+benchmarkLabelSelector="!benchmark"
 echo "${1:-All tests}"
 echo "----------------------------"
 echo "- Testing Compass..."
@@ -66,6 +73,10 @@ then
   then
     labelSelector=',disable-db-dump'
   fi
+  if [[ "${BENCHMARK}" == "true" ]]
+  then
+    benchmarkLabelSelector='benchmark'
+  fi
       cat <<EOF | ${kc} apply -f -
       apiVersion: testing.kyma-project.io/v1alpha1
       kind: ClusterTestSuite
@@ -78,7 +89,7 @@ then
         concurrency: 1
         selectors:
           matchLabelExpressions:
-            - "!benchmark${labelSelector}"
+            - "${benchmarkLabelSelector}${labelSelector}"
 EOF
 
 else
