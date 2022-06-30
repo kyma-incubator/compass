@@ -437,9 +437,9 @@ func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string
 		appInput["labels"] = map[string]interface{}{applicationTypeLabelKey: applicationType}
 	}
 
-	inputJson, err := json.Marshal(appInput)
+	inputJSON, err := json.Marshal(appInput)
 	if err != nil {
 		return "", errors.Wrapf(err, "while marshalling app input")
 	}
-	return string(inputJson), nil
+	return string(inputJSON), nil
 }
