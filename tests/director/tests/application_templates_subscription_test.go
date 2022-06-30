@@ -24,87 +24,89 @@ import (
 
 func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 	t := testingx.NewT(stdT)
-	ctx := context.Background()
-
-	// GIVEN
-	subscriptionProviderSubaccountID := conf.TestProviderSubaccountID
-	subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID
-	subscriptionConsumerTenantID := conf.TestConsumerTenantID
-
-	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
-	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, conf.ExternalCertProviderConfig)
-	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
-
-	apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
-	subscriptionToken := token.GetClientCredentialsToken(stdT, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
-
-	// Create Application Template
-	appTemplateName := createAppTemplateName("app-template-name-subscription")
-	appTemplateInput := fixAppTemplateInput(appTemplateName)
-
-	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), &appTmpl)
-	require.NoError(t, err)
-	require.NotEmpty(t, appTmpl.ID)
-
-	selfRegLabelValue, ok := appTmpl.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
-	require.True(t, ok)
-	require.Contains(t, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTmpl.ID)
-
-	httpClient := &http.Client{
-		Timeout: 10 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation},
-		},
-	}
-
-	depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
-	require.NoError(t, err)
-	response, err := httpClient.Do(depConfigureReq)
-	require.NoError(t, err)
-	defer func() {
-		if err := response.Body.Close(); err != nil {
-			t.Logf("Could not close response body %s", err)
-		}
-	}()
-	require.Equal(t, http.StatusOK, response.StatusCode)
-
-	t.Run("Subscribe tenant to Application flow", func(t *testing.T) {
-		// WHEN
-		createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
-		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-
-		// THEN
-		actualAppPage := graphql.ApplicationPage{}
-		getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
-		require.NoError(t, err)
-
-		require.Len(t, actualAppPage.Data, 1)
-		require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
-	})
-
-	t.Run("Unsubscribe tenant to Application flow", func(t *testing.T) {
+	t.Run("When creating app template with a certificate", func(t *testing.T) {
 		// GIVEN
-		createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
+		ctx := context.Background()
 
-		actualAppPage := graphql.ApplicationPage{}
-		getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
+		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID
+		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID
+		subscriptionConsumerTenantID := conf.TestConsumerTenantID
+
+		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
+		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
+		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
+		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+
+		// Create Application Template
+		appTemplateName := createAppTemplateName("app-template-name-subscription")
+		appTemplateInput := fixAppTemplateInput(appTemplateName)
+
+		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), &appTmpl)
 		require.NoError(t, err)
+		require.NotEmpty(t, appTmpl.ID)
 
-		require.Len(t, actualAppPage.Data, 1)
-		require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
+		selfRegLabelValue, ok := appTmpl.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
+		require.True(t, ok)
+		require.Contains(t, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTmpl.ID)
 
-		// WHEN
-		subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+		httpClient := &http.Client{
+			Timeout: 10 * time.Second,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation},
+			},
+		}
 
-		// THEN
-		actualAppPage = graphql.ApplicationPage{}
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
+		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
 		require.NoError(t, err)
+		response, err := httpClient.Do(depConfigureReq)
+		require.NoError(t, err)
+		defer func() {
+			if err := response.Body.Close(); err != nil {
+				t.Logf("Could not close response body %s", err)
+			}
+		}()
+		require.Equal(t, http.StatusOK, response.StatusCode)
 
-		require.Len(t, actualAppPage.Data, 0)
+		t.Run("Subscribe tenant to Application flow", func(t *testing.T) {
+			// WHEN
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
+			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+			// THEN
+			actualAppPage := graphql.ApplicationPage{}
+			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualAppPage.Data, 1)
+			require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
+		})
+
+		t.Run("Unsubscribe tenant to Application flow", func(t *testing.T) {
+			// GIVEN
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
+
+			actualAppPage := graphql.ApplicationPage{}
+			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualAppPage.Data, 1)
+			require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
+
+			// WHEN
+			subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+			// THEN
+			actualAppPage = graphql.ApplicationPage{}
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualAppPage.Data, 0)
+		})
 	})
 }
 
