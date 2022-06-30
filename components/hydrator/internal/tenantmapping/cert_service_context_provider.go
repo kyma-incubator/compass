@@ -49,11 +49,6 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 
 	externalTenantID := authDetails.AuthID
 
-	if tnt := reqData.Header.Get("Tenant"); len(tnt) > 0 {
-		log.C(ctx).Infof("Tenant header with value %q is found. Will use it for the tenant context", tnt)
-		externalTenantID = tnt
-	}
-
 	scopes, err := p.directorScopes(consumerType)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to get scopes for consumer type %s: %v", consumerType, err)
