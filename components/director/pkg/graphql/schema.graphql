@@ -1352,7 +1352,15 @@ type Query {
 	automaticScenarioAssignments(first: Int = 200, after: PageCursor): AutomaticScenarioAssignmentPage @hasScopes(path: "graphql.query.automaticScenarioAssignments")
 	systemAuth(id: ID!): SystemAuth @hasScopes(path: "graphql.query.systemAuth")
 	systemAuthByToken(token: String!): SystemAuth @hasScopes(path: "graphql.query.systemAuthByToken")
+	"""
+	**Examples**
+	- [query formation](examples/query-formation/query-formation.graphql)
+	"""
 	formation(id: ID!): Formation @hasScopes(path: "graphql.query.formation")
+	"""
+	**Examples**
+	- [query formations](examples/query-formations/query-formations.graphql)
+	"""
 	formations(first: Int = 200, after: PageCursor): FormationPage! @hasScopes(path: "graphql.query.formations")
 	"""
 	**Examples**
