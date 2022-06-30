@@ -77,8 +77,8 @@ type TenantProviderConfig struct {
 
 // EventsConfig contains configuration for Events API requests
 type EventsConfig struct {
-	AccountsRegion    string   `envconfig:"default=central"`
-	SubaccountRegions []string `envconfig:"default=central"`
+	AccountsRegion    string            `envconfig:"default=central"`
+	SubaccountRegions map[string]string `envconfig:"optional"`
 
 	AuthMode    oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
 	OAuthConfig OAuth2Config

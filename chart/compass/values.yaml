@@ -113,7 +113,7 @@ global:
       version: "PR-2453"
     hydrator:
       dir:
-      version: "PR-2408"
+      version: "PR-2458"
     gateway:
       dir:
       version: "PR-2383"
@@ -558,6 +558,7 @@ global:
       entityTypeField: "entityType"
       globalAccountID: "gaID"
       regionField: "region"
+    regionDetails: '[{"central", ""}]'
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     issuerLocality: "local" # In local setup we have manually created connector CA certificate with 'local' Locality property
