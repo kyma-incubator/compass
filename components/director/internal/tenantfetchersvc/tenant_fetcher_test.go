@@ -74,7 +74,9 @@ func TestFetcher_FetchTenantOnDemand(t *testing.T) {
 
 			defer mock.AssertExpectationsForObjects(t, persist, tenantStorageSvc, apiClient, gqlClient)
 
-			onDemandSvc := tenantfetchersvc.NewSubaccountOnDemandService(tenantfetchersvc.QueryConfig{}, tenantfetchersvc.TenantFieldMapping{}, apiClient, transact, tenantStorageSvc, gqlClient, provider, tenantCnv)
+			regionName := "central"
+			regionDetails := map[string]tenantfetchersvc.RegionDetails{regionName: {Name: regionName, Prefix: ""}}
+			onDemandSvc := tenantfetchersvc.NewSubaccountOnDemandService(tenantfetchersvc.QueryConfig{}, tenantfetchersvc.TenantFieldMapping{}, apiClient, transact, tenantStorageSvc, gqlClient, provider, tenantCnv, regionDetails)
 
 			tf := tenantfetchersvc.NewTenantFetcher(*onDemandSvc)
 
