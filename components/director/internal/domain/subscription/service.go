@@ -260,7 +260,7 @@ func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, 
 }
 
 // SubscribeTenantToApplication fetches model.ApplicationTemplate by region and provider and registers an Application from that template
-func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, subscribedSubaccountID, region, subscribedAppName string) (bool, error) {
+func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, subscribedSubaccountID, consumerTenantID, region, subscribedAppName string) (bool, error) {
 	filters := s.buildLabelFilters(providerID, region)
 	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)
 	if err != nil {
@@ -291,7 +291,7 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 		}
 	}
 
-	if err := s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, subscribedAppName); err != nil {
+	if err := s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName); err != nil {
 		return false, err
 	}
 
@@ -363,7 +363,7 @@ func (s *service) DetermineSubscriptionFlow(ctx context.Context, providerID, reg
 	return "", errors.Errorf("could not determine flow")
 }
 
-func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, subscribedAppName string) error {
+func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, consumerTenantID string, subscribedAppName string) error {
 	values := []*model.ApplicationTemplateValueInput{
 		{Placeholder: "name", Value: subscribedAppName},
 		{Placeholder: "display-name", Value: subscribedAppName},
@@ -395,6 +395,7 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 	}
 	appCreateInputModel.Labels["managed"] = "false"
 	appCreateInputModel.Labels[scenarioassignment.SubaccountIDKey] = subscribedSubaccountID
+	appCreateInputModel.LocalTenantID = &consumerTenantID
 
 	log.C(ctx).Infof("Creating an Application with name %q from Application Template with name %q", subscribedAppName, appTemplate.Name)
 	_, err = s.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID)
