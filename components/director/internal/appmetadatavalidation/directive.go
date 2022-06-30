@@ -58,6 +58,7 @@ func (d *directive) Validate(ctx context.Context, _ interface{}, next gqlgen.Res
 		return next(ctx)
 	}
 
+	// TODO: Use the tenant data from the future tenant context provider (from the onBehalfOf property).
 	tenantID, ok := ctx.Value(TenantHeader).(string)
 	if !ok || tenantID == "" {
 		logger.Infof("Missing tenant header. Continue with next handler.")
