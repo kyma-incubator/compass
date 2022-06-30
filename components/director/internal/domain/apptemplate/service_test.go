@@ -376,7 +376,7 @@ func TestService_ListLabels(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", ctx, "", model.AppTemplateLabelableObject, testID).Return(labels, nil).Once()
+				labelRepo.On("ListForGlobalObject", ctx, model.AppTemplateLabelableObject, testID).Return(labels, nil).Once()
 				return labelRepo
 			},
 			ExpectedOutput: modelAppTemplate,
@@ -390,7 +390,7 @@ func TestService_ListLabels(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", ctx, "", model.AppTemplateLabelableObject, testID).Return(nil, testError).Once()
+				labelRepo.On("ListForGlobalObject", ctx, model.AppTemplateLabelableObject, testID).Return(nil, testError).Once()
 				return labelRepo
 			},
 			ExpectedError: testError,
@@ -480,7 +480,7 @@ func TestService_GetLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", ctx, "", model.AppTemplateLabelableObject, testID).Return(labels, nil).Once()
+				labelRepo.On("ListForGlobalObject", ctx, model.AppTemplateLabelableObject, testID).Return(labels, nil).Once()
 				return labelRepo
 			},
 			ExpectedOutput: labels["abc"],
@@ -496,7 +496,7 @@ func TestService_GetLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", ctx, "", model.AppTemplateLabelableObject, testID).Return(nil, testError).Once()
+				labelRepo.On("ListForGlobalObject", ctx, model.AppTemplateLabelableObject, testID).Return(nil, testError).Once()
 				return labelRepo
 			},
 			ExpectedOutput: nil,
@@ -512,7 +512,7 @@ func TestService_GetLabel(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("ListForObject", ctx, "", model.AppTemplateLabelableObject, testID).Return(labels, nil).Once()
+				labelRepo.On("ListForGlobalObject", ctx, model.AppTemplateLabelableObject, testID).Return(labels, nil).Once()
 				return labelRepo
 			},
 			ExpectedOutput: nil,
