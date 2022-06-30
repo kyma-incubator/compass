@@ -396,7 +396,7 @@ func registerTenantsOnDemandHandler(ctx context.Context, router *mux.Router, eve
 }
 
 func regionDetailsToMap(regionDetails []tenantfetcher.RegionDetails) map[string]tenantfetcher.RegionDetails {
-	regionDetailsMap := make(map[string]tenantfetcher.RegionDetails, 0)
+	regionDetailsMap := make(map[string]tenantfetcher.RegionDetails)
 	for _, region := range regionDetails {
 		regionDetailsMap[region.Name] = region
 	}
