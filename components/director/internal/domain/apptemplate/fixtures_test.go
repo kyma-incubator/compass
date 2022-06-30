@@ -23,7 +23,7 @@ const (
 	testTenant         = "tnt"
 	testExternalTenant = "external-tnt"
 	testID             = "foo"
-	testConsumerId     = "consumer-id"
+	testConsumerID     = "consumer-id"
 
 	testWebhookID                      = "webhook-id-1"
 	testName                           = "bar"

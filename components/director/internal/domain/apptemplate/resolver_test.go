@@ -910,7 +910,7 @@ func TestResolver_Labels(t *testing.T) {
 func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
-	ctx = consumer.SaveToContext(ctx, consumer.Consumer{ConsumerID: testConsumerId})
+	ctx = consumer.SaveToContext(ctx, consumer.Consumer{ConsumerID: testConsumerID})
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
@@ -944,7 +944,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByNameAndSubaccount", txtest.CtxWithDBMatcher(), testName, testConsumerId).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("GetByNameAndSubaccount", txtest.CtxWithDBMatcher(), testName, testConsumerID).Return(modelAppTemplate, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
 				return appTemplateSvc
 			},
@@ -988,7 +988,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByNameAndSubaccount", txtest.CtxWithDBMatcher(), testName, testConsumerId).Return(nil, testError).Once()
+				appTemplateSvc.On("GetByNameAndSubaccount", txtest.CtxWithDBMatcher(), testName, testConsumerID).Return(nil, testError).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
@@ -1008,7 +1008,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByNameAndSubaccount", txtest.CtxWithDBMatcher(), testName, testConsumerId).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("GetByNameAndSubaccount", txtest.CtxWithDBMatcher(), testName, testConsumerID).Return(modelAppTemplate, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return("", testError).Once()
 				return appTemplateSvc
 			},
@@ -1029,7 +1029,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByNameAndSubaccount", txtest.CtxWithDBMatcher(), testName, testConsumerId).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("GetByNameAndSubaccount", txtest.CtxWithDBMatcher(), testName, testConsumerID).Return(modelAppTemplate, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
 				return appTemplateSvc
 			},
@@ -1054,7 +1054,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByNameAndSubaccount", txtest.CtxWithDBMatcher(), testName, testConsumerId).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("GetByNameAndSubaccount", txtest.CtxWithDBMatcher(), testName, testConsumerID).Return(modelAppTemplate, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
 				return appTemplateSvc
 			},
@@ -1079,7 +1079,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByNameAndSubaccount", txtest.CtxWithDBMatcher(), testName, testConsumerId).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("GetByNameAndSubaccount", txtest.CtxWithDBMatcher(), testName, testConsumerID).Return(modelAppTemplate, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
 				return appTemplateSvc
 			},
@@ -1109,7 +1109,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByNameAndSubaccount", txtest.CtxWithDBMatcher(), testName, testConsumerId).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("GetByNameAndSubaccount", txtest.CtxWithDBMatcher(), testName, testConsumerID).Return(modelAppTemplate, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
 				return appTemplateSvc
 			},
@@ -1140,7 +1140,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByNameAndSubaccount", txtest.CtxWithDBMatcher(), testName, testConsumerId).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("GetByNameAndSubaccount", txtest.CtxWithDBMatcher(), testName, testConsumerID).Return(modelAppTemplate, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
 				return appTemplateSvc
 			},
