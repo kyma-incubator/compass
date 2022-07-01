@@ -117,6 +117,10 @@ spec:
               value: {{ .Values.deployment.args.token.applicationExpiration | quote }}
             - name: APP_ONE_TIME_TOKEN_CSR_EXPIRATION
               value: {{ .Values.deployment.args.token.csrExpiration | quote }}
+            - name: APP_HTTP_RETRY_ATTEMPTS
+              value: "{{ .Values.global.ordAggregator.http.retry.attempts }}"
+            - name: APP_HTTP_RETRY_DELAY
+              value: "{{ .Values.global.ordAggregator.http.retry.delay }}"
             - name: APP_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: APP_LOG_FORMAT
