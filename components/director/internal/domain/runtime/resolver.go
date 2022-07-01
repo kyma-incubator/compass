@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
@@ -52,6 +53,7 @@ type RuntimeService interface {
 	GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error)
 	ListLabels(ctx context.Context, runtimeID string) (map[string]*model.Label, error)
 	DeleteLabel(ctx context.Context, runtimeID string, key string) error
+	ListByFilters(ctx context.Context, filters []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 }
 
 // ScenarioAssignmentService missing godoc
@@ -340,6 +342,10 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 	}()
 
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err = r.checkProviderRuntimeExistence(ctx, labels); err != nil {
+		return nil, err
+	}
 
 	if err = r.runtimeService.CreateWithMandatoryLabels(ctx, convertedIn, id, labels); err != nil {
 		return nil, err
@@ -847,6 +853,33 @@ func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runt
 		}
 	}
 
+	return nil
+}
+
+func (r *Resolver) checkProviderRuntimeExistence(ctx context.Context, labels map[string]interface{}) error {
+	distinguishLabelKey := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
+	regionLabelKey := selfregmanager.RegionLabel
+
+	distinguishLabelValue, distinguishLabelExists := labels[distinguishLabelKey]
+	region, regionExists := labels[regionLabelKey]
+
+	if distinguishLabelExists && regionExists {
+		filters := []*labelfilter.LabelFilter{
+			labelfilter.NewForKeyWithQuery(distinguishLabelKey, fmt.Sprintf("\"%s\"", distinguishLabelValue)),
+			labelfilter.NewForKeyWithQuery(regionLabelKey, fmt.Sprintf("\"%s\"", region)),
+		}
+
+		log.C(ctx).Infof("Getting runtimes for labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue)
+		runtimes, err := r.runtimeService.ListByFilters(ctx, filters)
+		if err != nil && !apperrors.IsNotFoundError(err) {
+			return errors.Wrap(err, fmt.Sprintf("Failed to get runtimes for labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue))
+		}
+
+		if len(runtimes) > 0 {
+			log.C(ctx).Errorf("Cannot have more than one runtime with labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue)
+			return errors.New(fmt.Sprintf("Cannot have more than one runtime with labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue))
+		}
+	}
 	return nil
 }
 
