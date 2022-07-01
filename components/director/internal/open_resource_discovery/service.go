@@ -211,8 +211,7 @@ func (s *Service) processApp(ctx context.Context, app *model.Application, global
 	if err != nil {
 		return err
 	}
-
-	//defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
@@ -830,7 +829,7 @@ func (s *Service) getAppTemplatesWebhooks(ctx context.Context) (map[string][]*mo
 	}
 	appTemplates := make(map[string][]*model.Webhook)
 	for _, appTmplWebhook := range appTemplatesWebhooks {
-		if _ , ok := appTemplates[appTmplWebhook.ObjectID] ; !ok {
+		if _, ok := appTemplates[appTmplWebhook.ObjectID]; !ok {
 			appTemplates[appTmplWebhook.ObjectID] = []*model.Webhook{appTmplWebhook}
 			continue
 		}

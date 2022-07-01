@@ -82,11 +82,11 @@ func (s *service) fetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 			log.C(ctx).WithError(err).Errorf("Cannot find executor for access strategy %q as part of fetch request %s processing: %v", *fr.Auth.AccessStrategy, fr.ID, err)
 			return nil, FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching Spec: %s", err.Error())), s.timestampGen())
 		}
-		resp, err = executor.Execute(ctx, s.client, fr.URL)
+		resp, err = executor.Execute(ctx, s.client, fr.URL, "")
 	} else if fr.Auth != nil {
-		resp, err = httputil.GetRequestWithCredentials(ctx, s.client, fr.URL, fr.Auth)
+		resp, err = httputil.GetRequestWithCredentials(ctx, s.client, fr.URL, "", fr.Auth)
 	} else {
-		resp, err = httputil.GetRequestWithoutCredentials(s.client, fr.URL)
+		resp, err = httputil.GetRequestWithoutCredentials(s.client, fr.URL, "")
 	}
 
 	if err != nil {

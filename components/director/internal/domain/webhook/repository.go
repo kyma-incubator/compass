@@ -152,7 +152,6 @@ func (r *repository) ListByApplicationTemplates(ctx context.Context) ([]*model.W
 	return convertToWebhooks(entities, r)
 }
 
-
 // Create missing godoc
 func (r *repository) Create(ctx context.Context, tenant string, item *model.Webhook) error {
 	if item == nil {

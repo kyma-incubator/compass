@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -40,7 +42,18 @@ func NewClient(httpClient *http.Client, accessStrategyExecutorProvider accessstr
 
 // FetchOpenResourceDiscoveryDocuments fetches all the documents for a single ORD .well-known endpoint
 func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *model.Application, webhook *model.Webhook) (Documents, string, error) {
-	config, err := c.fetchConfig(ctx, app, webhook)
+	var tenantValue string
+
+	if needsTenantHeader := webhook.ObjectType == model.ApplicationTemplateWebhookReference; needsTenantHeader {
+		tntFromCtx, err := tenant.LoadTenantPairFromContext(ctx)
+		if err != nil {
+			return nil, "", errors.Wrapf(err, "while loading tenant from context for application template wenhook flow")
+		}
+
+		tenantValue = tntFromCtx.ExternalID
+	}
+
+	config, err := c.fetchConfig(ctx, app, webhook, tenantValue)
 	if err != nil {
 		return nil, "", err
 	}
@@ -66,7 +79,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 			log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", documentURL)
 			continue
 		}
-		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy)
+		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, tenantValue)
 		if err != nil {
 			return nil, "", errors.Wrapf(err, "error fetching ORD document from: %s", documentURL)
 		}
@@ -77,14 +90,14 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 	return docs, baseURL, nil
 }
 
-func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type) (*Document, error) {
+func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type, tenantValue string) (*Document, error) {
 	log.C(ctx).Infof("Fetching ORD Document %q with Access Strategy %q", documentURL, accessStrategy)
 	executor, err := c.accessStrategyExecutorProvider.Provide(accessStrategy)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := executor.Execute(ctx, c.Client, documentURL)
+	resp, err := executor.Execute(ctx, c.Client, documentURL, tenantValue)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +126,7 @@ func closeBody(ctx context.Context, body io.ReadCloser) {
 	}
 }
 
-func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhook *model.Webhook) (*WellKnownConfig, error) {
+func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhook *model.Webhook, tenantValue string) (*WellKnownConfig, error) {
 	var resp *http.Response
 	var err error
 	if webhook.Auth != nil && webhook.Auth.AccessStrategy != nil && len(*webhook.Auth.AccessStrategy) > 0 {
@@ -122,19 +135,19 @@ func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhoo
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot find executor for access strategy %q as part of webhook processing", *webhook.Auth.AccessStrategy)
 		}
-		resp, err = executor.Execute(ctx, c.Client, *webhook.URL)
+		resp, err = executor.Execute(ctx, c.Client, *webhook.URL, tenantValue)
 		if err != nil {
 			return nil, errors.Wrapf(err, "error while fetching open resource discovery well-known configuration with access strategy %q", *webhook.Auth.AccessStrategy)
 		}
 	} else if webhook.Auth != nil {
 		log.C(ctx).Infof("Application %q (id = %q, type = %q) configuration endpoint is secured and webhook credentials will be used", app.Name, app.ID, app.Type)
-		resp, err = httputil.GetRequestWithCredentials(ctx, c.Client, *webhook.URL, webhook.Auth)
+		resp, err = httputil.GetRequestWithCredentials(ctx, c.Client, *webhook.URL, tenantValue, webhook.Auth)
 		if err != nil {
 			return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration with webhook credentials")
 		}
 	} else {
 		log.C(ctx).Infof("Application %q (id = %q, type = %q) configuration endpoint is not secured", app.Name, app.ID, app.Type)
-		resp, err = httputil.GetRequestWithoutCredentials(c.Client, *webhook.URL)
+		resp, err = httputil.GetRequestWithoutCredentials(c.Client, *webhook.URL, tenantValue)
 		if err != nil {
 			return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration")
 		}
