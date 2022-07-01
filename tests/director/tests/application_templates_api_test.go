@@ -39,7 +39,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 	// WHEN
 	t.Log("Create application template")
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createApplicationTemplateRequest, &output)
+	err = testctx.Tc.RunOperationNoTenant(ctx, certSecuredGraphQLClient, createApplicationTemplateRequest, &output)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &output)
 
 	//THEN
