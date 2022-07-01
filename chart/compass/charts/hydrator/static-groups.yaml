@@ -28,6 +28,7 @@
     - "fetch-request.auth:read"
     - "webhooks.auth:read"
     - "formation:write"
+    - "formation:read"
     - "internal_visibility:read"
     - "runtime.webhooks:read"
     - "webhook:write"

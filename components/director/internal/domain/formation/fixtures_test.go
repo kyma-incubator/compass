@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation/automock"
@@ -17,6 +18,20 @@ var (
 	tenantID          = uuid.New()
 	externalTenantID  = uuid.New()
 	nilFormationModel *model.Formation
+
+	modelFormation = model.Formation{
+		ID:                  FormationID,
+		FormationTemplateID: FormationTemplateID,
+		Name:                testFormationName,
+	}
+	graphqlFormation = graphql.Formation{
+		ID:                  FormationID,
+		FormationTemplateID: FormationTemplateID,
+		Name:                testFormationName,
+	}
+	defaultFormation = model.Formation{
+		Name: model.DefaultScenario,
+	}
 )
 
 const (
@@ -72,6 +87,18 @@ func unusedLabelDefService() *automock.LabelDefService {
 // UnusedUUIDService returns a mock uid service that does not expect to get called
 func unusedUUIDService() *automock.UuidService {
 	return &automock.UuidService{}
+}
+
+func unusedConverter() *automock.Converter {
+	return &automock.Converter{}
+}
+
+func unusedService() *automock.Service {
+	return &automock.Service{}
+}
+
+func unusedFormationRepo() *automock.FormationRepository {
+	return &automock.FormationRepository{}
 }
 
 func fixCtxWithTenant() context.Context {

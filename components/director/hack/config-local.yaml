@@ -24,6 +24,8 @@ graphql:
     systemAuth: ["runtime.auths:read", "application.auths:read", "integration_system.auths:read"]
     formationTemplate: [ "formation_template:read" ]
     formationTemplates: [ "formation_template:read" ]
+    formation: ["formation:read"]
+    formations: ["formation:read"]
 
   mutation:
     registerApplication: ["application:write"]
@@ -158,6 +160,7 @@ clientCredentialsRegistrationScopes:
     - "integration_system.auths:read"
     - "application.webhooks:read"
     - "application_template.webhooks:read"
+    - "formation:read"
     - "formation:write"
     - "internal_visibility:read"
     - "application.auths:read"
@@ -189,6 +192,7 @@ clientCredentialsRegistrationScopes:
     - "runtime.auths:read"
     - "fetch-request.auth:read"
     - "webhooks.auth:read"
+    - "formation:read"
     - "formation:write"
     - "internal_visibility:read"
     - "runtime.webhooks:read"

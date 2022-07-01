@@ -30,6 +30,22 @@ func (_m *Converter) FromGraphQL(i graphql.FormationInput) model.Formation {
 	return r0
 }
 
+// MultipleToGraphQL provides a mock function with given fields: in
+func (_m *Converter) MultipleToGraphQL(in []*model.Formation) []*graphql.Formation {
+	ret := _m.Called(in)
+
+	var r0 []*graphql.Formation
+	if rf, ok := ret.Get(0).(func([]*model.Formation) []*graphql.Formation); ok {
+		r0 = rf(in)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*graphql.Formation)
+		}
+	}
+
+	return r0
+}
+
 // ToGraphQL provides a mock function with given fields: i
 func (_m *Converter) ToGraphQL(i *model.Formation) *graphql.Formation {
 	ret := _m.Called(i)
