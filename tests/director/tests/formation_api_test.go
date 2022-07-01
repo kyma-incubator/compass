@@ -66,7 +66,7 @@ func TestListFormations(t *testing.T) {
 	formationPage1 := fixtures.ListFormations(t, ctx, certSecuredGraphQLClient, listFormationsReq, expectedFormations)
 	require.NotNil(t, formationPage1)
 	require.Equal(t, expectedFormations, formationPage1.TotalCount)
-	require.Nil(t, formationPage1.Data)
+	require.Empty(t, formationPage1.Data)
 
 	t.Logf("Should create formation: %q", firstFormationName)
 	firstFormation := fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, firstFormationName)
