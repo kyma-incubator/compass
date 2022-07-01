@@ -40,6 +40,8 @@ spec:
                 value: "{{ .Values.global.externalServicesMock.oauthSecuredPort }}"
               - name: APP_ORD_SERVERS_CERT_SECURED_BASE_URL
                 value: "https://{{ .Values.global.externalServicesMock.ordCertSecuredHost }}.{{ .Values.global.ingress.domainName }}"
+              - name: APP_ORD_SERVERS_UNSECURED_MULTI_TENANT_PORT
+                value: "{{ .Values.global.externalServicesMock.unsecuredMultiTenantPort }}"
               - name: APP_ORD_SERVERS_CERT_SECURED_GLOBAL_BASE_URL
                 value: "https://{{ .Values.global.externalServicesMock.ordGlobalCertSecuredHost }}.{{ .Values.global.ingress.domainName }}"
               - name: APP_CLIENT_ID

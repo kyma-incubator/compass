@@ -41,6 +41,10 @@ spec:
       targetPort: {{ .Values.global.externalServicesMock.ordGlobalRegistryUnsecuredPort }}
       protocol: TCP
       name: http-ord-uns-gr
+    - port: {{ .Values.global.externalServicesMock.unsecuredMultiTenantPort }}
+      targetPort: {{ .Values.global.externalServicesMock.unsecuredMultiTenantPort }}
+      protocol: TCP
+      name: http-unsecured-multi-tenant-port
     selector:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
