@@ -26,7 +26,7 @@ func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache, tenantProvider
 }
 
 // Execute performs the access strategy's specific execution logic
-func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient *http.Client, documentURL, _ string) (*http.Response, error) {
+func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient *http.Client, documentURL, tnt string) (*http.Response, error) {
 	clientCert := as.certCache.Get()
 	if clientCert == nil {
 		return nil, errors.New("did not find client certificate in the cache")
@@ -49,12 +49,16 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		return nil, err
 	}
 
-	tenant, err := as.tenantProviderFunc(ctx)
-	if err != nil {
-		return nil, err
-	}
+	if as.tenantProviderFunc != nil {
+		tenant, err := as.tenantProviderFunc(ctx)
+		if err != nil {
+			return nil, err
+		}
 
-	req.Header.Set(tenantHeader, tenant)
+		req.Header.Set(tenantHeader, tenant)
+	} else if len(tnt) > 0 {
+		req.Header.Set(tenantHeader, tnt)
+	}
 
 	return client.Do(req)
 }
