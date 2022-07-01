@@ -18,6 +18,75 @@ import (
 const assignFormationCategory = "assign formation"
 const unassignFormationCategory = "unassign formation"
 
+func TestGetFormation(t *testing.T) {
+	ctx := context.Background()
+	formationName := "formation1"
+
+	t.Logf("Should create formation: %q", formationName)
+	formation := fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, formationName)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formationName)
+
+	t.Logf("Should get formation %q by id %q", formationName, formation.ID)
+	var gotFormation graphql.Formation
+	getFormationReq := fixtures.FixGetFormationRequest(formation.ID)
+	saveExample(t, getFormationReq.Query(), "query formation")
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getFormationReq, &gotFormation)
+	require.NoError(t, err)
+	require.Equal(t, formation, gotFormation)
+
+	t.Logf("Should delete formation %q", formationName)
+	deleteFormation := fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formationName)
+	assert.Equal(t, formation, *deleteFormation)
+
+	t.Logf("Should NOT get formation %q by id %q because it is already deleted", formationName, formation.ID)
+	var nonexistentFormation *graphql.Formation
+	getNonexistentFormationReq := fixtures.FixGetFormationRequest(formation.ID)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getNonexistentFormationReq, nonexistentFormation)
+	require.Error(t, err)
+	require.Nil(t, nonexistentFormation)
+}
+
+func TestListFormations(t *testing.T) {
+	// Pre-cleanup because the formations table may be dirty by previous tests in the director,
+	// which delete their created formations after the end of all director tests.
+	tenantID := tenant.TestTenants.GetDefaultTenantID()
+	tenant.TestTenants.CleanupTenant(tenantID)
+
+	ctx := context.Background()
+
+	firstFormationName := "formation1"
+	secondFormationName := "formation2"
+
+	first := 100
+
+	expectedFormations := 0
+	t.Logf("List should return %d formations", expectedFormations)
+	listFormationsReq := fixtures.FixListFormationsRequestWithPageSize(first)
+	saveExample(t, listFormationsReq.Query(), "query formations")
+	formationPage1 := fixtures.ListFormations(t, ctx, certSecuredGraphQLClient, listFormationsReq, expectedFormations)
+	require.NotNil(t, formationPage1)
+	require.Equal(t, expectedFormations, formationPage1.TotalCount)
+	require.Empty(t, formationPage1.Data)
+
+	t.Logf("Should create formation: %q", firstFormationName)
+	firstFormation := fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, firstFormationName)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, firstFormationName)
+
+	t.Logf("Should create formation: %q", secondFormationName)
+	secondFormation := fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, secondFormationName)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, secondFormationName)
+
+	expectedFormations = 2
+	t.Logf("List should return %d formations", expectedFormations)
+	formationPage2 := fixtures.ListFormations(t, ctx, certSecuredGraphQLClient, listFormationsReq, expectedFormations)
+	require.NotNil(t, formationPage2)
+	require.Equal(t, expectedFormations, formationPage2.TotalCount)
+	require.ElementsMatch(t, formationPage2.Data, []*graphql.Formation{
+		&firstFormation,
+		&secondFormation,
+	})
+}
+
 func TestApplicationFormationFlow(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
