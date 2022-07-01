@@ -11,8 +11,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -56,7 +54,7 @@ type LabelUpsertService interface {
 // LabelRepository missing godoc
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
-	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
+	ListForGlobalObject(ctx context.Context, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 }
 
 type service struct {
@@ -160,11 +158,6 @@ func (s *service) GetByName(ctx context.Context, name string) (*model.Applicatio
 
 // ListLabels retrieves all labels for application template
 func (s *service) ListLabels(ctx context.Context, appTemplateID string) (map[string]*model.Label, error) {
-	appTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
 	appTemplateExists, err := s.appTemplateRepo.Exists(ctx, appTemplateID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while checking Application Template existence")
@@ -174,7 +167,7 @@ func (s *service) ListLabels(ctx context.Context, appTemplateID string) (map[str
 		return nil, fmt.Errorf("application template with ID %s doesn't exist", appTemplateID)
 	}
 
-	labels, err := s.labelRepo.ListForObject(ctx, appTenant, model.AppTemplateLabelableObject, appTemplateID)
+	labels, err := s.labelRepo.ListForGlobalObject(ctx, model.AppTemplateLabelableObject, appTemplateID) // tenent is not needed for AppTemplateLabelableObject
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting labels for Application Template")
 	}

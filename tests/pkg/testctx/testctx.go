@@ -47,6 +47,13 @@ func (tc *TestContext) NewOperation(ctx context.Context) *Operation {
 	}
 }
 
+func (tc *TestContext) NewOperationNoTenant(ctx context.Context) *Operation {
+	return &Operation{
+		ctx:         ctx,
+		queryParams: map[string]string{},
+	}
+}
+
 type Operation struct {
 	ctx context.Context
 
@@ -70,6 +77,10 @@ func (o *Operation) Run(req *gcli.Request, cli *gcli.Client, resp interface{}) e
 
 func (tc *TestContext) RunOperation(ctx context.Context, cli *gcli.Client, req *gcli.Request, resp interface{}) error {
 	return tc.NewOperation(ctx).Run(req, cli, resp)
+}
+
+func (tc *TestContext) RunOperationNoTenant(ctx context.Context, cli *gcli.Client, req *gcli.Request, resp interface{}) error {
+	return tc.NewOperationNoTenant(ctx).Run(req, cli, resp)
 }
 
 func (tc *TestContext) RunOperationWithoutTenant(ctx context.Context, cli *gcli.Client, req *gcli.Request, resp interface{}) error {
