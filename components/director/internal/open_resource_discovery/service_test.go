@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -80,12 +78,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		return appSvc
 	}
 
-	successfulAppTemplateList := func() *automock.ApplicationTemplateService {
-		appTemplateSvc := &automock.ApplicationTemplateService{}
-		appTemplateSvc.On("List", context.TODO(), []*labelfilter.LabelFilter{}, 200, "").Return(fixApplicationTemplatePage(), nil).Once()
-		return appTemplateSvc
-	}
-
 	successfulTenantSvc := func() *automock.TenantService {
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetLowestOwnerForResource", txtest.CtxWithDBMatcher(), resource.Application, appID).Return(tenantID, nil).Once()
@@ -96,6 +88,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	successfulWebhookList := func() *automock.WebhookService {
 		whSvc := &automock.WebhookService{}
 		whSvc.On("ListForApplicationWithSelectForUpdate", txtest.CtxWithDBMatcher(), appID).Return(fixWebhooks(), nil).Once()
+		whSvc.On("ListForApplicationTemplates", txtest.CtxWithDBMatcher())
 		return whSvc
 	}
 
@@ -335,7 +328,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		TransactionerFn   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		labelRepoFn       func() *automock.LabelRepository
 		appSvcFn          func() *automock.ApplicationService
-		appTemplateSvcFn  func() *automock.ApplicationTemplateService
 		webhookSvcFn      func() *automock.WebhookService
 		bundleSvcFn       func() *automock.BundleService
 		bundleRefSvcFn    func() *automock.BundleReferenceService
@@ -358,7 +350,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			bundleSvcFn:      successfulBundleUpdate,
@@ -394,7 +385,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			bundleSvcFn:      successfulBundleUpdate,
@@ -437,7 +427,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			bundleSvcFn:      successfulBundleCreate,
@@ -472,7 +461,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			bundleSvcFn:      successfulBundleCreate,
@@ -512,7 +500,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			bundleSvcFn:      successfulBundleCreate,
@@ -548,18 +535,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name:              "Returns error when transaction opening fails",
 			TransactionerFn:   txGen.ThatFailsOnBegin,
-			appTemplateSvcFn:  successfulAppTemplateList,
 			ExpectedErr:       testErr,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
 			Name:            "Returns error when app templates list fails",
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
-			appTemplateSvcFn: func() *automock.ApplicationTemplateService {
-				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("List", context.TODO(), []*labelfilter.LabelFilter{}, 200, "").Return(model.ApplicationTemplatePage{}, testErr).Once()
-				return appTemplateSvc
-			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			ExpectedErr:       testErr,
 		},
@@ -571,7 +552,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				appSvc.On("ListGlobal", txtest.CtxWithDBMatcher(), 200, "").Return(nil, testErr).Once()
 				return appSvc
 			},
-			appTemplateSvcFn:  successfulAppTemplateList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			ExpectedErr:       testErr,
 		},
@@ -588,7 +568,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				appSvc.On("ListGlobal", txtest.CtxWithDBMatcher(), 200, "").Return(fixApplicationPage(), nil).Once()
 				return appSvc
 			},
-			appTemplateSvcFn:  successfulAppTemplateList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			ExpectedErr:       testErr,
 		},
@@ -606,7 +585,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				appSvc.On("ListGlobal", txtest.CtxWithDBMatcher(), 200, "").Return(fixApplicationPage(), nil).Once()
 				return appSvc
 			},
-			appTemplateSvcFn:  successfulAppTemplateList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			ExpectedErr:       errors.New("failed to process 1 app"),
 		},
@@ -625,7 +603,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				appSvc.On("ListGlobal", txtest.CtxWithDBMatcher(), 200, "").Return(fixApplicationPage(), nil).Once()
 				return appSvc
 			},
-			appTemplateSvcFn:  successfulAppTemplateList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			ExpectedErr:       errors.New("failed to process 1 app"),
 		},
@@ -640,7 +617,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				appSvc.On("GetForUpdate", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil, testErr).Once()
 				return appSvc
 			},
-			appTemplateSvcFn:  successfulAppTemplateList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			ExpectedErr:       errors.New("failed to process 1 app"),
 		},
@@ -651,7 +627,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			webhookSvcFn:     successfulWebhookList,
 			clientFn:         successfulClientFetch,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
@@ -674,7 +649,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			webhookSvcFn:     successfulWebhookList,
 			clientFn:         successfulClientFetch,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
@@ -697,7 +671,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
@@ -722,7 +695,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			bundleSvcFn:      successfulBundleUpdate,
@@ -757,7 +729,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			clientFn: func() *automock.Client {
@@ -772,7 +743,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			clientFn: func() *automock.Client {
@@ -797,7 +767,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			vendorSvcFn: func() *automock.VendorService {
@@ -821,7 +790,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			vendorSvcFn: func() *automock.VendorService {
@@ -846,7 +814,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			vendorSvcFn: func() *automock.VendorService {
@@ -871,7 +838,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			vendorSvcFn:      successfulVendorUpdate,
@@ -896,7 +862,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			vendorSvcFn:      successfulVendorUpdate,
@@ -922,7 +887,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			vendorSvcFn:      successfulVendorUpdate,
@@ -948,7 +912,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -974,7 +937,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1001,7 +963,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductCreate,
@@ -1028,7 +989,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1054,7 +1014,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1081,7 +1040,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductCreate,
@@ -1108,7 +1066,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1132,7 +1089,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1162,7 +1118,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1187,7 +1142,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductCreate,
@@ -1212,7 +1166,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1242,7 +1195,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1273,7 +1225,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1302,7 +1253,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1332,7 +1282,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1363,7 +1312,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1388,7 +1336,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1422,7 +1369,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1448,7 +1394,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductCreate,
@@ -1473,7 +1418,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1511,7 +1455,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1552,7 +1495,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1590,7 +1532,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1629,7 +1570,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1670,7 +1610,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1702,7 +1641,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductUpdate,
@@ -1735,7 +1673,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			productSvcFn:     successfulProductCreate,
@@ -1767,7 +1704,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			bundleSvcFn:      successfulBundleCreate,
@@ -1801,7 +1737,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			bundleSvcFn:      successfulBundleCreate,
@@ -1852,7 +1787,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			bundleSvcFn:      successfulBundleCreate,
@@ -1896,7 +1830,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			bundleSvcFn:      successfulBundleCreate,
@@ -1947,7 +1880,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			bundleSvcFn:      successfulBundleCreate,
@@ -1997,7 +1929,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn:  secondTransactionNotCommited,
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			bundleSvcFn: func() *automock.BundleService {
@@ -2049,7 +1980,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			bundleSvcFn:      successfulBundleCreate,
@@ -2090,7 +2020,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			labelRepoFn:      successfulLabelRepo,
 			appSvcFn:         successfulAppListAndGet,
-			appTemplateSvcFn: successfulAppTemplateList,
 			tenantSvcFn:      successfulTenantSvc,
 			webhookSvcFn:     successfulWebhookList,
 			bundleSvcFn:      successfulBundleUpdate,
@@ -2138,10 +2067,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			appSvc := &automock.ApplicationService{}
 			if test.appSvcFn != nil {
 				appSvc = test.appSvcFn()
-			}
-			appTemplateSvc := &automock.ApplicationTemplateService{}
-			if test.appTemplateSvcFn != nil {
-				appTemplateSvc = test.appTemplateSvcFn()
 			}
 			whSvc := &automock.WebhookService{}
 			if test.webhookSvcFn != nil {
@@ -2197,7 +2122,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			}
 
 			ordCfg := ord.NewServiceConfig(4)
-			svc := ord.NewAggregatorService(ordCfg, tx, labelRepo, appSvc, appTemplateSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, client)
+			svc := ord.NewAggregatorService(ordCfg, tx, labelRepo, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, client)
 			err := svc.SyncORDDocuments(context.TODO())
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
@@ -2206,7 +2131,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, tx, labelRepo, appSvc, appTemplateSvc, whSvc, bndlSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, client)
+			mock.AssertExpectationsForObjects(t, tx, labelRepo, appSvc, whSvc, bndlSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, client)
 		})
 	}
 }

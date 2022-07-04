@@ -16,13 +16,13 @@ type Executor struct {
 	mock.Mock
 }
 
-// Execute provides a mock function with given fields: ctx, client, url
-func (_m *Executor) Execute(ctx context.Context, client *http.Client, url string) (*http.Response, error) {
-	ret := _m.Called(ctx, client, url)
+// Execute provides a mock function with given fields: ctx, client, url, tnt
+func (_m *Executor) Execute(ctx context.Context, client *http.Client, url string, tnt string) (*http.Response, error) {
+	ret := _m.Called(ctx, client, url, tnt)
 
 	var r0 *http.Response
-	if rf, ok := ret.Get(0).(func(context.Context, *http.Client, string) *http.Response); ok {
-		r0 = rf(ctx, client, url)
+	if rf, ok := ret.Get(0).(func(context.Context, *http.Client, string, string) *http.Response); ok {
+		r0 = rf(ctx, client, url, tnt)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*http.Response)
@@ -30,8 +30,8 @@ func (_m *Executor) Execute(ctx context.Context, client *http.Client, url string
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *http.Client, string) error); ok {
-		r1 = rf(ctx, client, url)
+	if rf, ok := ret.Get(1).(func(context.Context, *http.Client, string, string) error); ok {
+		r1 = rf(ctx, client, url, tnt)
 	} else {
 		r1 = ret.Error(1)
 	}

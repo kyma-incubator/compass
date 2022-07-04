@@ -3,8 +3,6 @@ package ord
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -20,7 +18,6 @@ type labelRepository interface {
 type WebhookService interface {
 	ListForApplication(ctx context.Context, applicationID string) ([]*model.Webhook, error)
 	ListForApplicationWithSelectForUpdate(ctx context.Context, applicationID string) ([]*model.Webhook, error)
-	//ListForApplicationTemplate(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
 	ListForApplicationTemplates(ctx context.Context) ([]*model.Webhook, error)
 }
 
@@ -29,12 +26,6 @@ type WebhookService interface {
 type ApplicationService interface {
 	ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error)
 	GetForUpdate(ctx context.Context, id string) (*model.Application, error)
-}
-
-// ApplicationTemplateService is responsible for the service-layer Application Template operations.
-//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type ApplicationTemplateService interface {
-	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 }
 
 // BundleService is responsible for the service-layer Bundle operations.

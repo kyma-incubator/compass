@@ -136,6 +136,29 @@ func (_m *WebhookRepository) ListByApplicationTemplateID(ctx context.Context, ap
 	return r0, r1
 }
 
+// ListByApplicationTemplates provides a mock function with given fields: ctx
+func (_m *WebhookRepository) ListByApplicationTemplates(ctx context.Context) ([]*model.Webhook, error) {
+	ret := _m.Called(ctx)
+
+	var r0 []*model.Webhook
+	if rf, ok := ret.Get(0).(func(context.Context) []*model.Webhook); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Webhook)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListByReferenceObjectID provides a mock function with given fields: ctx, tenant, objID, objType
 func (_m *WebhookRepository) ListByReferenceObjectID(ctx context.Context, tenant string, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error) {
 	ret := _m.Called(ctx, tenant, objID, objType)

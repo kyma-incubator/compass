@@ -98,7 +98,7 @@ func (s *service) fetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 		}
 
 		doRequest = func() (*http.Response, error) {
-			return executor.Execute(s.client, fr.URL, "")
+			return executor.Execute(ctx, s.client, fr.URL, "")
 		}
 	} else if fr.Auth != nil {
 		doRequest = func() (*http.Response, error) {

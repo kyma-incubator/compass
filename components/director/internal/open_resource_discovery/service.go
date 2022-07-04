@@ -6,7 +6,6 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -44,7 +43,6 @@ type Service struct {
 	labelRepo labelRepository
 
 	appSvc             ApplicationService
-	appTemplateSvc     ApplicationTemplateService
 	webhookSvc         WebhookService
 	bundleSvc          BundleService
 	bundleReferenceSvc BundleReferenceService
@@ -62,12 +60,11 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, labelRepo labelRepository, appSvc ApplicationService, appTemplateSvc ApplicationTemplateService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client) *Service {
+func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, labelRepo labelRepository, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client) *Service {
 	return &Service{
 		config:             config,
 		transact:           transact,
 		appSvc:             appSvc,
-		appTemplateSvc:     appTemplateSvc,
 		labelRepo:          labelRepo,
 		webhookSvc:         webhookSvc,
 		bundleSvc:          bundleSvc,
@@ -111,11 +108,6 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 
 	wg := &sync.WaitGroup{}
 	wg.Add(s.config.maxParallelApplicationProcessors)
-
-	//appTemplates, err := s.getAppTemplates(ctx, pageSize, pageCursor)
-	//if err != nil {
-	//	return err
-	//}
 
 	appTemplatesWebhooks, err := s.getAppTemplatesWebhooks(ctx)
 	if err != nil {
@@ -240,12 +232,10 @@ func (s *Service) processApp(ctx context.Context, app *model.Application, global
 		return err
 	}
 
-	fmt.Printf("1. TemplateID %s, webhookExecuted %v", *app.ApplicationTemplateID, webhookExecuted)
+	//fmt.Printf("1. TemplateID %s, webhookExecuted %v", *app.ApplicationTemplateID, webhookExecuted)
 	if app.ApplicationTemplateID != nil && !webhookExecuted {
 		appTemplateWebhooks := appTemplatesWebhooks[*app.ApplicationTemplateID]
-		fmt.Printf("4.appTemplate webhooks len %v", len(appTemplateWebhooks))
-		//appTemplateWebhooks, err := s.webhookSvc.ListForApplicationTemplate()
-		//appTemplateWebhooks := convertWebhooks(appTemplate.Webhooks)
+		//fmt.Printf("4.appTemplate webhooks len %v", len(appTemplateWebhooks))
 
 		if _, err := s.processWebhooksAndDocuments(ctx, tx, appTemplateWebhooks, app, globalResourcesOrdIDs); err != nil {
 			return err
@@ -771,7 +761,7 @@ func (s *Service) processWebhooksAndDocuments(ctx context.Context, tx persistenc
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
 			ctx = addFieldToLogger(ctx, "app_id", app.ID)
 			documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, wh)
-			fmt.Printf("3. documents len %v, ", len(documents))
+			//fmt.Printf("3. documents len %v, ", len(documents))
 
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("error fetching ORD document for webhook with id %q: %v", wh.ID, err)
@@ -790,29 +780,6 @@ func (s *Service) processWebhooksAndDocuments(ctx context.Context, tx persistenc
 		}
 	}
 	return false, nil
-}
-func (s *Service) getAppTemplates(ctx context.Context, pageSize int, pageCursor string) (map[string]*model.ApplicationTemplate, error) {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	appTemplatePage, err := s.appTemplateSvc.List(ctx, []*labelfilter.LabelFilter{}, pageSize, pageCursor)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while listing application templates")
-	}
-	appTemplates := make(map[string]*model.ApplicationTemplate)
-	for _, appTmpl := range appTemplatePage.Data {
-		appTemplates[appTmpl.ID] = appTmpl
-	}
-
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
-
-	return appTemplates, nil
 }
 
 func (s *Service) getAppTemplatesWebhooks(ctx context.Context) (map[string][]*model.Webhook, error) {
@@ -984,13 +951,4 @@ func addFieldToLogger(ctx context.Context, fieldName, fieldValue string) context
 	logger := log.LoggerFromContext(ctx)
 	logger = logger.WithField(fieldName, fieldValue)
 	return log.ContextWithLogger(ctx, logger)
-}
-
-func convertWebhooks(webhooks []model.Webhook) []*model.Webhook {
-	ptrWebhooks := make([]*model.Webhook, len(webhooks))
-
-	for idx := range webhooks {
-		ptrWebhooks[idx] = &webhooks[idx]
-	}
-	return ptrWebhooks
 }
