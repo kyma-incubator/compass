@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/retry"
+
 	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
@@ -153,6 +155,8 @@ type config struct {
 
 	TenantOnDemandConfig tenant.FetchOnDemandAPIConfig
 
+	RetryConfig retry.Config
+
 	SkipSSLValidation bool `envconfig:"default=false,APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"`
 }
 
@@ -229,6 +233,7 @@ func main() {
 	exitOnError(err, "Failed to initialize certificate loader")
 
 	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
+	retryHTTPExecutor := retry.NewHTTPExecutor(&cfg.RetryConfig)
 
 	rootResolver, err := domain.NewRootResolver(
 		&normalizer.DefaultNormalizator{},
@@ -239,6 +244,7 @@ func main() {
 		pa,
 		cfg.Features,
 		metricsCollector,
+		retryHTTPExecutor,
 		httpClient,
 		internalFQDNHTTPClient,
 		internalGatewayHTTPClient,

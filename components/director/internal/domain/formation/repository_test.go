@@ -5,6 +5,9 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation/automock"
@@ -65,6 +68,86 @@ func TestRepository_Get(t *testing.T) {
 		ExpectedModelEntity:       formationModel,
 		ExpectedDBEntity:          formationEntity,
 		MethodArgs:                []interface{}{FormationID, Tnt},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
+func TestRepository_GetByName(t *testing.T) {
+	suite := testdb.RepoGetTestSuite{
+		Name:       "Get Formation By Name",
+		MethodName: "GetByName",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name FROM public.formations WHERE tenant_id = $1 AND name = $2`),
+				Args:     []driver.Value{Tnt, testFormationName},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(FormationID, Tnt, FormationTemplateID, testFormationName)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       formation.NewRepository,
+		ExpectedModelEntity:       formationModel,
+		ExpectedDBEntity:          formationEntity,
+		MethodArgs:                []interface{}{testFormationName, Tnt},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
+func TestRepository_List(t *testing.T) {
+	suite := testdb.RepoListPageableTestSuite{
+		Name:       "List Formations ",
+		MethodName: "List",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name FROM public.formations WHERE tenant_id = $1 ORDER BY id LIMIT 4 OFFSET 0`),
+				Args:     []driver.Value{Tnt},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(FormationID, Tnt, FormationTemplateID, testFormationName)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+			{
+				Query:    regexp.QuoteMeta(`SELECT COUNT(*) FROM public.formations`),
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows([]string{"count"}).AddRow(1)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: formation.NewRepository,
+		Pages: []testdb.PageDetails{
+			{
+				ExpectedModelEntities: []interface{}{formationModel},
+				ExpectedDBEntities:    []interface{}{formationEntity},
+				ExpectedPage: &model.FormationPage{
+					Data: []*model.Formation{formationModel},
+					PageInfo: &pagination.Page{
+						StartCursor: "",
+						EndCursor:   "",
+						HasNextPage: false,
+					},
+					TotalCount: 1,
+				},
+			},
+		},
+		MethodArgs:                []interface{}{Tnt, 4, ""},
 		DisableConverterErrorTest: true,
 	}
 

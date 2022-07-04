@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
+	tenantfetcher "github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 

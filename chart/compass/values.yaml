@@ -110,10 +110,10 @@ global:
       version: "PR-2383"
     director:
       dir:
-      version: "PR-2446"
+      version: "PR-2438"
     hydrator:
       dir:
-      version: "PR-2408"
+      version: "PR-2458"
     gateway:
       dir:
       version: "PR-2383"
@@ -122,7 +122,7 @@ global:
       version: "PR-2383"
     ord_service:
       dir:
-      version: "PR-70"
+      version: "PR-71"
     schema_migrator:
       dir:
       version: "PR-2456"
@@ -142,7 +142,7 @@ global:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2408"
+      version: "PR-2438"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -558,6 +558,7 @@ global:
       entityTypeField: "entityType"
       globalAccountID: "gaID"
       regionField: "region"
+    regionDetails: '[{"central", ""}]'
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     issuerLocality: "local" # In local setup we have manually created connector CA certificate with 'local' Locality property
@@ -603,6 +604,9 @@ global:
     http:
       client:
         skipSSLValidation: false
+      retry:
+        attempts: 3
+        delay: 100ms
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
@@ -894,6 +898,7 @@ global:
         - "integration_system.auths:read"
         - "application_template.webhooks:read"
         - "formation:write"
+        - "formation:read"
         - "internal_visibility:read"
         - "application.auths:read"
         - "webhook:write"
@@ -925,6 +930,7 @@ global:
         - "fetch-request.auth:read"
         - "webhooks.auth:read"
         - "formation:write"
+        - "formation:read"
         - "internal_visibility:read"
         - "runtime.webhooks:read"
         - "webhook:write"

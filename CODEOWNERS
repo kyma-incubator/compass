@@ -18,12 +18,10 @@
 /chart/compass/templates/filters @kyma-incubator/team-raptor
 /components/connectivity-adapter @kyma-incubator/team-falcon
 /components/connector @kyma-incubator/team-raptor
-/components/director/cmd/director @kyma-incubator/team-dragon @kyma-incubator/team-falcon @kyma-incubator/team-raptor
 /components/director/cmd/ns-adapter @kyma-incubator/team-falcon
 /components/director/cmd/ordaggregator @kyma-incubator/team-falcon
 /components/director/cmd/scopessynchronizer @kyma-incubator/team-raptor
 /components/director/cmd/systemfetcher @kyma-incubator/team-falcon
-/components/director/cmd/tenantfetcher-job @kyma-incubator/team-dragon
 /components/director/cmd/tenantfetcher-svc @kyma-incubator/team-dragon
 /components/director/cmd/tenantloader @kyma-incubator/team-raptor @kyma-incubator/team-dragon @kyma-incubator/team-falcon
 /components/director/internal/domain/formation @kyma-incubator/team-raptor
@@ -38,7 +36,6 @@
 /components/director/pkg/accessstrategy @kyma-incubator/team-falcon
 /components/director/pkg/operation @kyma-incubator/team-falcon
 /components/director/pkg/scenario @kyma-incubator/team-raptor
-/components/external-services-mock @kyma-incubator/team-dragon @kyma-incubator/team-falcon @kyma-incubator/team-raptor
 /components/gateway @kyma-incubator/team-raptor
 /components/hydrator @kyma-incubator/team-raptor
 /components/operations-controller @kyma-incubator/team-falcon
@@ -57,7 +54,6 @@
 /tests/pairing-adapter @kyma-incubator/team-falcon
 /tests/system-fetcher @kyma-incubator/team-falcon
 /tests/tenant-fetcher @kyma-incubator/team-dragon
-/tests/tenant-fetcher-job @kyma-incubator/team-dragon
 
 # All .md files
 *.md @kyma-incubator/cmp-technical-writers

@@ -5,7 +5,7 @@ package automock
 import (
 	testing "testing"
 
-	tenantfetcher "github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
+	tenantfetchersvc "github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -15,20 +15,20 @@ type EventAPIClient struct {
 }
 
 // FetchTenantEventsPage provides a mock function with given fields: eventsType, additionalQueryParams
-func (_m *EventAPIClient) FetchTenantEventsPage(eventsType tenantfetcher.EventsType, additionalQueryParams tenantfetcher.QueryParams) (tenantfetcher.TenantEventsResponse, error) {
+func (_m *EventAPIClient) FetchTenantEventsPage(eventsType tenantfetchersvc.EventsType, additionalQueryParams tenantfetchersvc.QueryParams) (tenantfetchersvc.TenantEventsResponse, error) {
 	ret := _m.Called(eventsType, additionalQueryParams)
 
-	var r0 tenantfetcher.TenantEventsResponse
-	if rf, ok := ret.Get(0).(func(tenantfetcher.EventsType, tenantfetcher.QueryParams) tenantfetcher.TenantEventsResponse); ok {
+	var r0 tenantfetchersvc.TenantEventsResponse
+	if rf, ok := ret.Get(0).(func(tenantfetchersvc.EventsType, tenantfetchersvc.QueryParams) tenantfetchersvc.TenantEventsResponse); ok {
 		r0 = rf(eventsType, additionalQueryParams)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(tenantfetcher.TenantEventsResponse)
+			r0 = ret.Get(0).(tenantfetchersvc.TenantEventsResponse)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(tenantfetcher.EventsType, tenantfetcher.QueryParams) error); ok {
+	if rf, ok := ret.Get(1).(func(tenantfetchersvc.EventsType, tenantfetchersvc.QueryParams) error); ok {
 		r1 = rf(eventsType, additionalQueryParams)
 	} else {
 		r1 = ret.Error(1)

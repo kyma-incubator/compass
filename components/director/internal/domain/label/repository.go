@@ -173,6 +173,11 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, objectType mod
 	return labelModel, nil
 }
 
+// ListForGlobalObject missing godoc
+func (r *repository) ListForGlobalObject(ctx context.Context, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
+	return r.ListForObject(ctx, "", objectType, objectID)
+}
+
 // ListForObject missing godoc
 func (r *repository) ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
 	var entities Collection

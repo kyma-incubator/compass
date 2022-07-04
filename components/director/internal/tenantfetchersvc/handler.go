@@ -10,8 +10,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
-	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
-
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -53,7 +51,7 @@ type HandlerConfig struct {
 	FullResyncInterval           time.Duration `envconfig:"default=12h"`
 	ShouldSyncSubaccounts        bool          `envconfig:"default=false"`
 
-	Kubernetes tenantfetcher.KubeConfig
+	Kubernetes KubeConfig
 	Database   persistence.DatabaseConfig
 
 	DirectorGraphQLEndpoint     string        `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
@@ -79,16 +77,16 @@ type TenantProviderConfig struct {
 
 // EventsConfig contains configuration for Events API requests
 type EventsConfig struct {
-	AccountsRegion    string   `envconfig:"default=central"`
-	SubaccountRegions []string `envconfig:"default=central"`
+	AccountsRegion    string            `envconfig:"default=central"`
+	SubaccountRegions map[string]string `envconfig:"optional"`
 
 	AuthMode    oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
-	OAuthConfig tenantfetcher.OAuth2Config
-	APIConfig   tenantfetcher.APIConfig
-	QueryConfig tenantfetcher.QueryConfig
+	OAuthConfig OAuth2Config
+	APIConfig   APIConfig
+	QueryConfig QueryConfig
 
-	TenantFieldMapping          tenantfetcher.TenantFieldMapping
-	MovedSubaccountFieldMapping tenantfetcher.MovedSubaccountsFieldMapping
+	TenantFieldMapping          TenantFieldMapping
+	MovedSubaccountFieldMapping MovedSubaccountsFieldMapping
 
 	MetricsPushEndpoint string `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
 }
