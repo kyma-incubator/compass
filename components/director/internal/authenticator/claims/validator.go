@@ -147,8 +147,6 @@ func (v *validator) validateRuntimeConsumer(ctx context.Context, claims Claims) 
 
 	if !found {
 		return nil
-		//log.C(ctx).Errorf("Consumer's external tenant %s was not found as subscription record in the runtime context table for any runtime in the provider tenant %s", consumerExternalTenantID, providerInternalTenantID)
-		//return apperrors.NewUnauthorizedError(fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the runtime context table for any runtime in the provider tenant %s", consumerExternalTenantID, providerInternalTenantID))
 	}
 
 	return tx.Commit()
