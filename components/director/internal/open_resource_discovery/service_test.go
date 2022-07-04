@@ -1898,7 +1898,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client = test.clientFn()
 			}
 
-			ordCfg := ord.ServiceConfig{MaxParallelDownloads: 4}
+			ordCfg := ord.NewServiceConfig(4)
 			svc := ord.NewAggregatorService(ordCfg, tx, labelRepo, appSvc, whSvc, bndlSvc, bndlRefSvc, apiSvc, eventSvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, client)
 			err := svc.SyncORDDocuments(context.TODO())
 			if test.ExpectedErr != nil {

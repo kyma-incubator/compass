@@ -1,4 +1,4 @@
-package tenantfetcher_test
+package tenantfetchersvc_test
 
 import (
 	"bytes"
@@ -21,8 +21,8 @@ import (
 
 	domainTenant "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
+	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc/automock"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -58,7 +58,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 	)
 
 	var (
-		tenantFieldMapping tenantfetcher.TenantFieldMapping
+		tenantFieldMapping tenantfetchersvc.TenantFieldMapping
 
 		parentTenant  model.BusinessTenantMappingInput
 		parentTenants []model.BusinessTenantMappingInput
@@ -74,7 +74,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 		subaccountEvent2 []byte
 	)
 
-	pageOneQueryParams := tenantfetcher.QueryParams{
+	pageOneQueryParams := tenantfetchersvc.QueryParams{
 		"entityId": subaccountID,
 		"pageSize": "1",
 		"pageNum":  "1",
@@ -92,7 +92,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 			Subdomain:      "",
 			Region:         "",
 			Type:           string(tenant.Subaccount),
-			Provider:       tenantfetcher.TenantOnDemandProvider,
+			Provider:       tenantfetchersvc.TenantOnDemandProvider,
 		}}
 		gqlClient := &automock.DirectorGraphQLClient{}
 		gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(tenantConverter.MultipleInputToGraphQLInput(tenantsToCreate))).Return(nil)
@@ -100,7 +100,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 	}
 
 	beforeEach := func() {
-		tenantFieldMapping = tenantfetcher.TenantFieldMapping{
+		tenantFieldMapping = tenantfetchersvc.TenantFieldMapping{
 			NameField:       "name",
 			IDField:         "id",
 			CustomerIDField: "customerId",
@@ -156,7 +156,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
 				return client
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
@@ -204,7 +204,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
 				return client
 			},
 			GqlClientFn:      UnusedGQLClient,
@@ -220,7 +220,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 				return svc
 			}, APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedSubaccountType)
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.CreatedSubaccountType)
 				return client
 			},
 			GqlClientFn:      lazyStoreGQLClient,
@@ -237,7 +237,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1, subaccountEvent2), 2, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1, subaccountEvent2), 2, 1), nil).Once()
 				return client
 			},
 			GqlClientFn:      UnusedGQLClient,
@@ -254,7 +254,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(nil, nil).Once()
 				return client
 			},
 			GqlClientFn: lazyStoreGQLClient,
@@ -270,7 +270,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(nil, testErr).Times(tenantfetcher.RetryAttempts)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(nil, testErr).Times(tenantfetchersvc.RetryAttempts)
 				return client
 			},
 			GqlClientFn:      UnusedGQLClient,
@@ -297,7 +297,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
 				return client
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
@@ -320,7 +320,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
 				return client
 			},
 			GqlClientFn: func() *automock.DirectorGraphQLClient {
@@ -342,7 +342,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 			},
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				wrongFieldMapping := tenantfetcher.TenantFieldMapping{
+				wrongFieldMapping := tenantfetchersvc.TenantFieldMapping{
 					IDField:   "wrong",
 					NameField: tenantFieldMapping.NameField,
 				}
@@ -351,7 +351,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 					wrongFieldMapping.NameField: "qux",
 				}
 				wrongTenantEvents := eventsToJSONArray(fixEvent(t, "Subaccount", "id992", wrongTenantEventFields))
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(wrongTenantEvents, 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(wrongTenantEvents, 1, 1), nil).Once()
 				return client
 			},
 			GqlClientFn: lazyStoreGQLClient,
@@ -365,13 +365,14 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 			tenantStorageSvc := testCase.TenantStorageSvcFn()
 			apiClient := testCase.APIClientFn()
 			gqlClient := testCase.GqlClientFn()
-			svc := tenantfetcher.NewSubaccountOnDemandService(tenantfetcher.QueryConfig{
+			regionDetails := map[string]tenantfetchersvc.RegionDetails{region: {Name: region}}
+			svc := tenantfetchersvc.NewSubaccountOnDemandService(tenantfetchersvc.QueryConfig{
 				PageNumField:    "pageNum",
 				PageSizeField:   "pageSize",
 				PageStartValue:  "1",
 				PageSizeValue:   "1",
 				SubaccountField: "entityId",
-			}, tenantfetcher.TenantFieldMapping{
+			}, tenantfetchersvc.TenantFieldMapping{
 				DetailsField:           "eventData",
 				DiscriminatorField:     "",
 				DiscriminatorValue:     "",
@@ -385,7 +386,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 				EntityTypeField:        "type",
 				GlobalAccountGUIDField: "globalAccountGUID",
 				RegionField:            "region",
-			}, apiClient, transact, tenantStorageSvc, gqlClient, provider, tenantConverter)
+			}, apiClient, transact, tenantStorageSvc, gqlClient, provider, tenantConverter, regionDetails)
 
 			// WHEN
 			err := svc.SyncTenant(context.TODO(), subaccountID, globalAccountGUID)
@@ -408,7 +409,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 	provider := "default"
 	region := "eu-1"
 
-	tenantFieldMapping := tenantfetcher.TenantFieldMapping{
+	tenantFieldMapping := tenantfetchersvc.TenantFieldMapping{
 		NameField:       "name",
 		IDField:         "id",
 		CustomerIDField: "customerId",
@@ -486,18 +487,18 @@ func TestService_SyncAccountTenants(t *testing.T) {
 
 	tenantEvents := eventsToJSONArray(event1, event2, event3)
 
-	pageOneQueryParams := tenantfetcher.QueryParams{
+	pageOneQueryParams := tenantfetchersvc.QueryParams{
 		"pageSize":  "1",
 		"pageNum":   "1",
 		"timestamp": "1",
 	}
-	pageTwoQueryParams := tenantfetcher.QueryParams{
+	pageTwoQueryParams := tenantfetchersvc.QueryParams{
 		"pageSize":  "1",
 		"pageNum":   "2",
 		"timestamp": "1",
 	}
 
-	pageThreeQueryParams := tenantfetcher.QueryParams{
+	pageThreeQueryParams := tenantfetchersvc.QueryParams{
 		"pageSize":  "1",
 		"pageNum":   "3",
 		"timestamp": "1",
@@ -522,9 +523,9 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event2), 1, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event3), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event2), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event3), 1, 1), nil).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -552,8 +553,8 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.UpdatedAccountType, tenantfetcher.DeletedAccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.UpdatedAccountType, tenantfetchersvc.DeletedAccountType)
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -581,8 +582,8 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.DeletedAccountType, tenantfetcher.UpdatedAccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.DeletedAccountType, tenantfetchersvc.UpdatedAccountType)
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -614,8 +615,8 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedAccountType, tenantfetcher.DeletedAccountType)
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.CreatedAccountType, tenantfetchersvc.DeletedAccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -645,8 +646,8 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedAccountType, tenantfetcher.UpdatedAccountType)
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.CreatedAccountType, tenantfetchersvc.UpdatedAccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -672,7 +673,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.DeletedAccountType)
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.DeletedAccountType)
 
 				updatedEventFields := map[string]string{
 					tenantFieldMapping.IDField:         busTenant1.ExternalTenant,
@@ -682,8 +683,8 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				}
 
 				updatedTenant := fixEvent(t, busTenant1.Type, busTenant1.ExternalTenant, updatedEventFields)
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(updatedTenant), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(updatedTenant), 1, 1), nil).Once()
 
 				return client
 			},
@@ -710,9 +711,9 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.UpdatedAccountType)
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.UpdatedAccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
 
 				return client
 			},
@@ -736,11 +737,11 @@ func TestService_SyncAccountTenants(t *testing.T) {
 
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageThreeQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(event1)+"]"), 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageThreeQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(event1)+"]"), 3, 1), nil).Once()
 
 				return client
 			},
@@ -773,9 +774,9 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(nil, 0, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(nil, 0, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(nil, 0, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(nil, 0, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(nil, 0, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(nil, 0, 1), nil).Once()
 
 				return client
 			},
@@ -794,11 +795,11 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageThreeQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(event1)+"]"), 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageThreeQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(event1)+"]"), 3, 1), nil).Once()
 
 				return client
 			},
@@ -831,11 +832,11 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageThreeQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(event1)+"]"), 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageThreeQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.UpdatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(event1)+"]"), 3, 1), nil).Once()
 
 				return client
 			},
@@ -868,9 +869,9 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageThreeQueryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(tenantEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageThreeQueryParams).Return(nil, nil).Once()
 
 				return client
 			},
@@ -889,7 +890,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(nil, testErr).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(nil, testErr).Once()
 				return client
 			},
 			TenantStorageSvcFn: UnusedTenantStorageSvc,
@@ -907,8 +908,8 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedAccountType)
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedAccountType, pageOneQueryParams).Return(nil, testErr).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.CreatedAccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.UpdatedAccountType, pageOneQueryParams).Return(nil, testErr).Once()
 
 				return client
 			},
@@ -927,8 +928,8 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedAccountType, tenantfetcher.UpdatedAccountType)
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedAccountType, pageOneQueryParams).Return(nil, testErr).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.CreatedAccountType, tenantfetchersvc.UpdatedAccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.DeletedAccountType, pageOneQueryParams).Return(nil, testErr).Once()
 
 				return client
 			},
@@ -947,8 +948,8 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 6, 2), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageTwoQueryParams).Return(nil, testErr).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 6, 2), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageTwoQueryParams).Return(nil, testErr).Once()
 
 				return client
 			},
@@ -967,8 +968,8 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 6, 2), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(tenantEvents, 7, 2), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 6, 2), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(tenantEvents, 7, 2), nil).Once()
 
 				return client
 			},
@@ -987,8 +988,8 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnBegin,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.UpdatedAccountType, tenantfetcher.DeletedAccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.UpdatedAccountType, tenantfetchersvc.DeletedAccountType)
 
 				return client
 			},
@@ -1007,8 +1008,8 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.UpdatedAccountType, tenantfetcher.DeletedAccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.UpdatedAccountType, tenantfetchersvc.DeletedAccountType)
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -1030,8 +1031,8 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.UpdatedAccountType, tenantfetcher.DeletedAccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.UpdatedAccountType, tenantfetchersvc.DeletedAccountType)
 
 				return client
 			},
@@ -1060,8 +1061,8 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.UpdatedAccountType, tenantfetcher.CreatedAccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(tenantEvents, 3, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.UpdatedAccountType, tenantfetchersvc.CreatedAccountType)
 
 				return client
 			},
@@ -1088,7 +1089,7 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				wrongFieldMapping := tenantfetcher.TenantFieldMapping{
+				wrongFieldMapping := tenantfetchersvc.TenantFieldMapping{
 					IDField:   "wrong",
 					NameField: tenantFieldMapping.NameField,
 				}
@@ -1098,8 +1099,8 @@ func TestService_SyncAccountTenants(t *testing.T) {
 				}
 
 				wrongTenantEvents := eventsToJSONArray(fixEvent(t, "GlobalAccount", "", wrongTenantEventFields))
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(wrongTenantEvents, 1, 1), nil).Once()
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.UpdatedAccountType, tenantfetcher.DeletedAccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(wrongTenantEvents, 1, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.UpdatedAccountType, tenantfetchersvc.DeletedAccountType)
 				return client
 			},
 			TenantStorageSvcFn: UnusedTenantStorageSvc,
@@ -1121,13 +1122,13 @@ func TestService_SyncAccountTenants(t *testing.T) {
 			kubeClient := testCase.KubeClientFn()
 			gqlClient := testCase.GqlClientFn()
 			tenantConverter := domainTenant.NewConverter()
-			svc := tenantfetcher.NewGlobalAccountService(tenantfetcher.QueryConfig{
+			svc := tenantfetchersvc.NewGlobalAccountService(tenantfetchersvc.QueryConfig{
 				PageNumField:   "pageNum",
 				PageSizeField:  "pageSize",
 				TimestampField: "timestamp",
 				PageSizeValue:  "1",
 				PageStartValue: "1",
-			}, transact, kubeClient, tenantfetcher.TenantFieldMapping{
+			}, transact, kubeClient, tenantfetchersvc.TenantFieldMapping{
 				DetailsField:       "eventData",
 				DiscriminatorField: "",
 				DiscriminatorValue: "",
@@ -1163,11 +1164,11 @@ func TestService_SyncAccountTenants(t *testing.T) {
 		// GIVEN
 		persist, transact := txGen.ThatSucceeds()
 		apiClient := &automock.EventAPIClient{}
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(nil, testErr).Once()
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(nil, testErr).Once()
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.UpdatedAccountType, pageOneQueryParams).Return(nil, nil).Once()
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedAccountType, pageOneQueryParams).Return(nil, nil).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(nil, testErr).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(nil, testErr).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetchersvc.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetchersvc.UpdatedAccountType, pageOneQueryParams).Return(nil, nil).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetchersvc.DeletedAccountType, pageOneQueryParams).Return(nil, nil).Once()
 
 		tenantStorageSvc := &automock.TenantStorageService{}
 		tenantStorageSvc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEvents(event1))).Return(nil, nil).Once()
@@ -1180,13 +1181,13 @@ func TestService_SyncAccountTenants(t *testing.T) {
 		gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(tenantConverter.MultipleInputToGraphQLInput(tenantsToCreate))).Return(nil)
 		defer mock.AssertExpectationsForObjects(t, persist, transact, apiClient, tenantStorageSvc, kubeClient)
 
-		svc := tenantfetcher.NewGlobalAccountService(tenantfetcher.QueryConfig{
+		svc := tenantfetchersvc.NewGlobalAccountService(tenantfetchersvc.QueryConfig{
 			PageNumField:   "pageNum",
 			PageSizeField:  "pageSize",
 			TimestampField: "timestamp",
 			PageSizeValue:  "1",
 			PageStartValue: "1",
-		}, transact, kubeClient, tenantfetcher.TenantFieldMapping{
+		}, transact, kubeClient, tenantfetchersvc.TenantFieldMapping{
 			DetailsField:       "eventData",
 			DiscriminatorField: "",
 			DiscriminatorValue: "",
@@ -1220,7 +1221,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 		targetInternalTenant      *model.BusinessTenantMapping
 		sourceInternalTenantInput model.BusinessTenantMappingInput
 		sourceInternalTenant      *model.BusinessTenantMapping
-		tenantFieldMapping        tenantfetcher.TenantFieldMapping
+		tenantFieldMapping        tenantfetchersvc.TenantFieldMapping
 		busTenant1GUID            string
 		busTenant2GUID            string
 		busTenant3GUID            string
@@ -1267,19 +1268,19 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 		return []byte(fmt.Sprintf(`[%s]`, bytes.Join(events, []byte(","))))
 	}
 
-	pageOneQueryParams := tenantfetcher.QueryParams{
+	pageOneQueryParams := tenantfetchersvc.QueryParams{
 		"pageSize":  "1",
 		"pageNum":   "1",
 		"timestamp": "1",
 		"region":    "test-region",
 	}
-	pageTwoQueryParams := tenantfetcher.QueryParams{
+	pageTwoQueryParams := tenantfetchersvc.QueryParams{
 		"pageSize":  "1",
 		"pageNum":   "2",
 		"timestamp": "1",
 		"region":    "test-region",
 	}
-	pageThreeQueryParams := tenantfetcher.QueryParams{
+	pageThreeQueryParams := tenantfetchersvc.QueryParams{
 		"pageSize":  "1",
 		"pageNum":   "3",
 		"timestamp": "1",
@@ -1297,7 +1298,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 		sourceInternalTenantInput = fixBusinessTenantMappingInput("source", "source", provider, "", "", "", tenant.Account)
 		sourceInternalTenant = sourceInternalTenantInput.ToBusinessTenantMapping("sourceInternalID")
 
-		tenantFieldMapping = tenantfetcher.TenantFieldMapping{
+		tenantFieldMapping = tenantfetchersvc.TenantFieldMapping{
 			NameField:       "name",
 			IDField:         "id",
 			CustomerIDField: "customerId",
@@ -1397,10 +1398,10 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent2), 1, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent3), 1, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent4), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.UpdatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent2), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.DeletedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent3), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent4), 1, 1), nil).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -1457,8 +1458,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.UpdatedSubaccountType, tenantfetcher.DeletedSubaccountType, tenantfetcher.MovedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.UpdatedSubaccountType, tenantfetchersvc.DeletedSubaccountType, tenantfetchersvc.MovedSubaccountType)
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -1488,8 +1489,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent2), 1, 1), nil).Once()
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedSubaccountType, tenantfetcher.DeletedSubaccountType, tenantfetcher.MovedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.UpdatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent2), 1, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.CreatedSubaccountType, tenantfetchersvc.DeletedSubaccountType, tenantfetchersvc.MovedSubaccountType)
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -1518,8 +1519,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedSubaccountType, tenantfetcher.UpdatedSubaccountType, tenantfetcher.MovedSubaccountType)
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent3), 1, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.CreatedSubaccountType, tenantfetchersvc.UpdatedSubaccountType, tenantfetchersvc.MovedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.DeletedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent3), 1, 1), nil).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -1547,7 +1548,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.DeletedSubaccountType, tenantfetcher.MovedSubaccountType)
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.DeletedSubaccountType, tenantfetchersvc.MovedSubaccountType)
 
 				updatedEventFields := map[string]string{
 					tenantFieldMapping.IDField:         "S1",
@@ -1558,8 +1559,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				}
 
 				updatedTenant := fixEvent(t, parentTenant1.Type, busTenant1GUID, updatedEventFields)
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(updatedTenant), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.UpdatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(updatedTenant), 1, 1), nil).Once()
 
 				return client
 			},
@@ -1590,9 +1591,9 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.UpdatedSubaccountType, tenantfetcher.MovedSubaccountType)
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 3, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.UpdatedSubaccountType, tenantfetchersvc.MovedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.DeletedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 3, 1), nil).Once()
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -1617,12 +1618,12 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageThreeQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent1)+"]"), 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageThreeQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.UpdatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.DeletedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent1)+"]"), 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
 
 				return client
 			},
@@ -1685,8 +1686,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedSubaccountType, tenantfetcher.UpdatedSubaccountType, tenantfetcher.DeletedSubaccountType)
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.CreatedSubaccountType, tenantfetchersvc.UpdatedSubaccountType, tenantfetchersvc.DeletedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
 
 				return client
 			},
@@ -1730,12 +1731,12 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageThreeQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent1)+"]"), 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageThreeQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.UpdatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.DeletedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent1)+"]"), 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
 
 				return client
 			},
@@ -1797,12 +1798,12 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageThreeQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent1)+"]"), 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageThreeQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.UpdatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.DeletedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent1)+"]"), 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
 
 				return client
 			},
@@ -1882,9 +1883,9 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageThreeQueryParams).Return(nil, nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageThreeQueryParams).Return(nil, nil).Once()
 
 				return client
 			},
@@ -1905,7 +1906,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(nil, testErr).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(nil, testErr).Once()
 				return client
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
@@ -1925,8 +1926,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedSubaccountType)
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedSubaccountType, pageOneQueryParams).Return(nil, testErr).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.CreatedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.UpdatedSubaccountType, pageOneQueryParams).Return(nil, testErr).Once()
 
 				return client
 			},
@@ -1947,8 +1948,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedSubaccountType, tenantfetcher.UpdatedSubaccountType)
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedSubaccountType, pageOneQueryParams).Return(nil, testErr).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.CreatedSubaccountType, tenantfetchersvc.UpdatedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.DeletedSubaccountType, pageOneQueryParams).Return(nil, testErr).Once()
 
 				return client
 			},
@@ -1969,8 +1970,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedSubaccountType, tenantfetcher.UpdatedSubaccountType, tenantfetcher.DeletedSubaccountType)
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(nil, testErr).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.CreatedSubaccountType, tenantfetchersvc.UpdatedSubaccountType, tenantfetchersvc.DeletedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.MovedSubaccountType, pageOneQueryParams).Return(nil, testErr).Once()
 
 				return client
 			},
@@ -1991,8 +1992,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 6, 2), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageTwoQueryParams).Return(nil, testErr).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 6, 2), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageTwoQueryParams).Return(nil, testErr).Once()
 
 				return client
 			},
@@ -2013,8 +2014,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 6, 2), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 7, 2), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 6, 2), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 7, 2), nil).Once()
 
 				return client
 			},
@@ -2035,8 +2036,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnBegin,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.UpdatedSubaccountType, tenantfetcher.DeletedSubaccountType, tenantfetcher.MovedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.UpdatedSubaccountType, tenantfetchersvc.DeletedSubaccountType, tenantfetchersvc.MovedSubaccountType)
 
 				return client
 			},
@@ -2057,8 +2058,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatFailsOnCommit,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.UpdatedSubaccountType, tenantfetcher.DeletedSubaccountType, tenantfetcher.MovedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.UpdatedSubaccountType, tenantfetchersvc.DeletedSubaccountType, tenantfetchersvc.MovedSubaccountType)
 				return client
 			},
 			TenantStorageSvcFn: func() *automock.TenantStorageService {
@@ -2089,8 +2090,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.UpdatedSubaccountType, tenantfetcher.DeletedSubaccountType, tenantfetcher.MovedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.UpdatedSubaccountType, tenantfetchersvc.DeletedSubaccountType, tenantfetchersvc.MovedSubaccountType)
 
 				return client
 			},
@@ -2122,8 +2123,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 3, 1), nil).Once()
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.UpdatedSubaccountType, tenantfetcher.CreatedSubaccountType, tenantfetcher.MovedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.DeletedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 3, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.UpdatedSubaccountType, tenantfetchersvc.CreatedSubaccountType, tenantfetchersvc.MovedSubaccountType)
 
 				return client
 			},
@@ -2153,8 +2154,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedSubaccountType, tenantfetcher.UpdatedSubaccountType, tenantfetcher.DeletedSubaccountType)
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.CreatedSubaccountType, tenantfetchersvc.UpdatedSubaccountType, tenantfetchersvc.DeletedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
 
 				return client
 			},
@@ -2179,8 +2180,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedSubaccountType, tenantfetcher.UpdatedSubaccountType, tenantfetcher.DeletedSubaccountType)
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.CreatedSubaccountType, tenantfetchersvc.UpdatedSubaccountType, tenantfetchersvc.DeletedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
 
 				return client
 			},
@@ -2224,8 +2225,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedSubaccountType, tenantfetcher.UpdatedSubaccountType, tenantfetcher.DeletedSubaccountType)
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.CreatedSubaccountType, tenantfetchersvc.UpdatedSubaccountType, tenantfetchersvc.DeletedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
 
 				return client
 			},
@@ -2258,8 +2259,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedSubaccountType, tenantfetcher.UpdatedSubaccountType, tenantfetcher.DeletedSubaccountType)
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.CreatedSubaccountType, tenantfetchersvc.UpdatedSubaccountType, tenantfetchersvc.DeletedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
 
 				return client
 			},
@@ -2283,8 +2284,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedSubaccountType, tenantfetcher.UpdatedSubaccountType, tenantfetcher.DeletedSubaccountType)
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.CreatedSubaccountType, tenantfetchersvc.UpdatedSubaccountType, tenantfetchersvc.DeletedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
 
 				return client
 			},
@@ -2325,8 +2326,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedSubaccountType, tenantfetcher.UpdatedSubaccountType, tenantfetcher.DeletedSubaccountType)
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.CreatedSubaccountType, tenantfetchersvc.UpdatedSubaccountType, tenantfetchersvc.DeletedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
 
 				return client
 			},
@@ -2358,8 +2359,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedSubaccountType, tenantfetcher.UpdatedSubaccountType, tenantfetcher.DeletedSubaccountType)
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.CreatedSubaccountType, tenantfetchersvc.UpdatedSubaccountType, tenantfetchersvc.DeletedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
 
 				return client
 			},
@@ -2399,8 +2400,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.CreatedSubaccountType, tenantfetcher.UpdatedSubaccountType, tenantfetcher.DeletedSubaccountType)
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.CreatedSubaccountType, tenantfetchersvc.UpdatedSubaccountType, tenantfetchersvc.DeletedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
 
 				return client
 			},
@@ -2442,7 +2443,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				wrongFieldMapping := tenantfetcher.TenantFieldMapping{
+				wrongFieldMapping := tenantfetchersvc.TenantFieldMapping{
 					IDField:   "wrong",
 					NameField: tenantFieldMapping.NameField,
 				}
@@ -2452,8 +2453,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				}
 
 				wrongTenantEvents := eventsToJSONArray(fixEvent(t, "Subaccount", "id992", wrongTenantEventFields))
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(wrongTenantEvents, 1, 1), nil).Once()
-				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetcher.UpdatedSubaccountType, tenantfetcher.DeletedSubaccountType, tenantfetcher.MovedSubaccountType)
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(wrongTenantEvents, 1, 1), nil).Once()
+				attachNoResponseOnFirstPage(client, pageOneQueryParams, tenantfetchersvc.UpdatedSubaccountType, tenantfetchersvc.DeletedSubaccountType, tenantfetchersvc.MovedSubaccountType)
 				return client
 			},
 			TenantStorageSvcFn:  UnusedTenantStorageSvc,
@@ -2473,12 +2474,12 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 
 			APIClientFn: func() *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageThreeQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.UpdatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.DeletedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent1)+"]"), 3, 1), nil).Once()
-				client.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageThreeQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 9, 3), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.UpdatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(subaccountEvents, 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.DeletedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent1)+"]"), 3, 1), nil).Once()
+				client.On("FetchTenantEventsPage", tenantfetchersvc.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse([]byte("["+string(subaccountEvent4)+"]"), 3, 1), nil).Once()
 
 				return client
 			},
@@ -2549,14 +2550,16 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			labelSvc := testCase.LabelRepoFn()
 			kubeClient := testCase.KubeClientFn()
 			gqlClient := testCase.GqlClientFn()
-			svc := tenantfetcher.NewSubaccountService(tenantfetcher.QueryConfig{
+			regionDetails := make(map[string]string)
+			regionDetails[testRegion] = ""
+			svc := tenantfetchersvc.NewSubaccountService(tenantfetchersvc.QueryConfig{
 				PageNumField:   "pageNum",
 				PageSizeField:  "pageSize",
 				TimestampField: "timestamp",
 				RegionField:    "region",
 				PageSizeValue:  "1",
 				PageStartValue: "1",
-			}, transact, kubeClient, tenantfetcher.TenantFieldMapping{
+			}, transact, kubeClient, tenantfetchersvc.TenantFieldMapping{
 				DetailsField:           "eventData",
 				DiscriminatorField:     "",
 				DiscriminatorValue:     "",
@@ -2570,11 +2573,11 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				EntityTypeField:        "type",
 				GlobalAccountGUIDField: "globalAccountGUID",
 				RegionField:            "region",
-			}, tenantfetcher.MovedSubaccountsFieldMapping{
+			}, tenantfetchersvc.MovedSubaccountsFieldMapping{
 				LabelValue:   "id",
 				SourceTenant: "source_tenant",
 				TargetTenant: "target_tenant",
-			}, provider, []string{testRegion}, apiClient, tenantStorageSvc, runtimeStorageSvc, labelSvc, time.Hour, gqlClient, tenantInsertChunkSize, tenantConverter)
+			}, provider, regionDetails, apiClient, tenantStorageSvc, runtimeStorageSvc, labelSvc, time.Hour, gqlClient, tenantInsertChunkSize, tenantConverter)
 			svc.SetRetryAttempts(1)
 
 			// WHEN
@@ -2598,12 +2601,12 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 
 		persist, transact := txGen.ThatSucceeds()
 		apiClient := &automock.EventAPIClient{}
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(nil, testErr).Once()
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(nil, testErr).Once()
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.UpdatedSubaccountType, pageOneQueryParams).Return(nil, nil).Once()
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.DeletedSubaccountType, pageOneQueryParams).Return(nil, nil).Once()
-		apiClient.On("FetchTenantEventsPage", tenantfetcher.MovedSubaccountType, pageOneQueryParams).Return(nil, nil).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(nil, testErr).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(nil, testErr).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetchersvc.CreatedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(subaccountEvent1), 1, 1), nil).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetchersvc.UpdatedSubaccountType, pageOneQueryParams).Return(nil, nil).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetchersvc.DeletedSubaccountType, pageOneQueryParams).Return(nil, nil).Once()
+		apiClient.On("FetchTenantEventsPage", tenantfetchersvc.MovedSubaccountType, pageOneQueryParams).Return(nil, nil).Once()
 
 		tenantStorageSvc := &automock.TenantStorageService{}
 		tenantStorageSvc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), tenantIDsMatcher(getTenantsIDsFromEvents(subaccountEvent1))).Return(nil, nil).Once()
@@ -2615,14 +2618,16 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 		gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(tenantConverter.MultipleInputToGraphQLInput(tenantsToCreate))).Return(nil)
 
 		defer mock.AssertExpectationsForObjects(t, persist, transact, apiClient, tenantStorageSvc, kubeClient)
-		svc := tenantfetcher.NewSubaccountService(tenantfetcher.QueryConfig{
+		regionDetails := make(map[string]string)
+		regionDetails[testRegion] = ""
+		svc := tenantfetchersvc.NewSubaccountService(tenantfetchersvc.QueryConfig{
 			PageNumField:   "pageNum",
 			PageSizeField:  "pageSize",
 			TimestampField: "timestamp",
 			RegionField:    "region",
 			PageSizeValue:  "1",
 			PageStartValue: "1",
-		}, transact, kubeClient, tenantfetcher.TenantFieldMapping{
+		}, transact, kubeClient, tenantfetchersvc.TenantFieldMapping{
 			DetailsField:           "eventData",
 			DiscriminatorField:     "",
 			DiscriminatorValue:     "",
@@ -2636,11 +2641,11 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			EntityTypeField:        "type",
 			GlobalAccountGUIDField: "globalAccountGUID",
 			RegionField:            "region",
-		}, tenantfetcher.MovedSubaccountsFieldMapping{
+		}, tenantfetchersvc.MovedSubaccountsFieldMapping{
 			LabelValue:   "id",
 			SourceTenant: "source_tenant",
 			TargetTenant: "target_tenant",
-		}, provider, []string{testRegion}, apiClient, tenantStorageSvc, nil, nil, time.Hour, gqlClient, tenantInsertChunkSize, tenantConverter)
+		}, provider, regionDetails, apiClient, tenantStorageSvc, nil, nil, time.Hour, gqlClient, tenantInsertChunkSize, tenantConverter)
 
 		// WHEN
 		err := svc.SyncTenants()
@@ -2650,7 +2655,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 	})
 }
 
-func attachNoResponseOnFirstPage(client *automock.EventAPIClient, queryParams tenantfetcher.QueryParams, eventTypes ...tenantfetcher.EventsType) {
+func attachNoResponseOnFirstPage(client *automock.EventAPIClient, queryParams tenantfetchersvc.QueryParams, eventTypes ...tenantfetchersvc.EventsType) {
 	for _, eventType := range eventTypes {
 		client.On("FetchTenantEventsPage", eventType, queryParams).Return(nil, nil).Once()
 	}

@@ -1,4 +1,4 @@
-package tenantfetcher_test
+package tenantfetchersvc_test
 
 import (
 	"context"
@@ -17,8 +17,8 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
-	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
+	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc/automock"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,20 +32,20 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 	metricsPusherMock := fixMetricsPusherMock()
 	defer metricsPusherMock.AssertExpectations(t)
 
-	queryParams := tenantfetcher.QueryParams{
+	queryParams := tenantfetchersvc.QueryParams{
 		"pageSize":  "1",
 		"pageNum":   "1",
 		"timestamp": "1",
 	}
 
-	subaccountQueryParams := tenantfetcher.QueryParams{
+	subaccountQueryParams := tenantfetchersvc.QueryParams{
 		"pageSize":  "1",
 		"pageNum":   "1",
 		"timestamp": "1",
 		"region":    "test-region",
 	}
 
-	apiCfg := tenantfetcher.APIConfig{
+	apiCfg := tenantfetchersvc.APIConfig{
 		EndpointTenantCreated:     endpoint + "/ga-created",
 		EndpointTenantDeleted:     endpoint + "/ga-deleted",
 		EndpointTenantUpdated:     endpoint + "/ga-updated",
@@ -54,7 +54,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 		EndpointSubaccountUpdated: endpoint + "/sub-updated",
 		EndpointSubaccountMoved:   endpoint + "/sub-moved",
 	}
-	client, err := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, oauth.Standard, apiCfg, time.Second)
+	client, err := tenantfetchersvc.NewClient(tenantfetchersvc.OAuth2Config{}, oauth.Standard, apiCfg, time.Second)
 	require.NoError(t, err)
 
 	client.SetMetricsPusher(metricsPusherMock)
@@ -62,7 +62,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success fetching account creation events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.CreatedAccountType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetchersvc.CreatedAccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -70,7 +70,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success fetching account update events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedAccountType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetchersvc.UpdatedAccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -78,7 +78,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success fetching account deletion events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.DeletedAccountType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetchersvc.DeletedAccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -86,7 +86,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success fetching subaccount creation events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.CreatedSubaccountType, subaccountQueryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetchersvc.CreatedSubaccountType, subaccountQueryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -94,7 +94,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success fetching subaccount update events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedSubaccountType, subaccountQueryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetchersvc.UpdatedSubaccountType, subaccountQueryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -102,7 +102,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success fetching subaccount deletion events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.DeletedSubaccountType, subaccountQueryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetchersvc.DeletedSubaccountType, subaccountQueryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -110,7 +110,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success fetching moved subaccount events", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.MovedSubaccountType, subaccountQueryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetchersvc.MovedSubaccountType, subaccountQueryParams)
 		// THEN
 		require.NoError(t, err)
 		assert.NotEmpty(t, res)
@@ -125,12 +125,12 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 	})
 
 	// GIVEN
-	apiCfg = tenantfetcher.APIConfig{
+	apiCfg = tenantfetchersvc.APIConfig{
 		EndpointTenantCreated: "___ :// ___ ",
 		EndpointTenantDeleted: "http://127.0.0.1:8111/badpath",
 		EndpointTenantUpdated: endpoint + "/empty",
 	}
-	client, err = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, oauth.Standard, apiCfg, time.Second)
+	client, err = tenantfetchersvc.NewClient(tenantfetchersvc.OAuth2Config{}, oauth.Standard, apiCfg, time.Second)
 	require.NoError(t, err)
 
 	client.SetMetricsPusher(metricsPusherMock)
@@ -138,7 +138,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Success when no content", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedAccountType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetchersvc.UpdatedAccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		require.Empty(t, res)
@@ -146,7 +146,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Error when endpoint not parsable", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.CreatedAccountType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetchersvc.CreatedAccountType, queryParams)
 		// THEN
 		require.EqualError(t, err, "parse \"___ :// ___ \": first path segment in URL cannot contain colon")
 		assert.Empty(t, res)
@@ -154,19 +154,19 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Error when bad path", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.DeletedAccountType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetchersvc.DeletedAccountType, queryParams)
 		// THEN
 		require.EqualError(t, err, "while sending get request: Get \"http://127.0.0.1:8111/badpath?pageNum=1&pageSize=1&timestamp=1\": dial tcp 127.0.0.1:8111: connect: connection refused")
 		assert.Empty(t, res)
 	})
 
 	// GIVEN
-	apiCfg = tenantfetcher.APIConfig{
+	apiCfg = tenantfetchersvc.APIConfig{
 		EndpointTenantCreated: endpoint + "/created",
 		EndpointTenantDeleted: endpoint + "/deleted",
 		EndpointTenantUpdated: endpoint + "/badRequest",
 	}
-	client, err = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, oauth.Standard, apiCfg, time.Second)
+	client, err = tenantfetchersvc.NewClient(tenantfetchersvc.OAuth2Config{}, oauth.Standard, apiCfg, time.Second)
 	require.NoError(t, err)
 
 	client.SetMetricsPusher(metricsPusherMock)
@@ -174,17 +174,17 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Error when status code not equal to 200 OK and 204 No Content is returned", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.UpdatedAccountType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetchersvc.UpdatedAccountType, queryParams)
 		// THEN
 		require.EqualError(t, err, fmt.Sprintf("request to \"%s/badRequest?pageNum=1&pageSize=1&timestamp=1\" returned status code 400 and body \"\"", endpoint))
 		assert.Empty(t, res)
 	})
 
 	// GIVEN
-	apiCfg = tenantfetcher.APIConfig{
+	apiCfg = tenantfetchersvc.APIConfig{
 		EndpointSubaccountMoved: "",
 	}
-	client, err = tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, oauth.Standard, apiCfg, time.Second)
+	client, err = tenantfetchersvc.NewClient(tenantfetchersvc.OAuth2Config{}, oauth.Standard, apiCfg, time.Second)
 	require.NoError(t, err)
 
 	client.SetMetricsPusher(metricsPusherMock)
@@ -192,7 +192,7 @@ func TestClient_FetchTenantEventsPage(t *testing.T) {
 
 	t.Run("Skip fetching moved subaccount events when endpoint is not provided", func(t *testing.T) {
 		// WHEN
-		res, err := client.FetchTenantEventsPage(tenantfetcher.MovedSubaccountType, queryParams)
+		res, err := client.FetchTenantEventsPage(tenantfetchersvc.MovedSubaccountType, queryParams)
 		// THEN
 		require.NoError(t, err)
 		require.Nil(t, res)
@@ -467,15 +467,15 @@ func TestNewClient(t *testing.T) {
 	const clientSecret = "secret"
 
 	t.Run("expect error on invalid auth mode", func(t *testing.T) {
-		_, err := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{}, "invalid-auth-mode", tenantfetcher.APIConfig{}, 1)
+		_, err := tenantfetchersvc.NewClient(tenantfetchersvc.OAuth2Config{}, "invalid-auth-mode", tenantfetchersvc.APIConfig{}, 1)
 		require.Error(t, err)
 	})
 
 	t.Run("standard client-credentials mode", func(t *testing.T) {
-		client, err := tenantfetcher.NewClient(tenantfetcher.OAuth2Config{
+		client, err := tenantfetchersvc.NewClient(tenantfetchersvc.OAuth2Config{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
-		}, oauth.Standard, tenantfetcher.APIConfig{}, 1)
+		}, oauth.Standard, tenantfetchersvc.APIConfig{}, 1)
 		require.NoError(t, err)
 
 		httpClient := client.GetHTTPClient()
@@ -503,11 +503,11 @@ func TestNewClient(t *testing.T) {
 		tlsCert, err := certCfg.ParseCertificate()
 		require.NoError(t, err)
 
-		oauthCfg := tenantfetcher.OAuth2Config{
+		oauthCfg := tenantfetchersvc.OAuth2Config{
 			X509Config: certCfg,
 			ClientID:   clientID,
 		}
-		client, err := tenantfetcher.NewClient(oauthCfg, oauth.Mtls, tenantfetcher.APIConfig{}, 1)
+		client, err := tenantfetchersvc.NewClient(oauthCfg, oauth.Mtls, tenantfetchersvc.APIConfig{}, 1)
 		require.NoError(t, err)
 
 		httpClient := client.GetHTTPClient()

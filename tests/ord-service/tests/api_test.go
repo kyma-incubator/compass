@@ -136,7 +136,7 @@ func TestORDService(t *testing.T) {
 	intSystemHttpClient, err := clients.NewIntegrationSystemClient(ctx, intSystemCredentials)
 	require.NoError(t, err)
 
-	extIssuerCertHttpClient := createHttpClientWithCert(certCache.Get().PrivateKey, certCache.Get().Certificate, conf.SkipSSLValidation)
+	extIssuerCertHttpClient := CreateHttpClientWithCert(certCache.Get().PrivateKey, certCache.Get().Certificate, conf.SkipSSLValidation)
 
 	t.Run("401 when requests to ORD Service are unsecured", func(t *testing.T) {
 		makeRequestWithStatusExpect(t, unsecuredHttpClient, conf.ORDServiceURL+"/$metadata?$format=json", http.StatusUnauthorized)
@@ -736,8 +736,8 @@ func makeRequestWithStatusExpect(t require.TestingT, httpClient *http.Client, ur
 	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, map[string][]string{}, expectedHTTPStatus, conf.ORDServiceDefaultResponseType)
 }
 
-// createHttpClientWithCert returns http client configured with provided client certificate and key
-func createHttpClientWithCert(clientKey crypto.PrivateKey, rawCertChain [][]byte, skipSSLValidation bool) *http.Client {
+// CreateHttpClientWithCert returns http client configured with provided client certificate and key
+func CreateHttpClientWithCert(clientKey crypto.PrivateKey, rawCertChain [][]byte, skipSSLValidation bool) *http.Client {
 	return &http.Client{
 		Timeout: 20 * time.Second,
 		Transport: &http.Transport{

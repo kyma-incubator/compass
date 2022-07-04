@@ -16,13 +16,13 @@ type LabelRepository struct {
 	mock.Mock
 }
 
-// ListForObject provides a mock function with given fields: ctx, tenant, objectType, objectID
-func (_m *LabelRepository) ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
-	ret := _m.Called(ctx, tenant, objectType, objectID)
+// ListForGlobalObject provides a mock function with given fields: ctx, objectType, objectID
+func (_m *LabelRepository) ListForGlobalObject(ctx context.Context, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
+	ret := _m.Called(ctx, objectType, objectID)
 
 	var r0 map[string]*model.Label
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string) map[string]*model.Label); ok {
-		r0 = rf(ctx, tenant, objectType, objectID)
+	if rf, ok := ret.Get(0).(func(context.Context, model.LabelableObject, string) map[string]*model.Label); ok {
+		r0 = rf(ctx, objectType, objectID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[string]*model.Label)
@@ -30,8 +30,8 @@ func (_m *LabelRepository) ListForObject(ctx context.Context, tenant string, obj
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.LabelableObject, string) error); ok {
-		r1 = rf(ctx, tenant, objectType, objectID)
+	if rf, ok := ret.Get(1).(func(context.Context, model.LabelableObject, string) error); ok {
+		r1 = rf(ctx, objectType, objectID)
 	} else {
 		r1 = ret.Error(1)
 	}

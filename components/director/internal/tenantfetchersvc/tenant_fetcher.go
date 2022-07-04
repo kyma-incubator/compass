@@ -2,16 +2,14 @@ package tenantfetchersvc
 
 import (
 	"context"
-
-	"github.com/kyma-incubator/compass/components/director/internal/tenantfetcher"
 )
 
 type fetcher struct {
-	svc tenantfetcher.SubaccountOnDemandService
+	svc SubaccountOnDemandService
 }
 
 // NewTenantFetcher creates new fetcher
-func NewTenantFetcher(svc tenantfetcher.SubaccountOnDemandService) *fetcher {
+func NewTenantFetcher(svc SubaccountOnDemandService) *fetcher {
 	return &fetcher{
 		svc: svc,
 	}

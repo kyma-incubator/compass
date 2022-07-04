@@ -16,6 +16,20 @@ type DirectorGraphQLClient struct {
 	mock.Mock
 }
 
+// DeleteTenants provides a mock function with given fields: ctx, tenants
+func (_m *DirectorGraphQLClient) DeleteTenants(ctx context.Context, tenants []graphql.BusinessTenantMappingInput) error {
+	ret := _m.Called(ctx, tenants)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []graphql.BusinessTenantMappingInput) error); ok {
+		r0 = rf(ctx, tenants)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // SubscribeTenant provides a mock function with given fields: ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName
 func (_m *DirectorGraphQLClient) SubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionProviderAppName string) error {
 	ret := _m.Called(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName)
@@ -37,6 +51,20 @@ func (_m *DirectorGraphQLClient) UnsubscribeTenant(ctx context.Context, provider
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string) error); ok {
 		r0 = rf(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateTenant provides a mock function with given fields: ctx, id, tenant
+func (_m *DirectorGraphQLClient) UpdateTenant(ctx context.Context, id string, tenant graphql.BusinessTenantMappingInput) error {
+	ret := _m.Called(ctx, id, tenant)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, graphql.BusinessTenantMappingInput) error); ok {
+		r0 = rf(ctx, id, tenant)
 	} else {
 		r0 = ret.Error(0)
 	}

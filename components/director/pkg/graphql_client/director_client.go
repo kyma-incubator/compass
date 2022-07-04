@@ -88,7 +88,6 @@ func (d *Director) SubscribeTenant(ctx context.Context, providerID, subaccountID
 
 	subscriptionMutation := fmt.Sprintf(`mutation { subscribeTenant(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", consumerTenantID: "%s", region: "%s", subscriptionAppName: "%s")}`, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName)
 	gRequest := gcli.NewRequest(subscriptionMutation)
-	gRequest.Header.Set("tenant", subaccountID)
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql mutation")
 	}
@@ -101,7 +100,6 @@ func (d *Director) UnsubscribeTenant(ctx context.Context, providerID, subaccount
 
 	unsubscriptionMutation := fmt.Sprintf(`mutation { unsubscribeTenant(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", consumerTenantID: "%s", region: "%s")}`, providerID, subaccountID, providerSubaccountID, consumerTenantID, region)
 	gRequest := gcli.NewRequest(unsubscriptionMutation)
-	gRequest.Header.Set("tenant", subaccountID)
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql mutation")
 	}

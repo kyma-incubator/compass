@@ -1,4 +1,4 @@
-package tenantfetcher
+package tenantfetchersvc
 
 import (
 	"context"
@@ -80,6 +80,12 @@ type PageConfig struct {
 	PageNumField      string
 }
 
+// RegionDetails contains region name and the prefix which should be appended to the name, when storing this region in the DB
+type RegionDetails struct {
+	Name   string `json:"name"`
+	Prefix string `json:"prefix"`
+}
+
 // TenantStorageService missing godoc
 //go:generate mockery --name=TenantStorageService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantStorageService interface {
@@ -112,25 +118,10 @@ type TenantSyncService interface {
 	SyncTenants() error
 }
 
-// DirectorGraphQLClient expects graphql implementation
-//go:generate mockery --name=DirectorGraphQLClient --output=automock --outpkg=automock --case=underscore --disable-version-string
-type DirectorGraphQLClient interface {
-	WriteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
-	DeleteTenants(context.Context, []graphql.BusinessTenantMappingInput) error
-	UpdateTenant(context.Context, string, graphql.BusinessTenantMappingInput) error
-}
-
 // LabelDefConverter missing godoc
 //go:generate mockery --name=LabelDefConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelDefConverter interface {
 	ToGraphQLInput(definition model.LabelDefinition) (graphql.LabelDefinitionInput, error)
-}
-
-// TenantConverter expects tenant converter implementation
-//go:generate mockery --name=TenantConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
-type TenantConverter interface {
-	MultipleInputToGraphQLInput([]model.BusinessTenantMappingInput) []graphql.BusinessTenantMappingInput
-	ToGraphQLInput(model.BusinessTenantMappingInput) graphql.BusinessTenantMappingInput
 }
 
 const (
@@ -153,6 +144,7 @@ type SubaccountOnDemandService struct {
 	gqlClient            DirectorGraphQLClient
 	providerName         string
 	tenantConverter      TenantConverter
+	tenantsRegions       map[string]RegionDetails
 }
 
 // GlobalAccountService missing godoc
@@ -182,7 +174,7 @@ type SubaccountService struct {
 	tenantStorageService         TenantStorageService
 	runtimeStorageService        RuntimeService
 	providerName                 string
-	tenantsRegions               []string
+	tenantsRegions               map[string]string
 	fieldMapping                 TenantFieldMapping
 	movedSubaccountsFieldMapping MovedSubaccountsFieldMapping
 	labelRepo                    LabelRepo
@@ -203,7 +195,8 @@ func NewSubaccountOnDemandService(
 	tenantStorageService TenantStorageService,
 	gqlClient DirectorGraphQLClient,
 	providerName string,
-	tenantConverter TenantConverter) *SubaccountOnDemandService {
+	tenantConverter TenantConverter,
+	tenantsRegions map[string]RegionDetails) *SubaccountOnDemandService {
 	return &SubaccountOnDemandService{
 		queryConfig:    queryConfig,
 		fieldMapping:   fieldMapping,
@@ -221,6 +214,7 @@ func NewSubaccountOnDemandService(
 		gqlClient:            gqlClient,
 		providerName:         providerName,
 		tenantConverter:      tenantConverter,
+		tenantsRegions:       tenantsRegions,
 	}
 }
 
@@ -266,7 +260,7 @@ func NewSubaccountService(queryConfig QueryConfig,
 	fieldMapping TenantFieldMapping,
 	movRuntime MovedSubaccountsFieldMapping,
 	providerName string,
-	regionNames []string,
+	regionNames map[string]string,
 	client EventAPIClient,
 	tenantStorageService TenantStorageService,
 	runtimeStorageService RuntimeService,
@@ -325,24 +319,24 @@ func (s SubaccountService) SyncTenants() error {
 		newLastResyncTimestamp = convertTimeToUnixMilliSecondString(startTime)
 	}
 
-	for _, region := range s.tenantsRegions {
-		tenantsToCreate, err := s.getSubaccountsToCreateForRegion(lastConsumedTenantTimestamp, region)
+	for regionName, regionPrefix := range s.tenantsRegions {
+		tenantsToCreate, err := s.getSubaccountsToCreateForRegion(lastConsumedTenantTimestamp, regionName)
 		if err != nil {
 			return err
 		}
-		log.C(ctx).Printf("Got subaccount to create for region: %s", region)
+		log.C(ctx).Printf("Got subaccount to create for region: %s", regionName)
 
-		tenantsToDelete, err := s.getSubaccountsToDeleteForRegion(lastConsumedTenantTimestamp, region)
+		tenantsToDelete, err := s.getSubaccountsToDeleteForRegion(lastConsumedTenantTimestamp, regionName)
 		if err != nil {
 			return err
 		}
-		log.C(ctx).Printf("Got subaccount to delete for region: %s", region)
+		log.C(ctx).Printf("Got subaccount to delete for region: %s", regionName)
 
-		subaccountsToMove, err := s.getSubaccountsToMove(lastConsumedTenantTimestamp, region)
+		subaccountsToMove, err := s.getSubaccountsToMove(lastConsumedTenantTimestamp, regionName)
 		if err != nil {
 			return err
 		}
-		log.C(ctx).Printf("Got subaccount to move for region: %s", region)
+		log.C(ctx).Printf("Got subaccount to move for region: %s", regionName)
 
 		tenantsToCreate = dedupeTenants(tenantsToCreate)
 		tenantsToCreate = excludeTenants(tenantsToCreate, tenantsToDelete)
@@ -371,7 +365,8 @@ func (s SubaccountService) SyncTenants() error {
 
 		// Order of event processing matters
 		if len(tenantsToCreate) > 0 {
-			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, region, s.providerName, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
+			fullRegionName := regionPrefix + regionName
+			if err := createTenants(ctx, s.gqlClient, currentTenants, tenantsToCreate, fullRegionName, s.providerName, s.tenantInsertChunkSize, s.tenantConverter); err != nil {
 				return errors.Wrap(err, "while storing subaccounts")
 			}
 		}
@@ -386,7 +381,7 @@ func (s SubaccountService) SyncTenants() error {
 			}
 		}
 
-		log.C(ctx).Printf("Processed new events for region: %s", region)
+		log.C(ctx).Printf("Processed new events for region: %s", regionName)
 
 		if err = tx.Commit(); err != nil {
 			return err
@@ -449,7 +444,12 @@ func (s *SubaccountOnDemandService) SyncTenant(ctx context.Context, subaccountID
 	}
 
 	var tenantsToCreate = []model.BusinessTenantMappingInput{*tenantToCreate}
-	if err := createTenants(ctx, s.gqlClient, parentTenantDetails, tenantsToCreate, tenantToCreate.Region, s.providerName, chunkSizeForTenantOnDemand, s.tenantConverter); err != nil {
+	fullRegionName := tenantToCreate.Region
+	if detail, ok := s.tenantsRegions[fullRegionName]; ok {
+		fullRegionName = detail.Prefix + detail.Name
+	}
+
+	if err := createTenants(ctx, s.gqlClient, parentTenantDetails, tenantsToCreate, fullRegionName, s.providerName, chunkSizeForTenantOnDemand, s.tenantConverter); err != nil {
 		return errors.Wrapf(err, "while creating missing tenants from tenant hierarchy of subaccount tenant with ID %s", subaccountID)
 	}
 
