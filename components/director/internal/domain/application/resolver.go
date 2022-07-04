@@ -154,6 +154,9 @@ type Resolver struct {
 	sysAuthConv      SystemAuthConverter
 	eventingSvc      EventingService
 	bndlConv         BundleConverter
+
+	selfRegisterDistinguishLabelKey string
+	tokenPrefix                     string
 }
 
 // NewResolver missing godoc
@@ -168,25 +171,52 @@ func NewResolver(transact persistence.Transactioner,
 	eventingSvc EventingService,
 	bndlSvc BundleService,
 	bndlConverter BundleConverter,
-	appTemplateSvc ApplicationTemplateService) *Resolver {
+	appTemplateSvc ApplicationTemplateService,
+	selfRegisterDistinguishLabelKey, tokenPrefix string) *Resolver {
 	return &Resolver{
-		transact:         transact,
-		appSvc:           svc,
-		webhookSvc:       webhookSvc,
-		oAuth20Svc:       oAuth20Svc,
-		sysAuthSvc:       sysAuthSvc,
-		appConverter:     appConverter,
-		webhookConverter: webhookConverter,
-		sysAuthConv:      sysAuthConv,
-		eventingSvc:      eventingSvc,
-		bndlSvc:          bndlSvc,
-		bndlConv:         bndlConverter,
-		appTemplateSvc:   appTemplateSvc,
+		transact:                        transact,
+		appSvc:                          svc,
+		webhookSvc:                      webhookSvc,
+		oAuth20Svc:                      oAuth20Svc,
+		sysAuthSvc:                      sysAuthSvc,
+		appConverter:                    appConverter,
+		webhookConverter:                webhookConverter,
+		sysAuthConv:                     sysAuthConv,
+		eventingSvc:                     eventingSvc,
+		bndlSvc:                         bndlSvc,
+		bndlConv:                        bndlConverter,
+		appTemplateSvc:                  appTemplateSvc,
+		selfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
+		tokenPrefix:                     tokenPrefix,
 	}
 }
 
-// Applications missing godoc
+// Applications retrieves all applications using paging.
+// If this method is executed in a certificate flow (certificate + .
+// It fetches model.ApplicationTemplate by label scenarioassignment.SubaccountIDKey
+// with value equal to the consumer ID. Lists all tenant header scoped []model.Application and finds the one created by the previously fetched App Template
 func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if consumerInfo.OnBehalfOf != "" {
+		app, err := r.applicationForTenant(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return &graphql.ApplicationPage{
+			Data:       []*graphql.Application{app},
+			TotalCount: 1,
+			PageInfo: &graphql.PageInfo{
+				StartCursor: "1",
+				EndCursor:   "1",
+				HasNextPage: false,
+			},
+		}, nil
+	}
+
 	labelFilter := labelfilter.MultipleFromGraphQL(filter)
 
 	var cursor string
@@ -252,62 +282,6 @@ func (r *Resolver) Application(ctx context.Context, id string) (*graphql.Applica
 	}
 
 	return r.appConverter.ToGraphQL(app), nil
-}
-
-// ApplicationForTenant could be executed only in a certificate flow. It fetches model.ApplicationTemplate by label scenarioassignment.SubaccountIDKey
-// with value equal to the consumer ID. Lists all tenant header scoped []model.Application and finds the one created by the previously fetched App Template
-func (r *Resolver) ApplicationForTenant(ctx context.Context) (*graphql.Application, error) {
-	consumerInfo, err := consumer.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if !consumerInfo.Flow.IsCertFlow() {
-		return nil, apperrors.NewInvalidOperationError("query is accessible only with а certificate authentication")
-	}
-
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	filters := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(scenarioassignment.SubaccountIDKey, fmt.Sprintf("\"%s\"", consumerInfo.ConsumerID)),
-	}
-	appTemplate, err := r.appTemplateSvc.GetByFilters(ctx, filters)
-
-	if err != nil {
-		log.C(ctx).Infof("No app template found with filter %s = %q", scenarioassignment.SubaccountIDKey, consumerInfo.ConsumerID)
-		return nil, errors.Wrapf(err, "no app template found with filter %s = %q", scenarioassignment.SubaccountIDKey, consumerInfo.ConsumerID)
-	}
-
-	tntApplications, err := r.appSvc.ListAll(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "while listing applications for tenant")
-	}
-
-	var foundApp *model.Application
-	for _, app := range tntApplications {
-		if str.PtrStrToStr(app.ApplicationTemplateID) == appTemplate.ID {
-			foundApp = app
-			break
-		}
-	}
-
-	if foundApp == nil {
-		log.C(ctx).Infof("No application found for template with ID %q", appTemplate.ID)
-		return nil, errors.Errorf("No application found for template with ID %q", appTemplate.ID)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
-	}
-
-	return r.appConverter.ToGraphQL(foundApp), nil
 }
 
 // ApplicationsForRuntime missing godoc
@@ -812,4 +786,57 @@ func (r *Resolver) Bundle(ctx context.Context, obj *graphql.Application, id stri
 	}
 
 	return gqlBundle, nil
+}
+
+func (r *Resolver) applicationForTenant(ctx context.Context) (*graphql.Application, error) {
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	tokenClientID := strings.TrimPrefix(consumerInfo.TokenClientID, r.tokenPrefix)
+	filters := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(scenarioassignment.SubaccountIDKey, fmt.Sprintf("\"%s\"", consumerInfo.ConsumerID)),
+		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", consumerInfo.Region)),
+		labelfilter.NewForKeyWithQuery(r.selfRegisterDistinguishLabelKey, fmt.Sprintf("\"%s\"", tokenClientID)),
+	}
+	appTemplate, err := r.appTemplateSvc.GetByFilters(ctx, filters)
+
+	if err != nil {
+		log.C(ctx).Infof("No app template found with filter %q = %q, %q = %q, %q = %q", scenarioassignment.SubaccountIDKey, consumerInfo.ConsumerID, tenant.RegionLabelKey, consumerInfo.Region, r.selfRegisterDistinguishLabelKey, tokenClientID)
+		return nil, errors.Wrapf(err, "no app template found with filter %q = %q, %q = %q, %q = %q", scenarioassignment.SubaccountIDKey, consumerInfo.ConsumerID, tenant.RegionLabelKey, consumerInfo.Region, r.selfRegisterDistinguishLabelKey, tokenClientID)
+	}
+
+	tntApplications, err := r.appSvc.ListAll(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing applications for tenant")
+	}
+
+	var foundApp *model.Application
+	for _, app := range tntApplications {
+		if str.PtrStrToStr(app.ApplicationTemplateID) == appTemplate.ID {
+			foundApp = app
+			break
+		}
+	}
+
+	if foundApp == nil {
+		log.C(ctx).Infof("No application found for template with ID %q", appTemplate.ID)
+		return nil, errors.Errorf("No application found for template with ID %q", appTemplate.ID)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.appConverter.ToGraphQL(foundApp), nil
 }
