@@ -3,11 +3,12 @@ package application_test
 import (
 	"context"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
-	"testing"
-	"time"
 
 	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
@@ -1058,6 +1059,7 @@ func TestResolver_Applications_CertFlow(t *testing.T) {
 	tokenClientID := "sb-token-client-id"
 	strippedTokenClientID := "token-client-id"
 	selfRegisterDistinguishLabelKey := "test-distinguish-label-key"
+
 	certConsumer := consumer.Consumer{
 		ConsumerID:    consumerID,
 		ConsumerType:  consumer.ExternalCertificate,
@@ -1067,9 +1069,6 @@ func TestResolver_Applications_CertFlow(t *testing.T) {
 		TokenClientID: tokenClientID,
 	}
 	ctxWithConsumerInfo := consumer.SaveToContext(context.TODO(), certConsumer)
-
-	//oauthConsumer := consumer.Consumer{ConsumerID: consumerID, ConsumerType: consumer.Runtime, Flow: oathkeeper.OAuth2Flow}
-	//ctxWithOAuthConsumerInfo := consumer.SaveToContext(context.TODO(), oauthConsumer)
 
 	appTmplFilters := []*labelfilter.LabelFilter{
 		labelfilter.NewForKeyWithQuery(scenarioassignment.SubaccountIDKey, fmt.Sprintf("\"%s\"", consumerID)),
