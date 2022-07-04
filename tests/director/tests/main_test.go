@@ -46,6 +46,11 @@ type DirectorConfig struct {
 	SubscriptionLabelKey             string
 	RuntimeTypeLabelKey              string
 	KymaRuntimeTypeLabelValue        string
+	ConsumerTokenURL                 string
+	ProviderClientID                 string
+	ProviderClientSecret             string
+	BasicUsername                    string
+	BasicPassword                    string
 }
 
 type BaseDirectorConfig struct {
