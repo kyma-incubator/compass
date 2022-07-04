@@ -209,6 +209,10 @@ if [[ ${DUMP_DB} ]]; then
        done
     done
 
+    if [[ -z $SCHEMA_VERSION ]]; then
+      echo -e "${RED}\$SCHEMA_VERSION variable cannot be empty${NC}"
+    fi
+
     echo -e "${YELLOW}Check if there is DB dump in GCS bucket with migration number: $SCHEMA_VERSION...${NC}"
     gsutil -q stat gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}".sql
     STATUS=$?
