@@ -125,7 +125,7 @@ global:
       version: "PR-70"
     schema_migrator:
       dir:
-      version: "PR-2436"
+      version: "PR-2464"
     system_broker:
       dir:
       version: "PR-2383"
@@ -558,6 +558,7 @@ global:
       entityTypeField: "entityType"
       globalAccountID: "gaID"
       regionField: "region"
+    regionDetails: '[{"central", ""}]'
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     issuerLocality: "local" # In local setup we have manually created connector CA certificate with 'local' Locality property
@@ -603,6 +604,9 @@ global:
     http:
       client:
         skipSSLValidation: false
+      retry:
+        attempts: 3
+        delay: 100ms
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
@@ -895,6 +899,7 @@ global:
         - "integration_system.auths:read"
         - "application_template.webhooks:read"
         - "formation:write"
+        - "formation:read"
         - "internal_visibility:read"
         - "application.auths:read"
         - "webhook:write"
@@ -926,6 +931,7 @@ global:
         - "fetch-request.auth:read"
         - "webhooks.auth:read"
         - "formation:write"
+        - "formation:read"
         - "internal_visibility:read"
         - "runtime.webhooks:read"
         - "webhook:write"

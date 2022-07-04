@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
+	"github.com/kyma-incubator/compass/components/director/pkg/retry"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 
@@ -65,6 +65,8 @@ type config struct {
 	ClientTimeout     time.Duration `envconfig:"default=60s"`
 	SkipSSLValidation bool          `envconfig:"default=false"`
 
+	RetryConfig retry.Config
+
 	CertLoaderConfig certloader.Config
 
 	GlobalRegistryConfig ord.GlobalRegistryConfig
@@ -105,8 +107,9 @@ func main() {
 	exitOnError(err, "Failed to initialize certificate loader")
 
 	accessStrategyExecutorProvider := accessstrategy.NewExecutorProviderWithTenant(certCache, ctxTenantProvider)
+	retryHTTPExecutor := retry.NewHTTPExecutor(&cfg.RetryConfig)
 
-	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg, transact, httpClient, accessStrategyExecutorProvider)
+	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg, transact, httpClient, accessStrategyExecutorProvider, retryHTTPExecutor)
 	err = ordAggregator.SyncORDDocuments(ctx)
 	exitOnError(err, "Error while synchronizing Open Resource Discovery Documents")
 
@@ -143,7 +146,6 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	runtimeConverter := runtime.NewConverter(webhookConverter)
 	bundleReferenceConv := bundlereferences.NewConverter()
 	runtimeContextConv := runtimectx.NewConverter()
-	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
 	formationConv := formation.NewConverter()
 	formationTemplateConverter := formationtemplate.NewConverter()
 
@@ -167,7 +169,6 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConv)
 	formationRepo := formation.NewRepository(formationConv)
 	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
-	appTemplateRepo := apptemplate.NewRepository(appTemplateConv)
 
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
@@ -175,7 +176,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	tenantRepo := tenant.NewRepository(tenant.NewConverter())
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, config.Features.DefaultScenarioEnabled)
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessStrategyExecutorProvider)
+	fetchRequestSvc := fetchrequest.NewServiceWithRetry(fetchRequestRepo, httpClient, accessStrategyExecutorProvider, retryHTTPExecutor)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
@@ -192,14 +193,13 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 
 	ordClient := ord.NewClient(httpClient, accessStrategyExecutorProvider)
 
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, config.GlobalRegistryConfig, vendorSvc, productSvc, ordClient)
 
 	ordConfig := ord.NewServiceConfig(config.MaxParallelApplicationProcessors)
-	return ord.NewAggregatorService(ordConfig, transact, labelRepo, appSvc, appTemplateSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClient)
+	return ord.NewAggregatorService(ordConfig, transact, labelRepo, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, eventAPISvc, specSvc, packageSvc, productSvc, vendorSvc, tombstoneSvc, tenantSvc, globalRegistrySvc, ordClient)
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
