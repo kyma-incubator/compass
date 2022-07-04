@@ -191,10 +191,10 @@ func NewResolver(transact persistence.Transactioner,
 	}
 }
 
-// Applications retrieves all applications using paging.
-// If this method is executed in a certificate flow (certificate + .
-// It fetches model.ApplicationTemplate by label scenarioassignment.SubaccountIDKey
-// with value equal to the consumer ID. Lists all tenant header scoped []model.Application and finds the one created by the previously fetched App Template
+// Applications retrieves all tenant scoped applications.
+// If this method is executed in a certificate flow (certificate + "user_context" header):
+// - It fetches model.ApplicationTemplate by labels: scenarioassignment.SubaccountIDKey, region and selfRegisterDistinguishLabelKey.
+// - Lists all tenant header scoped []model.Application and finds the one created by the previously fetched App Template.
 func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
