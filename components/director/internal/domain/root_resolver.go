@@ -386,12 +386,6 @@ func (r *queryResolver) Application(ctx context.Context, id string) (*graphql.Ap
 	return r.app.Application(ctx, id)
 }
 
-// ApplicationForTenant could be executed only in a certificate flow. It fetches model.ApplicationTemplate by label scenarioassignment.SubaccountIDKey
-// with value equal to the consumer ID. Lists all tenant header scoped []model.Application and finds the one created by the previously fetched App Template
-func (r *queryResolver) ApplicationForTenant(ctx context.Context) (*graphql.Application, error) {
-	return r.app.ApplicationForTenant(ctx)
-}
-
 // ApplicationTemplates missing godoc
 func (r *queryResolver) ApplicationTemplates(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationTemplatePage, error) {
 	return r.appTemplate.ApplicationTemplates(ctx, filter, first, after)
