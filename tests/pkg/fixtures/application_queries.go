@@ -5,8 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
 	"github.com/avast/retry-go"
 
 	"github.com/pkg/errors"
