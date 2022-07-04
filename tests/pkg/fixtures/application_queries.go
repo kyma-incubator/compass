@@ -253,14 +253,3 @@ func UnassignApplicationFromScenarios(t require.TestingT, ctx context.Context, g
 		}
 	}
 }
-
-func GetApplicationForTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID string) graphql.ApplicationExt {
-	req := FixGetApplicationForTenantRequest()
-
-	log.D().Infof("Getting Application for tenant %s", tenantID)
-	app := graphql.ApplicationExt{}
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, req, &app)
-	require.NoError(t, err)
-
-	return app
-}
