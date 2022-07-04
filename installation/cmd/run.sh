@@ -197,7 +197,6 @@ if [[ ${DUMP_DB} ]]; then
     fi
 
     REMOTE_VERSIONS=($(gsutil ls -R gs://sap-cp-cmp-dev-db-dump/ | grep -o -E '[0-9]+' | sed -e 's/^0\+//' | sort -r))
-    LOCAL_VERSIONS=($(ls migrations/director | grep -o -E '^[0-9]+' | sed -e 's/^0\+//' | sort -ru))
     LOCAL_VERSIONS=($(ls "$SCHEMA_MIGRATOR_COMPONENT_PATH"/migrations/director | grep -o -E '^[0-9]+' | sed -e 's/^0\+//' | sort -ru))
 
     SCHEMA_VERSION=""
