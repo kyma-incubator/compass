@@ -475,7 +475,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("ListByFilters", contextParam, subscriptionFilters).Return([]*model.Runtime{}, testErr).Once()
+				svc.On("ListByFilters", contextParam, subscriptionFilters).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
