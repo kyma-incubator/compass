@@ -184,13 +184,13 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 		return false, errors.Errorf("entity %s does not have access table", resource.Runtime)
 	}
 
-	if err := repo.CreateTenantAccessRecursively(ctx, m2mTable, &repo.TenantAccess{
-		TenantID:   consumerInternalTenant,
-		ResourceID: runtime.ID,
-		Owner:      false,
-	}); err != nil {
-		return false, err
-	}
+		if err := repo.UpsertTenantAccessRecursively(ctx, m2mTable, &repo.TenantAccess{
+			TenantID:   consumerInternalTenant,
+			ResourceID: runtime.ID,
+			Owner:      false,
+		}); err != nil {
+			return false, err
+		}
 
 	log.C(ctx).Infof("Creating label for runtime context with ID: %q with key: %q and value: %q", rtmCtxID, s.consumerSubaccountLabelKey, subaccountTenantID)
 	if err := s.labelSvc.CreateLabel(ctx, consumerInternalTenant, s.uidSvc.Generate(), &model.LabelInput{
