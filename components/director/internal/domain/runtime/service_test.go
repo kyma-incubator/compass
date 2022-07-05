@@ -44,8 +44,6 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 	subaccountID := "subaccountID"
 	xsappNameCMPClone := "xsappnameCMPClone"
 	xsappNameCMPCloneValue := "xsappnameCMPCloneValue"
-	//runtimeTypeLabelKey := "runtimeType"
-	//runtimeTypeLabelValue := "runtimeTypeValue"
 
 	desc := "Lorem ipsum"
 	labels := map[string]interface{}{
