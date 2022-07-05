@@ -171,11 +171,11 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 
 		// We need an externally issued cert with a subject that is not part of the access level mappings
 		externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
-			ExternalClientCertTestSecretName:      "external-client-certificate-rtm-ctx-test-secret",
+			ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
 			ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
 			CertSvcInstanceTestSecretName:         conf.ExternalCertProviderConfig.CertSvcInstanceTestSecretName,
 			ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
-			ExternalCertTestJobName:               "external-client-certificate-rtm-ctx-test-job",
+			ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
 			TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertTestCN, "rtm-ctx-test-cn", -1),
 			ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
 			ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
