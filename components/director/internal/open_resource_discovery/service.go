@@ -6,7 +6,6 @@ import (
 	"sync"
 	"sync/atomic"
 
-
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"

@@ -48,13 +48,14 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	packagePreSanitizedHash, err := ord.HashObject(fixORDDocument().Packages[0])
 	require.NoError(t, err)
 
-	secondTransactionNotCommited := func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+	thirdTransactionNotCommited := func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 		persistTx := &persistenceautomock.PersistenceTx{}
-		persistTx.On("Commit").Return(nil).Once()
+		persistTx.On("Commit").Return(nil).Twice()
 
 		transact := &persistenceautomock.Transactioner{}
-		transact.On("Begin").Return(persistTx, nil).Twice()
-		transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Twice()
+		transact.On("Begin").Return(persistTx, nil).Times(3)
+		transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
+		transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 		return persistTx, transact
 	}
 
@@ -88,7 +89,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	successfulWebhookList := func() *automock.WebhookService {
 		whSvc := &automock.WebhookService{}
 		whSvc.On("ListForApplicationWithSelectForUpdate", txtest.CtxWithDBMatcher(), appID).Return(fixWebhooks(), nil).Once()
-		whSvc.On("ListForApplicationTemplates", txtest.CtxWithDBMatcher())
+		whSvc.On("ListForApplicationTemplates", txtest.CtxWithDBMatcher()).Return(fixWebhooks(), nil).Once()
 		return whSvc
 	}
 
@@ -190,7 +191,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	successfulEmptyAPIList := func() *automock.APIService {
 		apiSvc := &automock.APIService{}
 		apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-		apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 		return apiSvc
 	}
 
@@ -277,7 +277,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), api1ID, *sanitizedDoc.APIResources[0], nilSpecInput, map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, map[string]string{}, []string{}, api1PreSanitizedHash, "").Return(nil).Once()
 		apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), api2ID, *sanitizedDoc.APIResources[1], nilSpecInput, map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, map[string]string{}, []string{}, api2PreSanitizedHash, "").Return(nil).Once()
 		apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
-		apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
 		return apiSvc
 	}
 
@@ -288,7 +287,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], fixAPI1SpecInputs(), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", nil).Once()
 		apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[1], fixAPI2SpecInputs(), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return("", nil).Once()
 		apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
-		apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 		return apiSvc
 	}
 
@@ -346,14 +344,14 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Success when resources are already in db and APIs/Events versions are incremented should Update them and resync API/Event specs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(2)
+				return txGen.ThatSucceedsMultipleTimes(3)
 			},
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			bundleSvcFn:      successfulBundleUpdate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfBundleIDs,
+			labelRepoFn:    successfulLabelRepo,
+			appSvcFn:       successfulAppListAndGet,
+			tenantSvcFn:    successfulTenantSvc,
+			webhookSvcFn:   successfulWebhookList,
+			bundleSvcFn:    successfulBundleUpdate,
+			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
@@ -381,14 +379,14 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Success when resources are already in db and APIs/Events versions are NOT incremented should Update them and refetch only failed API/Event specs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(2)
+				return txGen.ThatSucceedsMultipleTimes(3)
 			},
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			bundleSvcFn:      successfulBundleUpdate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfBundleIDs,
+			labelRepoFn:    successfulLabelRepo,
+			appSvcFn:       successfulAppListAndGet,
+			tenantSvcFn:    successfulTenantSvc,
+			webhookSvcFn:   successfulWebhookList,
+			bundleSvcFn:    successfulBundleUpdate,
+			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoVersionBump(), nil).Once()
@@ -423,13 +421,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Success when resources are not in db should Create them",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(2)
+				return txGen.ThatSucceedsMultipleTimes(3)
 			},
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			bundleSvcFn:      successfulBundleCreate,
+			labelRepoFn:  successfulLabelRepo,
+			appSvcFn:     successfulAppListAndGet,
+			tenantSvcFn:  successfulTenantSvc,
+			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -457,13 +455,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Error when synchronizing global resources from global registry should get them from DB and proceed with the rest of the sync",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(2)
+				return txGen.ThatSucceedsMultipleTimes(3)
 			},
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			bundleSvcFn:      successfulBundleCreate,
+			labelRepoFn:  successfulLabelRepo,
+			appSvcFn:     successfulAppListAndGet,
+			tenantSvcFn:  successfulTenantSvc,
+			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -496,13 +494,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Error when synchronizing global resources from global registry and get them from DB should proceed with the rest of the sync",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(2)
+				return txGen.ThatSucceedsMultipleTimes(3)
 			},
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			bundleSvcFn:      successfulBundleCreate,
+			labelRepoFn:  successfulLabelRepo,
+			appSvcFn:     successfulAppListAndGet,
+			tenantSvcFn:  successfulTenantSvc,
+			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -539,25 +537,54 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:            "Returns error when app templates list fails",
-			TransactionerFn: txGen.ThatDoesntStartTransaction,
-			globalRegistrySvc: successfulGlobalRegistrySvc,
-			ExpectedErr:       testErr,
-		},
-		{
-			Name:            "Returns error when app list fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			appSvcFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				appSvc.On("ListGlobal", txtest.CtxWithDBMatcher(), 200, "").Return(nil, testErr).Once()
-				return appSvc
+			Name:            "Returns error when app templates webhooks list fails",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whSvc.On("ListForApplicationTemplates", txtest.CtxWithDBMatcher()).Return(nil, testErr).Once()
+				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			ExpectedErr:       testErr,
 		},
 		{
-			Name:            "Returns error when labels list fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			Name: "Returns error when app list fails",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				persistTx.On("Commit").Return(testErr).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
+			appSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("ListGlobal", txtest.CtxWithDBMatcher(), 200, "").Return(nil, testErr).Once()
+				return appSvc
+			},
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whSvc.On("ListForApplicationTemplates", txtest.CtxWithDBMatcher()).Return(fixWebhooks(), nil).Once()
+				return whSvc
+			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			ExpectedErr:       testErr,
+		},
+		{
+			Name: "Returns error when labels list fails",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
 				labelRepo.On("ListGlobalByKeyAndObjects", txtest.CtxWithDBMatcher(), model.ApplicationLabelableObject, mock.Anything, applicationTypeLabel).Return(nil, testErr).Once()
@@ -568,12 +595,17 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				appSvc.On("ListGlobal", txtest.CtxWithDBMatcher(), 200, "").Return(fixApplicationPage(), nil).Once()
 				return appSvc
 			},
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whSvc.On("ListForApplicationTemplates", txtest.CtxWithDBMatcher()).Return(fixWebhooks(), nil).Once()
+				return whSvc
+			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			ExpectedErr:       testErr,
 		},
 		{
 			Name:            "Returns error when get internal tenant id fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			tenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
@@ -585,12 +617,17 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				appSvc.On("ListGlobal", txtest.CtxWithDBMatcher(), 200, "").Return(fixApplicationPage(), nil).Once()
 				return appSvc
 			},
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whSvc.On("ListForApplicationTemplates", txtest.CtxWithDBMatcher()).Return(fixWebhooks(), nil).Once()
+				return whSvc
+			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			ExpectedErr:       errors.New("failed to process 1 app"),
 		},
 		{
 			Name:            "Returns error when get tenant fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			tenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
@@ -603,12 +640,17 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				appSvc.On("ListGlobal", txtest.CtxWithDBMatcher(), 200, "").Return(fixApplicationPage(), nil).Once()
 				return appSvc
 			},
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whSvc.On("ListForApplicationTemplates", txtest.CtxWithDBMatcher()).Return(fixWebhooks(), nil).Once()
+				return whSvc
+			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			ExpectedErr:       errors.New("failed to process 1 app"),
 		},
 		{
 			Name:            "Returns error when application locking fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			tenantSvcFn:     successfulTenantSvc,
 			appSvcFn: func() *automock.ApplicationService {
@@ -617,42 +659,44 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				appSvc.On("GetForUpdate", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil, testErr).Once()
 				return appSvc
 			},
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whSvc.On("ListForApplicationTemplates", txtest.CtxWithDBMatcher()).Return(fixWebhooks(), nil).Once()
+				return whSvc
+			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			ExpectedErr:       errors.New("failed to process 1 app"),
 		},
 		{
-			Name:             "Does not resync resources when event list fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			webhookSvcFn:     successfulWebhookList,
-			clientFn:         successfulClientFetch,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
+			Name:            "Does not resync resources when event list fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			webhookSvcFn:    successfulWebhookList,
+			clientFn:        successfulClientFetch,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				return apiSvc
 			},
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:             "Does not resync resources when api list fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			webhookSvcFn:     successfulWebhookList,
-			clientFn:         successfulClientFetch,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
+			Name:            "Does not resync resources when api list fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			webhookSvcFn:    successfulWebhookList,
+			clientFn:        successfulClientFetch,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return apiSvc
 			},
@@ -662,19 +706,22 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			Name: "Returns error when webhook list fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
+				persistTx.On("Commit").Return(nil).Twice()
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Twice()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Twice()
+				transact.On("Begin").Return(persistTx, nil).Times(3)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+
 				return persistTx, transact
 			},
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
+			labelRepoFn: successfulLabelRepo,
+			appSvcFn:    successfulAppListAndGet,
+			tenantSvcFn: successfulTenantSvc,
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
 				whSvc.On("ListForApplicationWithSelectForUpdate", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
+				whSvc.On("ListForApplicationTemplates", txtest.CtxWithDBMatcher()).Return(fixWebhooks(), nil).Once()
 				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
@@ -684,21 +731,21 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			Name: "Returns error when processing application webhooks",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
+				persistTx.On("Commit").Return(nil).Twice()
 				persistTx.On("Commit").Return(testErr).Once()
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Twice()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("Begin").Return(persistTx, nil).Times(3)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			bundleSvcFn:      successfulBundleUpdate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfBundleIDs,
+			labelRepoFn:    successfulLabelRepo,
+			appSvcFn:       successfulAppListAndGet,
+			tenantSvcFn:    successfulTenantSvc,
+			webhookSvcFn:   successfulWebhookList,
+			bundleSvcFn:    successfulBundleUpdate,
+			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
@@ -725,12 +772,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			ExpectedErr:       errors.New("failed to process 1 applications"),
 		},
 		{
-			Name:             "Skips app when ORD documents fetch fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
+			Name:            "Skips app when ORD documents fetch fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(nil, "", testErr)
@@ -739,12 +786,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:             "Does not resync resources for invalid ORD documents",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
+			Name:            "Does not resync resources for invalid ORD documents",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixORDDocument()
@@ -756,19 +803,18 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:             "Does not resync resources if vendor list fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
+			Name:            "Does not resync resources if vendor list fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
 			vendorSvcFn: func() *automock.VendorService {
 				vendorSvc := &automock.VendorService{}
 				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
@@ -779,19 +825,18 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:             "Does not resync resources if vendor update fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
+			Name:            "Does not resync resources if vendor update fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
 			vendorSvcFn: func() *automock.VendorService {
 				vendorSvc := &automock.VendorService{}
 				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixVendors(), nil).Once()
@@ -803,19 +848,18 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:             "Does not resync resources if vendor create fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
+			Name:            "Does not resync resources if vendor create fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
 			vendorSvcFn: func() *automock.VendorService {
 				vendorSvc := &automock.VendorService{}
 				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -827,20 +871,19 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:             "Does not resync resources if product list fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			vendorSvcFn:      successfulVendorUpdate,
+			Name:            "Does not resync resources if product list fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			vendorSvcFn:     successfulVendorUpdate,
 			productSvcFn: func() *automock.ProductService {
 				productSvc := &automock.ProductService{}
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
@@ -851,20 +894,19 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:             "Does not resync resources if product update fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			vendorSvcFn:      successfulVendorUpdate,
+			Name:            "Does not resync resources if product update fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			vendorSvcFn:     successfulVendorUpdate,
 			productSvcFn: func() *automock.ProductService {
 				productSvc := &automock.ProductService{}
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixProducts(), nil).Once()
@@ -876,20 +918,19 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:             "Does not resync resources if product create fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			vendorSvcFn:      successfulVendorUpdate,
+			Name:            "Does not resync resources if product create fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			vendorSvcFn:     successfulVendorUpdate,
 			productSvcFn: func() *automock.ProductService {
 				productSvc := &automock.ProductService{}
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -901,21 +942,20 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:             "Does not resync resources if package list fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
+			Name:            "Does not resync resources if package list fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
 			packageSvcFn: func() *automock.PackageService {
 				packagesSvc := &automock.PackageService{}
 				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -927,20 +967,19 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:             "Does not resync resources if package update fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
+			Name:            "Does not resync resources if package update fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
 			packageSvcFn: func() *automock.PackageService {
 				packagesSvc := &automock.PackageService{}
 				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixPackages(), nil).Once()
@@ -953,20 +992,19 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:             "Does not resync resources if package create fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductCreate,
-			vendorSvcFn:      successfulVendorCreate,
+			Name:            "Does not resync resources if package create fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductCreate,
+			vendorSvcFn:     successfulVendorCreate,
 			packageSvcFn: func() *automock.PackageService {
 				packagesSvc := &automock.PackageService{}
 				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -979,21 +1017,21 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
+				//eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:             "Does not resync resources if bundle list fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
+			Name:            "Does not resync resources if bundle list fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
@@ -1004,21 +1042,20 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:             "Does not resync resources if bundle update fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
+			Name:            "Does not resync resources if bundle update fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(fixBundles(), nil).Once()
@@ -1030,21 +1067,20 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:             "Does not resync resources if bundle create fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductCreate,
-			vendorSvcFn:      successfulVendorCreate,
-			packageSvcFn:     successfulPackageUpdate,
+			Name:            "Does not resync resources if bundle create fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductCreate,
+			vendorSvcFn:     successfulVendorCreate,
+			packageSvcFn:    successfulPackageUpdate,
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -1056,28 +1092,25 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:             "Does not resync resources if api list fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
-			bundleSvcFn:      successfulBundleUpdate,
+			Name:            "Does not resync resources if api list fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
-
 				return apiSvc
 			},
 			clientFn:          successfulClientFetch,
@@ -1085,16 +1118,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:             "Does not resync resources if fetching bundle ids for api fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
-			bundleSvcFn:      successfulBundleUpdate,
+			Name:            "Does not resync resources if fetching bundle ids for api fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
 			bundleRefSvcFn: func() *automock.BundleReferenceService {
 				bundleRefSvc := &automock.BundleReferenceService{}
 				firstAPIID := api1ID
@@ -1105,8 +1138,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
-
 				return apiSvc
 			},
 			eventSvcFn:        successfulEmptyEventList,
@@ -1114,23 +1145,22 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:             "Does not resync resources if api update fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
-			bundleSvcFn:      successfulBundleUpdate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfAPIBundleIDs,
+			Name:            "Does not resync resources if api update fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfAPIBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
 				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), api1ID, *sanitizedDoc.APIResources[0], nilSpecInput, map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, map[string]string{}, []string{}, api1PreSanitizedHash, "").Return(testErr).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return apiSvc
 			},
 			eventSvcFn:        successfulEmptyEventList,
@@ -1138,23 +1168,21 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:             "Does not resync resources if api create fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductCreate,
-			vendorSvcFn:      successfulVendorCreate,
-			packageSvcFn:     successfulPackageCreate,
-			bundleSvcFn:      successfulBundleCreate,
+			Name:            "Does not resync resources if api create fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductCreate,
+			vendorSvcFn:     successfulVendorCreate,
+			packageSvcFn:    successfulPackageCreate,
+			bundleSvcFn:     successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[0], fixAPI1SpecInputs(), map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, mock.Anything, "").Return("", testErr).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
-
 				return apiSvc
 			},
 			eventSvcFn:        successfulEmptyEventList,
@@ -1162,23 +1190,22 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:             "Does not resync resources if api spec delete fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
-			bundleSvcFn:      successfulBundleUpdate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfAPIBundleIDs,
+			Name:            "Does not resync resources if api spec delete fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfAPIBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
 				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), api1ID, *sanitizedDoc.APIResources[0], nilSpecInput, map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, map[string]string{}, []string{}, api1PreSanitizedHash, "").Return(nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return apiSvc
 			},
 			specSvcFn: func() *automock.SpecService {
@@ -1191,23 +1218,22 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn:        successfulEmptyEventList,
 		},
 		{
-			Name:             "Does not resync resources if api spec create fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
-			bundleSvcFn:      successfulBundleUpdate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfAPIBundleIDs,
+			Name:            "Does not resync resources if api spec create fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfAPIBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
 				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), api1ID, *sanitizedDoc.APIResources[0], nilSpecInput, map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, map[string]string{}, []string{}, api1PreSanitizedHash, "").Return(nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return apiSvc
 			},
 			specSvcFn: func() *automock.SpecService {
@@ -1221,22 +1247,21 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			eventSvcFn:        successfulEmptyEventList,
 		},
 		{
-			Name:             "Does not resync resources if api spec list fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
-			bundleSvcFn:      successfulBundleUpdate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfAPIBundleIDs,
+			Name:            "Does not resync resources if api spec list fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfAPIBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoVersionBump(), nil).Twice()
 				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), api1ID, *sanitizedDoc.APIResources[0], nilSpecInput, map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, map[string]string{}, []string{}, api1PreSanitizedHash, "").Return(nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return apiSvc
 			},
 			specSvcFn: func() *automock.SpecService {
@@ -1249,22 +1274,21 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:             "Does not resync resources if api spec get fetch request fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
-			bundleSvcFn:      successfulBundleUpdate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfAPIBundleIDs,
+			Name:            "Does not resync resources if api spec get fetch request fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfAPIBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoVersionBump(), nil).Twice()
 				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), api1ID, *sanitizedDoc.APIResources[0], nilSpecInput, map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, map[string]string{}, []string{}, api1PreSanitizedHash, "").Return(nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return apiSvc
 			},
 			specSvcFn: func() *automock.SpecService {
@@ -1278,22 +1302,21 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:             "Does not resync resources if api spec refetch fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
-			bundleSvcFn:      successfulBundleUpdate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfAPIBundleIDs,
+			Name:            "Does not resync resources if api spec refetch fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfAPIBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoVersionBump(), nil).Twice()
 				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), api1ID, *sanitizedDoc.APIResources[0], nilSpecInput, map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, map[string]string{}, []string{}, api1PreSanitizedHash, "").Return(nil).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return apiSvc
 			},
 			specSvcFn: func() *automock.SpecService {
@@ -1308,23 +1331,22 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:             "Does not resync resources if event list fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
-			bundleSvcFn:      successfulBundleUpdate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfAPIBundleIDs,
-			apiSvcFn:         successfulAPIUpdate,
-			specSvcFn:        successfulAPISpecUpdate,
+			Name:            "Does not resync resources if event list fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfAPIBundleIDs,
+			apiSvcFn:        successfulAPIUpdate,
+			specSvcFn:       successfulAPISpecUpdate,
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
@@ -1332,16 +1354,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:             "Does not resync resources if fetching bundle ids for event fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
-			bundleSvcFn:      successfulBundleUpdate,
+			Name:            "Does not resync resources if fetching bundle ids for event fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
 			bundleRefSvcFn: func() *automock.BundleReferenceService {
 				bundleRefSvc := &automock.BundleReferenceService{}
 				firstAPIID := api1ID
@@ -1358,74 +1380,71 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:             "Does not resync resources if event update fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
-			bundleSvcFn:      successfulBundleUpdate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:         successfulAPIUpdate,
-			specSvcFn:        successfulAPISpecUpdate,
+			Name:            "Does not resync resources if event update fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:        successfulAPIUpdate,
+			specSvcFn:       successfulAPISpecUpdate,
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(testErr).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:             "Does not resync resources if event create fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductCreate,
-			vendorSvcFn:      successfulVendorCreate,
-			packageSvcFn:     successfulPackageCreate,
-			bundleSvcFn:      successfulBundleCreate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfAPIBundleIDs,
-			apiSvcFn:         successfulAPICreate,
+			Name:            "Does not resync resources if event create fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductCreate,
+			vendorSvcFn:     successfulVendorCreate,
+			packageSvcFn:    successfulPackageCreate,
+			bundleSvcFn:     successfulBundleCreate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfAPIBundleIDs,
+			apiSvcFn:        successfulAPICreate,
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
 				eventSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.EventResources[0], fixEvent1SpecInputs(), []string{bundleID}, mock.Anything, "").Return("", testErr).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:             "Does not resync resources if event spec delete fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
-			bundleSvcFn:      successfulBundleUpdate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:         successfulAPIUpdate,
+			Name:            "Does not resync resources if event spec delete fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:        successfulAPIUpdate,
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 
@@ -1444,25 +1463,24 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:             "Does not resync resources if event spec create fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
-			bundleSvcFn:      successfulBundleUpdate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:         successfulAPIUpdate,
+			Name:            "Does not resync resources if event spec create fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:        successfulAPIUpdate,
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 
@@ -1484,25 +1502,24 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:             "Does not resync resources if event spec list fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
-			bundleSvcFn:      successfulBundleUpdate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:         successfulAPIUpdate,
+			Name:            "Does not resync resources if event spec list fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:        successfulAPIUpdate,
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
@@ -1521,25 +1538,24 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoVersionBump(), nil).Twice()
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:             "Does not resync resources if event spec get fetch request fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
-			bundleSvcFn:      successfulBundleUpdate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:         successfulAPIUpdate,
+			Name:            "Does not resync resources if event spec get fetch request fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:        successfulAPIUpdate,
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
@@ -1559,25 +1575,24 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoVersionBump(), nil).Twice()
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:             "Does not resync resources if event spec refetch fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
-			bundleSvcFn:      successfulBundleUpdate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:         successfulAPIUpdate,
+			Name:            "Does not resync resources if event spec refetch fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:        successfulAPIUpdate,
 			specSvcFn: func() *automock.SpecService {
 				specSvc := &automock.SpecService{}
 				specSvc.On("DeleteByReferenceObjectID", txtest.CtxWithDBMatcher(), model.APISpecReference, api1ID).Return(nil).Once()
@@ -1599,32 +1614,30 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEventsNoVersionBump(), nil).Twice()
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, event1PreSanitizedHash, "").Return(nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:             "Does not resync resources if tombstone list fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
-			bundleSvcFn:      successfulBundleUpdate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:         successfulAPIUpdate,
+			Name:            "Does not resync resources if tombstone list fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:        successfulAPIUpdate,
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, mock.Anything, "").Return(nil).Once()
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event2ID, *sanitizedDoc.EventResources[1], nilSpecInput, []string{bundleID}, []string{}, []string{}, mock.Anything, "").Return(nil).Once()
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Twice()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			specSvcFn: successfulSpecUpdate,
@@ -1637,25 +1650,24 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:             "Does not resync resources if tombstone update fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductUpdate,
-			vendorSvcFn:      successfulVendorUpdate,
-			packageSvcFn:     successfulPackageUpdate,
-			bundleSvcFn:      successfulBundleUpdate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfBundleIDs,
-			apiSvcFn:         successfulAPIUpdate,
+			Name:            "Does not resync resources if tombstone update fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductUpdate,
+			vendorSvcFn:     successfulVendorUpdate,
+			packageSvcFn:    successfulPackageUpdate,
+			bundleSvcFn:     successfulBundleUpdate,
+			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn:        successfulAPIUpdate,
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event1ID, *sanitizedDoc.EventResources[0], nilSpecInput, []string{bundleID}, []string{}, []string{}, mock.Anything, "").Return(nil).Once()
 				eventSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), event2ID, *sanitizedDoc.EventResources[1], nilSpecInput, []string{bundleID}, []string{}, []string{}, mock.Anything, "").Return(nil).Once()
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Twice()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			specSvcFn: successfulSpecUpdate,
@@ -1669,17 +1681,17 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:             "Does not resync resources if tombstone create fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			productSvcFn:     successfulProductCreate,
-			vendorSvcFn:      successfulVendorCreate,
-			packageSvcFn:     successfulPackageCreate,
-			bundleSvcFn:      successfulBundleCreate,
-			apiSvcFn:         successfulAPICreate,
+			Name:            "Does not resync resources if tombstone create fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			productSvcFn:    successfulProductCreate,
+			vendorSvcFn:     successfulVendorCreate,
+			packageSvcFn:    successfulPackageCreate,
+			bundleSvcFn:     successfulBundleCreate,
+			apiSvcFn:        successfulAPICreate,
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -1687,7 +1699,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.EventResources[0], fixEvent1SpecInputs(), []string{bundleID}, mock.Anything, "").Return("", nil).Once()
 				eventSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.EventResources[1], fixEvent2SpecInputs(), []string{bundleID}, mock.Anything, "").Return("", nil).Once()
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			tombstoneSvcFn: func() *automock.TombstoneService {
@@ -1700,13 +1711,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:             "Does not resync resources if api resource deletion due to tombstone fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			bundleSvcFn:      successfulBundleCreate,
+			Name:            "Does not resync resources if api resource deletion due to tombstone fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			bundleSvcFn:     successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -1715,7 +1726,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.APIResources[1], fixAPI2SpecInputs(), map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, mock.Anything, "").Return("", nil).Once()
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
 				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), api2ID).Return(testErr).Once()
-				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return apiSvc
 			},
 			eventSvcFn:   successfulEventCreate,
@@ -1733,14 +1743,14 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:             "Does not resync resources if package resource deletion due to tombstone fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			bundleSvcFn:      successfulBundleCreate,
-			apiSvcFn:         successfulAPICreate,
+			Name:            "Does not resync resources if package resource deletion due to tombstone fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			bundleSvcFn:     successfulBundleCreate,
+			apiSvcFn:        successfulAPICreate,
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -1748,7 +1758,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.EventResources[0], fixEvent1SpecInputs(), []string{bundleID}, mock.Anything, "").Return("", nil).Once()
 				eventSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.EventResources[1], fixEvent2SpecInputs(), []string{bundleID}, mock.Anything, "").Return("", nil).Once()
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			packageSvcFn: func() *automock.PackageService {
@@ -1783,14 +1792,14 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 		},
 		{
-			Name:             "Does not resync resources if event resource deletion due to tombstone fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			bundleSvcFn:      successfulBundleCreate,
-			apiSvcFn:         successfulAPICreate,
+			Name:            "Does not resync resources if event resource deletion due to tombstone fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			bundleSvcFn:     successfulBundleCreate,
+			apiSvcFn:        successfulAPICreate,
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -1799,7 +1808,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.EventResources[1], fixEvent2SpecInputs(), []string{bundleID}, mock.Anything, "").Return("", nil).Once()
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
 				eventSvc.On("Delete", txtest.CtxWithDBMatcher(), event1ID).Return(testErr).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			packageSvcFn: successfulPackageCreate,
@@ -1826,14 +1834,14 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 		},
 		{
-			Name:             "Does not resync resources if vendor resource deletion due to tombstone fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			bundleSvcFn:      successfulBundleCreate,
-			apiSvcFn:         successfulAPICreate,
+			Name:            "Does not resync resources if vendor resource deletion due to tombstone fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			bundleSvcFn:     successfulBundleCreate,
+			apiSvcFn:        successfulAPICreate,
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -1841,7 +1849,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.EventResources[0], fixEvent1SpecInputs(), []string{bundleID}, mock.Anything, "").Return("", nil).Once()
 				eventSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.EventResources[1], fixEvent2SpecInputs(), []string{bundleID}, mock.Anything, "").Return("", nil).Once()
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			packageSvcFn: successfulPackageCreate,
@@ -1876,14 +1883,14 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 		},
 		{
-			Name:             "Does not resync resources if product resource deletion due to tombstone fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			bundleSvcFn:      successfulBundleCreate,
-			apiSvcFn:         successfulAPICreate,
+			Name:            "Does not resync resources if product resource deletion due to tombstone fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
+			bundleSvcFn:     successfulBundleCreate,
+			apiSvcFn:        successfulAPICreate,
 			eventSvcFn: func() *automock.EventService {
 				eventSvc := &automock.EventService{}
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -1891,7 +1898,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.EventResources[0], fixEvent1SpecInputs(), []string{bundleID}, mock.Anything, "").Return("", nil).Once()
 				eventSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.EventResources[1], fixEvent2SpecInputs(), []string{bundleID}, mock.Anything, "").Return("", nil).Once()
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			packageSvcFn: successfulPackageCreate,
@@ -1925,12 +1931,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 		},
 		{
-			Name:             "Does not resync resources if bundle resource deletion due to tombstone fails",
-			TransactionerFn:  secondTransactionNotCommited,
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
+			Name:            "Does not resync resources if bundle resource deletion due to tombstone fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			appSvcFn:        successfulAppListAndGet,
+			tenantSvcFn:     successfulTenantSvc,
+			webhookSvcFn:    successfulWebhookList,
 			bundleSvcFn: func() *automock.BundleService {
 				bundlesSvc := &automock.BundleService{}
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -1947,7 +1953,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				eventSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.EventResources[0], fixEvent1SpecInputs(), []string{bundleID}, mock.Anything, "").Return("", nil).Once()
 				eventSvc.On("Create", txtest.CtxWithDBMatcher(), appID, nilBundleID, str.Ptr(packageID), *sanitizedDoc.EventResources[1], fixEvent2SpecInputs(), []string{bundleID}, mock.Anything, "").Return("", nil).Once()
 				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixEvents(), nil).Once()
-				eventSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return eventSvc
 			},
 			packageSvcFn: successfulPackageCreate,
@@ -1976,13 +1981,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Success when resources are not in db and no SAP Vendor is declared in Documents should Create them as SAP Vendor is coming from the Global Registry",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(2)
+				return txGen.ThatSucceedsMultipleTimes(3)
 			},
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			bundleSvcFn:      successfulBundleCreate,
+			labelRepoFn:  successfulLabelRepo,
+			appSvcFn:     successfulAppListAndGet,
+			tenantSvcFn:  successfulTenantSvc,
+			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -2016,14 +2021,14 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Success when resources are already in db and no SAP Vendor is declared in Documents should Update them as SAP Vendor is coming from the Global Registry",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(2)
+				return txGen.ThatSucceedsMultipleTimes(3)
 			},
-			labelRepoFn:      successfulLabelRepo,
-			appSvcFn:         successfulAppListAndGet,
-			tenantSvcFn:      successfulTenantSvc,
-			webhookSvcFn:     successfulWebhookList,
-			bundleSvcFn:      successfulBundleUpdate,
-			bundleRefSvcFn:   successfulBundleReferenceFetchingOfBundleIDs,
+			labelRepoFn:    successfulLabelRepo,
+			appSvcFn:       successfulAppListAndGet,
+			tenantSvcFn:    successfulTenantSvc,
+			webhookSvcFn:   successfulWebhookList,
+			bundleSvcFn:    successfulBundleUpdate,
+			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
