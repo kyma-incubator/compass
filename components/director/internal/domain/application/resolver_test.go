@@ -1236,7 +1236,7 @@ func TestResolver_Applications_CertFlow(t *testing.T) {
 			},
 			ConverterFn: func() *automock.ApplicationConverter {
 				conv := &automock.ApplicationConverter{}
-				conv.AssertNotCalled(t, "ToGraphQL")
+				conv.On("ToGraphQL", modelApplication).Return(gqlApplication).Once()
 				return conv
 			},
 			AppTemplateServiceFn: func() *automock.ApplicationTemplateService {

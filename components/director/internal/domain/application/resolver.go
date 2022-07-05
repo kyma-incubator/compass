@@ -201,22 +201,6 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 		return nil, err
 	}
 
-	if consumerInfo.OnBehalfOf != "" {
-		app, err := r.applicationForTenant(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return &graphql.ApplicationPage{
-			Data:       []*graphql.Application{app},
-			TotalCount: 1,
-			PageInfo: &graphql.PageInfo{
-				StartCursor: "1",
-				EndCursor:   "1",
-				HasNextPage: false,
-			},
-		}, nil
-	}
-
 	labelFilter := labelfilter.MultipleFromGraphQL(filter)
 
 	var cursor string
@@ -234,6 +218,28 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	if consumerInfo.OnBehalfOf != "" {
+		app, err := r.applicationForTenant(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			return nil, err
+		}
+
+		return &graphql.ApplicationPage{
+			Data:       []*graphql.Application{app},
+			TotalCount: 1,
+			PageInfo: &graphql.PageInfo{
+				StartCursor: "1",
+				EndCursor:   "1",
+				HasNextPage: false,
+			},
+		}, nil
+	}
 
 	appPage, err := r.appSvc.List(ctx, labelFilter, *first, cursor)
 	if err != nil {
@@ -794,14 +800,6 @@ func (r *Resolver) applicationForTenant(ctx context.Context) (*graphql.Applicati
 		return nil, err
 	}
 
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
 	tokenClientID := strings.TrimPrefix(consumerInfo.TokenClientID, r.tokenPrefix)
 	filters := []*labelfilter.LabelFilter{
 		labelfilter.NewForKeyWithQuery(scenarioassignment.SubaccountIDKey, fmt.Sprintf("\"%s\"", consumerInfo.ConsumerID)),
@@ -831,11 +829,6 @@ func (r *Resolver) applicationForTenant(ctx context.Context) (*graphql.Applicati
 	if foundApp == nil {
 		log.C(ctx).Infof("No application found for template with ID %q", appTemplate.ID)
 		return nil, errors.Errorf("No application found for template with ID %q", appTemplate.ID)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, err
 	}
 
 	return r.appConverter.ToGraphQL(foundApp), nil
