@@ -58,12 +58,7 @@ var (
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", tenantRegion)),
 	}
 
-	providerRuntimes = []*model.Runtime{
-		{
-			ID:   providerRuntimeID,
-			Name: "provider-runtime-1",
-		},
-	}
+	providerRuntime = &model.Runtime{ID: providerRuntimeID, Name: "provider-runtime-1"}
 
 	providerAppNameLabelInput = &model.LabelInput{
 		Key:        subscriptionAppNameLabelKey,
@@ -111,7 +106,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
@@ -163,7 +158,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(nil, notFoundErr).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(nil, notFoundErr).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: unusedRuntimeContextSvc,
@@ -177,11 +172,11 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			IsSuccessful:   false,
 		},
 		{
-			Name:   "Returns an error when could not list runtimes",
+			Name:   "Returns an error when could not get runtime",
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(nil, testError).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(nil, testError).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: unusedRuntimeContextSvc,
@@ -200,7 +195,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: unusedRuntimeContextSvc,
@@ -220,7 +215,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: unusedRuntimeContextSvc,
@@ -245,7 +240,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: unusedRuntimeContextSvc,
@@ -271,7 +266,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
@@ -300,7 +295,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
@@ -333,7 +328,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
@@ -441,7 +436,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
@@ -480,7 +475,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(nil, notFoundErr).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(nil, notFoundErr).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: unusedRuntimeContextSvc,
@@ -494,11 +489,11 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			IsSuccessful:   false,
 		},
 		{
-			Name:   "Returns an error when could not list runtimes",
+			Name:   "Returns an error when could not get runtime",
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(nil, testError).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(nil, testError).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: unusedRuntimeContextSvc,
@@ -517,7 +512,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
@@ -541,7 +536,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: unusedRuntimeContextSvc,
@@ -561,7 +556,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {

@@ -108,6 +108,34 @@ func (r *pgRepository) GetByFiltersAndID(ctx context.Context, tenant, id string,
 	return runtimeModel, nil
 }
 
+// GetByFilters retrieves model.Runtime matching on the given label filters
+func (r *pgRepository) GetByFilters(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
+	var runtimeEnt Runtime
+
+	tenantID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing tenant as UUID")
+	}
+
+	filterSubquery, args, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
+	var conditions repo.Conditions
+	if filterSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	if err = r.singleGetter.Get(ctx, resource.Runtime, tenant, conditions, repo.NoOrderBy, &runtimeEnt); err != nil {
+		return nil, err
+	}
+
+	appModel := r.conv.FromEntity(&runtimeEnt)
+
+	return appModel, nil
+}
+
 // GetByFiltersGlobal missing godoc
 func (r *pgRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
 	filterSubquery, args, err := label.FilterQueryGlobal(model.RuntimeLabelableObject, label.IntersectSet, filter)
