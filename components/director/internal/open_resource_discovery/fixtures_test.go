@@ -36,6 +36,7 @@ const (
 	appID            = "testApp"
 	appTemplateID    = "testAppTemplate"
 	whID             = "testWh"
+	whID2			 = "testWh2"
 	tenantID         = "testTenant"
 	externalTenantID = "externalTestTenant"
 	packageID        = "testPkg"
@@ -596,6 +597,13 @@ func fixWebhooks() []*model.Webhook {
 	return []*model.Webhook{
 		{
 			ID:         whID,
+			ObjectID:   appID,
+			ObjectType: model.ApplicationWebhookReference,
+			Type:       model.WebhookTypeOpenResourceDiscovery,
+			URL:        str.Ptr(baseURL),
+		},
+		{
+			ID:         whID2,
 			ObjectID:   appID,
 			ObjectType: model.ApplicationWebhookReference,
 			Type:       model.WebhookTypeOpenResourceDiscovery,

@@ -119,7 +119,7 @@ func main() {
 func ctxTenantProvider(ctx context.Context) (string, error) {
 	tenantPair, err := tenant.LoadTenantPairFromContext(ctx)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
 	return tenantPair.ExternalID, nil
