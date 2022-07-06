@@ -3,41 +3,60 @@ package fixtures
 import (
 	"fmt"
 
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
 )
+
+func FixGetFormationRequest(formationID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query{
+				  result: formation(id: "%s"){
+					%s
+				  }
+				}`, formationID, testctx.Tc.GQLFieldsProvider.ForFormation()))
+}
+
+func FixListFormationsRequestWithPageSize(pageSize int) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				  result: formations(first:%d, after:"") {
+    					%s
+					}
+				}`, pageSize, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForFormation())))
+}
 
 func FixCreateFormationRequest(formationName string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{
 				  result: createFormation(formation: {name: "%s"}){
-					name
+					%s
 				  }
-				}`, formationName))
+				}`, formationName, testctx.Tc.GQLFieldsProvider.ForFormation()))
 }
 
 func FixDeleteFormationRequest(formationName string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{
 				  result: deleteFormation(formation: {name: "%s"}){
-					name
+					%s
 				  }
-				}`, formationName))
+				}`, formationName, testctx.Tc.GQLFieldsProvider.ForFormation()))
 }
 
 func FixAssignFormationRequest(objID, objType, formationName string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{
 			  result: assignFormation(objectID:"%s",objectType: %s ,formation: {name: "%s"}){
-				name
+				%s
 			  }
-			}`, objID, objType, formationName))
+			}`, objID, objType, formationName, testctx.Tc.GQLFieldsProvider.ForFormation()))
 }
 
 func FixUnassignFormationRequest(objID, objType, formationName string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{
 			  result: unassignFormation(objectID:"%s",objectType: %s ,formation: {name: "%s"}){
-				name
+				%s
 			  }
-			}`, objID, objType, formationName))
+			}`, objID, objType, formationName, testctx.Tc.GQLFieldsProvider.ForFormation()))
 }

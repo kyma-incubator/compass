@@ -47,6 +47,9 @@ type runtimeContextRepository interface {
 // FormationRepository represents the Formations repository layer
 //go:generate mockery --name=FormationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationRepository interface {
+	Get(ctx context.Context, id, tenantID string) (*model.Formation, error)
+	GetByName(ctx context.Context, name, tenantID string) (*model.Formation, error)
+	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.FormationPage, error)
 	Create(ctx context.Context, item *model.Formation) error
 	DeleteByName(ctx context.Context, tenantID, name string) error
 }
@@ -132,6 +135,35 @@ func NewService(labelDefRepository labelDefRepository, labelRepository labelRepo
 
 type processScenarioFunc func(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)
 
+// List returns paginated Formations based on pageSize and cursor
+func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model.FormationPage, error) {
+	formationTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
+	}
+
+	return s.formationRepository.List(ctx, formationTenant, pageSize, cursor)
+}
+
+// Get returns the Formation by its id
+func (s *service) Get(ctx context.Context, id string) (*model.Formation, error) {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	formation, err := s.formationRepository.Get(ctx, id, tnt)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Formation with ID %q", id)
+	}
+
+	return formation, nil
+}
+
 // GetFormationsForObject returns slice of formations for entity with ID objID and type objType
 func (s *service) GetFormationsForObject(ctx context.Context, tnt string, objType model.LabelableObject, objID string) ([]string, error) {
 	labelInput := &model.LabelInput{
@@ -152,8 +184,7 @@ func (s *service) GetFormationsForObject(ctx context.Context, tnt string, objTyp
 // Also, a new Formation entity is created based on the provided template name or the default one is used if it's not provided
 func (s *service) CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName string) (*model.Formation, error) {
 	formationName := formation.Name
-	err := s.modifyFormations(ctx, tnt, formationName, addFormation)
-	if err != nil {
+	if err := s.modifyFormations(ctx, tnt, formationName, addFormation); err != nil {
 		if !apperrors.IsNotFoundError(err) {
 			return nil, err
 		}
@@ -163,18 +194,18 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	// TODO:: Currently we need to support both mechanisms of formation creation/deletion(through label definitions and Formations entity) for backwards compatibility
-	if err := s.createFormation(ctx, tnt, templateName, formationName); err != nil {
-		return nil, err
-	}
-
-	return &model.Formation{Name: formationName}, nil
+	return s.createFormation(ctx, tnt, templateName, formationName)
 }
 
 // DeleteFormation removes the provided formation from the scenario label definitions of the given tenant.
 // Also, removes the Formation entity from the DB
 func (s *service) DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error) {
 	formationName := formation.Name
-	err := s.modifyFormations(ctx, tnt, formationName, deleteFormation)
+	if err := s.modifyFormations(ctx, tnt, formationName, deleteFormation); err != nil {
+		return nil, err
+	}
+
+	f, err := s.getFormationByName(ctx, formation.Name, tnt)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +216,7 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		return nil, errors.Wrapf(err, "An error occurred while deleting formation with name: %q", formationName)
 	}
 
-	return &model.Formation{Name: formationName}, nil
+	return f, nil
 }
 
 // AssignFormation assigns object based on graphql.FormationObjectType.
@@ -197,18 +228,19 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
 	switch objectType {
 	case graphql.FormationObjectTypeApplication, graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
-		f, err := s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), addFormation)
-		if err != nil {
+		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), addFormation); err != nil {
 			if apperrors.IsNotFoundError(err) {
 				labelInput := newLabelInput(formation.Name, objectID, objectTypeToLabelableObject(objectType))
 				if err = s.labelService.CreateLabel(ctx, tnt, s.uuidService.Generate(), labelInput); err != nil {
 					return nil, err
 				}
-				return &formation, nil
+
+				return s.getFormationByName(ctx, formation.Name, tnt)
 			}
 			return nil, err
 		}
-		return f, nil
+
+		return s.getFormationByName(ctx, formation.Name, tnt)
 	case graphql.FormationObjectTypeTenant:
 		tenantID, err := s.tenantSvc.GetInternalTenant(ctx, objectID)
 		if err != nil {
@@ -218,7 +250,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		if _, err = s.CreateAutomaticScenarioAssignment(ctx, newAutomaticScenarioAssignmentModel(formation.Name, tnt, tenantID)); err != nil {
 			return nil, err
 		}
-		return &formation, err
+		return s.getFormationByName(ctx, formation.Name, tnt)
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
@@ -235,7 +267,11 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
-		return s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), deleteFormation)
+		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
+			return nil, err
+		}
+
+		return s.getFormationByName(ctx, formation.Name, tnt)
 	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
 		if isFormationComingFromASA, err := s.isFormationComingFromASA(ctx, objectID, formation.Name, objectType); err != nil {
 			return nil, err
@@ -243,7 +279,11 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return &formation, nil
 		}
 
-		return s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), deleteFormation)
+		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
+			return nil, err
+		}
+
+		return s.getFormationByName(ctx, formation.Name, tnt)
 	case graphql.FormationObjectTypeTenant:
 		asa, err := s.asaService.GetForScenarioName(ctx, formation.Name)
 		if err != nil {
@@ -252,7 +292,8 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		if err = s.DeleteAutomaticScenarioAssignment(ctx, asa); err != nil {
 			return nil, err
 		}
-		return &formation, nil
+
+		return s.getFormationByName(ctx, formation.Name, tnt)
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
@@ -510,46 +551,37 @@ func (s *service) modifyFormations(ctx context.Context, tnt, formationName strin
 		return errors.Wrap(err, "while validating Scenario Assignments against a new schema")
 	}
 
-	if err = s.labelDefRepository.UpdateWithVersion(ctx, model.LabelDefinition{
+	return s.labelDefRepository.UpdateWithVersion(ctx, model.LabelDefinition{
 		ID:      def.ID,
 		Tenant:  tnt,
 		Key:     model.ScenariosKey,
 		Schema:  &schema,
 		Version: def.Version,
-	}); err != nil {
-		return err
-	}
-	return nil
+	})
 }
 
-func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID string, formation model.Formation, objectType model.LabelableObject, modificationFunc modificationFunc) (*model.Formation, error) {
+func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID string, formation model.Formation, objectType model.LabelableObject, modificationFunc modificationFunc) error {
 	labelInput := newLabelInput(formation.Name, objectID, objectType)
 
 	existingLabel, err := s.labelService.GetLabel(ctx, tnt, labelInput)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	existingFormations, err := label.ValueToStringsSlice(existingLabel.Value)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	formations := modificationFunc(existingFormations, formation.Name)
 	// can not set scenario label to empty value, violates the scenario label definition
 	if len(formations) == 0 {
-		if err := s.labelRepository.Delete(ctx, tnt, objectType, objectID, model.ScenariosKey); err != nil {
-			return nil, err
-		}
-		return &formation, nil
+		return s.labelRepository.Delete(ctx, tnt, objectType, objectID, model.ScenariosKey)
 	}
 
 	labelInput.Value = formations
 	labelInput.Version = existingLabel.Version
-	if err := s.labelService.UpdateLabel(ctx, tnt, existingLabel.ID, labelInput); err != nil {
-		return nil, err
-	}
-	return &formation, nil
+	return s.labelService.UpdateLabel(ctx, tnt, existingLabel.ID, labelInput)
 }
 
 type modificationFunc func([]string, string) []string
@@ -650,11 +682,11 @@ func (s *service) getAvailableScenarios(ctx context.Context, tenantID string) ([
 	return out, nil
 }
 
-func (s *service) createFormation(ctx context.Context, tenant, templateName, formationName string) error {
+func (s *service) createFormation(ctx context.Context, tenant, templateName, formationName string) (*model.Formation, error) {
 	fTmpl, err := s.formationTemplateRepository.GetByName(ctx, templateName)
 	if err != nil {
 		log.C(ctx).Errorf("An error occurred while getting formation template by name: %q: %v", templateName, err)
-		return errors.Wrapf(err, "An error occurred while getting formation template by name: %q", templateName)
+		return nil, errors.Wrapf(err, "An error occurred while getting formation template by name: %q", templateName)
 	}
 
 	formation := &model.Formation{
@@ -666,8 +698,24 @@ func (s *service) createFormation(ctx context.Context, tenant, templateName, for
 	log.C(ctx).Debugf("Creating formation with name: %q and template ID: %q...", formationName, fTmpl.ID)
 	if err = s.formationRepository.Create(ctx, formation); err != nil {
 		log.C(ctx).Errorf("An error occurred while creating formation with name: %q and template ID: %q", formationName, fTmpl.ID)
-		return errors.Wrapf(err, "An error occurred while creating formation with name: %q and template ID: %q", formationName, fTmpl.ID)
+		return nil, errors.Wrapf(err, "An error occurred while creating formation with name: %q and template ID: %q", formationName, fTmpl.ID)
 	}
 
-	return nil
+	return formation, nil
+}
+
+func (s *service) getFormationByName(ctx context.Context, formationName, tnt string) (*model.Formation, error) {
+	// TODO:: Workaround for the DEFAULT scenario, because it is not in the 'formations' table, and getting it will fail.
+	// Soon this label will be removed and then we can get rid of this check.
+	if formationName == model.DefaultScenario {
+		return &model.Formation{Name: model.DefaultScenario}, nil
+	}
+
+	f, err := s.formationRepository.GetByName(ctx, formationName, tnt)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting formation by name: %q: %v", formationName, err)
+		return nil, errors.Wrapf(err, "An error occurred while getting formation by name: %q", formationName)
+	}
+
+	return f, nil
 }

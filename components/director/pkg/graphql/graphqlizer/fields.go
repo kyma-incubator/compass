@@ -131,6 +131,15 @@ func (fp *GqlFieldsProvider) ForApplicationTemplate(ctx ...FieldCtx) string {
 	`, fp.ForPlaceholders(), fp.ForWebhooks())
 }
 
+// ForFormation missing godoc
+func (fp *GqlFieldsProvider) ForFormation(ctx ...FieldCtx) string {
+	return `
+		id
+		name
+		formationTemplateId
+	`
+}
+
 // ForFormationTemplate missing godoc
 func (fp *GqlFieldsProvider) ForFormationTemplate(ctx ...FieldCtx) string {
 	return `

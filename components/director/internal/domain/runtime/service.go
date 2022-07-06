@@ -39,6 +39,7 @@ type runtimeRepository interface {
 	Update(ctx context.Context, tenant string, item *model.Runtime) error
 	ListAll(context.Context, string, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	Delete(ctx context.Context, tenant, id string) error
+	GetByFilters(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
 }
 
 //go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -177,6 +178,20 @@ func (s *service) GetByFiltersGlobal(ctx context.Context, filters []*labelfilter
 		return nil, errors.Wrapf(err, "while getting runtimes by filters from repo")
 	}
 	return runtimes, nil
+}
+
+// GetByFilters retrieves model.Runtime matching on the given label filters
+func (s *service) GetByFilters(ctx context.Context, filters []*labelfilter.LabelFilter) (*model.Runtime, error) {
+	rtmTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	runtime, err := s.repo.GetByFilters(ctx, rtmTenant, filters)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting runtime by filters from repo")
+	}
+	return runtime, nil
 }
 
 // ListByFiltersGlobal missing godoc
