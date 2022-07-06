@@ -251,6 +251,8 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
 		t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 
+		time.Sleep(4 * time.Minute)
+
 		t.Log("Assert provider runtime is visible in the consumer's subaccount after successful subscription")
 		consumerSubaccountRuntimes := fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
 		require.Len(t, consumerSubaccountRuntimes.Data, 1)
