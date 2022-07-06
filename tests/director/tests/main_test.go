@@ -51,6 +51,7 @@ type DirectorConfig struct {
 	ProviderClientSecret             string
 	BasicUsername                    string
 	BasicPassword                    string
+	ExternalCertTestCN               string
 }
 
 type BaseDirectorConfig struct {

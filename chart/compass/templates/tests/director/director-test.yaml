@@ -183,6 +183,8 @@ spec:
               value: {{ .Values.global.director.subscription.subscriptionLabelKey }}
             - name: SKIP_TESTS_REGEX
               value: {{ .Values.global.tests.director.skipPattern }}
+            - name: APP_EXTERNAL_CERT_TEST_CN
+              value: {{ .Values.global.tests.director.externalCertIntSystemCN }}
           {{ if .Values.global.isLocalEnv }}
           volumeMounts:
             - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"
