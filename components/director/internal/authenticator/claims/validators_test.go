@@ -82,15 +82,33 @@ func TestValidator_Validate(t *testing.T) {
 		labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", consumerExtTenantID)),
 	}
 
+	// applicationTemplate := &model.ApplicationTemplate{
+	// 	ID: "appTemplateID",
+	// }
+
+	// applicaitonFilter := []*labelfilter.LabelFilter{
+	// 	labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", consumerExtTenantID)),
+	// }
+
+	// applicationPage := &model.ApplicationPage{
+	// 	Data: []*model.Application{
+	// 		{
+	// 			ApplicationTemplateID: &applicationTemplate.ID,
+	// 		},
+	// 	},
+	// }
+
 	testCases := []struct {
-		Name                       string
-		RuntimeServiceFn           func() *automock.RuntimeService
-		RuntimeCtxSvcFn            func() *automock.RuntimeCtxService
-		IntegrationSystemServiceFn func() *automock.IntegrationSystemService
-		Claims                     claims.Claims
-		PersistenceFn              func() *persistenceautomock.PersistenceTx
-		TransactionerFn            func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ExpectedErr                string
+		Name                         string
+		RuntimeServiceFn             func() *automock.RuntimeService
+		ApplicationTemplateServiceFn func() *automock.ApplicationTemplateService
+		ApplicationServiceFn         func() *automock.ApplicationService
+		RuntimeCtxSvcFn              func() *automock.RuntimeCtxService
+		IntegrationSystemServiceFn   func() *automock.IntegrationSystemService
+		Claims                       claims.Claims
+		PersistenceFn                func() *persistenceautomock.PersistenceTx
+		TransactionerFn              func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ExpectedErr                  string
 	}{
 		// common
 		{
@@ -276,6 +294,14 @@ func TestValidator_Validate(t *testing.T) {
 			if testCase.RuntimeCtxSvcFn != nil {
 				runtimeCtxSvc = testCase.RuntimeCtxSvcFn()
 			}
+			appTemplateSvc := &automock.ApplicationTemplateService{}
+			if testCase.ApplicationTemplateServiceFn != nil {
+				appTemplateSvc = testCase.ApplicationTemplateServiceFn()
+			}
+			applicationSvc := &automock.ApplicationService{}
+			if testCase.ApplicationServiceFn != nil {
+				applicationSvc = testCase.ApplicationServiceFn()
+			}
 			intSysSvc := &automock.IntegrationSystemService{}
 			if testCase.IntegrationSystemServiceFn != nil {
 				intSysSvc = testCase.IntegrationSystemServiceFn()
@@ -289,7 +315,7 @@ func TestValidator_Validate(t *testing.T) {
 				transactionerMock = testCase.TransactionerFn(persistTxMock)
 			}
 
-			validator := claims.NewValidator(transactionerMock, runtimeSvc, runtimeCtxSvc, intSysSvc, providerLabelKey, consumerSubaccountLabelKey, tokenPrefix)
+			validator := claims.NewValidator(transactionerMock, runtimeSvc, runtimeCtxSvc, appTemplateSvc, applicationSvc, intSysSvc, providerLabelKey, consumerSubaccountLabelKey, tokenPrefix)
 			err := validator.Validate(context.TODO(), testCase.Claims)
 
 			if len(testCase.ExpectedErr) > 0 {

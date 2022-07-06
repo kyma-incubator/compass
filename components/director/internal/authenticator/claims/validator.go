@@ -30,6 +30,18 @@ type RuntimeCtxService interface {
 	ListByFilter(ctx context.Context, runtimeID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error)
 }
 
+// ApplicationTemplateService is used to interact with application templates.
+//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationTemplateService interface {
+	GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)
+}
+
+// ApplicationService is used to interact with runtime contexts.
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationService interface {
+	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
+}
+
 // IntegrationSystemService is used to check if integration system with a given ID exists.
 //go:generate mockery --name=IntegrationSystemService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IntegrationSystemService interface {
@@ -40,6 +52,8 @@ type validator struct {
 	transact                     persistence.Transactioner
 	runtimesSvc                  RuntimeService
 	runtimeCtxSvc                RuntimeCtxService
+	appTemplateSvc               ApplicationTemplateService
+	applicationSvc               ApplicationService
 	intSystemSvc                 IntegrationSystemService
 	subscriptionProviderLabelKey string
 	consumerSubaccountLabelKey   string
@@ -47,11 +61,13 @@ type validator struct {
 }
 
 // NewValidator creates new claims validator
-func NewValidator(transact persistence.Transactioner, runtimesSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, intSystemSvc IntegrationSystemService, subscriptionProviderLabelKey, consumerSubaccountLabelKey, tokenPrefix string) *validator {
+func NewValidator(transact persistence.Transactioner, runtimesSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, appTemplateSvc ApplicationTemplateService, applicationSvc ApplicationService, intSystemSvc IntegrationSystemService, subscriptionProviderLabelKey, consumerSubaccountLabelKey, tokenPrefix string) *validator {
 	return &validator{
 		transact:                     transact,
 		runtimesSvc:                  runtimesSvc,
 		runtimeCtxSvc:                runtimeCtxSvc,
+		appTemplateSvc:               appTemplateSvc,
+		applicationSvc:               applicationSvc,
 		intSystemSvc:                 intSystemSvc,
 		subscriptionProviderLabelKey: subscriptionProviderLabelKey,
 		consumerSubaccountLabelKey:   consumerSubaccountLabelKey,
@@ -76,7 +92,15 @@ func (v *validator) Validate(ctx context.Context, claims Claims) error {
 	log.C(ctx).Infof("Consumer-Provider call by %s on behalf of %s. Proceeding with double authentication crosscheck...", claims.Tenant[tenantmapping.ProviderTenantKey], claims.Tenant[tenantmapping.ConsumerTenantKey])
 	switch claims.ConsumerType {
 	case consumer.Runtime, consumer.ExternalCertificate, consumer.SuperAdmin: // SuperAdmin consumer is needed only for testing purposes
-		return v.validateRuntimeConsumer(ctx, claims)
+		errRuntimeConsumer := v.validateRuntimeConsumer(ctx, claims)
+		if errRuntimeConsumer == nil {
+			return nil
+		}
+		errAppProvider := v.validateApplicationProvider(ctx, claims)
+		if errAppProvider == nil {
+			return nil
+		}
+		return apperrors.NewUnauthorizedError(fmt.Sprintf("subscription record not found neither for application: %q nor for runtime: %q", errAppProvider.Error(), errRuntimeConsumer.Error()))
 	case consumer.IntegrationSystem:
 		return v.validateIntegrationSystemConsumer(ctx, claims)
 	default:
@@ -148,6 +172,77 @@ func (v *validator) validateRuntimeConsumer(ctx context.Context, claims Claims) 
 	if !found {
 		log.C(ctx).Errorf("Consumer's external tenant %s was not found as subscription record in the runtime context table for any runtime in the provider tenant %s", consumerExternalTenantID, providerInternalTenantID)
 		return apperrors.NewUnauthorizedError(fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the runtime context table for any runtime in the provider tenant %s", consumerExternalTenantID, providerInternalTenantID))
+	}
+
+	return tx.Commit()
+}
+
+func (v *validator) validateApplicationProvider(ctx context.Context, claims Claims) error {
+	tx, err := v.transact.Begin()
+	if err != nil {
+		log.C(ctx).Errorf("An error has occurred while opening transaction: %v", err)
+		return errors.Wrapf(err, "An error has occurred while opening transaction")
+	}
+	defer v.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if len(claims.TokenClientID) == 0 {
+		log.C(ctx).Errorf("Could not find consumer token client ID")
+		return apperrors.NewUnauthorizedError("could not find consumer token client ID")
+	}
+	if len(claims.Region) == 0 {
+		log.C(ctx).Errorf("Could not determine consumer token's region")
+		return apperrors.NewUnauthorizedError("could not determine token's region")
+	}
+
+	tokenClientID := strings.TrimPrefix(claims.TokenClientID, v.tokenPrefix)
+	filters := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(v.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", tokenClientID)),
+		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", claims.Region)),
+	}
+
+	providerInternalTenantID := claims.Tenant[tenantmapping.ProviderTenantKey]
+	providerExternalTenantID := claims.Tenant[tenantmapping.ProviderExternalTenantKey]
+	ctxWithProviderTenant := tenant.SaveToContext(ctx, providerInternalTenantID, providerExternalTenantID)
+
+	log.C(ctx).Infof("Get application template in provider tenant %s for labels %s: %s and %s: %s", providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, tokenClientID)
+	applicationTemplate, err := v.appTemplateSvc.GetByFilters(ctxWithProviderTenant, filters)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Error while getting application template in provider tenant %s for labels %s: %s and %s: %s: %v", providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, tokenClientID, err)
+		return errors.Wrapf(err, "failed to get application template in tenant %s for labels %s: %s and %s: %s", providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, tokenClientID)
+	}
+	log.C(ctx).Infof("Found application template with ID %q in provider tenant %s for labels %s: %s and %s: %s", applicationTemplate.ID, providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, tokenClientID)
+
+	consumerInternalTenantID := claims.Tenant[tenantmapping.ConsumerTenantKey]
+	consumerExternalTenantID := claims.Tenant[tenantmapping.ExternalTenantKey]
+	ctxWithConsumerTenant := tenant.SaveToContext(ctx, consumerInternalTenantID, consumerExternalTenantID)
+
+	applicatinsFilter := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(v.consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", consumerExternalTenantID)),
+	}
+
+	found := false
+
+	log.C(ctx).Infof("Listing applications in the consumer tenant %q for application template with ID: %q and label with key: %q and value: %q", consumerExternalTenantID, applicationTemplate.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
+	applicationsPage, err := v.applicationSvc.List(ctxWithConsumerTenant, applicatinsFilter, 100, "")
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while listing applications for filter with key: %q and value: %q", v.consumerSubaccountLabelKey, consumerExternalTenantID)
+		return errors.Wrapf(err, "while listing applications for filter with key: %q and value: %q", v.consumerSubaccountLabelKey, consumerExternalTenantID)
+	}
+
+	log.C(ctx).Infof("Found %d applications for application template with ID: %q", len(applicationsPage.Data), applicationTemplate.ID)
+
+	for _, application := range applicationsPage.Data {
+		if application.ApplicationTemplateID == &applicationTemplate.ID {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		log.C(ctx).Errorf("Consumer's external tenant %s was not found as subscription record in the applications table for any application templates in the provider tenant %s", consumerExternalTenantID, providerInternalTenantID)
+		return apperrors.NewUnauthorizedError(fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the applications table for any application templates in the provider tenant %s", consumerExternalTenantID, providerInternalTenantID))
 	}
 
 	return tx.Commit()
