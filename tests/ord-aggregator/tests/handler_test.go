@@ -589,7 +589,7 @@ func TestORDAggregator(t *testing.T) {
 		actualAppPage := directorSchema.ApplicationPage{}
 		getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
-		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+		// defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
 		require.NoError(t, err)
 
@@ -695,6 +695,9 @@ func TestORDAggregator(t *testing.T) {
 				t.Log("Missing Products...will try again")
 				return false
 			}
+			t.Logf("Expected total number of product: %d", expectedTotalNumberOfProducts)
+			t.Logf("Products response body: %s", respBody)
+			t.Logf("Expected products map: %v", productsMap)
 			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedTotalNumberOfProducts)
 			assertions.AssertProducts(t, respBody, productsMap, expectedTotalNumberOfProducts, shortDescriptionField)
 			t.Log("Successfully verified products")
