@@ -90,7 +90,7 @@ func TestRequestWithCredentials_FailedWithBasicAuth(t *testing.T) {
 		return nil
 	})
 
-	_, err := httputil.GetRequestWithCredentials(context.Background(), client, testURL, "",  &model.Auth{
+	_, err := httputil.GetRequestWithCredentials(context.Background(), client, testURL, "", &model.Auth{
 		Credential: model.CredentialData{
 			Basic: &model.BasicCredentialData{
 				Username: "user",
