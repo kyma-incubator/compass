@@ -108,11 +108,11 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 	}
 	in.ApplicationInputJSON = appInputJSON
 
-	exists, err := s.exists(ctx, in.Name, in.Labels[tenant.RegionLabelKey])
-	if err != nil {
+	_, err = s.GetByNameAndRegion(ctx, in.Name, in.Labels[tenant.RegionLabelKey])
+	if err != nil && !apperrors.IsNotFoundError(err) {
 		return "", errors.Wrapf(err, "while checking if application template with name %q exists", in.Name)
 	}
-	if exists {
+	if err == nil {
 		return "", fmt.Errorf("application template with name %q already exists", in.Name)
 	}
 
@@ -309,11 +309,11 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 	in.ApplicationInputJSON = appInputJSON
 
 	if oldAppTemplate.Name != in.Name {
-		exists, err := s.exists(ctx, in.Name, region)
-		if err != nil {
+		_, err := s.GetByNameAndRegion(ctx, in.Name, region)
+		if err != nil && !apperrors.IsNotFoundError(err) {
 			return errors.Wrapf(err, "while checking if application template with name %q exists", in.Name)
 		}
-		if exists {
+		if err == nil {
 			return fmt.Errorf("application template with name %q already exists", in.Name)
 		}
 	}
@@ -349,27 +349,6 @@ func (s *service) PrepareApplicationCreateInputJSON(appTemplate *model.Applicati
 		appCreateInputJSON = strings.ReplaceAll(appCreateInputJSON, fmt.Sprintf("{{%s}}", placeholder.Name), newValue)
 	}
 	return appCreateInputJSON, nil
-}
-
-func (s *service) exists(ctx context.Context, inputName string, inputRegion interface{}) (bool, error) {
-	appTemplates, err := s.appTemplateRepo.GetByName(ctx, inputName)
-	if err != nil {
-		return false, errors.Wrapf(err, "while listing application templates with name %q", inputName)
-	}
-
-	for _, appTemplate := range appTemplates {
-		region, err := s.retrieveLabel(ctx, appTemplate.ID, tenant.RegionLabelKey)
-		if err != nil && !apperrors.IsNotFoundError(err) {
-			return false, errors.Wrapf(err, "while retrieving application template label with key %q", tenant.RegionLabelKey)
-		}
-
-		if region == inputRegion {
-			log.C(ctx).Infof("Application Template with name %q and region label %v already exists", inputName, inputRegion)
-			return true, nil
-		}
-	}
-
-	return false, nil
 }
 
 func (s *service) retrieveLabel(ctx context.Context, id string, labelKey string) (interface{}, error) {
