@@ -46,6 +46,7 @@ type DirectorConfig struct {
 	SubscriptionLabelKey             string
 	RuntimeTypeLabelKey              string
 	KymaRuntimeTypeLabelValue        string
+	ExternalCertTestCN               string
 }
 
 type BaseDirectorConfig struct {
