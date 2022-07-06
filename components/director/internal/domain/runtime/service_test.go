@@ -44,8 +44,6 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 	subaccountID := "subaccountID"
 	xsappNameCMPClone := "xsappnameCMPClone"
 	xsappNameCMPCloneValue := "xsappnameCMPCloneValue"
-	//runtimeTypeLabelKey := "runtimeType"
-	//runtimeTypeLabelValue := "runtimeTypeValue"
 
 	desc := "Lorem ipsum"
 	labels := map[string]interface{}{
@@ -2913,6 +2911,76 @@ func TestService_GetByFiltersGlobal(t *testing.T) {
 				require.Equal(t, testRuntime, actualRuntime)
 				require.NoError(t, err)
 			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo, labelUpsertService, labelRepository, scenariosService, formationService, uidSvc)
+		})
+	}
+}
+
+func TestService_GetByFilters(t *testing.T) {
+	// GIVEN
+	tnt := "tenant"
+	testErr := errors.New("Test error")
+	filters := []*labelfilter.LabelFilter{
+		{Key: "test-key", Query: str.Ptr("test-filter")},
+	}
+	modelRuntime := fixModelRuntime(t, "foo", tnt, "Foo", "Lorem Ipsum")
+	ctx := tenant.SaveToContext(context.TODO(), tnt, tnt)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.RuntimeRepository
+		Context            context.Context
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByFilters", contextThatHasTenant(tnt), tnt, filters).Return(modelRuntime, nil).Once()
+				return repo
+			},
+			Context:            ctx,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Fails on repository error",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByFilters", contextThatHasTenant(tnt), tnt, filters).Return(nil, testErr).Once()
+				return repo
+			},
+			Context:            ctx,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name:               "Fails when no tenant in the context",
+			RepositoryFn:       unusedRuntimeRepository,
+			Context:            context.TODO(),
+			ExpectedErrMessage: "while loading tenant from context",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			labelRepository := &automock.LabelRepository{}
+			labelUpsertService := &automock.LabelUpsertService{}
+			scenariosService := &automock.ScenariosService{}
+			formationService := &automock.FormationService{}
+			uidSvc := &automock.UidService{}
+			svc := runtime.NewService(repo, labelRepository, scenariosService, labelUpsertService, uidSvc, formationService, nil, nil, nil, ".*_defaultEventing$", immutableLabelPattern, "", "")
+
+			// WHEN
+			actualRuntime, err := svc.GetByFilters(testCase.Context, filters)
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				require.Equal(t, modelRuntime, actualRuntime)
+			} else {
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
