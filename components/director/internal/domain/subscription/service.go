@@ -3,6 +3,7 @@ package subscription
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -191,6 +192,8 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 		}); err != nil {
 			return false, err
 		}
+
+		time.Sleep(4 * time.Minute)
 
 		if err := s.labelSvc.CreateLabel(ctx, consumerInternalTenant, s.uidSvc.Generate(), &model.LabelInput{
 			Key:        s.consumerSubaccountLabelKey,
