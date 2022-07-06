@@ -32,10 +32,10 @@ type ApplicationTemplateService interface {
 	Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error)
 	CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error)
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
-	GetByName(ctx context.Context, name string) ([]*model.ApplicationTemplate, error)
 	GetByNameAndRegion(ctx context.Context, name string, region interface{}) (*model.ApplicationTemplate, error)
 	GetByNameAndSubaccount(ctx context.Context, name string, subaccount string) (*model.ApplicationTemplate, error)
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
+	ListByName(ctx context.Context, name string) ([]*model.ApplicationTemplate, error)
 	Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error
 	Delete(ctx context.Context, id string) error
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
@@ -326,7 +326,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	log.C(ctx).Infof("Registering an Application from Application Template with name %s", in.TemplateName)
 	convertedIn := r.appTemplateConverter.ApplicationFromTemplateInputFromGraphQL(in)
 
-	log.C(ctx).Debugf("Extracting Application Template with name %q and subaccount %q from GraphQL input", in.TemplateName, consumerInfo.ConsumerID)
+	log.C(ctx).Debugf("Extracting Application Template with name %q and consumer id %q from GraphQL input", in.TemplateName, consumerInfo.ConsumerID)
 	appTemplate, err := r.appTemplateSvc.GetByNameAndSubaccount(ctx, convertedIn.TemplateName, consumerInfo.ConsumerID)
 	if err != nil {
 		return nil, err

@@ -98,7 +98,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 
 	log.C(ctx).Debugf("ID %s generated for Application Template with name %s", appTemplateID, in.Name)
 
-	applicationType, err := s.createApplicationType(in.Name, in.Labels)
+	applicationType, err := s.constructApplicationTypeLabelValue(in.Name, in.Labels)
 	if err != nil {
 		return "", err
 	}
@@ -173,8 +173,8 @@ func (s *service) GetByFilters(ctx context.Context, filter []*labelfilter.LabelF
 	return appTemplate, nil
 }
 
-// GetByName retrieves all Application Templates by given name
-func (s *service) GetByName(ctx context.Context, name string) ([]*model.ApplicationTemplate, error) {
+// ListByName retrieves all Application Templates by given name
+func (s *service) ListByName(ctx context.Context, name string) ([]*model.ApplicationTemplate, error) {
 	appTemplates, err := s.appTemplateRepo.GetByName(ctx, name)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing application templates with name %q", name)
@@ -208,7 +208,7 @@ func (s *service) GetByNameAndRegion(ctx context.Context, name string, region in
 // GetByNameAndSubaccount retrieves Application Template by given name and subaccount.
 // If there is no subaccount match it will retrieve a global Application Template (not labeled with subaccount).
 func (s *service) GetByNameAndSubaccount(ctx context.Context, name string, subaccount string) (*model.ApplicationTemplate, error) {
-	appTemplates, err := s.GetByName(ctx, name)
+	appTemplates, err := s.ListByName(ctx, name)
 	if err != nil {
 		return nil, err
 	}
@@ -380,7 +380,7 @@ func (s *service) retrieveLabel(ctx context.Context, id string, labelKey string)
 	return label.Value, nil
 }
 
-func (s *service) createApplicationType(name string, labels map[string]interface{}) (string, error) {
+func (s *service) constructApplicationTypeLabelValue(name string, labels map[string]interface{}) (string, error) {
 	regionValue, exists := labels[tenant.RegionLabelKey]
 	if !exists {
 		return name, nil

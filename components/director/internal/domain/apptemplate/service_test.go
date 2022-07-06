@@ -690,7 +690,7 @@ func TestService_GetLabel(t *testing.T) {
 	}
 }
 
-func TestService_GetByName(t *testing.T) {
+func TestService_ListByName(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
@@ -728,7 +728,7 @@ func TestService_GetByName(t *testing.T) {
 			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, nil)
 
 			// WHEN
-			result, err := svc.GetByName(ctx, testName)
+			result, err := svc.ListByName(ctx, testName)
 
 			// THEN
 			if testCase.ExpectedError != nil {
