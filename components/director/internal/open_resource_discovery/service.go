@@ -2,7 +2,6 @@ package ord
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -231,11 +230,8 @@ func (s *Service) processApp(ctx context.Context, app *model.Application, global
 		return err
 	}
 
-	//fmt.Printf("1. TemplateID %s, webhookExecuted %v", *app.ApplicationTemplateID, webhookExecuted)
 	if app.ApplicationTemplateID != nil && !webhookExecuted {
 		appTemplateWebhooks := appTemplatesWebhooks[*app.ApplicationTemplateID]
-		//fmt.Printf("4.appTemplate webhooks len %v", len(appTemplateWebhooks))
-
 		if _, err := s.processWebhooksAndDocuments(ctx, tx, appTemplateWebhooks, app, globalResourcesOrdIDs); err != nil {
 			return err
 		}
@@ -754,14 +750,11 @@ func (s *Service) processWebhooksAndDocuments(ctx context.Context, tx persistenc
 	var documents Documents
 	var baseURL string
 	var err error
-	fmt.Printf("2. webhooks len %v, ", len(webhooks))
 
 	for _, wh := range webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
 			ctx = addFieldToLogger(ctx, "app_id", app.ID)
 			documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, wh)
-			//fmt.Printf("3. documents len %v, ", len(documents))
-
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("error fetching ORD document for webhook with id %q: %v", wh.ID, err)
 			}
