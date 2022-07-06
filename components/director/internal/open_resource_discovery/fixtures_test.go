@@ -36,7 +36,7 @@ const (
 	appID            = "testApp"
 	appTemplateID    = "testAppTemplate"
 	whID             = "testWh"
-	whID2			 = "testWh2"
+	whID2            = "testWh2"
 	tenantID         = "testTenant"
 	externalTenantID = "externalTestTenant"
 	packageID        = "testPkg"
