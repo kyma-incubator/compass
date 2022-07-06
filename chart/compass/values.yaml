@@ -113,7 +113,7 @@ global:
       version: "PR-2455"
     hydrator:
       dir:
-      version: "PR-2408"
+      version: "PR-2458"
     gateway:
       dir:
       version: "PR-2383"
@@ -122,7 +122,7 @@ global:
       version: "PR-2383"
     ord_service:
       dir:
-      version: "PR-70"
+      version: "PR-71"
     schema_migrator:
       dir:
       version: "PR-2464"
