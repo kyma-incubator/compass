@@ -28,7 +28,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
 		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestIntSystemSecretName,
 		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
-		ExternalCertTestJobName:               "external-client-certificate-integration-system-test-job",
+		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
 		TestExternalCertSubject:               replacer.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject),
 		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
 		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
