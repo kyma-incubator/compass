@@ -1073,7 +1073,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			WebhookConvFn:  UnusedWebhookConv,
 			WebhookSvcFn:   UnusedWebhookSvc,
 			ExpectedOutput: nil,
-			ExpectedError:  errors.New("application template with name \"bar\" and customer id \"consumer-id\" not found"),
+			ExpectedError:  errors.New("application template with name \"bar\" and consumer id \"consumer-id\" not found"),
 		},
 		{
 			Name: "Returns error when list application templates by name return more than one application template",

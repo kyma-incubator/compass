@@ -587,7 +587,7 @@ func (r *Resolver) retrieveAppTemplate(ctx context.Context, appTemplateName, con
 	}
 
 	if len(templates) < 1 {
-		return nil, errors.Errorf("application template with name %q and customer id %q not found", appTemplateName, consumerID)
+		return nil, errors.Errorf("application template with name %q and consumer id %q not found", appTemplateName, consumerID)
 	}
 	if len(templates) > 1 {
 		return nil, errors.Errorf("unexpected number of application templates. found %d", len(appTemplates))
