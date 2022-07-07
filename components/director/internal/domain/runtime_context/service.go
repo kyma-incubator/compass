@@ -34,6 +34,12 @@ type LabelRepository interface {
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 }
 
+// RuntimeRepository is responsible for the repo-layer Runtime operations.
+//go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type RuntimeRepository interface {
+	ExistsOwned(ctx context.Context, tenant, id string) (bool, error)
+}
+
 // LabelUpsertService missing godoc
 //go:generate mockery --name=LabelUpsertService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelUpsertService interface {
@@ -65,6 +71,7 @@ type UIDService interface {
 type service struct {
 	repo               RuntimeContextRepository
 	labelRepo          LabelRepository
+	runtimeRepo        RuntimeRepository
 	formationService   formationService
 	tenantService      tenantService
 	labelUpsertService LabelUpsertService
@@ -74,6 +81,7 @@ type service struct {
 // NewService missing godoc
 func NewService(repo RuntimeContextRepository,
 	labelRepo LabelRepository,
+	runtimeRepo RuntimeRepository,
 	labelUpsertService LabelUpsertService,
 	formationService formationService,
 	tenantService tenantService,
@@ -81,6 +89,7 @@ func NewService(repo RuntimeContextRepository,
 	return &service{
 		repo:               repo,
 		labelRepo:          labelRepo,
+		runtimeRepo:        runtimeRepo,
 		formationService:   formationService,
 		tenantService:      tenantService,
 		labelUpsertService: labelUpsertService,
@@ -129,9 +138,27 @@ func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (str
 			return "", errors.Wrapf(err, "while getting formations from automatic scenario assignments")
 		}
 
+		if len(scenariosFromAssignments) == 0 {
+			return id, nil
+		}
+
+		// If we have a runtime with runtime context(s) we need to assign only the runtime context(s) to the formation.
+		// But if we create ASA in the provider account before registering runtime, the runtime will be assigned to the formation.
+		// And then if we register runtime context for this runtime, the runtime context too will be assigned to the formation.
+		ownedRuntimeExists, err := s.runtimeRepo.ExistsOwned(ctxWithParentTenant, tnt.Parent, in.RuntimeID)
+		if err != nil {
+			return "", errors.Wrapf(err, "while checking if runtime with id %q exists", in.RuntimeID)
+		}
+
 		for _, scenario := range scenariosFromAssignments {
 			if _, err := s.formationService.AssignFormation(ctxWithParentTenant, tnt.Parent, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}); err != nil {
 				return "", errors.Wrapf(err, "while assigning formation with name %q for runtime context", scenario)
+			}
+
+			if ownedRuntimeExists {
+				if _, err := s.formationService.UnassignFormation(ctxWithParentTenant, tnt.Parent, in.RuntimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
+					return "", errors.Wrapf(err, "while assigning formation with name %q for runtime context", scenario)
+				}
 			}
 		}
 	}

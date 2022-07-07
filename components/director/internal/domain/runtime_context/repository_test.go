@@ -497,6 +497,66 @@ func TestPgRepository_Exist(t *testing.T) {
 		RepoConstructorFunc: runtimectx.NewRepository,
 		TargetID:            runtimeCtxID,
 		TenantID:            tenantID,
+		MethodName:          "Exists",
+		MethodArgs:          []interface{}{tenantID, runtimeCtxID},
+	}
+
+	suite.Run(t)
+}
+
+func TestPgRepository_ExistsByRuntimeID(t *testing.T) {
+	suite := testdb.RepoExistTestSuite{
+		Name: "Runtime Context Exists By Runtime ID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.runtime_contexts WHERE runtime_id = $1 AND (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $2))`),
+				Args:     []driver.Value{runtimeID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: runtimectx.NewRepository,
+		TargetID:            runtimeCtxID,
+		TenantID:            tenantID,
+		MethodName:          "ExistsByRuntimeID",
+		MethodArgs:          []interface{}{tenantID, runtimeID},
+	}
+
+	suite.Run(t)
+}
+
+func TestPgRepository_ExistsByIDAndRuntimeID(t *testing.T) {
+	suite := testdb.RepoExistTestSuite{
+		Name: "Runtime Context Exists By Runtime ID and Runtime Context ID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.runtime_contexts WHERE id = $1 AND runtime_id = $2 AND (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $3))`),
+				Args:     []driver.Value{runtimeCtxID, runtimeID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: runtimectx.NewRepository,
+		TargetID:            runtimeCtxID,
+		TenantID:            tenantID,
+		MethodName:          "ExistsByIDAndRuntimeID",
+		MethodArgs:          []interface{}{tenantID, runtimeCtxID, runtimeID},
 	}
 
 	suite.Run(t)

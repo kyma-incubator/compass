@@ -51,6 +51,8 @@ func TestRepository_Exists(t *testing.T) {
 		RepoConstructorFunc: application.NewRepository,
 		TargetID:            givenID(),
 		TenantID:            givenTenant(),
+		MethodName:          "Exists",
+		MethodArgs:          []interface{}{givenTenant(), givenID()},
 	}
 
 	suite.Run(t)

@@ -71,6 +71,11 @@ func (r *pgRepository) ExistsByRuntimeID(ctx context.Context, tenant, rtmID stri
 	return r.existQuerier.Exists(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("runtime_id", rtmID)})
 }
 
+// ExistsByIDAndRuntimeID returns true if a RuntimeContext with the provided runtime context ID and runtime ID exists in the database and is visible for `tenant`
+func (r *pgRepository) ExistsByIDAndRuntimeID(ctx context.Context, tenant, rtmCtxID, rtmID string) (bool, error) {
+	return r.existQuerier.Exists(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("id", rtmCtxID), repo.NewEqualCondition("runtime_id", rtmID)})
+}
+
 // Delete deletes the RuntimeContext with the provided `id` from the database if `tenant` has the appropriate access to it
 func (r *pgRepository) Delete(ctx context.Context, tenant string, id string) error {
 	return r.deleter.DeleteOne(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})

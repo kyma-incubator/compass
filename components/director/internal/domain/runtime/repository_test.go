@@ -3,6 +3,7 @@ package runtime_test
 import (
 	"context"
 	"database/sql/driver"
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -459,6 +460,70 @@ func TestPgRepository_Exist(t *testing.T) {
 		RepoConstructorFunc: runtime.NewRepository,
 		TargetID:            runtimeID,
 		TenantID:            tenantID,
+		MethodName:          "Exists",
+		MethodArgs:          []interface{}{tenantID, runtimeID},
+	}
+
+	suite.Run(t)
+}
+
+func TestPgRepository_ExistsOwned(t *testing.T) {
+	suite := testdb.RepoExistTestSuite{
+		Name: "Owned Runtime Exists",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.runtimes WHERE id = $1 AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $2 AND owner = true))`),
+				Args:     []driver.Value{runtimeID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: runtime.NewRepository,
+		TargetID:            runtimeID,
+		TenantID:            tenantID,
+		MethodName:          "ExistsOwned",
+		MethodArgs:          []interface{}{tenantID, runtimeID},
+	}
+
+	suite.Run(t)
+}
+
+func TestPgRepository_ExistsByFiltersAndIdOwned(t *testing.T) {
+	suite := testdb.RepoExistTestSuite{
+		Name: "Owned Runtime With Runtime Type Exists",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query: regexp.QuoteMeta(`SELECT 1 FROM public.runtimes WHERE id = $1 AND 
+											id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND 
+											(id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $2)) AND "key" = $3 AND "value" @> $4) AND
+											(id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $5 AND owner = true))`),
+
+				Args:     []driver.Value{runtimeID, tenantID, runtimeType, "\"runtimeType\"", tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: runtime.NewRepository,
+		TargetID:            runtimeID,
+		TenantID:            tenantID,
+		MethodName:          "ExistsByFiltersAndIdOwned",
+		MethodArgs:          []interface{}{tenantID, runtimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf("\"%s\"", runtimeType))}},
 	}
 
 	suite.Run(t)

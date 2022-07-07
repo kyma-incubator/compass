@@ -40,6 +40,50 @@ func (_m *RuntimeRepository) Exists(ctx context.Context, tenant string, id strin
 	return r0, r1
 }
 
+// ExistsByFiltersAndIdOwned provides a mock function with given fields: ctx, tenant, id, filter
+func (_m *RuntimeRepository) ExistsByFiltersAndIdOwned(ctx context.Context, tenant string, id string, filter []*labelfilter.LabelFilter) (bool, error) {
+	ret := _m.Called(ctx, tenant, id, filter)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []*labelfilter.LabelFilter) bool); ok {
+		r0 = rf(ctx, tenant, id, filter)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, []*labelfilter.LabelFilter) error); ok {
+		r1 = rf(ctx, tenant, id, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListAll provides a mock function with given fields: ctx, tenant, filter
+func (_m *RuntimeRepository) ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
+	ret := _m.Called(ctx, tenant, filter)
+
+	var r0 []*model.Runtime
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) []*model.Runtime); ok {
+		r0 = rf(ctx, tenant, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Runtime)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter) error); ok {
+		r1 = rf(ctx, tenant, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListOwnedRuntimes provides a mock function with given fields: ctx, tenant, filter
 func (_m *RuntimeRepository) ListOwnedRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
 	ret := _m.Called(ctx, tenant, filter)
