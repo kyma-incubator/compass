@@ -10,8 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func ListFormations(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, first, expectedCount int) *graphql.FormationPage {
-	listFormationsReq := FixListFormationsRequestWithPageSize(first)
+func ListFormations(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, listFormationsReq *gcli.Request, expectedCount int) *graphql.FormationPage {
 	var formationPage graphql.FormationPage
 	err := testctx.Tc.RunOperation(ctx, gqlClient, listFormationsReq, &formationPage)
 	require.NoError(t, err)

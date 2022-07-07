@@ -55,6 +55,8 @@ spec:
               value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080/"
             - name: EXTERNAL_SERVICES_MOCK_MTLS_SECURED_URL
               value: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{.Values.global.ingress.domainName}}:443/"
+            - name: EXTERNAL_SERVICES_MOCK_ORD_SERVER_UNSECURED_URL
+              value: "{{ .Values.global.tests.externalServicesMockFQDN }}:{{ .Values.global.externalServicesMock.unsecuredPort }}/"
             - name: SKIP_TESTS_REGEX
               value: {{ .Values.global.tests.externalServicesMock.skipPattern }}
             - name: AUDITLOG_MANAGEMENT_API_PATH

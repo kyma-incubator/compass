@@ -316,12 +316,8 @@ github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-2022022
 github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220225101454-1e11cf2f8a9b/go.mod h1:EPQuWKlrkBDEK2Fj4G3qrnPCQhAvM48z7JzbWD2dUts=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20220225101454-1e11cf2f8a9b h1:CTvWA/b4sbr4D91mmmHUEZYM6iWi0BXtDOCNxG0BwSI=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20220225101454-1e11cf2f8a9b/go.mod h1:wGzvH5XWBA34gt7cb+UVrovLHsIqjNddzP+DkPBZ3u0=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220614113623-8dd387ee4836 h1:RR9I5HHFmLkxiTHnlUQubMGkGlqiHvzqB+GCUjptiwY=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220614113623-8dd387ee4836/go.mod h1:IUlFyONxb8YHJyB3unZNVMGoFeOXlaoijuvI65I6NCA=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220616074319-26d5120af8f5 h1:WNKcsANO8DEyBFOVTs1hqiOuymggzSf+oyITj/VELUk=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220616074319-26d5120af8f5/go.mod h1:IUlFyONxb8YHJyB3unZNVMGoFeOXlaoijuvI65I6NCA=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220616082410-db7fda9dfc15 h1:DoY3YsqgsFF4By3KPEcBD8t850CVMl3VceLH9eiE4dE=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220616082410-db7fda9dfc15/go.mod h1:IUlFyONxb8YHJyB3unZNVMGoFeOXlaoijuvI65I6NCA=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220622101746-715bb21a6e3a h1:ILhp7Dy2cNiPAa7t6/SUnKD/c30qCjSweYZ+CS7Ykm0=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220622101746-715bb21a6e3a/go.mod h1:V4nDMsJUfGIEoYs/tYj64qfkbt0Z0wFTQ/LYIedal9o=
 github.com/kyma-incubator/compass/components/director v0.0.0-20220622095121-b3390e54e43d h1:qb+1F6j94a2q/YnLwb+DRwGmMZ+TwOgbP2Jo0kFBRHY=
 github.com/kyma-incubator/compass/components/director v0.0.0-20220622095121-b3390e54e43d/go.mod h1:V4nDMsJUfGIEoYs/tYj64qfkbt0Z0wFTQ/LYIedal9o=
 github.com/kyma-incubator/compass/components/director v0.0.0-20220622101746-715bb21a6e3a h1:ILhp7Dy2cNiPAa7t6/SUnKD/c30qCjSweYZ+CS7Ykm0=

@@ -24,12 +24,12 @@ func TestGetFormation(t *testing.T) {
 
 	t.Logf("Should create formation: %q", formationName)
 	formation := fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, formationName)
-	require.Equal(t, formationName, formation.Name)
 	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formationName)
 
 	t.Logf("Should get formation %q by id %q", formationName, formation.ID)
 	var gotFormation graphql.Formation
 	getFormationReq := fixtures.FixGetFormationRequest(formation.ID)
+	saveExample(t, getFormationReq.Query(), "query formation")
 	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getFormationReq, &gotFormation)
 	require.NoError(t, err)
 	require.Equal(t, formation, gotFormation)
@@ -61,9 +61,12 @@ func TestListFormations(t *testing.T) {
 
 	expectedFormations := 0
 	t.Logf("List should return %d formations", expectedFormations)
-	formationPage1 := fixtures.ListFormations(t, ctx, certSecuredGraphQLClient, first, expectedFormations)
+	listFormationsReq := fixtures.FixListFormationsRequestWithPageSize(first)
+	saveExample(t, listFormationsReq.Query(), "query formations")
+	formationPage1 := fixtures.ListFormations(t, ctx, certSecuredGraphQLClient, listFormationsReq, expectedFormations)
 	require.NotNil(t, formationPage1)
 	require.Equal(t, expectedFormations, formationPage1.TotalCount)
+	require.Empty(t, formationPage1.Data)
 
 	t.Logf("Should create formation: %q", firstFormationName)
 	firstFormation := fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, firstFormationName)
@@ -75,10 +78,10 @@ func TestListFormations(t *testing.T) {
 
 	expectedFormations = 2
 	t.Logf("List should return %d formations", expectedFormations)
-	formationPage2 := fixtures.ListFormations(t, ctx, certSecuredGraphQLClient, first, expectedFormations)
+	formationPage2 := fixtures.ListFormations(t, ctx, certSecuredGraphQLClient, listFormationsReq, expectedFormations)
 	require.NotNil(t, formationPage2)
-	assert.Equal(t, expectedFormations, formationPage2.TotalCount)
-	assert.Subset(t, formationPage2.Data, []*graphql.Formation{
+	require.Equal(t, expectedFormations, formationPage2.TotalCount)
+	require.ElementsMatch(t, formationPage2.Data, []*graphql.Formation{
 		&firstFormation,
 		&secondFormation,
 	})

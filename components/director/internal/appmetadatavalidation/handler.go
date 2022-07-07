@@ -25,7 +25,6 @@ func (h *handler) Handler() func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), TenantHeader, r.Header.Get("Tenant"))
 			next.ServeHTTP(w, r.WithContext(ctx))
-			return
 		})
 	}
 }

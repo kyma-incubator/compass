@@ -102,10 +102,10 @@ func (r *Resolver) Formations(ctx context.Context, first *int, after *graphql.Pa
 		return nil, err
 	}
 
-	gqlFormation := r.conv.MultipleToGraphQL(formationPage.Data)
+	formations := r.conv.MultipleToGraphQL(formationPage.Data)
 
 	return &graphql.FormationPage{
-		Data:       gqlFormation,
+		Data:       formations,
 		TotalCount: formationPage.TotalCount,
 		PageInfo: &graphql.PageInfo{
 			StartCursor: graphql.PageCursor(formationPage.PageInfo.StartCursor),

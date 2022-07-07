@@ -5513,6 +5513,16 @@ type Query {
 	formations(first: Int = 200, after: PageCursor): FormationPage! @hasScopes(path: "graphql.query.formations")
 	"""
 	**Examples**
+	- [query formation](examples/query-formation/query-formation.graphql)
+	"""
+	formation(id: ID!): Formation @hasScopes(path: "graphql.query.formation")
+	"""
+	**Examples**
+	- [query formations](examples/query-formations/query-formations.graphql)
+	"""
+	formations(first: Int = 200, after: PageCursor): FormationPage! @hasScopes(path: "graphql.query.formations")
+	"""
+	**Examples**
 	- [query formation template](examples/query-formation-template/query-formation-template.graphql)
 	"""
 	formationTemplate(id: ID!): FormationTemplate @hasScopes(path: "graphql.query.formationTemplate")
