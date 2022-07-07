@@ -142,7 +142,7 @@ global:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2473"
+      version: "PR-2477"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -770,10 +770,7 @@ global:
         skipSSLValidation: false
     director:
       skipPattern: ""
-      externalClientCertTestSecretName: "external-client-certificate-integration-system-test-secret"
-      externalClientCertTestSecretNamespace: "compass-system"
       externalCertIntSystemCN: "integration-system-test"
-      externalCertTestJobName: "external-client-certificate-integration-system-test-job"
     tenantFetcher:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
     ordService:

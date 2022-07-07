@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
@@ -169,20 +168,8 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID // the parent is ApplicationsForRuntimeTenantName
 		subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
-		// We need an externally issued cert with a subject that is not part of the access level mappings
-		externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
-			ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
-			ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-			CertSvcInstanceTestSecretName:         conf.ExternalCertProviderConfig.CertSvcInstanceTestSecretName,
-			ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
-			ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-			TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertTestCN, "rtm-ctx-test-cn", -1),
-			ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
-			ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
-		}
-
 		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
-		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig)
+		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		providerRuntimeInput := graphql.RuntimeRegisterInput{
