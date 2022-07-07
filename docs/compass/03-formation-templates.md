@@ -1,17 +1,16 @@
 # Formation Templates
 
-A Formation Template is the basis for the formations. 
-It establishes a contract for each formation of the given type which states what types of applications and what type of runtime is allowed to be assigned to the given formation.
-Based on their type we can process the formations differently depending on the Formation Template restrictions and specifics.
+A formation template is a model that is used during the creation of a specific formation type.  The formation template comprises preliminary information about what system types and runtimes are allowed to be included in a specific formation type. 
+That is, the actual formation object is modelled, created, and processed, based entirely on the information and limitations that are set in the formation template.
+ 
+The formation templates provide a list of many system types and only one runtime. This way, they control the combination of various systems and a runtime for the productive formation object when created. The runtime, specified in the formation template is a central entity that controls the nature of the formation template. Then, the formation template, in turn, determines the type of the actual formation object.
 
-
-Each Formation Template provides a list of application types that are allowed to be assigned to a formation that is based on the template. Currently, every Formation Template allows exactly one runtime type to be included in a formation.
-
-The template also provides additional metadata fields such as `runtimeTypeDisplayName` and `runtimeArtifactKind`.
-The `runtimeTypeDisplayName` is the brand name representing this runtime. Unlike `runtimeType`, this value is suitable for UI visualizations and external documents where a brand name that customers are familiar with should be used. As for the `runtimeArtifactKind`, it's an enum with the following allowed values: `SUBSCRIPTION`, `SERVICE_INSTANCE`  and `ENVIRONMENT_INSTANCE`.
+Additionally, the formation template provides the following metadata fields:
+* `runtimeTypeDisplayName` - Represents the official name of the runtime. Unlike `runtimeType`, the value is suitable for UI visualizations and external documents where the official name of the runtime must be used.
+* `runtimeArtifactKind` - An enum with the following allowed values: `SUBSCRIPTION`, `SERVICE_INSTANCE`, and `ENVIRONMENT_INSTANCE`.
 
 ## GraphQL API
-Formation Templates are defined in the following way:
+Formation templates are defined as follows:
 ```graphql
 type FormationTemplate {
     id: ID!
@@ -30,7 +29,7 @@ type FormationTemplatePage implements Pageable {
 ```
 
 ### Mutations
-Director API exposes the following GraphQL mutations for managing Formation Templates: 
+Director API exposes the following GraphQL mutations for managing formation templates: 
 ```graphql
 type Mutation {
     createFormationTemplate(in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.createFormationTemplate")
@@ -38,15 +37,15 @@ type Mutation {
     updateFormationTemplate(id: ID!, in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.updateFormationTemplate")
 }
 ```
-> **TIP:** For the GraphQL mutation examples that you can use, go to the [create](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/create-formation-template/create-formation-template.graphql), [update](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/update-formation-template/update-formation-template.graphql) or [delete](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/delete-formation-template/delete-formation-template.graphql) examples.
+> **Note:** For example GraphQL mutations, see: [create](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/create-formation-template/create-formation-template.graphql), [update](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/update-formation-template/update-formation-template.graphql), or [delete](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/delete-formation-template/delete-formation-template.graphql).
 
 
 ### Queries 
-Director API exposes the following GraphQL queries for fetching all Formation Templates or a single one given an ID:
+Director API exposes the following GraphQL queries for fetching a single formation template by its ID or all formation templates:
 ```graphql
 type Query {
     formationTemplate(id: ID!): FormationTemplate @hasScopes(path: "graphql.query.formationTemplate")
     formationTemplates(first: Int = 200, after: PageCursor): FormationTemplatePage! @hasScopes(path: "graphql.query.formationTemplates")
 }
 ```
-> **TIP:** For the GraphQL query examples that you can use, go to the [query formation template](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/query-formation-template/query-formation-template.graphql) or [query formation templates](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/query-formation-templates/query-formation-templates.graphql) examples.
+> **Note:** For example GraphQL queries, see: [Query formation template](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/query-formation-template/query-formation-template.graphql), or [Query formation templates](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/query-formation-templates/query-formation-templates.graphql).
