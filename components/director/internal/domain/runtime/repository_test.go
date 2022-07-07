@@ -522,7 +522,7 @@ func TestPgRepository_ExistsByFiltersAndIdOwned(t *testing.T) {
 		RepoConstructorFunc: runtime.NewRepository,
 		TargetID:            runtimeID,
 		TenantID:            tenantID,
-		MethodName:          "ExistsByFiltersAndIdOwned",
+		MethodName:          "ExistsByFiltersAndIDOwned",
 		MethodArgs:          []interface{}{tenantID, runtimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf("\"%s\"", runtimeType))}},
 	}
 
