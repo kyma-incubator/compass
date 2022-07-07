@@ -575,13 +575,24 @@ func (r *Resolver) retrieveAppTemplate(ctx context.Context, appTemplateName, con
 	if err != nil {
 		return nil, err
 	}
-	if len(appTemplates) < 1 {
+	templates := make([]*model.ApplicationTemplate, 0, len(appTemplates))
+	for _, appTemplate := range appTemplates {
+		_, err := r.appTemplateSvc.GetLabel(ctx, appTemplate.ID, globalSubaccountIDLabelKey)
+		if err != nil && !apperrors.IsNotFoundError(err) {
+			return nil, errors.Wrapf(err, "while getting %q label", globalSubaccountIDLabelKey)
+		}
+		if err != nil && apperrors.IsNotFoundError(err) {
+			templates = append(templates, appTemplate)
+		}
+	}
+
+	if len(templates) < 1 {
 		return nil, errors.Errorf("application template with name %q and customer id %q not found", appTemplateName, consumerID)
 	}
-	if len(appTemplates) > 1 {
+	if len(templates) > 1 {
 		return nil, errors.Errorf("unexpected number of application templates. found %d", len(appTemplates))
 	}
-	return appTemplates[0], nil
+	return templates[0], nil
 }
 
 func validateAppTemplateForSelfReg(name string, placeholders []model.ApplicationTemplatePlaceholder) error {
