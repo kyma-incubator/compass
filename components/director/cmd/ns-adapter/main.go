@@ -60,7 +60,7 @@ import (
 	"github.com/vrischmann/envconfig"
 )
 
-const appTemplateName = "S4HANA"
+const appTemplateName = "SAP S/4HANA On-Premise"
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -199,7 +199,7 @@ func registerAppTemplate(ctx context.Context, transact persistence.Transactioner
 
 	appTemplate := model.ApplicationTemplateInput{
 		Name:        appTemplateName,
-		Description: str.Ptr("Template for systems pushed from Notifications Service"),
+		Description: str.Ptr(appTemplateName),
 		ApplicationInputJSON: `{
 									"name": "{{name}}",
 									"description": "{{description}}",

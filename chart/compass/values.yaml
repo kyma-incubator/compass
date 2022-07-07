@@ -167,7 +167,7 @@ global:
       gatewayHost: "compass-gateway-xsuaa"
     prefix: /nsadapter
     path: /nsadapter/api/v1/notifications
-    systemToTemplateMappings: '[{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["abapSys"]},{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["nonSAPsys"]},{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["hana"]}]'
+    systemToTemplateMappings: '[{  "Name": "SAP S/4HANA On-Premise",  "SourceKey": ["type"],  "SourceValue": ["abapSys"]},{  "Name": "SAP S/4HANA On-Premise",  "SourceKey": ["type"],  "SourceValue": ["nonSAPsys"]},{  "Name": "SAP S/4HANA On-Premise",  "SourceKey": ["type"],  "SourceValue": ["hana"]}]'
     secret:
       name: nsadapter-secret
       subaccountKey: subaccount

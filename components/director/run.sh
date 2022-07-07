@@ -58,7 +58,7 @@ do
         ;;
         --ns-adapter)
           COMPONENT='ns-adapter'
-          export APP_SYSTEM_TO_TEMPLATE_MAPPINGS='[{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["on-premise"]}]'
+          export APP_SYSTEM_TO_TEMPLATE_MAPPINGS='[{  "Name": "SAP S/4HANA On-Premise",  "SourceKey": ["type"],  "SourceValue": ["on-premise"]}]'
           shift
         ;;
         --jwks-endpoint)
