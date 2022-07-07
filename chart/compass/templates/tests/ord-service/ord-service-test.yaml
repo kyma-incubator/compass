@@ -133,7 +133,7 @@ spec:
             - name: TEST_EXTERNAL_CERT_OU
               value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
             - name: TEST_EXTERNAL_CERT_OU2
-              value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID2 }}
+              value: {{ .Values.global.tests.externalCertConfiguration.ouCertSubaccountID }}
             - name: TEST_EXTERNAL_CERT_SUBJECT
               value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.subscription.tenants.providerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
             - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME
