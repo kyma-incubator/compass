@@ -236,11 +236,8 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	rtmInput.Description = &rtmDesc
 	rtmInput.Labels[selectorKey] = subaccountID
 
-	t.Log("Create runtime")
-	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, subaccountID, &rtmInput)
+	rtm := registerKymaRuntime(t, ctx, subaccountID, rtmInput)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, &rtm)
-	require.NoError(t, err)
-	require.NotEmpty(t, rtm.ID)
 
 	t.Logf("Should create formation: %s", unusedFormationName)
 	var unusedFormation graphql.Formation
@@ -373,10 +370,8 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	}
 
 	t.Log("Create runtime")
-	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, subaccountID, &rtmInput)
+	rtm := registerKymaRuntime(t, ctx, subaccountID, rtmInput)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, &rtm)
-	require.NoError(t, err)
-	require.NotEmpty(t, rtm.ID)
 
 	t.Log("Create runtimeContext")
 	runtimeContext := fixtures.CreateRuntimeContext(t, ctx, certSecuredGraphQLClient, subaccountID, rtm.ID, "ASATest", "ASATest")
