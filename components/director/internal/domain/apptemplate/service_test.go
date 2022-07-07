@@ -744,6 +744,61 @@ func TestService_ListByName(t *testing.T) {
 	}
 }
 
+func TestService_ListByFilters(t *testing.T) {
+	// GIVEN
+	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
+
+	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
+	filters := []*labelfilter.LabelFilter{labelfilter.NewForKey("someKey")}
+
+	testCases := []struct {
+		Name              string
+		AppTemplateRepoFn func() *automock.ApplicationTemplateRepository
+		ExpectedError     error
+		ExpectedOutput    []*model.ApplicationTemplate
+	}{
+		{
+			Name: "Success",
+			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				appTemplateRepo.On("ListByFilters", ctx, filters).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
+				return appTemplateRepo
+			},
+			ExpectedOutput: []*model.ApplicationTemplate{modelAppTemplate},
+		},
+		{
+			Name: "Error when listing application templates by filters",
+			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				appTemplateRepo.On("ListByFilters", ctx, filters).Return(nil, testError).Once()
+				return appTemplateRepo
+			},
+			ExpectedError: testError,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			appTemplateRepo := testCase.AppTemplateRepoFn()
+			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, nil)
+
+			// WHEN
+			result, err := svc.ListByFilters(ctx, filters)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			appTemplateRepo.AssertExpectations(t)
+		})
+	}
+}
+
 func TestService_GetByNameAndRegion(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
@@ -835,113 +890,6 @@ func TestService_GetByNameAndRegion(t *testing.T) {
 
 			// WHEN
 			result, err := svc.GetByNameAndRegion(ctx, testName, testCase.Region)
-
-			// THEN
-			if testCase.ExpectedError != nil {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
-			} else {
-				assert.NoError(t, err)
-			}
-			assert.Equal(t, testCase.ExpectedOutput, result)
-
-			appTemplateRepo.AssertExpectations(t)
-			labelRepo.AssertExpectations(t)
-		})
-	}
-}
-
-func TestService_GetByNameAndSubaccount(t *testing.T) {
-	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
-	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
-	modelAppTemplates := []*model.ApplicationTemplate{modelAppTemplate}
-
-	testCases := []struct {
-		Name              string
-		Subaccount        string
-		AppTemplateRepoFn func() *automock.ApplicationTemplateRepository
-		LabelRepoFn       func() *automock.LabelRepository
-		ExpectedError     error
-		ExpectedOutput    *model.ApplicationTemplate
-	}{
-		{
-			Name:       "Success",
-			Subaccount: "",
-			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
-				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("ListByName", ctx, testName).Return(modelAppTemplates, nil).Once()
-				return appTemplateRepo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "global_subaccount_id").Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
-				return labelRepo
-			},
-			ExpectedOutput: modelAppTemplate,
-		},
-		{
-			Name:       "Success matching subaccount",
-			Subaccount: testTenant,
-			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
-				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("ListByName", ctx, testName).Return(modelAppTemplates, nil).Once()
-				return appTemplateRepo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "global_subaccount_id").Return(&model.Label{Value: testTenant}, nil).Once()
-				return labelRepo
-			},
-			ExpectedOutput: modelAppTemplate,
-		},
-		{
-			Name:       "Error when getting application templates by name",
-			Subaccount: "",
-			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
-				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("ListByName", ctx, testName).Return(nil, testError).Once()
-				return appTemplateRepo
-			},
-			LabelRepoFn:   UnusedLabelRepo,
-			ExpectedError: testError,
-		},
-		{
-			Name:       "Error when retrieving subaccount label",
-			Subaccount: "",
-			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
-				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("ListByName", ctx, testName).Return(modelAppTemplates, nil).Once()
-				return appTemplateRepo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "global_subaccount_id").Return(nil, testError).Once()
-				return labelRepo
-			},
-			ExpectedError: testError,
-		},
-		{
-			Name:       "Error when application template not found",
-			Subaccount: "",
-			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
-				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("ListByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
-				return appTemplateRepo
-			},
-			LabelRepoFn:   UnusedLabelRepo,
-			ExpectedError: apperrors.NewNotFoundErrorWithType(resource.ApplicationTemplate),
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			appTemplateRepo := testCase.AppTemplateRepoFn()
-			labelRepo := testCase.LabelRepoFn()
-			svc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, labelRepo)
-
-			// WHEN
-			result, err := svc.GetByNameAndSubaccount(ctx, testName, testCase.Subaccount)
 
 			// THEN
 			if testCase.ExpectedError != nil {

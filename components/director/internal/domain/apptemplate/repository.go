@@ -160,6 +160,26 @@ func (r *repository) ListByName(ctx context.Context, name string) ([]*model.Appl
 	return r.multipleFromEntities(entities)
 }
 
+// ListByFilters builds a subquery for a given slice of labelfilter.LabelFilter and gets a slice of model.ApplicationTemplate
+func (r *repository) ListByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationTemplate, error) {
+	filterSubquery, args, err := label.FilterQueryGlobal(model.AppTemplateLabelableObject, label.IntersectSet, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
+	var additionalConditions repo.Conditions
+	if filterSubquery != "" {
+		additionalConditions = append(additionalConditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	var entities EntityCollection
+	if err := r.listerGlobal.ListGlobal(ctx, &entities, additionalConditions...); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
+}
+
 // Update missing godoc
 func (r *repository) Update(ctx context.Context, model model.ApplicationTemplate) error {
 	entity, err := r.conv.ToEntity(&model)

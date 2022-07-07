@@ -3,6 +3,7 @@ package apptemplate
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -26,6 +27,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const globalSubaccountIDLabelKey = "global_subaccount_id"
+
 // ApplicationTemplateService missing godoc
 //go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateService interface {
@@ -33,9 +36,9 @@ type ApplicationTemplateService interface {
 	CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error)
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 	GetByNameAndRegion(ctx context.Context, name string, region interface{}) (*model.ApplicationTemplate, error)
-	GetByNameAndSubaccount(ctx context.Context, name string, subaccount string) (*model.ApplicationTemplate, error)
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 	ListByName(ctx context.Context, name string) ([]*model.ApplicationTemplate, error)
+	ListByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationTemplate, error)
 	Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error
 	Delete(ctx context.Context, id string) error
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
@@ -327,7 +330,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	convertedIn := r.appTemplateConverter.ApplicationFromTemplateInputFromGraphQL(in)
 
 	log.C(ctx).Debugf("Extracting Application Template with name %q and consumer id %q from GraphQL input", in.TemplateName, consumerInfo.ConsumerID)
-	appTemplate, err := r.appTemplateSvc.GetByNameAndSubaccount(ctx, convertedIn.TemplateName, consumerInfo.ConsumerID)
+	appTemplate, err := r.retrieveAppTemplate(ctx, convertedIn.TemplateName, consumerInfo.ConsumerID)
 	if err != nil {
 		return nil, err
 	}
@@ -551,6 +554,34 @@ func (r *Resolver) cleanupAndLogOnError(ctx context.Context, id, region string) 
 	if err := r.selfRegManager.CleanupSelfRegistration(ctx, id, region); err != nil {
 		log.C(ctx).Errorf("An error occurred during cleanup of self-registered app template: %v", err)
 	}
+}
+
+func (r *Resolver) retrieveAppTemplate(ctx context.Context, appTemplateName, consumerID string) (*model.ApplicationTemplate, error) {
+	filters := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", consumerID)),
+	}
+	appTemplates, err := r.appTemplateSvc.ListByFilters(ctx, filters)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, appTemplate := range appTemplates {
+		if appTemplate.Name == appTemplateName {
+			return appTemplate, nil
+		}
+	}
+
+	appTemplates, err = r.appTemplateSvc.ListByName(ctx, appTemplateName)
+	if err != nil {
+		return nil, err
+	}
+	if len(appTemplates) < 1 {
+		return nil, errors.Errorf("application template with name %q and customer id %q not found", appTemplateName, consumerID)
+	}
+	if len(appTemplates) > 1 {
+		return nil, errors.Errorf("unexpected number of application templates. found %d", len(appTemplates))
+	}
+	return appTemplates[0], nil
 }
 
 func validateAppTemplateForSelfReg(name string, placeholders []model.ApplicationTemplatePlaceholder) error {

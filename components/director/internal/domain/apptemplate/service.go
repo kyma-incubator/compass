@@ -23,10 +23,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-const (
-	applicationTypeLabelKey    = "applicationType"
-	globalSubaccountIDLabelKey = "global_subaccount_id"
-)
+const applicationTypeLabelKey = "applicationType"
 
 // ApplicationTemplateRepository missing godoc
 //go:generate mockery --name=ApplicationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -37,6 +34,7 @@ type ApplicationTemplateRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 	ListByName(ctx context.Context, id string) ([]*model.ApplicationTemplate, error)
+	ListByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationTemplate, error)
 	Update(ctx context.Context, model model.ApplicationTemplate) error
 	Delete(ctx context.Context, id string) error
 }
@@ -183,6 +181,16 @@ func (s *service) ListByName(ctx context.Context, name string) ([]*model.Applica
 	return appTemplates, nil
 }
 
+// ListByFilters retrieves all Application Templates by given slice of labelfilter.LabelFilter
+func (s *service) ListByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationTemplate, error) {
+	appTemplates, err := s.appTemplateRepo.ListByFilters(ctx, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing application templates by filters")
+	}
+
+	return appTemplates, nil
+}
+
 // GetByNameAndRegion retrieves Application Template by given name and region
 func (s *service) GetByNameAndRegion(ctx context.Context, name string, region interface{}) (*model.ApplicationTemplate, error) {
 	appTemplates, err := s.appTemplateRepo.ListByName(ctx, name)
@@ -203,33 +211,6 @@ func (s *service) GetByNameAndRegion(ctx context.Context, name string, region in
 	}
 
 	return nil, apperrors.NewNotFoundErrorWithType(resource.ApplicationTemplate)
-}
-
-// GetByNameAndSubaccount retrieves Application Template by given name and subaccount.
-// If there is no subaccount match it will retrieve a global Application Template (not labeled with subaccount).
-func (s *service) GetByNameAndSubaccount(ctx context.Context, name string, subaccount string) (*model.ApplicationTemplate, error) {
-	appTemplates, err := s.ListByName(ctx, name)
-	if err != nil {
-		return nil, err
-	}
-
-	var appTemplate *model.ApplicationTemplate
-	for _, tmpl := range appTemplates {
-		account, err := s.retrieveLabel(ctx, tmpl.ID, globalSubaccountIDLabelKey)
-		if err != nil {
-			if !apperrors.IsNotFoundError(err) {
-				return nil, err
-			}
-			appTemplate = tmpl
-		}
-		if account == subaccount {
-			return tmpl, nil
-		}
-	}
-	if appTemplate == nil {
-		return nil, apperrors.NewNotFoundErrorWithType(resource.ApplicationTemplate)
-	}
-	return appTemplate, nil
 }
 
 // ListLabels retrieves all labels for application template
