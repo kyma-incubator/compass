@@ -638,7 +638,7 @@ func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 
 	// THEN
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Object not found [object=applicationTemplate]")
+	require.Contains(t, err.Error(), "application template with name \\\"SAP template\\\" and customer id \\\"bad76f69-e5c2-4d55-bca5-240944824b83\\\" not found")
 }
 
 func TestAddWebhookToApplicationTemplate(t *testing.T) {
