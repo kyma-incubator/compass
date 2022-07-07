@@ -192,7 +192,7 @@ func TestRepository_GetByName(t *testing.T) {
 		appTemplateRepo := apptemplate.NewRepository(mockConverter)
 
 		// WHEN
-		result, err := appTemplateRepo.GetByName(ctx, testName)
+		result, err := appTemplateRepo.ListByName(ctx, testName)
 
 		// THEN
 		require.NoError(t, err)
@@ -214,7 +214,7 @@ func TestRepository_GetByName(t *testing.T) {
 		appTemplateRepo := apptemplate.NewRepository(mockConverter)
 
 		// WHEN
-		_, err := appTemplateRepo.GetByName(ctx, testName)
+		_, err := appTemplateRepo.ListByName(ctx, testName)
 
 		// THEN
 		require.Error(t, err)
@@ -240,7 +240,7 @@ func TestRepository_GetByName(t *testing.T) {
 		appTemplateRepo := apptemplate.NewRepository(mockConverter)
 
 		// WHEN
-		_, err := appTemplateRepo.GetByName(ctx, testName)
+		_, err := appTemplateRepo.ListByName(ctx, testName)
 
 		// THEN
 		require.Error(t, err)

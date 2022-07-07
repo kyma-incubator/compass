@@ -67,7 +67,7 @@ func TestService_Create(t *testing.T) {
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
 				appTemplateRepo.On("Create", ctx, *modelAppTemplate).Return(nil).Once()
 				return appTemplateRepo
 			},
@@ -92,7 +92,7 @@ func TestService_Create(t *testing.T) {
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
 				appTemplateRepo.On("Create", ctx, mock.AnythingOfType("model.ApplicationTemplate")).Return(nil).Once()
 				return appTemplateRepo
 			},
@@ -119,7 +119,7 @@ func TestService_Create(t *testing.T) {
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				modelAppTemplate := fixModelAppTemplateWithAppInputJSON(testID, testName, fmt.Sprintf(appInputJSONWithAppTypeLabelString, testName+" (eu-1)"), []*model.Webhook{})
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
 				appTemplateRepo.On("Create", ctx, *modelAppTemplate).Return(nil).Once()
 				return appTemplateRepo
 			},
@@ -145,7 +145,7 @@ func TestService_Create(t *testing.T) {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				modelAppTemplateWithPredefinedID := *modelAppTemplate
 				modelAppTemplateWithPredefinedID.ID = predefinedID
-				appTemplateRepo.On("GetByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
 				appTemplateRepo.On("Create", ctx, modelAppTemplateWithPredefinedID).Return(nil).Once()
 				return appTemplateRepo
 			},
@@ -169,7 +169,7 @@ func TestService_Create(t *testing.T) {
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
 				appTemplateRepo.On("Create", ctx, mock.AnythingOfType("model.ApplicationTemplate")).Return(nil).Once()
 				return appTemplateRepo
 			},
@@ -193,7 +193,7 @@ func TestService_Create(t *testing.T) {
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
 				appTemplateRepo.On("Create", ctx, *modelAppTemplate).Return(testError).Once()
 				return appTemplateRepo
 			},
@@ -258,7 +258,7 @@ func TestService_Create(t *testing.T) {
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return(nil, testError).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return(nil, testError).Once()
 				return appTemplateRepo
 			},
 			WebhookRepoFn:    UnusedWebhookRepo,
@@ -273,7 +273,7 @@ func TestService_Create(t *testing.T) {
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
 				return appTemplateRepo
 			},
 			WebhookRepoFn:    UnusedWebhookRepo,
@@ -292,7 +292,7 @@ func TestService_Create(t *testing.T) {
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
 				appTemplateRepo.On("Create", ctx, *modelAppTemplate).Return(nil).Once()
 				return appTemplateRepo
 			},
@@ -364,7 +364,7 @@ func TestService_CreateWithLabels(t *testing.T) {
 			Input: fixModelAppTemplateInput(testName, appInputJSON),
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
 				appTemplateRepo.On("Create", ctx, *modelAppTemplate).Return(nil).Once()
 				return appTemplateRepo
 			},
@@ -386,7 +386,7 @@ func TestService_CreateWithLabels(t *testing.T) {
 			Input: fixModelAppTemplateInput(testName, appInputJSON),
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
 				appTemplateRepo.On("Create", ctx, *modelAppTemplate).Return(testError).Once()
 				return appTemplateRepo
 			},
@@ -706,7 +706,7 @@ func TestService_ListByName(t *testing.T) {
 			Name: "Success",
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return(modelAppTemplates, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return(modelAppTemplates, nil).Once()
 				return appTemplateRepo
 			},
 			ExpectedOutput: modelAppTemplates,
@@ -715,7 +715,7 @@ func TestService_ListByName(t *testing.T) {
 			Name: "Error when getting application template",
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return(nil, testError).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return(nil, testError).Once()
 				return appTemplateRepo
 			},
 			ExpectedError: testError,
@@ -763,7 +763,7 @@ func TestService_GetByNameAndRegion(t *testing.T) {
 			Region: nil,
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return(modelAppTemplates, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return(modelAppTemplates, nil).Once()
 				return appTemplateRepo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -778,7 +778,7 @@ func TestService_GetByNameAndRegion(t *testing.T) {
 			Region: "eu-1",
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return(modelAppTemplates, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return(modelAppTemplates, nil).Once()
 				return appTemplateRepo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -793,7 +793,7 @@ func TestService_GetByNameAndRegion(t *testing.T) {
 			Region: nil,
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return(nil, testError).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return(nil, testError).Once()
 				return appTemplateRepo
 			},
 			LabelRepoFn:   UnusedLabelRepo,
@@ -804,7 +804,7 @@ func TestService_GetByNameAndRegion(t *testing.T) {
 			Region: nil,
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return(modelAppTemplates, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return(modelAppTemplates, nil).Once()
 				return appTemplateRepo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -819,7 +819,7 @@ func TestService_GetByNameAndRegion(t *testing.T) {
 			Region: nil,
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
 				return appTemplateRepo
 			},
 			LabelRepoFn:   UnusedLabelRepo,
@@ -870,7 +870,7 @@ func TestService_GetByNameAndSubaccount(t *testing.T) {
 			Subaccount: "",
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return(modelAppTemplates, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return(modelAppTemplates, nil).Once()
 				return appTemplateRepo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -885,7 +885,7 @@ func TestService_GetByNameAndSubaccount(t *testing.T) {
 			Subaccount: testTenant,
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return(modelAppTemplates, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return(modelAppTemplates, nil).Once()
 				return appTemplateRepo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -900,7 +900,7 @@ func TestService_GetByNameAndSubaccount(t *testing.T) {
 			Subaccount: "",
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return(nil, testError).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return(nil, testError).Once()
 				return appTemplateRepo
 			},
 			LabelRepoFn:   UnusedLabelRepo,
@@ -911,7 +911,7 @@ func TestService_GetByNameAndSubaccount(t *testing.T) {
 			Subaccount: "",
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return(modelAppTemplates, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return(modelAppTemplates, nil).Once()
 				return appTemplateRepo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -926,7 +926,7 @@ func TestService_GetByNameAndSubaccount(t *testing.T) {
 			Subaccount: "",
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
 				return appTemplateRepo
 			},
 			LabelRepoFn:   UnusedLabelRepo,
@@ -1322,7 +1322,7 @@ func TestService_Update(t *testing.T) {
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName+"test").Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName+"test").Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
 				appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
 				return appTemplateRepo
 			},
@@ -1342,7 +1342,7 @@ func TestService_Update(t *testing.T) {
 			},
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("GetByName", ctx, testName+"test").Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
+				appTemplateRepo.On("ListByName", ctx, testName+"test").Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
 				appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
 				return appTemplateRepo
 			},

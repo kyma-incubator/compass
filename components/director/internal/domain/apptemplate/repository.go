@@ -107,16 +107,6 @@ func (r *repository) GetByFilters(ctx context.Context, filter []*labelfilter.Lab
 	return model, nil
 }
 
-// GetByName retrieves all Application Templates by given name
-func (r *repository) GetByName(ctx context.Context, name string) ([]*model.ApplicationTemplate, error) {
-	var entities EntityCollection
-	if err := r.listerGlobal.ListGlobal(ctx, &entities, repo.Conditions{repo.NewEqualCondition("name", name)}...); err != nil {
-		return nil, err
-	}
-
-	return r.multipleFromEntities(entities)
-}
-
 // Exists missing godoc
 func (r *repository) Exists(ctx context.Context, id string) (bool, error) {
 	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
@@ -158,6 +148,16 @@ func (r *repository) List(ctx context.Context, filter []*labelfilter.LabelFilter
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
+}
+
+// ListByName retrieves all Application Templates by given name
+func (r *repository) ListByName(ctx context.Context, name string) ([]*model.ApplicationTemplate, error) {
+	var entities EntityCollection
+	if err := r.listerGlobal.ListGlobal(ctx, &entities, repo.Conditions{repo.NewEqualCondition("name", name)}...); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
 }
 
 // Update missing godoc

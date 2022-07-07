@@ -113,29 +113,6 @@ func (_m *ApplicationTemplateRepository) GetByFilters(ctx context.Context, filte
 	return r0, r1
 }
 
-// GetByName provides a mock function with given fields: ctx, id
-func (_m *ApplicationTemplateRepository) GetByName(ctx context.Context, id string) ([]*model.ApplicationTemplate, error) {
-	ret := _m.Called(ctx, id)
-
-	var r0 []*model.ApplicationTemplate
-	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.ApplicationTemplate); ok {
-		r0 = rf(ctx, id)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.ApplicationTemplate)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // List provides a mock function with given fields: ctx, filter, pageSize, cursor
 func (_m *ApplicationTemplateRepository) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error) {
 	ret := _m.Called(ctx, filter, pageSize, cursor)
@@ -150,6 +127,29 @@ func (_m *ApplicationTemplateRepository) List(ctx context.Context, filter []*lab
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter, int, string) error); ok {
 		r1 = rf(ctx, filter, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListByName provides a mock function with given fields: ctx, id
+func (_m *ApplicationTemplateRepository) ListByName(ctx context.Context, id string) ([]*model.ApplicationTemplate, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 []*model.ApplicationTemplate
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.ApplicationTemplate); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.ApplicationTemplate)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
 	} else {
 		r1 = ret.Error(1)
 	}

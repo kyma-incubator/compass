@@ -33,10 +33,10 @@ const (
 type ApplicationTemplateRepository interface {
 	Create(ctx context.Context, item model.ApplicationTemplate) error
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
-	GetByName(ctx context.Context, id string) ([]*model.ApplicationTemplate, error)
 	GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
+	ListByName(ctx context.Context, id string) ([]*model.ApplicationTemplate, error)
 	Update(ctx context.Context, model model.ApplicationTemplate) error
 	Delete(ctx context.Context, id string) error
 }
@@ -175,7 +175,7 @@ func (s *service) GetByFilters(ctx context.Context, filter []*labelfilter.LabelF
 
 // ListByName retrieves all Application Templates by given name
 func (s *service) ListByName(ctx context.Context, name string) ([]*model.ApplicationTemplate, error) {
-	appTemplates, err := s.appTemplateRepo.GetByName(ctx, name)
+	appTemplates, err := s.appTemplateRepo.ListByName(ctx, name)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing application templates with name %q", name)
 	}
@@ -185,7 +185,7 @@ func (s *service) ListByName(ctx context.Context, name string) ([]*model.Applica
 
 // GetByNameAndRegion retrieves Application Template by given name and region
 func (s *service) GetByNameAndRegion(ctx context.Context, name string, region interface{}) (*model.ApplicationTemplate, error) {
-	appTemplates, err := s.appTemplateRepo.GetByName(ctx, name)
+	appTemplates, err := s.appTemplateRepo.ListByName(ctx, name)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing application templates with name %q", name)
 	}
