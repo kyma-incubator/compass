@@ -777,17 +777,17 @@ func (s *service) createFormation(ctx context.Context, tenant, templateName, for
 	return formation, nil
 }
 
-func (s *service) getFormationByName(ctx context.Context, formation, tnt string) (*model.Formation, error) {
+func (s *service) getFormationByName(ctx context.Context, formationName, tnt string) (*model.Formation, error) {
 	// TODO:: Workaround for the DEFAULT scenario, because it is not in the 'formations' table, and getting it will fail.
 	// Soon this label will be removed and then we can get rid of this check.
-	if formation == model.DefaultScenario {
+	if formationName == model.DefaultScenario {
 		return &model.Formation{Name: model.DefaultScenario}, nil
 	}
 
-	f, err := s.formationRepository.GetByName(ctx, formation, tnt)
+	f, err := s.formationRepository.GetByName(ctx, formationName, tnt)
 	if err != nil {
-		log.C(ctx).Errorf("An error occurred while getting formation by name: %q: %v", formation, err)
-		return nil, errors.Wrapf(err, "An error occurred while getting formation by name: %q", formation)
+		log.C(ctx).Errorf("An error occurred while getting formation by name: %q: %v", formationName, err)
+		return nil, errors.Wrapf(err, "An error occurred while getting formation by name: %q", formationName)
 	}
 
 	return f, nil
