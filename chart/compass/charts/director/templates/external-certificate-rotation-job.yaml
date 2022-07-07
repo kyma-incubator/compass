@@ -113,6 +113,11 @@ spec:
                     -d "grant_type=client_credentials&token_format=bearer&client_id=$CERT_SVC_CLIENT_ID" \
                     | jq -r .access_token)
 
+                  if [[ -z "$TOKEN" ]]; then
+                    echo -e "${RED}Bearer token should not be empty. Exiting... ${NC}"
+                    exit 1
+                  fi
+
                   echo -e "${YELLOW}Generating an encrypted private key... ${NC}"
                   PASS_PHRASE=$(openssl rand -base64 32)
                   openssl genpkey -pass pass:"$PASS_PHRASE" -aes-256-cbc -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /tmp/encrypted-private-key.pem
@@ -120,9 +125,10 @@ spec:
                   echo -e "${YELLOW}Saving an unencrypted copy of the private key... ${NC}" # Later we use it to create a k8s secret, currently k8s does not support loading encrypted private keys
                   openssl rsa -in /tmp/encrypted-private-key.pem -out /tmp/unencrypted-private-key.pem -passin pass:"$PASS_PHRASE"
 
-                  echo -e "${YELLOW}Creating a CSR in json... ${NC}"
+                  echo -e "${YELLOW}Creating a CSR in json with the following subject: $CERT_SUBJECT_PATTERN ${NC}"
                   openssl req -new -sha256 -key /tmp/encrypted-private-key.pem -passin pass:"$PASS_PHRASE" -out /tmp/my-csr.pem -subj "$CERT_SUBJECT_PATTERN"
                   JSON_CSR=$(jq -sR '.' /tmp/my-csr.pem)
+                  echo -e "${YELLOW}Created CSR: $JSON_CSR ${NC}"
 
                   getClientCert
 
