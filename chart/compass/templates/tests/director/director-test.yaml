@@ -107,15 +107,17 @@ spec:
             - name: TEST_EXTERNAL_CERT_OU2
               value: {{ .Values.global.tests.externalCertConfiguration.ouCertSubaccountID }}
             - name: TEST_EXTERNAL_CERT_SUBJECT
-              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.externalCertConfiguration.ouCertSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.tests.director.externalCertIntSystemCN }}
+              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.subscription.tenants.providerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
+            - name: EXTERNAL_CERT_COMMON_NAME
+              value: {{ .Values.global.externalCertConfiguration.commonName }}
             - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME
-              value: {{ .Values.global.tests.director.externalClientCertTestSecretName }}
+              value: {{ .Values.global.tests.subscription.externalClientCertTestSecretName }}
             - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE
-              value: {{ .Values.global.tests.director.externalClientCertTestSecretNamespace }}
+              value: {{ .Values.global.tests.subscription.externalClientCertTestSecretNamespace }}
             - name: EXTERNAL_CERT_TEST_JOB_NAME
-              value: {{ .Values.global.tests.director.externalCertTestJobName }}
+              value: {{ .Values.global.tests.subscription.externalCertTestJobName }}
             - name: CERT_SVC_INSTANCE_TEST_SECRET_NAME
-              value: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
+              value: {{ .Values.global.tests.subscription.certSvcInstanceTestSecretName }}
             - name: EXTERNAL_CERT_CRONJOB_CONTAINER_NAME
               value: {{ .Values.global.externalCertConfiguration.rotationCronjob.containerName }}
             - name: APP_RUNTIME_TYPE_LABEL_KEY
@@ -171,7 +173,11 @@ spec:
               value: {{ .Values.global.director.subscription.subscriptionLabelKey }}
             - name: SKIP_TESTS_REGEX
               value: {{ .Values.global.tests.director.skipPattern }}
-            - name: APP_EXTERNAL_CERT_TEST_CN
+            - name: CERT_SVC_INSTANCE_TEST_INTEGRATION_SYSTEM_SECRET_NAME
+              value: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
+            - name: APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT
+              value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
+            - name: APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN
               value: {{ .Values.global.tests.director.externalCertIntSystemCN }}
           {{ if .Values.global.isLocalEnv }}
           volumeMounts:
@@ -249,11 +255,11 @@ rules:
     verbs: ["get"]
   - apiGroups: ["*"]
     resources: ["secrets"]
-    resourceNames: ["{{ .Values.global.tests.director.externalClientCertTestSecretName }}"]
+    resourceNames: ["{{ .Values.global.tests.subscription.externalClientCertTestSecretName }}"]
     verbs: ["get", "delete"]
   - apiGroups: ["*"]
     resources: ["jobs"]
-    resourceNames: [{{ .Values.global.tests.director.externalCertTestJobName }}]
+    resourceNames: [{{ .Values.global.tests.subscription.externalCertTestJobName }}]
     verbs: ["get", "delete"]
   - apiGroups: ["*"]
     resources: ["jobs"]
