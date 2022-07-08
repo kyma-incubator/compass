@@ -157,6 +157,9 @@ spec:
               - name: http-ord-uns-gr
                 containerPort: {{ .Values.global.externalServicesMock.ordGlobalRegistryUnsecuredPort }}
                 protocol: TCP
+              - name: http-uns-contnt
+                containerPort: {{ .Values.global.externalServicesMock.unsecuredPortWithAdditionalContent }}
+                protocol: TCP
               resources:
                 {{- toYaml .Values.deployment.resources | nindent 16 }}
               {{- with .Values.deployment.securityContext }}
