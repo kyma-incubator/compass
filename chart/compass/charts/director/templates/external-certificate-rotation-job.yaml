@@ -125,7 +125,7 @@ spec:
                   echo -e "${YELLOW}Saving an unencrypted copy of the private key... ${NC}" # Later we use it to create a k8s secret, currently k8s does not support loading encrypted private keys
                   openssl rsa -in /tmp/encrypted-private-key.pem -out /tmp/unencrypted-private-key.pem -passin pass:"$PASS_PHRASE"
 
-                  echo -e "${YELLOW}Creating a CSR in json with the following subject: $CERT_SUBJECT_PATTERN ${NC}"
+                  echo -e "${YELLOW}Creating a CSR with the following subject: $CERT_SUBJECT_PATTERN ${NC}"
                   openssl req -new -sha256 -key /tmp/encrypted-private-key.pem -passin pass:"$PASS_PHRASE" -out /tmp/my-csr.pem -subj "$CERT_SUBJECT_PATTERN"
                   JSON_CSR=$(jq -sR '.' /tmp/my-csr.pem)
                   echo -e "${YELLOW}Created CSR: $JSON_CSR ${NC}"
