@@ -35,20 +35,21 @@ type DirectorConfig struct {
 	ConsumerID                     string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
 	CertLoaderConfig               certloader.Config
 	certprovider.ExternalCertProviderConfig
-	SubscriptionConfig                    subscription.Config
-	TestProviderSubaccountID              string
-	TestConsumerSubaccountID              string
-	TestConsumerTenantID                  string
-	ExternalServicesMockBaseURL           string
-	TokenPath                             string
-	SubscriptionProviderAppNameValue      string
-	ConsumerSubaccountLabelKey            string
-	SubscriptionLabelKey                  string
-	RuntimeTypeLabelKey                   string
-	KymaRuntimeTypeLabelValue             string
-	ExternalCertCommonName                string `envconfig:"EXTERNAL_CERT_COMMON_NAME"`
-	ExternalCertTestIntSystemOUSubaccount string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT"`
-	ExternalCertTestIntSystemCommonName   string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN"`
+	SubscriptionConfig                     subscription.Config
+	TestProviderSubaccountID               string
+	TestConsumerSubaccountID               string
+	TestConsumerTenantID                   string
+	ExternalServicesMockBaseURL            string
+	TokenPath                              string
+	SubscriptionProviderAppNameValue       string
+	ConsumerSubaccountLabelKey             string
+	SubscriptionLabelKey                   string
+	RuntimeTypeLabelKey                    string
+	KymaRuntimeTypeLabelValue              string
+	ExternalCertCommonName                 string `envconfig:"EXTERNAL_CERT_COMMON_NAME"`
+	CertSvcInstanceTestIntSystemSecretName string `envconfig:"CERT_SVC_INSTANCE_TEST_INTEGRATION_SYSTEM_SECRET_NAME"`
+	ExternalCertTestIntSystemOUSubaccount  string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT"`
+	ExternalCertTestIntSystemCommonName    string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN"`
 }
 
 type BaseDirectorConfig struct {
