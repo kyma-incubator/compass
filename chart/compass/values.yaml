@@ -110,7 +110,7 @@ global:
       version: "PR-2383"
     director:
       dir:
-      version: "PR-2465"
+      version: "PR-2480"
     hydrator:
       dir:
       version: "PR-2458"
@@ -163,7 +163,7 @@ global:
       gatewayHost: "compass-gateway-xsuaa"
     prefix: /nsadapter
     path: /nsadapter/api/v1/notifications
-    systemToTemplateMappings: '[{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["abapSys"]},{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["nonSAPsys"]},{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["hana"]}]'
+    systemToTemplateMappings: '[{  "Name": "SAP S/4HANA On-Premise",  "SourceKey": ["type"],  "SourceValue": ["abapSys"]},{  "Name": "SAP S/4HANA On-Premise",  "SourceKey": ["type"],  "SourceValue": ["nonSAPsys"]},{  "Name": "SAP S/4HANA On-Premise",  "SourceKey": ["type"],  "SourceValue": ["hana"]}]'
     secret:
       name: nsadapter-secret
       subaccountKey: subaccount
@@ -771,10 +771,7 @@ global:
         skipSSLValidation: false
     director:
       skipPattern: ""
-      externalClientCertTestSecretName: "external-client-certificate-integration-system-test-secret"
-      externalClientCertTestSecretNamespace: "compass-system"
       externalCertIntSystemCN: "integration-system-test"
-      externalCertTestJobName: "external-client-certificate-integration-system-test-job"
     tenantFetcher:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
     ordService:
