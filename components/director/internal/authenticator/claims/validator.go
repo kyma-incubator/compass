@@ -113,7 +113,7 @@ func (v *validator) validateRuntimeConsumer(ctx context.Context, claims Claims) 
 	providerExternalTenantID := claims.Tenant[tenantmapping.ProviderExternalTenantKey]
 	ctxWithProviderTenant := tenant.SaveToContext(ctx, providerInternalTenantID, providerExternalTenantID)
 
-	log.C(ctx).Infof("Listing runtimes in provider tenant %s for labels %s: %s and %s: %s", providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, tokenClientID)
+	log.C(ctx).Infof("Getting runtime in provider tenant %s for labels %s: %s and %s: %s", providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, tokenClientID)
 	runtime, err := v.runtimesSvc.GetByFilters(ctxWithProviderTenant, filters)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Error while getting runtime in provider tenant %s for labels %s: %s and %s: %s: %v", providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, tokenClientID, err)
