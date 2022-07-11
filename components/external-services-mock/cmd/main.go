@@ -339,14 +339,14 @@ func initUnsecuredORDServerWithAdditionalContent(cfg config) *http.Server {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open"))
-	router.HandleFunc("/test/fullPath", ord_aggregator.HandleFuncOrdConfigWithDocPath(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredPort), "/open-resource-discovery/v1/documents/example2", "open"))
+	router.HandleFunc("/test/fullPath", ord_aggregator.HandleFuncOrdConfigWithDocPath(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredWithAdditionalContentPort), "/open-resource-discovery/v1/documents/example2", "open"))
 
 	testProperties := `"testProperty1": "testValue1", "testProperty2": "testValue2", "testProperty3": "testValue3"`
 	additionalTestEntity := fmt.Sprintf(`,"testEntity": { %s }`, testProperties)
 	additionalTestProperties := fmt.Sprintf(`,%s`, testProperties)
 
-	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocumentWithAdditionalContent(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredPort), "open", additionalTestEntity, additionalTestProperties))
-	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocumentWithAdditionalContent(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredPort), "open", additionalTestEntity, additionalTestProperties))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocumentWithAdditionalContent(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredWithAdditionalContentPort), "open", additionalTestEntity, additionalTestProperties))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocumentWithAdditionalContent(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredWithAdditionalContentPort), "open", additionalTestEntity, additionalTestProperties))
 
 	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
 	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
