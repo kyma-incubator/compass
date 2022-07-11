@@ -157,7 +157,7 @@ func TestSelfRegisterManager_IsSelfRegistrationFlow(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, nil)
+			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, nil, nil, nil)
 			require.NoError(t, err)
 
 			output, err := manager.IsSelfRegistrationFlow(testCase.Context, testCase.InputLabels)
@@ -370,7 +370,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svcCallerProvider := testCase.CallerProvider(t, testCase.Config, testCase.Region)
-			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider)
+			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider, nil, nil)
 			require.NoError(t, err)
 
 			output, err := manager.PrepareForSelfRegistration(testCase.Context, testCase.ResourceType, testCase.InputLabels, testUUID, testCase.Validation)
@@ -486,7 +486,7 @@ func TestSelfRegisterManager_CleanupSelfRegistration(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svcCallerProvider := testCase.CallerProvider(t, testCase.Config, testCase.Region)
-			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider)
+			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider, nil, nil)
 			require.NoError(t, err)
 
 			err = manager.CleanupSelfRegistration(testCase.Context, testCase.SelfRegisteredDistinguishLabelValue, testCase.Region)
@@ -503,7 +503,7 @@ func TestSelfRegisterManager_CleanupSelfRegistration(t *testing.T) {
 func TestNewSelfRegisterManager(t *testing.T) {
 	t.Run("Error when creating self register manager fails", func(t *testing.T) {
 		cfg := config.SelfRegConfig{}
-		manager, err := selfregmanager.NewSelfRegisterManager(cfg, nil)
+		manager, err := selfregmanager.NewSelfRegisterManager(cfg, nil, nil, nil)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "self registration secret path cannot be empty")
 		require.Nil(t, manager)
