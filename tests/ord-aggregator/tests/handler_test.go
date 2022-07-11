@@ -115,8 +115,8 @@ const (
 
 var (
 	// The expected number is increased with initial number of global vendors/products before test execution
-	expectedNumberOfProducts = 6
-	expectedNumberOfVendors  = 6
+	expectedNumberOfProducts = 7
+	expectedNumberOfVendors  = 7
 )
 
 func TestORDAggregator(t *testing.T) {
