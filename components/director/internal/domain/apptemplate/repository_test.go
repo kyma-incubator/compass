@@ -169,16 +169,17 @@ func TestRepository_Get(t *testing.T) {
 	})
 }
 
-func TestRepository_GetByName(t *testing.T) {
+func TestRepository_ListByName(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		webhooksModel := fixModelApplicationWebhooks(testWebhookID, testID)
-		appTemplateModel := fixModelApplicationTemplate(testID, testName, webhooksModel)
+		appTemplate := fixModelApplicationTemplate(testID, testName, webhooksModel)
+		appTemplates := []*model.ApplicationTemplate{appTemplate}
 		appTemplateEntity := fixEntityApplicationTemplate(t, testID, testName)
 
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("FromEntity", appTemplateEntity).Return(appTemplateModel, nil).Once()
+		mockConverter.On("FromEntity", appTemplateEntity).Return(appTemplate, nil).Once()
 		db, dbMock := testdb.MockDatabase(t)
 		defer dbMock.AssertExpectations(t)
 
@@ -191,12 +192,12 @@ func TestRepository_GetByName(t *testing.T) {
 		appTemplateRepo := apptemplate.NewRepository(mockConverter)
 
 		// WHEN
-		result, err := appTemplateRepo.GetByName(ctx, testName)
+		result, err := appTemplateRepo.ListByName(ctx, testName)
 
 		// THEN
 		require.NoError(t, err)
 		require.NotNil(t, result)
-		assert.Equal(t, appTemplateModel, result)
+		assert.Equal(t, appTemplates, result)
 	})
 
 	t.Run("Error when getting", func(t *testing.T) {
@@ -213,7 +214,7 @@ func TestRepository_GetByName(t *testing.T) {
 		appTemplateRepo := apptemplate.NewRepository(mockConverter)
 
 		// WHEN
-		_, err := appTemplateRepo.GetByName(ctx, testName)
+		_, err := appTemplateRepo.ListByName(ctx, testName)
 
 		// THEN
 		require.Error(t, err)
@@ -239,7 +240,88 @@ func TestRepository_GetByName(t *testing.T) {
 		appTemplateRepo := apptemplate.NewRepository(mockConverter)
 
 		// WHEN
-		_, err := appTemplateRepo.GetByName(ctx, testName)
+		_, err := appTemplateRepo.ListByName(ctx, testName)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testError.Error())
+	})
+}
+
+func TestRepository_ListByFilters(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		webhooksModel := fixModelApplicationWebhooks(testWebhookID, testID)
+		appTemplateModel := fixModelApplicationTemplate(testID, testName, webhooksModel)
+		appTemplateEntity := fixEntityApplicationTemplate(t, testID, testName)
+
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromEntity", appTemplateEntity).Return(appTemplateModel, nil).Once()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		rowsToReturn := fixSQLRows([]apptemplate.Entity{*appTemplateEntity})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_namespace, application_input, placeholders, access_level FROM public.app_templates WHERE id IN (SELECT "app_template_id" FROM public.labels WHERE "app_template_id" IS NOT NULL AND "key" = $1)`)).
+			WithArgs("someKey").
+			WillReturnRows(rowsToReturn)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		appTemplateRepo := apptemplate.NewRepository(mockConverter)
+
+		// WHEN
+		filters := []*labelfilter.LabelFilter{labelfilter.NewForKey("someKey")}
+		result, err := appTemplateRepo.ListByFilters(ctx, filters)
+
+		// THEN
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, []*model.ApplicationTemplate{appTemplateModel}, result)
+	})
+
+	t.Run("Error when listing by filters", func(t *testing.T) {
+		// GIVEN
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_namespace, application_input, placeholders, access_level FROM public.app_templates WHERE id IN (SELECT "app_template_id" FROM public.labels WHERE "app_template_id" IS NOT NULL AND "key" = $1)`)).
+			WithArgs("someKey").
+			WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		appTemplateRepo := apptemplate.NewRepository(mockConverter)
+
+		// WHEN
+		filters := []*labelfilter.LabelFilter{labelfilter.NewForKey("someKey")}
+		_, err := appTemplateRepo.ListByFilters(ctx, filters)
+
+		// THEN
+		require.Error(t, err)
+		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
+	})
+
+	t.Run("Error when converting", func(t *testing.T) {
+		// GIVEN
+		appTemplateEntity := fixEntityApplicationTemplate(t, testID, testName)
+
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromEntity", appTemplateEntity).Return(nil, testError).Once()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		rowsToReturn := fixSQLRows([]apptemplate.Entity{*appTemplateEntity})
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, name, description, application_namespace, application_input, placeholders, access_level FROM public.app_templates WHERE id IN (SELECT "app_template_id" FROM public.labels WHERE "app_template_id" IS NOT NULL AND "key" = $1)`)).
+			WithArgs("someKey").
+			WillReturnRows(rowsToReturn)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		appTemplateRepo := apptemplate.NewRepository(mockConverter)
+
+		// WHEN
+		filters := []*labelfilter.LabelFilter{labelfilter.NewForKey("someKey")}
+		_, err := appTemplateRepo.ListByFilters(ctx, filters)
 
 		// THEN
 		require.Error(t, err)

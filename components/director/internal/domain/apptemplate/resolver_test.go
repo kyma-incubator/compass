@@ -3,7 +3,10 @@ package apptemplate_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
@@ -908,8 +911,14 @@ func TestResolver_Labels(t *testing.T) {
 func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 	// GIVEN
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
+	ctx = consumer.SaveToContext(ctx, consumer.Consumer{ConsumerID: testConsumerID})
 
 	txGen := txtest.NewTransactionContextGenerator(testError)
+
+	globalSubaccountIDLabelKey := "global_subaccount_id"
+	filters := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(globalSubaccountIDLabelKey, fmt.Sprintf("\"%s\"", "consumer-id")),
+	}
 
 	jsonAppCreateInput := fixJSONApplicationCreateInput(testName)
 	modelAppCreateInput := fixModelApplicationCreateInput(testName)
@@ -941,7 +950,9 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByName", txtest.CtxWithDBMatcher(), testName).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), filters).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateSvc.On("ListByName", txtest.CtxWithDBMatcher(), testName).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, globalSubaccountIDLabelKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
 				return appTemplateSvc
 			},
@@ -981,11 +992,11 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			ExpectedError:     testError,
 		},
 		{
-			Name: "Returns error when getting Application Template fails",
+			Name: "Returns error when list application templates by filters fails",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByName", txtest.CtxWithDBMatcher(), testName).Return(nil, testError).Once()
+				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), filters).Return(nil, testError).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
@@ -1001,11 +1012,97 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			ExpectedError:  testError,
 		},
 		{
+			Name: "Returns error when list application templates by name fails",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), filters).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateSvc.On("ListByName", txtest.CtxWithDBMatcher(), testName).Return(nil, testError).Once()
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
+				return appTemplateConv
+			},
+			AppSvcFn:       UnusedAppSvc,
+			AppConvFn:      UnusedAppConv,
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
+			ExpectedOutput: nil,
+			ExpectedError:  testError,
+		},
+		{
+			Name: "Returns error when get application template label fails",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), filters).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateSvc.On("ListByName", txtest.CtxWithDBMatcher(), testName).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, globalSubaccountIDLabelKey).Return(nil, testError).Once()
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
+				return appTemplateConv
+			},
+			AppSvcFn:       UnusedAppSvc,
+			AppConvFn:      UnusedAppConv,
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
+			ExpectedOutput: nil,
+			ExpectedError:  testError,
+		},
+		{
+			Name: "Returns error when list application templates by name cannot find application template",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), filters).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateSvc.On("ListByName", txtest.CtxWithDBMatcher(), testName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
+				return appTemplateConv
+			},
+			AppSvcFn:       UnusedAppSvc,
+			AppConvFn:      UnusedAppConv,
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
+			ExpectedOutput: nil,
+			ExpectedError:  errors.New("application template with name \"bar\" and consumer id \"consumer-id\" not found"),
+		},
+		{
+			Name: "Returns error when list application templates by name return more than one application template",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), filters).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateSvc.On("ListByName", txtest.CtxWithDBMatcher(), testName).Return([]*model.ApplicationTemplate{modelAppTemplate, modelAppTemplate}, nil).Once()
+				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, globalSubaccountIDLabelKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Twice()
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", gqlAppFromTemplateInput).Return(modelAppFromTemplateInput).Once()
+				return appTemplateConv
+			},
+			AppSvcFn:       UnusedAppSvc,
+			AppConvFn:      UnusedAppConv,
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
+			ExpectedOutput: nil,
+			ExpectedError:  errors.New("unexpected number of application templates. found 2"),
+		},
+		{
 			Name: "Returns error when preparing ApplicationCreateInputJSON fails",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByName", txtest.CtxWithDBMatcher(), testName).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), filters).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return("", testError).Once()
 				return appTemplateSvc
 			},
@@ -1026,7 +1123,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByName", txtest.CtxWithDBMatcher(), testName).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), filters).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
 				return appTemplateSvc
 			},
@@ -1051,7 +1148,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByName", txtest.CtxWithDBMatcher(), testName).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), filters).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
 				return appTemplateSvc
 			},
@@ -1076,7 +1173,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByName", txtest.CtxWithDBMatcher(), testName).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), filters).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
 				return appTemplateSvc
 			},
@@ -1106,7 +1203,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByName", txtest.CtxWithDBMatcher(), testName).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), filters).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
 				return appTemplateSvc
 			},
@@ -1137,7 +1234,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByName", txtest.CtxWithDBMatcher(), testName).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), filters).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
 				return appTemplateSvc
 			},
