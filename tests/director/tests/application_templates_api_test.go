@@ -57,9 +57,9 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getApplicationTemplateRequest, &appTemplateOutput)
 
-	appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
-	appTemplateInput.Labels["global_subaccount_id"] = conf.ConsumerID
-	appTemplateInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, conf.SubscriptionConfig.SelfRegRegion)
+		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
+		appTemplateInput.Labels["global_subaccount_id"] = conf.ConsumerID
+		appTemplateInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, conf.SubscriptionConfig.SelfRegRegion)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, appTemplateOutput)
@@ -100,6 +100,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 		//THEN
 		require.Error(t, err)
+		require.Contains(t, err.Error(), fmt.Sprintf("Cannot have more than one application template with labels %q: %q and %q: %q", tenantfetcher.RegionKey, conf.SubscriptionConfig.SelfRegRegion, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue))
 		require.Empty(t, output2.ID)
 	})
 }
@@ -199,7 +200,7 @@ func TestCreateApplicationTemplate_SameNames(t *testing.T) {
 			require.NotEmpty(t, appTemplateOneOutput)
 			assertions.AssertApplicationTemplate(t, appTemplateOneInput, appTemplateOneOutput)
 
-			appTemplateTwoInput := fixAppTemplateInputWithRegion(testCase.AppTemplateTwoName, testCase.AppTemplateTwoRegion)
+			appTemplateTwoInput := fixAppTemplateInputWithRegionAndDistinguishLabel(testCase.AppTemplateTwoName, testCase.AppTemplateTwoRegion, "other-distinguished-label")
 
 			t.Log("Create second application template")
 			appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwoInput)
@@ -549,13 +550,15 @@ func TestQueryApplicationTemplates(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application templates")
-	appTmplInput1 := fixAppTemplateInput(name1)
+	appTmplInput1 := fixAppTemplateInputWithRegion(name1, conf.SubscriptionConfig.SelfRegRegion)
 	appTemplate1, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput1)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate1)
+	require.NoError(t, err)
 
-	appTmplInput2 := fixAppTemplateInput(name2)
+	appTmplInput2 := fixAppTemplateInputWithRegion(name2, conf.SubscriptionConfig.SelfRegRegion2)
 	appTemplate2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate2)
+	require.NoError(t, err)
 
 	first := 100
 	after := ""
@@ -785,6 +788,13 @@ func fixAppTemplateInputWithRegion(name, region string) graphql.ApplicationTempl
 	input := fixtures.FixApplicationTemplate(name)
 	input.Labels[tenantfetcher.RegionKey] = region
 	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
+
+	return input
+}
+
+func fixAppTemplateInputWithRegionAndDistinguishLabel(name, region, distinguishedLabel string) graphql.ApplicationTemplateInput {
+	input := fixAppTemplateInputWithRegion(name, region)
+	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = distinguishedLabel
 
 	return input
 }
