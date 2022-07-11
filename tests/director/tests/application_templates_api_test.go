@@ -351,7 +351,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	saveExample(t, updateAppTemplateRequest.Query(), "update application template")
 }
 
-func TestUpdateApplicationTemplate_AlreadyExists(t *testing.T) {
+func TestUpdateApplicationTemplate_AlreadyExistsInTheSameRegion(t *testing.T) {
 	ctx := context.Background()
 	appTemplateOneInput := fixAppTemplateInputWithRegion("SAP app-template", conf.SubscriptionConfig.SelfRegRegion)
 
@@ -363,7 +363,7 @@ func TestUpdateApplicationTemplate_AlreadyExists(t *testing.T) {
 	require.NotEmpty(t, appTemplateOne.ID)
 	require.NotEmpty(t, appTemplateOne.Name)
 
-	appTemplateTwoInput := fixAppTemplateInputWithRegion("SAP app-template-two", conf.SubscriptionConfig.SelfRegRegion)
+	appTemplateTwoInput := fixAppTemplateInputWithRegionAndDistinguishLabel("SAP app-template-two", conf.SubscriptionConfig.SelfRegRegion, "other-label")
 
 	t.Log("Create second application template")
 	appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwoInput)
@@ -383,6 +383,7 @@ func TestUpdateApplicationTemplate_AlreadyExists(t *testing.T) {
 	}
 
 	appTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateUpdateInputToGQL(appTemplateInput)
+	require.NoError(t, err)
 	updateAppTemplateRequest := fixtures.FixUpdateApplicationTemplateRequest(appTemplateTwo.ID, appTemplateGQL)
 
 	updateOutput := graphql.ApplicationTemplate{}
