@@ -204,7 +204,7 @@ func registerAppTemplate(ctx context.Context, transact persistence.Transactioner
 									"name": "{{name}}",
 									"description": "{{description}}",
 									"providerName": "SAP",
-									"labels": {"scc": {"Subaccount":"{{subaccount}}", "LocationID":"{{location-id}}", "Host":"{{host}}"}, "applicationType":"{{system-type}}", "systemProtocol": "{{protocol}}" },
+									"labels": {"scc": {"Subaccount":"{{subaccount}}", "LocationID":"{{location-id}}", "Host":"{{host}}"}, "systemType":"{{system-type}}", "systemProtocol": "{{protocol}}" },
 									"systemNumber": "{{system-number}}",
 									"systemStatus": "{{system-status}}"
 								}`,
@@ -249,7 +249,7 @@ func registerAppTemplate(ctx context.Context, transact persistence.Transactioner
 		AccessLevel: model.GlobalApplicationTemplateAccessLevel,
 	}
 
-	_, err = appTemplateSvc.GetByName(ctxWithTx, appTemplateName)
+	_, err = appTemplateSvc.GetByNameAndRegion(ctxWithTx, appTemplateName, nil)
 	if err != nil {
 		if !strings.Contains(err.Error(), "Object not found") {
 			return errors.Wrap(err, fmt.Sprintf("error while getting application template with name: %s", appTemplateName))
@@ -312,7 +312,7 @@ func calculateTemplateMappings(ctx context.Context, cfg adapter.Configuration, t
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	for index, tm := range systemToTemplateMappings {
-		appTemplate, err := appTemplateSvc.GetByName(ctx, tm.Name)
+		appTemplate, err := appTemplateSvc.GetByNameAndRegion(ctx, tm.Name, nil)
 		if err != nil && !apperrors.IsNotFoundError(err) {
 			return err
 		}

@@ -447,12 +447,12 @@ func (a *Handler) updateSystem(ctx context.Context, system nsmodel.System, app *
 	}
 
 	if err := a.appSvc.SetLabel(ctx, &model.LabelInput{
-		Key:        "applicationType",
+		Key:        "systemType",
 		Value:      system.SystemType,
 		ObjectID:   app.ID,
 		ObjectType: model.ApplicationLabelableObject,
 	}); err != nil {
-		log.C(ctx).Warn(errors.Wrapf(err, "while setting 'applicationType' label for Application with id %s", app.ID))
+		log.C(ctx).Warn(errors.Wrapf(err, "while setting 'systemType' label for Application with id %s", app.ID))
 		return false
 	}
 
