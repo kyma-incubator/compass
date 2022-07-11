@@ -7,6 +7,7 @@ import (
 
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
@@ -82,21 +82,25 @@ func TestValidator_Validate(t *testing.T) {
 		labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", consumerExtTenantID)),
 	}
 
-	// applicationTemplate := &model.ApplicationTemplate{
-	// 	ID: "appTemplateID",
-	// }
+	applicationTemplate := &model.ApplicationTemplate{
+		ID: "appTemplateID",
+	}
 
-	// applicaitonFilter := []*labelfilter.LabelFilter{
-	// 	labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", consumerExtTenantID)),
-	// }
+	applicationFilter := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", consumerExtTenantID)),
+	}
 
-	// applicationPage := &model.ApplicationPage{
-	// 	Data: []*model.Application{
-	// 		{
-	// 			ApplicationTemplateID: &applicationTemplate.ID,
-	// 		},
-	// 	},
-	// }
+	applicationPage := &model.ApplicationPage{
+		Data: []*model.Application{
+			{
+				ApplicationTemplateID: &applicationTemplate.ID,
+			},
+		},
+	}
+
+	emptyApplicationPage := &model.ApplicationPage{
+		Data: []*model.Application{},
+	}
 
 	testCases := []struct {
 		Name                         string
@@ -152,8 +156,14 @@ func TestValidator_Validate(t *testing.T) {
 		},
 		// runtime
 		{
-			Name:        "consumer-provider flow: error when token clientID missing",
-			Claims:      getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, ""),
+			Name:   "consumer-provider flow: error when token clientID missing",
+			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, ""),
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := txtest.NoopTransactioner(persistTx)
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Twice()
+				return transact
+			},
 			ExpectedErr: "could not find consumer token client ID",
 		},
 		{
@@ -164,7 +174,7 @@ func TestValidator_Validate(t *testing.T) {
 			},
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := txtest.NoopTransactioner(persistTx)
-				transact.On("Begin").Return(persistTx, testErr).Once()
+				transact.On("Begin").Return(persistTx, testErr).Twice()
 				return transact
 			},
 			ExpectedErr: "An error has occurred while opening transaction",
@@ -190,12 +200,22 @@ func TestValidator_Validate(t *testing.T) {
 			},
 		},
 		{
-			Name:   "Consumer-provider flow: Error when no runtimes are found",
+			Name:   "Consumer-provider flow: Error when no runtimes nor applications are found",
 			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				runtimeSvc := &automock.RuntimeService{}
 				runtimeSvc.On("ListByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return([]*model.Runtime{}, nil).Once()
 				return runtimeSvc
+			},
+			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(applicationTemplate, nil).Once()
+				return appTemplateSvc
+			},
+			ApplicationServiceFn: func() *automock.ApplicationService {
+				applicationSvc := &automock.ApplicationService{}
+				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 100, "").Return(emptyApplicationPage, nil).Once()
+				return applicationSvc
 			},
 			ExpectedErr: fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the runtime context table for any runtime in the provider tenant %s", consumerExtTenantID, providerTenantID),
 		},
@@ -207,7 +227,36 @@ func TestValidator_Validate(t *testing.T) {
 				runtimeSvc.On("ListByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(nil, testErr).Once()
 				return runtimeSvc
 			},
+			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(applicationTemplate, nil).Once()
+				return appTemplateSvc
+			},
+			ApplicationServiceFn: func() *automock.ApplicationService {
+				applicationSvc := &automock.ApplicationService{}
+				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 100, "").Return(emptyApplicationPage, nil).Once()
+				return applicationSvc
+			},
 			ExpectedErr: testErr.Error(),
+		},
+		{
+			Name:   "Success when no runtime, but there is an application subscribed",
+			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+			RuntimeServiceFn: func() *automock.RuntimeService {
+				runtimeSvc := &automock.RuntimeService{}
+				runtimeSvc.On("ListByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(nil, testErr).Once()
+				return runtimeSvc
+			},
+			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(applicationTemplate, nil).Once()
+				return appTemplateSvc
+			},
+			ApplicationServiceFn: func() *automock.ApplicationService {
+				applicationSvc := &automock.ApplicationService{}
+				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 100, "").Return(applicationPage, nil).Once()
+				return applicationSvc
+			},
 		},
 		{
 			Name:   "Consumer-provider flow: Error when listing runtime context with filters",
@@ -221,6 +270,16 @@ func TestValidator_Validate(t *testing.T) {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
 				rtmCtxSvc.On("ListByFilter", contextThatHasTenant(consumerTenantID), runtimeID, mock.Anything, 100, "").Return(nil, testErr).Once()
 				return rtmCtxSvc
+			},
+			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(applicationTemplate, nil).Once()
+				return appTemplateSvc
+			},
+			ApplicationServiceFn: func() *automock.ApplicationService {
+				applicationSvc := &automock.ApplicationService{}
+				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 100, "").Return(emptyApplicationPage, nil).Once()
+				return applicationSvc
 			},
 			ExpectedErr: testErr.Error(),
 		},
@@ -244,7 +303,17 @@ func TestValidator_Validate(t *testing.T) {
 				return persistTx
 			},
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				return txtest.TransactionerThatDoesARollback(persistTx)
+				return txtest.TransactionerThatDoesARollbackTwice(persistTx)
+			},
+			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(applicationTemplate, nil).Once()
+				return appTemplateSvc
+			},
+			ApplicationServiceFn: func() *automock.ApplicationService {
+				applicationSvc := &automock.ApplicationService{}
+				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 100, "").Return(emptyApplicationPage, nil).Once()
+				return applicationSvc
 			},
 			ExpectedErr: "test",
 		},
@@ -310,7 +379,7 @@ func TestValidator_Validate(t *testing.T) {
 			if testCase.PersistenceFn != nil {
 				persistTxMock = testCase.PersistenceFn()
 			}
-			transactionerMock := txtest.TransactionerThatSucceeds(persistTxMock)
+			transactionerMock := txtest.TransactionerThatSucceedsTwice(persistTxMock)
 			if testCase.TransactionerFn != nil {
 				transactionerMock = testCase.TransactionerFn(persistTxMock)
 			}

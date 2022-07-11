@@ -271,7 +271,7 @@ func main() {
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
-	claimsValidator := claims.NewValidator(transact, runtimeSvc(cfg), runtimeCtxSvc(cfg), appTemplateSvc(cfg), applicaitonSvc(cfg, httpClient, certCache), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey, cfg.Features.TokenPrefix)
+	claimsValidator := claims.NewValidator(transact, runtimeSvc(cfg), runtimeCtxSvc(cfg), appTemplateSvc(), applicaitonSvc(cfg, httpClient, certCache), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey, cfg.Features.TokenPrefix)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
 	authMiddleware := mp_authenticator.New(httpClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claimsValidator)
@@ -661,7 +661,7 @@ func runtimeCtxSvc(cfg config) claims.RuntimeCtxService {
 	return runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 }
 
-func appTemplateSvc(cfg config) claims.ApplicationTemplateService {
+func appTemplateSvc() claims.ApplicationTemplateService {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	versionConverter := version.NewConverter()
