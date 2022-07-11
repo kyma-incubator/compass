@@ -37,6 +37,7 @@ type repository struct {
 	pageableQuerierGlobal repo.PageableQuerierGlobal
 	updaterGlobal         repo.UpdaterGlobal
 	deleterGlobal         repo.DeleterGlobal
+	listerGlobal          repo.ListerGlobal
 	conv                  EntityConverter
 }
 
@@ -49,6 +50,7 @@ func NewRepository(conv EntityConverter) *repository {
 		pageableQuerierGlobal: repo.NewPageableQuerierGlobal(resource.ApplicationTemplate, tableName, tableColumns),
 		updaterGlobal:         repo.NewUpdaterGlobal(resource.ApplicationTemplate, tableName, updatableTableColumns, idTableColumns),
 		deleterGlobal:         repo.NewDeleterGlobal(resource.ApplicationTemplate, tableName),
+		listerGlobal:          repo.NewListerGlobal(resource.ApplicationTemplate, tableName, tableColumns),
 		conv:                  conv,
 	}
 }
@@ -105,21 +107,6 @@ func (r *repository) GetByFilters(ctx context.Context, filter []*labelfilter.Lab
 	return model, nil
 }
 
-// GetByName missing godoc
-func (r *repository) GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error) {
-	var entity Entity
-	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("name", name)}, repo.NoOrderBy, &entity); err != nil {
-		return nil, err
-	}
-
-	result, err := r.conv.FromEntity(&entity)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while converting Application Template with [name=%s]", name)
-	}
-
-	return result, nil
-}
-
 // Exists missing godoc
 func (r *repository) Exists(ctx context.Context, id string) (bool, error) {
 	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
@@ -163,6 +150,36 @@ func (r *repository) List(ctx context.Context, filter []*labelfilter.LabelFilter
 	}, nil
 }
 
+// ListByName retrieves all Application Templates by given name
+func (r *repository) ListByName(ctx context.Context, name string) ([]*model.ApplicationTemplate, error) {
+	var entities EntityCollection
+	if err := r.listerGlobal.ListGlobal(ctx, &entities, repo.Conditions{repo.NewEqualCondition("name", name)}...); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
+}
+
+// ListByFilters builds a subquery for a given slice of labelfilter.LabelFilter and gets a slice of model.ApplicationTemplate
+func (r *repository) ListByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationTemplate, error) {
+	filterSubquery, args, err := label.FilterQueryGlobal(model.AppTemplateLabelableObject, label.IntersectSet, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
+	var additionalConditions repo.Conditions
+	if filterSubquery != "" {
+		additionalConditions = append(additionalConditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	var entities EntityCollection
+	if err := r.listerGlobal.ListGlobal(ctx, &entities, additionalConditions...); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
+}
+
 // Update missing godoc
 func (r *repository) Update(ctx context.Context, model model.ApplicationTemplate) error {
 	entity, err := r.conv.ToEntity(&model)
@@ -176,4 +193,16 @@ func (r *repository) Update(ctx context.Context, model model.ApplicationTemplate
 // Delete missing godoc
 func (r *repository) Delete(ctx context.Context, id string) error {
 	return r.deleterGlobal.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+func (r *repository) multipleFromEntities(entities EntityCollection) ([]*model.ApplicationTemplate, error) {
+	items := make([]*model.ApplicationTemplate, 0, len(entities))
+	for _, ent := range entities {
+		m, err := r.conv.FromEntity(&ent)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, m)
+	}
+	return items, nil
 }
