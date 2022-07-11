@@ -2,8 +2,11 @@ package apptemplate
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -20,15 +23,18 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
+const applicationTypeLabelKey = "applicationType"
+
 // ApplicationTemplateRepository missing godoc
 //go:generate mockery --name=ApplicationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationTemplateRepository interface {
 	Create(ctx context.Context, item model.ApplicationTemplate) error
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
-	GetByName(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 	GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)
 	Exists(ctx context.Context, id string) (bool, error)
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
+	ListByName(ctx context.Context, id string) ([]*model.ApplicationTemplate, error)
+	ListByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationTemplate, error)
 	Update(ctx context.Context, model model.ApplicationTemplate) error
 	Delete(ctx context.Context, id string) error
 }
@@ -55,6 +61,7 @@ type LabelUpsertService interface {
 //go:generate mockery --name=LabelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type LabelRepository interface {
 	ListForGlobalObject(ctx context.Context, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
+	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 }
 
 type service struct {
@@ -83,11 +90,33 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 		appTemplateID = *in.ID
 	}
 
+	if in.Labels == nil {
+		in.Labels = map[string]interface{}{}
+	}
+
 	log.C(ctx).Debugf("ID %s generated for Application Template with name %s", appTemplateID, in.Name)
+
+	applicationType, err := s.constructApplicationTypeLabelValue(in.Name, in.Labels)
+	if err != nil {
+		return "", err
+	}
+	appInputJSON, err := enrichWithApplicationTypeLabel(in.ApplicationInputJSON, applicationType)
+	if err != nil {
+		return "", err
+	}
+	in.ApplicationInputJSON = appInputJSON
+
+	_, err = s.GetByNameAndRegion(ctx, in.Name, in.Labels[tenant.RegionLabelKey])
+	if err != nil && !apperrors.IsNotFoundError(err) {
+		return "", errors.Wrapf(err, "while checking if application template with name %q exists", in.Name)
+	}
+	if err == nil {
+		return "", fmt.Errorf("application template with name %q already exists", in.Name)
+	}
 
 	appTemplate := in.ToApplicationTemplate(appTemplateID)
 
-	err := s.appTemplateRepo.Create(ctx, appTemplate)
+	err = s.appTemplateRepo.Create(ctx, appTemplate)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating Application Template with name %s", in.Name)
 	}
@@ -98,10 +127,6 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 	}
 	if err = s.webhookRepo.CreateMany(ctx, "", webhooks); err != nil {
 		return "", errors.Wrapf(err, "while creating Webhooks for applicationTemplate")
-	}
-
-	if in.Labels == nil {
-		in.Labels = map[string]interface{}{}
 	}
 
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, "", model.AppTemplateLabelableObject, appTemplateID, in.Labels)
@@ -146,14 +171,46 @@ func (s *service) GetByFilters(ctx context.Context, filter []*labelfilter.LabelF
 	return appTemplate, nil
 }
 
-// GetByName missing godoc
-func (s *service) GetByName(ctx context.Context, name string) (*model.ApplicationTemplate, error) {
-	appTemplate, err := s.appTemplateRepo.GetByName(ctx, name)
+// ListByName retrieves all Application Templates by given name
+func (s *service) ListByName(ctx context.Context, name string) ([]*model.ApplicationTemplate, error) {
+	appTemplates, err := s.appTemplateRepo.ListByName(ctx, name)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Application Template with name %s", name)
+		return nil, errors.Wrapf(err, "while listing application templates with name %q", name)
 	}
 
-	return appTemplate, nil
+	return appTemplates, nil
+}
+
+// ListByFilters retrieves all Application Templates by given slice of labelfilter.LabelFilter
+func (s *service) ListByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationTemplate, error) {
+	appTemplates, err := s.appTemplateRepo.ListByFilters(ctx, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing application templates by filters")
+	}
+
+	return appTemplates, nil
+}
+
+// GetByNameAndRegion retrieves Application Template by given name and region
+func (s *service) GetByNameAndRegion(ctx context.Context, name string, region interface{}) (*model.ApplicationTemplate, error) {
+	appTemplates, err := s.appTemplateRepo.ListByName(ctx, name)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing application templates with name %q", name)
+	}
+
+	for _, appTemplate := range appTemplates {
+		appTmplRegion, err := s.retrieveLabel(ctx, appTemplate.ID, tenant.RegionLabelKey)
+		if err != nil && !apperrors.IsNotFoundError(err) {
+			return nil, err
+		}
+
+		if region == appTmplRegion {
+			log.C(ctx).Infof("Found Application Template with name %q and region label %v", name, region)
+			return appTemplate, nil
+		}
+	}
+
+	return nil, apperrors.NewNotFoundErrorWithType(resource.ApplicationTemplate)
 }
 
 // ListLabels retrieves all labels for application template
@@ -211,9 +268,40 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 
 // Update missing godoc
 func (s *service) Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error {
+	oldAppTemplate, err := s.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	region, err := s.retrieveLabel(ctx, id, tenant.RegionLabelKey)
+	if err != nil && !apperrors.IsNotFoundError(err) {
+		return err
+	}
+
+	applicationType, err := s.createApplicationTypeFromRegion(in.Name, region)
+	if err != nil {
+		return err
+	}
+
+	appInputJSON, err := enrichWithApplicationTypeLabel(in.ApplicationInputJSON, applicationType)
+	if err != nil {
+		return err
+	}
+	in.ApplicationInputJSON = appInputJSON
+
+	if oldAppTemplate.Name != in.Name {
+		_, err := s.GetByNameAndRegion(ctx, in.Name, region)
+		if err != nil && !apperrors.IsNotFoundError(err) {
+			return errors.Wrapf(err, "while checking if application template with name %q exists", in.Name)
+		}
+		if err == nil {
+			return fmt.Errorf("application template with name %q already exists", in.Name)
+		}
+	}
+
 	appTemplate := in.ToApplicationTemplate(id)
 
-	err := s.appTemplateRepo.Update(ctx, appTemplate)
+	err = s.appTemplateRepo.Update(ctx, appTemplate)
 	if err != nil {
 		return errors.Wrapf(err, "while updating Application Template with ID %s", id)
 	}
@@ -242,4 +330,71 @@ func (s *service) PrepareApplicationCreateInputJSON(appTemplate *model.Applicati
 		appCreateInputJSON = strings.ReplaceAll(appCreateInputJSON, fmt.Sprintf("{{%s}}", placeholder.Name), newValue)
 	}
 	return appCreateInputJSON, nil
+}
+
+func (s *service) retrieveLabel(ctx context.Context, id string, labelKey string) (interface{}, error) {
+	label, err := s.labelRepo.GetByKey(ctx, "", model.AppTemplateLabelableObject, id, labelKey)
+	if err != nil {
+		return nil, err
+	}
+	return label.Value, nil
+}
+
+func (s *service) constructApplicationTypeLabelValue(name string, labels map[string]interface{}) (string, error) {
+	regionValue, exists := labels[tenant.RegionLabelKey]
+	if !exists {
+		return name, nil
+	}
+
+	return s.createApplicationTypeFromRegion(name, regionValue)
+}
+
+func (s *service) createApplicationTypeFromRegion(name string, region interface{}) (string, error) {
+	if region == nil {
+		return name, nil
+	}
+
+	regionValue, ok := region.(string)
+	if !ok {
+		return "", fmt.Errorf("%q label value must be string", tenant.RegionLabelKey)
+	}
+	return fmt.Sprintf("%s (%s)", name, regionValue), nil
+}
+
+func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string) (string, error) {
+	var appInput map[string]interface{}
+
+	if err := json.Unmarshal([]byte(applicationInputJSON), &appInput); err != nil {
+		return "", errors.Wrapf(err, "while unmarshaling application input json")
+	}
+
+	labels, ok := appInput["labels"]
+	if ok && labels != nil {
+		labelsMap, ok := labels.(map[string]interface{})
+		if !ok {
+			return "", fmt.Errorf("app input json labels are type %T instead of map[string]interface{}. %v", labelsMap, labels)
+		}
+
+		if appType, ok := labelsMap[applicationTypeLabelKey]; ok {
+			appTypeValue, ok := appType.(string)
+			if !ok {
+				return "", fmt.Errorf("%q label value must be string", applicationTypeLabelKey)
+			}
+			if appTypeValue != applicationType {
+				return "", fmt.Errorf("%q label value does not follow %q schema", applicationTypeLabelKey, "<app_template_name> (<region>)")
+			}
+			return applicationInputJSON, nil
+		}
+
+		labelsMap[applicationTypeLabelKey] = applicationType
+		appInput["labels"] = labelsMap
+	} else {
+		appInput["labels"] = map[string]interface{}{applicationTypeLabelKey: applicationType}
+	}
+
+	inputJSON, err := json.Marshal(appInput)
+	if err != nil {
+		return "", errors.Wrapf(err, "while marshalling app input")
+	}
+	return string(inputJSON), nil
 }
