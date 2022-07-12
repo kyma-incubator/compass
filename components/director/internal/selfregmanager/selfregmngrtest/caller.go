@@ -28,6 +28,7 @@ const (
 // TestError is a testing error
 var TestError = errors.New("test-error")
 
+// TenantServiceDoesNotFindTenant missing godoc
 func TenantServiceDoesNotFindTenant(externalTenantID string) *automock.TenantService {
 	tenantService := &automock.TenantService{}
 	tenantService.On("GetTenantByExternalID", mock.Anything, externalTenantID).
@@ -36,6 +37,7 @@ func TenantServiceDoesNotFindTenant(externalTenantID string) *automock.TenantSer
 	return tenantService
 }
 
+// TenantServiceReturnsTenant missing godoc
 func TenantServiceReturnsTenant(externalTenantID, expectedInternalTenantID string) *automock.TenantService {
 	tenantService := &automock.TenantService{}
 	tenantService.On("GetTenantByExternalID", mock.Anything, externalTenantID).
@@ -44,6 +46,7 @@ func TenantServiceReturnsTenant(externalTenantID, expectedInternalTenantID strin
 	return tenantService
 }
 
+// LabelServiceDoesNotFindLabel missing godoc
 func LabelServiceDoesNotFindLabel(externalTenantID string) *automock.LabelService {
 	labelService := &automock.LabelService{}
 	labelService.On("GetByKey", mock.Anything, externalTenantID, model.TenantLabelableObject, externalTenantID, selfregmanager.RegionLabel).
@@ -52,6 +55,7 @@ func LabelServiceDoesNotFindLabel(externalTenantID string) *automock.LabelServic
 	return labelService
 }
 
+// LabelServiceReturnsRegionLabel missing godoc
 func LabelServiceReturnsRegionLabel(externalTenantID, regionLabel string) *automock.LabelService {
 	labelService := &automock.LabelService{}
 	labelService.On("GetByKey", mock.Anything, externalTenantID, model.TenantLabelableObject, externalTenantID, selfregmanager.RegionLabel).
