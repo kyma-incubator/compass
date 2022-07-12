@@ -17,6 +17,7 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
       labels:
         app: {{ .Chart.Name }}-system-fetcher-tests-app
     spec:
@@ -36,6 +37,8 @@ spec:
               value: "{{ .Values.global.systemFetcher.paging.pageSize }}"
             - name: SYSTEM_FETCHER_CONTAINER_NAME
               value: "{{ .Values.global.systemFetcher.containerName }}"
+            - name: SYSTEM_FETCHER_TEMPLATE_REGION
+              value: "{{ .Values.global.systemFetcher.templateRegion }}"
             - name: APP_DB_USER
               valueFrom:
                 secretKeyRef:

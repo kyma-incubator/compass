@@ -135,7 +135,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 				ApplicationTemplateID: &template.ID,
 				SystemNumber:          str.Ptr("1"),
 			},
-			Labels: applicationLabels("name1", true),
+			Labels: applicationLabels("name1", appTemplateName1, true),
 		},
 		{
 			Application: directorSchema.Application{
@@ -144,7 +144,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 				BaseURL:      &baseUrl,
 				SystemNumber: str.Ptr("2"),
 			},
-			Labels: applicationLabels("name2", false),
+			Labels: applicationLabels("name2", "", false),
 		},
 	}
 
@@ -297,7 +297,7 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 				ApplicationTemplateID: &template.ID,
 				SystemNumber:          str.Ptr("1"),
 			},
-			Labels: applicationLabels("name1", true),
+			Labels: applicationLabels("name1", appTemplateName1, true),
 		},
 		{
 			Application: directorSchema.Application{
@@ -306,7 +306,7 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 				BaseURL:      &baseUrl,
 				SystemNumber: str.Ptr("2"),
 			},
-			Labels: applicationLabels("name2", false),
+			Labels: applicationLabels("name2", "", false),
 		},
 	}
 
@@ -408,7 +408,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				ApplicationTemplateID: &template.ID,
 				SystemNumber:          str.Ptr("1"),
 			},
-			Labels: applicationLabels("name1", true),
+			Labels: applicationLabels("name1", appTemplateName1, true),
 		},
 		{
 			Application: directorSchema.Application{
@@ -416,7 +416,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				Description:  &description,
 				SystemNumber: str.Ptr("2"),
 			},
-			Labels: applicationLabels("name2", false),
+			Labels: applicationLabels("name2", "", false),
 		},
 		{
 			Application: directorSchema.Application{
@@ -424,7 +424,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				Description:  &description,
 				SystemNumber: str.Ptr("3"),
 			},
-			Labels: applicationLabels("name1", false),
+			Labels: applicationLabels("name1", "", false),
 		},
 	}
 
@@ -533,14 +533,14 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 				Description:           &description,
 				ApplicationTemplateID: &template.ID,
 			},
-			Labels: applicationLabels("name1", true),
+			Labels: applicationLabels("name1", appTemplateName1, true),
 		},
 		{
 			Application: directorSchema.Application{
 				Name:        "name2",
 				Description: &description,
 			},
-			Labels: applicationLabels("name2", false),
+			Labels: applicationLabels("name2", "", false),
 		},
 		{
 			Application: directorSchema.Application{
@@ -548,7 +548,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 				Description:           &description,
 				ApplicationTemplateID: &template2.ID,
 			},
-			Labels: applicationLabels("name3", true),
+			Labels: applicationLabels("name3", appTemplateName2, true),
 		},
 	}
 
@@ -648,7 +648,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 				Name:        "name2",
 				Description: &description,
 			},
-			Labels: applicationLabels("name2", false),
+			Labels: applicationLabels("name2", "", false),
 		},
 	}
 
@@ -766,7 +766,7 @@ func getFixExpectedMockSystems(count int, description string) []directorSchema.A
 				Description:  &description,
 				SystemNumber: str.Ptr(fmt.Sprintf("%d", i)),
 			},
-			Labels: applicationLabels(systemName, false),
+			Labels: applicationLabels(systemName, "", false),
 		}
 	}
 	return result
@@ -793,7 +793,7 @@ func cleanupMockSystems(t *testing.T) {
 	log.D().Info("Successfully reset mock systems")
 }
 
-func applicationLabels(name string, fromTemplate bool) directorSchema.Labels {
+func applicationLabels(name, appTemplateName string, fromTemplate bool) directorSchema.Labels {
 	labels := directorSchema.Labels{
 		"scenarios":            []interface{}{"DEFAULT"},
 		"managed":              "true",
@@ -805,6 +805,7 @@ func applicationLabels(name string, fromTemplate bool) directorSchema.Labels {
 
 	if fromTemplate {
 		labels[nameLabelKey] = name
+		labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, cfg.SystemFetcherTemplateRegion)
 	}
 
 	return labels
@@ -835,7 +836,7 @@ func fixApplicationTemplate(name string) directorSchema.ApplicationTemplateInput
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
 		Labels: directorSchema.Labels{
 			cfg.SelfRegDistinguishLabelKey: []interface{}{cfg.SelfRegDistinguishLabelValue},
-			tenantfetcher.RegionKey:        cfg.SelfRegRegion,
+			tenantfetcher.RegionKey:        cfg.SystemFetcherTemplateRegion,
 		},
 	}
 
