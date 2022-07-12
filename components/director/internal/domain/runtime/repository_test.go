@@ -496,7 +496,7 @@ func TestPgRepository_OwnerExists(t *testing.T) {
 	suite.Run(t)
 }
 
-func TestPgRepository_ExistsByFiltersAndIdOwned(t *testing.T) {
+func TestPgRepository_OwnerExistsByFiltersAndID(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{
 		Name: "Owned Runtime With Runtime Type Exists",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
@@ -522,7 +522,7 @@ func TestPgRepository_ExistsByFiltersAndIdOwned(t *testing.T) {
 		RepoConstructorFunc: runtime.NewRepository,
 		TargetID:            runtimeID,
 		TenantID:            tenantID,
-		MethodName:          "ExistsByFiltersAndIDOwned",
+		MethodName:          "OwnerExistsByFiltersAndID",
 		MethodArgs:          []interface{}{tenantID, runtimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf("\"%s\"", runtimeType))}},
 	}
 

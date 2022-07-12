@@ -37,7 +37,7 @@ type runtimeRepository interface {
 	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	ListOwnedRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
-	ExistsByFiltersAndIDOwned(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (bool, error)
+	OwnerExistsByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (bool, error)
 }
 
 //go:generate mockery --exported --name=runtimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -542,7 +542,7 @@ func (s *service) isASAMatchingRuntime(ctx context.Context, asa *model.Automatic
 
 	lblFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf("\"%s\"", runtimeType))}
 
-	runtimeExists, err := s.runtimeRepo.ExistsByFiltersAndIDOwned(ctx, asa.TargetTenantID, runtimeID, lblFilters)
+	runtimeExists, err := s.runtimeRepo.OwnerExistsByFiltersAndID(ctx, asa.TargetTenantID, runtimeID, lblFilters)
 	if err != nil {
 		return false, errors.Wrapf(err, "while checking if runtime with id %q have owner=true", runtimeID)
 	}
