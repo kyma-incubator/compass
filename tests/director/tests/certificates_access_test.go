@@ -98,7 +98,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 
 			name := fmt.Sprintf("app-template-%s", test.resourceSuffix)
 			appTemplateName := createAppTemplateName(name)
-			appTmplInput := fixAppTemplateInput(appTemplateName)
+			appTmplInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
 			at, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, test.tenant, appTmplInput)
 			defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, test.tenant, &at)
 			if test.expectErr {
@@ -126,7 +126,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 //		// WHEN
 //		t.Log("Create application template")
 //		name := createAppTemplateName("create-app-template-with-external-cert-name")
-//		appTemplateInput := fixAppTemplateInput(name)
+//		appTemplateInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(name)
 //		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenantId, appTemplateInput)
 //		defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertSecuredClient, tenantId, &appTemplate)
 //
@@ -148,7 +148,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 //	t.Run("Delete Application Template with external certificate", func(t *testing.T) {
 //		t.Log("Create application template")
 //		name := createAppTemplateName("delete-app-template-with-external-cert-name")
-//		appTemplateInput := fixAppTemplateInput(name)
+//		appTemplateInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(name)
 //		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenantId, appTemplateInput)
 //		defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertSecuredClient, tenantId, &appTemplate)
 //
@@ -180,7 +180,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 //	name := createAppTemplateName("app-template-with-external-cert-name")
 //
 //	t.Log("Create application template")
-//	appTemplateInput := fixAppTemplateInput(name)
+//	appTemplateInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(name)
 //	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenantId, appTemplateInput)
 //	defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertSecuredClient, tenantId, &appTemplate)
 //

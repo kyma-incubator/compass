@@ -120,6 +120,29 @@ func (_m *ApplicationTemplateService) GetByNameAndRegion(ctx context.Context, na
 	return r0, r1
 }
 
+// GetByFilters provides a mock function with given fields: ctx, filter
+func (_m *ApplicationTemplateService) GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 *model.ApplicationTemplate
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) *model.ApplicationTemplate); ok {
+		r0 = rf(ctx, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.ApplicationTemplate)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter) error); ok {
+		r1 = rf(ctx, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetLabel provides a mock function with given fields: ctx, appTemplateID, key
 func (_m *ApplicationTemplateService) GetLabel(ctx context.Context, appTemplateID string, key string) (*model.Label, error) {
 	ret := _m.Called(ctx, appTemplateID, key)
