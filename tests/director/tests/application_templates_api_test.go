@@ -31,7 +31,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		appTemplateName := createAppTemplateName("app-template-name")
-		appTemplateInput := fixAppTemplateInput(appTemplateName)
+		appTemplateInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
 		appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
 		require.NoError(t, err)
 
@@ -71,7 +71,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 		appTemplateName1 := createAppTemplateName("app-template-name-self-reg-1")
-		appTemplateInput1 := fixAppTemplateInput(appTemplateName1)
+		appTemplateInput1 := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName1)
 		appTemplate1, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput1)
 		require.NoError(t, err)
 
@@ -79,7 +79,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		output1 := graphql.ApplicationTemplate{}
 
 		appTemplateName2 := createAppTemplateName("app-template-name-self-reg-2")
-		appTemplateInput2 := fixAppTemplateInput(appTemplateName2)
+		appTemplateInput2 := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName2)
 		appTemplate2, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput2)
 		require.NoError(t, err)
 
@@ -276,7 +276,7 @@ func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			ctx := context.Background()
-			appTemplateInput := fixAppTemplateInput(testCase.AppTemplateName)
+			appTemplateInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(testCase.AppTemplateName)
 			if testCase.AppInputDescription != nil {
 				appTemplateInput.ApplicationInput.Description = testCase.AppInputDescription
 			}
@@ -316,7 +316,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
-	appTmplInput := fixAppTemplateInput(appTemplateName)
+	appTmplInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate)
 	require.NoError(t, err)
@@ -445,7 +445,7 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 			tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 			t.Log("Create application template")
-			appTmplInput := fixAppTemplateInput(appTemplateName)
+			appTmplInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
 			appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 			defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate)
 
@@ -493,7 +493,7 @@ func TestDeleteApplicationTemplate(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
-	appTmplInput := fixAppTemplateInput(appTemplateName)
+	appTmplInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate)
 	require.NoError(t, err)
@@ -524,7 +524,7 @@ func TestQueryApplicationTemplate(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
-	appTmplInput := fixAppTemplateInput(name)
+	appTmplInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(name)
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate)
 
@@ -582,7 +582,7 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 	appTemplateName := createAppTemplateName("template")
-	appTmplInput := fixAppTemplateInput(appTemplateName)
+	appTmplInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
 	appTmplInput.ApplicationInput.Description = ptr.String("test {{display-name}}")
 	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
 		{
@@ -630,7 +630,7 @@ func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 	// GIVEN
 	ctx := context.TODO()
 	appTemplateName := createAppTemplateName("template")
-	appTmplInput := fixAppTemplateInput(appTemplateName)
+	appTmplInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
 	appTmplInput.ApplicationInput.Description = ptr.String("test {{display-name}}")
 	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
 		{
@@ -708,7 +708,7 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 	t.Log("Create application template")
-	appTmplInput := fixAppTemplateInput(name)
+	appTmplInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(name)
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, &appTemplate)
 	require.NoError(t, err)
@@ -781,7 +781,7 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	assert.Equal(t, urlUpdated, *actualWebhook.URL)
 }
 
-func fixAppTemplateInput(name string) graphql.ApplicationTemplateInput {
+func fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(name string) graphql.ApplicationTemplateInput {
 	return fixAppTemplateInputWithRegion(name, conf.SubscriptionConfig.SelfRegRegion)
 }
 
