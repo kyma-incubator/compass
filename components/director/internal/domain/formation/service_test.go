@@ -2347,31 +2347,6 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 		},
 	}
 
-	//rtmContext := &model.RuntimeContext{
-	//	ID: "rtmCtxID",
-	//	RuntimeID: rtmIDs[0],
-	//	Key: "rtmCtxKey",
-	//	Value: "rtmCtxValue",
-	//}
-	//
-	//runtimeCtxLblInput := &model.LabelInput{
-	//	Key:        "scenarios",
-	//	Value:      []string{testFormationName},
-	//	ObjectID:   rtmContext.ID,
-	//	ObjectType: model.RuntimeContextLabelableObject,
-	//	Version:    0,
-	//}
-	//
-	//expectedRtmCtxLabel := &model.Label{
-	//	ID:         "1",
-	//	Tenant:     &tnt,
-	//	Key:        "scenarios",
-	//	Value:      []interface{}{testFormationName},
-	//	ObjectID:   rtmContext.ID,
-	//	ObjectType: model.RuntimeContextLabelableObject,
-	//	Version:    0,
-	//}
-
 	rtmContexts := []*model.RuntimeContext{
 		{
 			ID:        "1",
