@@ -288,7 +288,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
 			Validation:     func() error { return nil },
-			ExpectedErr:    errors.New(fmt.Sprintf("providing %q label and value is forbidden", selfregmanager.RegionLabel)),
+			ExpectedErr:    fmt.Errorf("providing %q label and value is forbidden", selfregmanager.RegionLabel),
 			ExpectedOutput: nil,
 		},
 		{
