@@ -3,13 +3,14 @@ package selfregmanager
 import (
 	"context"
 	"fmt"
-	tnt "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"io"
 	"net/http"
 	urlpkg "net/url"
 	"path"
 	"strings"
+
+	tnt "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 

@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	tnt "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	pkgerr "github.com/pkg/errors"
 	"net/http"
 	"testing"
 	"time"
+
+	tnt "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	pkgerr "github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
