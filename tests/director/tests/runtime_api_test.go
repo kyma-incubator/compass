@@ -805,7 +805,7 @@ func TestSelfRegMoreThanOneProviderRuntime(t *testing.T) {
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, registerSecondRuntimeRequest, &secondRuntimeExt)
 	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &secondRuntimeExt)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), fmt.Sprintf("Cannot have more than one runtime with labels %q: %q and %q: %q", tenantfetcher.RegionKey, conf.SubscriptionConfig.SelfRegRegion, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue))
+	require.Contains(t, err.Error(), fmt.Sprintf("cannot have more than one runtime with labels %q: %q and %q: %q", tenantfetcher.RegionKey, conf.SubscriptionConfig.SelfRegRegion, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue))
 	require.Empty(t, secondRuntimeExt)
 }
 
