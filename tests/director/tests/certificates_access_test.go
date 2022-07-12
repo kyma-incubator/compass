@@ -26,7 +26,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
 		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
 		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-		CertSvcInstanceTestSecretName:         conf.ExternalCertProviderConfig.CertSvcInstanceTestSecretName,
+		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestIntSystemSecretName,
 		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
 		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
 		TestExternalCertSubject:               replacer.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject),
@@ -98,7 +98,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 
 			name := fmt.Sprintf("app-template-%s", test.resourceSuffix)
 			appTemplateName := createAppTemplateName(name)
-			appTmplInput := fixAppTemplateInput(appTemplateName)
+			appTmplInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
 			at, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, test.tenant, appTmplInput)
 			defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, test.tenant, &at)
 			if test.expectErr {
@@ -126,7 +126,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 //		// WHEN
 //		t.Log("Create application template")
 //		name := createAppTemplateName("create-app-template-with-external-cert-name")
-//		appTemplateInput := fixAppTemplateInput(name)
+//		appTemplateInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(name)
 //		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenantId, appTemplateInput)
 //		defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertSecuredClient, tenantId, &appTemplate)
 //
@@ -141,13 +141,14 @@ func TestIntegrationSystemAccess(t *testing.T) {
 //		// Enhance input to match the newly created labels
 //		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
 //		appTemplateInput.Labels["global_subaccount_id"] = conf.ConsumerID
+//		appTemplateInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", name, conf.SubscriptionConfig.SelfRegRegion)
 //		assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
 //	})
 //
 //	t.Run("Delete Application Template with external certificate", func(t *testing.T) {
 //		t.Log("Create application template")
 //		name := createAppTemplateName("delete-app-template-with-external-cert-name")
-//		appTemplateInput := fixAppTemplateInput(name)
+//		appTemplateInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(name)
 //		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenantId, appTemplateInput)
 //		defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertSecuredClient, tenantId, &appTemplate)
 //
@@ -179,7 +180,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 //	name := createAppTemplateName("app-template-with-external-cert-name")
 //
 //	t.Log("Create application template")
-//	appTemplateInput := fixAppTemplateInput(name)
+//	appTemplateInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(name)
 //	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenantId, appTemplateInput)
 //	defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertSecuredClient, tenantId, &appTemplate)
 //
@@ -230,7 +231,7 @@ func buildExternalCertProviderConfig() certprovider.ExternalCertProviderConfig {
 		CertSvcInstanceTestSecretName:         conf.ExternalCertProviderConfig.CertSvcInstanceTestSecretName,
 		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
 		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, "integration-system-test", "external-cert", -1),
+		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "external-cert", -1),
 		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
 		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
 	}

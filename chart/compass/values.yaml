@@ -96,6 +96,10 @@ global:
       id: 8d42d818-d4c4-4036-b82f-b199db7ffeb5
       type: subaccount
       parent: 5984a414-1eed-4972-af2c-b2b6a415c7d7
+    - name: TestExternalCertificateSubaccount
+      id: bad76f69-e5c2-4d55-bca5-240944824b83
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
@@ -125,7 +129,7 @@ global:
       version: "PR-71"
     schema_migrator:
       dir:
-      version: "PR-2464"
+      version: "PR-2425"
     system_broker:
       dir:
       version: "PR-2383"
@@ -637,6 +641,7 @@ global:
     systemsAPIFilterCriteria: ""
     # systemToTemplateMappings - how to map system properties to an existing application template
     systemToTemplateMappings: '{}'
+    templateRegion: "eu-1"
     templatePlaceholderToSystemKeyMappings: '[{"placeholder_name": "name","system_key": "displayName"},{"placeholder_name": "display-name","system_key": "displayName"},{"placeholder_name": "systemNumber","system_key": "systemNumber"},{"placeholder_name": "productId","system_key": "productId"},{"placeholder_name": "ppmsProductVersionId","system_key": "ppmsProductVersionId"},{"placeholder_name": "description","system_key": "productDescription", "optional": true},{"placeholder_name": "baseUrl","system_key": "additionalUrls.mainUrl", "optional":true},{"placeholder_name": "providerName","system_key": "infrastructureProvider", "optional": true}]'
     templateOverrideApplicationInput: '{"name": "{{name}}","description": "{{description}}","providerName": "{{providerName}}","statusCondition": "INITIAL","systemNumber": "{{systemNumber}}","labels": {"managed": "true","productId": "{{productId}}","ppmsProductVersionId": "{{ppmsProductVersionId}}"},"baseUrl": "{{baseUrl}}"}'
     http:
@@ -768,6 +773,8 @@ global:
     http:
       client:
         skipSSLValidation: false
+    externalCertConfiguration:
+      ouCertSubaccountID: "bad76f69-e5c2-4d55-bca5-240944824b83"
     director:
       skipPattern: ""
       externalCertIntSystemCN: "integration-system-test"
@@ -780,6 +787,7 @@ global:
       skipPattern: ""
     selfRegistration:
       region: "eu-1"
+      region2: "eu-2"
     subscription:
       tenants:
         consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants

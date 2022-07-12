@@ -16,6 +16,7 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
       labels:
         app: {{ .Chart.Name }}-director-tests-app
     spec:
@@ -96,8 +97,16 @@ spec:
               value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
             - name: APP_SELF_REG_REGION
               value: {{ .Values.global.tests.selfRegistration.region }}
+            - name: APP_SELF_REG_REGION2
+              value: {{ .Values.global.tests.selfRegistration.region2 }}
             - name: APP_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
+            - name: TEST_EXTERNAL_CERT_CN
+              value: {{ .Values.global.tests.director.externalCertIntSystemCN }}
+            - name: TEST_EXTERNAL_CERT_OU
+              value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
+            - name: TEST_EXTERNAL_CERT_OU2
+              value: {{ .Values.global.tests.externalCertConfiguration.ouCertSubaccountID }}
             - name: TEST_EXTERNAL_CERT_SUBJECT
               value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.subscription.tenants.providerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
             - name: EXTERNAL_CERT_COMMON_NAME
@@ -139,6 +148,8 @@ spec:
               value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
             - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_REGION
               value: {{ .Values.global.tests.selfRegistration.region }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_REGION2
+              value: {{ .Values.global.tests.selfRegistration.region2 }}
             - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.label }}
             - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_VALUE_PREFIX
@@ -163,6 +174,8 @@ spec:
               value: {{ .Values.global.director.subscription.subscriptionLabelKey }}
             - name: SKIP_TESTS_REGEX
               value: {{ .Values.global.tests.director.skipPattern }}
+            - name: CERT_SVC_INSTANCE_TEST_INTEGRATION_SYSTEM_SECRET_NAME
+              value: {{ .Values.global.externalCertConfiguration.secrets.externalCertSvcSecret.name }}
             - name: APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT
               value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
             - name: APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN

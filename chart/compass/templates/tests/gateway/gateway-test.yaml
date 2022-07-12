@@ -16,6 +16,7 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
       labels:
         app: {{ .Chart.Name }}-gateway-tests-app
     spec:
