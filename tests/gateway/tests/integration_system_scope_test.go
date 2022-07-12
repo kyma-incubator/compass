@@ -66,7 +66,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 				ProviderName: ptr.String("test"),
 			},
 			Labels: graphql.Labels{
-				testConfig.AppSelfRegDistinguishLabelKey: []interface{}{testConfig.AppSelfRegDistinguishLabelValue},
+				testConfig.AppSelfRegDistinguishLabelKey: testConfig.AppSelfRegDistinguishLabelValue,
 				tenantfetcher.RegionKey:                  testConfig.AppSelfRegRegion,
 			},
 			Placeholders: nil,
