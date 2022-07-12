@@ -448,7 +448,7 @@ func TestCreateApplicationTemplate_Validation(t *testing.T) {
 	ctx := context.Background()
 
 	appCreateInput := fixtures.FixSampleApplicationRegisterInputWithWebhooks("placeholder")
-	invalidInput := fixAppTemplateInput("")
+	invalidInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel("")
 	invalidInput.Placeholders = []*graphql.PlaceholderDefinitionInput{}
 	invalidInput.ApplicationInput = &appCreateInput
 	invalidInput.AccessLevel = graphql.ApplicationTemplateAccessLevelGlobal
@@ -472,7 +472,7 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appTemplateName := createAppTemplateName("validation-test-app-tpl")
-	input := fixAppTemplateInput(appTemplateName)
+	input := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
 
 	appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, input)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTpl)
@@ -506,7 +506,7 @@ func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	appTemplateName := createAppTemplateName("validation-app")
-	input := fixAppTemplateInput(appTemplateName)
+	input := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
 
 	tmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, input)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &tmpl)

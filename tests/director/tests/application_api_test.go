@@ -1758,7 +1758,7 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	expectedProductType := createAppTemplateName("MergeTemplate")
 	newFormation := "formation-merge-applications-e2e"
 
-	appTmplInput := fixAppTemplateInput(expectedProductType)
+	appTmplInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(expectedProductType)
 	appTmplInput.ApplicationInput.Name = "{{name}}"
 	appTmplInput.ApplicationInput.BaseURL = baseURL
 	appTmplInput.ApplicationInput.ProviderName = nil
