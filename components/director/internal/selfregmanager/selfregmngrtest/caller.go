@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -24,6 +26,38 @@ const (
 
 // TestError is a testing error
 var TestError = errors.New("test-error")
+
+func TenantServiceDoesNotFindTenant(externalTenantID string) *automock.TenantService {
+	tenantService := &automock.TenantService{}
+	tenantService.On("GetTenantByExternalID", mock.Anything, externalTenantID).
+		Return(nil, TestError).Once()
+
+	return tenantService
+}
+
+func TenantServiceReturnsTenant(externalTenantID, expectedInternalTenantID string) *automock.TenantService {
+	tenantService := &automock.TenantService{}
+	tenantService.On("GetTenantByExternalID", mock.Anything, externalTenantID).
+		Return(&model.BusinessTenantMapping{ID: expectedInternalTenantID}, nil).Once()
+
+	return tenantService
+}
+
+func LabelServiceDoesNotFindLabel(externalTenantID string) *automock.LabelService {
+	labelService := &automock.LabelService{}
+	labelService.On("GetByKey", mock.Anything, externalTenantID, model.TenantLabelableObject, externalTenantID, selfregmanager.RegionLabel).
+		Return(nil, TestError).Once()
+
+	return labelService
+}
+
+func LabelServiceReturnsRegionLabel(externalTenantID, regionLabel string) *automock.LabelService {
+	labelService := &automock.LabelService{}
+	labelService.On("GetByKey", mock.Anything, externalTenantID, model.TenantLabelableObject, externalTenantID, selfregmanager.RegionLabel).
+		Return(&model.Label{Value: regionLabel}, nil).Once()
+
+	return labelService
+}
 
 // CallerThatDoesNotGetCalled missing godoc
 func CallerThatDoesNotGetCalled(t *testing.T, _ config.SelfRegConfig, _ string) *automock.ExternalSvcCallerProvider {
