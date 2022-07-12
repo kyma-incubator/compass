@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -41,12 +42,13 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 
 		// Create Application Template
 		appTemplateName := createAppTemplateName("app-template-name-subscription")
-		appTemplateInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
+		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), &appTmpl)
 		require.NoError(t, err)
 		require.NotEmpty(t, appTmpl.ID)
+		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
 
 		selfRegLabelValue, ok := appTmpl.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
 		require.True(t, ok)
