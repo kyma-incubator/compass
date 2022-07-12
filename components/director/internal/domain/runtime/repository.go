@@ -66,12 +66,12 @@ func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, err
 	return r.existQuerier.Exists(ctx, resource.Runtime, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-// ExistsOwned checks if runtime with given id in given tenant exists and have owner=true
-func (r *pgRepository) ExistsOwned(ctx context.Context, tenant, id string) (bool, error) {
+// OwnerExists checks if runtime with given id and tenant exists and has owner access
+func (r *pgRepository) OwnerExists(ctx context.Context, tenant, id string) (bool, error) {
 	return r.ownerExistQuerier.Exists(ctx, resource.Runtime, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
-// ExistsByFiltersAndIDOwned checks if runtime with given id and filters in given tenant exists and have owner=true
+// ExistsByFiltersAndIDOwned checks if runtime with given id and filters in given tenant exists and has owner access
 func (r *pgRepository) ExistsByFiltersAndIDOwned(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (bool, error) {
 	tenantID, err := uuid.Parse(tenant)
 	if err != nil {

@@ -37,7 +37,7 @@ type LabelRepository interface {
 // RuntimeRepository is responsible for the repo-layer Runtime operations.
 //go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeRepository interface {
-	ExistsOwned(ctx context.Context, tenant, id string) (bool, error)
+	OwnerExists(ctx context.Context, tenant, id string) (bool, error)
 }
 
 // LabelUpsertService missing godoc
@@ -144,8 +144,8 @@ func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (str
 
 		// If we have a runtime with runtime context(s) we need to assign only the runtime context(s) to the formation.
 		// But if we create ASA in the provider account before registering runtime, the runtime will be assigned to the formation.
-		// And then if we register runtime context for this runtime, the runtime context too will be assigned to the formation.
-		ownedRuntimeExists, err := s.runtimeRepo.ExistsOwned(ctxWithParentTenant, tnt.Parent, in.RuntimeID)
+		// And then if we register runtime context for this runtime, the runtime context will be assigned to the formation as well.
+		ownedRuntimeExists, err := s.runtimeRepo.OwnerExists(ctxWithParentTenant, tnt.Parent, in.RuntimeID)
 		if err != nil {
 			return "", errors.Wrapf(err, "while checking if runtime with id %q exists", in.RuntimeID)
 		}

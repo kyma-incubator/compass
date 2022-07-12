@@ -50,6 +50,39 @@ func TestPgRepository_GetByID(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestPgRepository_GetByRuntimeID(t *testing.T) {
+	runtimeCtxModel := fixModelRuntimeCtx()
+	runtimeCtxEntity := fixEntityRuntimeCtx()
+
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Runtime Context By runtime ID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, runtime_id, key, value FROM public.runtime_contexts WHERE runtime_id = $1 AND (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $2))`),
+				Args:     []driver.Value{runtimeID, tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(runtimeCtxModel.ID, runtimeCtxModel.RuntimeID, runtimeCtxModel.Key, runtimeCtxModel.Value)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       runtimectx.NewRepository,
+		ExpectedModelEntity:       runtimeCtxModel,
+		ExpectedDBEntity:          runtimeCtxEntity,
+		MethodName:                "GetByRuntimeID",
+		MethodArgs:                []interface{}{tenantID, runtimeID},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
 func TestPgRepository_GetForRuntime(t *testing.T) {
 	runtimeCtxModel := fixModelRuntimeCtx()
 	runtimeCtxEntity := fixEntityRuntimeCtx()
@@ -528,35 +561,6 @@ func TestPgRepository_ExistsByRuntimeID(t *testing.T) {
 		TenantID:            tenantID,
 		MethodName:          "ExistsByRuntimeID",
 		MethodArgs:          []interface{}{tenantID, runtimeID},
-	}
-
-	suite.Run(t)
-}
-
-func TestPgRepository_ExistsByIDAndRuntimeID(t *testing.T) {
-	suite := testdb.RepoExistTestSuite{
-		Name: "Runtime Context Exists By Runtime ID and Runtime Context ID",
-		SQLQueryDetails: []testdb.SQLQueryDetails{
-			{
-				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.runtime_contexts WHERE id = $1 AND runtime_id = $2 AND (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $3))`),
-				Args:     []driver.Value{runtimeCtxID, runtimeID, tenantID},
-				IsSelect: true,
-				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
-				},
-				InvalidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
-				},
-			},
-		},
-		ConverterMockProvider: func() testdb.Mock {
-			return &automock.EntityConverter{}
-		},
-		RepoConstructorFunc: runtimectx.NewRepository,
-		TargetID:            runtimeCtxID,
-		TenantID:            tenantID,
-		MethodName:          "ExistsByIDAndRuntimeID",
-		MethodArgs:          []interface{}{tenantID, runtimeCtxID, runtimeID},
 	}
 
 	suite.Run(t)

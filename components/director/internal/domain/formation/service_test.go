@@ -2309,6 +2309,8 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 
 	testErr := errors.New("test err")
 
+	tnt := tenantID.String()
+
 	rtmIDs := []string{"123", "456", "789"}
 	rtmNames := []string{"first", "second", "third"}
 
@@ -2345,6 +2347,31 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 		},
 	}
 
+	//rtmContext := &model.RuntimeContext{
+	//	ID: "rtmCtxID",
+	//	RuntimeID: rtmIDs[0],
+	//	Key: "rtmCtxKey",
+	//	Value: "rtmCtxValue",
+	//}
+	//
+	//runtimeCtxLblInput := &model.LabelInput{
+	//	Key:        "scenarios",
+	//	Value:      []string{testFormationName},
+	//	ObjectID:   rtmContext.ID,
+	//	ObjectType: model.RuntimeContextLabelableObject,
+	//	Version:    0,
+	//}
+	//
+	//expectedRtmCtxLabel := &model.Label{
+	//	ID:         "1",
+	//	Tenant:     &tnt,
+	//	Key:        "scenarios",
+	//	Value:      []interface{}{testFormationName},
+	//	ObjectID:   rtmContext.ID,
+	//	ObjectType: model.RuntimeContextLabelableObject,
+	//	Version:    0,
+	//}
+
 	rtmContexts := []*model.RuntimeContext{
 		{
 			ID:        "1",
@@ -2376,7 +2403,6 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			Version:    0,
 		},
 	}
-	tnt := tenantID.String()
 
 	expectedRtmCtxLabels := []*model.Label{
 		{
@@ -2443,9 +2469,9 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(false, nil).Once()
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
 
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[:1], nil).Once()
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[1]).Return(nil, nil).Once()
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1:], nil).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[0], nil).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -2495,9 +2521,9 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(false, nil).Once()
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
 
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[:1], nil).Once()
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[1]).Return(nil, nil).Once()
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1:], nil).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[0], nil).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -2547,7 +2573,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(false, nil).Once()
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
 
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[0]).Return(nil, testErr).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(nil, testErr).Once()
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -3182,9 +3208,9 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(false, nil).Once()
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
 
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[:1], nil).Once()
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[1]).Return(nil, nil).Once()
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1:], nil).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[0], nil).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -3237,9 +3263,9 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(false, nil).Once()
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
 
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[:1], nil).Once()
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[1]).Return(nil, nil).Once()
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1:], nil).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[0], nil).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -3292,7 +3318,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(false, nil).Once()
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
 
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[0]).Return(nil, testErr).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(nil, testErr).Once()
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -3708,9 +3734,9 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(false, nil).Once()
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
 
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[:1], nil).Once()
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[1]).Return(nil, nil).Once()
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1:], nil).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[0], nil).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -3751,9 +3777,9 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(false, nil).Once()
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
 
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[:1], nil).Once()
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[1]).Return(nil, nil).Once()
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1:], nil).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[0], nil).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -3794,7 +3820,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(false, nil).Once()
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
 
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[0]).Return(nil, testErr).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(nil, testErr).Once()
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -4122,9 +4148,9 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(false, nil).Once()
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
 
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[:1], nil).Once()
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[1]).Return(nil, nil).Once()
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1:], nil).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[0], nil).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -4174,9 +4200,9 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(false, nil).Once()
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
 
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[:1], nil).Once()
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[1]).Return(nil, nil).Once()
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1:], nil).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[0], nil).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -4226,7 +4252,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(false, nil).Once()
 				runtimeContextRepo.On("ExistsByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(true, nil).Once()
 
-				runtimeContextRepo.On("ListAllForRuntime", ctx, TargetTenantID, rtmIDs[0]).Return(nil, testErr).Once()
+				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(nil, testErr).Once()
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -4778,11 +4804,11 @@ func TestService_GetScenariosFromMatchingASAs(t *testing.T) {
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				runtimeContextRepo := &automock.RuntimeContextRepository{}
-				runtimeContextRepo.On("ExistsByIDAndRuntimeID", ctx, testScenarios[0].TargetTenantID, RuntimeContextID, runtimes[0].ID).Return(true, nil).Once()
+				runtimeContextRepo.On("Exists", ctx, testScenarios[0].TargetTenantID, RuntimeContextID).Return(true, nil).Once()
 
-				runtimeContextRepo.On("ExistsByIDAndRuntimeID", ctx, testScenarios[1].TargetTenantID, RuntimeContextID, runtimes[0].ID).Return(false, nil).Once()
-				runtimeContextRepo.On("ExistsByIDAndRuntimeID", ctx, testScenarios[1].TargetTenantID, RuntimeContextID, runtimes[1].ID).Return(false, nil).Once()
-				runtimeContextRepo.On("ExistsByIDAndRuntimeID", ctx, testScenarios[1].TargetTenantID, RuntimeContextID, runtimes[2].ID).Return(false, nil).Once()
+				runtimeContextRepo.On("Exists", ctx, testScenarios[1].TargetTenantID, RuntimeContextID).Return(false, nil).Once()
+				runtimeContextRepo.On("Exists", ctx, testScenarios[1].TargetTenantID, RuntimeContextID).Return(false, nil).Once()
+				runtimeContextRepo.On("Exists", ctx, testScenarios[1].TargetTenantID, RuntimeContextID).Return(false, nil).Once()
 				return runtimeContextRepo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
@@ -4817,7 +4843,7 @@ func TestService_GetScenariosFromMatchingASAs(t *testing.T) {
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				runtimeContextRepo := &automock.RuntimeContextRepository{}
-				runtimeContextRepo.On("ExistsByIDAndRuntimeID", ctx, testScenarios[0].TargetTenantID, RuntimeContextID, runtimes[0].ID).Return(false, testErr).Once()
+				runtimeContextRepo.On("Exists", ctx, testScenarios[0].TargetTenantID, RuntimeContextID).Return(false, testErr).Once()
 				return runtimeContextRepo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {

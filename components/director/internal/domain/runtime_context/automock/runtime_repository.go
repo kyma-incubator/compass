@@ -15,8 +15,8 @@ type RuntimeRepository struct {
 	mock.Mock
 }
 
-// ExistsOwned provides a mock function with given fields: ctx, tenant, id
-func (_m *RuntimeRepository) ExistsOwned(ctx context.Context, tenant string, id string) (bool, error) {
+// OwnerExists provides a mock function with given fields: ctx, tenant, id
+func (_m *RuntimeRepository) OwnerExists(ctx context.Context, tenant string, id string) (bool, error) {
 	ret := _m.Called(ctx, tenant, id)
 
 	var r0 bool

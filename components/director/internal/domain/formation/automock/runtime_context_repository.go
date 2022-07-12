@@ -38,27 +38,6 @@ func (_m *RuntimeContextRepository) Exists(ctx context.Context, tenant string, i
 	return r0, r1
 }
 
-// ExistsByIDAndRuntimeID provides a mock function with given fields: ctx, tenant, rtmCtxID, rtmID
-func (_m *RuntimeContextRepository) ExistsByIDAndRuntimeID(ctx context.Context, tenant string, rtmCtxID string, rtmID string) (bool, error) {
-	ret := _m.Called(ctx, tenant, rtmCtxID, rtmID)
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) bool); ok {
-		r0 = rf(ctx, tenant, rtmCtxID, rtmID)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
-		r1 = rf(ctx, tenant, rtmCtxID, rtmID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // ExistsByRuntimeID provides a mock function with given fields: ctx, tenant, rtmID
 func (_m *RuntimeContextRepository) ExistsByRuntimeID(ctx context.Context, tenant string, rtmID string) (bool, error) {
 	ret := _m.Called(ctx, tenant, rtmID)
@@ -73,6 +52,29 @@ func (_m *RuntimeContextRepository) ExistsByRuntimeID(ctx context.Context, tenan
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenant, rtmID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetByRuntimeID provides a mock function with given fields: ctx, tenant, runtimeID
+func (_m *RuntimeContextRepository) GetByRuntimeID(ctx context.Context, tenant string, runtimeID string) (*model.RuntimeContext, error) {
+	ret := _m.Called(ctx, tenant, runtimeID)
+
+	var r0 *model.RuntimeContext
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.RuntimeContext); ok {
+		r0 = rf(ctx, tenant, runtimeID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.RuntimeContext)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, runtimeID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -96,29 +98,6 @@ func (_m *RuntimeContextRepository) ListAll(ctx context.Context, tenant string) 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, tenant)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// ListAllForRuntime provides a mock function with given fields: ctx, tenant, runtimeID
-func (_m *RuntimeContextRepository) ListAllForRuntime(ctx context.Context, tenant string, runtimeID string) ([]*model.RuntimeContext, error) {
-	ret := _m.Called(ctx, tenant, runtimeID)
-
-	var r0 []*model.RuntimeContext
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.RuntimeContext); ok {
-		r0 = rf(ctx, tenant, runtimeID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.RuntimeContext)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, tenant, runtimeID)
 	} else {
 		r1 = ret.Error(1)
 	}

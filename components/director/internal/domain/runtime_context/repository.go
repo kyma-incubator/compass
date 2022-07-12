@@ -71,11 +71,6 @@ func (r *pgRepository) ExistsByRuntimeID(ctx context.Context, tenant, rtmID stri
 	return r.existQuerier.Exists(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("runtime_id", rtmID)})
 }
 
-// ExistsByIDAndRuntimeID returns true if a RuntimeContext with the provided runtime context ID and runtime ID exists in the database and is visible for `tenant`
-func (r *pgRepository) ExistsByIDAndRuntimeID(ctx context.Context, tenant, rtmCtxID, rtmID string) (bool, error) {
-	return r.existQuerier.Exists(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("id", rtmCtxID), repo.NewEqualCondition("runtime_id", rtmID)})
-}
-
 // Delete deletes the RuntimeContext with the provided `id` from the database if `tenant` has the appropriate access to it
 func (r *pgRepository) Delete(ctx context.Context, tenant string, id string) error {
 	return r.deleter.DeleteOne(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
@@ -85,6 +80,16 @@ func (r *pgRepository) Delete(ctx context.Context, tenant string, id string) err
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error) {
 	var runtimeCtxEnt RuntimeContext
 	if err := r.singleGetter.Get(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &runtimeCtxEnt); err != nil {
+		return nil, err
+	}
+
+	return r.conv.FromEntity(&runtimeCtxEnt), nil
+}
+
+// GetByRuntimeID retrieves the RuntimeContext by provided runtimeID from the database within the given tenant
+func (r *pgRepository) GetByRuntimeID(ctx context.Context, tenant, runtimeID string) (*model.RuntimeContext, error) {
+	var runtimeCtxEnt RuntimeContext
+	if err := r.singleGetter.Get(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("runtime_id", runtimeID)}, repo.NoOrderBy, &runtimeCtxEnt); err != nil {
 		return nil, err
 	}
 

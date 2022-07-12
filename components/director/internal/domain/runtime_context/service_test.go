@@ -161,7 +161,7 @@ func TestService_Create(t *testing.T) {
 			},
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ExistsOwned", ctxWithParentTenant, parentTnt, runtimeID).Return(false, nil).Once()
+				repo.On("OwnerExists", ctxWithParentTenant, parentTnt, runtimeID).Return(false, nil).Once()
 				return repo
 			},
 			TenantServiceFN: func() *automock.TenantService {
@@ -194,7 +194,7 @@ func TestService_Create(t *testing.T) {
 			},
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ExistsOwned", ctxWithParentTenant, parentTnt, runtimeID).Return(true, nil).Once()
+				repo.On("OwnerExists", ctxWithParentTenant, parentTnt, runtimeID).Return(true, nil).Once()
 				return repo
 			},
 			TenantServiceFN: func() *automock.TenantService {
@@ -252,7 +252,7 @@ func TestService_Create(t *testing.T) {
 			},
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ExistsOwned", ctxWithParentTenant, parentTnt, runtimeID).Return(false, testErr).Once()
+				repo.On("OwnerExists", ctxWithParentTenant, parentTnt, runtimeID).Return(false, testErr).Once()
 				return repo
 			},
 			TenantServiceFN: func() *automock.TenantService {
@@ -285,7 +285,7 @@ func TestService_Create(t *testing.T) {
 			},
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ExistsOwned", ctxWithParentTenant, parentTnt, runtimeID).Return(true, nil).Once()
+				repo.On("OwnerExists", ctxWithParentTenant, parentTnt, runtimeID).Return(true, nil).Once()
 				return repo
 			},
 			TenantServiceFN: func() *automock.TenantService {
@@ -397,7 +397,7 @@ func TestService_Create(t *testing.T) {
 			},
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ExistsOwned", ctxWithParentTenant, parentTnt, runtimeID).Return(false, nil).Once()
+				repo.On("OwnerExists", ctxWithParentTenant, parentTnt, runtimeID).Return(false, nil).Once()
 				return repo
 			},
 			TenantServiceFN: func() *automock.TenantService {

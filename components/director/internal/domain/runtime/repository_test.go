@@ -467,7 +467,7 @@ func TestPgRepository_Exist(t *testing.T) {
 	suite.Run(t)
 }
 
-func TestPgRepository_ExistsOwned(t *testing.T) {
+func TestPgRepository_OwnerExists(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{
 		Name: "Owned Runtime Exists",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
@@ -489,7 +489,7 @@ func TestPgRepository_ExistsOwned(t *testing.T) {
 		RepoConstructorFunc: runtime.NewRepository,
 		TargetID:            runtimeID,
 		TenantID:            tenantID,
-		MethodName:          "ExistsOwned",
+		MethodName:          "OwnerExists",
 		MethodArgs:          []interface{}{tenantID, runtimeID},
 	}
 
