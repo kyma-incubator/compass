@@ -35,6 +35,7 @@ type ApplicationTemplateService interface {
 	Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error)
 	CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error)
 	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
+	GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)
 	GetByNameAndRegion(ctx context.Context, name string, region interface{}) (*model.ApplicationTemplate, error)
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (model.ApplicationTemplatePage, error)
 	ListByName(ctx context.Context, name string) ([]*model.ApplicationTemplate, error)
@@ -201,14 +202,6 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, filter []*graphql.L
 
 // CreateApplicationTemplate missing godoc
 func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
@@ -232,6 +225,13 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, err
 	}
 
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	defer func() {
 		didRollback := r.transact.RollbackUnlessCommitted(ctx, tx)
 		if didRollback {
@@ -246,6 +246,10 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 			}
 		}
 	}()
+
+	if err := r.checkProviderAppTemplateExistence(ctx, labels); err != nil {
+		return nil, err
+	}
 
 	log.C(ctx).Infof("Creating an Application Template with name %s", convertedIn.Name)
 	id, err := r.appTemplateSvc.CreateWithLabels(ctx, convertedIn, labels)
@@ -613,5 +617,33 @@ func validateAppTemplateForSelfReg(name string, placeholders []model.Application
 		return errors.Errorf("application template name %q does not comply with the following naming convention: %q", name, "SAP <product name>")
 	}
 
+	return nil
+}
+
+func (r *Resolver) checkProviderAppTemplateExistence(ctx context.Context, labels map[string]interface{}) error {
+	distinguishLabelKey := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
+	regionLabelKey := selfregmanager.RegionLabel
+
+	distinguishLabelValue, distinguishLabelExists := labels[distinguishLabelKey]
+	region, regionExists := labels[regionLabelKey]
+
+	if distinguishLabelExists && regionExists {
+		filters := []*labelfilter.LabelFilter{
+			labelfilter.NewForKeyWithQuery(distinguishLabelKey, fmt.Sprintf("\"%s\"", distinguishLabelValue)),
+			labelfilter.NewForKeyWithQuery(regionLabelKey, fmt.Sprintf("\"%s\"", region)),
+		}
+
+		log.C(ctx).Infof("Getting application template for labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue)
+		appTemplate, err := r.appTemplateSvc.GetByFilters(ctx, filters)
+		if err != nil && !apperrors.IsNotFoundError(err) {
+			return errors.Wrap(err, fmt.Sprintf("Failed to get application template for labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue))
+		}
+
+		if appTemplate != nil {
+			msg := fmt.Sprintf("Cannot have more than one application template with labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue)
+			log.C(ctx).Error(msg)
+			return errors.New(msg)
+		}
+	}
 	return nil
 }

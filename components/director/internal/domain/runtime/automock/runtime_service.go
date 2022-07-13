@@ -83,6 +83,29 @@ func (_m *RuntimeService) Get(ctx context.Context, id string) (*model.Runtime, e
 	return r0, r1
 }
 
+// GetByFilters provides a mock function with given fields: ctx, filters
+func (_m *RuntimeService) GetByFilters(ctx context.Context, filters []*labelfilter.LabelFilter) (*model.Runtime, error) {
+	ret := _m.Called(ctx, filters)
+
+	var r0 *model.Runtime
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) *model.Runtime); ok {
+		r0 = rf(ctx, filters)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Runtime)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter) error); ok {
+		r1 = rf(ctx, filters)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetByTokenIssuer provides a mock function with given fields: ctx, issuer
 func (_m *RuntimeService) GetByTokenIssuer(ctx context.Context, issuer string) (*model.Runtime, error) {
 	ret := _m.Called(ctx, issuer)
@@ -145,29 +168,6 @@ func (_m *RuntimeService) List(ctx context.Context, filter []*labelfilter.LabelF
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter, int, string) error); ok {
 		r1 = rf(ctx, filter, pageSize, cursor)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// ListByFilters provides a mock function with given fields: ctx, filters
-func (_m *RuntimeService) ListByFilters(ctx context.Context, filters []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
-	ret := _m.Called(ctx, filters)
-
-	var r0 []*model.Runtime
-	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) []*model.Runtime); ok {
-		r0 = rf(ctx, filters)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Runtime)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter) error); ok {
-		r1 = rf(ctx, filters)
 	} else {
 		r1 = ret.Error(1)
 	}
