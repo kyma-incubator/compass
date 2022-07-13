@@ -200,10 +200,10 @@ func TestValidator_Validate(t *testing.T) {
 			},
 			ApplicationServiceFn: func() *automock.ApplicationService {
 				applicationSvc := &automock.ApplicationService{}
-				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 100, "").Return(emptyApplicationPage, nil).Once()
+				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 200, "").Return(emptyApplicationPage, nil).Once()
 				return applicationSvc
 			},
-			ExpectedErr: fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the runtime context table for any runtime in the provider tenant %s", consumerExtTenantID, providerTenantID),
+			ExpectedErr: "subscription record not found neither for application",
 		},
 		{
 			Name:   "Consumer-provider flow: Error when listing runtime context with filters",
@@ -220,21 +220,22 @@ func TestValidator_Validate(t *testing.T) {
 			},
 			ApplicationServiceFn: func() *automock.ApplicationService {
 				applicationSvc := &automock.ApplicationService{}
-				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 100, "").Return(emptyApplicationPage, nil).Once()
+				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 200, "").Return(emptyApplicationPage, nil).Once()
 				return applicationSvc
+			},
 			RuntimeCtxSvcFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
 				rtmCtxSvc.On("ListByFilter", contextThatHasTenant(consumerTenantID), runtimeID, mock.Anything, 100, "").Return(nil, testErr).Once()
 				return rtmCtxSvc
 			},
-			ExpectedErr: testErr.Error(),
+			ExpectedErr: "subscription record not found neither for application",
 		},
 		{
 			Name:   "Success when no runtime, but there is an application subscribed",
 			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				runtimeSvc := &automock.RuntimeService{}
-				runtimeSvc.On("ListByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(nil, testErr).Once()
+				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(nil, testErr).Once()
 				return runtimeSvc
 			},
 			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
@@ -244,7 +245,7 @@ func TestValidator_Validate(t *testing.T) {
 			},
 			ApplicationServiceFn: func() *automock.ApplicationService {
 				applicationSvc := &automock.ApplicationService{}
-				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 100, "").Return(applicationPage, nil).Once()
+				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 200, "").Return(applicationPage, nil).Once()
 				return applicationSvc
 			},
 		},
@@ -268,27 +269,12 @@ func TestValidator_Validate(t *testing.T) {
 			},
 			ApplicationServiceFn: func() *automock.ApplicationService {
 				applicationSvc := &automock.ApplicationService{}
-				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 100, "").Return(emptyApplicationPage, nil).Once()
+				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 200, "").Return(emptyApplicationPage, nil).Once()
 				return applicationSvc
 			},
-			ExpectedErr: testErr.Error(),
+			ExpectedErr: "subscription record not found neither for application",
 		},
 		{
-			Name:   "Consumer-provider flow: Error when no subscription was found",
-			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
-			RuntimeServiceFn: func() *automock.RuntimeService {
-				runtimeSvc := &automock.RuntimeService{}
-				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(runtime, nil).Once()
-				return runtimeSvc
-			},
-			RuntimeCtxSvcFn: func() *automock.RuntimeCtxService {
-				rtmCtxSvc := &automock.RuntimeCtxService{}
-				rtmCtxSvc.On("ListByFilter", contextThatHasTenant(consumerTenantID), runtimeID, mock.Anything, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
-				return rtmCtxSvc
-			},
-			ExpectedErr: fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the runtime context table for the runtime in the provider tenant %s", consumerExtTenantID, providerTenantID),
-		},
-    {
 			Name:   "Consumer-provider flow: Error when transaction cannot be committed",
 			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
 			RuntimeServiceFn: func() *automock.RuntimeService {
@@ -316,10 +302,10 @@ func TestValidator_Validate(t *testing.T) {
 			},
 			ApplicationServiceFn: func() *automock.ApplicationService {
 				applicationSvc := &automock.ApplicationService{}
-				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 100, "").Return(emptyApplicationPage, nil).Once()
+				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 200, "").Return(emptyApplicationPage, nil).Once()
 				return applicationSvc
 			},
-			ExpectedErr: "test",
+			ExpectedErr: testErr.Error(),
 		},
 		// integration system
 		{
