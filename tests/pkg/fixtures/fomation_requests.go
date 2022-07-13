@@ -2,7 +2,6 @@ package fixtures
 
 import (
 	"fmt"
-
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
 )
@@ -33,6 +32,24 @@ func FixCreateFormationRequest(formationName string) *gcli.Request {
 				  }
 				}`, formationName, testctx.Tc.GQLFieldsProvider.ForFormation()))
 }
+
+// todo:: delete
+//func FixCreateFormationWithTemplateRequest(formationInput string) *gcli.Request {
+//	return gcli.NewRequest(
+//		fmt.Sprintf(`mutation{
+//				  result: createFormation(formation: {formation: "%s"}){
+//					%s
+//				  }
+//				}`, formationInput, testctx.Tc.GQLFieldsProvider.ForFormation()))
+//}
+//
+//func FixFormationInput(formationName, formationTemplateName string) graphql.FormationInput {
+//	return graphql.FormationInput{
+//		Name: "",
+//		// todo:: update director component and add formation template name
+//	}
+//
+//}
 
 func FixDeleteFormationRequest(formationName string) *gcli.Request {
 	return gcli.NewRequest(

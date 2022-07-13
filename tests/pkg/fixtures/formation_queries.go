@@ -30,6 +30,18 @@ func CreateFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Cl
 	return formation
 }
 
+// todo:: delete
+//func CreateFormationWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, formationName, formationTemplateName string) graphql.Formation {
+//	var formation graphql.Formation
+//	formationInput := FixFormationInput(formationName, formationTemplateName)
+//	createFormationReq := testctx.Tc.Graphqlizer.FormationInputToGQL(formationInput) // todo:: add FormationInputToGQL
+//	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, createFormationReq, &formation)
+//	require.NoError(t, err)
+//	require.Equal(t, formationName, formation.Name)
+//
+//	return formation
+//}
+
 func DeleteFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, formationName string) *graphql.Formation {
 	deleteRequest := FixDeleteFormationRequest(formationName)
 	var deleteFormation graphql.Formation
@@ -38,6 +50,16 @@ func DeleteFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Cl
 
 	return &deleteFormation
 }
+
+// todo:: delete
+//func DeleteFormationWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, formationName string) *graphql.Formation {
+//	deleteRequest := FixDeleteFormationRequest(formationName)
+//	var deleteFormation graphql.Formation
+//	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, deleteRequest, &deleteFormation)
+//	assertions.AssertNoErrorForOtherThanNotFound(t, err)
+//
+//	return &deleteFormation
+//}
 
 func AssignFormationWithTenantObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, tenantID, parent string) *graphql.Formation {
 	createRequest := FixAssignFormationRequest(tenantID, string(graphql.FormationObjectTypeTenant), in.Name)
