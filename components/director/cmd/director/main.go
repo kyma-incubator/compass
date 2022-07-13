@@ -271,7 +271,7 @@ func main() {
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
-	claimsValidator := claims.NewValidator(transact, runtimeSvc(cfg), runtimeCtxSvc(cfg), appTemplateSvc(), applicaitonSvc(cfg, httpClient, certCache), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey, cfg.Features.TokenPrefix)
+	claimsValidator := claims.NewValidator(transact, runtimeSvc(cfg), runtimeCtxSvc(cfg), appTemplateSvc(), applicationSvc(cfg, httpClient, certCache), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey, cfg.Features.TokenPrefix)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
 	authMiddleware := mp_authenticator.New(httpClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claimsValidator)
@@ -688,7 +688,7 @@ func appTemplateSvc() claims.ApplicationTemplateService {
 	return apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 }
 
-func applicaitonSvc(cfg config, httpClient *http.Client, certCache certloader.Cache) claims.ApplicationService {
+func applicationSvc(cfg config, httpClient *http.Client, certCache certloader.Cache) claims.ApplicationService {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	webhookConverter := webhook.NewConverter(authConverter)

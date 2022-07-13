@@ -156,7 +156,7 @@ func (v *validator) validateRuntimeConsumer(ctx context.Context, claims Claims) 
 	found := false
 	for _, runtime := range runtimes {
 		log.C(ctx).Infof("Listing runtime context(s) in the consumer tenant %q for runtime with ID: %q and label with key: %q and value: %q", consumerExternalTenantID, runtime.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
-		rtmCtxPage, err := v.runtimeCtxSvc.ListByFilter(ctxWithConsumerTenant, runtime.ID, rtmCtxFilter, 100, "")
+		rtmCtxPage, err := v.runtimeCtxSvc.ListByFilter(ctxWithConsumerTenant, runtime.ID, rtmCtxFilter, 200, "")
 		if err != nil {
 			log.C(ctx).Errorf("An error occurred while listing runtime context for runtime with ID: %q and filter with key: %q and value: %q", runtime.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
 			return errors.Wrapf(err, "while listing runtime context for runtime with ID: %q and filter with key: %q and value: %q", runtime.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
@@ -218,14 +218,14 @@ func (v *validator) validateApplicationProvider(ctx context.Context, claims Clai
 	consumerExternalTenantID := claims.Tenant[tenantmapping.ExternalTenantKey]
 	ctxWithConsumerTenant := tenant.SaveToContext(ctx, consumerInternalTenantID, consumerExternalTenantID)
 
-	applicatinsFilter := []*labelfilter.LabelFilter{
+	applicationsFilter := []*labelfilter.LabelFilter{
 		labelfilter.NewForKeyWithQuery(v.consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", consumerExternalTenantID)),
 	}
 
 	found := false
 
 	log.C(ctx).Infof("Listing applications in the consumer tenant %q for application template with ID: %q and label with key: %q and value: %q", consumerExternalTenantID, applicationTemplate.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
-	applicationsPage, err := v.applicationSvc.List(ctxWithConsumerTenant, applicatinsFilter, 100, "")
+	applicationsPage, err := v.applicationSvc.List(ctxWithConsumerTenant, applicationsFilter, 200, "")
 	if err != nil {
 		log.C(ctx).Errorf("An error occurred while listing applications for filter with key: %q and value: %q", v.consumerSubaccountLabelKey, consumerExternalTenantID)
 		return errors.Wrapf(err, "while listing applications for filter with key: %q and value: %q", v.consumerSubaccountLabelKey, consumerExternalTenantID)
