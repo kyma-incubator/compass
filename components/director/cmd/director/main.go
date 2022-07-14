@@ -15,8 +15,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 
-	"github.com/kyma-incubator/compass/components/director/internal/appmetadatavalidation"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/subscription"
 
@@ -291,8 +289,6 @@ func main() {
 
 	statusMiddleware := statusupdate.New(transact, statusupdate.NewRepository())
 
-	tntHeaderMiddleware := appmetadatavalidation.NewHandler()
-
 	mainRouter := mux.NewRouter()
 	mainRouter.HandleFunc("/", playground.Handler("Dataloader", cfg.PlaygroundAPIEndpoint))
 
@@ -303,7 +299,6 @@ func main() {
 	gqlAPIRouter.Use(authMiddleware.Handler())
 	gqlAPIRouter.Use(packageToBundlesMiddleware.Handler())
 	gqlAPIRouter.Use(statusMiddleware.Handler())
-	gqlAPIRouter.Use(tntHeaderMiddleware.Handler())
 	gqlAPIRouter.Use(dataloader.HandlerBundle(rootResolver.BundlesDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerAPIDef(rootResolver.APIDefinitionsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
 	gqlAPIRouter.Use(dataloader.HandlerEventDef(rootResolver.EventDefinitionsDataloader, cfg.DataloaderMaxBatch, cfg.DataloaderWait))
