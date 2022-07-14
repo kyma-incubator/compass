@@ -101,15 +101,20 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			subscribedApplication := actualAppPage.Data[0]
 			require.Equal(t, appTmpl.ID, *subscribedApplication.ApplicationTemplateID)
 
+			// After successful subscription from above we call the director component with "double authentication(token + certificate)" in order to test claims validation is successful
+			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
+			headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
+
 			//Create Bundle
 			bndlInput := fixtures.FixBundleCreateInputWithRelatedObjects(t, "bndl-app-1")
 			bndl, err := testctx.Tc.Graphqlizer.BundleCreateInputToGQL(bndlInput)
 			require.NoError(t, err)
 			addBndlRequest := fixtures.FixAddBundleRequest(subscribedApplication.ID, bndl)
+			addBndlRequest.Header = headers
 			output := graphql.BundleExt{}
 
 			t.Log("Try to create bundle")
-			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addBndlRequest, &output)
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionProviderSubaccountID, addBndlRequest, &output)
 
 			//Verify that Bundle can be created
 			require.NoError(t, err)
@@ -143,14 +148,19 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			require.Len(t, actualAppPage.Data, 0)
 
 			//Create Bundle
+			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
+			headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
+
+			//Create Bundle
 			bndlInput := fixtures.FixBundleCreateInputWithRelatedObjects(t, "bndl-app-1")
 			bndl, err := testctx.Tc.Graphqlizer.BundleCreateInputToGQL(bndlInput)
 			require.NoError(t, err)
 			addBndlRequest := fixtures.FixAddBundleRequest(subscribedApplication.ID, bndl)
+			addBndlRequest.Header = headers
 			output := graphql.BundleExt{}
 
 			t.Log("Try to create bundle")
-			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addBndlRequest, &output)
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionProviderSubaccountID, addBndlRequest, &output)
 
 			//Verify that Bundle cannot be created after unsubscribtion
 			require.Error(t, err)

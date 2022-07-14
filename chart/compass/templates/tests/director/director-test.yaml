@@ -180,6 +180,28 @@ spec:
               value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
             - name: APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN
               value: {{ .Values.global.tests.director.externalCertIntSystemCN }}
+            - name: CONSUMER_TOKEN_URL
+              value: {{ .Values.global.tests.subscription.consumerTokenURL }}
+            - name: PROVIDER_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientIdKey }}
+            - name: PROVIDER_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientSecretKey }}
+            - name: BASIC_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.basicCredentials.secretName }}
+                  key: username
+            - name: BASIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.basicCredentials.secretName }}
+                  key: password
           {{ if .Values.global.isLocalEnv }}
           volumeMounts:
             - mountPath: "/src/github.com/kyma-incubator/compass/components/director/examples"
