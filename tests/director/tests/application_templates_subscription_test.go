@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
@@ -83,6 +84,76 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 
 			require.Len(t, actualAppPage.Data, 1)
 			require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
+		})
+
+		t.Run("Subscribe tenant to Application flow and add bundle", func(t *testing.T) {
+			// Subscribe
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
+			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+			// Ensure subscription is OK
+			actualAppPage := graphql.ApplicationPage{}
+			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualAppPage.Data, 1)
+			subscribedApplication := actualAppPage.Data[0]
+			require.Equal(t, appTmpl.ID, *subscribedApplication.ApplicationTemplateID)
+
+			//Create Bundle
+			bndlInput := fixtures.FixBundleCreateInputWithRelatedObjects(t, "bndl-app-1")
+			bndl, err := testctx.Tc.Graphqlizer.BundleCreateInputToGQL(bndlInput)
+			require.NoError(t, err)
+			addBndlRequest := fixtures.FixAddBundleRequest(subscribedApplication.ID, bndl)
+			output := graphql.BundleExt{}
+
+			t.Log("Try to create bundle")
+			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addBndlRequest, &output)
+
+			//Verify that Bundle can be created
+			require.NoError(t, err)
+			require.NotEmpty(t, output.ID)
+			assertions.AssertBundle(t, &bndlInput, &output)
+			defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, subscriptionConsumerTenantID, output.ID)
+		})
+
+		t.Run("Unsubscribe tenant to Application flow and ensure that canot add bundle", func(t *testing.T) {
+			// Subscribe
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
+
+			// Ensure subscription is OK
+			actualAppPage := graphql.ApplicationPage{}
+			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualAppPage.Data, 1)
+			subscribedApplication := actualAppPage.Data[0]
+			require.Equal(t, appTmpl.ID, *subscribedApplication.ApplicationTemplateID)
+
+			// Unsubscribe
+			subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+			// Ensure Unsubscription is OK
+			actualAppPage = graphql.ApplicationPage{}
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualAppPage.Data, 0)
+
+			//Create Bundle
+			bndlInput := fixtures.FixBundleCreateInputWithRelatedObjects(t, "bndl-app-1")
+			bndl, err := testctx.Tc.Graphqlizer.BundleCreateInputToGQL(bndlInput)
+			require.NoError(t, err)
+			addBndlRequest := fixtures.FixAddBundleRequest(subscribedApplication.ID, bndl)
+			output := graphql.BundleExt{}
+
+			t.Log("Try to create bundle")
+			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addBndlRequest, &output)
+
+			//Verify that Bundle cannot be created after unsubscribtion
+			require.Error(t, err)
 		})
 
 		t.Run("Unsubscribe tenant to Application flow", func(t *testing.T) {
