@@ -74,7 +74,7 @@ type ORDServers struct {
 	OauthPort                          int `envconfig:"default=8085"`
 	GlobalRegistryCertPort             int `envconfig:"default=8086"`
 	GlobalRegistryUnsecuredPort        int `envconfig:"default=8087"`
-    UnsecuredWithAdditionalContentPort int `envconfig:"default=8088"`
+	UnsecuredWithAdditionalContentPort int `envconfig:"default=8088"`
 	UnsecuredMultiTenantPort           int `envconfig:"default=8089"`
 	CertSecuredBaseURL                 string
 	CertSecuredGlobalBaseURL           string
