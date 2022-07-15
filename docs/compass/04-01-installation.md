@@ -4,30 +4,22 @@ You can install Compass both on a cluster and on your local machine in the follo
 - Single Kyma cluster
 - Compass as a Central Management Plane
 
-The installed Compass version can be one of the following:
- | Installation option                                | Value to use with the installation command   	| Example value          	|
- |----------------------------------------------------|-----------------------------------------------|-------------------------|
- | From the Compass `main` branch                    	| `main`                                       	| `main`                 	|
- | From a specific commit on the Compass `main` branch| `main-{COMMIT_HASH}`                         	| `main-34edf09a`        	|
- | From a specific PR on the Compass repository       | `PR-{PR_NUMBER}`                             	| `PR-1420`     	         |
-
-The Kyma version is read from the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file on a specific commit.
-
 ## Prerequisites for cluster installation
+
+### Required CLI versions
+
+- check [here](https://github.com/kyma-incubator/compass#prerequisites)
 
 ### Managed PostgreSQL Database
 
 For more information about how you can use GCP managed PostgreSQL database instance with Compass, see: [Configure Managed GCP PostgreSQL](https://github.com/kyma-incubator/compass/blob/main/chart/compass/configure-managed-gcp-postgresql.md).
 
 ### Custom domain
-For more information about using custom domains, see [Custom Domain](https://github.com/kyma-project/kyma/blob/1.24.11/docs/kyma/04-04-use-your-own-domain.md) in the the Kyma installation guide, and the resources in the [Certificate Management](#certificate-management) section of this document.
+TODO: In 2.0.4 docs, Kyma removed the docs for custom domain installation linked here previously: [Install Kyma with your own domain](https://github.com/kyma-project/kyma/blob/1.24.11/docs/kyma/04-04-use-your-own-domain.md). The closest one that I found is [this one](https://github.com/kyma-project/kyma/blob/2.0.4/docs/03-tutorials/00-api-exposure/apix-01-own-domain.md), but I am not entirely sure they are semantically equal. Double check and decide whether to leave some doc about custom domain in Kyma
 
- > **NOTE:** If you installed Kyma on a cluster with a custom domain, you must also apply global overrides to the `compass-installer` namespace. To do that either manually replicate the overrides ConfigMap from `kyma-installer` to `compass-installer` namespace, or (if you have installed `yq`) run the following command:
-    
-  ```bash
-  kubectl get configmap -n kyma-installer {OVERRIDE_NAME} -o yaml \
-  | yq eval 'del(.metadata.resourceVersion, .metadata.uid, .metadata.annotations, .metadata.creationTimestamp, .metadata.selfLink, .metadata.managedFields, .metadata.namespace)' - | kubectl apply -n compass-installer -f -
-  ```
+For more information about using custom domains, see <based on above TODO decide whether to link Kyma doc> in the Kyma installation guide, and the resources in the [Certificate Management](#certificate-management) section of this document.
+
+ > **NOTE:** If you installed Kyma on a cluster with a custom domain, you must also apply global overrides to Compass. To do that manually replicate the respective overrides passed to Kyma installation and pass them to Compass installation.
 
 ### Certificate Management
 
@@ -138,41 +130,65 @@ Compass as a Central Management Plane cluster requires minimal Kyma installation
 
 ### Cluster installation
 
-1. Select installation option for Compass and Kyma. Then, use this command:
+> **NOTE:** During Kyma installation, Kyma version must be the same as in the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file on a specific commit.
+
+TODO: I couldn't find `cluster-installation` doc for Kyma 2.0.4 similar to the one below. Double check if there is such one and delete the step 1. below if it is outdated.
+
+1. Prepare the cluster for custom Kyma installation. See the prerequisites in this document above and the prerequisites in the [Kyma documentation](https://github.com/kyma-project/kyma/blob/1.24.11/docs/kyma/04-03-cluster-installation.md) depending on the infrastructure of your provider
+
+2. Perform minimal Kyma installation with the following commands:
+   1. Save the following .yaml into some file (e.g: additionalKymaOverrides.yaml)
+    ```yaml
+    istio-configuration:
+       components:
+          ingressGateways:
+             config:
+                service:
+                   loadBalancerIP: ${GATEWAY_IP_ADDRESS}
+                   type: LoadBalancer
+       meshConfig:
+          defaultConfig:
+             holdApplicationUntilProxyStarts: true
+    global:
+       loadBalancerIP: ${GATEWAY_IP_ADDRESS}
+    # uncomment below values if you want to proceed with your custom values; default domain is 'local.kyma.dev' and there is default self-signed cert and key for that domain
+       #domainName: ${DOMAIN} 
+       #tlsCrt: ${TLS_CERT} 
+       #tlsKey: ${TLS_KEY} 
+       #ingress:
+       #domainName: ${DOMAIN} 
+       #tlsCrt: ${TLS_CERT} 
+       #tlsKey: ${TLS_KEY}
+    ```
+
     ```bash
-    export INSTALLATION_OPTION={CHOSEN_INSTALLATION_OPTION_HERE}
+    kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c <minimal file from ../../installation/resources/kyma/kyma-components-minimal.yaml> -f <overrides file from ../../installation/resources/kyma/kyma-overrides-minimal.yaml> -f <file from above step - e.g. additionalKymaOverrides.yaml> --ci
     ```
-1. Prepare the cluster for custom Kyma installation. See the prerequisites in this document above and the prerequisites in the [Kyma documentation](https://github.com/kyma-project/kyma/blob/1.24.11/docs/kyma/04-03-cluster-installation.md) depending on the infrastructure of your provider. 
 
-1. Apply overrides using the following command from the root directory of the Compass repository:
+5. Install Compass using the following command:
+   1. Save the following .yaml into some file (e.g: additionalCompassOverrides.yaml)
+    ```yaml
+    global:
+       isLocalEnv: false
+       migratorJob:
+          pvc:
+             isLocalEnv: false
+       enableInternalCommunicationPolicies: false
+       loadBalancerIP: ${GATEWAY_IP_ADDRESS}
+    # uncomment below values if you want to proceed with your custom values; default domain is 'local.kyma.dev' and there is default self-signed cert and key for that domain
+       #domainName: ${DOMAIN} 
+       #tlsCrt: ${TLS_CERT} 
+       #tlsKey: ${TLS_KEY} 
+       #ingress:
+       #domainName: ${DOMAIN} 
+       #tlsCrt: ${TLS_CERT} 
+       #tlsKey: ${TLS_KEY}
+    ```
+
     ```bash
-    kubectl create namespace kyma-installer || true \
-        && kubectl apply -f ./installation/resources/kyma/installer-cr-kyma-minimal.yaml
+    . <script from ../../installation/scripts/install-compass.sh> --override-files <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
     ```
-    >**NOTE:** Before starting the respective installation, apply all global overrides in both the `kyma-installer` and `compass-installer` namespaces.
-
-1. Perform minimal Kyma installation with the following command:
-    ```bash
-    kubectl apply -f "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/kyma-installer.yaml"
-    ```
-
-1. Check the Kyma installation progress. To do so, download the script and check the progress of the installation:
-    ```bash
-    source <(curl -s "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/is-kyma-installed.sh")
-    ```
-
-1. If required, perform Kyma [post-installation steps](https://github.com/kyma-project/kyma/blob/1.24.11/docs/kyma/04-03-cluster-installation.md#post-installation-steps).
-
-1. Install Compass using the following command:
-    ```bash
-    kubectl apply -f "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/compass-installer.yaml"
-    ```
-
-1. Check the Compass installation progress. To do so, download the script and check the progress of the installation:
-     ```bash
-    source <(curl -s "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/is-installed.sh")
-    ```
-
+TODO: in the above Compass installation step, do we want to pass `local` overrides or `benchmark` ones as `benchmark` are used in productive cluster (not local one)
 ### Local k3d installation
 
 For local development, install Compass with the minimal Kyma installation on k3d from the `main` branch. To do so, run the following script:
@@ -222,39 +238,70 @@ If you want to build and deploy the local source code version of a component (fo
 This is a single-tenant mode, which provides the complete cluster Kyma installation with all components, including the Runtime Agent. You can install Compass on top of it.
 In this mode, the Runtime Agent is already connected to Compass. This mode facilitates various kind of testing and development.
 
+> **NOTE:** The version of the Kyma installed on the cluster must match the Kyma version in the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file on a specific commit.
+
 ### Cluster installation
 
 To install Compass and Runtime components on a single cluster, follow these steps:
 
-1. Apply the [Installation](https://github.com/kyma-project/kyma/blob/1.24.11/docs/runtime-agent/04-01-installation-modes.md) configuration that enables the Runtime Agent, and then, install Kyma, see [Install Kyma on a cluster](https://github.com/kyma-project/kyma/blob/1.24.11/docs/kyma/04-03-cluster-installation.md). 
-1. Apply the required overrides configuration in Compass that also enables the automatic registration of the Kyma runtime into Compass:
+TODO: As mentioned previously, there is no longer `cluster-installation` doc for Kyma 2.0.4. Consider whether to remove the one in the step below if no such doc is found.
+
+1. Bear in mind the [Installation](https://github.com/kyma-project/kyma/blob/2.0.4/docs/04-operation-guides/operations/ra-01-enable-kyma-with-runtime-agent.md) configuration that enables the Runtime Agent, and then, install Kyma. 
+
+   1. Save the following .yaml into some file (e.g: additionalKymaOverrides.yaml)
+    ```yaml
+    istio-configuration:
+       components:
+          ingressGateways:
+             config:
+                service:
+                   loadBalancerIP: ${GATEWAY_IP_ADDRESS}
+                   type: LoadBalancer
+       meshConfig:
+          defaultConfig:
+             holdApplicationUntilProxyStarts: true
+    global:
+       loadBalancerIP: ${GATEWAY_IP_ADDRESS}
+       disableLegacyConnectivity: true   
+    # uncomment below values if you want to proceed with your custom values; default domain is 'local.kyma.dev' and there is default self-signed cert and key for that domain
+       #domainName: ${DOMAIN} 
+       #tlsCrt: ${TLS_CERT} 
+       #tlsKey: ${TLS_KEY} 
+       #ingress:
+       #domainName: ${DOMAIN} 
+       #tlsCrt: ${TLS_CERT} 
+       #tlsKey: ${TLS_KEY}
+    ```
+   2. Add the `compass-runtime-agent` module in the `compass-system` Namespace to the [kyma-components-file](../../installation/resources/kyma/kyma-components-full.yaml) and save the following .yaml into some file (e.g: kyma-components-with-runtime-agent.yaml)
     ```bash
-    kubectl create namespace compass-installer || true && cat <<EOF | kubectl apply -f -
-    apiVersion: v1
-    kind: ConfigMap
-    metadata:
-      name: compass-overrides
-      namespace: compass-installer
-      labels:
-        installer: overrides
-        component: compass
-        kyma-project.io/installation: ""
-    data:
-      global.agentPreconfiguration: "true"
-    EOF
+    kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c <file from above step - e.g: kyma-components-with-runtime-agent.yaml> -f <overrides file from ../../installation/resources/kyma/kyma-overrides-full.yaml> -f <file from above step - e.g. additionalKymaOverrides.yaml> --ci
     ```
 
-1. Choose an installation option from the ones listed at the beginning of this document and install Compass:
-    ```bash
-    export INSTALLATION_OPTION={CHOSEN_INSTALLATION_OPTION}
-    kubectl apply -f "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/compass-installer.yaml"
+5. Install Compass using the following command:
+   1. Save the following .yaml into some file (e.g: additionalCompassOverrides.yaml)
+    ```yaml
+    global:
+       isLocalEnv: false
+       migratorJob:
+          pvc:
+             isLocalEnv: false
+       enableInternalCommunicationPolicies: false
+       loadBalancerIP: ${GATEWAY_IP_ADDRESS}
+    # uncomment below values if you want to proceed with your custom values; default domain is 'local.kyma.dev' and there is default self-signed cert and key for that domain
+       #domainName: ${DOMAIN} 
+       #tlsCrt: ${TLS_CERT} 
+       #tlsKey: ${TLS_KEY} 
+       #ingress:
+       #domainName: ${DOMAIN} 
+       #tlsCrt: ${TLS_CERT} 
+       #tlsKey: ${TLS_KEY}
     ```
 
-1. Check the Compass installation progress. To do so, download the script and check the progress of the installation:
     ```bash
-    source <(curl -s "https://storage.googleapis.com/kyma-development-artifacts/compass/${INSTALLATION_OPTION}/is-installed.sh")
+    . <script from ../../installation/scripts/install-compass.sh> --override-files <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
     ```
-
+TODO: in the above Compass installation step, do we want to pass `local` overrides or `benchmark` ones as `benchmark` are used in productive cluster (not local one)
+   
 Once Compass is installed, Runtime Agent will be configured to fetch the Runtime configuration from the Compass installation within the same cluster.
 
 ### Local k3d installation
