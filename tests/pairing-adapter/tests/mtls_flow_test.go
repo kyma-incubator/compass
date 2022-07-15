@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
-
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 
 	director_http "github.com/kyma-incubator/compass/components/director/pkg/http"
@@ -224,7 +222,6 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 		},
 		Labels: directorSchema.Labels{
 			conf.SelfRegDistinguishLabelKey: []interface{}{conf.SelfRegDistinguishLabelValue},
-			tenantfetcher.RegionKey:         conf.SelfRegRegion,
 		},
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
 	}

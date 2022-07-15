@@ -554,6 +554,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 
 		//THEN
 		require.NotEmpty(t, actualRuntime.ID)
+		runtimeInput.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
 		assertions.AssertRuntime(t, runtimeInput, actualRuntime, conf.DefaultScenarioEnabled, true)
 
 		t.Log("Successfully set regular runtime label using certificate")
@@ -777,7 +778,7 @@ func TestSelfRegMoreThanOneProviderRuntime(t *testing.T) {
 	runtimeInput := graphql.RuntimeRegisterInput{
 		Name:        "selfRegisterRuntime-1",
 		Description: ptr.String("selfRegisterRuntime-1-description"),
-		Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue, tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
+		Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue},
 	}
 
 	t.Logf("Self registering runtime with labels %q:%q and %q:%q...", conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue, tenantfetcher.RegionKey, conf.SubscriptionConfig.SelfRegRegion)
@@ -787,6 +788,10 @@ func TestSelfRegMoreThanOneProviderRuntime(t *testing.T) {
 	strLbl, ok := runtime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
 	require.True(t, ok)
 	require.Contains(t, strLbl, runtime.ID)
+
+	regionLbl, ok := runtime.Labels[tenantfetcher.RegionKey].(string)
+	require.True(t, ok)
+	require.Contains(t, conf.SubscriptionConfig.SelfRegRegion, regionLbl)
 
 	// Self register second runtime with same distinguish label and region labels
 	secondRuntimeInput := graphql.RuntimeRegisterInput{
@@ -819,7 +824,6 @@ func fixRuntimeInput(name string) graphql.RuntimeRegisterInput {
 func fixRuntimeWithSelfRegLabelsInput(name string) graphql.RuntimeRegisterInput {
 	input := fixtures.FixRuntimeRegisterInput(name)
 	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SubscriptionConfig.SelfRegDistinguishLabelValue}
-	input.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
 	delete(input.Labels, "placeholder")
 
 	return input
