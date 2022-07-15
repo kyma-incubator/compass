@@ -19,6 +19,7 @@ import (
 )
 
 const testURL = "http://localhost:8000"
+const testTenant = "testTenant"
 
 var (
 	expectedResp = &http.Response{
@@ -49,7 +50,7 @@ func TestRequestWithoutCredentials_Success(t *testing.T) {
 		return expectedResp
 	})
 
-	resp, err := httputil.GetRequestWithoutCredentials(client, testURL, "")
+	resp, err := httputil.GetRequestWithoutCredentials(client, testURL, testTenant)
 	require.NoError(t, err)
 	require.Equal(t, resp, expectedResp)
 }
@@ -59,7 +60,7 @@ func TestRequestWithoutCredentials_FailedRequest(t *testing.T) {
 		return nil
 	})
 
-	_, err := httputil.GetRequestWithoutCredentials(client, testURL, "")
+	_, err := httputil.GetRequestWithoutCredentials(client, testURL, testTenant)
 	require.ErrorIs(t, err, testErr)
 }
 
@@ -73,7 +74,7 @@ func TestRequestWithCredentials_SuccessWithBasicAuth(t *testing.T) {
 		return expectedResp
 	})
 
-	resp, err := httputil.GetRequestWithCredentials(context.Background(), client, testURL, "", &model.Auth{
+	resp, err := httputil.GetRequestWithCredentials(context.Background(), client, testURL, testTenant, &model.Auth{
 		Credential: model.CredentialData{
 			Basic: &model.BasicCredentialData{
 				Username: user,
@@ -90,7 +91,7 @@ func TestRequestWithCredentials_FailedWithBasicAuth(t *testing.T) {
 		return nil
 	})
 
-	_, err := httputil.GetRequestWithCredentials(context.Background(), client, testURL, "", &model.Auth{
+	_, err := httputil.GetRequestWithCredentials(context.Background(), client, testURL, testTenant, &model.Auth{
 		Credential: model.CredentialData{
 			Basic: &model.BasicCredentialData{
 				Username: "user",
@@ -135,7 +136,7 @@ func TestRequestWithCredentials_SuccessWithOAuth(t *testing.T) {
 		}
 	})
 
-	resp, err := httputil.GetRequestWithCredentials(context.Background(), client, testURL, "", &model.Auth{
+	resp, err := httputil.GetRequestWithCredentials(context.Background(), client, testURL, testTenant, &model.Auth{
 		Credential: model.CredentialData{
 			Oauth: &model.OAuthCredentialData{
 				ClientID:     clientID,
@@ -155,7 +156,7 @@ func TestRequestWithCredentials_FailedWithOAuthDueToInvalidCredentials(t *testin
 		}
 	})
 
-	_, err := httputil.GetRequestWithCredentials(context.Background(), client, testURL, "", &model.Auth{
+	_, err := httputil.GetRequestWithCredentials(context.Background(), client, testURL, testTenant, &model.Auth{
 		Credential: model.CredentialData{
 			Oauth: &model.OAuthCredentialData{},
 		},

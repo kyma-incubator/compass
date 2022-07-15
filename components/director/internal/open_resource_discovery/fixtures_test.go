@@ -605,7 +605,7 @@ func fixWebhooks() []*model.Webhook {
 		{
 			ID:         whID2,
 			ObjectID:   appID,
-			ObjectType: model.ApplicationWebhookReference,
+			ObjectType: model.ApplicationTemplateWebhookReference,
 			Type:       model.WebhookTypeOpenResourceDiscovery,
 			URL:        str.Ptr(baseURL),
 		},
