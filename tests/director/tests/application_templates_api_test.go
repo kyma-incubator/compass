@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	str "github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	gcli "github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
@@ -221,7 +223,7 @@ func TestCreateApplicationTemplate_SameNames(t *testing.T) {
 				appTemplateTwoOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwo.ID)
 
 				appTemplateTwoInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateTwoOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
-				appTemplateTwoInput.Labels["global_subaccount_id"] = conf.ConsumerID
+				appTemplateTwoInput.Labels["global_subaccount_id"] = conf.TestProviderSubaccountIDRegion2
 				appTemplateTwoInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", testCase.AppTemplateTwoName, testCase.AppTemplateTwoRegion)
 
 				require.NotEmpty(t, appTemplateTwoOutput)
@@ -579,7 +581,14 @@ func TestQueryApplicationTemplates(t *testing.T) {
 
 	//THEN
 	t.Log("Check if application templates were received")
-	assert.Subset(t, output.Data, []*graphql.ApplicationTemplate{&appTemplate1, &appTemplate2})
+	appTemplateIDs := []string{appTemplate1.ID, appTemplate2.ID}
+	found := 0
+	for _, tmpl := range output.Data {
+		if str.ContainsInSlice(appTemplateIDs, tmpl.ID) {
+			found++
+		}
+	}
+	assert.Equal(t, 2, found)
 	saveExample(t, getApplicationTemplatesRequest.Query(), "query application templates")
 }
 
