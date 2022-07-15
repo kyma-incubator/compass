@@ -68,14 +68,15 @@ type config struct {
 // This is needed in order to ensure that every call in the context of an application happens in a single server isolated from others.
 // Prior to this separation there were cases when tests succeeded (false positive) due to mistakenly configured baseURL resulting in different flow - different access strategy returned.
 type ORDServers struct {
-	CertPort                    int `envconfig:"default=8082"`
-	UnsecuredPort               int `envconfig:"default=8083"`
-	BasicPort                   int `envconfig:"default=8084"`
-	OauthPort                   int `envconfig:"default=8085"`
-	GlobalRegistryCertPort      int `envconfig:"default=8086"`
-	GlobalRegistryUnsecuredPort int `envconfig:"default=8087"`
-	CertSecuredBaseURL          string
-	CertSecuredGlobalBaseURL    string
+	CertPort                           int `envconfig:"default=8082"`
+	UnsecuredPort                      int `envconfig:"default=8083"`
+	BasicPort                          int `envconfig:"default=8084"`
+	OauthPort                          int `envconfig:"default=8085"`
+	GlobalRegistryCertPort             int `envconfig:"default=8086"`
+	GlobalRegistryUnsecuredPort        int `envconfig:"default=8087"`
+	UnsecuredWithAdditionalContentPort int `envconfig:"default=8088"`
+	CertSecuredBaseURL                 string
+	CertSecuredGlobalBaseURL           string
 }
 
 type OAuthConfig struct {
@@ -293,6 +294,7 @@ func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 	servers = append(servers, initUnsecuredORDServer(cfg))
 	servers = append(servers, initBasicSecuredORDServer(cfg))
 	servers = append(servers, initOauthSecuredORDServer(cfg, key))
+	servers = append(servers, initUnsecuredORDServerWithAdditionalContent(cfg))
 	servers = append(servers, initSecuredGlobalRegistryORDServer(cfg))
 	servers = append(servers, initUnsecuredGlobalRegistryORDServer(cfg))
 	return servers
@@ -329,6 +331,28 @@ func initUnsecuredORDServer(cfg config) *http.Server {
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.UnsecuredPort),
+		Handler: router,
+	}
+}
+
+func initUnsecuredORDServerWithAdditionalContent(cfg config) *http.Server {
+	router := mux.NewRouter()
+
+	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open"))
+	router.HandleFunc("/test/fullPath", ord_aggregator.HandleFuncOrdConfigWithDocPath(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredWithAdditionalContentPort), "/open-resource-discovery/v1/documents/example2", "open"))
+
+	testProperties := `"testProperty1": "testValue1", "testProperty2": "testValue2", "testProperty3": "testValue3"`
+	additionalTestEntity := fmt.Sprintf(`,"testEntity": { %s }`, testProperties)
+	additionalTestProperties := fmt.Sprintf(`,%s`, testProperties)
+
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncOrdDocumentWithAdditionalContent(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredWithAdditionalContentPort), "open", additionalTestEntity, additionalTestProperties))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncOrdDocumentWithAdditionalContent(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredWithAdditionalContentPort), "open", additionalTestEntity, additionalTestProperties))
+
+	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
+	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
+
+	return &http.Server{
+		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.UnsecuredWithAdditionalContentPort),
 		Handler: router,
 	}
 }
