@@ -162,7 +162,7 @@ spec:
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
             - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.providerSubaccountID }}
-            - name: APP_TEST_PROVIDER_SUBACCOUNT_ID_REGION_2
+            - name: APP_TEST_PROVIDER_SUBACCOUNT_ID_REGION2
               value:  {{ .Values.global.tests.subscription.tenants.providerSubaccountIDRegion2 }}
             - name: APP_TEST_CONSUMER_SUBACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountID }}
