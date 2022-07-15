@@ -798,7 +798,7 @@ global:
       tenants:
         consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
         providerSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd" # TestProviderSubaccount from our testing tenants
-        providerSubaccountIDRegion2: "f3cfe09f-68ef-4cb6-9ca2-e389c926a53b" # TestProviderSubaccountRegion2 from our testing tenants
+        providerSubaccountIDRegion2: "731b7bc4-5472-41d2-a447-e4c0f45de739" # TestProviderSubaccountRegion2 from our testing tenants
         consumerSubaccountID: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae" # randomly chosen
         consumerTenantID: "ba49f1aa-ddc1-43ff-943c-fe949857a34a" # randomly chosen
       oauthSecret:
