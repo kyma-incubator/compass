@@ -180,24 +180,24 @@ spec:
               value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
             - name: APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN
               value: {{ .Values.global.tests.director.externalCertIntSystemCN }}
-            - name: CONSUMER_TOKEN_URL
+            - name: APP_CONSUMER_TOKEN_URL
               value: {{ .Values.global.tests.subscription.consumerTokenURL }}
-            - name: PROVIDER_CLIENT_ID
+            - name: APP_PROVIDER_CLIENT_ID
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
                   key: {{ .Values.global.externalServicesMock.oauthSecret.clientIdKey }}
-            - name: PROVIDER_CLIENT_SECRET
+            - name: APP_PROVIDER_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
                   key: {{ .Values.global.externalServicesMock.oauthSecret.clientSecretKey }}
-            - name: BASIC_USERNAME
+            - name: APP_BASIC_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.global.tests.basicCredentials.secretName }}
                   key: username
-            - name: BASIC_PASSWORD
+            - name: APP_BASIC_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.global.tests.basicCredentials.secretName }}
