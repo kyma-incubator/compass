@@ -36,32 +36,33 @@ import (
 )
 
 type config struct {
-	DefaultTestTenant                           string
-	DirectorExternalCertSecuredURL              string
-	DirectorGraphqlOauthURL                     string
-	ORDServiceURL                               string
-	AggregatorSchedule                          string
-	ExternalServicesMockBaseURL                 string
-	ExternalServicesMockUnsecuredURL            string
-	ExternalServicesMockAbsoluteURL             string
-	ExternalServicesMockOrdCertSecuredURL       string
-	ExternalServicesMockBasicURL                string
-	ExternalServicesMockOauthURL                string
-	ExternalServicesMockUnsecuredMultiTenantURL string `envconfig:"EXTERNAL_SERVICES_MOCK_UNSECURED_MULTI_TENANT_URL"`
-	ClientID                                    string
-	ClientSecret                                string
-	BasicUsername                               string
-	BasicPassword                               string
-	ORDServiceDefaultResponseType               string
-	GlobalRegistryURL                           string
-	TestConsumerSubaccountID                    string
-	TestConsumerTenantID                        string
-	TestProviderSubaccountID                    string
-	TokenPath                                   string
-	CertLoaderConfig                            certloader.Config
-	ClientTimeout                               time.Duration `envconfig:"default=60s"`
-	SkipSSLValidation                           bool          `envconfig:"default=false"`
-	SubscriptionConfig                          subscription.Config
+	DefaultTestTenant                                     string
+	DirectorExternalCertSecuredURL                        string
+	DirectorGraphqlOauthURL                               string
+	ORDServiceURL                                         string
+	AggregatorSchedule                                    string
+	ExternalServicesMockBaseURL                           string
+	ExternalServicesMockUnsecuredURL                      string
+	ExternalServicesMockAbsoluteURL                       string
+	ExternalServicesMockOrdCertSecuredURL                 string
+	ExternalServicesMockBasicURL                          string
+	ExternalServicesMockOauthURL                          string
+	ExternalServicesMockUnsecuredWithAdditionalContentURL string
+  ExternalServicesMockUnsecuredMultiTenantURL           string        `envconfig:"EXTERNAL_SERVICES_MOCK_UNSECURED_MULTI_TENANT_URL"`
+	ClientID                                              string
+	ClientSecret                                          string
+	BasicUsername                                         string
+	BasicPassword                                         string
+	ORDServiceDefaultResponseType                         string
+	GlobalRegistryURL                                     string
+	TestConsumerSubaccountID                              string
+	TestConsumerTenantID                                  string
+	TestProviderSubaccountID                              string
+	TokenPath                                             string
+	CertLoaderConfig                                      certloader.Config
+	ClientTimeout                                         time.Duration `envconfig:"default=60s"`
+	SkipSSLValidation                                     bool          `envconfig:"default=false"`
+	SubscriptionConfig                                    subscription.Config
 }
 
 var (

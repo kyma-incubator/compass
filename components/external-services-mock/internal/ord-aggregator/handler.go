@@ -42,7 +42,11 @@ func HandleFuncOrdConfigWithDocPath(baseURLOverride, docPath, accessStrategy str
 	}
 }
 
-func HandleFuncOrdDocument(expectedBaseURL string, specsAccessStrategy string) func(rw http.ResponseWriter, req *http.Request) {
+func HandleFuncOrdDocument(expectedBaseURL, specsAccessStrategy string) func(rw http.ResponseWriter, req *http.Request) {
+	return HandleFuncOrdDocumentWithAdditionalContent(expectedBaseURL, specsAccessStrategy, "", "")
+}
+
+func HandleFuncOrdDocumentWithAdditionalContent(expectedBaseURL, specsAccessStrategy, additionalEntities, additionalProperties string) func(rw http.ResponseWriter, req *http.Request) {
 	randomSuffix := fmt.Sprintf("-%s", randSeq(10))
 	return func(rw http.ResponseWriter, req *http.Request) {
 		t, err := template.New("").Parse(ordDocument)
@@ -51,9 +55,11 @@ func HandleFuncOrdDocument(expectedBaseURL string, specsAccessStrategy string) f
 		}
 
 		data := map[string]string{
-			"randomSuffix":        randomSuffix,
-			"baseURL":             expectedBaseURL,
-			"specsAccessStrategy": specsAccessStrategy,
+			"randomSuffix":         randomSuffix,
+			"baseURL":              expectedBaseURL,
+			"specsAccessStrategy":  specsAccessStrategy,
+			"additionalEntities":   additionalEntities,
+			"additionalProperties": additionalProperties,
 		}
 
 		res := new(bytes.Buffer)

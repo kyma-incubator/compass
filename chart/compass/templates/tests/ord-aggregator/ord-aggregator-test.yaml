@@ -36,6 +36,8 @@ spec:
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:8080"
             - name: EXTERNAL_SERVICES_MOCK_UNSECURED_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.unsecuredPort}}/.well-known/open-resource-discovery"
+            - name: EXTERNAL_SERVICES_MOCK_UNSECURED_WITH_ADDITIONAL_CONTENT_URL
+              value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.unsecuredPortWithAdditionalContent}}/.well-known/open-resource-discovery"
             - name: EXTERNAL_SERVICES_MOCK_ABSOLUTE_URL
               value: "http://compass-external-services-mock.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.externalServicesMock.unsecuredPort}}/test/fullPath"
             - name: EXTERNAL_SERVICES_MOCK_ORD_CERT_SECURED_URL

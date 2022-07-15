@@ -45,6 +45,10 @@ spec:
       targetPort: {{ .Values.global.externalServicesMock.unsecuredMultiTenantPort }}
       protocol: TCP
       name: http-unsecured-multi-tenant-port
+    - port: {{ .Values.global.externalServicesMock.unsecuredPortWithAdditionalContent }}
+      targetPort: {{ .Values.global.externalServicesMock.unsecuredPortWithAdditionalContent }}
+      protocol: TCP
+      name: http-uns-contnt
     selector:
         app: {{ .Chart.Name }}
         release: {{ .Release.Name }}
