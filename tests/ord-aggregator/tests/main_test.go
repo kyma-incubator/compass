@@ -48,7 +48,7 @@ type config struct {
 	ExternalServicesMockBasicURL                          string
 	ExternalServicesMockOauthURL                          string
 	ExternalServicesMockUnsecuredWithAdditionalContentURL string
-  ExternalServicesMockUnsecuredMultiTenantURL           string        `envconfig:"EXTERNAL_SERVICES_MOCK_UNSECURED_MULTI_TENANT_URL"`
+    ExternalServicesMockUnsecuredMultiTenantURL           string        `envconfig:"EXTERNAL_SERVICES_MOCK_UNSECURED_MULTI_TENANT_URL"`
 	ClientID                                              string
 	ClientSecret                                          string
 	BasicUsername                                         string

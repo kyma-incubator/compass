@@ -74,7 +74,7 @@ type ORDServers struct {
 	OauthPort                          int `envconfig:"default=8085"`
 	GlobalRegistryCertPort             int `envconfig:"default=8086"`
 	GlobalRegistryUnsecuredPort        int `envconfig:"default=8087"`
-  UnsecuredWithAdditionalContentPort int `envconfig:"default=8088"`
+    UnsecuredWithAdditionalContentPort int `envconfig:"default=8088"`
 	UnsecuredMultiTenantPort           int `envconfig:"default=8089"`
 	CertSecuredBaseURL                 string
 	CertSecuredGlobalBaseURL           string
@@ -358,8 +358,8 @@ func initMultiTenantORDServer(cfg config) *http.Server {
 func initUnsecuredORDServerWithAdditionalContent(cfg config) *http.Server {
 	router := mux.NewRouter()
 
-	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open"))
-	router.HandleFunc("/test/fullPath", ord_aggregator.HandleFuncOrdConfigWithDocPath(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredWithAdditionalContentPort), "/open-resource-discovery/v1/documents/example2", "open"))
+	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open", false))
+	router.HandleFunc("/test/fullPath", ord_aggregator.HandleFuncOrdConfigWithDocPath(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.UnsecuredWithAdditionalContentPort), "/open-resource-discovery/v1/documents/example2", "open", false))
 
 	testProperties := `"testProperty1": "testValue1", "testProperty2": "testValue2", "testProperty3": "testValue3"`
 	additionalTestEntity := fmt.Sprintf(`,"testEntity": { %s }`, testProperties)
