@@ -1,3 +1,4 @@
+{{ if .Values.global.enableInternalCommunicationPolicies }}
 apiVersion: security.istio.io/v1beta1
 kind: RequestAuthentication
 metadata:
@@ -125,3 +126,4 @@ spec:
     - from: # or anything other only if the request is authenticated via RequestAuthentication
         - source:
             requestPrincipals: ['*']
+{{ end }}
