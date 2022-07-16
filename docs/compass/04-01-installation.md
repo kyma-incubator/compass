@@ -188,7 +188,7 @@ TODO: I couldn't find `cluster-installation` doc for Kyma 2.0.4 similar to the o
     ```bash
     . <script from ../../installation/scripts/install-compass.sh> --override-files <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
     ```
-TODO: in the above Compass installation step, do we want to pass `local` overrides or `benchmark` ones as `benchmark` are used in productive cluster (not local one)
+TODO: in the above Compass installation step, do we want to pass `local` overrides or `benchmark` ones as `benchmark` are used in productive cluster (not local one). In addition, double-check if we want to set `isLocalEnv: false` in the Compass overrides
 ### Local k3d installation
 
 For local development, install Compass with the minimal Kyma installation on k3d from the `main` branch. To do so, run the following script:
@@ -300,7 +300,7 @@ TODO: As mentioned previously, there is no longer `cluster-installation` doc for
     ```bash
     . <script from ../../installation/scripts/install-compass.sh> --override-files <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
     ```
-TODO: in the above Compass installation step, do we want to pass `local` overrides or `benchmark` ones as `benchmark` are used in productive cluster (not local one)
+TODO: in the above Compass installation step, do we want to pass `local` overrides or `benchmark` ones as `benchmark` are used in productive cluster (not local one). In addition, double-check if we want to set `isLocalEnv: false` in the Compass overrides
    
 Once Compass is installed, Runtime Agent will be configured to fetch the Runtime configuration from the Compass installation within the same cluster.
 
