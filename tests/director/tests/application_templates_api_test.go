@@ -3,8 +3,11 @@ package tests
 import (
 	"context"
 	"fmt"
-	"strings"
 	"testing"
+
+	str "github.com/kyma-incubator/compass/components/director/pkg/str"
+
+	gcli "github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 
@@ -202,9 +205,11 @@ func TestCreateApplicationTemplate_SameNames(t *testing.T) {
 
 			appTemplateTwoInput := fixAppTemplateInputWithRegionAndDistinguishLabel(testCase.AppTemplateTwoName, testCase.AppTemplateTwoRegion, "other-distinguished-label")
 
+			directorCertClientRegion2 := CreateDirectorCertClientForRegion2(t, ctx)
+
 			t.Log("Create second application template")
-			appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwoInput)
-			defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &appTemplateTwo)
+			appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertClientRegion2, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwoInput)
+			defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertClientRegion2, tenant.TestTenants.GetDefaultTenantID(), &appTemplateTwo)
 
 			if testCase.ExpectError {
 				require.NotNil(t, err)
@@ -218,7 +223,7 @@ func TestCreateApplicationTemplate_SameNames(t *testing.T) {
 				appTemplateTwoOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwo.ID)
 
 				appTemplateTwoInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateTwoOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
-				appTemplateTwoInput.Labels["global_subaccount_id"] = conf.ConsumerID
+				appTemplateTwoInput.Labels["global_subaccount_id"] = conf.TestProviderSubaccountIDRegion2
 				appTemplateTwoInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", testCase.AppTemplateTwoName, testCase.AppTemplateTwoRegion)
 
 				require.NotEmpty(t, appTemplateTwoOutput)
@@ -556,9 +561,11 @@ func TestQueryApplicationTemplates(t *testing.T) {
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate1)
 	require.NoError(t, err)
 
+	directorCertClientRegion2 := CreateDirectorCertClientForRegion2(t, ctx)
+
 	appTmplInput2 := fixAppTemplateInputWithRegion(name2, conf.SubscriptionConfig.SelfRegRegion2)
-	appTemplate2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput2)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate2)
+	appTemplate2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertClientRegion2, tenantId, appTmplInput2)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertClientRegion2, tenantId, &appTemplate2)
 	require.NoError(t, err)
 
 	first := 100
@@ -574,7 +581,14 @@ func TestQueryApplicationTemplates(t *testing.T) {
 
 	//THEN
 	t.Log("Check if application templates were received")
-	assert.Subset(t, output.Data, []*graphql.ApplicationTemplate{&appTemplate1, &appTemplate2})
+	appTemplateIDs := []string{appTemplate1.ID, appTemplate2.ID}
+	found := 0
+	for _, tmpl := range output.Data {
+		if str.ContainsInSlice(appTemplateIDs, tmpl.ID) {
+			found++
+		}
+	}
+	assert.Equal(t, 2, found)
 	saveExample(t, getApplicationTemplatesRequest.Query(), "query application templates")
 }
 
@@ -649,18 +663,7 @@ func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTmpl)
 	require.NoError(t, err)
 
-	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
-		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
-		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-		CertSvcInstanceTestSecretName:         conf.ExternalCertProviderConfig.CertSvcInstanceTestSecretName,
-		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
-		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertOU, conf.ExternalCertProviderConfig.TestExternalCertOU2, -1),
-		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
-		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
-	}
-	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig)
-	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
+	directorCertSecuredClient := CreateDirectorCertClientForRegion2(t, ctx)
 
 	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: appTemplateName, Values: []*graphql.TemplateValueInput{
 		{
@@ -680,7 +683,7 @@ func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 
 	// THEN
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "application template with name \"SAP template\" and consumer id \"bad76f69-e5c2-4d55-bca5-240944824b83\" not found")
+	require.Contains(t, err.Error(), fmt.Sprintf("application template with name %q and consumer id %q not found", appTemplateName, conf.TestProviderSubaccountIDRegion2))
 }
 
 func TestAddWebhookToApplicationTemplate(t *testing.T) {
@@ -779,6 +782,22 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, actualWebhook.URL)
 	assert.Equal(t, urlUpdated, *actualWebhook.URL)
+}
+
+func CreateDirectorCertClientForRegion2(t *testing.T, ctx context.Context) *gcli.Client {
+	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
+		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
+		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
+		CertSvcInstanceTestSecretName:         conf.ExternalCertProviderConfig.CertSvcInstanceTestSecretName,
+		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
+		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
+		TestExternalCertSubject:               conf.ExternalCertProviderConfig.TestExternalCertSubjectRegion2,
+		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
+		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
+	}
+	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig)
+	return gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 }
 
 func fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(name string) graphql.ApplicationTemplateInput {
