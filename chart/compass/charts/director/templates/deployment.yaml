@@ -179,6 +179,8 @@ spec:
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_CONSUMER_SUBACCOUNT_LABEL_KEY
               value: {{ .Values.global.director.subscription.consumerSubaccountLabelKey }}
+            - name: APP_GLOBAL_SUBACCOUNT_LABEL_KEY
+              value: {{ .Values.global.director.subscription.globalSubaccountLabelKey }}
             - name: APP_TOKEN_PREFIX
               value: {{ .Values.global.director.subscription.tokenPrefix }}
             - name: APP_SUBSCRIPTION_LABEL_KEY

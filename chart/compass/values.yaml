@@ -211,6 +211,7 @@ global:
     subscription:
       subscriptionProviderLabelKey: "subscriptionProviderId"
       consumerSubaccountLabelKey: "consumer_subaccount_id"
+      globalSubaccountLabelKey: "global_subaccount_id"
       subscriptionLabelKey: "subscription"
       tokenPrefix: "sb-"
     selfRegister:
