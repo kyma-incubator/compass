@@ -676,7 +676,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     UnusedWebhookSvc,
 			Input:            gqlAppTemplateInput,
-			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
+			SelfRegManagerFn: apptmpltest.NoopSelfRegManager,
 			ExpectedError:    testError,
 		},
 		{
@@ -773,7 +773,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 		},
 		{
 			Name: "Returns error when app template self registration fails",
-			TxFn: txGen.ThatDoesntStartTransaction,
+			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
@@ -788,7 +788,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     UnusedWebhookSvc,
-			SelfRegManagerFn: apptmpltest.SelfRegManagerThatReturnsErrorOnPrep,
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatReturnsErrorOnPrepAndGetSelfRegDistinguishingLabelKey,
 			Input:            gqlAppTemplateInput,
 			ExpectedError:    errors.New(apptmpltest.SelfRegErrorMsg),
 		},
@@ -807,7 +807,8 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				modelAppTemplateInput.Labels = distinguishLabel
-				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, labels).Return("", testError).Once()
+				appTemplateSvc.On("GetByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFilters).Return(nil, nil).Once()
+				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, labelsContainingSelfRegistration).Return("", testError).Once()
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				return appTemplateSvc
 			},
@@ -821,7 +822,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     UnusedWebhookSvc,
-			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanup(labels),
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesCleanup(labelsContainingSelfRegistration),
 			Input:            gqlAppTemplateInput,
 			ExpectedError:    testError,
 		},
