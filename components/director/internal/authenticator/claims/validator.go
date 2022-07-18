@@ -57,12 +57,11 @@ type validator struct {
 	intSystemSvc                 IntegrationSystemService
 	subscriptionProviderLabelKey string
 	consumerSubaccountLabelKey   string
-	globalSubaccountLabelKey     string
 	tokenPrefix                  string
 }
 
 // NewValidator creates new claims validator
-func NewValidator(transact persistence.Transactioner, runtimesSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, appTemplateSvc ApplicationTemplateService, applicationSvc ApplicationService, intSystemSvc IntegrationSystemService, subscriptionProviderLabelKey, consumerSubaccountLabelKey, globalSubaccountLabelKey, tokenPrefix string) *validator {
+func NewValidator(transact persistence.Transactioner, runtimesSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, appTemplateSvc ApplicationTemplateService, applicationSvc ApplicationService, intSystemSvc IntegrationSystemService, subscriptionProviderLabelKey, consumerSubaccountLabelKey, tokenPrefix string) *validator {
 	return &validator{
 		transact:                     transact,
 		runtimesSvc:                  runtimesSvc,
@@ -72,7 +71,6 @@ func NewValidator(transact persistence.Transactioner, runtimesSvc RuntimeService
 		intSystemSvc:                 intSystemSvc,
 		subscriptionProviderLabelKey: subscriptionProviderLabelKey,
 		consumerSubaccountLabelKey:   consumerSubaccountLabelKey,
-		globalSubaccountLabelKey:     globalSubaccountLabelKey,
 		tokenPrefix:                  tokenPrefix,
 	}
 }
@@ -213,7 +211,7 @@ func (v *validator) validateApplicationProvider(ctx context.Context, claims Clai
 	ctxWithConsumerTenant := tenant.SaveToContext(ctx, consumerInternalTenantID, consumerExternalTenantID)
 
 	applicationsFilter := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(v.globalSubaccountLabelKey, fmt.Sprintf("\"%s\"", consumerExternalTenantID)),
+		labelfilter.NewForKeyWithQuery(v.consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", consumerExternalTenantID)),
 	}
 
 	found := false

@@ -7,8 +7,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -393,7 +391,7 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 		appCreateInputModel.Labels = make(map[string]interface{})
 	}
 	appCreateInputModel.Labels["managed"] = "false"
-	appCreateInputModel.Labels[scenarioassignment.SubaccountIDKey] = subscribedSubaccountID
+	appCreateInputModel.Labels[s.consumerSubaccountLabelKey] = subscribedSubaccountID
 	appCreateInputModel.LocalTenantID = &consumerTenantID
 
 	log.C(ctx).Infof("Creating an Application with name %q from Application Template with name %q", subscribedAppName, appTemplate.Name)

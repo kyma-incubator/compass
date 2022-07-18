@@ -210,8 +210,7 @@ global:
       path: "/v1/info"
     subscription:
       subscriptionProviderLabelKey: "subscriptionProviderId"
-      consumerSubaccountLabelKey: "consumer_subaccount_id"
-      globalSubaccountLabelKey: "global_subaccount_id"
+      consumerSubaccountLabelKey: "global_subaccount_id"
       subscriptionLabelKey: "subscription"
       tokenPrefix: "sb-"
     selfRegister:
