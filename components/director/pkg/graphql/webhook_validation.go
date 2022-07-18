@@ -1,13 +1,47 @@
 package graphql
 
 import (
-	"net/url"
-
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	"net/url"
 )
+
+var emptyApplicationLifecycleWebhookRequestObject = &webhook.ApplicationLifecycleWebhookRequestObject{
+	Application: &Application{
+		BaseEntity: &BaseEntity{},
+	},
+}
+
+var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChangeInput{
+	ApplicationTemplate: webhook.ApplicationTemplateWithLabels{
+		ApplicationTemplate: model.ApplicationTemplate{},
+		Labels:              map[string]interface{}{},
+	},
+	Application: webhook.ApplicationWithLabels{
+		Application: model.Application{
+			BaseEntity: &model.BaseEntity{},
+		},
+		Labels: map[string]interface{}{},
+	},
+	Runtime: webhook.RuntimeWithLabels{
+		Runtime: model.Runtime{},
+		Labels:  map[string]interface{}{},
+	},
+	RuntimeContext: webhook.RuntimeContextWithLabels{
+		RuntimeContext: model.RuntimeContext{},
+		Labels:         map[string]interface{}{},
+	},
+}
+
+var webhookTemplateInputByType = map[WebhookType]webhook.TemplateInput{
+	WebhookTypeRegisterApplication:   emptyApplicationLifecycleWebhookRequestObject,
+	WebhookTypeUnregisterApplication: emptyApplicationLifecycleWebhookRequestObject,
+	WebhookTypeUnpairApplication:     emptyApplicationLifecycleWebhookRequestObject,
+	WebhookTypeConfigurationChanged:  emptyFormationConfigurationChangeInput,
+}
 
 // Validate missing godoc
 func (i WebhookInput) Validate() error {
@@ -26,7 +60,7 @@ func (i WebhookInput) Validate() error {
 		}
 	}
 
-	requestObject := webhook.RequestObject{Application: &Application{BaseEntity: &BaseEntity{}}}
+	requestObject := webhookTemplateInputByType[i.Type]
 	if i.URLTemplate != nil {
 		if _, err := requestObject.ParseURLTemplate(i.URLTemplate); err != nil {
 			return apperrors.NewInvalidDataError("failed to parse webhook url template: %s", err)

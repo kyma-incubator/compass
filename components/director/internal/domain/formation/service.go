@@ -348,15 +348,15 @@ func (s *service) DeleteAutomaticScenarioAssignment(ctx context.Context, in mode
 
 // EnsureScenarioAssigned ensures that the scenario is assigned to all the runtimes and runtimeContexts that are in the ASAs target_tenant_id
 func (s *service) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment) error {
-	return s.processScenario(ctx, in, s.AssignFormation, "assigning")
+	return s.processScenario(ctx, in, s.AssignFormation, model.AssignFormation)
 }
 
 // RemoveAssignedScenario removes all the scenarios that are coming from the provided ASA
 func (s *service) RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment) error {
-	return s.processScenario(ctx, in, s.UnassignFormation, "unassigning")
+	return s.processScenario(ctx, in, s.UnassignFormation, model.UnassignFormation)
 }
 
-func (s *service) processScenario(ctx context.Context, in model.AutomaticScenarioAssignment, processScenarioFunc processScenarioFunc, processingType string) error {
+func (s *service) processScenario(ctx context.Context, in model.AutomaticScenarioAssignment, processScenarioFunc processScenarioFunc, processingType model.FormationOperation) error {
 	runtimes, err := s.runtimeRepo.ListOwnedRuntimes(ctx, in.TargetTenantID, nil)
 	if err != nil {
 		return errors.Wrapf(err, "while fetching runtimes in target tenant: %s", in.TargetTenantID)

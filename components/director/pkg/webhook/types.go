@@ -31,20 +31,15 @@ import (
 
 var allowedMethods = []string{"GET", "POST", "PUT", "DELETE"}
 
+// TemplateInput is an interface that unions all structs that can act as a template input for a webhook
+type TemplateInput interface {
+	ParseURLTemplate(tmpl *string) (*URL, error)
+	ParseInputTemplate(tmpl *string) ([]byte, error)
+	ParseHeadersTemplate(tmpl *string) (http.Header, error)
+}
+
 // Mode missing godoc
 type Mode string
-
-// Resource is used to identify entities which can be part of a webhook's request data
-type Resource interface {
-	Sentinel()
-}
-
-// RequestObject struct contains parts of request that might be needed for later processing of a Webhook request
-type RequestObject struct {
-	Application Resource
-	TenantID    string
-	Headers     map[string]string
-}
 
 // ResponseObject struct contains parts of response that might be needed for later processing of Webhook response
 type ResponseObject struct {
@@ -142,24 +137,6 @@ func (rs *ResponseStatus) Validate() error {
 	}
 
 	return nil
-}
-
-// ParseURLTemplate missing godoc
-func (rd *RequestObject) ParseURLTemplate(tmpl *string) (*URL, error) {
-	var url URL
-	return &url, parseTemplate(tmpl, *rd, &url)
-}
-
-// ParseInputTemplate missing godoc
-func (rd *RequestObject) ParseInputTemplate(tmpl *string) ([]byte, error) {
-	res := json.RawMessage{}
-	return res, parseTemplate(tmpl, *rd, &res)
-}
-
-// ParseHeadersTemplate missing godoc
-func (rd *RequestObject) ParseHeadersTemplate(tmpl *string) (http.Header, error) {
-	var headers http.Header
-	return headers, parseTemplate(tmpl, *rd, &headers)
 }
 
 // ParseOutputTemplate missing godoc
