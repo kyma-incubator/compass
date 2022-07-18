@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package webhook_test
+package webhook_client_test
 
 import (
 	"bytes"
@@ -22,7 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	webhook2 "github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -56,7 +56,7 @@ func TestClient_Do_WhenUrlTemplateIsInvalid_ShouldReturnError(t *testing.T) {
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{},
 	}
 
-	client := webhook2.NewClient(http.DefaultClient, nil)
+	client := webhook_client.NewClient(http.DefaultClient, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -73,7 +73,7 @@ func TestClient_Do_WhenUrlTemplateIsNil_ShouldReturnError(t *testing.T) {
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{},
 	}
 
-	client := webhook2.NewClient(http.DefaultClient, nil)
+	client := webhook_client.NewClient(http.DefaultClient, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -94,7 +94,7 @@ func TestClient_Do_WhenParseInputTemplateIsInvalid_ShouldReturnError(t *testing.
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
 	}
 
-	client := webhook2.NewClient(http.DefaultClient, nil)
+	client := webhook_client.NewClient(http.DefaultClient, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -116,7 +116,7 @@ func TestClient_Do_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T) 
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
 	}
 
-	client := webhook2.NewClient(http.DefaultClient, nil)
+	client := webhook_client.NewClient(http.DefaultClient, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -139,7 +139,7 @@ func TestClient_Do_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
 	}
 
-	client := webhook2.NewClient(http.DefaultClient, nil)
+	client := webhook_client.NewClient(http.DefaultClient, nil)
 
 	_, err := client.Do(nil, webhookReq)
 
@@ -163,7 +163,7 @@ func TestClient_Do_WhenAuthFlowCannotBeDetermined_ShouldReturnError(t *testing.T
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
 	}
 
-	client := webhook2.NewClient(http.DefaultClient, nil)
+	client := webhook_client.NewClient(http.DefaultClient, nil)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -186,7 +186,7 @@ func TestClient_Do_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
 	}
 
-	client := webhook2.NewClient(&http.Client{
+	client := webhook_client.NewClient(&http.Client{
 		Transport: mockedTransport{err: errors.New(mockedError)},
 	}, nil)
 
@@ -214,7 +214,7 @@ func TestClient_Do_WhenWebhookResponseDoesNotContainLocationURL_ShouldReturnErro
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
 	}
 
-	client := webhook2.NewClient(&http.Client{
+	client := webhook_client.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
@@ -246,7 +246,7 @@ func TestClient_Do_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *tes
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
 	}
 
-	client := webhook2.NewClient(&http.Client{
+	client := webhook_client.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte(fmt.Sprintf("{\"error\": \"%s\"}", mockedError)))),
@@ -282,7 +282,7 @@ func TestClient_Do_WhenWebhookResponseBodyContainsErrorWithJSONObjects_ShouldPar
 
 	mockedJSONObjectError := "{\"code\":\"401\",\"message\":\"Unauthorized\",\"correlationId\":\"12345678-e89b-12d3-a456-556642440000\"}"
 
-	client := webhook2.NewClient(&http.Client{
+	client := webhook_client.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte(fmt.Sprintf("{\"error\": %s}", mockedJSONObjectError)))),
@@ -317,7 +317,7 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsGoneAndGoneStatusISDefined_Sho
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
 	}
 
-	client := webhook2.NewClient(&http.Client{
+	client := webhook_client.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
@@ -330,7 +330,7 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsGoneAndGoneStatusISDefined_Sho
 	_, err := client.Do(context.Background(), webhookReq)
 
 	require.Error(t, err)
-	require.IsType(t, webhook.WebhookStatusGoneErr{}, err)
+	require.IsType(t, webhook_client.WebhookStatusGoneErr{}, err)
 	require.Contains(t, err.Error(), goneCodeString)
 }
 
@@ -351,7 +351,7 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError(t
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
 	}
 
-	client := webhook2.NewClient(&http.Client{
+	client := webhook_client.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
@@ -393,7 +393,7 @@ func TestClient_Do_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testing.
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
 	}
 
-	client := webhook2.NewClient(&http.Client{
+	client := webhook_client.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
@@ -443,7 +443,7 @@ func TestClient_Do_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T) {
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
 	}
 
-	client := webhook2.NewClient(&http.Client{
+	client := webhook_client.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
@@ -497,7 +497,7 @@ func TestClient_Do_WhenSuccessfulMTLSWebhook_ShouldBeSuccessful(t *testing.T) {
 		},
 	}
 
-	client := webhook2.NewClient(nil, mtlsClient)
+	client := webhook_client.NewClient(nil, mtlsClient)
 
 	_, err := client.Do(context.Background(), webhookReq)
 
@@ -526,7 +526,7 @@ func TestClient_Do_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
 		CorrelationID: correlationID,
 	}
 
-	client := webhook2.NewClient(&http.Client{
+	client := webhook_client.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
@@ -564,7 +564,7 @@ func TestClient_Poll_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T
 		},
 	}
 
-	client := webhook2.NewClient(http.DefaultClient, nil)
+	client := webhook_client.NewClient(http.DefaultClient, nil)
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -586,7 +586,7 @@ func TestClient_Poll_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook2.NewClient(http.DefaultClient, nil)
+	client := webhook_client.NewClient(http.DefaultClient, nil)
 
 	_, err := client.Poll(nil, webhookReq)
 
@@ -610,7 +610,7 @@ func TestClient_Poll_WhenAuthFlowCannotBeDetermined_ShouldReturnError(t *testing
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook2.NewClient(http.DefaultClient, nil)
+	client := webhook_client.NewClient(http.DefaultClient, nil)
 
 	_, err := client.Poll(context.Background(), webhookReq)
 
@@ -632,7 +632,7 @@ func TestClient_Poll_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook2.NewClient(&http.Client{
+	client := webhook_client.NewClient(&http.Client{
 		Transport: mockedTransport{err: errors.New(mockedError)},
 	}, nil)
 
@@ -659,7 +659,7 @@ func TestClient_Poll_WhenParseStatusTemplateFails_ShouldReturnError(t *testing.T
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook2.NewClient(&http.Client{
+	client := webhook_client.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{Body: ioutil.NopCloser(bytes.NewReader([]byte("{}")))},
 		},
@@ -687,7 +687,7 @@ func TestClient_Poll_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *t
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook2.NewClient(&http.Client{
+	client := webhook_client.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte(fmt.Sprintf("{\"error\": \"%s\"}", mockedError)))),
@@ -719,7 +719,7 @@ func TestClient_Poll_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook2.NewClient(&http.Client{
+	client := webhook_client.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
@@ -759,7 +759,7 @@ func TestClient_Poll_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testin
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook2.NewClient(&http.Client{
+	client := webhook_client.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
@@ -807,7 +807,7 @@ func TestClient_Poll_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T)
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook2.NewClient(&http.Client{
+	client := webhook_client.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),
@@ -863,7 +863,7 @@ func TestClient_Poll_WhenSuccessfulMTLSWebhook_ShouldBeSuccessful(t *testing.T) 
 		},
 	}
 
-	client := webhook2.NewClient(nil, mtlsClient)
+	client := webhook_client.NewClient(nil, mtlsClient)
 
 	_, err := client.Poll(context.Background(), pollRequest)
 
@@ -887,7 +887,7 @@ func TestClient_Poll_WhenSuccessfulWebhookPollResponseContainsNullErrorField_Sho
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook2.NewClient(&http.Client{
+	client := webhook_client.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{\"error\":null}"))),
@@ -916,7 +916,7 @@ func TestClient_Poll_WhenSuccessfulWebhookPollResponseContainsEmptyErrorField_Sh
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook2.NewClient(&http.Client{
+	client := webhook_client.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{\"error\":\"\"}"))),
@@ -949,7 +949,7 @@ func TestClient_Poll_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
 		PollURL: mockedLocationURL,
 	}
 
-	client := webhook2.NewClient(&http.Client{
+	client := webhook_client.NewClient(&http.Client{
 		Transport: mockedTransport{
 			resp: &http.Response{
 				Body:       ioutil.NopCloser(bytes.NewReader([]byte("{}"))),

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package webhook
+package webhook_client
 
 import (
 	"bytes"
@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"io/ioutil"
 	"net/http"
 
@@ -61,7 +62,7 @@ func NewClient(httpClient *http.Client, mtlsClient *http.Client) *client {
 	}
 }
 
-func (c *client) Do(ctx context.Context, request *Request) (*Response, error) {
+func (c *client) Do(ctx context.Context, request *webhook.Request) (*webhook.Response, error) {
 	var err error
 	webhook := request.Webhook
 
@@ -147,7 +148,7 @@ func (c *client) Do(ctx context.Context, request *Request) (*Response, error) {
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
 }
 
-func (c *client) Poll(ctx context.Context, request *PollRequest) (*ResponseStatus, error) {
+func (c *client) Poll(ctx context.Context, request *webhook.PollRequest) (*webhook.ResponseStatus, error) {
 	var err error
 	webhook := request.Webhook
 
@@ -214,7 +215,7 @@ func (c *client) executeRequestWithCorrectClient(ctx context.Context, req *http.
 	}
 }
 
-func parseResponseObject(resp *http.Response) (*ResponseObject, error) {
+func parseResponseObject(resp *http.Response) (*webhook.ResponseObject, error) {
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -240,7 +241,7 @@ func parseResponseObject(resp *http.Response) (*ResponseObject, error) {
 		headers[key] = value[0]
 	}
 
-	return &ResponseObject{
+	return &webhook.ResponseObject{
 		Headers: headers,
 		Body:    body,
 	}, nil
