@@ -17,7 +17,7 @@
 package errors
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"github.com/pkg/errors"
 )
 
@@ -52,6 +52,6 @@ func NewFatalReconcileErrorFromExisting(err error) *FatalReconcileErr {
 // IsWebhookStatusGoneErr check whether an error is a WebhookStatusGoneErr
 // and returns true if so.
 func IsWebhookStatusGoneErr(err error) (ok bool) {
-	_, ok = err.(webhook.WebhookStatusGoneErr)
+	_, ok = err.(webhook_client.WebhookStatusGoneErr)
 	return
 }
