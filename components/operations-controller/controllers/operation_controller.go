@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"strings"
 	"time"
 
@@ -33,7 +34,6 @@ import (
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/log"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -46,7 +46,7 @@ import (
 
 // OperationReconciler reconciles an Operation object
 type OperationReconciler struct {
-	config           *webhookdir.Config
+	config           *webhook.Config
 	statusManager    StatusManager
 	k8sClient        KubernetesClient
 	directorClient   DirectorClient
@@ -54,7 +54,7 @@ type OperationReconciler struct {
 	metricsCollector *metrics.Collector
 }
 
-func NewOperationReconciler(config *webhookdir.Config, statusManager StatusManager, k8sClient KubernetesClient, directorClient DirectorClient, webhookClient WebhookClient, collector *metrics.Collector) *OperationReconciler {
+func NewOperationReconciler(config *webhook.Config, statusManager StatusManager, k8sClient KubernetesClient, directorClient DirectorClient, webhookClient WebhookClient, collector *metrics.Collector) *OperationReconciler {
 	return &OperationReconciler{
 		config:           config,
 		statusManager:    statusManager,
@@ -116,7 +116,7 @@ func (r *OperationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	if !operation.HasPollURL() {
 		log.C(ctx).Info("Webhook Poll URL is not found. Will attempt to execute the webhook")
-		request := webhook.NewRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID)
+		request := webhookdir.NewRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID)
 
 		response, err := r.webhookClient.Do(ctx, request)
 		if errors.IsWebhookStatusGoneErr(err) && operation.Spec.OperationType == v1alpha1.OperationTypeDelete {
@@ -143,7 +143,7 @@ func (r *OperationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
 
-	request := webhook.NewPollRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID, operation.PollURL())
+	request := webhookdir.NewPollRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID, operation.PollURL())
 	response, err := r.webhookClient.Poll(ctx, request)
 	if err != nil {
 		log.C(ctx).Error(err, "Unable to execute Webhook Poll request")

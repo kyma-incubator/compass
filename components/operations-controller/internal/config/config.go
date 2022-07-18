@@ -17,7 +17,7 @@
 package config
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"reflect"
 
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
@@ -37,12 +37,12 @@ type Validatable interface {
 // Config comprises of all the configurations that are necessary
 // for successful bootstrap and execution of the Operations Controller
 type Config struct {
-	Server                   *server.Config   `mapstructure:"server"`
-	HttpClient               *http.Config     `mapstructure:"http_client"`
-	GraphQLClient            *graphql.Config  `mapstructure:"graphql_client"`
-	Director                 *director.Config `mapstructure:"director"`
-	Webhook                  *webhook.Config  `mapstructure:"webhook"`
-	ExternalClientCertSecret string           `mapstructure:"external_client_cert_secret"`
+	Server         *server.Config        `mapstructure:"server"`
+	HttpClient     *http.Config          `mapstructure:"http_client"`
+	GraphQLClient  *graphql.Config       `mapstructure:"graphql_client"`
+	Director       *director.Config      `mapstructure:"director"`
+	Webhook        *webhook.Config       `mapstructure:"webhook"`
+	ExternalClient *ExternalClientConfig `mapstructure:"external_client"`
 }
 
 // AppPFlags adds pflags for the Config structure and adds them in the provided set
@@ -54,11 +54,12 @@ func AddPFlags(set *pflag.FlagSet) {
 // DefaultConfig constructs a Config with default values
 func DefaultConfig() *Config {
 	return &Config{
-		Server:        server.DefaultConfig(),
-		HttpClient:    http.DefaultConfig(),
-		GraphQLClient: graphql.DefaultConfig(),
-		Director:      director.DefaultConfig(),
-		Webhook:       webhook.DefaultConfig(),
+		Server:         server.DefaultConfig(),
+		HttpClient:     http.DefaultConfig(),
+		GraphQLClient:  graphql.DefaultConfig(),
+		Director:       director.DefaultConfig(),
+		Webhook:        webhook.DefaultConfig(),
+		ExternalClient: &ExternalClientConfig{},
 	}
 }
 

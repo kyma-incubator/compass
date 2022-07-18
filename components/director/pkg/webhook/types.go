@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"net/http"
 	"net/url"
 	"text/template"
@@ -41,7 +41,7 @@ type TemplateInput interface {
 
 // Request represents a webhook request to be executed
 type Request struct {
-	Webhook       graphql.Webhook
+	Webhook       model.Webhook
 	Object        TemplateInput
 	CorrelationID string
 }
@@ -53,7 +53,7 @@ type PollRequest struct {
 }
 
 // NewRequest constructs a webhook Request
-func NewRequest(webhook graphql.Webhook, requestObject TemplateInput, correlationID string) *Request {
+func NewRequest(webhook model.Webhook, requestObject TemplateInput, correlationID string) *Request {
 	return &Request{
 		Webhook:       webhook,
 		Object:        requestObject,
@@ -62,7 +62,7 @@ func NewRequest(webhook graphql.Webhook, requestObject TemplateInput, correlatio
 }
 
 // NewPollRequest constructs a webhook Request
-func NewPollRequest(webhook graphql.Webhook, requestObject TemplateInput, correlationID string, pollURL string) *PollRequest {
+func NewPollRequest(webhook model.Webhook, requestObject TemplateInput, correlationID string, pollURL string) *PollRequest {
 	return &PollRequest{
 		Request: NewRequest(webhook, requestObject, correlationID),
 		PollURL: pollURL,

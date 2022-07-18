@@ -112,7 +112,11 @@ func main() {
 	httpClient, err := utils.PrepareHttpClient(cfg.HttpClient)
 	fatalOnError(err)
 
-	certCache, err := certloader.StartCertLoader(ctx, cfg.ExternalClientCertSecret)
+	certCache, err := certloader.StartCertLoader(ctx, certloader.Config{
+		ExternalClientCertSecret:  cfg.ExternalClient.CertSecret,
+		ExternalClientCertCertKey: cfg.ExternalClient.CertKey,
+		ExternalClientCertKeyKey:  cfg.ExternalClient.KeyKey,
+	})
 	fatalOnError(errors.Wrapf(err, "Failed to initialize certificate loader"))
 
 	httpMTLSClient := utils.PrepareMTLSClient(cfg.HttpClient, certCache)

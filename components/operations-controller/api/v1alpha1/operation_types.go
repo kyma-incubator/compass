@@ -183,7 +183,7 @@ func (in *Operation) TimeoutReached(timeout time.Duration) bool {
 // RequestObject parses and returns the request object associated with
 // the current operation. The request object is essential for the processing of
 // webhook templates as part of the Operation Controller reconcile logic.
-func (in *Operation) RequestObject() (webhook.ApplicationLifecycleWebhookRequestObject, error) {
+func (in *Operation) RequestObject() (*webhook.ApplicationLifecycleWebhookRequestObject, error) {
 	str := struct {
 		Application graphql.Application
 		TenantID    string
@@ -191,10 +191,10 @@ func (in *Operation) RequestObject() (webhook.ApplicationLifecycleWebhookRequest
 	}{}
 
 	if err := json.Unmarshal([]byte(in.Spec.RequestObject), &str); err != nil {
-		return webhook.ApplicationLifecycleWebhookRequestObject{}, err
+		return &webhook.ApplicationLifecycleWebhookRequestObject{}, err
 	}
 
-	return webhook.ApplicationLifecycleWebhookRequestObject{
+	return &webhook.ApplicationLifecycleWebhookRequestObject{
 		Application: &str.Application,
 		TenantID:    str.TenantID,
 		Headers:     str.Headers,

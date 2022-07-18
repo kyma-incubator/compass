@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"io/ioutil"
 	"net/http"
@@ -32,7 +33,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
 )
 
@@ -138,7 +138,7 @@ func (c *client) Do(ctx context.Context, request *Request) (*Response, error) {
 	}
 
 	isLocationEmpty := response.Location != nil && *response.Location == ""
-	isAsyncWebhook := webhook.Mode != nil && *webhook.Mode == graphql.WebhookModeAsync
+	isAsyncWebhook := webhook.Mode != nil && *webhook.Mode == model.WebhookModeAsync
 
 	if isLocationEmpty && isAsyncWebhook {
 		return nil, errors.Errorf("missing location url after executing async webhook: HTTP response status %+v with body %s", resp.Status, responseObject.Body)
@@ -198,11 +198,11 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*ResponseStatu
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
 }
 
-func (c *client) executeRequestWithCorrectClient(ctx context.Context, req *http.Request, webhook graphql.Webhook) (*http.Response, error) {
+func (c *client) executeRequestWithCorrectClient(ctx context.Context, req *http.Request, webhook model.Webhook) (*http.Response, error) {
 	if webhook.Auth != nil {
 		if str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.CMPmTLSAccessStrategy) {
 			return c.mtlsClient.Do(req)
-		} else if webhook.Auth.Credential != nil {
+		} else if webhook.Auth.Credential.Basic != nil || webhook.Auth.Credential.Oauth != nil {
 			ctx = saveToContext(ctx, webhook.Auth.Credential)
 			req = req.WithContext(ctx)
 			return c.httpClient.Do(req)
@@ -270,22 +270,21 @@ func checkForGoneStatus(resp *http.Response, goneStatusCode *int) error {
 	return nil
 }
 
-func saveToContext(ctx context.Context, credentialData graphql.CredentialData) context.Context {
+func saveToContext(ctx context.Context, credentialData model.CredentialData) context.Context {
 	var credentials auth.Credentials
 
-	switch v := credentialData.(type) {
-	case *graphql.BasicCredentialData:
+	if credentialData.Basic != nil {
 		credentials = &auth.BasicCredentials{
-			Username: v.Username,
-			Password: v.Password,
+			Username: credentialData.Basic.Username,
+			Password: credentialData.Basic.Password,
 		}
-	case *graphql.OAuthCredentialData:
+	} else if credentialData.Oauth != nil {
 		credentials = &auth.OAuthCredentials{
-			ClientID:     v.ClientID,
-			ClientSecret: v.ClientSecret,
-			TokenURL:     v.URL,
+			ClientID:     credentialData.Oauth.ClientID,
+			ClientSecret: credentialData.Oauth.ClientSecret,
+			TokenURL:     credentialData.Oauth.URL,
 		}
-	default:
+	} else {
 		return ctx
 	}
 

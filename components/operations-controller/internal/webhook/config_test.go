@@ -17,7 +17,7 @@
 package webhook_test
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"testing"
 	"time"
 
