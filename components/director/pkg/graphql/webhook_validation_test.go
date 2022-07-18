@@ -1,6 +1,7 @@
 package graphql_test
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -533,7 +534,7 @@ func TestWebhookInput_Validate_OutputTemplate(t *testing.T) {
 		{
 			Name:          "Nil",
 			Value:         nil,
-			ExpectedValid: true,
+			ExpectedValid: false,
 		},
 	}
 
@@ -693,40 +694,53 @@ func TestWebhookInput_Validate_AsyncWebhook_MissingLocationInOutputTemplate_Shou
 }
 
 func TestWebhookInput_Validate_MissingOutputTemplateForCertainTypes(t *testing.T) {
+	webhookMode := graphql.WebhookModeSync
 	testCases := []struct {
 		Name          string
-		Type          graphql.WebhookType
+		Input         graphql.WebhookInput
 		ExpectedValid bool
 	}{
 		{
 			Name:          "Success when missing for type: OPEN_RESOURCE_DISCOVERY",
 			ExpectedValid: true,
-			Type:          graphql.WebhookTypeOpenResourceDiscovery,
+			Input: graphql.WebhookInput{
+				Type: graphql.WebhookTypeOpenResourceDiscovery,
+				Mode: &webhookMode,
+				URL:  str.Ptr(inputvalidationtest.ValidURL),
+			},
 		},
 		{
 			Name:          "Success when missing for type: CONFIGURATION_CHANGED",
 			ExpectedValid: true,
-			Type:          graphql.WebhookTypeConfigurationChanged,
+			Input: graphql.WebhookInput{
+				Type: graphql.WebhookTypeConfigurationChanged,
+				Mode: &webhookMode,
+				URL:  str.Ptr(inputvalidationtest.ValidURL),
+			},
 		},
 		{
 			Name:          "Fails when missing for type: UNREGISTER_APPLICATION",
 			ExpectedValid: false,
-			Type:          graphql.WebhookTypeUnregisterApplication,
+			Input: graphql.WebhookInput{
+				Type: graphql.WebhookTypeUnregisterApplication,
+				Mode: &webhookMode,
+				URL:  str.Ptr(inputvalidationtest.ValidURL),
+			},
 		},
 		{
 			Name:          "Fails when missing for type: REGISTER_APPLICATION",
 			ExpectedValid: false,
-			Type:          graphql.WebhookTypeRegisterApplication,
+			Input: graphql.WebhookInput{
+				Type: graphql.WebhookTypeRegisterApplication,
+				Mode: &webhookMode,
+				URL:  str.Ptr(inputvalidationtest.ValidURL),
+			},
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			input := fixValidWebhookInput(inputvalidationtest.ValidURL)
-			input.OutputTemplate = nil
-			input.Type = testCase.Type
-
-			err := input.Validate()
+			err := testCase.Input.Validate()
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
 			} else {
@@ -745,7 +759,7 @@ func fixValidWebhookInput(url string) graphql.WebhookInput {
  }`
 	webhookMode := graphql.WebhookModeSync
 	webhookInput := graphql.WebhookInput{
-		Type:           graphql.WebhookTypeConfigurationChanged,
+		Type:           graphql.WebhookTypeUnregisterApplication,
 		Mode:           &webhookMode,
 		InputTemplate:  &template,
 		HeaderTemplate: &template,

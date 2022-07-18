@@ -21,7 +21,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"io/ioutil"
 	"net/http"
@@ -44,12 +43,12 @@ var (
 	emptyTemplate     = "{}"
 	mockedError       = "mocked error"
 	mockedLocationURL = "https://test-domain.com/operation"
-	webhookAsyncMode  = model.WebhookModeAsync
+	webhookAsyncMode  = graphql.WebhookModeAsync
 )
 
 func TestClient_Do_WhenUrlTemplateIsInvalid_ShouldReturnError(t *testing.T) {
-	webhookReq := &webhook.Request{
-		Webhook: model.Webhook{
+	webhookReq := &webhook_client.Request{
+		Webhook: graphql.Webhook{
 			URLTemplate:    &invalidTemplate,
 			OutputTemplate: &emptyTemplate,
 		},
@@ -65,8 +64,8 @@ func TestClient_Do_WhenUrlTemplateIsInvalid_ShouldReturnError(t *testing.T) {
 }
 
 func TestClient_Do_WhenUrlTemplateIsNil_ShouldReturnError(t *testing.T) {
-	webhookReq := &webhook.Request{
-		Webhook: model.Webhook{
+	webhookReq := &webhook_client.Request{
+		Webhook: graphql.Webhook{
 			URLTemplate:    nil,
 			OutputTemplate: &emptyTemplate,
 		},
@@ -85,8 +84,8 @@ func TestClient_Do_WhenParseInputTemplateIsInvalid_ShouldReturnError(t *testing.
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
 	invalidInputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"group\": \"{{.Application.Group}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.Request{
-		Webhook: model.Webhook{
+	webhookReq := &webhook_client.Request{
+		Webhook: graphql.Webhook{
 			URLTemplate:    &URLTemplate,
 			InputTemplate:  &invalidInputTemplate,
 			OutputTemplate: &emptyTemplate,
@@ -106,8 +105,8 @@ func TestClient_Do_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T) 
 	URLTemplate := "{\"method\": \"DELETE\",\"path\":\"https://test-domain.com/api/v1/applicaitons/{{.Application.ID}}\"}"
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.Request{
-		Webhook: model.Webhook{
+	webhookReq := &webhook_client.Request{
+		Webhook: graphql.Webhook{
 			URLTemplate:    &URLTemplate,
 			InputTemplate:  &inputTemplate,
 			HeaderTemplate: &invalidTemplate,
@@ -129,8 +128,8 @@ func TestClient_Do_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.Request{
-		Webhook: model.Webhook{
+	webhookReq := &webhook_client.Request{
+		Webhook: graphql.Webhook{
 			URLTemplate:    &URLTemplate,
 			InputTemplate:  &inputTemplate,
 			HeaderTemplate: &headersTemplate,
@@ -152,13 +151,13 @@ func TestClient_Do_WhenAuthFlowCannotBeDetermined_ShouldReturnError(t *testing.T
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.Request{
-		Webhook: model.Webhook{
+	webhookReq := &webhook_client.Request{
+		Webhook: graphql.Webhook{
 			URLTemplate:    &URLTemplate,
 			InputTemplate:  &inputTemplate,
 			HeaderTemplate: &headersTemplate,
 			OutputTemplate: &emptyTemplate,
-			Auth:           &model.Auth{AccessStrategy: str.Ptr("wrong")},
+			Auth:           &graphql.Auth{AccessStrategy: str.Ptr("wrong")},
 		},
 		Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
 	}
@@ -176,8 +175,8 @@ func TestClient_Do_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
 	inputTemplate := "{\"application_id\": \"{{.Application.ID}}\",\"name\": \"{{.Application.Name}}\"}"
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.Request{
-		Webhook: model.Webhook{
+	webhookReq := &webhook_client.Request{
+		Webhook: graphql.Webhook{
 			URLTemplate:    &URLTemplate,
 			InputTemplate:  &inputTemplate,
 			HeaderTemplate: &headersTemplate,
@@ -203,8 +202,8 @@ func TestClient_Do_WhenWebhookResponseDoesNotContainLocationURL_ShouldReturnErro
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.Request{
-		Webhook: model.Webhook{
+	webhookReq := &webhook_client.Request{
+		Webhook: graphql.Webhook{
 			URLTemplate:    &URLTemplate,
 			InputTemplate:  &inputTemplate,
 			HeaderTemplate: &headersTemplate,
@@ -235,8 +234,8 @@ func TestClient_Do_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *tes
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.Request{
-		Webhook: model.Webhook{
+	webhookReq := &webhook_client.Request{
+		Webhook: graphql.Webhook{
 			URLTemplate:    &URLTemplate,
 			InputTemplate:  &inputTemplate,
 			HeaderTemplate: &headersTemplate,
@@ -269,8 +268,8 @@ func TestClient_Do_WhenWebhookResponseBodyContainsErrorWithJSONObjects_ShouldPar
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.Request{
-		Webhook: model.Webhook{
+	webhookReq := &webhook_client.Request{
+		Webhook: graphql.Webhook{
 			URLTemplate:    &URLTemplate,
 			InputTemplate:  &inputTemplate,
 			HeaderTemplate: &headersTemplate,
@@ -306,8 +305,8 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsGoneAndGoneStatusISDefined_Sho
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	outputTemplate := fmt.Sprintf("{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"gone_status_code\": %s,\"error\": \"{{.Body.error}}\"}", goneCodeString)
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.Request{
-		Webhook: model.Webhook{
+	webhookReq := &webhook_client.Request{
+		Webhook: graphql.Webhook{
 			URLTemplate:    &URLTemplate,
 			InputTemplate:  &inputTemplate,
 			HeaderTemplate: &headersTemplate,
@@ -340,8 +339,8 @@ func TestClient_Do_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError(t
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.Request{
-		Webhook: model.Webhook{
+	webhookReq := &webhook_client.Request{
+		Webhook: graphql.Webhook{
 			URLTemplate:    &URLTemplate,
 			InputTemplate:  &inputTemplate,
 			HeaderTemplate: &headersTemplate,
@@ -374,19 +373,17 @@ func TestClient_Do_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testing.
 	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
 	username, password := "user", "pass"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.Request{
-		Webhook: model.Webhook{
+	webhookReq := &webhook_client.Request{
+		Webhook: graphql.Webhook{
 			URLTemplate:    &URLTemplate,
 			InputTemplate:  &inputTemplate,
 			HeaderTemplate: &headersTemplate,
 			OutputTemplate: &outputTemplate,
 			Mode:           &webhookAsyncMode,
-			Auth: &model.Auth{
-				Credential: model.CredentialData{
-					Basic: &model.BasicCredentialData{
-						Username: username,
-						Password: password,
-					},
+			Auth: &graphql.Auth{
+				Credential: &graphql.BasicCredentialData{
+					Username: username,
+					Password: password,
 				},
 			},
 		},
@@ -423,20 +420,18 @@ func TestClient_Do_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T) {
 	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
 	clientID, clientSecret, tokenURL := "client-id", "client-secret", "https://test-domain.com/oauth/token"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.Request{
-		Webhook: model.Webhook{
+	webhookReq := &webhook_client.Request{
+		Webhook: graphql.Webhook{
 			URLTemplate:    &URLTemplate,
 			InputTemplate:  &inputTemplate,
 			HeaderTemplate: &headersTemplate,
 			OutputTemplate: &outputTemplate,
 			Mode:           &webhookAsyncMode,
-			Auth: &model.Auth{
-				Credential: model.CredentialData{
-					Oauth: &model.OAuthCredentialData{
-						ClientID:     clientID,
-						ClientSecret: clientSecret,
-						URL:          tokenURL,
-					},
+			Auth: &graphql.Auth{
+				Credential: &graphql.OAuthCredentialData{
+					ClientID:     clientID,
+					ClientSecret: clientSecret,
+					URL:          tokenURL,
 				},
 			},
 		},
@@ -472,12 +467,12 @@ func TestClient_Do_WhenSuccessfulMTLSWebhook_ShouldBeSuccessful(t *testing.T) {
 	outputTemplate := "{\"location\":\"{{.Headers.Location}}\",\"success_status_code\": 202,\"error\": \"{{.Body.error}}\"}"
 	mtlsCalled := false
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.Request{
-		Webhook: model.Webhook{
+	webhookReq := &webhook_client.Request{
+		Webhook: graphql.Webhook{
 			URLTemplate:    &URLTemplate,
 			OutputTemplate: &outputTemplate,
 			Mode:           &webhookAsyncMode,
-			Auth: &model.Auth{
+			Auth: &graphql.Auth{
 				AccessStrategy: str.Ptr(string(accessstrategy2.CMPmTLSAccessStrategy)),
 			},
 		},
@@ -513,8 +508,8 @@ func TestClient_Do_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
 	correlationIDKey := "X-Correlation-Id"
 	correlationID := "abc"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.Request{
-		Webhook: model.Webhook{
+	webhookReq := &webhook_client.Request{
+		Webhook: graphql.Webhook{
 			CorrelationIDKey: &correlationIDKey,
 			URLTemplate:      &URLTemplate,
 			InputTemplate:    &inputTemplate,
@@ -554,9 +549,9 @@ func TestClient_Do_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
 
 func TestClient_Poll_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T) {
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.PollRequest{
-		Request: &webhook.Request{
-			Webhook: model.Webhook{
+	webhookReq := &webhook_client.PollRequest{
+		Request: &webhook_client.Request{
+			Webhook: graphql.Webhook{
 				HeaderTemplate: &invalidTemplate,
 				StatusTemplate: &emptyTemplate,
 			},
@@ -575,9 +570,9 @@ func TestClient_Poll_WhenHeadersTemplateIsInvalid_ShouldReturnError(t *testing.T
 func TestClient_Poll_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.PollRequest{
-		Request: &webhook.Request{
-			Webhook: model.Webhook{
+	webhookReq := &webhook_client.PollRequest{
+		Request: &webhook_client.Request{
+			Webhook: graphql.Webhook{
 				HeaderTemplate: &headersTemplate,
 				StatusTemplate: &emptyTemplate,
 			},
@@ -597,13 +592,13 @@ func TestClient_Poll_WhenCreatingRequestFails_ShouldReturnError(t *testing.T) {
 func TestClient_Poll_WhenAuthFlowCannotBeDetermined_ShouldReturnError(t *testing.T) {
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.PollRequest{
+	webhookReq := &webhook_client.PollRequest{
 
-		Request: &webhook.Request{
-			Webhook: model.Webhook{
+		Request: &webhook_client.Request{
+			Webhook: graphql.Webhook{
 				HeaderTemplate: &headersTemplate,
 				StatusTemplate: &emptyTemplate,
-				Auth:           &model.Auth{AccessStrategy: str.Ptr("wrong")},
+				Auth:           &graphql.Auth{AccessStrategy: str.Ptr("wrong")},
 			},
 			Object: &webhook.ApplicationLifecycleWebhookRequestObject{Application: app},
 		},
@@ -621,9 +616,9 @@ func TestClient_Poll_WhenAuthFlowCannotBeDetermined_ShouldReturnError(t *testing
 func TestClient_Poll_WhenExecutingRequestFails_ShouldReturnError(t *testing.T) {
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.PollRequest{
-		Request: &webhook.Request{
-			Webhook: model.Webhook{
+	webhookReq := &webhook_client.PollRequest{
+		Request: &webhook_client.Request{
+			Webhook: graphql.Webhook{
 				HeaderTemplate: &headersTemplate,
 				StatusTemplate: &emptyTemplate,
 			},
@@ -647,9 +642,9 @@ func TestClient_Poll_WhenParseStatusTemplateFails_ShouldReturnError(t *testing.T
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	statusTemplate := "{\"status\":\"{{.Body.status}}\",\"success_status_identifier\":\"SUCCEEDED\",\"in_progress_status_identifier\":\"IN_PROGRESS\",\"failed_status_identifier\":\"FAILED\",\"error\": \"{{.Body.error}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.PollRequest{
-		Request: &webhook.Request{
-			Webhook: model.Webhook{
+	webhookReq := &webhook_client.PollRequest{
+		Request: &webhook_client.Request{
+			Webhook: graphql.Webhook{
 				HeaderTemplate: &headersTemplate,
 				StatusTemplate: &statusTemplate,
 				Mode:           &webhookAsyncMode,
@@ -675,9 +670,9 @@ func TestClient_Poll_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *t
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	statusTemplate := "{\"status\":\"{{.Body.status}}\",\"success_status_code\": 200,\"success_status_identifier\":\"SUCCEEDED\",\"in_progress_status_identifier\":\"IN_PROGRESS\",\"failed_status_identifier\":\"FAILED\",\"error\": \"{{.Body.error}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.PollRequest{
-		Request: &webhook.Request{
-			Webhook: model.Webhook{
+	webhookReq := &webhook_client.PollRequest{
+		Request: &webhook_client.Request{
+			Webhook: graphql.Webhook{
 				HeaderTemplate: &headersTemplate,
 				StatusTemplate: &statusTemplate,
 				Mode:           &webhookAsyncMode,
@@ -707,9 +702,9 @@ func TestClient_Poll_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	statusTemplate := "{\"status\":\"{{.Body.status}}\",\"success_status_code\": 200,\"success_status_identifier\":\"SUCCEEDED\",\"in_progress_status_identifier\":\"IN_PROGRESS\",\"failed_status_identifier\":\"FAILED\",\"error\": \"{{.Body.error}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.PollRequest{
-		Request: &webhook.Request{
-			Webhook: model.Webhook{
+	webhookReq := &webhook_client.PollRequest{
+		Request: &webhook_client.Request{
+			Webhook: graphql.Webhook{
 				HeaderTemplate: &headersTemplate,
 				StatusTemplate: &statusTemplate,
 				Mode:           &webhookAsyncMode,
@@ -739,18 +734,16 @@ func TestClient_Poll_WhenSuccessfulBasicAuthWebhook_ShouldBeSuccessful(t *testin
 	statusTemplate := "{\"status\":\"{{.Body.status}}\",\"success_status_code\": 200,\"success_status_identifier\":\"SUCCEEDED\",\"in_progress_status_identifier\":\"IN_PROGRESS\",\"failed_status_identifier\":\"FAILED\",\"error\": \"{{.Body.error}}\"}"
 	username, password := "user", "pass"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.PollRequest{
-		Request: &webhook.Request{
-			Webhook: model.Webhook{
+	webhookReq := &webhook_client.PollRequest{
+		Request: &webhook_client.Request{
+			Webhook: graphql.Webhook{
 				HeaderTemplate: &headersTemplate,
 				StatusTemplate: &statusTemplate,
 				Mode:           &webhookAsyncMode,
-				Auth: &model.Auth{
-					Credential: model.CredentialData{
-						Basic: &model.BasicCredentialData{
-							Username: username,
-							Password: password,
-						},
+				Auth: &graphql.Auth{
+					Credential: &graphql.BasicCredentialData{
+						Username: username,
+						Password: password,
 					},
 				},
 			},
@@ -786,19 +779,17 @@ func TestClient_Poll_WhenSuccessfulOAuthWebhook_ShouldBeSuccessful(t *testing.T)
 	statusTemplate := "{\"status\":\"{{.Body.status}}\",\"success_status_code\": 200,\"success_status_identifier\":\"SUCCEEDED\",\"in_progress_status_identifier\":\"IN_PROGRESS\",\"failed_status_identifier\":\"FAILED\",\"error\": \"{{.Body.error}}\"}"
 	clientID, clientSecret, tokenURL := "client-id", "client-secret", "https://test-domain.com/oauth/token"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.PollRequest{
-		Request: &webhook.Request{
-			Webhook: model.Webhook{
+	webhookReq := &webhook_client.PollRequest{
+		Request: &webhook_client.Request{
+			Webhook: graphql.Webhook{
 				HeaderTemplate: &headersTemplate,
 				StatusTemplate: &statusTemplate,
 				Mode:           &webhookAsyncMode,
-				Auth: &model.Auth{
-					Credential: model.CredentialData{
-						Oauth: &model.OAuthCredentialData{
-							ClientID:     "client-id",
-							ClientSecret: "client-secret",
-							URL:          "https://test-domain.com/oauth/token",
-						},
+				Auth: &graphql.Auth{
+					Credential: &graphql.OAuthCredentialData{
+						ClientID:     "client-id",
+						ClientSecret: "client-secret",
+						URL:          "https://test-domain.com/oauth/token",
 					},
 				},
 			},
@@ -835,13 +826,13 @@ func TestClient_Poll_WhenSuccessfulMTLSWebhook_ShouldBeSuccessful(t *testing.T) 
 	mtlsCalled := false
 
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	pollRequest := &webhook.PollRequest{
-		Request: &webhook.Request{
-			Webhook: model.Webhook{
+	pollRequest := &webhook_client.PollRequest{
+		Request: &webhook_client.Request{
+			Webhook: graphql.Webhook{
 				OutputTemplate: &outputTemplate,
 				StatusTemplate: &statusTemplate,
 				Mode:           &webhookAsyncMode,
-				Auth: &model.Auth{
+				Auth: &graphql.Auth{
 					AccessStrategy: str.Ptr(string(accessstrategy2.CMPmTLSAccessStrategy)),
 				},
 			},
@@ -875,9 +866,9 @@ func TestClient_Poll_WhenSuccessfulWebhookPollResponseContainsNullErrorField_Sho
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	statusTemplate := "{\"status\":\"{{.Body.status}}\",\"success_status_code\": 200,\"success_status_identifier\":\"SUCCEEDED\",\"in_progress_status_identifier\":\"IN_PROGRESS\",\"failed_status_identifier\":\"FAILED\",\"error\": \"{{.Body.error}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.PollRequest{
-		Request: &webhook.Request{
-			Webhook: model.Webhook{
+	webhookReq := &webhook_client.PollRequest{
+		Request: &webhook_client.Request{
+			Webhook: graphql.Webhook{
 				HeaderTemplate: &headersTemplate,
 				StatusTemplate: &statusTemplate,
 				Mode:           &webhookAsyncMode,
@@ -904,9 +895,9 @@ func TestClient_Poll_WhenSuccessfulWebhookPollResponseContainsEmptyErrorField_Sh
 	headersTemplate := "{\"user-identity\":[\"{{.Headers.Client_user}}\"]}"
 	statusTemplate := "{\"status\":\"{{.Body.status}}\",\"success_status_code\": 200,\"success_status_identifier\":\"SUCCEEDED\",\"in_progress_status_identifier\":\"IN_PROGRESS\",\"failed_status_identifier\":\"FAILED\",\"error\": \"{{.Body.error}}\"}"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.PollRequest{
-		Request: &webhook.Request{
-			Webhook: model.Webhook{
+	webhookReq := &webhook_client.PollRequest{
+		Request: &webhook_client.Request{
+			Webhook: graphql.Webhook{
 				HeaderTemplate: &headersTemplate,
 				StatusTemplate: &statusTemplate,
 				Mode:           &webhookAsyncMode,
@@ -935,9 +926,9 @@ func TestClient_Poll_WhenMissingCorrelationID_ShouldBeSuccessful(t *testing.T) {
 	correlationIDKey := "X-Correlation-Id"
 	correlationID := "abc"
 	app := &graphql.Application{BaseEntity: &graphql.BaseEntity{ID: "appID"}}
-	webhookReq := &webhook.PollRequest{
-		Request: &webhook.Request{
-			Webhook: model.Webhook{
+	webhookReq := &webhook_client.PollRequest{
+		Request: &webhook_client.Request{
+			Webhook: graphql.Webhook{
 				CorrelationIDKey: &correlationIDKey,
 				HeaderTemplate:   &headersTemplate,
 				StatusTemplate:   &statusTemplate,

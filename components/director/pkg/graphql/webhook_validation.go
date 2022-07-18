@@ -45,6 +45,18 @@ var webhookTemplateInputByType = map[WebhookType]webhook.TemplateInput{
 
 // Validate missing godoc
 func (i WebhookInput) Validate() error {
+	if err := validation.ValidateStruct(&i,
+		validation.Field(&i.Type, validation.Required, validation.In(WebhookTypeConfigurationChanged, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeUnpairApplication)),
+		validation.Field(&i.URL, is.URL, validation.RuneLength(0, longStringLengthLimit)),
+		validation.Field(&i.CorrelationIDKey, validation.RuneLength(0, longStringLengthLimit)),
+		validation.Field(&i.Mode, validation.In(WebhookModeSync, WebhookModeAsync)),
+		validation.Field(&i.RetryInterval, validation.Min(0)),
+		validation.Field(&i.Timeout, validation.Min(0)),
+		validation.Field(&i.Auth),
+	); err != nil {
+		return err
+	}
+
 	if i.URL == nil && i.URLTemplate == nil {
 		return apperrors.NewInvalidDataError("missing webhook url")
 	}
@@ -62,18 +74,27 @@ func (i WebhookInput) Validate() error {
 
 	requestObject := webhookTemplateInputByType[i.Type]
 	if i.URLTemplate != nil {
+		if requestObject == nil {
+			return apperrors.NewInvalidDataError("missing template input for type: %s", i.Type)
+		}
 		if _, err := requestObject.ParseURLTemplate(i.URLTemplate); err != nil {
 			return apperrors.NewInvalidDataError("failed to parse webhook url template: %s", err)
 		}
 	}
 
 	if i.InputTemplate != nil {
+		if requestObject == nil {
+			return apperrors.NewInvalidDataError("missing template input for type: %s", i.Type)
+		}
 		if _, err := requestObject.ParseInputTemplate(i.InputTemplate); err != nil {
 			return apperrors.NewInvalidDataError("failed to parse webhook input template: %s", err)
 		}
 	}
 
 	if i.HeaderTemplate != nil {
+		if requestObject == nil {
+			return apperrors.NewInvalidDataError("missing template input for type: %s", i.Type)
+		}
 		if _, err := requestObject.ParseHeadersTemplate(i.HeaderTemplate); err != nil {
 			return apperrors.NewInvalidDataError("failed to parse webhook headers template: %s", err)
 		}
@@ -100,15 +121,7 @@ func (i WebhookInput) Validate() error {
 		}
 	}
 
-	return validation.ValidateStruct(&i,
-		validation.Field(&i.Type, validation.Required, validation.In(WebhookTypeConfigurationChanged, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeUnpairApplication)),
-		validation.Field(&i.URL, is.URL, validation.RuneLength(0, longStringLengthLimit)),
-		validation.Field(&i.CorrelationIDKey, validation.RuneLength(0, longStringLengthLimit)),
-		validation.Field(&i.Mode, validation.In(WebhookModeSync, WebhookModeAsync)),
-		validation.Field(&i.RetryInterval, validation.Min(0)),
-		validation.Field(&i.Timeout, validation.Min(0)),
-		validation.Field(&i.Auth),
-	)
+	return nil
 }
 
 func isOutTemplateMandatory(webhookType WebhookType) bool {

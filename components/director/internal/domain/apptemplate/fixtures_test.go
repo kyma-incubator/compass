@@ -199,7 +199,7 @@ func fixGQLAppTemplateInputInvalidAppInputURLTemplateMethod(name string) *graphq
 			Description: &desc,
 			Webhooks: []*graphql.WebhookInput{
 				{
-					Type:        "ASYNC",
+					Type:        graphql.WebhookTypeUnregisterApplication,
 					URLTemplate: str.Ptr(`{"path": "https://target.url", "method":"invalid method"}`),
 				},
 			},
@@ -253,7 +253,7 @@ func fixGQLAppTemplateUpdateInputInvalidAppInput(name string) *graphql.Applicati
 			Description: &desc,
 			Webhooks: []*graphql.WebhookInput{
 				{
-					Type:        "ASYNC",
+					Type:        graphql.WebhookTypeUnregisterApplication,
 					URLTemplate: str.Ptr(`{"path": "https://target.url", "method":"invalid method"}`),
 				},
 			},

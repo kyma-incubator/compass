@@ -21,7 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"io/ioutil"
@@ -39,17 +39,6 @@ import (
 
 const emptyBody = `{}`
 
-// WebhookStatusGoneErr represents an error type which represents a gone status code
-// returned in response to calling delete webhook.
-type WebhookStatusGoneErr struct {
-	error
-}
-
-// NewWebhookStatusGoneErr constructs a new WebhookStatusGoneErr with the given error message
-func NewWebhookStatusGoneErr(goneStatusCode int) WebhookStatusGoneErr {
-	return WebhookStatusGoneErr{error: fmt.Errorf("gone response status %d was met while calling webhook", goneStatusCode)}
-}
-
 type client struct {
 	httpClient *http.Client
 	mtlsClient *http.Client
@@ -62,7 +51,7 @@ func NewClient(httpClient *http.Client, mtlsClient *http.Client) *client {
 	}
 }
 
-func (c *client) Do(ctx context.Context, request *webhook.Request) (*webhook.Response, error) {
+func (c *client) Do(ctx context.Context, request *Request) (*webhook.Response, error) {
 	var err error
 	webhook := request.Webhook
 
@@ -139,7 +128,7 @@ func (c *client) Do(ctx context.Context, request *webhook.Request) (*webhook.Res
 	}
 
 	isLocationEmpty := response.Location != nil && *response.Location == ""
-	isAsyncWebhook := webhook.Mode != nil && *webhook.Mode == model.WebhookModeAsync
+	isAsyncWebhook := webhook.Mode != nil && *webhook.Mode == graphql.WebhookModeAsync
 
 	if isLocationEmpty && isAsyncWebhook {
 		return nil, errors.Errorf("missing location url after executing async webhook: HTTP response status %+v with body %s", resp.Status, responseObject.Body)
@@ -148,7 +137,7 @@ func (c *client) Do(ctx context.Context, request *webhook.Request) (*webhook.Res
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
 }
 
-func (c *client) Poll(ctx context.Context, request *webhook.PollRequest) (*webhook.ResponseStatus, error) {
+func (c *client) Poll(ctx context.Context, request *PollRequest) (*webhook.ResponseStatus, error) {
 	var err error
 	webhook := request.Webhook
 
@@ -199,11 +188,11 @@ func (c *client) Poll(ctx context.Context, request *webhook.PollRequest) (*webho
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
 }
 
-func (c *client) executeRequestWithCorrectClient(ctx context.Context, req *http.Request, webhook model.Webhook) (*http.Response, error) {
+func (c *client) executeRequestWithCorrectClient(ctx context.Context, req *http.Request, webhook graphql.Webhook) (*http.Response, error) {
 	if webhook.Auth != nil {
 		if str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.CMPmTLSAccessStrategy) {
 			return c.mtlsClient.Do(req)
-		} else if webhook.Auth.Credential.Basic != nil || webhook.Auth.Credential.Oauth != nil {
+		} else if webhook.Auth.Credential != nil {
 			ctx = saveToContext(ctx, webhook.Auth.Credential)
 			req = req.WithContext(ctx)
 			return c.httpClient.Do(req)
@@ -271,21 +260,22 @@ func checkForGoneStatus(resp *http.Response, goneStatusCode *int) error {
 	return nil
 }
 
-func saveToContext(ctx context.Context, credentialData model.CredentialData) context.Context {
+func saveToContext(ctx context.Context, credentialData graphql.CredentialData) context.Context {
 	var credentials auth.Credentials
 
-	if credentialData.Basic != nil {
+	switch v := credentialData.(type) {
+	case *graphql.BasicCredentialData:
 		credentials = &auth.BasicCredentials{
-			Username: credentialData.Basic.Username,
-			Password: credentialData.Basic.Password,
+			Username: v.Username,
+			Password: v.Password,
 		}
-	} else if credentialData.Oauth != nil {
+	case *graphql.OAuthCredentialData:
 		credentials = &auth.OAuthCredentials{
-			ClientID:     credentialData.Oauth.ClientID,
-			ClientSecret: credentialData.Oauth.ClientSecret,
-			TokenURL:     credentialData.Oauth.URL,
+			ClientID:     v.ClientID,
+			ClientSecret: v.ClientSecret,
+			TokenURL:     v.URL,
 		}
-	} else {
+	default:
 		return ctx
 	}
 
