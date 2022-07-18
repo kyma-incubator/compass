@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"os"
 
 	"github.com/pkg/errors"
@@ -35,7 +36,6 @@ import (
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/k8s"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/k8s/status"
 	collector "github.com/kyma-incubator/compass/components/operations-controller/internal/metrics"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"

@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"net/http"
 	"net/url"
 	"text/template"
@@ -36,6 +37,36 @@ type TemplateInput interface {
 	ParseURLTemplate(tmpl *string) (*URL, error)
 	ParseInputTemplate(tmpl *string) ([]byte, error)
 	ParseHeadersTemplate(tmpl *string) (http.Header, error)
+}
+
+// Request represents a webhook request to be executed
+type Request struct {
+	Webhook       graphql.Webhook
+	Object        TemplateInput
+	CorrelationID string
+}
+
+// PollRequest represents a webhook poll request to be executed
+type PollRequest struct {
+	*Request
+	PollURL string
+}
+
+// NewRequest constructs a webhook Request
+func NewRequest(webhook graphql.Webhook, requestObject TemplateInput, correlationID string) *Request {
+	return &Request{
+		Webhook:       webhook,
+		Object:        requestObject,
+		CorrelationID: correlationID,
+	}
+}
+
+// NewPollRequest constructs a webhook Request
+func NewPollRequest(webhook graphql.Webhook, requestObject TemplateInput, correlationID string, pollURL string) *PollRequest {
+	return &PollRequest{
+		Request: NewRequest(webhook, requestObject, correlationID),
+		PollURL: pollURL,
+	}
 }
 
 // Mode missing godoc

@@ -38,7 +38,6 @@ import (
 	"github.com/kyma-incubator/compass/components/operations-controller/controllers/controllersfakes"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/k8s"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/k8s/status"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -108,7 +107,7 @@ func TestController_Scenarios(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	webhookConfig := webhook.DefaultConfig()
+	webhookConfig := web_hook.DefaultConfig()
 	webhookConfig.RequeueInterval = 100 * time.Millisecond
 	webhookConfig.TimeoutFactor = 1
 	webhookConfig.WebhookTimeout = 10 * time.Second

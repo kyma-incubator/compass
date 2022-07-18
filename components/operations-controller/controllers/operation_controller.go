@@ -46,7 +46,7 @@ import (
 
 // OperationReconciler reconciles an Operation object
 type OperationReconciler struct {
-	config           *webhook.Config
+	config           *webhookdir.Config
 	statusManager    StatusManager
 	k8sClient        KubernetesClient
 	directorClient   DirectorClient
@@ -54,7 +54,7 @@ type OperationReconciler struct {
 	metricsCollector *metrics.Collector
 }
 
-func NewOperationReconciler(config *webhook.Config, statusManager StatusManager, k8sClient KubernetesClient, directorClient DirectorClient, webhookClient WebhookClient, collector *metrics.Collector) *OperationReconciler {
+func NewOperationReconciler(config *webhookdir.Config, statusManager StatusManager, k8sClient KubernetesClient, directorClient DirectorClient, webhookClient WebhookClient, collector *metrics.Collector) *OperationReconciler {
 	return &OperationReconciler{
 		config:           config,
 		statusManager:    statusManager,
