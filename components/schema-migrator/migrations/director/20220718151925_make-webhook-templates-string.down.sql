@@ -1,8 +1,8 @@
 BEGIN;
 
-DROP VIEW IF EXISTS webhooks_tenants CASCADE;
-DROP VIEW IF EXISTS runtime_webhooks_tenants CASCADE;
-DROP VIEW IF EXISTS application_webhooks_tenants CASCADE;
+DROP VIEW IF EXISTS webhooks_tenants;
+DROP VIEW IF EXISTS runtime_webhooks_tenants;
+DROP VIEW IF EXISTS application_webhooks_tenants;
 
 ALTER TABLE webhooks
     ALTER COLUMN url_template TYPE jsonb USING url_template::jsonb,
