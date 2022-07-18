@@ -22,6 +22,9 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -107,7 +110,7 @@ func TestController_Scenarios(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	webhookConfig := web_hook.DefaultConfig()
+	webhookConfig := webhook.DefaultConfig()
 	webhookConfig.RequeueInterval = 100 * time.Millisecond
 	webhookConfig.TimeoutFactor = 1
 	webhookConfig.WebhookTimeout = 10 * time.Second
@@ -181,7 +184,7 @@ func TestController_Scenarios(t *testing.T) {
 	t.Run("Successful Async Webhook flow due to gone status", func(t *testing.T) {
 		mode := graphql.WebhookModeAsync
 		goneStatusCode := 410
-		expectedErr := errors.NewWebhookStatusGoneErr(goneStatusCode)
+		expectedErr := webhook_client.NewWebhookStatusGoneErr(goneStatusCode)
 		application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &mode})
 
 		directorClient.FetchApplicationReturns(application, nil)
@@ -671,7 +674,7 @@ func TestController_Scenarios(t *testing.T) {
 	t.Run("Successful Sync Webhook flow due to gone status", func(t *testing.T) {
 		mode := graphql.WebhookModeSync
 		goneStatusCode := 410
-		expectedErr := errors.NewWebhookStatusGoneErr(goneStatusCode)
+		expectedErr := webhook_client.NewWebhookStatusGoneErr(goneStatusCode)
 		application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &mode})
 
 		directorClient.FetchApplicationReturns(application, nil)

@@ -1,12 +1,13 @@
 package graphql
 
 import (
+	"net/url"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
-	"net/url"
 )
 
 var emptyApplicationLifecycleWebhookRequestObject = &webhook.ApplicationLifecycleWebhookRequestObject{

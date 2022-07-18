@@ -1,8 +1,9 @@
 package graphql_test
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 

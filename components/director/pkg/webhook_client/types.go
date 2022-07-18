@@ -2,6 +2,7 @@ package webhook_client
 
 import (
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 )

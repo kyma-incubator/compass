@@ -2,8 +2,9 @@ package webhook
 
 import (
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"net/http"
+
+	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
 type ApplicationWithLabels struct {

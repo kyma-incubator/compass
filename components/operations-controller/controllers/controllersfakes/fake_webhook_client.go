@@ -6,16 +6,16 @@ import (
 	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"github.com/kyma-incubator/compass/components/operations-controller/controllers"
-	webhooka "github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 )
 
 type FakeWebhookClient struct {
-	DoStub        func(context.Context, *webhooka.Request) (*webhook.Response, error)
+	DoStub        func(context.Context, *webhook_client.Request) (*webhook.Response, error)
 	doMutex       sync.RWMutex
 	doArgsForCall []struct {
 		arg1 context.Context
-		arg2 *webhooka.Request
+		arg2 *webhook_client.Request
 	}
 	doReturns struct {
 		result1 *webhook.Response
@@ -25,11 +25,11 @@ type FakeWebhookClient struct {
 		result1 *webhook.Response
 		result2 error
 	}
-	PollStub        func(context.Context, *webhooka.PollRequest) (*webhook.ResponseStatus, error)
+	PollStub        func(context.Context, *webhook_client.PollRequest) (*webhook.ResponseStatus, error)
 	pollMutex       sync.RWMutex
 	pollArgsForCall []struct {
 		arg1 context.Context
-		arg2 *webhooka.PollRequest
+		arg2 *webhook_client.PollRequest
 	}
 	pollReturns struct {
 		result1 *webhook.ResponseStatus
@@ -43,12 +43,12 @@ type FakeWebhookClient struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeWebhookClient) Do(arg1 context.Context, arg2 *webhooka.Request) (*webhook.Response, error) {
+func (fake *FakeWebhookClient) Do(arg1 context.Context, arg2 *webhook_client.Request) (*webhook.Response, error) {
 	fake.doMutex.Lock()
 	ret, specificReturn := fake.doReturnsOnCall[len(fake.doArgsForCall)]
 	fake.doArgsForCall = append(fake.doArgsForCall, struct {
 		arg1 context.Context
-		arg2 *webhooka.Request
+		arg2 *webhook_client.Request
 	}{arg1, arg2})
 	stub := fake.DoStub
 	fakeReturns := fake.doReturns
@@ -69,13 +69,13 @@ func (fake *FakeWebhookClient) DoCallCount() int {
 	return len(fake.doArgsForCall)
 }
 
-func (fake *FakeWebhookClient) DoCalls(stub func(context.Context, *webhooka.Request) (*webhook.Response, error)) {
+func (fake *FakeWebhookClient) DoCalls(stub func(context.Context, *webhook_client.Request) (*webhook.Response, error)) {
 	fake.doMutex.Lock()
 	defer fake.doMutex.Unlock()
 	fake.DoStub = stub
 }
 
-func (fake *FakeWebhookClient) DoArgsForCall(i int) (context.Context, *webhooka.Request) {
+func (fake *FakeWebhookClient) DoArgsForCall(i int) (context.Context, *webhook_client.Request) {
 	fake.doMutex.RLock()
 	defer fake.doMutex.RUnlock()
 	argsForCall := fake.doArgsForCall[i]
@@ -108,12 +108,12 @@ func (fake *FakeWebhookClient) DoReturnsOnCall(i int, result1 *webhook.Response,
 	}{result1, result2}
 }
 
-func (fake *FakeWebhookClient) Poll(arg1 context.Context, arg2 *webhooka.PollRequest) (*webhook.ResponseStatus, error) {
+func (fake *FakeWebhookClient) Poll(arg1 context.Context, arg2 *webhook_client.PollRequest) (*webhook.ResponseStatus, error) {
 	fake.pollMutex.Lock()
 	ret, specificReturn := fake.pollReturnsOnCall[len(fake.pollArgsForCall)]
 	fake.pollArgsForCall = append(fake.pollArgsForCall, struct {
 		arg1 context.Context
-		arg2 *webhooka.PollRequest
+		arg2 *webhook_client.PollRequest
 	}{arg1, arg2})
 	stub := fake.PollStub
 	fakeReturns := fake.pollReturns
@@ -134,13 +134,13 @@ func (fake *FakeWebhookClient) PollCallCount() int {
 	return len(fake.pollArgsForCall)
 }
 
-func (fake *FakeWebhookClient) PollCalls(stub func(context.Context, *webhooka.PollRequest) (*webhook.ResponseStatus, error)) {
+func (fake *FakeWebhookClient) PollCalls(stub func(context.Context, *webhook_client.PollRequest) (*webhook.ResponseStatus, error)) {
 	fake.pollMutex.Lock()
 	defer fake.pollMutex.Unlock()
 	fake.PollStub = stub
 }
 
-func (fake *FakeWebhookClient) PollArgsForCall(i int) (context.Context, *webhooka.PollRequest) {
+func (fake *FakeWebhookClient) PollArgsForCall(i int) (context.Context, *webhook_client.PollRequest) {
 	fake.pollMutex.RLock()
 	defer fake.pollMutex.RUnlock()
 	argsForCall := fake.pollArgsForCall[i]

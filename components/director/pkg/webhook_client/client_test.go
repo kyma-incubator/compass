@@ -21,10 +21,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"io/ioutil"
 	"net/http"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
 	accessstrategy2 "github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"

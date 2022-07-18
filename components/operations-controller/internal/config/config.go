@@ -17,8 +17,9 @@
 package config
 
 import (
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"reflect"
+
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/director"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/server"

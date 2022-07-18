@@ -19,9 +19,11 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/metrics"
@@ -116,7 +118,7 @@ func (r *OperationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	if !operation.HasPollURL() {
 		log.C(ctx).Info("Webhook Poll URL is not found. Will attempt to execute the webhook")
-		request := webhookdir.NewRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID)
+		request := webhook_client.NewRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID)
 
 		response, err := r.webhookClient.Do(ctx, request)
 		if errors.IsWebhookStatusGoneErr(err) && operation.Spec.OperationType == v1alpha1.OperationTypeDelete {
@@ -143,7 +145,7 @@ func (r *OperationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{RequeueAfter: requeueAfter}, nil
 	}
 
-	request := webhookdir.NewPollRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID, operation.PollURL())
+	request := webhook_client.NewPollRequest(*webhookEntity, requestObject, operation.Spec.CorrelationID, operation.PollURL())
 	response, err := r.webhookClient.Poll(ctx, request)
 	if err != nil {
 		log.C(ctx).Error(err, "Unable to execute Webhook Poll request")
