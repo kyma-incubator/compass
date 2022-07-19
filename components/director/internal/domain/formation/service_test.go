@@ -93,7 +93,7 @@ func TestServiceList(t *testing.T) {
 			// GIVEN
 			formationRepo := testCase.FormationRepoFn()
 
-			svc := formation.NewService(nil, nil, formationRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := formation.NewService(nil, nil, formationRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			actual, err := svc.List(ctx, testCase.InputPageSize, cursor)
@@ -155,7 +155,7 @@ func TestServiceGet(t *testing.T) {
 			// GIVEN
 			formationRepo := testCase.FormationRepoFn()
 
-			svc := formation.NewService(nil, nil, formationRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := formation.NewService(nil, nil, formationRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			actual, err := svc.Get(ctx, testCase.InputID)
@@ -452,7 +452,7 @@ func TestServiceCreateFormation(t *testing.T) {
 				formationTemplateRepoMock = testCase.FormationTemplateRepoFn()
 			}
 
-			svc := formation.NewService(lblDefRepo, nil, formationRepoMock, formationTemplateRepoMock, nil, uuidSvcMock, lblDefService, nil, nil, nil, nil, nil)
+			svc := formation.NewService(lblDefRepo, nil, formationRepoMock, formationTemplateRepoMock, nil, uuidSvcMock, lblDefService, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			actual, err := svc.CreateFormation(ctx, Tnt, in, testCase.TemplateName)
@@ -689,7 +689,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 				formationRepoMock = testCase.FormationRepoFn()
 			}
 
-			svc := formation.NewService(lblDefRepo, nil, formationRepoMock, nil, nil, nil, lblDefService, nil, nil, nil, nil, nil)
+			svc := formation.NewService(lblDefRepo, nil, formationRepoMock, nil, nil, nil, lblDefService, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			actual, err := svc.DeleteFormation(ctx, Tnt, testCase.InputFormation)
@@ -1400,7 +1400,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				tenantSvc = testCase.TenantServiceFn()
 			}
 
-			svc := formation.NewService(nil, nil, formationRepo, nil, labelService, uidService, labelDefService, asaRepo, asaService, tenantSvc, runtimeRepo, runtimeContextRepo)
+			svc := formation.NewService(nil, nil, formationRepo, nil, labelService, uidService, labelDefService, asaRepo, asaService, tenantSvc, runtimeRepo, runtimeContextRepo, nil)
 
 			// WHEN
 			actual, err := svc.AssignFormation(ctx, Tnt, objectID, testCase.ObjectType, testCase.InputFormation)
@@ -2228,7 +2228,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			runtimeRepo := testCase.RuntimeRepoFN()
 			runtimeContextRepo := testCase.RuntimeContextRepoFn()
 			formationRepo := testCase.FormationRepositoryFn()
-			svc := formation.NewService(nil, labelRepo, formationRepo, nil, labelService, uidService, nil, asaRepo, asaService, nil, runtimeRepo, runtimeContextRepo)
+			svc := formation.NewService(nil, labelRepo, formationRepo, nil, labelService, uidService, nil, asaRepo, asaService, nil, runtimeRepo, runtimeContextRepo, nil)
 
 			// WHEN
 			actual, err := svc.UnassignFormation(ctx, Tnt, objectID, testCase.ObjectType, testCase.InputFormation)
@@ -2386,7 +2386,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			runtimeRepo := testCase.RuntimeRepoFN()
 			runtimeContextRepo := testCase.RuntimeContextRepoFn()
 
-			svc := formation.NewService(nil, nil, nil, nil, nil, nil, labelDefService, asaRepo, nil, tenantSvc, runtimeRepo, runtimeContextRepo)
+			svc := formation.NewService(nil, nil, nil, nil, nil, nil, labelDefService, asaRepo, nil, tenantSvc, runtimeRepo, runtimeContextRepo, nil)
 
 			// WHEN
 			actual, err := svc.CreateAutomaticScenarioAssignment(ctx, testCase.InputASA)
@@ -2407,7 +2407,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 
 	t.Run("returns error on missing tenant in context", func(t *testing.T) {
 		// GIVEN
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := svc.CreateAutomaticScenarioAssignment(context.TODO(), fixModel())
@@ -2445,7 +2445,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 		runtimeContextRepo.On("ListAll", ctx, TargetTenantID).Return(make([]*model.RuntimeContext, 0), nil)
 		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo, runtimeContextRepo)
 
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, runtimeContextRepo)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, runtimeContextRepo, nil)
 
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, models)
@@ -2463,7 +2463,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 		runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(nil, fixError())
 		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo)
 
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, nil)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, nil, nil)
 
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, models)
@@ -2485,7 +2485,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 		runtimeContextRepo.On("ListAll", ctx, TargetTenantID).Return(nil, fixError())
 		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo, runtimeContextRepo)
 
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, runtimeContextRepo)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, runtimeContextRepo, nil)
 
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, models)
@@ -2497,7 +2497,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 
 	t.Run("return error when input slice is empty", func(t *testing.T) {
 		// GIVEN
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, []*model.AutomaticScenarioAssignment{})
@@ -2520,7 +2520,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 			},
 		}
 
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, modelsWithDifferentSelectors)
 
@@ -2537,7 +2537,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, mockRepo)
 
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, nil, nil)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, nil, nil, nil)
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, models)
 
@@ -2546,7 +2546,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 	})
 
 	t.Run("returns error when empty tenant", func(t *testing.T) {
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		err := svc.DeleteManyASAForSameTargetTenant(context.TODO(), models)
 		require.EqualError(t, err, "cannot read tenant from context")
 	})
@@ -2566,7 +2566,7 @@ func TestService_DeleteForScenarioName(t *testing.T) {
 		runtimeContextRepo.On("ListAll", ctx, TargetTenantID).Return(make([]*model.RuntimeContext, 0), nil).Once()
 		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo, runtimeContextRepo)
 
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, runtimeContextRepo)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, runtimeContextRepo, nil)
 
 		// WHEN
 		err := svc.DeleteAutomaticScenarioAssignment(fixCtxWithTenant(), fixModel())
@@ -2585,7 +2585,7 @@ func TestService_DeleteForScenarioName(t *testing.T) {
 		runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(nil, fixError()).Once()
 		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo)
 
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, nil)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, nil, nil)
 
 		// WHEN
 		err := svc.DeleteAutomaticScenarioAssignment(ctx, fixModel())
@@ -2608,7 +2608,7 @@ func TestService_DeleteForScenarioName(t *testing.T) {
 		runtimeContextRepo.On("ListAll", ctx, TargetTenantID).Return(nil, fixError())
 		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo, runtimeContextRepo)
 
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, runtimeContextRepo)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, runtimeContextRepo, nil)
 
 		// WHEN
 		err := svc.DeleteAutomaticScenarioAssignment(ctx, fixModel())
@@ -2620,7 +2620,7 @@ func TestService_DeleteForScenarioName(t *testing.T) {
 
 	t.Run("error on missing tenant in context", func(t *testing.T) {
 		// GIVEN
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		err := svc.DeleteAutomaticScenarioAssignment(context.TODO(), fixModel())
@@ -2636,7 +2636,7 @@ func TestService_DeleteForScenarioName(t *testing.T) {
 		mockRepo.On("DeleteForScenarioName", ctx, tenantID.String(), ScenarioName).Return(fixError()).Once()
 		defer mock.AssertExpectationsForObjects(t, mockRepo)
 
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, nil, nil)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, nil, nil, nil)
 
 		// WHEN
 		err := svc.DeleteAutomaticScenarioAssignment(fixCtxWithTenant(), fixModel())
@@ -2766,7 +2766,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 		formationRepo := &automock.FormationRepository{}
 		formationRepo.On("GetByName", ctx, selectorScenario, in.Tenant).Return(expectedFormation, nil).Times(4)
 
-		svc := formation.NewService(nil, nil, formationRepo, nil, upsertSvc, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo)
+		svc := formation.NewService(nil, nil, formationRepo, nil, upsertSvc, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo, nil)
 
 		// WHEN
 		err := svc.EnsureScenarioAssigned(ctx, in)
@@ -2792,7 +2792,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 			ObjectType: model.RuntimeLabelableObject,
 		}).Return(testErr).Once()
 
-		svc := formation.NewService(nil, nil, nil, nil, upsertSvc, nil, nil, nil, nil, nil, runtimeRepo, nil)
+		svc := formation.NewService(nil, nil, nil, nil, upsertSvc, nil, nil, nil, nil, nil, runtimeRepo, nil, nil)
 
 		// WHEN
 		err := svc.EnsureScenarioAssigned(ctx, in)
@@ -2812,7 +2812,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 		labelService := &automock.LabelService{}
 		labelService.On("GetLabel", ctx, tenantID.String(), &labelInputWithoutScenario).Return(nil, testErr).Once()
 
-		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, nil, nil, nil, runtimeRepo, nil)
+		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, nil, nil, nil, runtimeRepo, nil, nil)
 
 		// WHEN
 		err := svc.EnsureScenarioAssigned(ctx, in)
@@ -2830,7 +2830,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(nil, testErr).Once()
 
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeRepo, nil)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeRepo, nil, nil)
 
 		// WHEN
 		err := svc.EnsureScenarioAssigned(ctx, in)
@@ -2861,7 +2861,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 			ObjectType: model.RuntimeContextLabelableObject,
 		}).Return(testErr).Once()
 
-		svc := formation.NewService(nil, nil, nil, nil, upsertSvc, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo)
+		svc := formation.NewService(nil, nil, nil, nil, upsertSvc, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo, nil)
 
 		// WHEN
 		err := svc.EnsureScenarioAssigned(ctx, in)
@@ -2885,7 +2885,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 		upsertSvc := &automock.LabelService{}
 		upsertSvc.On("GetLabel", ctx, tenantID.String(), &rtmCtxLabelInputWithoutScenario).Return(nil, testErr).Once()
 
-		svc := formation.NewService(nil, nil, nil, nil, upsertSvc, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo)
+		svc := formation.NewService(nil, nil, nil, nil, upsertSvc, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo, nil)
 
 		// WHEN
 		err := svc.EnsureScenarioAssigned(ctx, in)
@@ -2906,7 +2906,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 		runtimeContextRepo := &automock.RuntimeContextRepository{}
 		runtimeContextRepo.On("ListAll", ctx, TargetTenantID).Return(nil, testErr).Once()
 
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo, nil)
 
 		// WHEN
 		err := svc.EnsureScenarioAssigned(ctx, in)
@@ -2927,7 +2927,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 		runtimeContextRepo := &automock.RuntimeContextRepository{}
 		runtimeContextRepo.On("ListAll", ctx, TargetTenantID).Return(make([]*model.RuntimeContext, 0), nil).Once()
 
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo, nil)
 
 		// WHEN
 		err := svc.EnsureScenarioAssigned(ctx, in)
@@ -3017,7 +3017,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 		formationRepo := &automock.FormationRepository{}
 		formationRepo.On("GetByName", ctx, selectorScenario, in.Tenant).Return(expectedFormation, nil).Times(2)
 
-		svc := formation.NewService(nil, nil, formationRepo, nil, labelService, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo)
+		svc := formation.NewService(nil, nil, formationRepo, nil, labelService, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, nil)
 
 		// WHEN
 		err := svc.RemoveAssignedScenario(ctx, in)
@@ -3046,7 +3046,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			ObjectType: model.RuntimeLabelableObject,
 		}).Return(testErr).Once()
 
-		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, asaRepo, nil, nil, runtimeRepo, nil)
+		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, asaRepo, nil, nil, runtimeRepo, nil, nil)
 
 		// WHEN
 		err := svc.RemoveAssignedScenario(ctx, in)
@@ -3064,7 +3064,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(nil, testErr).Once()
 
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeRepo, nil)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeRepo, nil, nil)
 
 		// WHEN
 		err := svc.RemoveAssignedScenario(ctx, in)
@@ -3088,7 +3088,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 		labelService := &automock.LabelService{}
 		labelService.On("GetLabel", ctx, tenantID.String(), &labelInput).Return(nil, testErr).Once()
 
-		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, asaRepo, nil, nil, runtimeRepo, nil)
+		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, asaRepo, nil, nil, runtimeRepo, nil, nil)
 
 		// WHEN
 		err := svc.RemoveAssignedScenario(ctx, in)
@@ -3120,7 +3120,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			ObjectType: model.RuntimeContextLabelableObject,
 		}).Return(testErr).Once()
 
-		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo)
+		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, nil)
 
 		// WHEN
 		err := svc.RemoveAssignedScenario(ctx, in)
@@ -3141,7 +3141,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 		runtimeContextRepo := &automock.RuntimeContextRepository{}
 		runtimeContextRepo.On("ListAll", ctx, TargetTenantID).Return(nil, testErr).Once()
 
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo, nil)
 
 		// WHEN
 		err := svc.RemoveAssignedScenario(ctx, in)
@@ -3168,7 +3168,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 		labelService := &automock.LabelService{}
 		labelService.On("GetLabel", ctx, tenantID.String(), &rtmCtxLabelInput).Return(nil, testErr).Once()
 
-		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo)
+		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, nil)
 
 		// WHEN
 		err := svc.RemoveAssignedScenario(ctx, in)
@@ -3213,7 +3213,7 @@ func TestService_MergeScenariosFromInputLabelsAndAssignments_Success(t *testing.
 	runtimeRepo.On("Exists", ctx, TargetTenantID, runtimeID).Return(true, nil).Once()
 	runtimeRepo.On("Exists", ctx, differentTargetTenant, runtimeID).Return(false, nil).Once()
 
-	svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, asaRepo, nil, nil, runtimeRepo, nil)
+	svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, asaRepo, nil, nil, runtimeRepo, nil, nil)
 
 	// WHEN
 	actualScenarios, err := svc.MergeScenariosFromInputLabelsAndAssignments(ctx, inputLabels, runtimeID)
@@ -3254,7 +3254,7 @@ func TestService_MergeScenariosFromInputLabelsAndAssignments_SuccessIfScenariosL
 	runtimeRepo := &automock.RuntimeRepository{}
 	runtimeRepo.On("Exists", ctx, TargetTenantID, runtimeID).Return(true, nil).Once()
 
-	svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, asaRepo, nil, nil, runtimeRepo, nil)
+	svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, asaRepo, nil, nil, runtimeRepo, nil, nil)
 
 	// WHEN
 	actualScenarios, err := svc.MergeScenariosFromInputLabelsAndAssignments(ctx, inputLabels, runtimeID)
@@ -3280,7 +3280,7 @@ func TestService_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfListA
 	asaRepo := &automock.AutomaticFormationAssignmentRepository{}
 	asaRepo.On("ListAll", ctx, tenantID.String()).Return(nil, testErr)
 
-	svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, asaRepo, nil, nil, nil, nil)
+	svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, asaRepo, nil, nil, nil, nil, nil)
 
 	// WHEN
 	_, err := svc.MergeScenariosFromInputLabelsAndAssignments(ctx, inputLabels, "runtimeID")
@@ -3317,7 +3317,7 @@ func TestService_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfExist
 	runtimeRepo := &automock.RuntimeRepository{}
 	runtimeRepo.On("Exists", ctx, TargetTenantID, runtimeID).Return(false, testErr).Once()
 
-	svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, asaRepo, nil, nil, runtimeRepo, nil)
+	svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, asaRepo, nil, nil, runtimeRepo, nil, nil)
 
 	// WHEN
 	_, err := svc.MergeScenariosFromInputLabelsAndAssignments(ctx, inputLabels, runtimeID)
@@ -3355,7 +3355,7 @@ func TestService_MergeScenariosFromInputLabelsAndAssignments_ReturnsErrorIfScena
 	runtimeRepo := &automock.RuntimeRepository{}
 	runtimeRepo.On("Exists", ctx, TargetTenantID, runtimeID).Return(true, nil).Once()
 
-	svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, asaRepo, nil, nil, runtimeRepo, nil)
+	svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, asaRepo, nil, nil, runtimeRepo, nil, nil)
 
 	// WHEN
 	_, err := svc.MergeScenariosFromInputLabelsAndAssignments(ctx, inputLabels, runtimeID)
@@ -3498,7 +3498,7 @@ func TestService_GetScenariosFromMatchingASAs(t *testing.T) {
 			runtimeRepo := testCase.RuntimeRepoFn()
 			runtimeContextRepo := testCase.RuntimeContextRepoFn()
 
-			svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo)
+			svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, nil)
 
 			// WHEN
 			scenarios, err := svc.GetScenariosFromMatchingASAs(ctx, testCase.ObjectID, testCase.ObjectType)
@@ -3544,7 +3544,7 @@ func TestService_GetFormationsForObject(t *testing.T) {
 		labelService := &automock.LabelService{}
 		labelService.On("GetLabel", ctx, tenantID.String(), labelInput).Return(label, nil).Once()
 
-		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, nil, nil, nil, nil, nil)
+		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		formations, err := svc.GetFormationsForObject(ctx, tenantID.String(), model.RuntimeLabelableObject, id)
@@ -3562,7 +3562,7 @@ func TestService_GetFormationsForObject(t *testing.T) {
 		labelService := &automock.LabelService{}
 		labelService.On("GetLabel", ctx, tenantID.String(), labelInput).Return(nil, errors.New(testErr)).Once()
 
-		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, nil, nil, nil, nil, nil)
+		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		formations, err := svc.GetFormationsForObject(ctx, tenantID.String(), model.RuntimeLabelableObject, id)

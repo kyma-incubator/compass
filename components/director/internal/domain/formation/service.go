@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -100,6 +103,11 @@ type tenantService interface {
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 }
 
+//go:generate mockery --exported --name=webhookClient --output=automock --outpkg=automock --case=underscore --disable-version-string
+type webhookClient interface {
+	Do(ctx context.Context, request *webhook_client.Request) (*webhookdir.Response, error)
+}
+
 type service struct {
 	labelDefRepository          labelDefRepository
 	labelRepository             labelRepository
@@ -113,10 +121,11 @@ type service struct {
 	repo                        automaticFormationAssignmentRepository
 	runtimeRepo                 runtimeRepository
 	runtimeContextRepo          runtimeContextRepository
+	webhookClient               webhookClient
 }
 
 // NewService creates formation service
-func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository) *service {
+func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, webhookClient webhookClient) *service {
 	return &service{
 		labelDefRepository:          labelDefRepository,
 		labelRepository:             labelRepository,
@@ -130,6 +139,7 @@ func NewService(labelDefRepository labelDefRepository, labelRepository labelRepo
 		repo:                        asaRepo,
 		runtimeRepo:                 runtimeRepo,
 		runtimeContextRepo:          runtimeContextRepo,
+		webhookClient:               webhookClient,
 	}
 }
 

@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
@@ -112,7 +114,10 @@ func main() {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize certificate loader"))
 	}
 
-	sf, err := createSystemFetcher(cfg, cfgProvider, transact, &http.Client{Timeout: cfg.ClientTimeout}, certCache)
+	httpClient := pkgAuth.PrepareHTTPClient(cfg.ClientTimeout)
+	mtlsClient := pkgAuth.PrepareMTLSClient(cfg.ClientTimeout, certCache)
+
+	sf, err := createSystemFetcher(cfg, cfgProvider, transact, httpClient, mtlsClient, certCache)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize System Fetcher"))
 	}
@@ -178,7 +183,7 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 	return nil
 }
 
-func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient *http.Client, certCache certloader.Cache) (*systemfetcher.SystemFetcher, error) {
+func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, mtlsClient *http.Client, certCache certloader.Cache) (*systemfetcher.SystemFetcher, error) {
 	uidSvc := uid.NewService()
 
 	tenantConv := tenant.NewConverter()
@@ -234,7 +239,8 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo)
+	webhookClient := webhook_client.NewClient(httpClient, mtlsClient)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, webhookClient)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegisterDistinguishLabelKey)
 	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConv)

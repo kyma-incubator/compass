@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"net/http"
 	"time"
+
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/retry"
 
@@ -94,29 +96,25 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	httpClient := &http.Client{
-		Timeout: cfg.ClientTimeout,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: cfg.SkipSSLValidation,
-			},
-		},
-	}
+	httpClient := httputil.PrepareHTTPClient(cfg.ClientTimeout)
+	httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = cfg.SkipSSLValidation
 
 	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	exitOnError(err, "Failed to initialize certificate loader")
 
+	mtlsClient := httputil.PrepareMTLSClient(cfg.ClientTimeout, certCache)
+
 	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
 	retryHTTPExecutor := retry.NewHTTPExecutor(&cfg.RetryConfig)
 
-	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg, transact, httpClient, accessStrategyExecutorProvider, retryHTTPExecutor)
+	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg, transact, httpClient, mtlsClient, accessStrategyExecutorProvider, retryHTTPExecutor)
 	err = ordAggregator.SyncORDDocuments(ctx)
 	exitOnError(err, "Error while synchronizing Open Resource Discovery Documents")
 
 	log.C(ctx).Info("Successfully synchronized Open Resource Discovery Documents")
 }
 
-func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config, transact persistence.Transactioner, httpClient *http.Client, accessStrategyExecutorProvider *accessstrategy.Provider, retryHTTPExecutor *retry.HTTPExecutor) *ord.Service {
+func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config, transact persistence.Transactioner, httpClient, mtlsClient *http.Client, accessStrategyExecutorProvider *accessstrategy.Provider, retryHTTPExecutor *retry.HTTPExecutor) *ord.Service {
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -177,7 +175,8 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo)
+	webhookClient := webhook_client.NewClient(httpClient, mtlsClient)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, webhookClient)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc, formationSvc, config.SelfRegisterDistinguishLabelKey)
 	packageSvc := ordpackage.NewService(pkgRepo, uidSvc)
 	productSvc := product.NewService(productRepo, uidSvc)
