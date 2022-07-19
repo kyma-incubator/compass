@@ -73,9 +73,7 @@ func TestValidator_Validate(t *testing.T) {
 		ID: "appTemplateID",
 	}
 
-	applicationFilter := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", consumerExtTenantID)),
-	}
+	emptyApplicationFilter := []*labelfilter.LabelFilter{}
 
 	applicationPage := &model.ApplicationPage{
 		Data: []*model.Application{
@@ -200,7 +198,7 @@ func TestValidator_Validate(t *testing.T) {
 			},
 			ApplicationServiceFn: func() *automock.ApplicationService {
 				applicationSvc := &automock.ApplicationService{}
-				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 200, "").Return(emptyApplicationPage, nil).Once()
+				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), emptyApplicationFilter, 200, "").Return(emptyApplicationPage, nil).Once()
 				return applicationSvc
 			},
 			ExpectedErr: "subscription record not found neither for application",
@@ -220,7 +218,7 @@ func TestValidator_Validate(t *testing.T) {
 			},
 			ApplicationServiceFn: func() *automock.ApplicationService {
 				applicationSvc := &automock.ApplicationService{}
-				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 200, "").Return(emptyApplicationPage, nil).Once()
+				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), emptyApplicationFilter, 200, "").Return(emptyApplicationPage, nil).Once()
 				return applicationSvc
 			},
 			RuntimeCtxSvcFn: func() *automock.RuntimeCtxService {
@@ -245,7 +243,7 @@ func TestValidator_Validate(t *testing.T) {
 			},
 			ApplicationServiceFn: func() *automock.ApplicationService {
 				applicationSvc := &automock.ApplicationService{}
-				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 200, "").Return(applicationPage, nil).Once()
+				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), emptyApplicationFilter, 200, "").Return(applicationPage, nil).Once()
 				return applicationSvc
 			},
 		},
@@ -269,7 +267,7 @@ func TestValidator_Validate(t *testing.T) {
 			},
 			ApplicationServiceFn: func() *automock.ApplicationService {
 				applicationSvc := &automock.ApplicationService{}
-				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 200, "").Return(emptyApplicationPage, nil).Once()
+				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), emptyApplicationFilter, 200, "").Return(emptyApplicationPage, nil).Once()
 				return applicationSvc
 			},
 			ExpectedErr: "subscription record not found neither for application",
@@ -302,7 +300,7 @@ func TestValidator_Validate(t *testing.T) {
 			},
 			ApplicationServiceFn: func() *automock.ApplicationService {
 				applicationSvc := &automock.ApplicationService{}
-				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), applicationFilter, 200, "").Return(emptyApplicationPage, nil).Once()
+				applicationSvc.On("List", contextThatHasTenant(consumerTenantID), emptyApplicationFilter, 200, "").Return(emptyApplicationPage, nil).Once()
 				return applicationSvc
 			},
 			ExpectedErr: testErr.Error(),
