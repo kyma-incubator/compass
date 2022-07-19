@@ -244,7 +244,7 @@ func checkForErr(resp *http.Response, successStatusCode *int, error *string) err
 	}
 
 	if error != nil && *error != "" {
-		errMsg += fmt.Sprintf("received error while polling external system: %s", *error)
+		errMsg += fmt.Sprintf("received error while calling external system: %s", *error)
 	}
 
 	if errMsg != "" {

@@ -29,7 +29,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var allowedMethods = []string{"GET", "POST", "PUT", "DELETE"}
+var allowedMethods = []string{"GET", "POST", "PUT", "DELETE", "PATCH"}
 
 // TemplateInput is an interface that unions all structs that can act as a template input for a webhook
 type TemplateInput interface {

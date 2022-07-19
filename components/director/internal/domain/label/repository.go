@@ -222,6 +222,9 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 // ListForObjectIDs lists all labels for given object IDs
 // TODO: Unit Tests
 func (r *repository) ListForObjectIDs(ctx context.Context, tenant string, objectType model.LabelableObject, objectIDs []string) (map[string]map[string]interface{}, error) {
+	if len(objectIDs) == 0 {
+		return nil, nil
+	}
 	var entities Collection
 
 	var conditions []repo.Condition

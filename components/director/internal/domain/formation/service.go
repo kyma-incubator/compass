@@ -425,6 +425,10 @@ func (s *service) generateNotificationsForApplicationAssignment(ctx context.Cont
 		listeningRuntimeIDs = append(listeningRuntimeIDs, wh.ObjectID)
 	}
 
+	if len(listeningRuntimeIDs) == 0 {
+		return nil, nil, nil
+	}
+
 	listeningRuntimes, err := s.runtimeRepo.ListByIDs(ctx, tenant, listeningRuntimeIDs)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "while listing runtimes")
