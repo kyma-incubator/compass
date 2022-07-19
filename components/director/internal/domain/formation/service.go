@@ -3,6 +3,7 @@ package formation
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
@@ -280,19 +281,9 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		if err != nil {
 			return nil, errors.Wrap(err, "while generating notifications for application assignment")
 		}
-		for runtimeID := range webhooks {
-			gqlWebhook, err := s.webhookConverter.ToGraphQL(webhooks[runtimeID])
-			if err != nil {
-				return nil, errors.Wrapf(err, "while converting webhook with ID %s", webhooks[runtimeID].ID)
-			}
-			req := &webhook_client.Request{
-				Webhook:       *gqlWebhook,
-				Object:        inputs[runtimeID],
-				CorrelationID: correlation.CorrelationIDFromContext(ctx),
-			}
-			if _, err := s.webhookClient.Do(ctx, req); err != nil {
-				return nil, errors.Wrapf(err, "while executing webhook with ID %s for Runtime with ID %s", gqlWebhook.ID, runtimeID)
-			}
+		err = s.sendNotifications(ctx, webhooks, inputs)
+		if err != nil {
+			return nil, err
 		}
 		return formationFromDB, nil
 	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
@@ -310,6 +301,24 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
+}
+
+func (s *service) sendNotifications(ctx context.Context, webhooks map[string]*model.Webhook, inputs map[string]*webhookdir.FormationConfigurationChangeInput) error {
+	for runtimeID := range webhooks {
+		gqlWebhook, err := s.webhookConverter.ToGraphQL(webhooks[runtimeID])
+		if err != nil {
+			return errors.Wrapf(err, "while converting webhook with ID %s", webhooks[runtimeID].ID)
+		}
+		req := &webhook_client.Request{
+			Webhook:       *gqlWebhook,
+			Object:        inputs[runtimeID],
+			CorrelationID: correlation.CorrelationIDFromContext(ctx),
+		}
+		if _, err := s.webhookClient.Do(ctx, req); err != nil {
+			return errors.Wrapf(err, "while executing webhook with ID %s for Runtime with ID %s", gqlWebhook.ID, runtimeID)
+		}
+	}
+	return nil
 }
 
 func (s *service) assign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
@@ -343,7 +352,20 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, err
 		}
 
-		return s.getFormationByName(ctx, formation.Name, tnt)
+		formationFromDB, err := s.getFormationByName(ctx, formation.Name, tnt)
+		if err != nil {
+			return nil, err
+		}
+		webhooks, inputs, err := s.generateNotificationsForApplicationAssignment(ctx, tnt, objectID, formationFromDB, model.UnassignFormation)
+		if err != nil {
+			return nil, errors.Wrap(err, "while generating notifications for application unassignment")
+		}
+		err = s.sendNotifications(ctx, webhooks, inputs)
+		if err != nil {
+			return nil, err
+		}
+		return formationFromDB, nil
+
 	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
 		if isFormationComingFromASA, err := s.isFormationComingFromASA(ctx, objectID, formation.Name, objectType); err != nil {
 			return nil, err

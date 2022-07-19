@@ -17,22 +17,22 @@ var emptyApplicationLifecycleWebhookRequestObject = &webhook.ApplicationLifecycl
 }
 
 var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChangeInput{
-	ApplicationTemplate: webhook.ApplicationTemplateWithLabels{
-		ApplicationTemplate: model.ApplicationTemplate{},
+	ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+		ApplicationTemplate: &model.ApplicationTemplate{},
 		Labels:              map[string]interface{}{},
 	},
-	Application: webhook.ApplicationWithLabels{
-		Application: model.Application{
+	Application: &webhook.ApplicationWithLabels{
+		Application: &model.Application{
 			BaseEntity: &model.BaseEntity{},
 		},
 		Labels: map[string]interface{}{},
 	},
-	Runtime: webhook.RuntimeWithLabels{
-		Runtime: model.Runtime{},
+	Runtime: &webhook.RuntimeWithLabels{
+		Runtime: &model.Runtime{},
 		Labels:  map[string]interface{}{},
 	},
-	RuntimeContext: webhook.RuntimeContextWithLabels{
-		RuntimeContext: model.RuntimeContext{},
+	RuntimeContext: &webhook.RuntimeContextWithLabels{
+		RuntimeContext: &model.RuntimeContext{},
 		Labels:         map[string]interface{}{},
 	},
 }

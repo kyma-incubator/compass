@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
+
 	auth2 "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
@@ -602,6 +604,19 @@ func runtimeSvc(cfg config, securedHTTPClient, mtlsHTTPClient *http.Client) clai
 	asaConverter := scenarioassignment.NewConverter()
 	authConverter := auth.NewConverter()
 	webhookConverter := webhook.NewConverter(authConverter)
+	frConverter := fetchrequest.NewConverter(authConverter)
+	versionConverter := version.NewConverter()
+	docConverter := document.NewConverter(frConverter)
+	specConverter := spec.NewConverter(frConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	bundleConverter := bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	appConverter := application.NewConverter(webhookConverter, bundleConverter)
+	appRepo := application.NewRepository(appConverter)
+	webhookRepo := webhook.NewRepository(webhookConverter)
+
+	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 	labelConverter := label.NewConverter()
 	labelDefinitionConverter := labeldef.NewConverter()
 	runtimeContextConverter := runtimectx.NewConverter()
@@ -625,7 +640,7 @@ func runtimeSvc(cfg config, securedHTTPClient, mtlsHTTPClient *http.Client) clai
 	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
 	webhookClient := webhook_client.NewClient(securedHTTPClient, mtlsHTTPClient)
-	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, webhookClient)
+	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, appRepo, appTemplateRepo, webhookConverter)
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 
 	return runtime.NewService(runtimeRepo, labelRepo, labelDefinitionSvc, labelSvc, uidSvc, formationSvc, tenantSvc, webhookService(), runtimeContextSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern, cfg.Features.RuntimeTypeLabelKey, cfg.Features.KymaRuntimeTypeLabelValue)
@@ -642,7 +657,19 @@ func runtimeCtxSvc(cfg config, securedHTTPClient, mtlsHTTPClient *http.Client) c
 	runtimeConverter := runtime.NewConverter(webhookConverter)
 	formationConv := formation.NewConverter()
 	formationTemplateConverter := formationtemplate.NewConverter()
+	frConverter := fetchrequest.NewConverter(authConverter)
+	versionConverter := version.NewConverter()
+	docConverter := document.NewConverter(frConverter)
+	specConverter := spec.NewConverter(frConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	bundleConverter := bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	appConverter := application.NewConverter(webhookConverter, bundleConverter)
+	appRepo := application.NewRepository(appConverter)
+	webhookRepo := webhook.NewRepository(webhookConverter)
 
+	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConverter)
 	labelRepo := label.NewRepository(labelConverter)
 	labelDefinitionRepo := labeldef.NewRepository(labelDefinitionConverter)
@@ -658,7 +685,7 @@ func runtimeCtxSvc(cfg config, securedHTTPClient, mtlsHTTPClient *http.Client) c
 	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
 	webhookClient := webhook_client.NewClient(securedHTTPClient, mtlsHTTPClient)
-	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, webhookClient)
+	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, appRepo, appTemplateRepo, webhookConverter)
 
 	return runtimectx.NewService(runtimeContextRepo, labelRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 }
