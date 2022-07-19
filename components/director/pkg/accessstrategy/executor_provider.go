@@ -1,6 +1,9 @@
 package accessstrategy
 
-import "github.com/kyma-incubator/compass/components/director/pkg/certloader"
+import (
+	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+)
 
 // ExecutorProvider defines an interface for access strategy executor provider
 //go:generate mockery --name=ExecutorProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -25,7 +28,17 @@ func NewDefaultExecutorProvider(certCache certloader.Cache) *Provider {
 	return &Provider{
 		executors: map[Type]Executor{
 			OpenAccessStrategy:    &openAccessStrategyExecutor{},
-			CMPmTLSAccessStrategy: NewCMPmTLSAccessStrategyExecutor(certCache),
+			CMPmTLSAccessStrategy: NewCMPmTLSAccessStrategyExecutor(certCache, nil),
+		},
+	}
+}
+
+// NewExecutorProviderWithTenant returns a new access strategy executor provider by given tenant provider function
+func NewExecutorProviderWithTenant(certCache certloader.Cache, tenantProviderFunc func(ctx context.Context) (string, error)) *Provider {
+	return &Provider{
+		executors: map[Type]Executor{
+			OpenAccessStrategy:    &openAccessStrategyExecutor{},
+			CMPmTLSAccessStrategy: NewCMPmTLSAccessStrategyExecutor(certCache, tenantProviderFunc),
 		},
 	}
 }
