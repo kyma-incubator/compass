@@ -73,7 +73,7 @@ func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Contex
 		return "", err
 	}
 
-	resp, err := executor.Execute(c.Client, documentURL)
+	resp, err := executor.Execute(ctx, c.Client, documentURL, "")
 	if err != nil {
 		return "", err
 	}
@@ -101,7 +101,7 @@ func closeBody(ctx context.Context, body io.ReadCloser) {
 func (c *client) fetchConfig(ctx context.Context, globalRegistryURL string) (*WellKnownConfig, error) {
 	var resp *http.Response
 	var err error
-	resp, err = httputil.GetRequestWithoutCredentials(c.Client, globalRegistryURL)
+	resp, err = httputil.GetRequestWithoutCredentials(c.Client, globalRegistryURL, "")
 	if err != nil {
 		return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration")
 	}
