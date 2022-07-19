@@ -26,9 +26,19 @@ func PrepareMTLSClient(timeout time.Duration, cache certloader.Cache) *http.Clie
 }
 
 func PrepareHTTPClient(timeout time.Duration) *http.Client {
+	return PrepareHTTPClientWithSSLValidation(timeout, false)
+}
+
+func PrepareHTTPClientWithSSLValidation(timeout time.Duration, skipSSLValidation bool) *http.Client {
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: skipSSLValidation,
+		},
+	}
+
 	unsecuredClient := &http.Client{
 		Timeout:   timeout,
-		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+		Transport: httputil.NewCorrelationIDTransport(transport),
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
@@ -38,7 +48,7 @@ func PrepareHTTPClient(timeout time.Duration) *http.Client {
 	tokenProvider := NewTokenAuthorizationProvider(unsecuredClient)
 	saTokenProvider := NewServiceAccountTokenAuthorizationProvider()
 
-	securedTransport := httputil.NewSecuredTransport(httputil.NewCorrelationIDTransport(http.DefaultTransport), basicProvider, tokenProvider, saTokenProvider)
+	securedTransport := httputil.NewSecuredTransport(httputil.NewCorrelationIDTransport(transport), basicProvider, tokenProvider, saTokenProvider)
 	securedClient := &http.Client{
 		Timeout:   timeout,
 		Transport: securedTransport,
