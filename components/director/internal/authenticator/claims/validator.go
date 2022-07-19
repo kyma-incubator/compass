@@ -210,9 +210,7 @@ func (v *validator) validateApplicationProvider(ctx context.Context, claims Clai
 	consumerExternalTenantID := claims.Tenant[tenantmapping.ExternalTenantKey]
 	ctxWithConsumerTenant := tenant.SaveToContext(ctx, consumerInternalTenantID, consumerExternalTenantID)
 
-	applicationsFilter := []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(v.consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", consumerExternalTenantID)),
-	}
+	applicationsFilter := []*labelfilter.LabelFilter{}
 
 	found := false
 
@@ -223,10 +221,10 @@ func (v *validator) validateApplicationProvider(ctx context.Context, claims Clai
 		return errors.Wrapf(err, "while listing applications for filter with key: %q and value: %q", v.consumerSubaccountLabelKey, consumerExternalTenantID)
 	}
 
-	log.C(ctx).Infof("Found %d applications for application template with ID: %q", len(applicationsPage.Data), applicationTemplate.ID)
+	log.C(ctx).Infof("Found %d applications in consumer tenant using label: %q and external tenant ID: %q", len(applicationsPage.Data), v.consumerSubaccountLabelKey, consumerExternalTenantID)
 
 	for _, application := range applicationsPage.Data {
-		if application.ApplicationTemplateID == &applicationTemplate.ID {
+		if *application.ApplicationTemplateID == applicationTemplate.ID {
 			found = true
 			break
 		}
