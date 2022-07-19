@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -39,6 +40,7 @@ type pgRepository struct {
 	listerGlobal       repo.ListerGlobal
 	creator            repo.Creator
 	updater            repo.Updater
+	queryBuilder       repo.QueryBuilder
 	conv               EntityConverter
 }
 
@@ -279,6 +281,54 @@ func (r *pgRepository) GetOldestForFilters(ctx context.Context, tenant string, f
 	runtimeModel := r.conv.FromEntity(&runtimeEnt)
 
 	return runtimeModel, nil
+}
+
+// ListByScenariosAndIDs lists all runtimes with given IDs that are in any of the given scenarios
+// TODO: Unit tests
+func (r *pgRepository) ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Runtime, error) {
+	tenantUUID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, apperrors.NewInvalidDataError("tenantID is not UUID")
+	}
+
+	var entities RuntimeCollection
+
+	// Scenarios query part
+	scenariosFilters := make([]*labelfilter.LabelFilter, 0, len(scenarios))
+	for _, scenarioValue := range scenarios {
+		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
+		scenariosFilters = append(scenariosFilters, labelfilter.NewForKeyWithQuery(model.ScenariosKey, query))
+	}
+
+	scenariosSubquery, scenariosArgs, err := label.FilterQuery(model.RuntimeLabelableObject, label.UnionSet, tenantUUID, scenariosFilters)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating scenarios filter query")
+	}
+
+	var conditions repo.Conditions
+	if scenariosSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", scenariosSubquery, scenariosArgs))
+	}
+
+	conditions = append(conditions, repo.NewInConditionForStringValues("id", ids))
+
+	if err := r.lister.List(ctx, resource.Runtime, tenant, &entities, conditions...); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities), nil
+}
+
+// ListByIDs lists all runtimes with given IDs
+// TODO: Unit tests
+func (r *pgRepository) ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Runtime, error) {
+	var entities RuntimeCollection
+
+	if err := r.lister.List(ctx, resource.Runtime, tenant, &entities, repo.NewInConditionForStringValues("id", ids)); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities), nil
 }
 
 func (r *pgRepository) listRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, ownerCheck bool) ([]*model.Runtime, error) {

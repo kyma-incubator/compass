@@ -9,7 +9,9 @@ const DefaultTemplateName = "Side-by-side extensibility with Kyma"
 type FormationOperation string
 
 const (
-	AssignFormation   FormationOperation = "assign"
+	// AssignFormation represents the assign operation done on a given formation
+	AssignFormation FormationOperation = "assign"
+	// UnassignFormation represents the unassign operation done on a given formation
 	UnassignFormation FormationOperation = "unassign"
 )
 

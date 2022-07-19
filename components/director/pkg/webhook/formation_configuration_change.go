@@ -8,22 +8,22 @@ import (
 )
 
 type ApplicationWithLabels struct {
-	model.Application
+	*model.Application
 	Labels map[string]interface{}
 }
 
 type ApplicationTemplateWithLabels struct {
-	model.ApplicationTemplate
+	*model.ApplicationTemplate
 	Labels map[string]interface{}
 }
 
 type RuntimeWithLabels struct {
-	model.Runtime
+	*model.Runtime
 	Labels map[string]interface{}
 }
 
 type RuntimeContextWithLabels struct {
-	model.RuntimeContext
+	*model.RuntimeContext
 	Labels map[string]interface{}
 }
 
@@ -31,10 +31,10 @@ type RuntimeContextWithLabels struct {
 type FormationConfigurationChangeInput struct {
 	Operation           model.FormationOperation
 	FormationID         string
-	ApplicationTemplate ApplicationTemplateWithLabels
-	Application         ApplicationWithLabels
-	Runtime             RuntimeWithLabels
-	RuntimeContext      RuntimeContextWithLabels
+	ApplicationTemplate *ApplicationTemplateWithLabels
+	Application         *ApplicationWithLabels
+	Runtime             *RuntimeWithLabels
+	RuntimeContext      *RuntimeContextWithLabels
 }
 
 // ParseURLTemplate missing godoc

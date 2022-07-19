@@ -111,6 +111,12 @@ func HeadersFromContext(ctx context.Context) Headers {
 	return headersFromCtx
 }
 
+// CorrelationIDFromContext returns correlation id from the given context
+// TODO: Unit tests
+func CorrelationIDFromContext(ctx context.Context) string {
+	return HeadersFromContext(ctx)[RequestIDHeaderKey]
+}
+
 // SaveToContext saves the provided headers as correlation ID headers in the specified context
 func SaveToContext(ctx context.Context, headers Headers) context.Context {
 	return context.WithValue(ctx, HeadersContextKey, headers)

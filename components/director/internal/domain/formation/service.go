@@ -3,6 +3,7 @@ package formation
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
@@ -33,18 +34,33 @@ type labelDefRepository interface {
 //go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type labelRepository interface {
 	Delete(context.Context, string, model.LabelableObject, string, string) error
+	ListForObjectIDs(ctx context.Context, tenant string, objectType model.LabelableObject, objectIDs []string) (map[string]map[string]interface{}, error)
+	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 }
 
 //go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeRepository interface {
 	ListOwnedRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
+	ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Runtime, error)
+	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Runtime, error)
+}
+
+//go:generate mockery --exported --name=applicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type applicationRepository interface {
+	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
+}
+
+//go:generate mockery --exported --name=applicationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type applicationTemplateRepository interface {
+	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
 }
 
 //go:generate mockery --exported --name=runtimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeContextRepository interface {
 	ListAll(ctx context.Context, tenant string) ([]*model.RuntimeContext, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
+	ListByScenariosAndRuntimeIDs(ctx context.Context, tenant string, scenarios []string, runtimeIDs []string) ([]*model.RuntimeContext, error)
 }
 
 // FormationRepository represents the Formations repository layer
@@ -108,38 +124,56 @@ type webhookClient interface {
 	Do(ctx context.Context, request *webhook_client.Request) (*webhookdir.Response, error)
 }
 
+//go:generate mockery --exported --name=webhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type webhookRepository interface {
+	ListByReferenceObjectTypeAndWebhookType(ctx context.Context, tenant string, whType model.WebhookType, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error)
+}
+
+//go:generate mockery --exported --name=webhookConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type webhookConverter interface {
+	ToGraphQL(in *model.Webhook) (*graphql.Webhook, error)
+}
+
 type service struct {
-	labelDefRepository          labelDefRepository
-	labelRepository             labelRepository
-	formationRepository         FormationRepository
-	formationTemplateRepository FormationTemplateRepository
-	labelService                labelService
-	labelDefService             labelDefService
-	asaService                  automaticFormationAssignmentService
-	uuidService                 uuidService
-	tenantSvc                   tenantService
-	repo                        automaticFormationAssignmentRepository
-	runtimeRepo                 runtimeRepository
-	runtimeContextRepo          runtimeContextRepository
-	webhookClient               webhookClient
+	labelDefRepository            labelDefRepository
+	labelRepository               labelRepository
+	formationRepository           FormationRepository
+	formationTemplateRepository   FormationTemplateRepository
+	labelService                  labelService
+	labelDefService               labelDefService
+	asaService                    automaticFormationAssignmentService
+	uuidService                   uuidService
+	tenantSvc                     tenantService
+	repo                          automaticFormationAssignmentRepository
+	runtimeRepo                   runtimeRepository
+	runtimeContextRepo            runtimeContextRepository
+	webhookRepository             webhookRepository
+	webhookClient                 webhookClient
+	applicationRepository         applicationRepository
+	applicationTemplateRepository applicationTemplateRepository
+	webhookConverter              webhookConverter
 }
 
 // NewService creates formation service
-func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, webhookClient webhookClient) *service {
+func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, webhookRepository webhookRepository, webhookClient webhookClient, applicationRepository applicationRepository, applicationTemplateRepository applicationTemplateRepository, webhookConverter webhookConverter) *service {
 	return &service{
-		labelDefRepository:          labelDefRepository,
-		labelRepository:             labelRepository,
-		formationRepository:         formationRepository,
-		formationTemplateRepository: formationTemplateRepository,
-		labelService:                labelService,
-		labelDefService:             labelDefService,
-		asaService:                  asaService,
-		uuidService:                 uuidService,
-		tenantSvc:                   tenantSvc,
-		repo:                        asaRepo,
-		runtimeRepo:                 runtimeRepo,
-		runtimeContextRepo:          runtimeContextRepo,
-		webhookClient:               webhookClient,
+		labelDefRepository:            labelDefRepository,
+		labelRepository:               labelRepository,
+		formationRepository:           formationRepository,
+		formationTemplateRepository:   formationTemplateRepository,
+		labelService:                  labelService,
+		labelDefService:               labelDefService,
+		asaService:                    asaService,
+		uuidService:                   uuidService,
+		tenantSvc:                     tenantSvc,
+		repo:                          asaRepo,
+		runtimeRepo:                   runtimeRepo,
+		runtimeContextRepo:            runtimeContextRepo,
+		webhookRepository:             webhookRepository,
+		webhookClient:                 webhookClient,
+		applicationRepository:         applicationRepository,
+		applicationTemplateRepository: applicationTemplateRepository,
+		webhookConverter:              webhookConverter,
 	}
 }
 
@@ -237,20 +271,32 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 // create automatic scenario assignment with the caller and target tenant.
 func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
 	switch objectType {
-	case graphql.FormationObjectTypeApplication, graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
-		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), addFormation); err != nil {
-			if apperrors.IsNotFoundError(err) {
-				labelInput := newLabelInput(formation.Name, objectID, objectTypeToLabelableObject(objectType))
-				if err = s.labelService.CreateLabel(ctx, tnt, s.uuidService.Generate(), labelInput); err != nil {
-					return nil, err
-				}
-
-				return s.getFormationByName(ctx, formation.Name, tnt)
-			}
+	case graphql.FormationObjectTypeApplication:
+		formationFromDB, err := s.assign(ctx, tnt, objectID, objectType, formation)
+		if err != nil {
 			return nil, err
 		}
-
-		return s.getFormationByName(ctx, formation.Name, tnt)
+		webhooks, inputs, err := s.generateNotificationsForApplicationAssignment(ctx, tnt, objectID, formationFromDB, model.AssignFormation)
+		if err != nil {
+			return nil, errors.Wrap(err, "while generating notifications for application assignment")
+		}
+		for runtimeID := range webhooks {
+			gqlWebhook, err := s.webhookConverter.ToGraphQL(webhooks[runtimeID])
+			if err != nil {
+				return nil, errors.Wrapf(err, "while converting webhook with ID %s", webhooks[runtimeID].ID)
+			}
+			req := &webhook_client.Request{
+				Webhook:       *gqlWebhook,
+				Object:        inputs[runtimeID],
+				CorrelationID: correlation.CorrelationIDFromContext(ctx),
+			}
+			if _, err := s.webhookClient.Do(ctx, req); err != nil {
+				return nil, errors.Wrapf(err, "while executing webhook with ID %s for Runtime with ID %s", gqlWebhook.ID, runtimeID)
+			}
+		}
+		return formationFromDB, nil
+	case graphql.FormationObjectTypeRuntime, graphql.FormationObjectTypeRuntimeContext:
+		return s.assign(ctx, tnt, objectID, objectType, formation)
 	case graphql.FormationObjectTypeTenant:
 		tenantID, err := s.tenantSvc.GetInternalTenant(ctx, objectID)
 		if err != nil {
@@ -264,6 +310,22 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
+}
+
+func (s *service) assign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
+	if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), addFormation); err != nil {
+		if apperrors.IsNotFoundError(err) {
+			labelInput := newLabelInput(formation.Name, objectID, objectTypeToLabelableObject(objectType))
+			if err = s.labelService.CreateLabel(ctx, tnt, s.uuidService.Generate(), labelInput); err != nil {
+				return nil, err
+			}
+
+			return s.getFormationByName(ctx, formation.Name, tnt)
+		}
+		return nil, err
+	}
+
+	return s.getFormationByName(ctx, formation.Name, tnt)
 }
 
 // UnassignFormation unassigns object base on graphql.FormationObjectType.
@@ -307,6 +369,149 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	default:
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
+}
+
+func (s *service) generateNotificationsForApplicationAssignment(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation) (map[string]*model.Webhook, map[string]*webhookdir.FormationConfigurationChangeInput, error) {
+	application, err := s.applicationRepository.GetByID(ctx, tenant, appID)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "while getting application with id %s", appID)
+	}
+	applicationWithLables, err := s.enrichApplicationWithLabels(ctx, tenant, application)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var appTemplateWithLabels *webhookdir.ApplicationTemplateWithLabels
+	if application.ApplicationTemplateID != nil {
+		appTemplate, err := s.applicationTemplateRepository.Get(ctx, *application.ApplicationTemplateID)
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "while getting application template with id %s", *application.ApplicationTemplateID)
+		}
+		appTemplateWithLabels, err = s.enrichApplicationTemplateWithLabels(ctx, tenant, appTemplate)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	webhooks, err := s.webhookRepository.ListByReferenceObjectTypeAndWebhookType(ctx, tenant, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "when listing configuration changed webhooks for runtimes")
+	}
+
+	listeningRuntimeIDs := make([]string, 0, len(webhooks))
+	for _, wh := range webhooks {
+		listeningRuntimeIDs = append(listeningRuntimeIDs, wh.ObjectID)
+	}
+
+	listeningRuntimes, err := s.runtimeRepo.ListByIDs(ctx, tenant, listeningRuntimeIDs)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "while listing runtimes")
+	}
+
+	listeningRuntimesLabels, err := s.labelRepository.ListForObjectIDs(ctx, tenant, model.RuntimeLabelableObject, listeningRuntimeIDs)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "while listing lables")
+	}
+
+	listeningRuntimesMapping := make(map[string]*webhookdir.RuntimeWithLabels, len(listeningRuntimes))
+	for i, rt := range listeningRuntimes {
+		listeningRuntimesMapping[rt.ID] = &webhookdir.RuntimeWithLabels{
+			Runtime: listeningRuntimes[i],
+			Labels:  listeningRuntimesLabels[rt.ID],
+		}
+	}
+
+	listeningRuntimesInScenario, err := s.runtimeRepo.ListByScenariosAndIDs(ctx, tenant, []string{formation.Name}, listeningRuntimeIDs)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "while listing runtimes")
+	}
+
+	runtimeContextsInScenarioForListeningRuntimes, err := s.runtimeContextRepo.ListByScenariosAndRuntimeIDs(ctx, tenant, []string{formation.Name}, listeningRuntimeIDs)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "while listing runtime contexts")
+	}
+
+	runtimeContextsInScenarioForListeningRuntimesIDs := make([]string, 0, len(runtimeContextsInScenarioForListeningRuntimes))
+	for _, rtCtx := range runtimeContextsInScenarioForListeningRuntimes {
+		runtimeContextsInScenarioForListeningRuntimesIDs = append(runtimeContextsInScenarioForListeningRuntimesIDs, rtCtx.ID)
+	}
+
+	runtimeContextsLables, err := s.labelRepository.ListForObjectIDs(ctx, tenant, model.RuntimeContextLabelableObject, runtimeContextsInScenarioForListeningRuntimesIDs)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "while listing lables")
+	}
+
+	runtimeIDsToBeNotified := make(map[string]bool, len(listeningRuntimesInScenario)+len(runtimeContextsInScenarioForListeningRuntimes))
+	runtimeContextsInScenarioForListeningRuntimesMapping := make(map[string]*webhookdir.RuntimeContextWithLabels, len(runtimeContextsInScenarioForListeningRuntimes))
+	for _, rt := range listeningRuntimesInScenario {
+		runtimeIDsToBeNotified[rt.ID] = true
+	}
+	for i, rtCtx := range runtimeContextsInScenarioForListeningRuntimes {
+		runtimeIDsToBeNotified[rtCtx.RuntimeID] = true
+		runtimeContextsInScenarioForListeningRuntimesMapping[rtCtx.RuntimeID] = &webhookdir.RuntimeContextWithLabels{
+			RuntimeContext: runtimeContextsInScenarioForListeningRuntimes[i],
+			Labels:         runtimeContextsLables[rtCtx.ID],
+		}
+	}
+
+	webhooksToCall := make(map[string]*model.Webhook, len(runtimeIDsToBeNotified))
+	for i := range webhooks {
+		if runtimeIDsToBeNotified[webhooks[i].ObjectID] {
+			webhooksToCall[webhooks[i].ObjectID] = webhooks[i]
+		}
+	}
+
+	templateInputs := make(map[string]*webhookdir.FormationConfigurationChangeInput, len(runtimeIDsToBeNotified))
+	for rtID := range runtimeIDsToBeNotified {
+		rtCtx := runtimeContextsInScenarioForListeningRuntimesMapping[rtID]
+		runtime := listeningRuntimesMapping[rtID]
+		templateInputs[runtime.ID] = &webhookdir.FormationConfigurationChangeInput{
+			Operation:           operation,
+			FormationID:         formation.ID,
+			ApplicationTemplate: appTemplateWithLabels,
+			Application:         applicationWithLables,
+			Runtime:             runtime,
+			RuntimeContext:      rtCtx,
+		}
+	}
+
+	return webhooksToCall, templateInputs, nil
+}
+
+func (s *service) enrichApplicationWithLabels(ctx context.Context, tenant string, app *model.Application) (*webhookdir.ApplicationWithLabels, error) {
+	if app == nil {
+		return nil, errors.New("application cannot be nil")
+	}
+	labels, err := s.labelRepository.ListForObject(ctx, tenant, model.ApplicationLabelableObject, app.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing labels for app with id %s", app.ID)
+	}
+	appLables := make(map[string]interface{}, len(labels))
+	for _, l := range labels {
+		appLables[l.Key] = l.Value
+	}
+	return &webhookdir.ApplicationWithLabels{
+		Application: app,
+		Labels:      appLables,
+	}, nil
+}
+
+func (s *service) enrichApplicationTemplateWithLabels(ctx context.Context, tenant string, appTemplate *model.ApplicationTemplate) (*webhookdir.ApplicationTemplateWithLabels, error) {
+	if appTemplate == nil {
+		return nil, nil
+	}
+	labels, err := s.labelRepository.ListForObject(ctx, tenant, model.AppTemplateLabelableObject, appTemplate.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing labels for app template with id %s", appTemplate.ID)
+	}
+	appTemplateLables := make(map[string]interface{}, len(labels))
+	for _, l := range labels {
+		appTemplateLables[l.Key] = l.Value
+	}
+	return &webhookdir.ApplicationTemplateWithLabels{
+		ApplicationTemplate: appTemplate,
+		Labels:              appTemplateLables,
+	}, nil
 }
 
 // CreateAutomaticScenarioAssignment creates a new AutomaticScenarioAssignment for a given ScenarioName, Tenant and TargetTenantID

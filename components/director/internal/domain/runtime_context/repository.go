@@ -2,6 +2,7 @@ package runtimectx
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
@@ -245,6 +246,41 @@ func (r *pgRepository) ListAllForRuntime(ctx context.Context, tenant, runtimeID 
 	var entities RuntimeContextCollection
 
 	if err := r.lister.List(ctx, resource.RuntimeContext, tenant, &entities, repo.NewEqualCondition("runtime_id", runtimeID)); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities), nil
+}
+
+// ListByScenariosAndRuntimeIDs lists all runtime contexts that are in any of the given scenarios and are owned by any of the runtimes provided
+// TODO: Unit tests
+func (r *pgRepository) ListByScenariosAndRuntimeIDs(ctx context.Context, tenant string, scenarios []string, runtimeIDs []string) ([]*model.RuntimeContext, error) {
+	tenantUUID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, apperrors.NewInvalidDataError("tenantID is not UUID")
+	}
+
+	var entities RuntimeContextCollection
+
+	// Scenarios query part
+	scenariosFilters := make([]*labelfilter.LabelFilter, 0, len(scenarios))
+	for _, scenarioValue := range scenarios {
+		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
+		scenariosFilters = append(scenariosFilters, labelfilter.NewForKeyWithQuery(model.ScenariosKey, query))
+	}
+
+	scenariosSubquery, scenariosArgs, err := label.FilterQuery(model.RuntimeContextLabelableObject, label.UnionSet, tenantUUID, scenariosFilters)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating scenarios filter query")
+	}
+
+	var conditions repo.Conditions
+	if scenariosSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", scenariosSubquery, scenariosArgs))
+	}
+	conditions = append(conditions, repo.NewInConditionForStringValues("runtime_id", runtimeIDs))
+
+	if err := r.lister.List(ctx, resource.RuntimeContext, tenant, &entities, conditions...); err != nil {
 		return nil, err
 	}
 
