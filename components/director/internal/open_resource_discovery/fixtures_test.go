@@ -34,8 +34,11 @@ const (
 	event2ORDID            = "ns2:eventResource:EVENT_ID:v1"
 
 	appID       = "testApp"
+	appTemplateID = "testAppTemplate"
 	whID        = "testWh"
+	whID2 = "testWh2"
 	tenantID    = "testTenant"
+	externalTenantID = "externalTestTenant"
 	packageID   = "testPkg"
 	vendorID    = "testVendor"
 	vendorID2   = "testVendor2"
@@ -552,6 +555,7 @@ func fixApplicationPage() *model.ApplicationPage {
 					Ready: true,
 				},
 				Type: testApplicationType,
+				ApplicationTemplateID: str.Ptr(appTemplateID),
 			},
 		},
 		PageInfo: &pagination.Page{
@@ -572,6 +576,14 @@ func fixWebhooks() []*model.Webhook {
 			Type:       model.WebhookTypeOpenResourceDiscovery,
 			URL:        str.Ptr(baseURL),
 		},
+		{
+			ID:         whID2,
+			ObjectID:   appID,
+			ObjectType: model.ApplicationTemplateWebhookReference,
+			Type:       model.WebhookTypeOpenResourceDiscovery,
+			URL:        str.Ptr(baseURL),
+		},
+
 	}
 }
 
