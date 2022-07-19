@@ -64,7 +64,7 @@ spec:
       shareProcessNamespace: true
       containers:
       - name: editor
-        image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.schema_migrator.dir }}compass-schema-migrator:{{ .Values.global.images.schema_migrator.version }}
+        image: k3d-kyma-registry:5001/compass-schema-migrator:dump
         imagePullPolicy: IfNotPresent
         command:
         - "/bin/bash"

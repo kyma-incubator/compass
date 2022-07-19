@@ -20,7 +20,7 @@ type cmpMTLSAccessStrategyExecutor struct {
 // NewCMPmTLSAccessStrategyExecutor creates a new Executor for the CMP mTLS Access Strategy
 func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache, tenantProviderFunc func(ctx context.Context) (string, error)) *cmpMTLSAccessStrategyExecutor {
 	return &cmpMTLSAccessStrategyExecutor{
-		certCache: certCache,
+		certCache:          certCache,
 		tenantProviderFunc: tenantProviderFunc,
 	}
 }

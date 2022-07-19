@@ -610,7 +610,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:            "Returns error when app list fails",
+			Name: "Returns error when app list fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				persistTx.On("Commit").Return(nil).Once()
@@ -786,12 +786,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), api2ID).Return(nil).Once()
 				return apiSvc
 			},
-		    eventSvcFn:   successfulEventUpdate,
+			eventSvcFn:   successfulEventUpdate,
 			specSvcFn:    successfulSpecUpdate,
 			packageSvcFn: successfulPackageUpdate,
 			productSvcFn: successfulProductUpdate,
 			vendorSvcFn:  successfulVendorUpdate,
-		    tombstoneSvcFn: func() *automock.TombstoneService {
+			tombstoneSvcFn: func() *automock.TombstoneService {
 				tombstoneSvc := &automock.TombstoneService{}
 				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
 				tombstoneSvc.On("Update", txtest.CtxWithDBMatcher(), tombstoneID, *sanitizedDoc.Tombstones[0]).Return(nil).Once()
@@ -830,8 +830,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				client.On("FetchOpenResourceDiscoveryDocuments", txtest.CtxWithDBMatcher(), testApplication, testWebhook).Return(ord.Documents{doc}, *doc.DescribedSystemInstance.BaseURL, nil)
 				return client
 			},
-			apiSvcFn: successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
@@ -847,9 +847,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				vendorSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return vendorSvc
 			},
-			clientFn: successfulClientFetch,
-			apiSvcFn: successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
@@ -866,9 +866,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				vendorSvc.On("Update", txtest.CtxWithDBMatcher(), vendorID, *sanitizedDoc.Vendors[0]).Return(testErr).Once()
 				return vendorSvc
 			},
-			clientFn: successfulClientFetch,
-			apiSvcFn: successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
@@ -885,9 +885,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				vendorSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Vendors[0]).Return("", testErr).Once()
 				return vendorSvc
 			},
-			clientFn: successfulClientFetch,
-			apiSvcFn: successfulEmptyAPIList,
-			eventSvcFn:successfulEmptyEventList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
@@ -904,9 +904,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				productSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return productSvc
 			},
-			clientFn: successfulClientFetch,
-			apiSvcFn: successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
@@ -924,9 +924,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				productSvc.On("Update", txtest.CtxWithDBMatcher(), productID, *sanitizedDoc.Products[0]).Return(testErr).Once()
 				return productSvc
 			},
-			clientFn: successfulClientFetch,
-			apiSvcFn: successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
 			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
@@ -944,10 +944,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				productSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Products[0]).Return("", testErr).Once()
 				return productSvc
 			},
-			clientFn: successfulClientFetch,
-			apiSvcFn: successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
-			packageSvcFn: successfulEmptyPackageList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
+			packageSvcFn:      successfulEmptyPackageList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
@@ -965,9 +965,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				packagesSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return packagesSvc
 			},
-			clientFn: successfulClientFetch,
-			apiSvcFn: successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
@@ -986,9 +986,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				packagesSvc.On("Update", txtest.CtxWithDBMatcher(), packageID, *sanitizedDoc.Packages[0], packagePreSanitizedHash).Return(testErr).Once()
 				return packagesSvc
 			},
-			clientFn: successfulClientFetch,
-			apiSvcFn: successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
@@ -1007,9 +1007,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				packagesSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.Packages[0], mock.Anything).Return("", testErr).Once()
 				return packagesSvc
 			},
-			clientFn: successfulClientFetch,
-			apiSvcFn: successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
@@ -1027,9 +1027,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				bundlesSvc.On("ListByApplicationIDNoPaging", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
 				return bundlesSvc
 			},
-			clientFn: successfulClientFetch,
-			apiSvcFn: successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
@@ -1048,9 +1048,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				bundlesSvc.On("Update", txtest.CtxWithDBMatcher(), bundleID, bundleUpdateInputFromCreateInput(*sanitizedDoc.ConsumptionBundles[0])).Return(testErr).Once()
 				return bundlesSvc
 			},
-			clientFn: successfulClientFetch,
-			apiSvcFn: successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
@@ -1069,9 +1069,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				bundlesSvc.On("Create", txtest.CtxWithDBMatcher(), appID, *sanitizedDoc.ConsumptionBundles[0]).Return("", testErr).Once()
 				return bundlesSvc
 			},
-			clientFn: successfulClientFetch,
-			apiSvcFn: successfulEmptyAPIList,
-			eventSvcFn: successfulEmptyEventList,
+			clientFn:          successfulClientFetch,
+			apiSvcFn:          successfulEmptyAPIList,
+			eventSvcFn:        successfulEmptyEventList,
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{

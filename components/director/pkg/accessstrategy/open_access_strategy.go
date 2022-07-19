@@ -13,7 +13,8 @@ func NewOpenAccessStrategyExecutor() *openAccessStrategyExecutor {
 }
 
 // Execute performs the access strategy's specific execution logic
-func (*openAccessStrategyExecutor) Execute(_ context.Context, client *http.Client, documentURL, tnt string) (*http.Response, error) {	req, err := http.NewRequest("GET", documentURL, nil)
+func (*openAccessStrategyExecutor) Execute(_ context.Context, client *http.Client, documentURL, tnt string) (*http.Response, error) {
+	req, err := http.NewRequest("GET", documentURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -22,4 +23,5 @@ func (*openAccessStrategyExecutor) Execute(_ context.Context, client *http.Clien
 		req.Header.Set(tenantHeader, tnt)
 	}
 
-	return client.Do(req)}
+	return client.Do(req)
+}

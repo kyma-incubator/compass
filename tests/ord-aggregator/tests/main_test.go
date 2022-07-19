@@ -18,10 +18,11 @@ package tests
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
@@ -61,7 +62,7 @@ type config struct {
 	CertLoaderConfig                                      certloader.Config
 	ClientTimeout                                         time.Duration `envconfig:"default=60s"`
 	SkipSSLValidation                                     bool          `envconfig:"default=false"`
-	SubscriptionConfig 									  subscription.Config
+	SubscriptionConfig                                    subscription.Config
 }
 
 var (

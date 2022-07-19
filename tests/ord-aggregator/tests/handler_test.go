@@ -5,14 +5,15 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/subscription"
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/subscription"
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
@@ -88,17 +89,17 @@ const (
 	expectedTombstoneOrdIDRegex              = "ns:apiResource:API_ID2(.+):v1"
 	expectedVendorTitle                      = "SAP SE"
 
-	expectedNumberOfSystemInstances = 7
+	expectedNumberOfSystemInstances               = 7
 	expectedNumberOfSystemInstancesInSubscription = 1
-	expectedNumberOfPackages        = 7
+	expectedNumberOfPackages                      = 7
 	expectedNumberOfPackagesInSubscription        = 1
-	expectedNumberOfBundles         = 14
+	expectedNumberOfBundles                       = 14
 	expectedNumberOfBundlesInSubscription         = 2
-	expectedNumberOfAPIs            = 21
+	expectedNumberOfAPIs                          = 21
 	expectedNumberOfAPIsInSubscription            = 3
-	expectedNumberOfEvents          = 28
+	expectedNumberOfEvents                        = 28
 	expectedNumberOfEventsInSubscription          = 4
-	expectedNumberOfTombstones      = 7
+	expectedNumberOfTombstones                    = 7
 	expectedNumberOfTombstonesInSubscription      = 1
 
 	expectedNumberOfPublicAPIs   = 7
@@ -126,9 +127,9 @@ const (
 
 var (
 	// The expected number is increased with initial number of global vendors/products before test execution
-	expectedNumberOfProducts = 7
+	expectedNumberOfProducts               = 7
 	expectedNumberOfProductsInSubscription = 1
-	expectedNumberOfVendors  = 7
+	expectedNumberOfVendors                = 7
 	expectedNumberOfVendorsInSubscription  = 1
 )
 
