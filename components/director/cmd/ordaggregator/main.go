@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -96,8 +98,15 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
-	httpClient := httputil.PrepareHTTPClient(cfg.ClientTimeout)
-	httpClient.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = cfg.SkipSSLValidation
+	fmt.Println("Echo?")
+	httpClient := &http.Client{
+		Timeout: cfg.ClientTimeout,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: cfg.SkipSSLValidation,
+			},
+		},
+	}
 
 	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	exitOnError(err, "Failed to initialize certificate loader")
