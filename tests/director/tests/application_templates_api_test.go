@@ -789,7 +789,7 @@ func CreateDirectorCertClientForRegion2(t *testing.T, ctx context.Context) *gcli
 	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
 		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
 		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-		CertSvcInstanceTestSecretName:         conf.ExternalCertProviderConfig.CertSvcInstanceTestSecretName,
+		CertSvcInstanceTestRegion2SecretName:  conf.ExternalCertProviderConfig.CertSvcInstanceTestRegion2SecretName,
 		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
 		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
 		TestExternalCertSubject:               conf.ExternalCertProviderConfig.TestExternalCertSubjectRegion2,
