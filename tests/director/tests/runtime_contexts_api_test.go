@@ -260,8 +260,15 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 
 		t.Log("Assert provider runtime is visible in the consumer's account after successful subscription")
 		consumerAccountRuntimes := fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID)
-		require.Len(t, consumerAccountRuntimes.Data, 1)
-		require.Equal(t, consumerAccountRuntimes.Data[0].ID, providerRuntime.ID)
+		require.NotZero(t, len(consumerAccountRuntimes.Data))
+		runtimeExists := false
+		for _, runtime := range consumerAccountRuntimes.Data {
+			if providerRuntime.ID == runtime.ID {
+				runtimeExists = true
+				break
+			}
+		}
+		require.True(t, runtimeExists)
 		require.Len(t, consumerSubaccountRuntimes.Data[0].RuntimeContexts.Data, 1)
 
 		t.Log("Assert the consumer cannot update the provider runtime(owner false check)")
@@ -271,13 +278,13 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "Owner access is needed for resource modification")
 
-		t.Log("Assert the consumer cannot delete the provider runtime(owner false check)")
+		t.Log("Assert the consumer cannot delete the provider runtime(cleanup of self-registered runtime failure)")
 		deleteRuntimeReq := fixtures.FixUnregisterRuntimeRequest(providerRuntime.ID)
 		rtmExt := graphql.RuntimeExt{}
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, deleteRuntimeReq, &rtmExt)
 		require.Empty(t, rtmExt)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "Owner access is needed for resource modification")
+		require.Contains(t, err.Error(), "An error occurred during cleanup of self-registered runtime")
 
 		subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
