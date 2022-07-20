@@ -107,6 +107,15 @@ func (r *repository) GetByFilters(ctx context.Context, filter []*labelfilter.Lab
 	return model, nil
 }
 
+func (r *repository) ListByIDs(ctx context.Context, ids []string) ([]*model.ApplicationTemplate, error) {
+	var entities EntityCollection
+	if err := r.listerGlobal.ListGlobal(ctx, &entities, repo.NewInConditionForStringValues("id", ids)); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities)
+}
+
 // Exists missing godoc
 func (r *repository) Exists(ctx context.Context, id string) (bool, error) {
 	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})

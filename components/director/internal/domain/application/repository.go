@@ -348,6 +348,66 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 		PageInfo:   page}, nil
 }
 
+// ListByScenariosNoPaging lists all applications that are in any of the given scenarios
+// TODO: Unit tests
+func (r *pgRepository) ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error) {
+	tenantUUID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, apperrors.NewInvalidDataError("tenantID is not UUID")
+	}
+
+	var entities EntityCollection
+
+	// Scenarios query part
+	scenariosFilters := make([]*labelfilter.LabelFilter, 0, len(scenarios))
+	for _, scenarioValue := range scenarios {
+		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
+		scenariosFilters = append(scenariosFilters, labelfilter.NewForKeyWithQuery(model.ScenariosKey, query))
+	}
+
+	scenariosSubquery, scenariosArgs, err := label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenantUUID, scenariosFilters)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating scenarios filter query")
+	}
+
+	var conditions repo.Conditions
+	if scenariosSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", scenariosSubquery, scenariosArgs))
+	}
+
+	if err := r.lister.List(ctx, resource.Application, tenant, &entities, conditions...); err != nil {
+		return nil, err
+	}
+
+	items := make([]*model.Application, 0, len(entities))
+
+	for _, appEnt := range entities {
+		m := r.conv.FromEntity(&appEnt)
+		items = append(items, m)
+	}
+
+	return items, nil
+}
+
+// ListByIDs lists all runtimes with given IDs
+// TODO: Unit tests
+func (r *pgRepository) ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Application, error) {
+	var entities EntityCollection
+
+	if err := r.lister.List(ctx, resource.Runtime, tenant, &entities, repo.NewInConditionForStringValues("id", ids)); err != nil {
+		return nil, err
+	}
+
+	items := make([]*model.Application, 0, len(entities))
+
+	for _, appEnt := range entities {
+		m := r.conv.FromEntity(&appEnt)
+		items = append(items, m)
+	}
+
+	return items, nil
+}
+
 // Create missing godoc
 func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.Application) error {
 	if model == nil {

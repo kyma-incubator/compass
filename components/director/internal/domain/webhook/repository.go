@@ -131,6 +131,28 @@ func (r *repository) ListByReferenceObjectTypeAndWebhookType(ctx context.Context
 	return convertToWebhooks(entities, r)
 }
 
+// GetByIDAndWebhookType returns a webhook given an objectID, objectType and webhookType
+func (r *repository) GetByIDAndWebhookType(ctx context.Context, tenant, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error) {
+	var entity Entity
+	refColumn, err := getReferenceColumnForListByReferenceObjectType(objectType)
+	if err != nil {
+		return nil, err
+	}
+
+	conditions := repo.Conditions{
+		repo.NewEqualCondition(refColumn, objectID),
+		repo.NewEqualCondition("type", webhookType),
+	}
+	if err := r.singleGetter.Get(ctx, objectType.GetResourceType(), tenant, conditions, repo.NoOrderBy, &entity); err != nil {
+		return nil, err
+	}
+	m, err := r.conv.FromEntity(&entity)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting from entity to model")
+	}
+	return m, nil
+}
+
 func (r *repository) ListByApplicationIDWithSelectForUpdate(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error) {
 	var entities Collection
 
