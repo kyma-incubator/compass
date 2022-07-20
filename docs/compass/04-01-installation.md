@@ -29,7 +29,7 @@ Compass as a Central Management Plane cluster requires minimal Kyma installation
 
 If custom domains and certificates are needed, see [Set up your custom domain TLS certificate](https://github.com/kyma-project/kyma/blob/10ae3a8acf7d57a329efa605890d11f9a9b40991/docs/03-tutorials/sec-01-tls-certificates-security.md#L1-L0) in the Kyma installation guide, and the resources in the [Certificate Management](#certificate-management) section of this document.
 
-1. Save the following .yaml with installation overrides into a file (e.g: additionalKymaOverrides.yaml)
+Save the following .yaml with installation overrides into a file (e.g: additionalKymaOverrides.yaml)
 ```yaml
 istio-configuration:
    components:
@@ -65,7 +65,7 @@ kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c
 The proper work of JWT token flows and Compass Cockpit require a set up and configured OpenID Connect (OIDC) Authorization Server.
 The OIDC Authorization Server is needed for the support of the respective users, user groups, and scopes. The OIDC server host and client-id are specified as overrides of the Compass Helm chart. Then a set of admin scopes are granted to a user based on the groups in the id_token, those trusted groups can be configured with overrides as well.
 
-1. Save the following .yaml with installation overrides into a file (e.g: additionalCompassOverrides.yaml)
+Save the following .yaml with installation overrides into a file (e.g: additionalCompassOverrides.yaml)
 ```yaml
 hydrator:
    adminGroupNames: ${ADMIN_GROUP_NAMES}
@@ -73,7 +73,7 @@ global:
    isLocalEnv: false
    migratorJob:
       pvc:
-         isLocalEnv: false
+         storageClass: ${ANY_SUPPORTED_STORAGE_CLASS}
    enableInternalCommunicationPolicies: false
    loadBalancerIP: 34.140.141.115
    cockpit:
