@@ -656,6 +656,7 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 		// Register kyma runtime
 		kymaRtmInput := fixtures.FixRuntimeRegisterInput("kyma-runtime")
 		kymaRuntime := registerKymaRuntime(t, ctx, subscriptionConsumerSubaccountID, kymaRtmInput)
+		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &kymaRuntime)
 
 		// Register kyma formation template
 		kymaFormationTmplName := "kyma-formation-template-name"
@@ -684,8 +685,16 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			defer unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionProviderAccountID, kymaFormationName)
 			t.Logf("Assert scenarios label after assigning tenant with ID: %q to formation", subscriptionConsumerSubaccountID)
 			checkRuntimeFormationLabels(t, ctx, kymaRuntime.ID, "scenarios", []string{kymaFormationName})
+
 			t.Log("Assert provider runtime has NOT scenarios label")
-			checkRuntimeFormationLabels(t, ctx, providerRuntime.ID, "scenarios", []string{})
+			appRequest := fixtures.FixGetRuntimeRequest(providerRuntime.ID)
+			rtm := graphql.RuntimeExt{}
+			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, appRequest, &rtm)
+			require.NoError(t, err)
+
+			scenariosLabel, hasScenario := rtm.Labels["scenarios"].([]interface{})
+			require.False(t, hasScenario)
+			require.Empty(t, scenariosLabel)
 		})
 
 		t.Run("Assign provider runtime to formation and validate scenarios labels", func(t *testing.T) {
@@ -695,8 +704,16 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			defer unassignTenantFromFormation(t, ctx, subscriptionProviderSubaccountID, subscriptionConsumerAccountID, providerFormationName)
 			t.Logf("Assert scenarios label after assigning tenant with ID: %q to formation", subscriptionProviderSubaccountID)
 			checkRuntimeFormationLabels(t, ctx, providerRuntime.ID, "scenarios", []string{providerFormationName})
+
 			t.Log("Assert kyma runtime has NOT scenarios label")
-			checkRuntimeFormationLabels(t, ctx, kymaRuntime.ID, "scenarios", []string{})
+			appRequest := fixtures.FixGetRuntimeRequest(providerRuntime.ID)
+			rtm := graphql.RuntimeExt{}
+			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, appRequest, &rtm)
+			require.NoError(t, err)
+
+			scenariosLabel, hasScenario := rtm.Labels["scenarios"].([]interface{})
+			require.False(t, hasScenario)
+			require.Empty(t, scenariosLabel)
 		})
 	})
 }
