@@ -283,7 +283,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		if err != nil {
 			return nil, err
 		}
-		webhooks, inputs, err := s.generateNotificationsForAssignment(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
+		webhooks, inputs, err := s.generateNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
@@ -397,7 +397,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	}
 }
 
-func (s *service) generateNotificationsForAssignment(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) (map[string]*model.Webhook, map[string]*webhookdir.FormationConfigurationChangeInput, error) {
+func (s *service) generateNotifications(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) (map[string]*model.Webhook, map[string]*webhookdir.FormationConfigurationChangeInput, error) {
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
 		return s.generateNotificationsForApplicationAssignment(ctx, tenant, appID, formation, operation)
@@ -558,7 +558,7 @@ func (s *service) generateNotificationsForRuntimeContextAssignment(ctx context.C
 	for key := range notificationsForRuntime {
 		notificationsForRuntime[key].RuntimeContext = runtimeCtxWithLabels
 	}
-	return webhooksForRuntime, notificationsForRuntime, err
+	return webhooksForRuntime, notificationsForRuntime, nil
 }
 
 func (s *service) generateNotificationsForRuntimeAssignment(ctx context.Context, tenant, runtimeID string, formation *model.Formation, operation model.FormationOperation) (map[string]*model.Webhook, map[string]*webhookdir.FormationConfigurationChangeInput, error) {
@@ -601,6 +601,7 @@ func (s *service) generateNotificationsForRuntimeAssignment(ctx context.Context,
 			applicationsTemplateIDs = append(applicationsTemplateIDs, *app.ApplicationTemplateID)
 		}
 	}
+
 	applicationsToBeNotifiedForLabels, err := s.labelRepository.ListForObjectIDs(ctx, tenant, model.ApplicationLabelableObject, applicationsToBeNotifiedForIDs)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "while listing labels for applications")
