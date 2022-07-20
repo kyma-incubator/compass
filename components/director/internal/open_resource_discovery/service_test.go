@@ -48,13 +48,14 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	packagePreSanitizedHash, err := ord.HashObject(fixORDDocument().Packages[0])
 	require.NoError(t, err)
 
-	secondTransactionNotCommited := func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+	thirdTransactionNotCommited := func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 		persistTx := &persistenceautomock.PersistenceTx{}
-		persistTx.On("Commit").Return(nil).Once()
+		persistTx.On("Commit").Return(nil).Twice()
 
 		transact := &persistenceautomock.Transactioner{}
-		transact.On("Begin").Return(persistTx, nil).Twice()
-		transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Twice()
+		transact.On("Begin").Return(persistTx, nil).Times(3)
+		transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
+		transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 		return persistTx, transact
 	}
 
@@ -81,12 +82,14 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	successfulTenantSvc := func() *automock.TenantService {
 		tenantSvc := &automock.TenantService{}
 		tenantSvc.On("GetLowestOwnerForResource", txtest.CtxWithDBMatcher(), resource.Application, appID).Return(tenantID, nil).Once()
+		tenantSvc.On("GetTenantByID", txtest.CtxWithDBMatcher(), tenantID).Return(&model.BusinessTenantMapping{ExternalTenant: externalTenantID}, nil).Once()
 		return tenantSvc
 	}
 
 	successfulWebhookList := func() *automock.WebhookService {
 		whSvc := &automock.WebhookService{}
 		whSvc.On("ListForApplicationWithSelectForUpdate", txtest.CtxWithDBMatcher(), appID).Return(fixWebhooks(), nil).Once()
+		whSvc.On("ListForApplicationTemplates", txtest.CtxWithDBMatcher()).Return(fixWebhooks(), nil).Once()
 		return whSvc
 	}
 
@@ -121,6 +124,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		secondAPIID := api2ID
 		firstEventID := event1ID
 		secondEventID := event2ID
+		bundleRefSvc.On("GetBundleIDsForObject", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &firstAPIID).Return([]string{bundleID}, nil).Once()
+		bundleRefSvc.On("GetBundleIDsForObject", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &secondAPIID).Return([]string{bundleID}, nil).Once()
+		bundleRefSvc.On("GetBundleIDsForObject", txtest.CtxWithDBMatcher(), model.BundleEventReference, &firstEventID).Return([]string{bundleID}, nil).Once()
+		bundleRefSvc.On("GetBundleIDsForObject", txtest.CtxWithDBMatcher(), model.BundleEventReference, &secondEventID).Return([]string{bundleID}, nil).Once()
 		bundleRefSvc.On("GetBundleIDsForObject", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &firstAPIID).Return([]string{bundleID}, nil).Once()
 		bundleRefSvc.On("GetBundleIDsForObject", txtest.CtxWithDBMatcher(), model.BundleAPIReference, &secondAPIID).Return([]string{bundleID}, nil).Once()
 		bundleRefSvc.On("GetBundleIDsForObject", txtest.CtxWithDBMatcher(), model.BundleEventReference, &firstEventID).Return([]string{bundleID}, nil).Once()
@@ -342,7 +349,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Success when resources are already in db and APIs/Events versions are incremented should Update them and resync API/Event specs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(2)
+				return txGen.ThatSucceedsMultipleTimes(3)
 			},
 			labelRepoFn:    successfulLabelRepo,
 			appSvcFn:       successfulAppListAndGet,
@@ -377,7 +384,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Success when resources are already in db and APIs/Events versions are NOT incremented should Update them and refetch only failed API/Event specs",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(2)
+				return txGen.ThatSucceedsMultipleTimes(3)
 			},
 			labelRepoFn:    successfulLabelRepo,
 			appSvcFn:       successfulAppListAndGet,
@@ -419,7 +426,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Success when resources are not in db should Create them",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(2)
+				return txGen.ThatSucceedsMultipleTimes(3)
 			},
 			labelRepoFn:  successfulLabelRepo,
 			appSvcFn:     successfulAppListAndGet,
@@ -453,7 +460,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Error when synchronizing global resources from global registry should get them from DB and proceed with the rest of the sync",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(2)
+				return txGen.ThatSucceedsMultipleTimes(3)
 			},
 			labelRepoFn:  successfulLabelRepo,
 			appSvcFn:     successfulAppListAndGet,
@@ -492,7 +499,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Error when synchronizing global resources from global registry and get them from DB should proceed with the rest of the sync",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(2)
+				return txGen.ThatSucceedsMultipleTimes(3)
 			},
 			labelRepoFn:  successfulLabelRepo,
 			appSvcFn:     successfulAppListAndGet,
@@ -529,25 +536,54 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			clientFn: successfulClientFetch,
 		},
 		{
-			Name:              "Returns error when transaction opening fails",
-			TransactionerFn:   txGen.ThatFailsOnBegin,
-			ExpectedErr:       testErr,
-			globalRegistrySvc: successfulGlobalRegistrySvc,
-		},
-		{
-			Name:            "Returns error when app list fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			appSvcFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				appSvc.On("ListGlobal", txtest.CtxWithDBMatcher(), 200, "").Return(nil, testErr).Once()
-				return appSvc
+			Name:            "Returns error when app templates webhooks list fails",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whSvc.On("ListForApplicationTemplates", txtest.CtxWithDBMatcher()).Return(nil, testErr).Once()
+				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			ExpectedErr:       testErr,
 		},
 		{
-			Name:            "Returns error when labels list fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			Name: "Returns error when app list fails",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				persistTx.On("Commit").Return(testErr).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
+			appSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("ListGlobal", txtest.CtxWithDBMatcher(), 200, "").Return(nil, testErr).Once()
+				return appSvc
+			},
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whSvc.On("ListForApplicationTemplates", txtest.CtxWithDBMatcher()).Return(fixWebhooks(), nil).Once()
+				return whSvc
+			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			ExpectedErr:       testErr,
+		},
+		{
+			Name: "Returns error when labels list fails",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			labelRepoFn: func() *automock.LabelRepository {
 				labelRepo := &automock.LabelRepository{}
 				labelRepo.On("ListGlobalByKeyAndObjects", txtest.CtxWithDBMatcher(), model.ApplicationLabelableObject, mock.Anything, applicationTypeLabel).Return(nil, testErr).Once()
@@ -558,12 +594,50 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				appSvc.On("ListGlobal", txtest.CtxWithDBMatcher(), 200, "").Return(fixApplicationPage(), nil).Once()
 				return appSvc
 			},
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whSvc.On("ListForApplicationTemplates", txtest.CtxWithDBMatcher()).Return(fixWebhooks(), nil).Once()
+				return whSvc
+			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			ExpectedErr:       testErr,
+		},
+
+		{
+			Name:              "Returns error when transaction opening fails",
+			TransactionerFn:   txGen.ThatFailsOnBegin,
+			ExpectedErr:       testErr,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+		},
+		{
+			Name: "Returns error when app list fails",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				persistTx.On("Commit").Return(testErr).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
+			appSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("ListGlobal", txtest.CtxWithDBMatcher(), 200, "").Return(nil, testErr).Once()
+				return appSvc
+			},
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whSvc.On("ListForApplicationTemplates", txtest.CtxWithDBMatcher()).Return(fixWebhooks(), nil).Once()
+				return whSvc
+			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			ExpectedErr:       testErr,
 		},
 		{
-			Name:            "Returns error when get tenant fails",
-			TransactionerFn: secondTransactionNotCommited,
+			Name:            "Returns error when get internal tenant id fails",
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			tenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
@@ -575,12 +649,40 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				appSvc.On("ListGlobal", txtest.CtxWithDBMatcher(), 200, "").Return(fixApplicationPage(), nil).Once()
 				return appSvc
 			},
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whSvc.On("ListForApplicationTemplates", txtest.CtxWithDBMatcher()).Return(fixWebhooks(), nil).Once()
+				return whSvc
+			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			ExpectedErr:       errors.New("failed to process 1 app"),
 		},
 		{
-			Name:            "Returns error when application locking fails",
-			TransactionerFn: secondTransactionNotCommited,
+			Name:            "Returns error when get tenant fails",
+			TransactionerFn: thirdTransactionNotCommited,
+			labelRepoFn:     successfulLabelRepo,
+			tenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetLowestOwnerForResource", txtest.CtxWithDBMatcher(), resource.Application, appID).Return(tenantID, nil).Once()
+				tenantSvc.On("GetTenantByID", txtest.CtxWithDBMatcher(), tenantID).Return(nil, testErr).Once()
+				return tenantSvc
+			},
+			appSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("ListGlobal", txtest.CtxWithDBMatcher(), 200, "").Return(fixApplicationPage(), nil).Once()
+				return appSvc
+			},
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whSvc.On("ListForApplicationTemplates", txtest.CtxWithDBMatcher()).Return(fixWebhooks(), nil).Once()
+				return whSvc
+			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			ExpectedErr:       errors.New("failed to process 1 app"),
+		},
+		{
+			Name:            "Returns error when application looking fails",
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			tenantSvcFn:     successfulTenantSvc,
 			appSvcFn: func() *automock.ApplicationService {
@@ -589,12 +691,17 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				appSvc.On("GetForUpdate", txtest.CtxWithDBMatcher(), mock.Anything).Return(nil, testErr).Once()
 				return appSvc
 			},
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whSvc.On("ListForApplicationTemplates", txtest.CtxWithDBMatcher()).Return(fixWebhooks(), nil).Once()
+				return whSvc
+			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			ExpectedErr:       errors.New("failed to process 1 app"),
 		},
 		{
 			Name:            "Does not resync resources when event list fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			webhookSvcFn:    successfulWebhookList,
 			clientFn:        successfulClientFetch,
@@ -614,7 +721,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources when api list fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			webhookSvcFn:    successfulWebhookList,
 			clientFn:        successfulClientFetch,
@@ -631,11 +738,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			Name: "Returns error when webhook list fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
+				persistTx.On("Commit").Return(nil).Twice()
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Twice()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Twice()
+				transact.On("Begin").Return(persistTx, nil).Times(3)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
 			labelRepoFn: successfulLabelRepo,
@@ -644,14 +752,59 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
 				whSvc.On("ListForApplicationWithSelectForUpdate", txtest.CtxWithDBMatcher(), appID).Return(nil, testErr).Once()
+				whSvc.On("ListForApplicationTemplates", txtest.CtxWithDBMatcher()).Return(fixWebhooks(), nil).Once()
 				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 			ExpectedErr:       errors.New("failed to process 1 app"),
 		},
 		{
+			Name: "Returns error when processing application webhooks",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Twice()
+				persistTx.On("Commit").Return(testErr).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Times(3)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
+			labelRepoFn:    successfulLabelRepo,
+			appSvcFn:       successfulAppListAndGet,
+			tenantSvcFn:    successfulTenantSvc,
+			webhookSvcFn:   successfulWebhookList,
+			bundleSvcFn:    successfulBundleUpdate,
+			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
+			apiSvcFn: func() *automock.APIService {
+				apiSvc := &automock.APIService{}
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), api1ID, *sanitizedDoc.APIResources[0], nilSpecInput, map[string]string{bundleID: sanitizedDoc.APIResources[0].PartOfConsumptionBundles[0].DefaultTargetURL}, map[string]string{}, []string{}, api1PreSanitizedHash, "").Return(nil).Once()
+				apiSvc.On("UpdateInManyBundles", txtest.CtxWithDBMatcher(), api2ID, *sanitizedDoc.APIResources[1], nilSpecInput, map[string]string{bundleID: "http://localhost:8080/some-api/v1"}, map[string]string{}, []string{}, api2PreSanitizedHash, "").Return(nil).Once()
+				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Twice()
+				apiSvc.On("Delete", txtest.CtxWithDBMatcher(), api2ID).Return(nil).Once()
+				return apiSvc
+			},
+			eventSvcFn:   successfulEventUpdate,
+			specSvcFn:    successfulSpecUpdate,
+			packageSvcFn: successfulPackageUpdate,
+			productSvcFn: successfulProductUpdate,
+			vendorSvcFn:  successfulVendorUpdate,
+			tombstoneSvcFn: func() *automock.TombstoneService {
+				tombstoneSvc := &automock.TombstoneService{}
+				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
+				tombstoneSvc.On("Update", txtest.CtxWithDBMatcher(), tombstoneID, *sanitizedDoc.Tombstones[0]).Return(nil).Once()
+				tombstoneSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixTombstones(), nil).Once()
+				return tombstoneSvc
+			},
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+			clientFn:          successfulClientFetch,
+			ExpectedErr:       errors.New("failed to process 1 applications"),
+		},
+		{
 			Name:            "Skips app when ORD documents fetch fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -665,7 +818,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources for invalid ORD documents",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -684,7 +837,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if vendor list fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -702,7 +855,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if vendor update fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -721,7 +874,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if vendor create fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -740,7 +893,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if product list fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -759,7 +912,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if product update fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -779,7 +932,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if product create fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -799,7 +952,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if package list fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -819,7 +972,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if package update fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -840,7 +993,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if package create fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -861,7 +1014,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if bundle list fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -881,7 +1034,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if bundle update fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -902,7 +1055,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if bundle create fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -923,7 +1076,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if api list fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -944,7 +1097,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if fetching bundle ids for api fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -972,7 +1125,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if api update fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -995,7 +1148,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if api create fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1017,7 +1170,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if api spec delete fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1045,7 +1198,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if api spec create fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1074,7 +1227,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if api spec list fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1101,7 +1254,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if api spec get fetch request fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1129,7 +1282,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if api spec refetch fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1158,7 +1311,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if event list fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1181,7 +1334,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if fetching bundle ids for event fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1213,7 +1366,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if event update fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1237,7 +1390,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if event create fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1260,7 +1413,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if event spec delete fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1296,7 +1449,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if event spec create fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1335,7 +1488,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if event spec list fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1371,7 +1524,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if event spec get fetch request fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1408,7 +1561,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if event spec refetch fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1447,7 +1600,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if tombstone list fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1470,7 +1623,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if tombstone update fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1494,7 +1647,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if tombstone create fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1516,7 +1669,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if api resource deletion due to tombstone fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1548,7 +1701,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if package resource deletion due to tombstone fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1589,7 +1742,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if event resource deletion due to tombstone fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1631,7 +1784,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if vendor resource deletion due to tombstone fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1672,7 +1825,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if product resource deletion due to tombstone fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1712,7 +1865,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if bundle resource deletion due to tombstone fails",
-			TransactionerFn: secondTransactionNotCommited,
+			TransactionerFn: thirdTransactionNotCommited,
 			labelRepoFn:     successfulLabelRepo,
 			appSvcFn:        successfulAppListAndGet,
 			tenantSvcFn:     successfulTenantSvc,
@@ -1753,7 +1906,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Success when resources are not in db and no SAP Vendor is declared in Documents should Create them as SAP Vendor is coming from the Global Registry",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(2)
+				return txGen.ThatSucceedsMultipleTimes(3)
 			},
 			labelRepoFn:  successfulLabelRepo,
 			appSvcFn:     successfulAppListAndGet,
@@ -1793,7 +1946,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Success when resources are already in db and no SAP Vendor is declared in Documents should Update them as SAP Vendor is coming from the Global Registry",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(2)
+				return txGen.ThatSucceedsMultipleTimes(3)
 			},
 			labelRepoFn:    successfulLabelRepo,
 			appSvcFn:       successfulAppListAndGet,
