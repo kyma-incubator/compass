@@ -385,7 +385,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		if err != nil {
 			return nil, err
 		}
-		webhooks, inputs, err := s.generateNotificationsForAssignment(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
+		webhooks, inputs, err := s.generateNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
