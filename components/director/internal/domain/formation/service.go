@@ -552,6 +552,9 @@ func (s *service) generateNotificationsForRuntimeContextAssignment(ctx context.C
 	}
 
 	webhooksForRuntime, notificationsForRuntime, err := s.generateNotificationsForRuntimeAssignment(ctx, tenant, runtimeCtxWithLabels.RuntimeID, formation, operation)
+	if err != nil {
+		return nil, nil, err
+	}
 	for key := range notificationsForRuntime {
 		notificationsForRuntime[key].RuntimeContext = runtimeCtxWithLabels
 	}
@@ -647,11 +650,11 @@ func (s *service) getLabelsForObject(ctx context.Context, tenant, objectID strin
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing labels for %s with id %s", objectType, objectID)
 	}
-	appLabels := make(map[string]interface{}, len(labels))
+	labelsMap := make(map[string]interface{}, len(labels))
 	for _, l := range labels {
-		appLabels[l.Key] = l.Value
+		labelsMap[l.Key] = l.Value
 	}
-	return appLabels, nil
+	return labelsMap, nil
 }
 
 // CreateAutomaticScenarioAssignment creates a new AutomaticScenarioAssignment for a given ScenarioName, Tenant and TargetTenantID
