@@ -26,7 +26,6 @@ func FixListFormationsRequestWithPageSize(pageSize int) *gcli.Request {
 				}`, pageSize, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForFormation())))
 }
 
-// todo:: formationInput instead of name?
 func FixCreateFormationRequest(formationName string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{
@@ -36,7 +35,6 @@ func FixCreateFormationRequest(formationName string) *gcli.Request {
 				}`, formationName, testctx.Tc.GQLFieldsProvider.ForFormation()))
 }
 
-// todo:: delete
 func FixCreateFormationWithTemplateRequest(formationInput string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{

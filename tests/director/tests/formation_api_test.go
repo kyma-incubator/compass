@@ -575,11 +575,11 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 	t := testingx.NewT(stdT)
 	t.Run("Runtime contexts formation processing from ASA", func(t *testing.T) {
 		ctx := context.Background()
-		subscriptionProviderAccountID := tenant.TestTenants.GetDefaultTenantID()
-		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID // the parent is testDefaultTenant
+		subscriptionProviderAccountID := conf.TestProviderAccountID
+		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID // in local set up the parent is testDefaultTenant
 
-		subscriptionConsumerAccountID := tenant.TestTenants.GetIDByName(t, tenant.ApplicationsForRuntimeTenantName)
-		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID // the parent is ApplicationsForRuntimeTenantName
+		subscriptionConsumerAccountID := conf.TestConsumerAccountID
+		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID // in local set up the parent is ApplicationsForRuntimeTenantName
 
 		subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
@@ -656,7 +656,6 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 		// Register kyma runtime
 		kymaRtmInput := fixtures.FixRuntimeRegisterInput("kyma-runtime")
 		kymaRuntime := registerKymaRuntime(t, ctx, subscriptionConsumerSubaccountID, kymaRtmInput)
-		//registerKymaRuntime(t, ctx, subscriptionConsumerSubaccountID, kymaRtmInput) // todo:: delete
 
 		// Register kyma formation template
 		kymaFormationTmplName := "kyma-formation-template-name"
@@ -678,30 +677,28 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionProviderSubaccountID, providerFormationName, &providerFormationTmplName) // todo:: tenant?
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionProviderSubaccountID, providerFormationName)
 
-		// todo:: ASA
-		t.Run("Assign kyma runtime to formation and validate kyma runtime has proper formation labels and provider runtime has NOT formation labels", func(t *testing.T) {
-			assertScenarios(t, kymaRuntime, []string{})
+		t.Run("Assign kyma runtime to formation and validate scenarios labels", func(t *testing.T) {
+			t.Logf("Assert there is no kyma runtime scenarios before assigning tenant with ID: %q to formation", subscriptionConsumerSubaccountID)
+			checkRuntimeFormationLabels(t, ctx, kymaRuntime.ID, "scenarios", []string{})
 			assignTenantToFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionProviderAccountID, kymaFormationName) // todo:: tenants?
-			assertScenarios(t, kymaRuntime, []string{kymaFormationName})
-			// todo:: assert provider runtime is NOT in formation
+			defer unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionProviderAccountID, kymaFormationName)
+			t.Logf("Assert scenarios label after assigning tenant with ID: %q to formation", subscriptionConsumerSubaccountID)
+			checkRuntimeFormationLabels(t, ctx, kymaRuntime.ID, "scenarios", []string{kymaFormationName})
+			t.Log("Assert provider runtime has NOT scenarios label")
+			checkRuntimeFormationLabels(t, ctx, providerRuntime.ID, "scenarios", []string{})
 		})
 
-		t.Run("Assign provider runtime to formation and validate provider runtime has proper formation labels and kyma runtime has NOT formation labels", func(t *testing.T) {
-			assertScenarios(t, kymaRuntime, []string{})
+		t.Run("Assign provider runtime to formation and validate scenarios labels", func(t *testing.T) {
+			t.Logf("Assert there is no provider runtime scenarios before assigning tenant with ID: %q to formation", subscriptionProviderSubaccountID)
+			checkRuntimeFormationLabels(t, ctx, providerRuntime.ID, "scenarios", []string{})
 			assignTenantToFormation(t, ctx, subscriptionProviderSubaccountID, subscriptionConsumerAccountID, providerFormationName) // todo:: tenants?
-			assertScenarios(t, kymaRuntime, []string{providerFormationName})
-			// todo:: assert kyma runtime is NOT in formation
+			defer unassignTenantFromFormation(t, ctx, subscriptionProviderSubaccountID, subscriptionConsumerAccountID, providerFormationName)
+			t.Logf("Assert scenarios label after assigning tenant with ID: %q to formation", subscriptionProviderSubaccountID)
+			checkRuntimeFormationLabels(t, ctx, providerRuntime.ID, "scenarios", []string{providerFormationName})
+			t.Log("Assert kyma runtime has NOT scenarios label")
+			checkRuntimeFormationLabels(t, ctx, kymaRuntime.ID, "scenarios", []string{})
 		})
 	})
-}
-
-func assertScenarios(t *testing.T, runtime graphql.RuntimeExt, expectedScenarios []string) {
-	scenariosLabel := runtime.Labels["scenarios"]
-	scenarios, ok := scenariosLabel.([]interface{})
-	if !ok {
-		scenarios = []interface{}{}
-	}
-	require.ElementsMatch(t, scenarios, expectedScenarios)
 }
 
 func assignTenantToFormation(t *testing.T, ctx context.Context, objectID, tenantID, formationName string) {
@@ -711,7 +708,17 @@ func assignTenantToFormation(t *testing.T, ctx context.Context, objectID, tenant
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, assignReq, &formation)
 	require.NoError(t, err)
 	require.Equal(t, formationName, formation.Name)
-	t.Logf("Successfully assigned tenant %s to formation %s", "", formationName)
+	t.Logf("Successfully assigned tenant %s to formation %s", objectID, formationName)
+}
+
+func unassignTenantFromFormation(t *testing.T, ctx context.Context, objectID, tenantID, formationName string) {
+	t.Logf("Unassign tenant %s from formation %s...", objectID, formationName)
+	unassignReq := fixtures.FixUnassignFormationRequest(objectID, "TENANT", formationName)
+	var formation graphql.Formation
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, unassignReq, &formation)
+	require.NoError(t, err)
+	require.Equal(t, formationName, formation.Name)
+	t.Logf("Successfully unassigned tenant %s from formation %s", objectID, formationName)
 }
 
 func createFormationTemplate(t *testing.T, ctx context.Context, tenantID, prefix, formationTemplateName, runtimeType string, runtimeArtifactKind graphql.ArtifactType) {

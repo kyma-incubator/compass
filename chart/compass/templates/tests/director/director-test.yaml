@@ -160,10 +160,14 @@ spec:
               value: {{ .Values.global.director.selfRegister.labelValuePrefix }}
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_PROVIDER_ACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
             - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.providerSubaccountID }}
             - name: APP_TEST_PROVIDER_SUBACCOUNT_ID_REGION2
               value:  {{ .Values.global.tests.subscription.tenants.providerSubaccountIDRegion2 }}
+            - name: APP_TEST_CONSUMER_ACCOUNT_ID
+              value: {{ .Values.global.tests.subscription.tenants.consumerAccountID }}
             - name: APP_TEST_CONSUMER_SUBACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountID }}
             - name: APP_TEST_CONSUMER_TENANT_ID
