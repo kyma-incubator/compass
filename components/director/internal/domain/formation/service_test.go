@@ -1745,7 +1745,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				runtimeRepo := &automock.RuntimeRepository{}
-				runtimeRepo.On("ExistsByFiltersAndIDOwned", ctx, Tnt, objectID, runtimeLblFilters).Return(true, nil).Once()
+				runtimeRepo.On("OwnerExistsByFiltersAndID", ctx, Tnt, objectID, runtimeLblFilters).Return(true, nil).Once()
 				return runtimeRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -4519,8 +4519,8 @@ func TestService_MergeScenariosFromInputLabelsAndAssignments(t *testing.T) {
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				runtimeRepo := &automock.RuntimeRepository{}
-				runtimeRepo.On("ExistsByFiltersAndIDOwned", ctx, TargetTenantID, runtimeID, runtimeLblFilters).Return(true, nil).Once()
-				runtimeRepo.On("ExistsByFiltersAndIDOwned", ctx, differentTargetTenant, runtimeID, runtimeLblFilters).Return(false, nil).Once()
+				runtimeRepo.On("OwnerExistsByFiltersAndID", ctx, TargetTenantID, runtimeID, runtimeLblFilters).Return(true, nil).Once()
+				runtimeRepo.On("OwnerExistsByFiltersAndID", ctx, differentTargetTenant, runtimeID, runtimeLblFilters).Return(false, nil).Once()
 				return runtimeRepo
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
@@ -4555,8 +4555,8 @@ func TestService_MergeScenariosFromInputLabelsAndAssignments(t *testing.T) {
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				runtimeRepo := &automock.RuntimeRepository{}
-				runtimeRepo.On("ExistsByFiltersAndIDOwned", ctx, TargetTenantID, runtimeID, runtimeLblFilters).Return(true, nil).Once()
-				runtimeRepo.On("ExistsByFiltersAndIDOwned", ctx, differentTargetTenant, runtimeID, runtimeLblFilters).Return(false, nil).Once()
+				runtimeRepo.On("OwnerExistsByFiltersAndID", ctx, TargetTenantID, runtimeID, runtimeLblFilters).Return(true, nil).Once()
+				runtimeRepo.On("OwnerExistsByFiltersAndID", ctx, differentTargetTenant, runtimeID, runtimeLblFilters).Return(false, nil).Once()
 				return runtimeRepo
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
@@ -4588,7 +4588,7 @@ func TestService_MergeScenariosFromInputLabelsAndAssignments(t *testing.T) {
 			RuntimeContextRepoFn: unusedRuntimeContextRepo,
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				runtimeRepo := &automock.RuntimeRepository{}
-				runtimeRepo.On("ExistsByFiltersAndIDOwned", ctx, TargetTenantID, runtimeID, runtimeLblFilters).Return(false, testErr).Once()
+				runtimeRepo.On("OwnerExistsByFiltersAndID", ctx, TargetTenantID, runtimeID, runtimeLblFilters).Return(false, testErr).Once()
 				return runtimeRepo
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
@@ -4621,8 +4621,8 @@ func TestService_MergeScenariosFromInputLabelsAndAssignments(t *testing.T) {
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				runtimeRepo := &automock.RuntimeRepository{}
-				runtimeRepo.On("ExistsByFiltersAndIDOwned", ctx, TargetTenantID, runtimeID, runtimeLblFilters).Return(true, nil).Once()
-				runtimeRepo.On("ExistsByFiltersAndIDOwned", ctx, differentTargetTenant, runtimeID, runtimeLblFilters).Return(false, nil).Once()
+				runtimeRepo.On("OwnerExistsByFiltersAndID", ctx, TargetTenantID, runtimeID, runtimeLblFilters).Return(true, nil).Once()
+				runtimeRepo.On("OwnerExistsByFiltersAndID", ctx, differentTargetTenant, runtimeID, runtimeLblFilters).Return(false, nil).Once()
 				return runtimeRepo
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
@@ -4749,8 +4749,8 @@ func TestService_GetScenariosFromMatchingASAs(t *testing.T) {
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				runtimeRepo := &automock.RuntimeRepository{}
-				runtimeRepo.On("ExistsByFiltersAndIDOwned", ctx, testScenarios[0].TargetTenantID, RuntimeID, runtimeLblFilters).Return(true, nil).Once()
-				runtimeRepo.On("ExistsByFiltersAndIDOwned", ctx, testScenarios[1].TargetTenantID, RuntimeID, runtimeLblFilters).Return(false, nil).Once()
+				runtimeRepo.On("OwnerExistsByFiltersAndID", ctx, testScenarios[0].TargetTenantID, RuntimeID, runtimeLblFilters).Return(true, nil).Once()
+				runtimeRepo.On("OwnerExistsByFiltersAndID", ctx, testScenarios[1].TargetTenantID, RuntimeID, runtimeLblFilters).Return(false, nil).Once()
 				return runtimeRepo
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
@@ -4907,7 +4907,7 @@ func TestService_GetScenariosFromMatchingASAs(t *testing.T) {
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				runtimeRepo := &automock.RuntimeRepository{}
-				runtimeRepo.On("ExistsByFiltersAndIDOwned", ctx, testScenarios[0].TargetTenantID, RuntimeID, runtimeLblFilters).Return(true, nil).Once()
+				runtimeRepo.On("OwnerExistsByFiltersAndID", ctx, testScenarios[0].TargetTenantID, RuntimeID, runtimeLblFilters).Return(true, nil).Once()
 				return runtimeRepo
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
@@ -4935,7 +4935,7 @@ func TestService_GetScenariosFromMatchingASAs(t *testing.T) {
 			RuntimeContextRepoFn: unusedRuntimeContextRepo,
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				runtimeRepo := &automock.RuntimeRepository{}
-				runtimeRepo.On("ExistsByFiltersAndIDOwned", ctx, testScenarios[0].TargetTenantID, RuntimeID, runtimeLblFilters).Return(false, testErr).Once()
+				runtimeRepo.On("OwnerExistsByFiltersAndID", ctx, testScenarios[0].TargetTenantID, RuntimeID, runtimeLblFilters).Return(false, testErr).Once()
 				return runtimeRepo
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
