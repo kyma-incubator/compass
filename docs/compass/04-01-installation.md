@@ -6,20 +6,93 @@ You can install Compass both on a cluster and on your local machine in the follo
 
 ## Prerequisites for cluster installation
 
-### Required CLI versions
+### Required versions
 
-- check [here](https://github.com/kyma-incubator/compass#prerequisites)
+- check [here](https://github.com/kyma-incubator/compass#prerequisites) for required CLI tools versions
+- Kubernetes 1.21
 
 ### Managed PostgreSQL Database
 
 For more information about how you can use GCP managed PostgreSQL database instance with Compass, see: [Configure Managed GCP PostgreSQL](https://github.com/kyma-incubator/compass/blob/main/chart/compass/configure-managed-gcp-postgresql.md).
 
-### Custom domain
-TODO: In 2.0.4 docs, Kyma removed the docs for custom domain installation linked here previously: [Install Kyma with your own domain](https://github.com/kyma-project/kyma/blob/1.24.11/docs/kyma/04-04-use-your-own-domain.md). The closest one that I found is [this one](https://github.com/kyma-project/kyma/blob/2.0.4/docs/03-tutorials/00-api-exposure/apix-01-own-domain.md), but I am not entirely sure they are semantically equal. Double check and decide whether to leave some doc about custom domain in Kyma
+## Compass as a Central Management Plane
 
-For more information about using custom domains, see <based on above TODO decide whether to link Kyma doc> in the Kyma installation guide, and the resources in the [Certificate Management](#certificate-management) section of this document.
+This is a multi-cluster installation mode, in which one cluster is needed with Compass. This mode allows you to integrate your Runtimes with Applications and manage them in one central place.
 
- > **NOTE:** If you installed Kyma on a cluster with a custom domain, you must also apply global overrides to Compass. To do that manually replicate the respective overrides passed to Kyma installation and pass them to Compass installation.
+Compass as a Central Management Plane cluster requires minimal Kyma installation. The installation steps can vary depending on the installation environment.
+
+### Cluster installation
+
+> **NOTE:** During Kyma installation, Kyma version must be the same as in the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file on a specific commit.
+
+#### Perform minimal Kyma installation
+
+If custom domains and certificates are needed, see [Set up your custom domain TLS certificate](https://github.com/kyma-project/kyma/blob/10ae3a8acf7d57a329efa605890d11f9a9b40991/docs/03-tutorials/sec-01-tls-certificates-security.md#L1-L0) in the Kyma installation guide, and the resources in the [Certificate Management](#certificate-management) section of this document.
+
+1. Save the following .yaml with installation overrides into a file (e.g: additionalKymaOverrides.yaml)
+```yaml
+istio-configuration:
+   components:
+      ingressGateways:
+         config:
+            service:
+               loadBalancerIP: ${GATEWAY_IP_ADDRESS}
+               type: LoadBalancer
+   meshConfig:
+      defaultConfig:
+         holdApplicationUntilProxyStarts: true
+global:
+   loadBalancerIP: ${GATEWAY_IP_ADDRESS}
+# uncomment below values if you want to proceed with your custom values; default domain is 'local.kyma.dev' and there is default self-signed cert and key for that domain
+   #domainName: ${DOMAIN} 
+   #tlsCrt: ${TLS_CERT} 
+   #tlsKey: ${TLS_KEY} 
+   #ingress:
+      #domainName: ${DOMAIN}
+      #tlsCrt: ${TLS_CERT}
+      #tlsKey: ${TLS_KEY}
+```
+And then execute the kyma installation with the following command:
+
+```bash
+kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c <minimal file from ../../installation/resources/kyma/kyma-components-minimal.yaml> -f <overrides file from ../../installation/resources/kyma/kyma-overrides-minimal.yaml> -f <file from above step - e.g. additionalKymaOverrides.yaml> --ci
+```
+
+#### Install Compass
+
+> **NOTE:** If you installed Kyma on a cluster with a custom domain and certificates, you must apply that overrides to Compass as well.
+
+The proper work of JWT token flows and Compass Cockpit require a set up and configured OpenID Connect (OIDC) Authorization Server.
+The OIDC Authorization Server is needed for the support of the respective users, user groups, and scopes. The OIDC server host and client-id are specified as overrides of the Compass Helm chart. Then a set of admin scopes are granted to a user based on the groups in the id_token, those trusted groups can be configured with overrides as well.
+
+1. Save the following .yaml with installation overrides into a file (e.g: additionalCompassOverrides.yaml)
+```yaml
+hydrator:
+   adminGroupNames: ${ADMIN_GROUP_NAMES}
+global:
+   isLocalEnv: false
+   migratorJob:
+      pvc:
+         isLocalEnv: false
+   enableInternalCommunicationPolicies: false
+   loadBalancerIP: 34.140.141.115
+   cockpit:
+      auth:
+         idpHost: ${IDP_HOST}
+         clientID: ${CLIENT_ID}
+# uncomment below values if you want to proceed with your custom values; default domain is 'local.kyma.dev' and there is default self-signed cert and key for that domain
+#   domainName: ${DOMAIN}
+#   tlsCrt: ${TLS_CERT}
+#   tlsKey: ${TLS_KEY}
+#   ingress:
+#      domainName: ${DOMAIN}
+#      tlsCrt: ${TLS_CERT}
+#      tlsKey: ${TLS_KEY}
+```
+
+```bash
+. <script from ../../installation/scripts/install-compass.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
+```
 
 ### Certificate Management
 
@@ -31,7 +104,6 @@ The following certificates can be rotated:
 * Istio gateway certificate for the mTLS gateway.
 
 #### Create issuers
-The proper work of JWT token flows requires a set up and configured OpenID Connect (OIDC) Authorization Server. The OIDC Authorization Server is needed for the support of the respective users, user groups, and scopes. The OIDC server host and client-id are specified in [values.yaml](../../chart/compass/values.yaml) file inside the Compass Helm chart. A set of scopes are granted to the admin group. The admin group can be configured in the [director's values.yaml](../../chart/compass/charts/director/values.yaml) file.
 
 To issue certificates, the Certificate Manager requires a resource called issuer.
 
@@ -122,73 +194,6 @@ spec:
 
 In this case, as this certificate is not used to issue other certificates, it is not a CA certificate. Additionally, its validity depends on the settings by the issuer (for example **Let's encrypt**).
 
-## Compass as a Central Management Plane
-
-This is a multi-cluster installation mode, in which one cluster is needed with Compass. This mode allows you to integrate your Runtimes with Applications and manage them in one central place.
-
-Compass as a Central Management Plane cluster requires minimal Kyma installation. The installation steps can vary depending on the installation environment.
-
-### Cluster installation
-
-> **NOTE:** During Kyma installation, Kyma version must be the same as in the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file on a specific commit.
-
-TODO: I couldn't find `cluster-installation` doc for Kyma 2.0.4 similar to the one below. Double check if there is such one and delete the step 1. below if it is outdated.
-
-1. Prepare the cluster for custom Kyma installation. See the prerequisites in this document above and the prerequisites in the [Kyma documentation](https://github.com/kyma-project/kyma/blob/1.24.11/docs/kyma/04-03-cluster-installation.md) depending on the infrastructure of your provider
-
-2. Perform minimal Kyma installation with the following commands:
-   1. Save the following .yaml into some file (e.g: additionalKymaOverrides.yaml)
-    ```yaml
-    istio-configuration:
-       components:
-          ingressGateways:
-             config:
-                service:
-                   loadBalancerIP: ${GATEWAY_IP_ADDRESS}
-                   type: LoadBalancer
-       meshConfig:
-          defaultConfig:
-             holdApplicationUntilProxyStarts: true
-    global:
-       loadBalancerIP: ${GATEWAY_IP_ADDRESS}
-    # uncomment below values if you want to proceed with your custom values; default domain is 'local.kyma.dev' and there is default self-signed cert and key for that domain
-       #domainName: ${DOMAIN} 
-       #tlsCrt: ${TLS_CERT} 
-       #tlsKey: ${TLS_KEY} 
-       #ingress:
-       #domainName: ${DOMAIN} 
-       #tlsCrt: ${TLS_CERT} 
-       #tlsKey: ${TLS_KEY}
-    ```
-
-    ```bash
-    kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c <minimal file from ../../installation/resources/kyma/kyma-components-minimal.yaml> -f <overrides file from ../../installation/resources/kyma/kyma-overrides-minimal.yaml> -f <file from above step - e.g. additionalKymaOverrides.yaml> --ci
-    ```
-
-5. Install Compass using the following command:
-   1. Save the following .yaml into some file (e.g: additionalCompassOverrides.yaml)
-    ```yaml
-    global:
-       isLocalEnv: false
-       migratorJob:
-          pvc:
-             isLocalEnv: false
-       enableInternalCommunicationPolicies: false
-       loadBalancerIP: ${GATEWAY_IP_ADDRESS}
-    # uncomment below values if you want to proceed with your custom values; default domain is 'local.kyma.dev' and there is default self-signed cert and key for that domain
-       #domainName: ${DOMAIN} 
-       #tlsCrt: ${TLS_CERT} 
-       #tlsKey: ${TLS_KEY} 
-       #ingress:
-       #domainName: ${DOMAIN} 
-       #tlsCrt: ${TLS_CERT} 
-       #tlsKey: ${TLS_KEY}
-    ```
-
-    ```bash
-    . <script from ../../installation/scripts/install-compass.sh> --override-files <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
-    ```
-TODO: in the above Compass installation step, do we want to pass `local` overrides or `benchmark` ones as `benchmark` are used in productive cluster (not local one). In addition, double-check if we want to set `global.isLocalEnv: false` in the Compass overrides (`migratorJob.pvc.isLocalEnv` must be set to false)
 ### Local k3d installation
 
 For local development, install Compass with the minimal Kyma installation on k3d from the `main` branch. To do so, run the following script:
