@@ -414,7 +414,14 @@ func (s *service) generateNotificationsForApplicationAssignment(ctx context.Cont
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "while getting application with id %s", appID)
 	}
-	applicationWithLables, err := s.enrichApplicationWithLabels(ctx, tenant, application)
+	applicationLabels, err := s.getLabelsForObject(ctx, tenant, appID, model.ApplicationLabelableObject)
+	if err != nil {
+		return nil, nil, err
+	}
+	applicationWithLabels := &webhookdir.ApplicationWithLabels{
+		Application: application,
+		Labels:      applicationLabels,
+	}
 	if err != nil {
 		return nil, nil, err
 	}
@@ -425,7 +432,14 @@ func (s *service) generateNotificationsForApplicationAssignment(ctx context.Cont
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "while getting application template with id %s", *application.ApplicationTemplateID)
 		}
-		appTemplateWithLabels, err = s.enrichApplicationTemplateWithLabels(ctx, tenant, appTemplate)
+		applicationTemplateLabels, err := s.getLabelsForObject(ctx, tenant, appTemplate.ID, model.AppTemplateLabelableObject)
+		if err != nil {
+			return nil, nil, err
+		}
+		appTemplateWithLabels = &webhookdir.ApplicationTemplateWithLabels{
+			ApplicationTemplate: appTemplate,
+			Labels:              applicationTemplateLabels,
+		}
 		if err != nil {
 			return nil, nil, err
 		}
@@ -511,7 +525,7 @@ func (s *service) generateNotificationsForApplicationAssignment(ctx context.Cont
 			Operation:           operation,
 			FormationID:         formation.ID,
 			ApplicationTemplate: appTemplateWithLabels,
-			Application:         applicationWithLables,
+			Application:         applicationWithLabels,
 			Runtime:             runtime,
 			RuntimeContext:      rtCtx,
 		}
@@ -525,7 +539,14 @@ func (s *service) generateNotificationsForRuntimeContextAssignment(ctx context.C
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "while getting runtime context with id %s", runtimeCtxID)
 	}
-	runtimeCtxWithLabels, err := s.enrichRuntimeContextWithLabels(ctx, tenant, runtimeCtx)
+	runtimeCtxLabels, err := s.getLabelsForObject(ctx, tenant, runtimeCtxID, model.RuntimeContextLabelableObject)
+	if err != nil {
+		return nil, nil, err
+	}
+	runtimeCtxWithLabels := &webhookdir.RuntimeContextWithLabels{
+		RuntimeContext: runtimeCtx,
+		Labels:         runtimeCtxLabels,
+	}
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "while getting runtime context labels with id %s", runtimeCtxID)
 	}
@@ -542,7 +563,14 @@ func (s *service) generateNotificationsForRuntimeAssignment(ctx context.Context,
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "while getting runtime with id %s", runtimeID)
 	}
-	runtimeWithLabels, err := s.enrichRuntimeWithLabels(ctx, tenant, runtime)
+	runtimeLabels, err := s.getLabelsForObject(ctx, tenant, runtimeID, model.RuntimeLabelableObject)
+	if err != nil {
+		return nil, nil, err
+	}
+	runtimeWithLabels := &webhookdir.RuntimeWithLabels{
+		Runtime: runtime,
+		Labels:  runtimeLabels,
+	}
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "while getting runtime labels for id %s", runtimeID)
 	}
@@ -558,6 +586,9 @@ func (s *service) generateNotificationsForRuntimeAssignment(ctx context.Context,
 	applicationsToBeNotifiedFor, err := s.applicationRepository.ListByScenariosNoPaging(ctx, tenant, []string{formation.Name})
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "while listing scenario labels for applications")
+	}
+	if len(applicationsToBeNotifiedFor) == 0 {
+		return nil, nil, nil
 	}
 	applicationsToBeNotifiedForIDs := make([]string, 0, len(applicationsToBeNotifiedFor))
 	applicationsTemplateIDs := make([]string, 0, len(applicationsToBeNotifiedFor))
@@ -611,76 +642,16 @@ func (s *service) generateNotificationsForRuntimeAssignment(ctx context.Context,
 	return webhooks, inputs, nil
 }
 
-func (s *service) enrichApplicationWithLabels(ctx context.Context, tenant string, app *model.Application) (*webhookdir.ApplicationWithLabels, error) {
-	if app == nil {
-		return nil, errors.New("application cannot be nil")
-	}
-	labels, err := s.labelRepository.ListForObject(ctx, tenant, model.ApplicationLabelableObject, app.ID)
+func (s *service) getLabelsForObject(ctx context.Context, tenant, objectID string, objectType model.LabelableObject) (map[string]interface{}, error) {
+	labels, err := s.labelRepository.ListForObject(ctx, tenant, objectType, objectID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while listing labels for app with id %s", app.ID)
+		return nil, errors.Wrapf(err, "while listing labels for %s with id %s", objectType, objectID)
 	}
-	appLables := make(map[string]interface{}, len(labels))
+	appLabels := make(map[string]interface{}, len(labels))
 	for _, l := range labels {
-		appLables[l.Key] = l.Value
+		appLabels[l.Key] = l.Value
 	}
-	return &webhookdir.ApplicationWithLabels{
-		Application: app,
-		Labels:      appLables,
-	}, nil
-}
-
-func (s *service) enrichApplicationTemplateWithLabels(ctx context.Context, tenant string, appTemplate *model.ApplicationTemplate) (*webhookdir.ApplicationTemplateWithLabels, error) {
-	if appTemplate == nil {
-		return nil, nil
-	}
-	labels, err := s.labelRepository.ListForObject(ctx, tenant, model.AppTemplateLabelableObject, appTemplate.ID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while listing labels for app template with id %s", appTemplate.ID)
-	}
-	appTemplateLables := make(map[string]interface{}, len(labels))
-	for _, l := range labels {
-		appTemplateLables[l.Key] = l.Value
-	}
-	return &webhookdir.ApplicationTemplateWithLabels{
-		ApplicationTemplate: appTemplate,
-		Labels:              appTemplateLables,
-	}, nil
-}
-
-func (s *service) enrichRuntimeWithLabels(ctx context.Context, tenantID string, runtime *model.Runtime) (*webhookdir.RuntimeWithLabels, error) {
-	if runtime == nil {
-		return nil, nil
-	}
-	labels, err := s.labelRepository.ListForObject(ctx, tenantID, model.RuntimeLabelableObject, runtime.ID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while listing labels for runtime with id %q", runtime.ID)
-	}
-	runtimeLabels := make(map[string]interface{}, len(labels))
-	for _, l := range labels {
-		runtimeLabels[l.Key] = l.Value
-	}
-	return &webhookdir.RuntimeWithLabels{
-		Runtime: runtime,
-		Labels:  runtimeLabels,
-	}, nil
-}
-
-func (s *service) enrichRuntimeContextWithLabels(ctx context.Context, tenantID string, runtimeCtx *model.RuntimeContext) (*webhookdir.RuntimeContextWithLabels, error) {
-	if runtimeCtx == nil {
-		return nil, nil
-	}
-	labels, err := s.labelRepository.ListForObject(ctx, tenantID, model.RuntimeLabelableObject, runtimeCtx.ID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while listing labels for runtime with id %q", runtimeCtx.ID)
-	}
-	runtimeLabels := make(map[string]interface{}, len(labels))
-	for _, l := range labels {
-		runtimeLabels[l.Key] = l.Value
-	}
-	return &webhookdir.RuntimeContextWithLabels{
-		RuntimeContext: runtimeCtx,
-		Labels:         runtimeLabels,
-	}, nil
+	return appLabels, nil
 }
 
 // CreateAutomaticScenarioAssignment creates a new AutomaticScenarioAssignment for a given ScenarioName, Tenant and TargetTenantID
