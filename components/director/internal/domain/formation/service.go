@@ -381,7 +381,19 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil, err
 		}
 
-		return s.getFormationByName(ctx, formation.Name, tnt)
+		formationFromDB, err := s.getFormationByName(ctx, formation.Name, tnt)
+		if err != nil {
+			return nil, err
+		}
+		webhooks, inputs, err := s.generateNotificationsForAssignment(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
+		}
+		err = s.sendNotifications(ctx, webhooks, inputs)
+		if err != nil {
+			return nil, err
+		}
+		return formationFromDB, nil
 	case graphql.FormationObjectTypeTenant:
 		asa, err := s.asaService.GetForScenarioName(ctx, formation.Name)
 		if err != nil {
