@@ -5,6 +5,11 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
@@ -12,10 +17,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
-	"io/ioutil"
-	"net/http"
-	"testing"
-	"time"
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 
@@ -574,8 +575,12 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 	t := testingx.NewT(stdT)
 	t.Run("Runtime contexts formation processing from ASA", func(t *testing.T) {
 		ctx := context.Background()
+		subscriptionProviderAccountID := tenant.TestTenants.GetDefaultTenantID()
 		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID // the parent is testDefaultTenant
+
+		subscriptionConsumerAccountID := tenant.TestTenants.GetIDByName(t, tenant.ApplicationsForRuntimeTenantName)
 		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID // the parent is ApplicationsForRuntimeTenantName
+
 		subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
 		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
@@ -651,61 +656,82 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 		// Register kyma runtime
 		kymaRtmInput := fixtures.FixRuntimeRegisterInput("kyma-runtime")
 		kymaRuntime := registerKymaRuntime(t, ctx, subscriptionConsumerSubaccountID, kymaRtmInput)
+		//registerKymaRuntime(t, ctx, subscriptionConsumerSubaccountID, kymaRtmInput) // todo:: delete
 
 		// Register kyma formation template
 		kymaFormationTmplName := "kyma-formation-template-name"
-		kymaFormationTmplInput := graphql.FormationTemplateInput{
-			Name:                   kymaFormationTmplName,
-			ApplicationTypes:       []string{"app-type-1", "app-type-2"},
-			RuntimeType:            "kyma",
-			RuntimeTypeDisplayName: "kyma-formation-template-display-name",
-			RuntimeArtifactKind:    graphql.ArtifactTypeEnvironmentInstance,
-		}
-
-		kymaFormationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(kymaFormationTmplInput)
-		require.NoError(t, err)
-		kymaFormationTmplRequest := fixtures.FixCreateFormationTemplateRequest(kymaFormationTmplGQLInput)
-
-		kymaFT := graphql.FormationTemplate{}
-		t.Logf("Creating formation template with name: %q", kymaFormationTmplName)
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, kymaFormationTmplRequest, &kymaFT)
-		require.NoError(t, err)
-		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, kymaFT.ID)
+		createFormationTemplate(t, ctx, subscriptionConsumerSubaccountID, "kyma", kymaFormationTmplName, conf.KymaRuntimeTypeLabelValue, graphql.ArtifactTypeEnvironmentInstance)
 
 		// Register provider formation template
 		providerFormationTmplName := "provider-formation-template-name"
-		providerFormationTmplInput := graphql.FormationTemplateInput{
-			Name:                   providerFormationTmplName,
-			ApplicationTypes:       []string{"app-type-1", "app-type-2"},
-			RuntimeType:            conf.SubscriptionProviderAppNameValue,
-			RuntimeTypeDisplayName: "provider-formation-template-display-name",
-			RuntimeArtifactKind:    graphql.ArtifactTypeSubscription,
-		}
+		createFormationTemplate(t, ctx, subscriptionProviderSubaccountID, "provider", providerFormationTmplName, conf.KymaRuntimeTypeLabelValue, graphql.ArtifactTypeSubscription)
 
-		providerFormationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(providerFormationTmplInput)
-		require.NoError(t, err)
-		providerFormationTmplRequest := fixtures.FixCreateFormationTemplateRequest(providerFormationTmplGQLInput)
+		// Register kyma formation
+		kymaFormationName := "kyma-formation-name"
+		t.Logf("Creating formation with name: %q", kymaFormationName)
+		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, kymaFormationName, &kymaFormationTmplName) // todo:: tenant?
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, kymaFormationName)
 
-		providerFT := graphql.FormationTemplate{}
-		t.Logf("Creating formation template with name: %q", providerFormationTmplName)
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, providerFormationTmplRequest, &providerFT)
-		require.NoError(t, err)
-		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, providerFT.ID)
+		// Register provider formation
+		providerFormationName := "provider-formation-name"
+		t.Logf("Creating formation with name: %q", providerFormationName)
+		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionProviderSubaccountID, providerFormationName, &providerFormationTmplName) // todo:: tenant?
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionProviderSubaccountID, providerFormationName)
 
-		// todo:: the formation should be created by the ASA. Currently, they will be added to the default(side by side extensibility by kyma) template
-		//kymaFormationName := "kyma-formation-name"
-		//t.Logf("Creating formation with name: %q", kymaFormationName)
-		//kymaF := fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, "", kymaFormationName, kymaFormationTmplName)
-		//defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, "", kymaFormationName)
-		//
-		//providerFormationName := "provider-formation-name"
-		//t.Logf("Creating formation with name: %q", providerFormationName)
-		//providerF := fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, "", providerFormationName, providerFormationTmplName)
-		//defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, "", providerFormationName)
+		// todo:: ASA
+		t.Run("Assign kyma runtime to formation and validate kyma runtime has proper formation labels and provider runtime has NOT formation labels", func(t *testing.T) {
+			assertScenarios(t, kymaRuntime, []string{})
+			assignTenantToFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionProviderAccountID, kymaFormationName) // todo:: tenants?
+			assertScenarios(t, kymaRuntime, []string{kymaFormationName})
+			// todo:: assert provider runtime is NOT in formation
+		})
 
-		// toddo::
-		// create ASA
+		t.Run("Assign provider runtime to formation and validate provider runtime has proper formation labels and kyma runtime has NOT formation labels", func(t *testing.T) {
+			assertScenarios(t, kymaRuntime, []string{})
+			assignTenantToFormation(t, ctx, subscriptionProviderSubaccountID, subscriptionConsumerAccountID, providerFormationName) // todo:: tenants?
+			assertScenarios(t, kymaRuntime, []string{providerFormationName})
+			// todo:: assert kyma runtime is NOT in formation
+		})
 	})
+}
+
+func assertScenarios(t *testing.T, runtime graphql.RuntimeExt, expectedScenarios []string) {
+	scenariosLabel := runtime.Labels["scenarios"]
+	scenarios, ok := scenariosLabel.([]interface{})
+	if !ok {
+		scenarios = []interface{}{}
+	}
+	require.ElementsMatch(t, scenarios, expectedScenarios)
+}
+
+func assignTenantToFormation(t *testing.T, ctx context.Context, objectID, tenantID, formationName string) {
+	t.Logf("Assign tenant %s to formation %s...", objectID, formationName)
+	assignReq := fixtures.FixAssignFormationRequest(objectID, "TENANT", formationName)
+	var formation graphql.Formation
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, assignReq, &formation)
+	require.NoError(t, err)
+	require.Equal(t, formationName, formation.Name)
+	t.Logf("Successfully assigned tenant %s to formation %s", "", formationName)
+}
+
+func createFormationTemplate(t *testing.T, ctx context.Context, tenantID, prefix, formationTemplateName, runtimeType string, runtimeArtifactKind graphql.ArtifactType) {
+	formationTmplInput := graphql.FormationTemplateInput{
+		Name:                   formationTemplateName,
+		ApplicationTypes:       []string{prefix + "-app-type-1", prefix + "-app-type-2"},
+		RuntimeType:            runtimeType,
+		RuntimeTypeDisplayName: prefix + "-formation-template-display-name",
+		RuntimeArtifactKind:    runtimeArtifactKind,
+	}
+
+	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTmplInput)
+	require.NoError(t, err)
+	formationTmplRequest := fixtures.FixCreateFormationTemplateRequest(formationTmplGQLInput)
+
+	ft := graphql.FormationTemplate{}
+	t.Logf("Creating formation template with name: %q", formationTemplateName)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, formationTmplRequest, &ft)
+	require.NoError(t, err)
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 }
 
 func checkRuntimeFormationLabels(t *testing.T, ctx context.Context, rtmID, formationLabelKey string, expectedFormations []string) {

@@ -38,10 +38,10 @@ func TestAddRuntimeContext(t *testing.T) {
 	require.NotEmpty(t, runtime.ID)
 
 	rtmCtxInput := fixtures.FixRuntimeContextInput("create", "create")
-	rtmCtx, err := testctx.Tc.Graphqlizer.RuntimeContextInputToGQL(rtmCtxInput)
+	rtmCtxInputGQL, err := testctx.Tc.Graphqlizer.RuntimeContextInputToGQL(rtmCtxInput)
 	require.NoError(t, err)
 
-	addRtmCtxRequest := fixtures.FixAddRuntimeContextRequest(runtime.ID, rtmCtx)
+	addRtmCtxRequest := fixtures.FixAddRuntimeContextRequest(runtime.ID, rtmCtxInputGQL)
 	output := graphql.RuntimeContextExt{}
 
 	// WHEN
