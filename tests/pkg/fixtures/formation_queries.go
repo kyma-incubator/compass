@@ -33,9 +33,11 @@ func CreateFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Cl
 func CreateFormationWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, formationName string, formationTemplateName *string) graphql.Formation {
 	var formation graphql.Formation
 	formationInput := FixFormationInput(formationName, formationTemplateName)
-	formationInputGQL := testctx.Tc.Graphqlizer.FormationInputToGQL(formationInput) // todo:: add FormationInputToGQL
+	formationInputGQL, err := testctx.Tc.Graphqlizer.FormationInputToGQL(formationInput) // todo:: add FormationInputToGQL
+	require.NoError(t, err)
+
 	createFormationReq := FixCreateFormationWithTemplateRequest(formationInputGQL)
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, createFormationReq, &formation)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, createFormationReq, &formation)
 	require.NoError(t, err)
 	require.Equal(t, formationName, formation.Name)
 
