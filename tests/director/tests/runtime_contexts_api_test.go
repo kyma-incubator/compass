@@ -259,16 +259,8 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		require.Equal(t, subscriptionConsumerSubaccountID, consumerSubaccountFromRtmCtxLabel)
 
 		t.Log("Assert provider runtime is visible in the consumer's account after successful subscription")
-		consumerAccountRuntimes := fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID)
-		require.NotZero(t, len(consumerAccountRuntimes.Data))
-		runtimeExists := false
-		for _, runtime := range consumerAccountRuntimes.Data {
-			if providerRuntime.ID == runtime.ID {
-				runtimeExists = true
-				break
-			}
-		}
-		require.True(t, runtimeExists)
+		consumerAccountRuntime := fixtures.GetRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerRuntime.ID)
+		require.Equal(t, providerRuntime.ID, consumerAccountRuntime.ID)
 		require.Len(t, consumerSubaccountRuntimes.Data[0].RuntimeContexts.Data, 1)
 
 		t.Log("Assert the consumer cannot update the provider runtime(owner false check)")
