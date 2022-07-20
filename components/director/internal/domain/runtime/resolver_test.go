@@ -62,9 +62,6 @@ func TestResolver_CreateRuntime(t *testing.T) {
 	ctx := tenant.SaveToContext(context.TODO(), accountTenantID, accountExternalID)
 
 	modelRuntime := fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem ipsum")
-	modelRuntimes := []*model.Runtime{
-		modelRuntime,
-	}
 	gqlRuntime := fixGQLRuntime(t, "foo", "Foo", "Lorem ipsum")
 	testErr := errors.New("Test error")
 
@@ -139,7 +136,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, testUUID).Return(modelRuntime, nil).Once()
-				svc.On("ListByFilters", contextParam, subscriptionFilters).Return([]*model.Runtime{}, nil).Once()
+				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, labels).Return(nil).Once()
 				return svc
 			},
@@ -173,7 +170,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, testUUID).Return(modelRuntime, nil).Once()
-				svc.On("ListByFilters", contextParam, subscriptionFilters).Return([]*model.Runtime{}, nil).Once()
+				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, labels).Return(nil).Once()
 				return svc
 			},
@@ -291,7 +288,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("ListByFilters", contextParam, subscriptionFilters).Return([]*model.Runtime{}, nil).Once()
+				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, labels).Return(testErr).Once()
 				return svc
 			},
@@ -323,7 +320,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("CreateWithMandatoryLabels", contextParam, selfRegModelInput, testUUID, labels).Return(testErr).Once()
-				svc.On("ListByFilters", contextParam, subscriptionFilters).Return([]*model.Runtime{}, nil).Once()
+				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -355,7 +352,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, testUUID).Return(nil, testErr).Once()
 				svc.On("CreateWithMandatoryLabels", contextParam, selfRegModelInput, testUUID, labels).Return(nil).Once()
-				svc.On("ListByFilters", contextParam, subscriptionFilters).Return([]*model.Runtime{}, nil).Once()
+				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -385,7 +382,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("ListByFilters", contextParam, subscriptionFilters).Return([]*model.Runtime{}, nil).Once()
+				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, labels).Return(nil).Once()
 				svc.On("Get", contextParam, testUUID).Return(nil, testErr).Once()
 				return svc
@@ -417,7 +414,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("ListByFilters", contextParam, subscriptionFilters).Return([]*model.Runtime{}, nil).Once()
+				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				svc.On("CreateWithMandatoryLabels", contextParam, selfRegModelInput, testUUID, labels).Return(nil).Once()
 				svc.On("Get", contextParam, testUUID).Return(nil, testErr).Once()
 				return svc
@@ -475,7 +472,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("ListByFilters", contextParam, subscriptionFilters).Return(nil, testErr).Once()
+				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -504,7 +501,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("ListByFilters", contextParam, subscriptionFilters).Return(modelRuntimes, nil).Once()
+				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(modelRuntime, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -523,7 +520,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanupFunc(labels),
 			Input:            gqlInput,
 			ExpectedRuntime:  nil,
-			ExpectedErr:      errors.New(fmt.Sprintf("Cannot have more than one runtime with labels %q: %q and %q: %q", RegionKey, testRegion, rtmtest.TestDistinguishLabel, distinguishLabelValue)),
+			ExpectedErr:      errors.New(fmt.Sprintf("cannot have more than one runtime with labels %q: %q and %q: %q", RegionKey, testRegion, rtmtest.TestDistinguishLabel, distinguishLabelValue)),
 		},
 	}
 
