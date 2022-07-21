@@ -534,7 +534,7 @@ func (g *Graphqlizer) TemplateValueInputToGQL(in graphql.TemplateValueInput) (st
 // FormationInputToGQL missing godoc
 func (g *Graphqlizer) FormationInputToGQL(in graphql.FormationInput) (string, error) {
 	return g.genericToGQL(in, `{
-		name: "{{.Name}}"
+		name: "{{.Name}}",
 		templateName: "{{.TemplateName}}"
 	}`)
 }
