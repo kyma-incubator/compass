@@ -36,6 +36,29 @@ func (_m *RuntimeContextRepository) Exists(ctx context.Context, tenant string, i
 	return r0, r1
 }
 
+// GetByID provides a mock function with given fields: ctx, tenant, id
+func (_m *RuntimeContextRepository) GetByID(ctx context.Context, tenant string, id string) (*model.RuntimeContext, error) {
+	ret := _m.Called(ctx, tenant, id)
+
+	var r0 *model.RuntimeContext
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.RuntimeContext); ok {
+		r0 = rf(ctx, tenant, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.RuntimeContext)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListAll provides a mock function with given fields: ctx, tenant
 func (_m *RuntimeContextRepository) ListAll(ctx context.Context, tenant string) ([]*model.RuntimeContext, error) {
 	ret := _m.Called(ctx, tenant)
