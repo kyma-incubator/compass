@@ -165,7 +165,7 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		ctx := context.Background()
 		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID // the parent is testDefaultTenant
 		subscriptionConsumerAccountID := conf.TestConsumerAccountID
-		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID // the parent is ApplicationsForRuntimeTenantName
+		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID // in local set up the parent is ApplicationsForRuntimeTenantName
 		subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
 		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
