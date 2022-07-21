@@ -668,13 +668,13 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 
 		// Register kyma formation
 		kymaFormationName := "kyma-formation-name"
-		t.Logf("Creating formation with name: %q", kymaFormationName)
+		t.Logf("Creating formation with name: %q from template with name: %q", kymaFormationName, kymaFormationTmplName)
 		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, kymaFormationName, &kymaFormationTmplName) // todo:: tenant?
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, kymaFormationName)
 
 		// Register provider formation
 		providerFormationName := "provider-formation-name"
-		t.Logf("Creating formation with name: %q", providerFormationName)
+		t.Logf("Creating formation with name: %q from template with name: %q", providerFormationName, providerFormationTmplName)
 		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionProviderSubaccountID, providerFormationName, &providerFormationTmplName) // todo:: tenant?
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionProviderSubaccountID, providerFormationName)
 
