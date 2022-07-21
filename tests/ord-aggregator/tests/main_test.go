@@ -18,6 +18,7 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 	"os"
 	"testing"
 	"time"
@@ -44,6 +45,7 @@ type config struct {
 	ExternalServicesMockUnsecuredWithAdditionalContentURL string
 	ExternalServicesMockAbsoluteURL                       string
 	ExternalServicesMockOrdCertSecuredURL                 string
+	ExternalServicesMockUnsecuredMultiTenantURL           string
 	ExternalServicesMockBasicURL                          string
 	ExternalServicesMockOauthURL                          string
 	ClientID                                              string
@@ -52,9 +54,14 @@ type config struct {
 	BasicPassword                                         string
 	ORDServiceDefaultResponseType                         string
 	GlobalRegistryURL                                     string
+	TestConsumerSubaccountID                              string
+	TestConsumerTenantID                                  string
+	TestProviderSubaccountID                              string
+	TokenPath                                             string
 	CertLoaderConfig                                      certloader.Config
 	ClientTimeout                                         time.Duration `envconfig:"default=60s"`
 	SkipSSLValidation                                     bool          `envconfig:"default=false"`
+	SubscriptionConfig                                    subscription.Config
 }
 
 var (
