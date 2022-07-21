@@ -75,7 +75,7 @@ global:
       pvc:
          storageClass: ${ANY_SUPPORTED_STORAGE_CLASS}
    enableInternalCommunicationPolicies: false
-   loadBalancerIP: 34.140.141.115
+   loadBalancerIP: ${LOAD_BALANCER_SERVICE_EXTERNAL_IP}
    cockpit:
       auth:
          idpHost: ${IDP_HOST}
@@ -271,7 +271,7 @@ global:
       pvc:
          storageClass: ${ANY_SUPPORTED_STORAGE_CLASS}
    enableInternalCommunicationPolicies: false
-   loadBalancerIP: 34.140.141.115
+   loadBalancerIP: ${LOAD_BALANCER_SERVICE_EXTERNAL_IP}
    cockpit:
       auth:
          idpHost: ${IDP_HOST}
