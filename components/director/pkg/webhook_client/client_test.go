@@ -260,7 +260,7 @@ func TestClient_Do_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *tes
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), mockedError)
-	require.Contains(t, err.Error(), "received error while polling external system")
+	require.Contains(t, err.Error(), "received error while calling external system")
 }
 
 func TestClient_Do_WhenWebhookResponseBodyContainsErrorWithJSONObjects_ShouldParseErrorSuccessfully(t *testing.T) {
@@ -296,7 +296,7 @@ func TestClient_Do_WhenWebhookResponseBodyContainsErrorWithJSONObjects_ShouldPar
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "Unauthorized")
-	require.Contains(t, err.Error(), "received error while polling external system")
+	require.Contains(t, err.Error(), "received error while calling external system")
 }
 
 func TestClient_Do_WhenWebhookResponseStatusCodeIsGoneAndGoneStatusISDefined_ShouldReturnWebhookStatusGoneError(t *testing.T) {
@@ -696,7 +696,7 @@ func TestClient_Poll_WhenWebhookResponseBodyContainsError_ShouldReturnError(t *t
 
 	require.Error(t, err)
 	require.Contains(t, err.Error(), mockedError)
-	require.Contains(t, err.Error(), "received error while polling external system")
+	require.Contains(t, err.Error(), "received error while calling external system")
 }
 
 func TestClient_Poll_WhenWebhookResponseStatusCodeIsNotSuccess_ShouldReturnError(t *testing.T) {
