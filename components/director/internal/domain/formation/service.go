@@ -283,11 +283,11 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		if err != nil {
 			return nil, err
 		}
-		webhooks, inputs, err := s.generateNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
+		requests, err := s.generateNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
-		err = s.sendNotifications(ctx, webhooks, inputs)
+		err = s.sendNotifications(ctx, requests)
 		if err != nil {
 			return nil, err
 		}
@@ -307,19 +307,22 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 	}
 }
 
-func (s *service) sendNotifications(ctx context.Context, webhooks map[string]*model.Webhook, inputs map[string]*webhookdir.FormationConfigurationChangeInput) error {
-	for runtimeID := range inputs {
-		gqlWebhook, err := s.webhookConverter.ToGraphQL(webhooks[runtimeID])
-		if err != nil {
-			return errors.Wrapf(err, "while converting webhook with ID %s", webhooks[runtimeID].ID)
-		}
-		req := &webhook_client.Request{
-			Webhook:       *gqlWebhook,
-			Object:        inputs[runtimeID],
-			CorrelationID: correlation.CorrelationIDFromContext(ctx),
-		}
-		if _, err := s.webhookClient.Do(ctx, req); err != nil {
-			return errors.Wrapf(err, "while executing webhook with ID %s for Runtime with ID %s", gqlWebhook.ID, runtimeID)
+func (s *service) createWebhookRequest(ctx context.Context, webhook *model.Webhook, input *webhookdir.FormationConfigurationChangeInput) (*webhook_client.Request, error) {
+	gqlWebhook, err := s.webhookConverter.ToGraphQL(webhook)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while converting webhook with ID %s", webhook.ID)
+	}
+	return &webhook_client.Request{
+		Webhook:       *gqlWebhook,
+		Object:        input,
+		CorrelationID: correlation.CorrelationIDFromContext(ctx),
+	}, nil
+}
+
+func (s *service) sendNotifications(ctx context.Context, notifications []*webhook_client.Request) error {
+	for _, notification := range notifications {
+		if _, err := s.webhookClient.Do(ctx, notification); err != nil {
+			return errors.Wrapf(err, "while executing webhook with ID %s for Runtime with ID %s", notification.Webhook.ID, notification.Webhook.RuntimeID)
 		}
 	}
 	return nil
@@ -360,11 +363,11 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		if err != nil {
 			return nil, err
 		}
-		webhooks, inputs, err := s.generateNotificationsForApplicationAssignment(ctx, tnt, objectID, formationFromDB, model.UnassignFormation)
+		requests, err := s.generateNotificationsForApplicationAssignment(ctx, tnt, objectID, formationFromDB, model.UnassignFormation)
 		if err != nil {
 			return nil, errors.Wrap(err, "while generating notifications for application unassignment")
 		}
-		err = s.sendNotifications(ctx, webhooks, inputs)
+		err = s.sendNotifications(ctx, requests)
 		if err != nil {
 			return nil, err
 		}
@@ -385,11 +388,11 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		if err != nil {
 			return nil, err
 		}
-		webhooks, inputs, err := s.generateNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
+		requests, err := s.generateNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
-		err = s.sendNotifications(ctx, webhooks, inputs)
+		err = s.sendNotifications(ctx, requests)
 		if err != nil {
 			return nil, err
 		}
@@ -409,7 +412,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	}
 }
 
-func (s *service) generateNotifications(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) (map[string]*model.Webhook, map[string]*webhookdir.FormationConfigurationChangeInput, error) {
+func (s *service) generateNotifications(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhook_client.Request, error) {
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
 		return s.generateNotificationsForApplicationAssignment(ctx, tenant, appID, formation, operation)
@@ -418,48 +421,45 @@ func (s *service) generateNotifications(ctx context.Context, tenant string, appI
 	case graphql.FormationObjectTypeRuntimeContext:
 		return s.generateNotificationsForRuntimeContextAssignment(ctx, tenant, appID, formation, operation)
 	default:
-		return nil, nil, fmt.Errorf("unknown formation type %s", objectType)
+		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
 }
-func (s *service) generateNotificationsForApplicationAssignment(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation) (map[string]*model.Webhook, map[string]*webhookdir.FormationConfigurationChangeInput, error) {
+func (s *service) generateNotificationsForApplicationAssignment(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation) ([]*webhook_client.Request, error) {
 	application, err := s.applicationRepository.GetByID(ctx, tenant, appID)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "while getting application with id %s", appID)
+		return nil, errors.Wrapf(err, "while getting application with id %s", appID)
 	}
 	applicationLabels, err := s.getLabelsForObject(ctx, tenant, appID, model.ApplicationLabelableObject)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	applicationWithLabels := &webhookdir.ApplicationWithLabels{
 		Application: application,
 		Labels:      applicationLabels,
 	}
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	var appTemplateWithLabels *webhookdir.ApplicationTemplateWithLabels
 	if application.ApplicationTemplateID != nil {
 		appTemplate, err := s.applicationTemplateRepository.Get(ctx, *application.ApplicationTemplateID)
 		if err != nil {
-			return nil, nil, errors.Wrapf(err, "while getting application template with id %s", *application.ApplicationTemplateID)
+			return nil, errors.Wrapf(err, "while getting application template with id %s", *application.ApplicationTemplateID)
 		}
 		applicationTemplateLabels, err := s.getLabelsForObject(ctx, tenant, appTemplate.ID, model.AppTemplateLabelableObject)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		appTemplateWithLabels = &webhookdir.ApplicationTemplateWithLabels{
 			ApplicationTemplate: appTemplate,
 			Labels:              applicationTemplateLabels,
 		}
-		if err != nil {
-			return nil, nil, err
-		}
 	}
 
 	webhooks, err := s.webhookRepository.ListByReferenceObjectTypeAndWebhookType(ctx, tenant, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "when listing configuration changed webhooks for runtimes")
+		return nil, errors.Wrap(err, "when listing configuration changed webhooks for runtimes")
 	}
 
 	listeningRuntimeIDs := make([]string, 0, len(webhooks))
@@ -468,17 +468,17 @@ func (s *service) generateNotificationsForApplicationAssignment(ctx context.Cont
 	}
 
 	if len(listeningRuntimeIDs) == 0 {
-		return nil, nil, nil
+		return nil, nil
 	}
 
 	listeningRuntimes, err := s.runtimeRepo.ListByIDs(ctx, tenant, listeningRuntimeIDs)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "while listing runtimes")
+		return nil, errors.Wrap(err, "while listing runtimes")
 	}
 
 	listeningRuntimesLabels, err := s.labelRepository.ListForObjectIDs(ctx, tenant, model.RuntimeLabelableObject, listeningRuntimeIDs)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "while listing lables")
+		return nil, errors.Wrap(err, "while listing lables")
 	}
 
 	listeningRuntimesMapping := make(map[string]*webhookdir.RuntimeWithLabels, len(listeningRuntimes))
@@ -491,12 +491,12 @@ func (s *service) generateNotificationsForApplicationAssignment(ctx context.Cont
 
 	listeningRuntimesInScenario, err := s.runtimeRepo.ListByScenariosAndIDs(ctx, tenant, []string{formation.Name}, listeningRuntimeIDs)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "while listing runtimes")
+		return nil, errors.Wrap(err, "while listing runtimes")
 	}
 
 	runtimeContextsInScenarioForListeningRuntimes, err := s.runtimeContextRepo.ListByScenariosAndRuntimeIDs(ctx, tenant, []string{formation.Name}, listeningRuntimeIDs)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "while listing runtime contexts")
+		return nil, errors.Wrap(err, "while listing runtime contexts")
 	}
 
 	runtimeContextsInScenarioForListeningRuntimesIDs := make([]string, 0, len(runtimeContextsInScenarioForListeningRuntimes))
@@ -506,7 +506,7 @@ func (s *service) generateNotificationsForApplicationAssignment(ctx context.Cont
 
 	runtimeContextsLables, err := s.labelRepository.ListForObjectIDs(ctx, tenant, model.RuntimeContextLabelableObject, runtimeContextsInScenarioForListeningRuntimesIDs)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "while listing lables")
+		return nil, errors.Wrap(err, "while listing lables")
 	}
 
 	runtimeIDsToBeNotified := make(map[string]bool, len(listeningRuntimesInScenario)+len(runtimeContextsInScenarioForListeningRuntimes))
@@ -529,11 +529,11 @@ func (s *service) generateNotificationsForApplicationAssignment(ctx context.Cont
 		}
 	}
 
-	templateInputs := make(map[string]*webhookdir.FormationConfigurationChangeInput, len(runtimeIDsToBeNotified))
+	requests := make([]*webhook_client.Request, 0, len(runtimeIDsToBeNotified))
 	for rtID := range runtimeIDsToBeNotified {
 		rtCtx := runtimeContextsInScenarioForListeningRuntimesMapping[rtID]
 		runtime := listeningRuntimesMapping[rtID]
-		templateInputs[runtime.ID] = &webhookdir.FormationConfigurationChangeInput{
+		input := &webhookdir.FormationConfigurationChangeInput{
 			Operation:           operation,
 			FormationID:         formation.ID,
 			ApplicationTemplate: appTemplateWithLabels,
@@ -541,69 +541,74 @@ func (s *service) generateNotificationsForApplicationAssignment(ctx context.Cont
 			Runtime:             runtime,
 			RuntimeContext:      rtCtx,
 		}
+		req, err := s.createWebhookRequest(ctx, webhooksToCall[runtime.ID], input)
+		if err != nil {
+			return nil, err
+		}
+		requests = append(requests, req)
 	}
 
-	return webhooksToCall, templateInputs, nil
+	return requests, nil
 }
 
-func (s *service) generateNotificationsForRuntimeContextAssignment(ctx context.Context, tenant, runtimeCtxID string, formation *model.Formation, operation model.FormationOperation) (map[string]*model.Webhook, map[string]*webhookdir.FormationConfigurationChangeInput, error) {
+func (s *service) generateNotificationsForRuntimeContextAssignment(ctx context.Context, tenant, runtimeCtxID string, formation *model.Formation, operation model.FormationOperation) ([]*webhook_client.Request, error) {
 	runtimeCtx, err := s.runtimeContextRepo.GetByID(ctx, tenant, runtimeCtxID)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "while getting runtime context with id %s", runtimeCtxID)
+		return nil, errors.Wrapf(err, "while getting runtime context with id %s", runtimeCtxID)
 	}
 	runtimeCtxLabels, err := s.getLabelsForObject(ctx, tenant, runtimeCtxID, model.RuntimeContextLabelableObject)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	runtimeCtxWithLabels := &webhookdir.RuntimeContextWithLabels{
 		RuntimeContext: runtimeCtx,
 		Labels:         runtimeCtxLabels,
 	}
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "while getting runtime context labels with id %s", runtimeCtxID)
+		return nil, errors.Wrapf(err, "while getting runtime context labels with id %s", runtimeCtxID)
 	}
 
-	webhooksForRuntime, notificationsForRuntime, err := s.generateNotificationsForRuntimeAssignment(ctx, tenant, runtimeCtxWithLabels.RuntimeID, formation, operation)
+	requests, err := s.generateNotificationsForRuntimeAssignment(ctx, tenant, runtimeCtxWithLabels.RuntimeID, formation, operation)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	for key := range notificationsForRuntime {
-		notificationsForRuntime[key].RuntimeContext = runtimeCtxWithLabels
+	for _, request := range requests {
+		request.Object.(*webhookdir.FormationConfigurationChangeInput).RuntimeContext = runtimeCtxWithLabels
 	}
-	return webhooksForRuntime, notificationsForRuntime, nil
+	return requests, nil
 }
 
-func (s *service) generateNotificationsForRuntimeAssignment(ctx context.Context, tenant, runtimeID string, formation *model.Formation, operation model.FormationOperation) (map[string]*model.Webhook, map[string]*webhookdir.FormationConfigurationChangeInput, error) {
+func (s *service) generateNotificationsForRuntimeAssignment(ctx context.Context, tenant, runtimeID string, formation *model.Formation, operation model.FormationOperation) ([]*webhook_client.Request, error) {
 	runtime, err := s.runtimeRepo.GetByID(ctx, tenant, runtimeID)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "while getting runtime with id %s", runtimeID)
+		return nil, errors.Wrapf(err, "while getting runtime with id %s", runtimeID)
 	}
 	runtimeLabels, err := s.getLabelsForObject(ctx, tenant, runtimeID, model.RuntimeLabelableObject)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	runtimeWithLabels := &webhookdir.RuntimeWithLabels{
 		Runtime: runtime,
 		Labels:  runtimeLabels,
 	}
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "while getting runtime labels for id %s", runtimeID)
+		return nil, errors.Wrapf(err, "while getting runtime labels for id %s", runtimeID)
 	}
 
 	webhook, err := s.webhookRepository.GetByIDAndWebhookType(ctx, tenant, runtimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return nil, nil, nil
+			return nil, nil
 		}
-		return nil, nil, errors.Wrap(err, "while listing configuration changes for applications")
+		return nil, errors.Wrap(err, "while listing configuration changes for applications")
 	}
 
 	applicationsToBeNotifiedFor, err := s.applicationRepository.ListByScenariosNoPaging(ctx, tenant, []string{formation.Name})
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "while listing scenario labels for applications")
+		return nil, errors.Wrap(err, "while listing scenario labels for applications")
 	}
 	if len(applicationsToBeNotifiedFor) == 0 {
-		return nil, nil, nil
+		return nil, nil
 	}
 	applicationsToBeNotifiedForIDs := make([]string, 0, len(applicationsToBeNotifiedFor))
 	applicationsTemplateIDs := make([]string, 0, len(applicationsToBeNotifiedFor))
@@ -616,15 +621,15 @@ func (s *service) generateNotificationsForRuntimeAssignment(ctx context.Context,
 
 	applicationsToBeNotifiedForLabels, err := s.labelRepository.ListForObjectIDs(ctx, tenant, model.ApplicationLabelableObject, applicationsToBeNotifiedForIDs)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "while listing labels for applications")
+		return nil, errors.Wrap(err, "while listing labels for applications")
 	}
 	applicationTemplates, err := s.applicationTemplateRepository.ListByIDs(ctx, applicationsTemplateIDs)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "while listing application templates")
+		return nil, errors.Wrap(err, "while listing application templates")
 	}
 	applicationTemplatesLabels, err := s.labelRepository.ListForObjectIDs(ctx, tenant, model.AppTemplateLabelableObject, applicationsTemplateIDs)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "while listing labels for application templates")
+		return nil, errors.Wrap(err, "while listing labels for application templates")
 	}
 	applicationTemplatesMapping := make(map[string]*webhookdir.ApplicationTemplateWithLabels, len(applicationTemplates))
 	for i, appTemplate := range applicationTemplates {
@@ -634,15 +639,13 @@ func (s *service) generateNotificationsForRuntimeAssignment(ctx context.Context,
 		}
 	}
 
-	webhooks := make(map[string]*model.Webhook, len(applicationsToBeNotifiedFor))
-	inputs := make(map[string]*webhookdir.FormationConfigurationChangeInput, len(applicationsToBeNotifiedFor))
+	requests := make([]*webhook_client.Request, 0, len(applicationsToBeNotifiedFor))
 	for i, app := range applicationsToBeNotifiedFor {
 		var appTemplate *webhookdir.ApplicationTemplateWithLabels
 		if app.ApplicationTemplateID != nil {
 			appTemplate = applicationTemplatesMapping[*app.ApplicationTemplateID]
 		}
-		webhooks[app.ID] = webhook
-		inputs[app.ID] = &webhookdir.FormationConfigurationChangeInput{
+		input := &webhookdir.FormationConfigurationChangeInput{
 			Operation:           operation,
 			FormationID:         formation.ID,
 			ApplicationTemplate: appTemplate,
@@ -653,9 +656,14 @@ func (s *service) generateNotificationsForRuntimeAssignment(ctx context.Context,
 			Runtime:        runtimeWithLabels,
 			RuntimeContext: nil,
 		}
+		req, err := s.createWebhookRequest(ctx, webhook, input)
+		if err != nil {
+			return nil, err
+		}
+		requests = append(requests, req)
 	}
 
-	return webhooks, inputs, nil
+	return requests, nil
 }
 
 func (s *service) getLabelsForObject(ctx context.Context, tenant, objectID string, objectType model.LabelableObject) (map[string]interface{}, error) {
