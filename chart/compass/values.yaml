@@ -150,7 +150,7 @@ global:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2495"
+      version: "PR-2499"
   isLocalEnv: false
   isForTesting: false
   enableInternalCommunicationPolicies: true
