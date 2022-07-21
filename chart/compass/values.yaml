@@ -118,7 +118,7 @@ global:
       version: "PR-2383"
     director:
       dir:
-      version: "PR-2483"
+      version: "PR-2500"
     hydrator:
       dir:
       version: "PR-2458"
@@ -144,13 +144,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2479"
+      version: "PR-2500"
     console:
       dir:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2497"
+      version: "PR-2500"
   isLocalEnv: false
   isForTesting: false
   enableInternalCommunicationPolicies: true
