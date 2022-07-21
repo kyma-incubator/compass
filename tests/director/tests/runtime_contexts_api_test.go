@@ -163,7 +163,7 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 	t := testingx.NewT(stdT)
 	t.Run("Runtime Contexts subscription flows", func(t *testing.T) {
 		ctx := context.Background()
-		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID // the parent is testDefaultTenant
+		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID // in local set up the parent is testDefaultTenant
 		subscriptionConsumerAccountID := conf.TestConsumerAccountID
 		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID // in local set up the parent is ApplicationsForRuntimeTenantName
 		subscriptionConsumerTenantID := conf.TestConsumerTenantID
