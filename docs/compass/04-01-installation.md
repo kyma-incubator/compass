@@ -249,78 +249,45 @@ In this mode, the Runtime Agent is already connected to Compass. This mode facil
 
 To install Compass and Runtime components on a single cluster, follow these steps:
 
-TODO: As mentioned previously, there is no longer `cluster-installation` doc for Kyma 2.0.4. Consider whether to remove the one in the step below if no such doc is found.
+#### Kyma Prerequisite
 
-1. Bear in mind the [Installation](https://github.com/kyma-project/kyma/blob/2.0.4/docs/04-operation-guides/operations/ra-01-enable-kyma-with-runtime-agent.md) configuration that enables the Runtime Agent, and then, install Kyma. 
+1. You need to have a Kyma installation with Runtime Agent enabled. For more information you can check [Enable Kyma with Runtime Agent](https://github.com/kyma-project/kyma/blob/2.0.4/docs/04-operation-guides/operations/ra-01-enable-kyma-with-runtime-agent.md).
 
-   1. Save the following .yaml into some file (e.g: additionalKymaOverrides.yaml)
-    ```yaml
-    istio-configuration:
-       components:
-          ingressGateways:
-             config:
-                service:
-                   loadBalancerIP: ${GATEWAY_IP_ADDRESS}
-                   type: LoadBalancer
-       meshConfig:
-          defaultConfig:
-             holdApplicationUntilProxyStarts: true
-    global:
-       loadBalancerIP: ${GATEWAY_IP_ADDRESS}
-       disableLegacyConnectivity: true   
-    # uncomment below values if you want to proceed with your custom values; default domain is 'local.kyma.dev' and there is default self-signed cert and key for that domain
-       #domainName: ${DOMAIN} 
-       #tlsCrt: ${TLS_CERT} 
-       #tlsKey: ${TLS_KEY} 
-       #ingress:
-       #domainName: ${DOMAIN} 
-       #tlsCrt: ${TLS_CERT} 
-       #tlsKey: ${TLS_KEY}
-    ```
-   2. Add the `compass-runtime-agent` module in the `compass-system` Namespace to the [kyma-components-file](../../installation/resources/kyma/kyma-components-full.yaml) and save the following .yaml into some file (e.g: kyma-components-with-runtime-agent.yaml)
-    ```bash
-    kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c <file from above step - e.g: kyma-components-with-runtime-agent.yaml> -f <overrides file from ../../installation/resources/kyma/kyma-overrides-full.yaml> -f <file from above step - e.g. additionalKymaOverrides.yaml> --ci
-    ```
+#### Install Compass
 
-5. Install Compass using the following command:
-   1. Save the following .yaml into some file (e.g: additionalCompassOverrides.yaml)
-    ```yaml
-    global:
-       isLocalEnv: false
-       migratorJob:
-          pvc:
-             isLocalEnv: false
-       enableInternalCommunicationPolicies: false
-       loadBalancerIP: ${GATEWAY_IP_ADDRESS}
-    # uncomment below values if you want to proceed with your custom values; default domain is 'local.kyma.dev' and there is default self-signed cert and key for that domain
-       #domainName: ${DOMAIN} 
-       #tlsCrt: ${TLS_CERT} 
-       #tlsKey: ${TLS_KEY} 
-       #ingress:
-       #domainName: ${DOMAIN} 
-       #tlsCrt: ${TLS_CERT} 
-       #tlsKey: ${TLS_KEY}
-    ```
+> **NOTE:** If you installed Kyma on a cluster with a custom domain and certificates, you must apply that overrides to Compass as well.
 
-    ```bash
-    . <script from ../../installation/scripts/install-compass.sh> --override-files <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
-    ```
-TODO: in the above Compass installation step, do we want to pass `local` overrides or `benchmark` ones as `benchmark` are used in productive cluster (not local one). In addition, double-check if we want to set `global.isLocalEnv: false` in the Compass overrides (`migratorJob.pvc.isLocalEnv` must be set to false)
-   
-Once Compass is installed, Runtime Agent will be configured to fetch the Runtime configuration from the Compass installation within the same cluster.
+The proper work of JWT token flows and Compass Cockpit require a set up and configured OpenID Connect (OIDC) Authorization Server.
+The OIDC Authorization Server is needed for the support of the respective users, user groups, and scopes. The OIDC server host and client-id are specified as overrides of the Compass Helm chart. Then a set of admin scopes are granted to a user based on the groups in the id_token, those trusted groups can be configured with overrides as well.
 
-### Local k3d installation
-
-To install Compass and Runtime components on k3d, run the command below. Kyma source code will be picked up according to the KYMA_VERSION file and Compass source code will be picked up from the local sources (locally checked out branch).
-
-```bash
-./installation/cmd/run.sh --kyma-installation full --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID}
+Save the following .yaml with installation overrides into a file (e.g: additionalCompassOverrides.yaml)
+```yaml
+hydrator:
+   adminGroupNames: ${ADMIN_GROUP_NAMES}
+global:
+   agentPreconfiguration: true
+   isLocalEnv: false
+   migratorJob:
+      pvc:
+         storageClass: ${ANY_SUPPORTED_STORAGE_CLASS}
+   enableInternalCommunicationPolicies: false
+   loadBalancerIP: 34.140.141.115
+   cockpit:
+      auth:
+         idpHost: ${IDP_HOST}
+         clientID: ${CLIENT_ID}
+# uncomment below values if you want to proceed with your custom values; default domain is 'local.kyma.dev' and there is default self-signed cert and key for that domain
+#   domainName: ${DOMAIN}
+#   tlsCrt: ${TLS_CERT}
+#   tlsKey: ${TLS_KEY}
+#   ingress:
+#      domainName: ${DOMAIN}
+#      tlsCrt: ${TLS_CERT}
+#      tlsKey: ${TLS_KEY}
 ```
 
->**NOTE:** The versions of the components that are installed depend on their tag versions listed in the `values.yaml` file in the Helm charts.
-If you want to build and deploy the local source code version of a component (for example, Director), you can run the following command in the component directory:
-  ```bash
-  make deploy-on-k3d
-  ```
-
-> **Note:** To reduce memory and CPU usage, from the `installer-cr-kyma.yaml` file, comment out the components you don't want to use, such as `monitoring`, `tracing`, `logging`, or `kiali`.
+```bash
+. <script from ../../installation/scripts/install-compass.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
+```
+   
+Once Compass is installed, Runtime Agent will be configured to fetch the Runtime configuration from the Compass installation within the same cluster.
