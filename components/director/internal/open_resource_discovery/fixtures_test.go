@@ -33,22 +33,22 @@ const (
 	event1ORDID            = "ns:eventResource:EVENT_ID:v1"
 	event2ORDID            = "ns2:eventResource:EVENT_ID:v1"
 
-	appID       = "testApp"
+	appID            = "testApp"
 	appTemplateID    = "testAppTemplate"
-	whID        = "testWh"
+	whID             = "testWh"
 	whID2            = "testWh2"
-	tenantID    = "testTenant"
+	tenantID         = "testTenant"
 	externalTenantID = "externalTestTenant"
-	packageID   = "testPkg"
-	vendorID    = "testVendor"
-	vendorID2   = "testVendor2"
-	productID   = "testProduct"
-	bundleID    = "testBndl"
-	api1ID      = "testAPI1"
-	api2ID      = "testAPI2"
-	event1ID    = "testEvent1"
-	event2ID    = "testEvent2"
-	tombstoneID = "testTs"
+	packageID        = "testPkg"
+	vendorID         = "testVendor"
+	vendorID2        = "testVendor2"
+	productID        = "testProduct"
+	bundleID         = "testBndl"
+	api1ID           = "testAPI1"
+	api2ID           = "testAPI2"
+	event1ID         = "testEvent1"
+	event2ID         = "testEvent2"
+	tombstoneID      = "testTs"
 
 	api1spec1ID  = "api1spec1ID"
 	api1spec2ID  = "api1spec2ID"
@@ -554,7 +554,7 @@ func fixApplicationPage() *model.ApplicationPage {
 					ID:    appID,
 					Ready: true,
 				},
-				Type: testApplicationType,
+				Type:                  testApplicationType,
 				ApplicationTemplateID: str.Ptr(appTemplateID),
 			},
 		},

@@ -13,14 +13,14 @@ import (
 const tenantHeader = "tenant"
 
 type cmpMTLSAccessStrategyExecutor struct {
-	certCache certloader.Cache
+	certCache          certloader.Cache
 	tenantProviderFunc func(ctx context.Context) (string, error)
 }
 
 // NewCMPmTLSAccessStrategyExecutor creates a new Executor for the CMP mTLS Access Strategy
 func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache, tenantProviderFunc func(ctx context.Context) (string, error)) *cmpMTLSAccessStrategyExecutor {
 	return &cmpMTLSAccessStrategyExecutor{
-		certCache: certCache,
+		certCache:          certCache,
 		tenantProviderFunc: tenantProviderFunc,
 	}
 }
@@ -60,4 +60,5 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		req.Header.Set(tenantHeader, tnt)
 	}
 
-	return client.Do(req)}
+	return client.Do(req)
+}
