@@ -538,10 +538,6 @@ func TestORDAggregator(t *testing.T) {
 		productsMap[firstProductTitle] = firstProductShortDescription
 		productsMap[secondProductTitle] = secondProductShortDescription
 
-		subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
-		subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
-		subscriptionConsumerTenantID := testConfig.TestConsumerTenantID
-
 		appTemplateName := createAppTemplateName("ORD-aggregator-test-app-template")
 		appTemplateInput := fixAppTemplateInput(appTemplateName, testConfig.ExternalServicesMockUnsecuredMultiTenantURL)
 		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplateInput)
@@ -571,6 +567,10 @@ func TestORDAggregator(t *testing.T) {
 		}()
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
+		subscriptionProviderSubaccountID := testConfig.TestProviderSubaccountID
+		subscriptionConsumerSubaccountID := testConfig.TestConsumerSubaccountID
+		subscriptionConsumerTenantID := testConfig.TestConsumerTenantID
+
 		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
 		subscribeReq, err := http.NewRequest(http.MethodPost, testConfig.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
 		require.NoError(t, err)
@@ -598,7 +598,7 @@ func TestORDAggregator(t *testing.T) {
 		actualAppPage := directorSchema.ApplicationPage{}
 		getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
-		// defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
 		require.NoError(t, err)
 
