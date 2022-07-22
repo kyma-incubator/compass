@@ -110,7 +110,6 @@ func (r *repository) ListByReferenceObjectID(ctx context.Context, tenant, objID 
 }
 
 // ListByReferenceObjectTypeAndWebhookType lists all webhooks of a given type for a given object type
-// TODO: Unit tests
 func (r *repository) ListByReferenceObjectTypeAndWebhookType(ctx context.Context, tenant string, whType model.WebhookType, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error) {
 	var entities Collection
 
