@@ -349,7 +349,7 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 }
 
 // ListByScenariosNoPaging lists all applications that are in any of the given scenarios
-// TODO: Unit tests
+// TODO: Add hiding selector
 func (r *pgRepository) ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error) {
 	tenantUUID, err := uuid.Parse(tenant)
 	if err != nil {
@@ -375,7 +375,7 @@ func (r *pgRepository) ListByScenariosNoPaging(ctx context.Context, tenant strin
 		conditions = append(conditions, repo.NewInConditionForSubQuery("id", scenariosSubquery, scenariosArgs))
 	}
 
-	if err := r.lister.List(ctx, resource.Application, tenant, &entities, conditions...); err != nil {
+	if err = r.lister.List(ctx, resource.Application, tenant, &entities, conditions...); err != nil {
 		return nil, err
 	}
 
@@ -390,8 +390,10 @@ func (r *pgRepository) ListByScenariosNoPaging(ctx context.Context, tenant strin
 }
 
 // ListByIDs lists all runtimes with given IDs
-// TODO: Unit tests
 func (r *pgRepository) ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Application, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
 	var entities EntityCollection
 
 	if err := r.lister.List(ctx, resource.Runtime, tenant, &entities, repo.NewInConditionForStringValues("id", ids)); err != nil {
