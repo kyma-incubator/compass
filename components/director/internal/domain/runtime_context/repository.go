@@ -253,8 +253,10 @@ func (r *pgRepository) ListAllForRuntime(ctx context.Context, tenant, runtimeID 
 }
 
 // ListByScenariosAndRuntimeIDs lists all runtime contexts that are in any of the given scenarios and are owned by any of the runtimes provided
-// TODO: Unit tests
 func (r *pgRepository) ListByScenariosAndRuntimeIDs(ctx context.Context, tenant string, scenarios []string, runtimeIDs []string) ([]*model.RuntimeContext, error) {
+	if len(runtimeIDs) == 0 || len(scenarios) == 0 {
+		return nil, nil
+	}
 	tenantUUID, err := uuid.Parse(tenant)
 	if err != nil {
 		return nil, apperrors.NewInvalidDataError("tenantID is not UUID")
@@ -280,7 +282,7 @@ func (r *pgRepository) ListByScenariosAndRuntimeIDs(ctx context.Context, tenant 
 	}
 	conditions = append(conditions, repo.NewInConditionForStringValues("runtime_id", runtimeIDs))
 
-	if err := r.lister.List(ctx, resource.RuntimeContext, tenant, &entities, conditions...); err != nil {
+	if err = r.lister.List(ctx, resource.RuntimeContext, tenant, &entities, conditions...); err != nil {
 		return nil, err
 	}
 
