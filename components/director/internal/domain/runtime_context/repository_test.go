@@ -3,9 +3,10 @@ package runtimectx_test
 import (
 	"context"
 	"database/sql/driver"
-	"github.com/stretchr/testify/assert"
 	"regexp"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
