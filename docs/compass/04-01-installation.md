@@ -60,10 +60,21 @@ kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c
 
 #### Install Compass
 
-> **NOTE:** If you installed Kyma on a cluster with a custom domain and certificates, you must apply that overrides to Compass as well.
+**Security Prerequisites**
 
-The proper work of JWT token flows and Compass Cockpit require a set up and configured OpenID Connect (OIDC) Authorization Server.
+- The proper work of JWT token flows and Compass Cockpit require a set up and configured OpenID Connect (OIDC) Authorization Server.
 The OIDC Authorization Server is needed for the support of the respective users, user groups, and scopes. The OIDC server host and client-id are specified as overrides of the Compass Helm chart. Then a set of admin scopes are granted to a user based on the groups in the id_token, those trusted groups can be configured with overrides as well.
+- For internal communication between components Compass relies on Kubernetes Service Account tokens and [Service Account Issuer Discovery](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-issuer-discovery) for validating the tokens.
+Therefore, `serviceAccountTokenJWKS` and `serviceAccountTokenIssuer` needs to be configured as overrides below. Note that this configuration may be infrastructure specific.
+
+> More information for GCP can be found [here](https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters.well-known/getOpenid-configuration). Example configuration for GKE clusters look like this:
+```yaml
+   kubernetes:
+       serviceAccountTokenIssuer: "https://container.googleapis.com/v1/projects/${PROJECT_NAME}/locations/${REGION}/clusters/${CLUSTER_NAME}"
+       serviceAccountTokenJWKS: "https://container.googleapis.com/v1/projects/${PROJECT_NAME}/locations/${REGION}/clusters/${CLUSTER_NAME}/jwks"
+``` 
+
+> **NOTE:** If you installed Kyma on a cluster with a custom domain and certificates, you must apply that overrides to Compass as well.
 
 Save the following .yaml with installation overrides into a file (e.g: additionalCompassOverrides.yaml)
 ```yaml
@@ -74,7 +85,9 @@ global:
    migratorJob:
       pvc:
          storageClass: ${ANY_SUPPORTED_STORAGE_CLASS}
-   enableInternalCommunicationPolicies: false
+   kubernetes:
+      serviceAccountTokenIssuer: ${TOKEN_ISSUER} # Default is kubernetes/serviceaccount 
+      serviceAccountTokenJWKS: ${JWKS_ENDPOINT} # Default is https://kubernetes.default.svc.cluster.local/openid/v1/jwks
    loadBalancerIP: ${LOAD_BALANCER_SERVICE_EXTERNAL_IP}
    cockpit:
       auth:
@@ -255,10 +268,21 @@ To install Compass and Runtime components on a single cluster, follow these step
 
 #### Install Compass
 
-> **NOTE:** If you installed Kyma on a cluster with a custom domain and certificates, you must apply that overrides to Compass as well.
+**Security Prerequisites**
 
-The proper work of JWT token flows and Compass Cockpit require a set up and configured OpenID Connect (OIDC) Authorization Server.
-The OIDC Authorization Server is needed for the support of the respective users, user groups, and scopes. The OIDC server host and client-id are specified as overrides of the Compass Helm chart. Then a set of admin scopes are granted to a user based on the groups in the id_token, those trusted groups can be configured with overrides as well.
+- The proper work of JWT token flows and Compass Cockpit require a set up and configured OpenID Connect (OIDC) Authorization Server.
+  The OIDC Authorization Server is needed for the support of the respective users, user groups, and scopes. The OIDC server host and client-id are specified as overrides of the Compass Helm chart. Then a set of admin scopes are granted to a user based on the groups in the id_token, those trusted groups can be configured with overrides as well.
+- For internal communication between components Compass relies on Kubernetes Service Account tokens and [Service Account Issuer Discovery](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-issuer-discovery) for validating the tokens.
+  Therefore, `serviceAccountTokenJWKS` and `serviceAccountTokenIssuer` needs to be configured as overrides below. Note that this configuration may be infrastructure specific.
+
+> More information for GCP can be found [here](https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters.well-known/getOpenid-configuration). Example configuration for GKE clusters look like this:
+```yaml
+   kubernetes:
+       serviceAccountTokenIssuer: "https://container.googleapis.com/v1/projects/${PROJECT_NAME}/locations/${REGION}/clusters/${CLUSTER_NAME}"
+       serviceAccountTokenJWKS: "https://container.googleapis.com/v1/projects/${PROJECT_NAME}/locations/${REGION}/clusters/${CLUSTER_NAME}/jwks"
+``` 
+
+> **NOTE:** If you installed Kyma on a cluster with a custom domain and certificates, you must apply that overrides to Compass as well.
 
 Save the following .yaml with installation overrides into a file (e.g: additionalCompassOverrides.yaml)
 ```yaml
@@ -270,7 +294,9 @@ global:
    migratorJob:
       pvc:
          storageClass: ${ANY_SUPPORTED_STORAGE_CLASS}
-   enableInternalCommunicationPolicies: false
+   kubernetes:
+     serviceAccountTokenIssuer: ${TOKEN_ISSUER} # Default is kubernetes/serviceaccount 
+     serviceAccountTokenJWKS: ${JWKS_ENDPOINT} # Default is https://kubernetes.default.svc.cluster.local/openid/v1/jwks
    loadBalancerIP: ${LOAD_BALANCER_SERVICE_EXTERNAL_IP}
    cockpit:
       auth:

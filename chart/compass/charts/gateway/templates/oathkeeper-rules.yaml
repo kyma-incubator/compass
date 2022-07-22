@@ -103,13 +103,9 @@ spec:
     methods: ["PUT"]
     url: <http|https>://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.director.operations.path }}
   authenticators:
-{{ if .Values.global.enableInternalCommunicationPolicies }}
     - handler: jwt
       config:
         jwks_urls: [{{ .Values.global.kubernetes.serviceAccountTokenJWKS }}]
-{{ else }}
-    - handler: noop
-{{ end }}
   authorizer:
     handler: allow
   mutators:
@@ -130,13 +126,9 @@ spec:
     methods: ["GET", "POST", "OPTIONS"]
     url: <http|https>://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.director.prefix }}/graphql
   authenticators:
-{{ if .Values.global.enableInternalCommunicationPolicies }}
     - handler: jwt
       config:
         jwks_urls: [{{ .Values.global.kubernetes.serviceAccountTokenJWKS }}]
-{{ else }}
-    - handler: noop
-{{ end }}
   authorizer:
     handler: allow
   mutators:
@@ -157,13 +149,9 @@ spec:
     methods: ["POST"]
     url: <http|https>://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.tenantFetcher.prefix }}/<.*>
   authenticators:
-{{ if .Values.global.enableInternalCommunicationPolicies }}
     - handler: jwt
       config:
         jwks_urls: [{{ .Values.global.kubernetes.serviceAccountTokenJWKS }}]
-{{ else }}
-    - handler: noop
-{{ end }}
   authorizer:
     handler: allow
   mutators:
@@ -184,13 +172,9 @@ spec:
     methods: ["GET", "POST", "OPTIONS"]
     url: <http|https>://{{ .Values.global.director.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>/<.*>
   authenticators:
-{{ if .Values.global.enableInternalCommunicationPolicies }}
     - handler: jwt
       config:
         jwks_urls: [{{ .Values.global.kubernetes.serviceAccountTokenJWKS }}]
-{{ else }}
-    - handler: noop
-{{ end }}
   authorizer:
     handler: allow
   mutators:

@@ -149,7 +149,6 @@ global:
       version: "PR-2483"
   isLocalEnv: false
   isForTesting: false
-  enableInternalCommunicationPolicies: true
   oauth2:
     host: oauth2
   livenessProbe:
