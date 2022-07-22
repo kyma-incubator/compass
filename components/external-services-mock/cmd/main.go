@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/notification"
+
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/provider"
 
 	ord_global_registry "github.com/kyma-incubator/compass/components/external-services-mock/internal/ord-aggregator/globalregistry"
@@ -261,6 +263,12 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	selfRegRouter.Use(oauthMiddleware(&key.PublicKey, noopClaimsValidator))
 	selfRegRouter.HandleFunc("", selfRegisterHandler.HandleSelfRegPrep).Methods(http.MethodPost)
 	selfRegRouter.HandleFunc(fmt.Sprintf("/{%s}", selfreg.NamePath), selfRegisterHandler.HandleSelfRegCleanup).Methods(http.MethodDelete)
+
+	// TODO: Move to cert securedClient
+	notificationHandler := notification.NewHandler()
+	router.HandleFunc("/formation-callback/{tenantId}", notificationHandler.Patch).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/", notificationHandler.GetResponses).Methods(http.MethodGet)
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),
