@@ -819,7 +819,6 @@ func TestFormationNotifications(stdT *testing.T) {
 		}
 
 		body = getNotificationFromExternalSvcMock(t, certSecuredHTTPClient)
-		fmt.Println(string(body))
 		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
 
 		notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
