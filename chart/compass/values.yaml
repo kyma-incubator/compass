@@ -787,6 +787,8 @@ global:
       externalCertIntSystemCN: "integration-system-test"
     tenantFetcher:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
+    ordAggregator:
+      skipPattern: ""
     ordService:
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
       skipPattern: ""

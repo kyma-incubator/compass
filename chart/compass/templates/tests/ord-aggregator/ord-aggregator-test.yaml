@@ -131,6 +131,8 @@ spec:
               value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountID }}
             - name: TEST_CONSUMER_TENANT_ID
               value: {{ .Values.global.tests.subscription.tenants.consumerTenantID }}
+            - name: SKIP_TESTS_REGEX
+              value: {{ .Values.global.tests.ordAggregator.skipPattern }}
       restartPolicy: Never
 ---
 apiVersion: v1

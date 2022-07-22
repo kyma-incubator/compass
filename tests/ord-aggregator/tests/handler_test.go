@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -133,7 +134,9 @@ var (
 	expectedNumberOfVendorsInSubscription  = 1
 )
 
-func TestORDAggregator(t *testing.T) {
+func TestORDAggregator(stdT *testing.T) {
+	t := testingx.NewT(stdT)
+
 	basicORDConfigSecurity := &fixtures.ORDConfigSecurity{
 		Username: testConfig.BasicUsername,
 		Password: testConfig.BasicPassword,
