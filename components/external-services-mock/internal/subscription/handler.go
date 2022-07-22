@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -146,10 +147,15 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 			log.C(ctx).WithError(err).Errorf("An error has occurred while closing response body: %v", err)
 		}
 	}()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.C(ctx).Errorf("while reading response body: %s", err.Error())
+		return http.StatusInternalServerError, err
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		log.C(ctx).Errorf("wrong status code while executing subscription request, got [%d], expected [%d]", resp.StatusCode, http.StatusOK)
-		return http.StatusInternalServerError, errors.New(fmt.Sprintf("wrong status code while executing subscription request, got [%d], expected [%d]", resp.StatusCode, http.StatusOK))
+		return http.StatusInternalServerError, errors.New(fmt.Sprintf("wrong status code while executing subscription request, got [%d], expected [%d], reason: [%s]", resp.StatusCode, http.StatusOK, body))
 	}
 
 	return http.StatusOK, nil
