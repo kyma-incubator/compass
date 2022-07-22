@@ -220,14 +220,13 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 }
 
 // ListForObjectIDs lists all labels for given object IDs
-// TODO: Unit Tests
 func (r *repository) ListForObjectIDs(ctx context.Context, tenant string, objectType model.LabelableObject, objectIDs []string) (map[string]map[string]interface{}, error) {
 	if len(objectIDs) == 0 {
 		return nil, nil
 	}
 	var entities Collection
 
-	var conditions []repo.Condition
+	conditions := []repo.Condition{repo.NewInConditionForStringValues(labelableObjectField(objectType), objectIDs)}
 
 	lister := r.lister
 	if objectType == model.TenantLabelableObject {
@@ -236,8 +235,6 @@ func (r *repository) ListForObjectIDs(ctx context.Context, tenant string, object
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeContextLabelableObject)))
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeLabelableObject)))
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.AppTemplateLabelableObject)))
-	} else {
-		conditions = append(conditions, repo.NewInConditionForStringValues(labelableObjectField(objectType), objectIDs))
 	}
 
 	if objectType == model.AppTemplateLabelableObject {
@@ -263,6 +260,7 @@ func (r *repository) ListForObjectIDs(ctx context.Context, tenant string, object
 			labelsForObject = make(map[string]interface{})
 		}
 		labelsForObject[m.Key] = m.Value
+		labelsMap[m.ObjectID] = labelsForObject
 	}
 
 	return labelsMap, nil
