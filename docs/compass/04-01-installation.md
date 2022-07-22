@@ -8,8 +8,8 @@ You can install Compass both on a cluster and on your local machine in the follo
 
 ### Required versions
 
-- check [here](https://github.com/kyma-incubator/compass#prerequisites) for required CLI tools versions
 - Kubernetes 1.21
+- For more information about the required CLI tools versions, see: [Compass Prerequisites](https://github.com/kyma-incubator/compass#prerequisites) 
 
 ### Managed PostgreSQL Database
 
@@ -17,19 +17,19 @@ For more information about how you can use GCP managed PostgreSQL database insta
 
 ## Compass as a Central Management Plane
 
-This is a multi-cluster installation mode, in which one cluster is needed with Compass. This mode allows you to integrate your Runtimes with Applications and manage them in one central place.
+This is a multi-cluster installation mode, in which one cluster needs to be dedicated to Compass. This mode allows you to integrate your Runtimes with Applications and manage them in one central place.
 
 Compass as a Central Management Plane cluster requires minimal Kyma installation. The installation steps can vary depending on the installation environment.
 
 ### Cluster installation
 
-> **NOTE:** During Kyma installation, Kyma version must be the same as in the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file on a specific commit.
+> **NOTE:** During the installation of Compass, the installed Kyma version (as a basis to Compass) must match to the one in the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file in the specific Compass commit.
 
 #### Perform minimal Kyma installation
 
-If custom domains and certificates are needed, see [Set up your custom domain TLS certificate](https://github.com/kyma-project/kyma/blob/10ae3a8acf7d57a329efa605890d11f9a9b40991/docs/03-tutorials/sec-01-tls-certificates-security.md#L1-L0) in the Kyma installation guide, and the resources in the [Certificate Management](#certificate-management) section of this document.
+If custom domains and certificates are needed, see the [Set up your custom domain TLS certificate](https://github.com/kyma-project/kyma/blob/10ae3a8acf7d57a329efa605890d11f9a9b40991/docs/03-tutorials/sec-01-tls-certificates-security.md#L1-L0) document in the Kyma installation guide, as well as the resources in the [Certificate Management](#certificate-management) section in this document.
 
-Save the following .yaml with installation overrides into a file (e.g: additionalKymaOverrides.yaml)
+Save the following .yaml with installation overrides into a file (for example: additionalKymaOverrides.yaml)
 ```yaml
 istio-configuration:
    components:
@@ -43,7 +43,7 @@ istio-configuration:
          holdApplicationUntilProxyStarts: true
 global:
    loadBalancerIP: ${GATEWAY_IP_ADDRESS}
-# uncomment below values if you want to proceed with your custom values; default domain is 'local.kyma.dev' and there is default self-signed cert and key for that domain
+# Uncomment the values below, if you want to proceed with your custom values; the default domain is `local.kyma.dev` and there is a default self-signed certificate and a key for that domain
    #domainName: ${DOMAIN} 
    #tlsCrt: ${TLS_CERT} 
    #tlsKey: ${TLS_KEY} 
@@ -52,7 +52,7 @@ global:
       #tlsCrt: ${TLS_CERT}
       #tlsKey: ${TLS_KEY}
 ```
-And then execute the kyma installation with the following command:
+And then start the Kyma installation by using the following command:
 
 ```bash
 kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c <minimal file from ../../installation/resources/kyma/kyma-components-minimal.yaml> -f <overrides file from ../../installation/resources/kyma/kyma-overrides-minimal.yaml> -f <file from above step - e.g. additionalKymaOverrides.yaml> --ci
@@ -60,12 +60,12 @@ kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c
 
 #### Install Compass
 
-> **NOTE:** If you installed Kyma on a cluster with a custom domain and certificates, you must apply that overrides to Compass as well.
+> **NOTE:** If you installed Kyma on a cluster with a custom domain and certificates, you must apply the overrides to Compass as well.
 
 The proper work of JWT token flows and Compass Cockpit require a set up and configured OpenID Connect (OIDC) Authorization Server.
-The OIDC Authorization Server is needed for the support of the respective users, user groups, and scopes. The OIDC server host and client-id are specified as overrides of the Compass Helm chart. Then a set of admin scopes are granted to a user based on the groups in the id_token, those trusted groups can be configured with overrides as well.
+The OIDC Authorization Server is needed for the support of the respective users, user groups, and scopes. The OIDC server host and client-id are specified as overrides of the Compass Helm chart. Then, a set of administrator scopes are granted to a user, based on the groups in the `id_token`. Those trusted groups can be configured with overrides as well.
 
-Save the following .yaml with installation overrides into a file (e.g: additionalCompassOverrides.yaml)
+Save the following .yaml with installation overrides into a file (for example: additionalCompassOverrides.yaml)
 ```yaml
 hydrator:
    adminGroupNames: ${ADMIN_GROUP_NAMES}
@@ -80,7 +80,7 @@ global:
       auth:
          idpHost: ${IDP_HOST}
          clientID: ${CLIENT_ID}
-# uncomment below values if you want to proceed with your custom values; default domain is 'local.kyma.dev' and there is default self-signed cert and key for that domain
+# Uncomment the values below, if you want to proceed with your custom values; the default domain is `local.kyma.dev` and there is a default self-signed certificate and a key for that domain
 #   domainName: ${DOMAIN}
 #   tlsCrt: ${TLS_CERT}
 #   tlsKey: ${TLS_KEY}
@@ -89,6 +89,8 @@ global:
 #      tlsCrt: ${TLS_CERT}
 #      tlsKey: ${TLS_KEY}
 ```
+
+And then start the Compass installation by using the following command:
 
 ```bash
 <script from ../../installation/scripts/install-compass.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
@@ -243,7 +245,7 @@ If you want to build and deploy the local source code version of a component (fo
 This is a single-tenant mode, which provides the complete cluster Kyma installation with all components, including the Runtime Agent. You can install Compass on top of it.
 In this mode, the Runtime Agent is already connected to Compass. This mode facilitates various kind of testing and development.
 
-> **NOTE:** The version of the Kyma installed on the cluster must match the Kyma version in the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file on a specific commit.
+> **NOTE:** During the installation of Kyma, the installed version must match to the one in the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file in the specific Compass commit.
 
 ### Cluster installation
 
@@ -251,16 +253,16 @@ To install Compass and Runtime components on a single cluster, follow these step
 
 #### Kyma Prerequisite
 
-1. You need to have a Kyma installation with Runtime Agent enabled. For more information you can check [Enable Kyma with Runtime Agent](https://github.com/kyma-project/kyma/blob/2.0.4/docs/04-operation-guides/operations/ra-01-enable-kyma-with-runtime-agent.md).
+1. You need to have a Kyma installation with Runtime Agent enabled. For more information, see [Enable Kyma with Runtime Agent](https://github.com/kyma-project/kyma/blob/2.0.4/docs/04-operation-guides/operations/ra-01-enable-kyma-with-runtime-agent.md).
 
 #### Install Compass
 
-> **NOTE:** If you installed Kyma on a cluster with a custom domain and certificates, you must apply that overrides to Compass as well.
+> **NOTE:** If you installed Kyma on a cluster with a custom domain and certificates, you must apply the overrides to Compass as well.
 
 The proper work of JWT token flows and Compass Cockpit require a set up and configured OpenID Connect (OIDC) Authorization Server.
-The OIDC Authorization Server is needed for the support of the respective users, user groups, and scopes. The OIDC server host and client-id are specified as overrides of the Compass Helm chart. Then a set of admin scopes are granted to a user based on the groups in the id_token, those trusted groups can be configured with overrides as well.
+The OIDC Authorization Server is needed for the support of the respective users, user groups, and scopes. The OIDC server host and client-id are specified as overrides of the Compass Helm chart. Then, a set of administrator scopes are granted to a user, based on the groups in the `id_token`. Those trusted groups can be configured with overrides as well.
 
-Save the following .yaml with installation overrides into a file (e.g: additionalCompassOverrides.yaml)
+Save the following .yaml with installation overrides into a file (for example: additionalCompassOverrides.yaml)
 ```yaml
 hydrator:
    adminGroupNames: ${ADMIN_GROUP_NAMES}
@@ -276,7 +278,7 @@ global:
       auth:
          idpHost: ${IDP_HOST}
          clientID: ${CLIENT_ID}
-# uncomment below values if you want to proceed with your custom values; default domain is 'local.kyma.dev' and there is default self-signed cert and key for that domain
+# Uncomment the values below, if you want to proceed with your custom values; the default domain is `local.kyma.dev` and there is a default self-signed certificate and a key for that domain
 #   domainName: ${DOMAIN}
 #   tlsCrt: ${TLS_CERT}
 #   tlsKey: ${TLS_KEY}
@@ -289,5 +291,5 @@ global:
 ```bash
 <script from ../../installation/scripts/install-compass.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
 ```
-   
-Once Compass is installed, Runtime Agent will be configured to fetch the Runtime configuration from the Compass installation within the same cluster.
+
+Once Compass is installed, the Runtime Agent will be configured to fetch the Runtime configuration from the Compass installation within the same cluster.
