@@ -284,8 +284,10 @@ func (r *pgRepository) GetOldestForFilters(ctx context.Context, tenant string, f
 }
 
 // ListByScenariosAndIDs lists all runtimes with given IDs that are in any of the given scenarios
-// TODO: Unit tests
 func (r *pgRepository) ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Runtime, error) {
+	if len(scenarios) == 0 || len(ids) == 0 {
+		return nil, nil
+	}
 	tenantUUID, err := uuid.Parse(tenant)
 	if err != nil {
 		return nil, apperrors.NewInvalidDataError("tenantID is not UUID")
@@ -320,8 +322,10 @@ func (r *pgRepository) ListByScenariosAndIDs(ctx context.Context, tenant string,
 }
 
 // ListByIDs lists all runtimes with given IDs
-// TODO: Unit tests
 func (r *pgRepository) ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Runtime, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
 	var entities RuntimeCollection
 
 	if err := r.lister.List(ctx, resource.Runtime, tenant, &entities, repo.NewInConditionForStringValues("id", ids)); err != nil {
