@@ -17,6 +17,7 @@ spec:
   template:
     metadata:
       annotations:
+        restartOnNewInstallationMarker: {{ randAlphaNum 5 | quote }} # Restarts the deployment on a new Helm installation. (https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments)
         cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         {{ if .Values.deployment.resourcesIstioProxy.requests.cpu }}
         sidecar.istio.io/proxyCPU: {{ .Values.deployment.resourcesIstioProxy.requests.cpu }}

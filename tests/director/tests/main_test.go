@@ -37,6 +37,8 @@ type DirectorConfig struct {
 	certprovider.ExternalCertProviderConfig
 	SubscriptionConfig                     subscription.Config
 	TestProviderSubaccountID               string
+	TestProviderSubaccountIDRegion2        string
+	TestConsumerAccountID                  string
 	TestConsumerSubaccountID               string
 	TestConsumerTenantID                   string
 	ExternalServicesMockBaseURL            string
