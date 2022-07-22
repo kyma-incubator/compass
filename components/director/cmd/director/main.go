@@ -204,7 +204,7 @@ func main() {
 
 	startPairingAdaptersWatcher(ctx, k8sClient, pa, cfg.PairingAdapterCfg)
 
-	httpClient := auth2.PrepareHTTPClient(cfg.ClientTimeout)
+	httpClient := auth2.PrepareHTTPClientWithSSLValidation(cfg.ClientTimeout, cfg.SkipSSLValidation)
 
 	cfg.SelfRegConfig.ClientTimeout = cfg.ClientTimeout
 
@@ -235,7 +235,7 @@ func main() {
 	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
 	retryHTTPExecutor := retry.NewHTTPExecutor(&cfg.RetryConfig)
 
-	mtlsHTTPClient := auth2.PrepareMTLSClient(cfg.ClientTimeout, certCache)
+	mtlsHTTPClient := auth2.PrepareMTLSClientWithSSLValidation(cfg.ClientTimeout, certCache, cfg.SkipSSLValidation)
 
 	rootResolver, err := domain.NewRootResolver(
 		&normalizer.DefaultNormalizator{},

@@ -264,12 +264,6 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	selfRegRouter.HandleFunc("", selfRegisterHandler.HandleSelfRegPrep).Methods(http.MethodPost)
 	selfRegRouter.HandleFunc(fmt.Sprintf("/{%s}", selfreg.NamePath), selfRegisterHandler.HandleSelfRegCleanup).Methods(http.MethodDelete)
 
-	// TODO: Move to cert securedClient
-	notificationHandler := notification.NewHandler()
-	router.HandleFunc("/formation-callback/{tenantId}", notificationHandler.Patch).Methods(http.MethodPatch)
-	router.HandleFunc("/formation-callback/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
-	router.HandleFunc("/formation-callback/", notificationHandler.GetResponses).Methods(http.MethodGet)
-
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),
 		Handler: router,
@@ -289,6 +283,11 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc(webhook.DeletePath, webhook.NewDeleteHTTPHandler()).Methods(http.MethodDelete)
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
+
+	notificationHandler := notification.NewHandler()
+	router.HandleFunc("/formation-callback/{tenantId}", notificationHandler.Patch).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback", notificationHandler.GetResponses).Methods(http.MethodGet)
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.CertPort),

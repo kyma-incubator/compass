@@ -322,7 +322,7 @@ func (s *service) createWebhookRequest(ctx context.Context, webhook *model.Webho
 func (s *service) sendNotifications(ctx context.Context, notifications []*webhook_client.Request) error {
 	for _, notification := range notifications {
 		if _, err := s.webhookClient.Do(ctx, notification); err != nil {
-			return errors.Wrapf(err, "while executing webhook with ID %s for Runtime with ID %s", notification.Webhook.ID, notification.Webhook.RuntimeID)
+			return errors.Wrapf(err, "while executing webhook with ID %s for Runtime with ID %s", notification.Webhook.ID, *notification.Webhook.RuntimeID)
 		}
 	}
 	return nil

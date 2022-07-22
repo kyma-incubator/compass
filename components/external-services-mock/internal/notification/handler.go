@@ -28,7 +28,7 @@ type Handler struct {
 type Response struct {
 	Operation     Operation
 	ApplicationID *string
-	RequestBody   []byte
+	RequestBody   json.RawMessage
 }
 
 func NewHandler() *Handler {
@@ -66,10 +66,6 @@ func (h *Handler) Patch(writer http.ResponseWriter, r *http.Request) {
 	h.mappings[id] = mappings
 
 	writer.WriteHeader(http.StatusOK)
-	_, err = writer.Write(bodyBytes)
-	if err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
-	}
 }
 
 func (h *Handler) Delete(writer http.ResponseWriter, r *http.Request) {
@@ -114,7 +110,6 @@ func (h *Handler) GetResponses(writer http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		writer.WriteHeader(http.StatusOK)
-		//_, err = writer.Write([]byte("{}"))
 		_, err = writer.Write(bodyBytes)
 		if err != nil {
 			httphelpers.WriteError(writer, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)

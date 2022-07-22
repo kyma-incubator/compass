@@ -42,6 +42,7 @@ type DirectorConfig struct {
 	TestConsumerSubaccountID               string
 	TestConsumerTenantID                   string
 	ExternalServicesMockBaseURL            string
+	ExternalServicesMockMtlsSecuredURL     string
 	TokenPath                              string
 	SubscriptionProviderAppNameValue       string
 	ConsumerSubaccountLabelKey             string
@@ -61,6 +62,7 @@ type BaseDirectorConfig struct {
 var (
 	conf                     = &DirectorConfig{}
 	certSecuredGraphQLClient *graphql.Client
+	cc                       certloader.Cache
 )
 
 func TestMain(m *testing.M) {
@@ -71,7 +73,8 @@ func TestMain(m *testing.M) {
 
 	ctx := context.Background()
 
-	cc, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
+	var err error
+	cc, err = certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}

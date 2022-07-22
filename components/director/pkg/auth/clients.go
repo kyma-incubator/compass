@@ -10,7 +10,12 @@ import (
 )
 
 func PrepareMTLSClient(timeout time.Duration, cache certloader.Cache) *http.Client {
+	return PrepareMTLSClientWithSSLValidation(timeout, cache, false)
+}
+
+func PrepareMTLSClientWithSSLValidation(timeout time.Duration, cache certloader.Cache, skipSSLValidation bool) *http.Client {
 	basicTransport := http.DefaultTransport.(*http.Transport).Clone()
+	basicTransport.TLSClientConfig.InsecureSkipVerify = skipSSLValidation
 	basicTransport.TLSClientConfig.GetClientCertificate = func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
 		return cache.Get(), nil
 	}
