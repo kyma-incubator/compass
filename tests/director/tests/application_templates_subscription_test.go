@@ -31,14 +31,13 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 
 		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID
 		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID
-		subscriptionConsumerTenantID := conf.TestConsumerTenantID
+		subscriptionConsumerTenantID := conf.TestConsumerTenantID // ba49f1aa-ddc1-43ff-943c-fe949857a34a
 
 		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
 		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
 		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
-		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
 		// Create Application Template
 		appTemplateName := createAppTemplateName("app-template-name-subscription")
@@ -72,6 +71,9 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
 		t.Run("Subscribe tenant to Application flow", func(t *testing.T) {
+			//GIVEN
+			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+
 			// WHEN
 			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
@@ -87,6 +89,9 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 		})
 
 		t.Run("Subscribe tenant to Application flow and add bundle", func(t *testing.T) {
+			//GIVEN
+			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+
 			// Subscribe
 			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
@@ -120,10 +125,12 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			require.NoError(t, err)
 			require.NotEmpty(t, output.ID)
 			assertions.AssertBundle(t, &bndlInput, &output)
-			defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, subscriptionConsumerTenantID, output.ID)
 		})
 
-		t.Run("Unsubscribe tenant to Application flow and ensure that canot add bundle", func(t *testing.T) {
+		t.Run("Unsubscribe tenant to Application flow and ensure that cannot add bundle", func(t *testing.T) {
+			//GIVEN
+			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+
 			// Subscribe
 			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
 
@@ -167,7 +174,8 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 		})
 
 		t.Run("Unsubscribe tenant to Application flow", func(t *testing.T) {
-			// GIVEN
+			//GIVEN
+			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
 
 			actualAppPage := graphql.ApplicationPage{}
