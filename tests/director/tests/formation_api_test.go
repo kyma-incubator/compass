@@ -284,7 +284,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	saveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign runtime to formation")
 
 	t.Log("Check if new scenario label value was set correctly")
-	checkRuntimeFormationLabels(t, ctx, rtm.ID, labelKey, []string{asaFormation, newFormation})
+	checkRuntimeFormationLabelsExists(t, ctx, rtm.ID, labelKey, []string{asaFormation, newFormation})
 
 	t.Logf("Assign runtime to formation %s which was already assigned by ASA", asaFormation)
 	assignReq = fixtures.FixAssignFormationRequest(rtm.ID, "RUNTIME", asaFormation)
@@ -293,7 +293,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	require.Equal(t, asaFormation, assignFormation.Name)
 
 	t.Log("Check if the formation label value is still assigned")
-	checkRuntimeFormationLabels(t, ctx, rtm.ID, labelKey, []string{asaFormation, newFormation})
+	checkRuntimeFormationLabelsExists(t, ctx, rtm.ID, labelKey, []string{asaFormation, newFormation})
 
 	t.Logf("Try to unassign runtime from formation %q which was assigned by ASA", asaFormation)
 	unassignReq := fixtures.FixUnassignFormationRequest(rtm.ID, "RUNTIME", asaFormation)
@@ -303,7 +303,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	require.Equal(t, asaFormation, unassignFormation.Name)
 
 	t.Log("Check that the formation label value is still assigned")
-	checkRuntimeFormationLabels(t, ctx, rtm.ID, labelKey, []string{asaFormation, newFormation})
+	checkRuntimeFormationLabelsExists(t, ctx, rtm.ID, labelKey, []string{asaFormation, newFormation})
 
 	t.Log("Should not delete formation while runtime is assigned")
 	deleteRequest := fixtures.FixDeleteFormationRequest(newFormation)
@@ -321,7 +321,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	saveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign runtime from formation")
 
 	t.Log("Check that the formation label value is unassigned")
-	checkRuntimeFormationLabels(t, ctx, rtm.ID, labelKey, []string{asaFormation})
+	checkRuntimeFormationLabelsExists(t, ctx, rtm.ID, labelKey, []string{asaFormation})
 
 	t.Log("Should be able to delete formation after runtime is unassigned")
 	deleteRequest = fixtures.FixDeleteFormationRequest(newFormation)
@@ -660,66 +660,56 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 
 		// Register kyma formation template
 		kymaFormationTmplName := "kyma-formation-template-name"
-		createFormationTemplate(t, ctx, subscriptionConsumerSubaccountID, "kyma", kymaFormationTmplName, conf.KymaRuntimeTypeLabelValue, graphql.ArtifactTypeEnvironmentInstance)
+		kymaFT := createFormationTemplate(t, ctx, "kyma", kymaFormationTmplName, conf.KymaRuntimeTypeLabelValue, graphql.ArtifactTypeEnvironmentInstance)
+		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, kymaFT.ID)
 
 		// Register provider formation template
 		providerFormationTmplName := "provider-formation-template-name"
-		createFormationTemplate(t, ctx, subscriptionProviderSubaccountID, "provider", providerFormationTmplName, conf.KymaRuntimeTypeLabelValue, graphql.ArtifactTypeSubscription)
+		providerFT := createFormationTemplate(t, ctx, "provider", providerFormationTmplName, conf.SubscriptionProviderAppNameValue, graphql.ArtifactTypeSubscription)
+		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, providerFT.ID)
 
 		// Register kyma formation
 		kymaFormationName := "kyma-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", kymaFormationName, kymaFormationTmplName)
-		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, kymaFormationName, &kymaFormationTmplName) // todo:: tenant?
-		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, kymaFormationName)
+		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, kymaFormationName, &kymaFormationTmplName) // todo:: tenant?
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, kymaFormationName)
 
 		// Register provider formation
 		providerFormationName := "provider-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", providerFormationName, providerFormationTmplName)
-		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionProviderSubaccountID, providerFormationName, &providerFormationTmplName) // todo:: tenant?
-		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionProviderSubaccountID, providerFormationName)
+		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionProviderAccountID, providerFormationName, &providerFormationTmplName) // todo:: tenant?
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionProviderAccountID, providerFormationName)
 
 		t.Run("Assign kyma runtime to formation and validate scenarios labels", func(t *testing.T) {
 			t.Logf("Assert there is no kyma runtime scenarios before assigning tenant with ID: %q to formation", subscriptionConsumerSubaccountID)
-			checkRuntimeFormationLabels(t, ctx, kymaRuntime.ID, "scenarios", []string{})
-			assignTenantToFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionProviderAccountID, kymaFormationName) // todo:: tenants?
-			defer unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionProviderAccountID, kymaFormationName)
-			t.Logf("Assert scenarios label after assigning tenant with ID: %q to formation", subscriptionConsumerSubaccountID)
-			checkRuntimeFormationLabels(t, ctx, kymaRuntime.ID, "scenarios", []string{kymaFormationName})
+			checkRuntimeFormationLabelIsMissing(t, ctx, kymaRuntime.ID)
+
+			assignTenantToFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, kymaFormationName) // todo:: tenants?
+			defer unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, kymaFormationName)
+			t.Logf("Assert scenarios label exists after assigning tenant with ID: %q to formation", subscriptionConsumerSubaccountID)
+			checkRuntimeFormationLabelsExists(t, ctx, kymaRuntime.ID, "scenarios", []string{kymaFormationName})
 
 			t.Log("Assert provider runtime has NOT scenarios label")
-			appRequest := fixtures.FixGetRuntimeRequest(providerRuntime.ID)
-			rtm := graphql.RuntimeExt{}
-			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, appRequest, &rtm)
-			require.NoError(t, err)
-
-			scenariosLabel, hasScenario := rtm.Labels["scenarios"].([]interface{})
-			require.False(t, hasScenario)
-			require.Empty(t, scenariosLabel)
+			checkRuntimeFormationLabelIsMissing(t, ctx, providerRuntime.ID)
 		})
 
 		t.Run("Assign provider runtime to formation and validate scenarios labels", func(t *testing.T) {
 			t.Logf("Assert there is no provider runtime scenarios before assigning tenant with ID: %q to formation", subscriptionProviderSubaccountID)
-			checkRuntimeFormationLabels(t, ctx, providerRuntime.ID, "scenarios", []string{})
-			assignTenantToFormation(t, ctx, subscriptionProviderSubaccountID, subscriptionConsumerAccountID, providerFormationName) // todo:: tenants?
-			defer unassignTenantFromFormation(t, ctx, subscriptionProviderSubaccountID, subscriptionConsumerAccountID, providerFormationName)
+			checkRuntimeFormationLabelIsMissing(t, ctx, providerRuntime.ID)
+
+			assignTenantToFormation(t, ctx, subscriptionProviderSubaccountID, subscriptionProviderAccountID, providerFormationName) // todo:: tenants?
+			defer unassignTenantFromFormation(t, ctx, subscriptionProviderSubaccountID, subscriptionProviderAccountID, providerFormationName)
 			t.Logf("Assert scenarios label after assigning tenant with ID: %q to formation", subscriptionProviderSubaccountID)
-			checkRuntimeFormationLabels(t, ctx, providerRuntime.ID, "scenarios", []string{providerFormationName})
+			checkRuntimeFormationLabelsExists(t, ctx, providerRuntime.ID, "scenarios", []string{providerFormationName})
 
 			t.Log("Assert kyma runtime has NOT scenarios label")
-			appRequest := fixtures.FixGetRuntimeRequest(providerRuntime.ID)
-			rtm := graphql.RuntimeExt{}
-			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, appRequest, &rtm)
-			require.NoError(t, err)
-
-			scenariosLabel, hasScenario := rtm.Labels["scenarios"].([]interface{})
-			require.False(t, hasScenario)
-			require.Empty(t, scenariosLabel)
+			checkRuntimeFormationLabelIsMissing(t, ctx, kymaRuntime.ID)
 		})
 	})
 }
 
 func assignTenantToFormation(t *testing.T, ctx context.Context, objectID, tenantID, formationName string) {
-	t.Logf("Assign tenant %s to formation %s...", objectID, formationName)
+	t.Logf("Assign tenant: %q to formation with name: %q...", objectID, formationName)
 	assignReq := fixtures.FixAssignFormationRequest(objectID, "TENANT", formationName)
 	var formation graphql.Formation
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, assignReq, &formation)
@@ -729,16 +719,16 @@ func assignTenantToFormation(t *testing.T, ctx context.Context, objectID, tenant
 }
 
 func unassignTenantFromFormation(t *testing.T, ctx context.Context, objectID, tenantID, formationName string) {
-	t.Logf("Unassign tenant %s from formation %s...", objectID, formationName)
+	t.Logf("Unassign tenant: %q from formation with name: %q...", objectID, formationName)
 	unassignReq := fixtures.FixUnassignFormationRequest(objectID, "TENANT", formationName)
 	var formation graphql.Formation
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, unassignReq, &formation)
 	require.NoError(t, err)
 	require.Equal(t, formationName, formation.Name)
-	t.Logf("Successfully unassigned tenant %s from formation %s", objectID, formationName)
+	t.Logf("Successfully unassigned tenant: %q from formation with name: %q", objectID, formationName)
 }
 
-func createFormationTemplate(t *testing.T, ctx context.Context, tenantID, prefix, formationTemplateName, runtimeType string, runtimeArtifactKind graphql.ArtifactType) {
+func createFormationTemplate(t *testing.T, ctx context.Context, prefix, formationTemplateName, runtimeType string, runtimeArtifactKind graphql.ArtifactType) graphql.FormationTemplate {
 	formationTmplInput := graphql.FormationTemplateInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       []string{prefix + "-app-type-1", prefix + "-app-type-2"},
@@ -753,15 +743,16 @@ func createFormationTemplate(t *testing.T, ctx context.Context, tenantID, prefix
 
 	ft := graphql.FormationTemplate{}
 	t.Logf("Creating formation template with name: %q", formationTemplateName)
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, formationTmplRequest, &ft)
+	err = testctx.Tc.RunOperationNoTenant(ctx, certSecuredGraphQLClient, formationTmplRequest, &ft)
 	require.NoError(t, err)
-	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
+
+	return ft
 }
 
-func checkRuntimeFormationLabels(t *testing.T, ctx context.Context, rtmID, formationLabelKey string, expectedFormations []string) {
-	appRequest := fixtures.FixGetRuntimeRequest(rtmID)
+func checkRuntimeFormationLabelsExists(t *testing.T, ctx context.Context, rtmID, formationLabelKey string, expectedFormations []string) {
+	runtimeRequest := fixtures.FixGetRuntimeRequest(rtmID)
 	rtm := graphql.RuntimeExt{}
-	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, appRequest, &rtm)
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, runtimeRequest, &rtm)
 	require.NoError(t, err)
 
 	scenariosLabel, ok := rtm.Labels[formationLabelKey].([]interface{})
@@ -772,6 +763,17 @@ func checkRuntimeFormationLabels(t *testing.T, ctx context.Context, rtmID, forma
 		actualScenariosEnum = append(actualScenariosEnum, v.(string))
 	}
 	assert.ElementsMatch(t, expectedFormations, actualScenariosEnum)
+}
+
+func checkRuntimeFormationLabelIsMissing(t *testing.T, ctx context.Context, rtmID string) {
+	rtmRequest := fixtures.FixGetRuntimeRequest(rtmID)
+	rtm := graphql.RuntimeExt{}
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, rtmRequest, &rtm)
+	require.NoError(t, err)
+
+	scenariosLabel, hasScenario := rtm.Labels["scenarios"].([]interface{})
+	require.False(t, hasScenario)
+	require.Empty(t, scenariosLabel)
 }
 
 func checkRuntimeContextFormationLabels(t *testing.T, ctx context.Context, rtmID, rtmCtxID, formationLabelKey string, expectedFormations []string) {
