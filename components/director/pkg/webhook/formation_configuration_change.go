@@ -1,6 +1,7 @@
 package webhook
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 
@@ -46,7 +47,11 @@ func (rd *FormationConfigurationChangeInput) ParseURLTemplate(tmpl *string) (*UR
 // ParseInputTemplate missing godoc
 func (rd *FormationConfigurationChangeInput) ParseInputTemplate(tmpl *string) ([]byte, error) {
 	res := json.RawMessage{}
-	return res, parseTemplate(tmpl, *rd, &res)
+	if err := parseTemplate(tmpl, *rd, &res); err != nil {
+		return nil, err
+	}
+	res = bytes.ReplaceAll(res, []byte("<nil>"), nil)
+	return res, nil
 }
 
 // ParseHeadersTemplate missing godoc
