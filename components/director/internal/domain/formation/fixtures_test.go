@@ -80,11 +80,30 @@ func unusedRuntimeContextRepo() *automock.RuntimeContextRepository {
 	return &automock.RuntimeContextRepository{}
 }
 
+func unusedApplicationRepo() *automock.ApplicationRepository {
+	return &automock.ApplicationRepository{}
+}
+
+func unusedWebhookRepository() *automock.WebhookRepository {
+	return &automock.WebhookRepository{}
+}
+
+func unusedAppTemplateRepository() *automock.ApplicationTemplateRepository {
+	return &automock.ApplicationTemplateRepository{}
+}
+
+func unusedWebhookConverter() *automock.WebhookConverter {
+	return &automock.WebhookConverter{}
+}
+
+func unusedWebhookClient() *automock.WebhookClient {
+	return &automock.WebhookClient{}
+}
+
 func unusedLabelDefService() *automock.LabelDefService {
 	return &automock.LabelDefService{}
 }
 
-// UnusedUUIDService returns a mock uid service that does not expect to get called
 func unusedUUIDService() *automock.UuidService {
 	return &automock.UuidService{}
 }
