@@ -3,6 +3,9 @@ package selfreg
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/subscription"
 	"io"
 	"net/http"
 	"reflect"
@@ -79,6 +82,25 @@ func (h *Handler) HandleSelfRegCleanup(w http.ResponseWriter, r *http.Request) {
 		httphelpers.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
+	log.D().Infof("Dump request:")
+	spew.Dump(r)
+	tenants, exists := r.Header["Tenant"]
+
+	log.D().Infof("Dump Tenants:")
+	spew.Dump(tenants)
+	if !exists {
+		err := errors.New("Tenant is missing in request header")
+		httphelpers.WriteError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	if subscription.Subscriptions[tenants[0]] {
+		// We swallow their error msg and print only the status code
+		err := errors.New("")
+		httphelpers.WriteError(w, err, http.StatusConflict)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 

@@ -277,7 +277,7 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 		require.Error(t, err)
 		// TODO:: Adjust external-services-mock to handle self-registration cleanup properly
 		// If we call with tenant that have owner=false, we shouldn't be able to cleanup the self-registered runtime
-		//require.Contains(t, err.Error(), "An error occurred during cleanup of self-registered runtime")
+		require.Contains(t, err.Error(), "received unexpected status code 409")
 
 		subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
