@@ -117,3 +117,8 @@ func (h *Handler) GetResponses(writer http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
+
+func (h *Handler) Cleanup(writer http.ResponseWriter, r *http.Request) {
+	h.mappings = make(map[string][]Response)
+	writer.WriteHeader(http.StatusOK)
+}

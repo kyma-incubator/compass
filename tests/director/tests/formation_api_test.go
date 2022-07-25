@@ -243,7 +243,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	formationInput := graphql.FormationInput{Name: asaFormation}
 	t.Log("Creating ASA")
 	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountID, tenantId)
-	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountID, tenantId)
+	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput.Name, subaccountID, tenantId)
 
 	rtmName := "rt"
 	rtmDesc := "rt-description"
@@ -375,7 +375,7 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	formationInput := graphql.FormationInput{Name: asaFormation}
 	t.Log("Creating ASA")
 	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountID, tenantId)
-	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountID, tenantId)
+	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput.Name, subaccountID, tenantId)
 
 	rtmName := "rt"
 	rtmDesc := "rt-description"
@@ -419,7 +419,7 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	formationInput2 := graphql.FormationInput{Name: asaFormation2}
 	t.Log("Creating second ASA")
 	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput2, subaccountID, tenantId)
-	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput2, subaccountID, tenantId)
+	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput2.Name, subaccountID, tenantId)
 
 	t.Log("RuntimeContext should be assigned to the new formation coming from ASA as well")
 	checkRuntimeContextFormationLabels(t, ctx, rtm.ID, runtimeContext.ID, labelKey, []string{asaFormation, asaFormation2})
@@ -795,12 +795,7 @@ func TestFormationNotifications(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 
-		defer func() { // TODO: extract cleanup method
-			unassignReq := fixtures.FixUnassignFormationRequest(subscriptionConsumerSubaccountID, "TENANT", providerFormationName)
-			testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, unassignReq, nil)
-		}()
-
-		// TODO: defer cleanup of notifications in ext svc mock
+		defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, assignedFormation.Name, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID)
 
 		certSecuredHTTPClient := &http.Client{
 			Timeout: 10 * time.Second,
@@ -818,7 +813,9 @@ func TestFormationNotifications(stdT *testing.T) {
 			},
 		}
 
-		body = getNotificationFromExternalSvcMock(t, certSecuredHTTPClient)
+		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+
+		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 1)
 
 		notificationsForConsumerTenant := gjson.GetBytes(body, subscriptionConsumerTenantID)
@@ -831,7 +828,7 @@ func TestFormationNotifications(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 
-		body = getNotificationFromExternalSvcMock(t, certSecuredHTTPClient)
+		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 2)
 
 		notificationsForConsumerTenant = gjson.GetBytes(body, subscriptionConsumerTenantID)
@@ -854,7 +851,7 @@ func TestFormationNotifications(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, unassignFormation.Name)
 
-		body = getNotificationFromExternalSvcMock(t, certSecuredHTTPClient)
+		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 3)
 
 		notificationsForConsumerTenant = gjson.GetBytes(body, subscriptionConsumerTenantID)
@@ -874,7 +871,7 @@ func TestFormationNotifications(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, unassignFormation.Name)
 
-		body = getNotificationFromExternalSvcMock(t, certSecuredHTTPClient)
+		body = getNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 4)
 
 		notificationsForConsumerTenant = gjson.GetBytes(body, subscriptionConsumerTenantID)
@@ -898,7 +895,15 @@ func assertNotificationsCountForTenant(t *testing.T, body []byte, tenant string,
 	require.Equal(t, count, len(notificationsForConsumerTenant.Array()))
 }
 
-func getNotificationFromExternalSvcMock(t *testing.T, client *http.Client) []byte {
+func cleanupNotificationsFromExternalSvcMock(t *testing.T, client *http.Client) {
+	req, err := http.NewRequest(http.MethodDelete, conf.ExternalServicesMockMtlsSecuredURL+"/formation-callback/cleanup", nil)
+	require.NoError(t, err)
+	resp, err := client.Do(req)
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func getNotificationsFromExternalSvcMock(t *testing.T, client *http.Client) []byte {
 	t.Logf("Getting formation notifications recieved in external services mock")
 	resp, err := client.Get(conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback")
 	require.NoError(t, err)
