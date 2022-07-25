@@ -40,7 +40,6 @@ type pgRepository struct {
 	listerGlobal       repo.ListerGlobal
 	creator            repo.Creator
 	updater            repo.Updater
-	queryBuilder       repo.QueryBuilder
 	conv               EntityConverter
 }
 

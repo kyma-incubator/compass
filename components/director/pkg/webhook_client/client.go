@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package webhook_client
+package webhookclient
 
 import (
 	"bytes"
@@ -45,6 +45,7 @@ type client struct {
 	mtlsClient *http.Client
 }
 
+// NewClient creates a new webhook client
 func NewClient(httpClient *http.Client, mtlsClient *http.Client) *client {
 	return &client{
 		httpClient: httpClient,
@@ -237,14 +238,14 @@ func parseResponseObject(resp *http.Response) (*webhook.ResponseObject, error) {
 	}, nil
 }
 
-func checkForErr(resp *http.Response, successStatusCode *int, error *string) error {
+func checkForErr(resp *http.Response, successStatusCode *int, errorMessage *string) error {
 	var errMsg string
 	if *successStatusCode != resp.StatusCode {
 		errMsg += fmt.Sprintf("response success status code was not met - expected %d, got %d; ", *successStatusCode, resp.StatusCode)
 	}
 
-	if error != nil && *error != "" {
-		errMsg += fmt.Sprintf("received error while calling external system: %s", *error)
+	if errorMessage != nil && *errorMessage != "" {
+		errMsg += fmt.Sprintf("received error while calling external system: %s", *errorMessage)
 	}
 
 	if errMsg != "" {

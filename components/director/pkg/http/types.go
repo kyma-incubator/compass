@@ -33,6 +33,7 @@ type httpTransportWrapper struct {
 	tr *http.Transport
 }
 
+// NewHTTPTransportWrapper wraps http transport
 func NewHTTPTransportWrapper(tr *http.Transport) HTTPRoundTripper {
 	return &httpTransportWrapper{
 		tr: tr,

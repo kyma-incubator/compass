@@ -58,6 +58,7 @@ func (c *ErrorHandlerTransport) Clone() HTTPRoundTripper {
 	}
 }
 
+// GetTransport returns the underlying transport.
 func (c *ErrorHandlerTransport) GetTransport() *http.Transport {
 	return c.roundTripper.GetTransport()
 }

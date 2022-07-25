@@ -70,6 +70,7 @@ func (c *SecuredTransport) Clone() HTTPRoundTripper {
 	}
 }
 
+// GetTransport returns the underlying transport.
 func (c *SecuredTransport) GetTransport() *http.Transport {
 	return c.roundTripper.GetTransport()
 }

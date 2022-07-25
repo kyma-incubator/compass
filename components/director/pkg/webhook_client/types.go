@@ -1,4 +1,4 @@
-package webhook_client
+package webhookclient
 
 import (
 	"fmt"

@@ -53,6 +53,7 @@ func (c *CorrelationIDTransport) Clone() HTTPRoundTripper {
 	}
 }
 
+// GetTransport returns the underlying transport.
 func (c *CorrelationIDTransport) GetTransport() *http.Transport {
 	return c.roundTripper.GetTransport()
 }

@@ -8,21 +8,25 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
+// ApplicationWithLabels represents an application with its corresponding labels
 type ApplicationWithLabels struct {
 	*model.Application
 	Labels map[string]interface{}
 }
 
+// ApplicationTemplateWithLabels represents an application template with its corresponding labels
 type ApplicationTemplateWithLabels struct {
 	*model.ApplicationTemplate
 	Labels map[string]interface{}
 }
 
+// RuntimeWithLabels represents a runtime with its corresponding labels
 type RuntimeWithLabels struct {
 	*model.Runtime
 	Labels map[string]interface{}
 }
 
+// RuntimeContextWithLabels represents runtime context with its corresponding labels
 type RuntimeContextWithLabels struct {
 	*model.RuntimeContext
 	Labels map[string]interface{}

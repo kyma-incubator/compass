@@ -9,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 )
 
+// HTTPRoundTripper missing godoc
 type HTTPRoundTripper interface {
 	RoundTrip(*http.Request) (*http.Response, error)
 	Clone() HTTPRoundTripper
