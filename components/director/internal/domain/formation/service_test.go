@@ -3170,9 +3170,25 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 		ctx := context.TODO()
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(runtimes, nil).Once()
+		runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[0].ID).Return(nil, nil)
+		runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[1].ID).Return(nil, nil)
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimes[0].ID).Return(nil, nil)
+		labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimes[1].ID).Return(nil, nil)
+		labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeContextLabelableObject, runtimeContexts[0].ID).Return(nil, nil)
+		labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeContextLabelableObject, runtimeContexts[1].ID).Return(nil, nil)
+		webhookRepo := &automock.WebhookRepository{}
+		webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), runtimes[0].ID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+		webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), runtimes[1].ID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[1].ID))
 
 		runtimeContextRepo := &automock.RuntimeContextRepository{}
 		runtimeContextRepo.On("ListAll", ctx, TargetTenantID).Return(runtimeContexts, nil).Once()
+		runtimeContextRepo.On("GetByID", ctx, tenantID.String(), runtimeContexts[0].ID).Return(&model.RuntimeContext{
+			RuntimeID: runtimes[0].ID,
+		}, nil)
+		runtimeContextRepo.On("GetByID", ctx, tenantID.String(), runtimeContexts[1].ID).Return(&model.RuntimeContext{
+			RuntimeID: runtimes[1].ID,
+		}, nil)
 
 		upsertSvc := &automock.LabelService{}
 		upsertSvc.On("GetLabel", ctx, tenantID.String(), &labelInputWithoutScenario).Return(&labelWithoutScenario, nil).Once()
@@ -3208,7 +3224,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 		formationRepo := &automock.FormationRepository{}
 		formationRepo.On("GetByName", ctx, selectorScenario, in.Tenant).Return(expectedFormation, nil).Times(4)
 
-		svc := formation.NewService(nil, nil, formationRepo, nil, upsertSvc, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo, nil, nil, nil, nil, nil)
+		svc := formation.NewService(nil, labelRepo, formationRepo, nil, upsertSvc, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo, webhookRepo, nil, nil, nil, nil)
 
 		// WHEN
 		err := svc.EnsureScenarioAssigned(ctx, in)
