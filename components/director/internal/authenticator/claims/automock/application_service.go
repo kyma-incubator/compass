@@ -5,10 +5,8 @@ package automock
 import (
 	context "context"
 
-	labelfilter "github.com/kyma-incubator/compass/components/director/internal/labelfilter"
-	mock "github.com/stretchr/testify/mock"
-
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
+	mock "github.com/stretchr/testify/mock"
 
 	testing "testing"
 )
@@ -18,22 +16,22 @@ type ApplicationService struct {
 	mock.Mock
 }
 
-// List provides a mock function with given fields: ctx, filter, pageSize, cursor
-func (_m *ApplicationService) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
-	ret := _m.Called(ctx, filter, pageSize, cursor)
+// ListAll provides a mock function with given fields: ctx
+func (_m *ApplicationService) ListAll(ctx context.Context) ([]*model.Application, error) {
+	ret := _m.Called(ctx)
 
-	var r0 *model.ApplicationPage
-	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, int, string) *model.ApplicationPage); ok {
-		r0 = rf(ctx, filter, pageSize, cursor)
+	var r0 []*model.Application
+	if rf, ok := ret.Get(0).(func(context.Context) []*model.Application); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.ApplicationPage)
+			r0 = ret.Get(0).([]*model.Application)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter, int, string) error); ok {
-		r1 = rf(ctx, filter, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}

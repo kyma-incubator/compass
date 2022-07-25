@@ -39,7 +39,7 @@ type ApplicationTemplateService interface {
 // ApplicationService is used to interact with runtime contexts.
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
-	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
+	ListAll(ctx context.Context) ([]*model.Application, error)
 }
 
 // IntegrationSystemService is used to check if integration system with a given ID exists.
@@ -210,20 +210,18 @@ func (v *validator) validateApplicationProvider(ctx context.Context, claims Clai
 	consumerExternalTenantID := claims.Tenant[tenantmapping.ExternalTenantKey]
 	ctxWithConsumerTenant := tenant.SaveToContext(ctx, consumerInternalTenantID, consumerExternalTenantID)
 
-	applicationsFilter := []*labelfilter.LabelFilter{}
-
 	found := false
 
 	log.C(ctx).Infof("Listing applications in the consumer tenant %q for application template with ID: %q and label with key: %q and value: %q", consumerExternalTenantID, applicationTemplate.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
-	applicationsPage, err := v.applicationSvc.List(ctxWithConsumerTenant, applicationsFilter, 200, "")
+	applications, err := v.applicationSvc.ListAll(ctxWithConsumerTenant)
 	if err != nil {
 		log.C(ctx).Errorf("An error occurred while listing applications for filter with key: %q and value: %q", v.consumerSubaccountLabelKey, consumerExternalTenantID)
 		return errors.Wrapf(err, "while listing applications for filter with key: %q and value: %q", v.consumerSubaccountLabelKey, consumerExternalTenantID)
 	}
 
-	log.C(ctx).Infof("Found %d applications in consumer tenant using label: %q and external tenant ID: %q", len(applicationsPage.Data), v.consumerSubaccountLabelKey, consumerExternalTenantID)
+	log.C(ctx).Infof("Found %d applications in consumer tenant using label: %q and external tenant ID: %q", len(applications), v.consumerSubaccountLabelKey, consumerExternalTenantID)
 
-	for _, application := range applicationsPage.Data {
+	for _, application := range applications {
 		if *application.ApplicationTemplateID == applicationTemplate.ID {
 			found = true
 			break
