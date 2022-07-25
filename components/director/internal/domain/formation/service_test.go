@@ -3446,12 +3446,22 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
+		webhookRepo := &automock.WebhookRepository{}
+		webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), runtimes[0].ID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+
+		labelRepo := &automock.LabelRepository{}
+		labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimes[0].ID).Return(nil, nil)
+		labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeContextLabelableObject, rtmContexts[0].ID).Return(nil, nil)
 
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, []*labelfilter.LabelFilter(nil)).Return(runtimes, nil).Once()
+		runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[0].ID).Return(nil, nil)
 
 		runtimeContextRepo := &automock.RuntimeContextRepository{}
 		runtimeContextRepo.On("ListAll", ctx, TargetTenantID).Return(rtmContexts, nil).Once()
+		runtimeContextRepo.On("GetByID", ctx, tenantID.String(), rtmContexts[0].ID).Return(&model.RuntimeContext{
+			RuntimeID: runtimes[0].ID,
+		}, nil)
 
 		asaRepo := &automock.AutomaticFormationAssignmentRepository{}
 		asaRepo.On("ListAll", ctx, tenantID.String()).Return(nil, nil)
@@ -3475,7 +3485,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 		formationRepo := &automock.FormationRepository{}
 		formationRepo.On("GetByName", ctx, selectorScenario, in.Tenant).Return(expectedFormation, nil).Times(2)
 
-		svc := formation.NewService(nil, nil, formationRepo, nil, labelService, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, nil, nil, nil, nil, nil)
+		svc := formation.NewService(nil, labelRepo, formationRepo, nil, labelService, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, webhookRepo, nil, nil, nil, nil)
 
 		// WHEN
 		err := svc.RemoveAssignedScenario(ctx, in)
