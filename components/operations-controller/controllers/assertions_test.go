@@ -21,6 +21,8 @@ import (
 	"testing"
 	"time"
 
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"

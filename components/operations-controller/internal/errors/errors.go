@@ -17,6 +17,7 @@
 package errors
 
 import (
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"github.com/pkg/errors"
 )
 

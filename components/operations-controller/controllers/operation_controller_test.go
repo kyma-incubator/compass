@@ -19,9 +19,10 @@ package controllers_test
 import (
 	"context"
 	"fmt"
-	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"testing"
 	"time"
+
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
 	corev1 "k8s.io/api/core/v1"
 

@@ -20,6 +20,8 @@ import (
 	"context"
 	"os"
 
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
+
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
