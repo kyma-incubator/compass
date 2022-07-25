@@ -8,11 +8,7 @@ metadata:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
 spec:
-  {{- if eq .Values.global.migratorJob.pvc.isLocalEnv true }}
-  storageClassName: local-path
-  {{- else }}
-  storageClassName: standard
-  {{- end }}
+  storageClassName: {{ .Values.global.migratorJob.pvc.storageClass }}
   volumeMode: Filesystem
   accessModes:
     - ReadWriteOnce
