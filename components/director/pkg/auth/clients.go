@@ -19,7 +19,8 @@ func PrepareMTLSClientWithSSLValidation(timeout time.Duration, cache certloader.
 	basicTransport.TLSClientConfig.GetClientCertificate = func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
 		return cache.Get(), nil
 	}
-	httpTransport := httputil.NewCorrelationIDTransport(basicTransport)
+	roundTripper := httputil.NewHTTPTransportWrapper(basicTransport)
+	httpTransport := httputil.NewCorrelationIDTransport(roundTripper)
 
 	return &http.Client{
 		Timeout:   timeout,
@@ -41,9 +42,11 @@ func PrepareHTTPClientWithSSLValidation(timeout time.Duration, skipSSLValidation
 		},
 	}
 
+	roundTripper := httputil.NewHTTPTransportWrapper(transport)
+
 	unsecuredClient := &http.Client{
 		Timeout:   timeout,
-		Transport: httputil.NewCorrelationIDTransport(transport),
+		Transport: httputil.NewCorrelationIDTransport(roundTripper),
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
@@ -53,7 +56,7 @@ func PrepareHTTPClientWithSSLValidation(timeout time.Duration, skipSSLValidation
 	tokenProvider := NewTokenAuthorizationProvider(unsecuredClient)
 	saTokenProvider := NewServiceAccountTokenAuthorizationProvider()
 
-	securedTransport := httputil.NewSecuredTransport(httputil.NewCorrelationIDTransport(transport), basicProvider, tokenProvider, saTokenProvider)
+	securedTransport := httputil.NewSecuredTransport(httputil.NewCorrelationIDTransport(roundTripper), basicProvider, tokenProvider, saTokenProvider)
 	securedClient := &http.Client{
 		Timeout:   timeout,
 		Transport: securedTransport,

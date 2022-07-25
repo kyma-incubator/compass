@@ -62,6 +62,18 @@ func (c *SecuredTransport) RoundTrip(request *http.Request) (*http.Response, err
 	return c.roundTripper.RoundTrip(request)
 }
 
+// Clone clones the underlying transport
+func (c *SecuredTransport) Clone() HTTPRoundTripper {
+	return &SecuredTransport{
+		roundTripper:           c.roundTripper.Clone(),
+		authorizationProviders: c.authorizationProviders,
+	}
+}
+
+func (c *SecuredTransport) GetTransport() *http.Transport {
+	return c.roundTripper.GetTransport()
+}
+
 func (c *SecuredTransport) getAuthorizationFromProvider(ctx context.Context) (string, error) {
 	for _, authProvider := range c.authorizationProviders {
 		if !authProvider.Matches(ctx) {

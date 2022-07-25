@@ -45,3 +45,14 @@ func (c *CorrelationIDTransport) RoundTrip(r *http.Request) (*http.Response, err
 
 	return c.roundTripper.RoundTrip(r)
 }
+
+// Clone clones the underlying transport.
+func (c *CorrelationIDTransport) Clone() HTTPRoundTripper {
+	return &CorrelationIDTransport{
+		roundTripper: c.roundTripper.Clone(),
+	}
+}
+
+func (c *CorrelationIDTransport) GetTransport() *http.Transport {
+	return c.roundTripper.GetTransport()
+}

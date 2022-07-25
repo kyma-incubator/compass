@@ -54,7 +54,7 @@ func NewCaller(config CallerConfig) (*Caller, error) {
 		}
 		c.Provider = auth.NewMtlsTokenAuthorizationProvider(oauthCfg, credentials.CertCache, auth.DefaultMtlsClientCreator)
 	}
-	c.client.Transport = director_http.NewCorrelationIDTransport(director_http.NewSecuredTransport(http.DefaultTransport, c.Provider))
+	c.client.Transport = director_http.NewCorrelationIDTransport(director_http.NewSecuredTransport(director_http.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport)), c.Provider))
 	return c, nil
 }
 

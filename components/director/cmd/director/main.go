@@ -216,12 +216,12 @@ func main() {
 
 	internalFQDNHTTPClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
-		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport)))),
 	}
 
 	internalGatewayHTTPClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
-		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(internalClientTransport, mp_authenticator.AuthorizationHeaderKey)),
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(httputil.NewHTTPTransportWrapper(internalClientTransport), mp_authenticator.AuthorizationHeaderKey)),
 	}
 
 	appRepo := applicationRepo()

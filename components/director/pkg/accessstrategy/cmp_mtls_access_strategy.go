@@ -9,6 +9,12 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 )
 
+type HTTPRoundTripper interface {
+	RoundTrip(*http.Request) (*http.Response, error)
+	Clone() HTTPRoundTripper
+	GetTransport() *http.Transport
+}
+
 type cmpMTLSAccessStrategyExecutor struct {
 	certCache certloader.Cache
 }
@@ -29,7 +35,14 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(baseClient *http.Client, docume
 
 	tr := &http.Transport{}
 	if baseClient.Transport != nil {
-		tr = baseClient.Transport.(*http.Transport).Clone()
+		switch v := baseClient.Transport.(type) {
+		case *http.Transport:
+			tr = v.Clone()
+		case HTTPRoundTripper:
+			tr = v.GetTransport()
+		default:
+			return nil, errors.New("unsupported transport type")
+		}
 	}
 
 	tr.TLSClientConfig.Certificates = []tls.Certificate{*clientCert}
