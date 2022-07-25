@@ -64,10 +64,10 @@ kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c
 
 - The proper work of JWT token flows and Compass Cockpit require a set up and configured OpenID Connect (OIDC) Authorization Server.
   The OIDC Authorization Server is needed for the support of the respective users, user groups, and scopes. The OIDC server host and client-id are specified as overrides of the Compass Helm chart. Then, a set of administrator scopes are granted to a user, based on the groups in the `id_token`. Those trusted groups can be configured with overrides as well.
-- For internal communication between components Compass relies on Kubernetes Service Account tokens and [Service Account Issuer Discovery](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-issuer-discovery) for validating the tokens.
-Therefore, `serviceAccountTokenJWKS` and `serviceAccountTokenIssuer` needs to be configured as overrides below. Note that this configuration may be infrastructure specific.
+- For internal communication between components, Compass relies on Kubernetes Service Account tokens and [Service Account Issuer Discovery](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-issuer-discovery) for the validation of the tokens.
+Therefore, `serviceAccountTokenJWKS` and `serviceAccountTokenIssuer` need to be configured as overrides. This configuration could be infrastructure specific.
 
-> More information for GCP can be found [here](https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters.well-known/getOpenid-configuration). Example configuration for GKE clusters look like this:
+> For more information about GCP, see [getOpenid-configuration](https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters.well-known/getOpenid-configuration). An example configuration of GKE clusters looks like this:
 ```yaml
    kubernetes:
        serviceAccountTokenIssuer: "https://container.googleapis.com/v1/projects/${PROJECT_NAME}/locations/${REGION}/clusters/${CLUSTER_NAME}"
@@ -274,10 +274,10 @@ To install Compass and Runtime components on a single cluster, follow these step
 
 - The proper work of JWT token flows and Compass Cockpit require a set up and configured OpenID Connect (OIDC) Authorization Server.
   The OIDC Authorization Server is needed for the support of the respective users, user groups, and scopes. The OIDC server host and client-id are specified as overrides of the Compass Helm chart. Then, a set of administrator scopes are granted to a user, based on the groups in the `id_token`. Those trusted groups can be configured with overrides as well.
-- For internal communication between components Compass relies on Kubernetes Service Account tokens and [Service Account Issuer Discovery](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-issuer-discovery) for validating the tokens.
-  Therefore, `serviceAccountTokenJWKS` and `serviceAccountTokenIssuer` needs to be configured as overrides below. Note that this configuration may be infrastructure specific.
+- For internal communication between components, Compass relies on Kubernetes Service Account tokens and [Service Account Issuer Discovery](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-issuer-discovery) for the validation of the tokens.
+Therefore, `serviceAccountTokenJWKS` and `serviceAccountTokenIssuer` need to be configured as overrides. This configuration could be infrastructure specific.
 
-> More information for GCP can be found [here](https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters.well-known/getOpenid-configuration). Example configuration for GKE clusters look like this:
+> For more information about GCP, see [getOpenid-configuration](https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1/projects.locations.clusters.well-known/getOpenid-configuration). An example configuration of GKE clusters looks like this:
 ```yaml
    kubernetes:
        serviceAccountTokenIssuer: "https://container.googleapis.com/v1/projects/${PROJECT_NAME}/locations/${REGION}/clusters/${CLUSTER_NAME}"
