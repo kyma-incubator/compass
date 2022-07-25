@@ -1,6 +1,7 @@
 package adapter
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -35,13 +36,13 @@ type Mapping struct {
 }
 
 type Auth struct {
-	Type                     string
-	ClientID                 string     `envconfig:"optional"`
-	ClientSecret             string     `envconfig:"optional"`
-	URL                      string     `envconfig:"optional"`
-	OAuthStyle               OAuthStyle `envconfig:"optional,default=AuthDetect"`
-	ExternalClientCertSecret string     `envconfig:"optional,EXTERNAL_CLIENT_CERT_SECRET"`
-	SkipSSLVerify            bool       `envconfig:"default=false,SKIP_SSL_VERIFY"`
+	Type          string
+	ClientID      string     `envconfig:"optional"`
+	ClientSecret  string     `envconfig:"optional"`
+	URL           string     `envconfig:"optional"`
+	OAuthStyle    OAuthStyle `envconfig:"optional,default=AuthDetect"`
+	SkipSSLVerify bool       `envconfig:"default=false,SKIP_SSL_VERIFY"`
+	certloader.Config
 }
 
 // swagger:response externalToken

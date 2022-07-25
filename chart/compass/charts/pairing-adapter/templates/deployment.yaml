@@ -72,8 +72,12 @@ spec:
               - name: AUTH_OAUTH_STYLE
                 value: {{ $config.envs.oauthStyle | quote }}
 {{ else if eq $config.auth.type "mtls" }}
-              - name: EXTERNAL_CLIENT_CERT_SECRET
-                value: "{{ $.Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ $.Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+              - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+                value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+              - name: APP_EXTERNAL_CLIENT_CERT_KEY
+                value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+              - name: APP_EXTERNAL_CLIENT_KEY_KEY
+                value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
               - name: SKIP_SSL_VERIFY
                 value: "{{ $config.envs.skipSSLVerify }}"
 {{ end }}

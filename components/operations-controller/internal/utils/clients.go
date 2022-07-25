@@ -21,7 +21,7 @@ func PrepareMTLSClient(cfg *httpbroker.Config, cache CertificateCache) *http.Cli
 	basicTransport.TLSClientConfig.GetClientCertificate = func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
 		return cache.Get(), nil
 	}
-	httpTransport := httputil.NewCorrelationIDTransport(basicTransport)
+	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(basicTransport))
 
 	return &http.Client{
 		Transport: httpTransport,
@@ -30,7 +30,7 @@ func PrepareMTLSClient(cfg *httpbroker.Config, cache CertificateCache) *http.Cli
 }
 
 func PrepareHttpClient(cfg *httpbroker.Config) (*http.Client, error) {
-	httpTransport := httputil.NewCorrelationIDTransport(httpbroker.NewHTTPTransport(cfg))
+	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(httpbroker.NewHTTPTransport(cfg)))
 
 	unsecuredClient := &http.Client{
 		Transport: httpTransport,
