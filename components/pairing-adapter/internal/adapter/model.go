@@ -1,8 +1,9 @@
 package adapter
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
