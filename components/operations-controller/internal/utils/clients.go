@@ -16,6 +16,7 @@ type CertificateCache interface {
 	Get() *tls.Certificate
 }
 
+// PrepareMTLSClient creates a MTLS secured http client with given certificate cache
 func PrepareMTLSClient(cfg *httpbroker.Config, cache CertificateCache) *http.Client {
 	basicTransport := httpbroker.NewHTTPTransport(cfg)
 	basicTransport.TLSClientConfig.GetClientCertificate = func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
@@ -29,6 +30,7 @@ func PrepareMTLSClient(cfg *httpbroker.Config, cache CertificateCache) *http.Cli
 	}
 }
 
+// PrepareHttpClient creates a http client with given http config
 func PrepareHttpClient(cfg *httpbroker.Config) (*http.Client, error) {
 	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(httpbroker.NewHTTPTransport(cfg)))
 

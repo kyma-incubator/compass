@@ -19,10 +19,9 @@ package controllers_test
 import (
 	"context"
 	"fmt"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"testing"
 	"time"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -1200,7 +1199,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	// GIVEN:
 	goneStatusCode := 410
 	webhookMode := graphql.WebhookModeAsync
-	expectedErr := webhook_client.NewWebhookStatusGoneErr(goneStatusCode)
+	expectedErr := webhookclient.NewWebhookStatusGoneErr(goneStatusCode)
 
 	stubLoggerAssertion(t, expectedErr.Error(), "gone response status")
 	defer func() { ctrl.Log = &originalLogger }()
@@ -1270,7 +1269,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	directorClient.UpdateOperationReturns(mockedErr)
 
 	webhookClient := &controllersfakes.FakeWebhookClient{
-		DoStub: func(_ context.Context, _ *webhook_client.Request) (*web_hook.Response, error) {
+		DoStub: func(_ context.Context, _ *webhookclient.Request) (*web_hook.Response, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return nil, mockedErr
 		},
@@ -1321,7 +1320,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &controllersfakes.FakeWebhookClient{
-		DoStub: func(_ context.Context, _ *webhook_client.Request) (*web_hook.Response, error) {
+		DoStub: func(_ context.Context, _ *webhookclient.Request) (*web_hook.Response, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return nil, mockedErr
 		},
@@ -1373,7 +1372,7 @@ func TestReconcile_OperationWithoutWebhookPollURL_And_WebhookExecutionFails_And_
 	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &controllersfakes.FakeWebhookClient{
-		DoStub: func(_ context.Context, _ *webhook_client.Request) (*web_hook.Response, error) {
+		DoStub: func(_ context.Context, _ *webhookclient.Request) (*web_hook.Response, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return nil, mockedErr
 		},
@@ -2019,7 +2018,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	directorClient.UpdateOperationReturns(mockedErr)
 
 	webhookClient := &controllersfakes.FakeWebhookClient{
-		PollStub: func(_ context.Context, _ *webhook_client.PollRequest) (*web_hook.ResponseStatus, error) {
+		PollStub: func(_ context.Context, _ *webhookclient.PollRequest) (*web_hook.ResponseStatus, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return nil, mockedErr
 		},
@@ -2073,7 +2072,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &controllersfakes.FakeWebhookClient{
-		PollStub: func(_ context.Context, _ *webhook_client.PollRequest) (*web_hook.ResponseStatus, error) {
+		PollStub: func(_ context.Context, _ *webhookclient.PollRequest) (*web_hook.ResponseStatus, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return nil, mockedErr
 		},
@@ -2128,7 +2127,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionFails_And_Webhook
 	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &controllersfakes.FakeWebhookClient{
-		PollStub: func(_ context.Context, _ *webhook_client.PollRequest) (*web_hook.ResponseStatus, error) {
+		PollStub: func(_ context.Context, _ *webhookclient.PollRequest) (*web_hook.ResponseStatus, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return nil, mockedErr
 		},
@@ -2267,7 +2266,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	directorClient.UpdateOperationReturns(mockedErr)
 
 	webhookClient := &controllersfakes.FakeWebhookClient{
-		PollStub: func(_ context.Context, _ *webhook_client.PollRequest) (*web_hook.ResponseStatus, error) {
+		PollStub: func(_ context.Context, _ *webhookclient.PollRequest) (*web_hook.ResponseStatus, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return prepareResponseStatus("IN_PROGRESS"), nil
 		},
@@ -2319,7 +2318,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &controllersfakes.FakeWebhookClient{
-		PollStub: func(_ context.Context, _ *webhook_client.PollRequest) (*web_hook.ResponseStatus, error) {
+		PollStub: func(_ context.Context, _ *webhookclient.PollRequest) (*web_hook.ResponseStatus, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return prepareResponseStatus("IN_PROGRESS"), nil
 		},
@@ -2371,7 +2370,7 @@ func TestReconcile_OperationHasWebhookPollURL_And_PollExecutionSucceeds_And_Stat
 	directorClient.UpdateOperationReturns(nil)
 
 	webhookClient := &controllersfakes.FakeWebhookClient{
-		PollStub: func(_ context.Context, _ *webhook_client.PollRequest) (*web_hook.ResponseStatus, error) {
+		PollStub: func(_ context.Context, _ *webhookclient.PollRequest) (*web_hook.ResponseStatus, error) {
 			time.Sleep(time.Duration(webhookTimeout) * time.Second)
 			return prepareResponseStatus("IN_PROGRESS"), nil
 		},

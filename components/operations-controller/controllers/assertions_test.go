@@ -21,8 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -163,7 +161,7 @@ func assertWebhookDoInvocation(t *testing.T, webhookClient *controllersfakes.Fak
 	_, actualRequest := webhookClient.DoArgsForCall(invocation)
 	expectedRequestObject, err := operation.RequestObject()
 	require.NoError(t, err)
-	expectedRequest := webhook_client.NewRequest(*webhookEntity, expectedRequestObject, operation.Spec.CorrelationID)
+	expectedRequest := webhookclient.NewRequest(*webhookEntity, expectedRequestObject, operation.Spec.CorrelationID)
 	require.Equal(t, expectedRequest, actualRequest)
 }
 
@@ -176,7 +174,7 @@ func assertWebhookPollInvocation(t *testing.T, webhookClient *controllersfakes.F
 	_, actualRequest := webhookClient.PollArgsForCall(invocation)
 	expectedRequestObject, err := operation.RequestObject()
 	require.NoError(t, err)
-	expectedRequest := webhook_client.NewPollRequest(*webhookEntity, expectedRequestObject, operation.Spec.CorrelationID, mockedLocationURL)
+	expectedRequest := webhookclient.NewPollRequest(*webhookEntity, expectedRequestObject, operation.Spec.CorrelationID, mockedLocationURL)
 	require.Equal(t, expectedRequest, actualRequest)
 }
 

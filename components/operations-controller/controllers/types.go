@@ -18,8 +18,7 @@ package controllers
 
 import (
 	"context"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
 	"errors"
 
@@ -59,8 +58,8 @@ type DirectorClient interface {
 // WebhookClient defines a general purpose Webhook executor client
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . WebhookClient
 type WebhookClient interface {
-	Do(ctx context.Context, request *webhook_client.Request) (*webhookdir.Response, error)
-	Poll(ctx context.Context, request *webhook_client.PollRequest) (*webhookdir.ResponseStatus, error)
+	Do(ctx context.Context, request *webhookclient.Request) (*webhookdir.Response, error)
+	Poll(ctx context.Context, request *webhookclient.PollRequest) (*webhookdir.ResponseStatus, error)
 }
 
 func isNotFoundError(err error) bool {

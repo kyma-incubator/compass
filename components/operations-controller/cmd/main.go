@@ -20,8 +20,6 @@ import (
 	"context"
 	"os"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
-
 	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
@@ -131,7 +129,7 @@ func main() {
 		status.NewManager(mgr.GetClient()),
 		k8s.NewClient(mgr.GetClient()),
 		directorClient,
-		webhook_client.NewClient(httpClient, httpMTLSClient),
+		webhookclient.NewClient(httpClient, httpMTLSClient),
 		collector)
 
 	if err = controller.SetupWithManager(mgr); err != nil {
