@@ -8,6 +8,7 @@ type Config struct {
 	SelfRegDistinguishLabelKey         string `envconfig:"APP_SUBSCRIPTION_CONFIG_SELF_REG_DISTINGUISH_LABEL_KEY"`
 	SelfRegDistinguishLabelValue       string `envconfig:"APP_SUBSCRIPTION_CONFIG_SELF_REG_DISTINGUISH_LABEL_VALUE"`
 	SelfRegRegion                      string `envconfig:"APP_SUBSCRIPTION_CONFIG_SELF_REG_REGION"`
+	SelfRegRegion2                     string `envconfig:"APP_SUBSCRIPTION_CONFIG_SELF_REG_REGION2"`
 	SelfRegisterLabelKey               string `envconfig:"APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_KEY"`
 	SelfRegisterLabelValuePrefix       string `envconfig:"APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_VALUE_PREFIX"`
 	PropagatedProviderSubaccountHeader string `envconfig:"APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER"`

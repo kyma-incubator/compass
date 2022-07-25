@@ -19,9 +19,14 @@ type ExternalCertProviderConfig struct {
 	ExternalClientCertTestSecretName      string `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME"`
 	ExternalClientCertTestSecretNamespace string `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE"`
 	CertSvcInstanceTestSecretName         string `envconfig:"CERT_SVC_INSTANCE_TEST_SECRET_NAME"`
+	CertSvcInstanceTestRegion2SecretName  string `envconfig:"CERT_SVC_INSTANCE_TEST_REGION2_SECRET_NAME"`
 	ExternalCertCronjobContainerName      string `envconfig:"EXTERNAL_CERT_CRONJOB_CONTAINER_NAME"`
 	ExternalCertTestJobName               string `envconfig:"EXTERNAL_CERT_TEST_JOB_NAME"`
 	TestExternalCertSubject               string `envconfig:"TEST_EXTERNAL_CERT_SUBJECT"`
+	TestExternalCertSubjectRegion2        string `envconfig:"TEST_EXTERNAL_CERT_SUBJECT_REGION2"`
+	TestExternalCertCN                    string `envconfig:"TEST_EXTERNAL_CERT_CN"`
+	TestExternalCertOU                    string `envconfig:"TEST_EXTERNAL_CERT_OU"`
+	TestExternalCertOU2                   string `envconfig:"TEST_EXTERNAL_CERT_OU2"`
 	ExternalClientCertCertKey             string `envconfig:"APP_EXTERNAL_CLIENT_CERT_KEY"`
 	ExternalClientCertKeyKey              string `envconfig:"APP_EXTERNAL_CLIENT_KEY_KEY"`
 }
@@ -69,7 +74,11 @@ func createExtCertJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.C
 					env.Value = testConfig.TestExternalCertSubject
 				}
 				if env.Name == "CERT_SVC_CSR_ENDPOINT" || env.Name == "CERT_SVC_CLIENT_ID" || env.Name == "CERT_SVC_OAUTH_URL" || env.Name == "CERT_SVC_OAUTH_CLIENT_CERT" || env.Name == "CERT_SVC_OAUTH_CLIENT_KEY" {
-					env.ValueFrom.SecretKeyRef.Name = testConfig.CertSvcInstanceTestSecretName // external certificate credentials used to execute consumer-provider test
+					if testConfig.CertSvcInstanceTestSecretName != "" {
+						env.ValueFrom.SecretKeyRef.Name = testConfig.CertSvcInstanceTestSecretName // external certificate credentials used to execute consumer-provider test
+					} else if testConfig.CertSvcInstanceTestRegion2SecretName != "" {
+						env.ValueFrom.SecretKeyRef.Name = testConfig.CertSvcInstanceTestRegion2SecretName // external certificate credentials used to execute consumer-provider test
+					}
 				}
 			}
 			break

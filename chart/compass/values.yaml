@@ -64,6 +64,10 @@ global:
       id: f8075207-1478-4a80-bd26-24a4785a2bfd
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+    - name: TestProviderSubaccountRegion2
+      id: 731b7bc4-5472-41d2-a447-e4c0f45de739
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
     - name: TestCertificateSubaccount
       id: 123e4567-e89b-12d3-a456-426614174001
       type: subaccount
@@ -96,6 +100,10 @@ global:
       id: 8d42d818-d4c4-4036-b82f-b199db7ffeb5
       type: subaccount
       parent: 5984a414-1eed-4972-af2c-b2b6a415c7d7
+    - name: TestExternalCertificateSubaccount
+      id: bad76f69-e5c2-4d55-bca5-240944824b83
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
@@ -110,7 +118,7 @@ global:
       version: "PR-2383"
     director:
       dir:
-      version: "PR-2438"
+      version: "PR-2483"
     hydrator:
       dir:
       version: "PR-2458"
@@ -136,15 +144,16 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2391"
+      version: "PR-2479"
     console:
       dir:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2438"
+      version: "PR-2499"
   isLocalEnv: false
   isForTesting: false
+  enableInternalCommunicationPolicies: true
   oauth2:
     host: oauth2
   livenessProbe:
@@ -163,7 +172,7 @@ global:
       gatewayHost: "compass-gateway-xsuaa"
     prefix: /nsadapter
     path: /nsadapter/api/v1/notifications
-    systemToTemplateMappings: '[{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["abapSys"]},{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["nonSAPsys"]},{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["hana"]}]'
+    systemToTemplateMappings: '[{  "Name": "SAP S/4HANA On-Premise",  "SourceKey": ["type"],  "SourceValue": ["abapSys"]},{  "Name": "SAP S/4HANA On-Premise",  "SourceKey": ["type"],  "SourceValue": ["nonSAPsys"]},{  "Name": "SAP S/4HANA On-Premise",  "SourceKey": ["type"],  "SourceValue": ["hana"]}]'
     secret:
       name: nsadapter-secret
       subaccountKey: subaccount
@@ -637,6 +646,7 @@ global:
     systemsAPIFilterCriteria: ""
     # systemToTemplateMappings - how to map system properties to an existing application template
     systemToTemplateMappings: '{}'
+    templateRegion: "eu-1"
     templatePlaceholderToSystemKeyMappings: '[{"placeholder_name": "name","system_key": "displayName"},{"placeholder_name": "display-name","system_key": "displayName"},{"placeholder_name": "systemNumber","system_key": "systemNumber"},{"placeholder_name": "productId","system_key": "productId"},{"placeholder_name": "ppmsProductVersionId","system_key": "ppmsProductVersionId"},{"placeholder_name": "description","system_key": "productDescription", "optional": true},{"placeholder_name": "baseUrl","system_key": "additionalUrls.mainUrl", "optional":true},{"placeholder_name": "providerName","system_key": "infrastructureProvider", "optional": true}]'
     templateOverrideApplicationInput: '{"name": "{{name}}","description": "{{description}}","providerName": "{{providerName}}","statusCondition": "INITIAL","systemNumber": "{{systemNumber}}","labels": {"managed": "true","productId": "{{productId}}","ppmsProductVersionId": "{{ppmsProductVersionId}}"},"baseUrl": "{{baseUrl}}"}'
     http:
@@ -738,6 +748,7 @@ global:
     oauthSecuredPort: 8085
     ordGlobalRegistryCertPort: 8086
     ordGlobalRegistryUnsecuredPort: 8087
+    unsecuredPortWithAdditionalContent: 8088
     certSecuredHost: compass-external-services-mock-sap-mtls
     ordCertSecuredHost: compass-external-services-mock-sap-mtls-ord
     ordGlobalCertSecuredHost: compass-external-services-mock-sap-mtls-global-ord-registry
@@ -768,12 +779,11 @@ global:
     http:
       client:
         skipSSLValidation: false
+    externalCertConfiguration:
+      ouCertSubaccountID: "bad76f69-e5c2-4d55-bca5-240944824b83"
     director:
       skipPattern: ""
-      externalClientCertTestSecretName: "external-client-certificate-integration-system-test-secret"
-      externalClientCertTestSecretNamespace: "compass-system"
       externalCertIntSystemCN: "integration-system-test"
-      externalCertTestJobName: "external-client-certificate-integration-system-test-job"
     tenantFetcher:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
     ordService:
@@ -783,10 +793,12 @@ global:
       skipPattern: ""
     selfRegistration:
       region: "eu-1"
+      region2: "eu-2"
     subscription:
       tenants:
         consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
         providerSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd" # TestProviderSubaccount from our testing tenants
+        providerSubaccountIDRegion2: "731b7bc4-5472-41d2-a447-e4c0f45de739" # TestProviderSubaccountRegion2 from our testing tenants
         consumerSubaccountID: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae" # randomly chosen
         consumerTenantID: "ba49f1aa-ddc1-43ff-943c-fe949857a34a" # randomly chosen
       oauthSecret:
@@ -800,6 +812,7 @@ global:
       externalClientCertTestSecretNamespace: "compass-system"
       externalCertTestJobName: "external-certificate-rotation-test-job"
       certSvcInstanceTestSecretName: "cert-svc-secret"
+      certSvcInstanceTestRegion2SecretName: "cert-svc-secret-eu2"
       consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
       subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
       subscriptionProviderIdValue: "id-value!t12345"

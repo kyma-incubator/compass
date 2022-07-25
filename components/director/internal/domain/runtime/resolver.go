@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
@@ -46,6 +47,7 @@ type RuntimeService interface {
 	Update(ctx context.Context, id string, in model.RuntimeUpdateInput) error
 	Get(ctx context.Context, id string) (*model.Runtime, error)
 	GetByTokenIssuer(ctx context.Context, issuer string) (*model.Runtime, error)
+	GetByFilters(ctx context.Context, filters []*labelfilter.LabelFilter) (*model.Runtime, error)
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 	SetLabel(ctx context.Context, label *model.LabelInput) error
@@ -340,6 +342,10 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 	}()
 
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err = r.checkProviderRuntimeExistence(ctx, labels); err != nil {
+		return nil, err
+	}
 
 	if err = r.runtimeService.CreateWithMandatoryLabels(ctx, convertedIn, id, labels); err != nil {
 		return nil, err
@@ -847,6 +853,34 @@ func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runt
 		}
 	}
 
+	return nil
+}
+
+func (r *Resolver) checkProviderRuntimeExistence(ctx context.Context, labels map[string]interface{}) error {
+	distinguishLabelKey := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
+	regionLabelKey := selfregmanager.RegionLabel
+
+	distinguishLabelValue, distinguishLabelExists := labels[distinguishLabelKey]
+	region, regionExists := labels[regionLabelKey]
+
+	if distinguishLabelExists && regionExists {
+		filters := []*labelfilter.LabelFilter{
+			labelfilter.NewForKeyWithQuery(distinguishLabelKey, fmt.Sprintf("\"%s\"", distinguishLabelValue)),
+			labelfilter.NewForKeyWithQuery(regionLabelKey, fmt.Sprintf("\"%s\"", region)),
+		}
+
+		log.C(ctx).Infof("Getting runtime for labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue)
+		_, err := r.runtimeService.GetByFilters(ctx, filters)
+		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				return nil
+			}
+			return errors.Wrap(err, fmt.Sprintf("failed to get runtime for labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue))
+		}
+
+		log.C(ctx).Errorf("Cannot have more than one runtime with labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue)
+		return errors.New(fmt.Sprintf("cannot have more than one runtime with labels %q: %q and %q: %q", regionLabelKey, region, distinguishLabelKey, distinguishLabelValue))
+	}
 	return nil
 }
 

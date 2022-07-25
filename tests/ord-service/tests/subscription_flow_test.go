@@ -271,7 +271,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		t.Log("Validating director returns error during claims validation after unsubscribe request is successfully executed...")
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, getRtmReq, &rtmExt)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the runtime context table for any runtime in the provider tenant", subscriptionConsumerSubaccountID))
+		require.Contains(t, err.Error(), fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the runtime context table for the runtime in the provider tenant", subscriptionConsumerSubaccountID))
 		t.Log("Successfully validated an error is returned during claims validation after unsubscribe request")
 	})
 }

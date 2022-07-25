@@ -710,7 +710,7 @@ func TestQuerySpecificRuntimeWithCertificate(t *testing.T) {
 	})
 }
 
-func TestsRuntimeTypeLabels(t *testing.T) {
+func TestRuntimeTypeLabels(t *testing.T) {
 	ctx := context.Background()
 	runtimeName := "runtime-with-int-sys-creds"
 	runtimeInput := fixRuntimeInput(runtimeName)
@@ -768,6 +768,45 @@ func TestsRuntimeTypeLabels(t *testing.T) {
 		require.False(t, ok)
 		require.Empty(t, runtimeTypeLabelValue)
 	})
+}
+
+func TestSelfRegMoreThanOneProviderRuntime(t *testing.T) {
+	ctx := context.Background()
+
+	// Self register runtime
+	runtimeInput := graphql.RuntimeRegisterInput{
+		Name:        "selfRegisterRuntime-1",
+		Description: ptr.String("selfRegisterRuntime-1-description"),
+		Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue, tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
+	}
+
+	t.Logf("Self registering runtime with labels %q:%q and %q:%q...", conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue, tenantfetcher.RegionKey, conf.SubscriptionConfig.SelfRegRegion)
+	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtimeInput)
+	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtime)
+	require.NotEmpty(t, runtime.ID)
+	strLbl, ok := runtime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
+	require.True(t, ok)
+	require.Contains(t, strLbl, runtime.ID)
+
+	// Self register second runtime with same distinguish label and region labels
+	secondRuntimeInput := graphql.RuntimeRegisterInput{
+		Name:        "selfRegisterRuntime-2",
+		Description: ptr.String("selfRegisterRuntime-2-description"),
+		Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue, tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
+	}
+
+	t.Logf("Self registering second runtime with same distinguish label: %q and region: %q and validate it will fail...", conf.SubscriptionConfig.SelfRegDistinguishLabelValue, conf.SubscriptionConfig.SelfRegRegion)
+	inputGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(secondRuntimeInput)
+	require.NoError(t, err)
+
+	registerSecondRuntimeRequest := fixtures.FixRegisterRuntimeRequest(inputGQL)
+	var secondRuntimeExt graphql.RuntimeExt
+
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, registerSecondRuntimeRequest, &secondRuntimeExt)
+	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &secondRuntimeExt)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), fmt.Sprintf("cannot have more than one runtime with labels %q: %q and %q: %q", tenantfetcher.RegionKey, conf.SubscriptionConfig.SelfRegRegion, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue))
+	require.Empty(t, secondRuntimeExt)
 }
 
 func fixRuntimeInput(name string) graphql.RuntimeRegisterInput {

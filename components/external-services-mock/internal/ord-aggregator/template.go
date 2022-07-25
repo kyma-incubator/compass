@@ -45,6 +45,7 @@ const ordDocument = `{
             "label-value-2"
          ]
       }
+	  {{ .additionalProperties }}
    },
    "packages":[
       {
@@ -113,6 +114,7 @@ const ordDocument = `{
             "Banking",
             "Chemicals"
          ]
+		 {{ .additionalProperties }}	 
       }
    ],
    "consumptionBundles":[
@@ -161,6 +163,7 @@ const ordDocument = `{
                "type":"custom"
             }
          ]
+		 {{ .additionalProperties }}
       },
       {
          "title":"BUNDLE TITLE 2",
@@ -205,6 +208,7 @@ const ordDocument = `{
                "url":"/testing/relative"
             }
          ]
+		 {{ .additionalProperties }}
       }
    ],
    "products":[
@@ -230,6 +234,7 @@ const ordDocument = `{
                "With multiple values"
             ]
          }
+		 {{ .additionalProperties }}
       }
    ],
    "apiResources":[
@@ -372,6 +377,7 @@ const ordDocument = `{
          ],
          "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
          "version":"2.1.2"
+		 {{ .additionalProperties }}
       },
       {
          "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
@@ -497,6 +503,7 @@ const ordDocument = `{
             }
          ],
          "version":"1.1.0"
+		 {{ .additionalProperties }}
       },
       {
          "ordId":"ns:apiResource:API_ID{{ .randomSuffix }}:v3",
@@ -557,6 +564,7 @@ const ordDocument = `{
                ]
             }
          ]
+		 {{ .additionalProperties }}
       },
       {
          "ordId":"ns:apiResource:API_ID{{ .randomSuffix }}:v4",
@@ -617,6 +625,7 @@ const ordDocument = `{
                ]
             }
          ]
+		 {{ .additionalProperties }}
       }
    ],
    "eventResources":[
@@ -713,6 +722,7 @@ const ordDocument = `{
          ],
          "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
          "version":"2.1.2"
+		 {{ .additionalProperties }}
       },
       {
          "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
@@ -808,6 +818,7 @@ const ordDocument = `{
             }
          ],
          "version":"1.1.0"
+		 {{ .additionalProperties }}
       },
       {
          "ordId":"ns3:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
@@ -842,6 +853,7 @@ const ordDocument = `{
                ]
             }
          ]
+		 {{ .additionalProperties }}
       },
       {
          "ordId":"ns4:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
@@ -876,12 +888,14 @@ const ordDocument = `{
                ]
             }
          ]
+		 {{ .additionalProperties }}
       }
    ],
    "tombstones":[
       {
          "ordId":"ns:apiResource:API_ID2{{ .randomSuffix }}:v1",
          "removalDate":"2020-12-02T14:12:59Z"
+		 {{ .additionalProperties }}
       }
    ],
    "vendors":[
@@ -903,6 +917,8 @@ const ordDocument = `{
                "With multiple values"
             ]
          }
+		 {{ .additionalProperties }}
       }
    ]
+   {{ .additionalEntities }}
 }`

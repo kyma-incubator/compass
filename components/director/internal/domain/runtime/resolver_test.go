@@ -2,6 +2,7 @@ package runtime_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
@@ -39,8 +40,9 @@ import (
 )
 
 const (
-	RegionKey  = "region"
-	testRegion = "test-region"
+	RegionKey             = "region"
+	testRegion            = "test-region"
+	distinguishLabelValue = "distinguishLabelValue"
 )
 
 var contextParam = mock.MatchedBy(func(ctx context.Context) bool {
@@ -102,7 +104,12 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			Type: "test webhook",
 		}},
 	}
-	labels := map[string]interface{}{"xsappnameCMPClone": "clone"}
+	labels := map[string]interface{}{"xsappnameCMPClone": "clone", RegionKey: testRegion, rtmtest.TestDistinguishLabel: distinguishLabelValue}
+
+	subscriptionFilters := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(rtmtest.TestDistinguishLabel, fmt.Sprintf("\"%s\"", distinguishLabelValue)),
+		labelfilter.NewForKeyWithQuery(RegionKey, fmt.Sprintf("\"%s\"", testRegion)),
+	}
 
 	testCases := []struct {
 		Name             string
@@ -129,6 +136,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, testUUID).Return(modelRuntime, nil).Once()
+				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, labels).Return(nil).Once()
 				return svc
 			},
@@ -146,7 +154,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TenantFetcherFn: func() *automock.TenantFetcher {
 				return &automock.TenantFetcher{}
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrorsAndGetSelfRegDistinguishingLabelKey(labels),
 			Input:            gqlInput,
 			ExpectedRuntime:  gqlRuntime,
 			ExpectedErr:      nil,
@@ -162,6 +170,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, testUUID).Return(modelRuntime, nil).Once()
+				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, labels).Return(nil).Once()
 				return svc
 			},
@@ -181,7 +190,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				svc.On("FetchOnDemand", extSubaccountID, accountTenantID).Return(nil).Once()
 				return svc
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrorsAndGetSelfRegDistinguishingLabelKey(labels),
 			Input:            gqlInputWithSubaccountLabel,
 			ExpectedRuntime:  gqlRuntime,
 			ExpectedErr:      nil,
@@ -279,6 +288,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
+				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, labels).Return(testErr).Once()
 				return svc
 			},
@@ -310,6 +320,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("CreateWithMandatoryLabels", contextParam, selfRegModelInput, testUUID, labels).Return(testErr).Once()
+				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -341,6 +352,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, testUUID).Return(nil, testErr).Once()
 				svc.On("CreateWithMandatoryLabels", contextParam, selfRegModelInput, testUUID, labels).Return(nil).Once()
+				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -370,6 +382,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
+				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, labels).Return(nil).Once()
 				svc.On("Get", contextParam, testUUID).Return(nil, testErr).Once()
 				return svc
@@ -401,6 +414,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
+				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				svc.On("CreateWithMandatoryLabels", contextParam, selfRegModelInput, testUUID, labels).Return(nil).Once()
 				svc.On("Get", contextParam, testUUID).Return(nil, testErr).Once()
 				return svc
@@ -449,6 +463,64 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			Input:            gqlInput,
 			ExpectedRuntime:  nil,
 			ExpectedErr:      errors.New(rtmtest.SelfRegErrorMsg),
+		},
+		{
+			Name: "Returns error when listing provider runtimes by filters",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				return &persistenceautomock.PersistenceTx{}
+			},
+			TransactionerFn: txtest.TransactionerThatDoesARollback,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, testErr).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				conv.On("RegisterInputFromGraphQL", gqlInput).Return(modelInput, nil).Once()
+				return conv
+			},
+			UUIDSvcFn: func() *automock.UidService {
+				svc := &automock.UidService{}
+				svc.On("Generate").Return(testUUID).Once()
+				return svc
+			},
+			TenantFetcherFn: func() *automock.TenantFetcher {
+				return &automock.TenantFetcher{}
+			},
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanupFunc(labels),
+			Input:            gqlInput,
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
+		},
+		{
+			Name: "Returns error when there is already registered provider runtime with the same region and distinguish label",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				return &persistenceautomock.PersistenceTx{}
+			},
+			TransactionerFn: txtest.TransactionerThatDoesARollback,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(modelRuntime, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				conv.On("RegisterInputFromGraphQL", gqlInput).Return(modelInput, nil).Once()
+				return conv
+			},
+			UUIDSvcFn: func() *automock.UidService {
+				svc := &automock.UidService{}
+				svc.On("Generate").Return(testUUID).Once()
+				return svc
+			},
+			TenantFetcherFn: func() *automock.TenantFetcher {
+				return &automock.TenantFetcher{}
+			},
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanupFunc(labels),
+			Input:            gqlInput,
+			ExpectedRuntime:  nil,
+			ExpectedErr:      errors.New(fmt.Sprintf("cannot have more than one runtime with labels %q: %q and %q: %q", RegionKey, testRegion, rtmtest.TestDistinguishLabel, distinguishLabelValue)),
 		},
 	}
 

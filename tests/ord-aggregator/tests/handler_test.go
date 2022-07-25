@@ -36,60 +36,62 @@ const (
 	publicAPIsField       = "publicAPIs"
 	publicEventsField     = "publicEvents"
 
-	expectedSpecType                        = "openapi-v3"
-	expectedSpecFormat                      = "application/json"
-	expectedSystemInstanceName              = "test-app"
-	expectedSecondSystemInstanceName        = "second-test-app"
-	expectedThirdSystemInstanceName         = "third-test-app"
-	expectedFourthSystemInstanceName        = "fourth-test-app"
-	expectedFifthSystemInstanceName         = "fifth-test-app"
-	expectedSixthSystemInstanceName         = "sixth-test-app"
-	expectedSystemInstanceDescription       = "test-app1-description"
-	expectedSecondSystemInstanceDescription = "test-app2-description"
-	expectedThirdSystemInstanceDescription  = "test-app3-description"
-	expectedFourthSystemInstanceDescription = "test-app4-description"
-	expectedFifthSystemInstanceDescription  = "test-app5-description"
-	expectedSixthSystemInstanceDescription  = "test-app6-description"
-	expectedBundleTitle                     = "BUNDLE TITLE"
-	secondExpectedBundleTitle               = "BUNDLE TITLE 2"
-	expectedBundleDescription               = "lorem ipsum dolor nsq sme"
-	secondExpectedBundleDescription         = ""
-	firstBundleOrdIDRegex                   = "ns:consumptionBundle:BUNDLE_ID(.+):v1"
-	expectedPackageTitle                    = "PACKAGE 1 TITLE"
-	expectedPackageDescription              = "lorem ipsum dolor set"
-	firstProductTitle                       = "PRODUCT TITLE"
-	firstProductShortDescription            = "lorem ipsum"
-	secondProductTitle                      = "SAP Business Technology Platform"
-	secondProductShortDescription           = "Accelerate business outcomes with integration, data to value, and extensibility."
-	firstAPIExpectedTitle                   = "API TITLE"
-	firstAPIExpectedDescription             = "lorem ipsum dolor sit amet"
-	firstAPIExpectedNumberOfSpecs           = 3
-	secondAPIExpectedTitle                  = "API TITLE INTERNAL"
-	secondAPIExpectedDescription            = "Test description internal"
-	secondAPIExpectedNumberOfSpecs          = 2
-	thirdAPIExpectedTitle                   = "API TITLE PRIVATE"
-	thirdAPIExpectedDescription             = "Test description private"
-	thirdAPIExpectedNumberOfSpecs           = 2
-	firstEventTitle                         = "EVENT TITLE"
-	firstEventDescription                   = "lorem ipsum dolor sit amet"
-	secondEventTitle                        = "EVENT TITLE 2"
-	secondEventDescription                  = "lorem ipsum dolor sit amet"
-	thirdEventTitle                         = "EVENT TITLE INTERNAL"
-	thirdEventDescription                   = "Test description internal"
-	fourthEventTitle                        = "EVENT TITLE PRIVATE"
-	fourthEventDescription                  = "Test description private"
-	expectedTombstoneOrdIDRegex             = "ns:apiResource:API_ID2(.+):v1"
-	expectedVendorTitle                     = "SAP SE"
+	expectedSpecType                         = "openapi-v3"
+	expectedSpecFormat                       = "application/json"
+	expectedSystemInstanceName               = "test-app"
+	expectedSecondSystemInstanceName         = "second-test-app"
+	expectedThirdSystemInstanceName          = "third-test-app"
+	expectedFourthSystemInstanceName         = "fourth-test-app"
+	expectedFifthSystemInstanceName          = "fifth-test-app"
+	expectedSixthSystemInstanceName          = "sixth-test-app"
+	expectedSeventhSystemInstanceName        = "seventh-test-app"
+	expectedSystemInstanceDescription        = "test-app1-description"
+	expectedSecondSystemInstanceDescription  = "test-app2-description"
+	expectedThirdSystemInstanceDescription   = "test-app3-description"
+	expectedFourthSystemInstanceDescription  = "test-app4-description"
+	expectedFifthSystemInstanceDescription   = "test-app5-description"
+	expectedSixthSystemInstanceDescription   = "test-app6-description"
+	expectedSeventhSystemInstanceDescription = "test-app7-description"
+	expectedBundleTitle                      = "BUNDLE TITLE"
+	secondExpectedBundleTitle                = "BUNDLE TITLE 2"
+	expectedBundleDescription                = "lorem ipsum dolor nsq sme"
+	secondExpectedBundleDescription          = ""
+	firstBundleOrdIDRegex                    = "ns:consumptionBundle:BUNDLE_ID(.+):v1"
+	expectedPackageTitle                     = "PACKAGE 1 TITLE"
+	expectedPackageDescription               = "lorem ipsum dolor set"
+	firstProductTitle                        = "PRODUCT TITLE"
+	firstProductShortDescription             = "lorem ipsum"
+	secondProductTitle                       = "SAP Business Technology Platform"
+	secondProductShortDescription            = "Accelerate business outcomes with integration, data to value, and extensibility."
+	firstAPIExpectedTitle                    = "API TITLE"
+	firstAPIExpectedDescription              = "lorem ipsum dolor sit amet"
+	firstAPIExpectedNumberOfSpecs            = 3
+	secondAPIExpectedTitle                   = "API TITLE INTERNAL"
+	secondAPIExpectedDescription             = "Test description internal"
+	secondAPIExpectedNumberOfSpecs           = 2
+	thirdAPIExpectedTitle                    = "API TITLE PRIVATE"
+	thirdAPIExpectedDescription              = "Test description private"
+	thirdAPIExpectedNumberOfSpecs            = 2
+	firstEventTitle                          = "EVENT TITLE"
+	firstEventDescription                    = "lorem ipsum dolor sit amet"
+	secondEventTitle                         = "EVENT TITLE 2"
+	secondEventDescription                   = "lorem ipsum dolor sit amet"
+	thirdEventTitle                          = "EVENT TITLE INTERNAL"
+	thirdEventDescription                    = "Test description internal"
+	fourthEventTitle                         = "EVENT TITLE PRIVATE"
+	fourthEventDescription                   = "Test description private"
+	expectedTombstoneOrdIDRegex              = "ns:apiResource:API_ID2(.+):v1"
+	expectedVendorTitle                      = "SAP SE"
 
-	expectedNumberOfSystemInstances = 6
-	expectedNumberOfPackages        = 6
-	expectedNumberOfBundles         = 12
-	expectedNumberOfAPIs            = 18
-	expectedNumberOfEvents          = 24
-	expectedNumberOfTombstones      = 6
+	expectedNumberOfSystemInstances = 7
+	expectedNumberOfPackages        = 7
+	expectedNumberOfBundles         = 14
+	expectedNumberOfAPIs            = 21
+	expectedNumberOfEvents          = 28
+	expectedNumberOfTombstones      = 7
 
-	expectedNumberOfPublicAPIs   = 6
-	expectedNumberOfPublicEvents = 12
+	expectedNumberOfPublicAPIs   = 7
+	expectedNumberOfPublicEvents = 14
 
 	expectedNumberOfAPIsInFirstBundle    = 2
 	expectedNumberOfAPIsInSecondBundle   = 2
@@ -113,8 +115,8 @@ const (
 
 var (
 	// The expected number is increased with initial number of global vendors/products before test execution
-	expectedNumberOfProducts = 6
-	expectedNumberOfVendors  = 6
+	expectedNumberOfProducts = 7
+	expectedNumberOfVendors  = 7
 )
 
 func TestORDAggregator(t *testing.T) {
@@ -133,7 +135,7 @@ func TestORDAggregator(t *testing.T) {
 		AccessStrategy: "sap:cmp-mtls:v1",
 	}
 
-	var appInput, secondAppInput, thirdAppInput, fourthAppInput, fifthAppInput, sixthAppInput directorSchema.ApplicationRegisterInput
+	var appInput, secondAppInput, thirdAppInput, fourthAppInput, fifthAppInput, sixthAppInput, seventhAppInput directorSchema.ApplicationRegisterInput
 	t.Run("Verifying ORD Document to be valid", func(t *testing.T) {
 		// Unsecured config endpoint with full absolute URL in the webhook; unsecured document; doc baseURL from the webhook
 		appInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSystemInstanceName, expectedSystemInstanceDescription, testConfig.ExternalServicesMockAbsoluteURL, nil)
@@ -147,6 +149,8 @@ func TestORDAggregator(t *testing.T) {
 		fifthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedFifthSystemInstanceName, expectedFifthSystemInstanceDescription, testConfig.ExternalServicesMockBaseURL+"/cert", nil)
 		// Cert secured config endpoint with automatic .well-known/open-resource-discovery; cert secured document; doc baseURL from the webhook
 		sixthAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSixthSystemInstanceName, expectedSixthSystemInstanceDescription, testConfig.ExternalServicesMockOrdCertSecuredURL, accessStrategyConfigSecurity)
+		// Unsecured config endpoint with automatic .well-known/open-resource-discovery; unsecured document; doc baseURL from the webhook; with additional content
+		seventhAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSeventhSystemInstanceName, expectedSeventhSystemInstanceDescription, testConfig.ExternalServicesMockUnsecuredWithAdditionalContentURL, nil)
 
 		systemInstancesMap := make(map[string]string)
 		systemInstancesMap[expectedSystemInstanceName] = expectedSystemInstanceDescription
@@ -155,6 +159,7 @@ func TestORDAggregator(t *testing.T) {
 		systemInstancesMap[expectedFourthSystemInstanceName] = expectedFourthSystemInstanceDescription
 		systemInstancesMap[expectedFifthSystemInstanceName] = expectedFifthSystemInstanceDescription
 		systemInstancesMap[expectedSixthSystemInstanceName] = expectedSixthSystemInstanceDescription
+		systemInstancesMap[expectedSeventhSystemInstanceName] = expectedSeventhSystemInstanceDescription
 
 		apisMap := make(map[string]string)
 		apisMap[firstAPIExpectedTitle] = firstAPIExpectedDescription
@@ -299,6 +304,10 @@ func TestORDAggregator(t *testing.T) {
 
 		sixthApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, sixthAppInput)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &sixthApp)
+		require.NoError(t, err)
+
+		seventhApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, seventhAppInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &seventhApp)
 		require.NoError(t, err)
 
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
