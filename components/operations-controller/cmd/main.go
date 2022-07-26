@@ -18,10 +18,11 @@ package main
 
 import (
 	"context"
-	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
-	httpbroker "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 	"net/http"
 	"os"
+
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	httpbroker "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
