@@ -318,12 +318,15 @@ github.com/kyma-incubator/compass/components/connector v0.0.0-20220225101454-1e1
 github.com/kyma-incubator/compass/components/connector v0.0.0-20220225101454-1e11cf2f8a9b/go.mod h1:wGzvH5XWBA34gt7cb+UVrovLHsIqjNddzP+DkPBZ3u0=
 github.com/kyma-incubator/compass/components/director v0.0.0-20220721105008-1778a09af669 h1:plHDcG82tdBz8/1EaokarwnHdsWzuflLM589Pw9+J8o=
 github.com/kyma-incubator/compass/components/director v0.0.0-20220721105008-1778a09af669/go.mod h1:V4nDMsJUfGIEoYs/tYj64qfkbt0Z0wFTQ/LYIedal9o=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220726151311-01074d8ea325 h1:UBfss7+ohiI17Dm7YDlJusssitFR/LeWLP1joTdgCtc=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220726151311-01074d8ea325/go.mod h1:zrz0jznBKxiqBuiDD7qXnHoubLxzPjxceQPWc9seIIg=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20220225101454-1e11cf2f8a9b h1:4R8r0Us/Arb5LyJojWuLJFImHLolGNKSsJGubZqoapY=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20220225101454-1e11cf2f8a9b/go.mod h1:GW13QCwxZX0gyEBKypJ0OX1VRyOrKe1BFvL4q1RZODY=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20220225101454-1e11cf2f8a9b h1:oxx4DknU9x54foCUWRoFzaSK7Z1Xpj0eG6Fr1gPQkOI=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20220225101454-1e11cf2f8a9b/go.mod h1:rUousXLlfXjG4Sr9Z7T/4IYOdK5BZdFSWnVY4SaFn4U=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220225101454-1e11cf2f8a9b h1:m7KzD3lVjr5Tihn16y/KLupm4BmyfB8RU9JIRdnax8I=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220225101454-1e11cf2f8a9b/go.mod h1:ksyDeeLH7U6bfvwJ1IwEwBAQgRFBcOfKYcIyodnAsdU=
+github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220718091245-0570e3e974e0/go.mod h1:hKHV+cI/qMfVx2Neq1vCzAfxuCWtvog2r6dF5xWFpW4=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459-11b81bddcce9 h1:WftrXM5d9PtBBo4J+eyCnwNEoFi8KDtINUD7jSp0jCA=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459-11b81bddcce9/go.mod h1:M30JDO6D3wgLgJ6leIFawaH1tv8k0m+GuroKv+0o38Y=
 github.com/lib/pq v1.2.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
