@@ -27,6 +27,8 @@ type JobStatus struct {
 	State string `json:"state"`
 }
 
+var Subscriptions = make(map[string]string)
+
 // NewHandler returns new subscription handler responsible to subscribe and unsubscribe tenants
 func NewHandler(httpClient *http.Client, tenantConfig Config, providerConfig ProviderConfig, jobID string) *handler {
 	return &handler{
@@ -136,7 +138,11 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		return http.StatusInternalServerError, errors.Wrap(err, "while creating subscription request")
 	}
 
-	log.C(ctx).Infof("Creating/Removing subscription for consumer with tenant id: %s and subaccount id: %s", consumerTenantID, h.tenantConfig.TestConsumerSubaccountID)
+	if httpMethod == http.MethodPut {
+		log.C(ctx).Infof("Creating subscription for consumer with tenant id: %s and subaccount id: %s", consumerTenantID, h.tenantConfig.TestConsumerSubaccountID)
+	} else {
+		log.C(ctx).Infof("Removing subscription for consumer with tenant id: %s and subaccount id: %s", consumerTenantID, h.tenantConfig.TestConsumerSubaccountID)
+	}
 	resp, err := h.httpClient.Do(request)
 	if err != nil {
 		log.C(ctx).Errorf("while executing subscription request: %s", err.Error())
@@ -156,6 +162,11 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 	if resp.StatusCode != http.StatusOK {
 		log.C(ctx).Errorf("wrong status code while executing subscription request, got [%d], expected [%d]", resp.StatusCode, http.StatusOK)
 		return http.StatusInternalServerError, errors.New(fmt.Sprintf("wrong status code while executing subscription request, got [%d], expected [%d], reason: [%s]", resp.StatusCode, http.StatusOK, body))
+	}
+	if httpMethod == http.MethodPut {
+		Subscriptions[consumerTenantID] = providerSubaccID
+	} else if httpMethod == http.MethodDelete {
+		delete(Subscriptions, consumerTenantID)
 	}
 
 	return http.StatusOK, nil

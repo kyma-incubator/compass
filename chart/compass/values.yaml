@@ -153,7 +153,6 @@ global:
       version: "PR-2500"
   isLocalEnv: false
   isForTesting: false
-  enableInternalCommunicationPolicies: true
   oauth2:
     host: oauth2
   livenessProbe:
@@ -845,7 +844,7 @@ global:
       name: "compass-director-migrations"
       namespace: "compass-system"
       migrationsPath: "/compass-migrations"
-      isLocalEnv: true
+      storageClass: local-path
   http:
     client:
       skipSSLValidation: false
