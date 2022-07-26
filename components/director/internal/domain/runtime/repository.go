@@ -30,6 +30,7 @@ type EntityConverter interface {
 
 type pgRepository struct {
 	existQuerier       repo.ExistQuerier
+	ownerExistQuerier  repo.ExistQuerier
 	singleGetter       repo.SingleGetter
 	singleGetterGlobal repo.SingleGetterGlobal
 	deleter            repo.Deleter
@@ -46,6 +47,7 @@ type pgRepository struct {
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		existQuerier:       repo.NewExistQuerier(runtimeTable),
+		ownerExistQuerier:  repo.NewExistQuerierWithOwnerCheck(runtimeTable),
 		singleGetter:       repo.NewSingleGetter(runtimeTable, runtimeColumns),
 		singleGetterGlobal: repo.NewSingleGetterGlobal(resource.Runtime, runtimeTable, runtimeColumns),
 		deleter:            repo.NewDeleter(runtimeTable),
@@ -62,6 +64,31 @@ func NewRepository(conv EntityConverter) *pgRepository {
 // Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
 	return r.existQuerier.Exists(ctx, resource.Runtime, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+// OwnerExists checks if runtime with given id and tenant exists and has owner access
+func (r *pgRepository) OwnerExists(ctx context.Context, tenant, id string) (bool, error) {
+	return r.ownerExistQuerier.Exists(ctx, resource.Runtime, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+// OwnerExistsByFiltersAndID checks if runtime with given id and filters in given tenant exists and has owner access
+func (r *pgRepository) OwnerExistsByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (bool, error) {
+	tenantID, err := uuid.Parse(tenant)
+	if err != nil {
+		return false, errors.Wrap(err, "while parsing tenant as UUID")
+	}
+
+	additionalConditions := repo.Conditions{repo.NewEqualCondition("id", id)}
+
+	filterSubquery, args, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
+	if err != nil {
+		return false, errors.Wrap(err, "while building filter query")
+	}
+	if filterSubquery != "" {
+		additionalConditions = append(additionalConditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	return r.ownerExistQuerier.Exists(ctx, resource.Runtime, tenant, additionalConditions)
 }
 
 // Delete missing godoc
