@@ -657,25 +657,23 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 		kymaRuntime := registerKymaRuntime(t, ctx, subscriptionConsumerSubaccountID, kymaRtmInput)
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &kymaRuntime)
 
-		// Register kyma formation template
+		// Create kyma formation template
 		kymaFormationTmplName := "kyma-formation-template-name"
 		kymaFT := createFormationTemplate(t, ctx, "kyma", kymaFormationTmplName, conf.KymaRuntimeTypeLabelValue, graphql.ArtifactTypeEnvironmentInstance)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, kymaFT.ID)
 
-		// Register provider formation template
+		// Create provider formation template
 		providerFormationTmplName := "provider-formation-template-name"
 		providerFT := createFormationTemplate(t, ctx, "provider", providerFormationTmplName, conf.SubscriptionProviderAppNameValue, graphql.ArtifactTypeSubscription)
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, providerFT.ID)
 
-		// Register kyma formation
+		// Create kyma formation
 		kymaFormationName := "kyma-formation-name"
-		t.Logf("Creating formation with name: %q from template with name: %q", kymaFormationName, kymaFormationTmplName)
 		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, kymaFormationName, &kymaFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, kymaFormationName)
 
-		// Register provider formation
+		// Create provider formation
 		providerFormationName := "provider-formation-name"
-		t.Logf("Creating formation with name: %q from template with name: %q", providerFormationName, providerFormationTmplName)
 		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
 
