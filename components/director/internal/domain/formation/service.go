@@ -437,9 +437,6 @@ func (s *service) generateNotificationsForApplicationAssignment(ctx context.Cont
 		Application: application,
 		Labels:      applicationLabels,
 	}
-	if err != nil {
-		return nil, err
-	}
 
 	var appTemplateWithLabels *webhookdir.ApplicationTemplateWithLabels
 	if application.ApplicationTemplateID != nil {
