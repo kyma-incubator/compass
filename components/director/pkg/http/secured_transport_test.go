@@ -76,6 +76,7 @@ func TestSecuredTransport_RoundTripDoesNotSetAuthorizationWhenNoAuthorizationPro
 
 	securedTransport := httputil.NewSecuredTransport(transport, tokenAuthorizationProvider)
 	_, err = securedTransport.RoundTrip(request)
+	require.NoError(t, err)
 	require.Equal(t, request.URL, testURL)
 }
 
