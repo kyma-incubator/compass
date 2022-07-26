@@ -144,7 +144,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2479"
+      version: "PR-2503"
     console:
       dir:
       version: "PR-68"
@@ -153,7 +153,6 @@ global:
       version: "PR-2478"
   isLocalEnv: false
   isForTesting: false
-  enableInternalCommunicationPolicies: true
   oauth2:
     host: oauth2
   livenessProbe:
@@ -843,7 +842,7 @@ global:
       name: "compass-director-migrations"
       namespace: "compass-system"
       migrationsPath: "/compass-migrations"
-      isLocalEnv: true
+      storageClass: local-path
   http:
     client:
       skipSSLValidation: false

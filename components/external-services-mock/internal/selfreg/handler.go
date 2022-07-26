@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/subscription"
+
 	"github.com/pkg/errors"
 
 	"github.com/gorilla/mux"
@@ -34,6 +36,8 @@ func NewSelfRegisterHandler(c Config) *Handler {
 	return &Handler{c: c}
 }
 
+var SelfRegistrations = make(map[string]string, 0)
+
 func (h *Handler) HandleSelfRegPrep(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get(h.c.NameQueryParam)
 	if name == "" {
@@ -41,7 +45,8 @@ func (h *Handler) HandleSelfRegPrep(w http.ResponseWriter, r *http.Request) {
 		httphelpers.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
-	if tenant := r.URL.Query().Get(h.c.TenantQueryParam); tenant == "" {
+	tenant := r.URL.Query().Get(h.c.TenantQueryParam)
+	if tenant == "" {
 		err := errors.New(fmt.Sprintf("%s query param missing", h.c.TenantQueryParam))
 		httphelpers.WriteError(w, err, http.StatusBadRequest)
 		return
@@ -70,15 +75,36 @@ func (h *Handler) HandleSelfRegPrep(w http.ResponseWriter, r *http.Request) {
 		httphelpers.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
+
+	SelfRegistrations[name] = tenant
 }
 
 func (h *Handler) HandleSelfRegCleanup(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	if name, ok := params[NamePath]; !ok || name == "" {
+	name, ok := params[NamePath]
+	if !ok || name == "" {
 		err := errors.New(fmt.Sprintf("%s is missing from path", NamePath))
 		httphelpers.WriteError(w, err, http.StatusBadRequest)
 		return
 	}
+
+	providerSubaccount, cloningExists := SelfRegistrations[name]
+
+	subscriberExists := false
+	for _, provider := range subscription.Subscriptions {
+		if provider == providerSubaccount {
+			subscriberExists = true
+			break
+		}
+	}
+
+	if cloningExists && subscriberExists {
+		// We swallow their error msg and print only the status code
+		err := errors.New("")
+		httphelpers.WriteError(w, err, http.StatusConflict)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
