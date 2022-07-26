@@ -32,7 +32,7 @@ Install Compass locally or on a cluster. See the [installation document](https:/
 ### Dependencies
 
 Compass depends on [Kyma](https://github.com/kyma-project/kyma).
-For installation and CI integration jobs, a fixed Kyma version is used. To change the Kyma version, see the [`README.md`](./installation/resources/README.md) in the `installation/resources` directory.
+For installation and CI integration jobs, a fixed Kyma version is used which can be found in `./installation/resources/KYMA_VERSION`.
 
 ## Testing
 
