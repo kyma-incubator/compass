@@ -63,11 +63,10 @@ KYMA_COMPONENTS_MINIMAL="${ROOT_PATH}"/installation/resources/kyma/kyma-componen
 KYMA_OVERRIDES_MINIMAL="${ROOT_PATH}"/installation/resources/kyma/kyma-overrides-minimal.yaml
 
 MINIMAL_OVERRIDES_TEMP=overrides-minimal.yaml
-MINIMAL_OVERRIDES_CONTENT=$(sed -e "s~__CERT__~$CERT~" -e "s~__URL__~$JWKS_URL~" "${KYMA_OVERRIDES_MINIMAL}")
+cp ${KYMA_OVERRIDES_MINIMAL} ${MINIMAL_OVERRIDES_TEMP}
 
->"${MINIMAL_OVERRIDES_TEMP}" cat <<-EOF
-$MINIMAL_OVERRIDES_CONTENT
-EOF
+yq -i ".istio-configuration.helmValues.pilot.jwksResolverExtraRootCA = \"$CERT\"" "${MINIMAL_OVERRIDES_TEMP}"
+yq -i ".ory.oathkeeper.oathkeeper.config.authenticators.jwt.config.jwks_urls |= . + [\"$JWKS_URL\"]" "${MINIMAL_OVERRIDES_TEMP}"
 
 if [[ $(uname -m) == 'arm64' ]]; then
   yq -i ".istio-configuration.global.containerRegistry.path = \"europe-west1-docker.pkg.dev\"" "${MINIMAL_OVERRIDES_TEMP}"
@@ -80,11 +79,10 @@ KYMA_COMPONENTS_FULL="${ROOT_PATH}"/installation/resources/kyma/kyma-components-
 KYMA_OVERRIDES_FULL="${ROOT_PATH}"/installation/resources/kyma/kyma-overrides-full.yaml
 
 FULL_OVERRIDES_TEMP=overrides-full.yaml
-FULL_OVERRIDES_CONTENT=$(sed -e "s~__CERT__~$CERT~" -e "s~__URL__~$JWKS_URL~" "${KYMA_OVERRIDES_FULL}")
+cp ${KYMA_OVERRIDES_FULL} ${FULL_OVERRIDES_TEMP}
 
->"${FULL_OVERRIDES_TEMP}" cat <<-EOF
-$FULL_OVERRIDES_CONTENT
-EOF
+yq -i ".istio-configuration.helmValues.pilot.jwksResolverExtraRootCA = \"$CERT\"" "${FULL_OVERRIDES_TEMP}"
+yq -i ".ory.oathkeeper.oathkeeper.config.authenticators.jwt.config.jwks_urls |= . + [\"$JWKS_URL\"]" "${FULL_OVERRIDES_TEMP}"
 
 if [[ $(uname -m) == 'arm64' ]]; then
   yq -i ".istio-configuration.global.containerRegistry.path = \"europe-west1-docker.pkg.dev\"" "${FULL_OVERRIDES_TEMP}"

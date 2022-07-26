@@ -87,7 +87,7 @@ func main() {
 	certCache, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	exitOnError(err, "Failed to initialize certificate loader")
 
-	httpClient := httputildirector.PrepareHTTPClient(conf.ClientTimeout)
+	securedHTTPClient := httputildirector.PrepareHTTPClient(conf.ClientTimeout)
 	mtlsHTTPClient := httputildirector.PrepareMTLSClient(conf.ClientTimeout, certCache)
 
 	uidSvc := uid.NewService()
@@ -135,7 +135,7 @@ func main() {
 	assignmentConv := scenarioassignment.NewConverter()
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, conf.DefaultScenarioEnabled)
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider(certCache))
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, &http.Client{Timeout: conf.ClientTimeout}, accessstrategy.NewDefaultExecutorProvider(certCache))
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
@@ -144,7 +144,7 @@ func main() {
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-	webhookClient := webhookclient.NewClient(httpClient, mtlsHTTPClient)
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
 
 	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)

@@ -114,10 +114,11 @@ func main() {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize certificate loader"))
 	}
 
-	httpClient := pkgAuth.PrepareHTTPClient(cfg.ClientTimeout)
+	httpClient := &http.Client{Timeout: cfg.ClientTimeout}
+	securedHTTPClient := pkgAuth.PrepareHTTPClient(cfg.ClientTimeout)
 	mtlsClient := pkgAuth.PrepareMTLSClient(cfg.ClientTimeout, certCache)
 
-	sf, err := createSystemFetcher(cfg, cfgProvider, transact, httpClient, mtlsClient, certCache)
+	sf, err := createSystemFetcher(cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, certCache)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize System Fetcher"))
 	}
@@ -183,7 +184,7 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 	return nil
 }
 
-func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, mtlsClient *http.Client, certCache certloader.Cache) (*systemfetcher.SystemFetcher, error) {
+func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient *http.Client, certCache certloader.Cache) (*systemfetcher.SystemFetcher, error) {
 	uidSvc := uid.NewService()
 
 	tenantConv := tenant.NewConverter()
@@ -239,7 +240,7 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-	webhookClient := webhookclient.NewClient(httpClient, mtlsClient)
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient)
 	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
 	appTemplateRepo := apptemplate.NewRepository(appTemplateConv)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)

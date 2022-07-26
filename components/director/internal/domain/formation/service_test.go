@@ -1721,7 +1721,6 @@ func TestServiceAssignFormation(t *testing.T) {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
 				return repo
-
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     inputFormation,
@@ -1820,7 +1819,6 @@ func TestServiceAssignFormation(t *testing.T) {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
 				return repo
-
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     inputFormation,
@@ -1890,7 +1888,6 @@ func TestServiceAssignFormation(t *testing.T) {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
 				return repo
-
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     inputFormation,
@@ -1954,7 +1951,6 @@ func TestServiceAssignFormation(t *testing.T) {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
 				return repo
-
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     inputFormation,
@@ -2017,7 +2013,6 @@ func TestServiceAssignFormation(t *testing.T) {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{inputFormation.Name}, []string{RuntimeContextRuntimeID}).Return(nil, testErr)
 				return repo
-
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     inputFormation,
