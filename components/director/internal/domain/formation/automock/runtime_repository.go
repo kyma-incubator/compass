@@ -61,6 +61,29 @@ func (_m *RuntimeRepository) GetByID(ctx context.Context, tenant string, id stri
 	return r0, r1
 }
 
+// ListAll provides a mock function with given fields: ctx, tenant, filter
+func (_m *RuntimeRepository) ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
+	ret := _m.Called(ctx, tenant, filter)
+
+	var r0 []*model.Runtime
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) []*model.Runtime); ok {
+		r0 = rf(ctx, tenant, filter)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Runtime)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter) error); ok {
+		r1 = rf(ctx, tenant, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListByIDs provides a mock function with given fields: ctx, tenant, ids
 func (_m *RuntimeRepository) ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Runtime, error) {
 	ret := _m.Called(ctx, tenant, ids)
@@ -130,13 +153,34 @@ func (_m *RuntimeRepository) ListOwnedRuntimes(ctx context.Context, tenant strin
 	return r0, r1
 }
 
-type NewRuntimeRepositoryT interface {
+// OwnerExistsByFiltersAndID provides a mock function with given fields: ctx, tenant, id, filter
+func (_m *RuntimeRepository) OwnerExistsByFiltersAndID(ctx context.Context, tenant string, id string, filter []*labelfilter.LabelFilter) (bool, error) {
+	ret := _m.Called(ctx, tenant, id, filter)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []*labelfilter.LabelFilter) bool); ok {
+		r0 = rf(ctx, tenant, id, filter)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, []*labelfilter.LabelFilter) error); ok {
+		r1 = rf(ctx, tenant, id, filter)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+type mockConstructorTestingTNewRuntimeRepository interface {
 	mock.TestingT
 	Cleanup(func())
 }
 
 // NewRuntimeRepository creates a new instance of RuntimeRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewRuntimeRepository(t NewRuntimeRepositoryT) *RuntimeRepository {
+func NewRuntimeRepository(t mockConstructorTestingTNewRuntimeRepository) *RuntimeRepository {
 	mock := &RuntimeRepository{}
 	mock.Mock.Test(t)
 

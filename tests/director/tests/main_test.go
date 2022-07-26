@@ -36,11 +36,12 @@ type DirectorConfig struct {
 	CertLoaderConfig               certloader.Config
 	certprovider.ExternalCertProviderConfig
 	SubscriptionConfig                     subscription.Config
+	TestProviderAccountID                  string
 	TestProviderSubaccountID               string
-	TestProviderSubaccountIDRegion2        string
 	TestConsumerAccountID                  string
 	TestConsumerSubaccountID               string
 	TestConsumerTenantID                   string
+	TestProviderSubaccountIDRegion2        string
 	ExternalServicesMockBaseURL            string
 	ExternalServicesMockMtlsSecuredURL     string
 	TokenPath                              string

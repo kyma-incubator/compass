@@ -2,7 +2,7 @@ package model
 
 import "github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
-// DefaultTemplateName will be used as default formation templane name if no other options are provided
+// DefaultTemplateName will be used as default formation template name if no other options are provided
 const DefaultTemplateName = "Side-by-side extensibility with Kyma"
 
 // FormationOperation defines the kind of operation done on a given formation

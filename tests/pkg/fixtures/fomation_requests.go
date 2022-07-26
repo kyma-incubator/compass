@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
 )
@@ -39,10 +38,10 @@ func FixCreateFormationRequest(formationName string) *gcli.Request {
 func FixCreateFormationWithTemplateRequest(formationInput string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{
- 				  result: createFormation(formation: %s){
- 					%s
- 				  }
- 				}`, formationInput, testctx.Tc.GQLFieldsProvider.ForFormation()))
+				  result: createFormation(formation: %s){
+					%s
+				  }
+				}`, formationInput, testctx.Tc.GQLFieldsProvider.ForFormation()))
 }
 
 func FixDeleteFormationRequest(formationName string) *gcli.Request {

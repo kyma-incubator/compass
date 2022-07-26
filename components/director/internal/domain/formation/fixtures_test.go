@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"time"
 
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/google/uuid"
@@ -36,6 +38,12 @@ var (
 	defaultFormation = model.Formation{
 		Name: model.DefaultScenario,
 	}
+	formationTemplate = model.FormationTemplate{
+		ID:          FormationTemplateID,
+		Name:        "formation-template",
+		RuntimeType: runtimeType,
+	}
+	runtimeLblFilters = []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf("\"%s\"", runtimeType))}
 )
 
 const (
@@ -60,6 +68,7 @@ const (
 	ApplicationID              = "04f3568d-3e0c-4f6b-b646-e6979e9d060c"
 	Application2ID             = "6f5389cf-4f9e-46b3-9870-624d792d94ad"
 	ApplicationTemplateID      = "58963c6f-24f6-4128-a05c-51d5356e7e09"
+	runtimeType                = "runtimeType"
 )
 
 func unusedLabelService() *automock.LabelService {
@@ -130,6 +139,10 @@ func unusedFormationRepo() *automock.FormationRepository {
 	return &automock.FormationRepository{}
 }
 
+func unusedFormationTemplateRepo() *automock.FormationTemplateRepository {
+	return &automock.FormationTemplateRepository{}
+}
+
 func fixCtxWithTenant() context.Context {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tenantID.String(), externalTenantID.String())
@@ -137,8 +150,8 @@ func fixCtxWithTenant() context.Context {
 	return ctx
 }
 
-func fixModel() model.AutomaticScenarioAssignment {
-	return fixModelWithScenarioName(ScenarioName)
+func fixModel(scenarioName string) model.AutomaticScenarioAssignment {
+	return fixModelWithScenarioName(scenarioName)
 }
 
 func fixModelWithScenarioName(scenario string) model.AutomaticScenarioAssignment {

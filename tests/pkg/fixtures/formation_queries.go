@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"context"
+	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
@@ -30,7 +31,8 @@ func CreateFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Cl
 	return formation
 }
 
-func CreateFormationWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, formationName string, formationTemplateName *string) graphql.Formation {
+func CreateFormationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, formationName string, formationTemplateName *string) graphql.Formation {
+	t.Logf("Creating formation with name: %q from template with name: %q", formationName, *formationTemplateName)
 	formationInput := FixFormationInput(formationName, formationTemplateName)
 	formationInputGQL, err := testctx.Tc.Graphqlizer.FormationInputToGQL(formationInput)
 	require.NoError(t, err)
@@ -53,7 +55,8 @@ func DeleteFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Cl
 	return &deleteFormation
 }
 
-func DeleteFormationWithinTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, formationName string) *graphql.Formation {
+func DeleteFormationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, formationName string) *graphql.Formation {
+	t.Logf("Deleting formation with name: %q", formationName)
 	deleteRequest := FixDeleteFormationRequest(formationName)
 	var deleteFormation graphql.Formation
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, deleteRequest, &deleteFormation)

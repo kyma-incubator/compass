@@ -123,6 +123,8 @@ func TestPgRepository_Exists(t *testing.T) {
 		RepoConstructorFunc: tombstone.NewRepository,
 		TargetID:            tombstoneID,
 		TenantID:            tenantID,
+		MethodName:          "Exists",
+		MethodArgs:          []interface{}{tenantID, tombstoneID},
 	}
 
 	suite.Run(t)
