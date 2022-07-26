@@ -199,5 +199,6 @@ exec:
 # Sets locally built image for a given component in k3d cluster
 deploy-on-k3d: build-for-k3d
 	kubectl config use-context k3d-kyma
+	kubectl patch -n $(NAMESPACE) deployment/$(DEPLOYMENT_NAME) -p '{"spec":{"template":{"spec":{"containers":[{"name":"'$(COMPONENT_NAME)'","imagePullPolicy":"Always"}]}}}}'
 	kubectl set image -n $(NAMESPACE) deployment/$(DEPLOYMENT_NAME) $(COMPONENT_NAME)=k3d-kyma-registry:5001/$(DEPLOYMENT_NAME):$(TAG)
 	kubectl rollout restart -n $(NAMESPACE) deployment/$(DEPLOYMENT_NAME)
