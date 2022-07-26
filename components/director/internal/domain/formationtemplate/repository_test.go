@@ -119,8 +119,10 @@ func TestRepository_Exists(t *testing.T) {
 		ConverterMockProvider: func() testdb.Mock {
 			return &automock.EntityConverter{}
 		},
-		TargetID: testID,
-		IsGlobal: true,
+		TargetID:   testID,
+		IsGlobal:   true,
+		MethodName: "Exists",
+		MethodArgs: []interface{}{testID},
 	}
 
 	suite.Run(t)

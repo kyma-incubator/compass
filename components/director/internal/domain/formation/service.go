@@ -34,14 +34,18 @@ type labelRepository interface {
 
 //go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeRepository interface {
+	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	ListOwnedRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
+	OwnerExistsByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (bool, error)
 }
 
 //go:generate mockery --exported --name=runtimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeContextRepository interface {
+	GetByRuntimeID(ctx context.Context, tenant, runtimeID string) (*model.RuntimeContext, error)
 	ListAll(ctx context.Context, tenant string) ([]*model.RuntimeContext, error)
 	Exists(ctx context.Context, tenant, id string) (bool, error)
+	ExistsByRuntimeID(ctx context.Context, tenant, rtmID string) (bool, error)
 }
 
 // FormationRepository represents the Formations repository layer
@@ -57,6 +61,7 @@ type FormationRepository interface {
 // FormationTemplateRepository represents the FormationTemplate repository layer
 //go:generate mockery --name=FormationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationTemplateRepository interface {
+	Get(ctx context.Context, id string) (*model.FormationTemplate, error)
 	GetByName(ctx context.Context, templateName string) (*model.FormationTemplate, error)
 }
 
@@ -242,12 +247,12 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 
 		return s.getFormationByName(ctx, formation.Name, tnt)
 	case graphql.FormationObjectTypeTenant:
-		tenantID, err := s.tenantSvc.GetInternalTenant(ctx, objectID)
+		targetTenantID, err := s.tenantSvc.GetInternalTenant(ctx, objectID)
 		if err != nil {
 			return nil, err
 		}
 
-		if _, err = s.CreateAutomaticScenarioAssignment(ctx, newAutomaticScenarioAssignmentModel(formation.Name, tnt, tenantID)); err != nil {
+		if _, err = s.CreateAutomaticScenarioAssignment(ctx, newAutomaticScenarioAssignmentModel(formation.Name, tnt, targetTenantID)); err != nil {
 			return nil, err
 		}
 		return s.getFormationByName(ctx, formation.Name, tnt)
@@ -300,7 +305,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 }
 
 // CreateAutomaticScenarioAssignment creates a new AutomaticScenarioAssignment for a given ScenarioName, Tenant and TargetTenantID
-// It also ensures that all runtimes with given scenarios are assigned for the TargetTenantID
+// It also ensures that all runtimes(or/and runtime contexts) with given scenarios are assigned for the TargetTenantID
 func (s *service) CreateAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -357,25 +362,54 @@ func (s *service) RemoveAssignedScenario(ctx context.Context, in model.Automatic
 }
 
 func (s *service) processScenario(ctx context.Context, in model.AutomaticScenarioAssignment, processScenarioFunc processScenarioFunc, processingType string) error {
-	runtimes, err := s.runtimeRepo.ListOwnedRuntimes(ctx, in.TargetTenantID, nil)
+	runtimeType, err := s.getFormationTemplateRuntimeType(ctx, in.ScenarioName, in.Tenant)
+	if err != nil {
+		return err
+	}
+
+	lblFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf("\"%s\"", runtimeType))}
+
+	ownedRuntimes, err := s.runtimeRepo.ListOwnedRuntimes(ctx, in.TargetTenantID, lblFilters)
 	if err != nil {
 		return errors.Wrapf(err, "while fetching runtimes in target tenant: %s", in.TargetTenantID)
 	}
 
-	for _, r := range runtimes {
+	for _, r := range ownedRuntimes {
+		hasRuntimeContext, err := s.runtimeContextRepo.ExistsByRuntimeID(ctx, in.TargetTenantID, r.ID)
+		if err != nil {
+			return errors.Wrapf(err, "while getting runtime contexts for runtime with id %q", r.ID)
+		}
+
+		// If the runtime has runtime context that is so called "multi-tenant" runtime, and we should not assign the runtime to formation.
+		// In such cases only the runtime context should be assigned to formation. That happens with the "for" cycle below.
+		if hasRuntimeContext {
+			continue
+		}
+
+		// If the runtime has not runtime context, then it's a "single tenant" runtime, and we have to assign it to formation.
 		if _, err = processScenarioFunc(ctx, in.Tenant, r.ID, graphql.FormationObjectTypeRuntime, model.Formation{Name: in.ScenarioName}); err != nil {
 			return errors.Wrapf(err, "while %s runtime with id %s from formation %s coming from ASA", processingType, r.ID, in.ScenarioName)
 		}
 	}
 
-	runtimeContexts, err := s.runtimeContextRepo.ListAll(ctx, in.TargetTenantID)
+	// The part below covers the "multi-tenant" runtime case that we skipped above and
+	// gets all runtimes(with and without owner access) and assign every runtime context(if there is any) for each of the runtimes to formation.
+	runtimes, err := s.runtimeRepo.ListAll(ctx, in.TargetTenantID, lblFilters)
 	if err != nil {
-		return errors.Wrapf(err, "while fetching runtime contexts in target tenant: %s", in.TargetTenantID)
+		return errors.Wrapf(err, "while fetching runtimes in target tenant: %s", in.TargetTenantID)
 	}
 
-	for _, rc := range runtimeContexts {
-		if _, err = processScenarioFunc(ctx, in.Tenant, rc.ID, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: in.ScenarioName}); err != nil {
-			return errors.Wrapf(err, "while %s runtime context with id %s from formation %s coming from ASA", processingType, rc.ID, in.ScenarioName)
+	for _, r := range runtimes {
+		runtimeContext, err := s.runtimeContextRepo.GetByRuntimeID(ctx, in.TargetTenantID, r.ID)
+		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				continue
+			}
+			return errors.Wrapf(err, "while getting runtime context for runtime with ID: %q", r.ID)
+		}
+
+		if _, err = processScenarioFunc(ctx, in.Tenant, runtimeContext.ID, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: in.ScenarioName}); err != nil {
+			return errors.Wrapf(err, "while %s runtime context with id %s from formation %s coming from ASA", processingType, runtimeContext.ID, in.ScenarioName)
 		}
 	}
 
@@ -459,7 +493,7 @@ func (s *service) GetScenariosFromMatchingASAs(ctx context.Context, objectID str
 		return nil, err
 	}
 
-	match, err := s.getMatchingFuncByFormationObjectType(objType)
+	matchFunc, err := s.getMatchingFuncByFormationObjectType(objType)
 	if err != nil {
 		return nil, err
 	}
@@ -472,7 +506,7 @@ func (s *service) GetScenariosFromMatchingASAs(ctx context.Context, objectID str
 	matchingASAs := make([]*model.AutomaticScenarioAssignment, 0, len(scenarioAssignments))
 
 	for _, scenarioAssignment := range scenarioAssignments {
-		matches, err := match(ctx, scenarioAssignment, objectID)
+		matches, err := matchFunc(ctx, scenarioAssignment, objectID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while checkig if asa matches runtime with ID %s", objectID)
 		}
@@ -501,11 +535,55 @@ func (s *service) getMatchingFuncByFormationObjectType(objType graphql.Formation
 }
 
 func (s *service) isASAMatchingRuntime(ctx context.Context, asa *model.AutomaticScenarioAssignment, runtimeID string) (bool, error) {
-	return s.runtimeRepo.Exists(ctx, asa.TargetTenantID, runtimeID)
+	runtimeType, err := s.getFormationTemplateRuntimeType(ctx, asa.ScenarioName, asa.Tenant)
+	if err != nil {
+		return false, err
+	}
+
+	lblFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf("\"%s\"", runtimeType))}
+
+	runtimeExists, err := s.runtimeRepo.OwnerExistsByFiltersAndID(ctx, asa.TargetTenantID, runtimeID, lblFilters)
+	if err != nil {
+		return false, errors.Wrapf(err, "while checking if runtime with id %q have owner=true", runtimeID)
+	}
+
+	if !runtimeExists {
+		return false, nil
+	}
+
+	// If the runtime has runtime contexts then it's a "multi-tenant" runtime, and it should NOT be matched by the ASA and should NOT be added to formation.
+	hasRuntimeContext, err := s.runtimeContextRepo.ExistsByRuntimeID(ctx, asa.TargetTenantID, runtimeID)
+	if err != nil {
+		return false, errors.Wrapf(err, "while cheking runtime context existence for runtime with ID: %q", runtimeID)
+	}
+
+	return !hasRuntimeContext, nil
 }
 
 func (s *service) isASAMatchingRuntimeContext(ctx context.Context, asa *model.AutomaticScenarioAssignment, runtimeContextID string) (bool, error) {
-	return s.runtimeContextRepo.Exists(ctx, asa.TargetTenantID, runtimeContextID)
+	runtimeType, err := s.getFormationTemplateRuntimeType(ctx, asa.ScenarioName, asa.Tenant)
+	if err != nil {
+		return false, err
+	}
+
+	lblFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf("\"%s\"", runtimeType))}
+
+	runtimes, err := s.runtimeRepo.ListAll(ctx, asa.TargetTenantID, lblFilters)
+	if err != nil {
+		return false, errors.Wrapf(err, "while listing runtimes with runtime type %q", runtimeType)
+	}
+
+	for _, r := range runtimes {
+		hasRuntimeContext, err := s.runtimeContextRepo.Exists(ctx, asa.TargetTenantID, runtimeContextID)
+		if err != nil {
+			return false, errors.Wrapf(err, "while getting runtime contexts for runtime with id %q", r.ID)
+		}
+		if hasRuntimeContext {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func (s *service) isFormationComingFromASA(ctx context.Context, objectID, formation string, objectType graphql.FormationObjectType) (bool, error) {
@@ -718,4 +796,20 @@ func (s *service) getFormationByName(ctx context.Context, formationName, tnt str
 	}
 
 	return f, nil
+}
+
+func (s *service) getFormationTemplateRuntimeType(ctx context.Context, scenarioName, tenant string) (string, error) {
+	log.C(ctx).Debugf("Getting formation with name: %q in tenant: %q", scenarioName, tenant)
+	formation, err := s.formationRepository.GetByName(ctx, scenarioName, tenant)
+	if err != nil {
+		return "", errors.Wrapf(err, "while getting formation by name %q", scenarioName)
+	}
+
+	log.C(ctx).Debugf("Getting formation template with ID: %q", formation.FormationTemplateID)
+	formationTemplate, err := s.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
+	if err != nil {
+		return "", errors.Wrapf(err, "while getting formation template by id %q", formation.FormationTemplateID)
+	}
+
+	return formationTemplate.RuntimeType, nil
 }
