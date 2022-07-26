@@ -26,7 +26,7 @@ type JobStatus struct {
 	State string `json:"state"`
 }
 
-var Subscriptions = make(map[string]bool)
+var Subscriptions = make(map[string]string)
 
 // NewHandler returns new subscription handler responsible to subscribe and unsubscribe tenants
 func NewHandler(httpClient *http.Client, tenantConfig Config, providerConfig ProviderConfig, jobID string) *handler {
@@ -137,8 +137,6 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		return http.StatusInternalServerError, errors.Wrap(err, "while creating subscription request")
 	}
 
-	log.D().Infof("Changed\n")
-
 	if httpMethod == http.MethodPut {
 		log.C(ctx).Infof("Creating subscription for consumer with tenant id: %s and subaccount id: %s", consumerTenantID, h.tenantConfig.TestConsumerSubaccountID)
 	} else {
@@ -160,7 +158,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 		return http.StatusInternalServerError, errors.New(fmt.Sprintf("wrong status code while executing subscription request, got [%d], expected [%d]", resp.StatusCode, http.StatusOK))
 	}
 	if httpMethod == http.MethodPut {
-		Subscriptions[consumerTenantID] = true
+		Subscriptions[consumerTenantID] = providerSubaccID
 	} else if httpMethod == http.MethodDelete {
 		delete(Subscriptions, consumerTenantID)
 	}
