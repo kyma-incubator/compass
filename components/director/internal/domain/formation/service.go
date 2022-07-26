@@ -582,14 +582,11 @@ func (s *service) generateNotificationsForRuntimeAssignment(ctx context.Context,
 	}
 	runtimeLabels, err := s.getLabelsForObject(ctx, tenant, runtimeID, model.RuntimeLabelableObject)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while getting runtime labels for id %s", runtimeID)
 	}
 	runtimeWithLabels := &webhookdir.RuntimeWithLabels{
 		Runtime: runtime,
 		Labels:  runtimeLabels,
-	}
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting runtime labels for id %s", runtimeID)
 	}
 
 	webhook, err := s.webhookRepository.GetByIDAndWebhookType(ctx, tenant, runtimeID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged)

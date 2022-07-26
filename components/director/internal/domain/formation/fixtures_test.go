@@ -58,6 +58,7 @@ const (
 	testFormationName          = "test-formation"
 	secondTestFormationName    = "second-formation"
 	ApplicationID              = "04f3568d-3e0c-4f6b-b646-e6979e9d060c"
+	Application2ID             = "6f5389cf-4f9e-46b3-9870-624d792d94ad"
 	ApplicationTemplateID      = "58963c6f-24f6-4128-a05c-51d5356e7e09"
 )
 
@@ -195,7 +196,13 @@ func fixFormationTemplateModel() *model.FormationTemplate {
 	}
 }
 
-func fixApplicationModel() *model.Application {
+func fixApplicationModelWithoutTemplate(applicationID string) *model.Application {
+	appModel := fixApplicationModel(applicationID)
+	appModel.ApplicationTemplateID = nil
+	return appModel
+}
+
+func fixApplicationModel(applicationID string) *model.Application {
 	return &model.Application{
 		ProviderName:          str.Ptr("application-provider"),
 		ApplicationTemplateID: str.Ptr(ApplicationTemplateID),
@@ -212,7 +219,7 @@ func fixApplicationModel() *model.Application {
 		SystemStatus:        str.Ptr("reachable"),
 		DocumentationLabels: json.RawMessage("[]"),
 		BaseEntity: &model.BaseEntity{
-			ID:        ApplicationID,
+			ID:        applicationID,
 			Ready:     true,
 			Error:     nil,
 			CreatedAt: &time.Time{},

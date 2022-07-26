@@ -1629,7 +1629,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			AsaServiceFN:      unusedASAService,
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
@@ -1668,7 +1668,7 @@ func TestServiceAssignFormation(t *testing.T) {
 							Labels:              fixApplicationTemplateLabelsMap(),
 						},
 						Application: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(),
+							Application: fixApplicationModel(ApplicationID),
 							Labels:      fixApplicationLabelsMap(),
 						},
 						Runtime: &webhook.RuntimeWithLabels{
@@ -1689,7 +1689,7 @@ func TestServiceAssignFormation(t *testing.T) {
 							Labels:              fixApplicationTemplateLabelsMap(),
 						},
 						Application: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(),
+							Application: fixApplicationModel(ApplicationID),
 							Labels:      fixApplicationLabelsMap(),
 						},
 						Runtime: &webhook.RuntimeWithLabels{
@@ -1750,7 +1750,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			AsaServiceFN:      unusedASAService,
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
@@ -1787,7 +1787,7 @@ func TestServiceAssignFormation(t *testing.T) {
 							Labels:              fixApplicationTemplateLabelsMap(),
 						},
 						Application: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(),
+							Application: fixApplicationModel(ApplicationID),
 							Labels:      fixApplicationLabelsMap(),
 						},
 						Runtime: &webhook.RuntimeWithLabels{
@@ -1847,7 +1847,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			AsaServiceFN:      unusedASAService,
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
@@ -1916,7 +1916,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			AsaServiceFN:      unusedASAService,
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
@@ -1979,7 +1979,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			AsaServiceFN:      unusedASAService,
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
@@ -2041,7 +2041,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			AsaServiceFN:      unusedASAService,
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
@@ -2099,7 +2099,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			AsaServiceFN:      unusedASAService,
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
@@ -2154,7 +2154,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			AsaServiceFN:      unusedASAService,
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
@@ -2208,7 +2208,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			AsaServiceFN:      unusedASAService,
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
@@ -2258,7 +2258,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			AsaServiceFN:      unusedASAService,
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
@@ -2304,7 +2304,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			AsaServiceFN:      unusedASAService,
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
@@ -2349,7 +2349,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			AsaServiceFN:      unusedASAService,
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
@@ -2403,6 +2403,648 @@ func TestServiceAssignFormation(t *testing.T) {
 			ObjectType:                graphql.FormationObjectTypeApplication,
 			InputFormation:            inputFormation,
 			ExpectedErrMessage:        testErr.Error(),
+		},
+		{
+			Name: "success for runtime if label does not exist with notifications",
+			UIDServiceFn: func() *automock.UuidService {
+				uidService := &automock.UuidService{}
+				uidService.On("Generate").Return(fixUUID())
+				return uidService
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, Tnt, &runtimeLblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, Tnt, fixUUID(), &runtimeLblInput).Return(nil)
+				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedFormation, nil).Once()
+				return formationRepo
+			},
+			LabelDefServiceFn: unusedLabelDefServiceFn,
+			AsaRepoFn:         unusedASARepo,
+			AsaServiceFN:      unusedASAService,
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil)
+				return repo
+			},
+			WebhookConverterFN: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("ToGraphQL", fixWebhookModel(WebhookID, RuntimeID)).Return(fixWebhookGQLModel(WebhookID, RuntimeID), nil)
+				return conv
+			},
+			WebhookClientFN: func() *automock.WebhookClient {
+				client := &automock.WebhookClient{}
+				client.On("Do", ctx, &webhookclient.Request{
+					Webhook: *fixWebhookGQLModel(WebhookID, RuntimeID),
+					Object: &webhook.FormationConfigurationChangeInput{
+						Operation:   model.AssignFormation,
+						FormationID: expectedFormation.ID,
+						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+							ApplicationTemplate: fixApplicationTemplateModel(),
+							Labels:              fixApplicationTemplateLabelsMap(),
+						},
+						Application: &webhook.ApplicationWithLabels{
+							Application: fixApplicationModel(ApplicationID),
+							Labels:      fixApplicationLabelsMap(),
+						},
+						Runtime: &webhook.RuntimeWithLabels{
+							Runtime: fixRuntimeModel(RuntimeID),
+							Labels:  fixRuntimeLabelsMap(),
+						},
+						RuntimeContext: nil,
+					},
+					CorrelationID: "",
+				}).Return(nil, nil).Once()
+				client.On("Do", ctx, &webhookclient.Request{
+					Webhook: *fixWebhookGQLModel(WebhookID, RuntimeID),
+					Object: &webhook.FormationConfigurationChangeInput{
+						Operation:           model.AssignFormation,
+						FormationID:         expectedFormation.ID,
+						ApplicationTemplate: nil,
+						Application: &webhook.ApplicationWithLabels{
+							Application: fixApplicationModelWithoutTemplate(Application2ID),
+							Labels:      fixApplicationLabelsMap(),
+						},
+						Runtime: &webhook.RuntimeWithLabels{
+							Runtime: fixRuntimeModel(RuntimeID),
+							Labels:  fixRuntimeLabelsMap(),
+						},
+						RuntimeContext: nil,
+					},
+					CorrelationID: "",
+				}).Return(nil, nil).Once()
+				return client
+			},
+			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
+				repo := &automock.ApplicationTemplateRepository{}
+				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil)
+				return repo
+			},
+			RuntimeContextRepoFn: unusedRuntimeContextRepo,
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixRuntimeModel(RuntimeID), nil)
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, objectID).Return(fixRuntimeLabels(), nil)
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID, Application2ID}).Return(map[string]map[string]interface{}{
+					ApplicationID:  fixApplicationLabelsMap(),
+					Application2ID: fixApplicationLabelsMap(),
+				}, nil)
+				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
+				}, nil)
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, objectID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeID), nil)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     inputFormation,
+			ExpectedFormation:  expectedFormation,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "error for runtime if webhook client call fails",
+			UIDServiceFn: func() *automock.UuidService {
+				uidService := &automock.UuidService{}
+				uidService.On("Generate").Return(fixUUID())
+				return uidService
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, Tnt, &runtimeLblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, Tnt, fixUUID(), &runtimeLblInput).Return(nil)
+				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedFormation, nil).Once()
+				return formationRepo
+			},
+			LabelDefServiceFn: unusedLabelDefServiceFn,
+			AsaRepoFn:         unusedASARepo,
+			AsaServiceFN:      unusedASAService,
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID)}, nil)
+				return repo
+			},
+			WebhookConverterFN: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("ToGraphQL", fixWebhookModel(WebhookID, RuntimeID)).Return(fixWebhookGQLModel(WebhookID, RuntimeID), nil)
+				return conv
+			},
+			WebhookClientFN: func() *automock.WebhookClient {
+				client := &automock.WebhookClient{}
+				client.On("Do", ctx, &webhookclient.Request{
+					Webhook: *fixWebhookGQLModel(WebhookID, RuntimeID),
+					Object: &webhook.FormationConfigurationChangeInput{
+						Operation:   model.AssignFormation,
+						FormationID: FormationID,
+						ApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+							ApplicationTemplate: fixApplicationTemplateModel(),
+							Labels:              fixApplicationTemplateLabelsMap(),
+						},
+						Application: &webhook.ApplicationWithLabels{
+							Application: fixApplicationModel(ApplicationID),
+							Labels:      fixApplicationLabelsMap(),
+						},
+						Runtime: &webhook.RuntimeWithLabels{
+							Runtime: fixRuntimeModel(RuntimeID),
+							Labels:  fixRuntimeLabelsMap(),
+						},
+						RuntimeContext: nil,
+					},
+					CorrelationID: "",
+				}).Return(nil, testErr).Once()
+				return client
+			},
+			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
+				repo := &automock.ApplicationTemplateRepository{}
+				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil)
+				return repo
+			},
+			RuntimeContextRepoFn: unusedRuntimeContextRepo,
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixRuntimeModel(RuntimeID), nil)
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, objectID).Return(fixRuntimeLabels(), nil)
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID}).Return(map[string]map[string]interface{}{
+					ApplicationID: fixApplicationLabelsMap(),
+				}, nil)
+				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
+				}, nil)
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, objectID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeID), nil)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error for runtime if webhook conversion fails",
+			UIDServiceFn: func() *automock.UuidService {
+				uidService := &automock.UuidService{}
+				uidService.On("Generate").Return(fixUUID())
+				return uidService
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, Tnt, &runtimeLblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, Tnt, fixUUID(), &runtimeLblInput).Return(nil)
+				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedFormation, nil).Once()
+				return formationRepo
+			},
+			LabelDefServiceFn: unusedLabelDefServiceFn,
+			AsaRepoFn:         unusedASARepo,
+			AsaServiceFN:      unusedASAService,
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID)}, nil)
+				return repo
+			},
+			WebhookConverterFN: func() *automock.WebhookConverter {
+				conv := &automock.WebhookConverter{}
+				conv.On("ToGraphQL", fixWebhookModel(WebhookID, RuntimeID)).Return(nil, testErr)
+				return conv
+			},
+			WebhookClientFN: unusedWebhookClient,
+			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
+				repo := &automock.ApplicationTemplateRepository{}
+				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil)
+				return repo
+			},
+			RuntimeContextRepoFn: unusedRuntimeContextRepo,
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixRuntimeModel(RuntimeID), nil)
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, objectID).Return(fixRuntimeLabels(), nil)
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID}).Return(map[string]map[string]interface{}{
+					ApplicationID: fixApplicationLabelsMap(),
+				}, nil)
+				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(map[string]map[string]interface{}{
+					ApplicationTemplateID: fixApplicationTemplateLabelsMap(),
+				}, nil)
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, objectID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeID), nil)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error for runtime if fetching application template labels fails",
+			UIDServiceFn: func() *automock.UuidService {
+				uidService := &automock.UuidService{}
+				uidService.On("Generate").Return(fixUUID())
+				return uidService
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, Tnt, &runtimeLblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, Tnt, fixUUID(), &runtimeLblInput).Return(nil)
+				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedFormation, nil).Once()
+				return formationRepo
+			},
+			LabelDefServiceFn: unusedLabelDefServiceFn,
+			AsaRepoFn:         unusedASARepo,
+			AsaServiceFN:      unusedASAService,
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID)}, nil)
+				return repo
+			},
+			WebhookConverterFN: unusedWebhookConverter,
+			WebhookClientFN:    unusedWebhookClient,
+			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
+				repo := &automock.ApplicationTemplateRepository{}
+				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil)
+				return repo
+			},
+			RuntimeContextRepoFn: unusedRuntimeContextRepo,
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixRuntimeModel(RuntimeID), nil)
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, objectID).Return(fixRuntimeLabels(), nil)
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID}).Return(map[string]map[string]interface{}{
+					ApplicationID: fixApplicationLabelsMap(),
+				}, nil)
+				repo.On("ListForObjectIDs", ctx, Tnt, model.AppTemplateLabelableObject, []string{ApplicationTemplateID}).Return(nil, testErr)
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, objectID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeID), nil)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error for runtime if fetching application templates fails",
+			UIDServiceFn: func() *automock.UuidService {
+				uidService := &automock.UuidService{}
+				uidService.On("Generate").Return(fixUUID())
+				return uidService
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, Tnt, &runtimeLblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, Tnt, fixUUID(), &runtimeLblInput).Return(nil)
+				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedFormation, nil).Once()
+				return formationRepo
+			},
+			LabelDefServiceFn: unusedLabelDefServiceFn,
+			AsaRepoFn:         unusedASARepo,
+			AsaServiceFN:      unusedASAService,
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID)}, nil)
+				return repo
+			},
+			WebhookConverterFN: unusedWebhookConverter,
+			WebhookClientFN:    unusedWebhookClient,
+			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
+				repo := &automock.ApplicationTemplateRepository{}
+				repo.On("ListByIDs", ctx, []string{ApplicationTemplateID}).Return(nil, testErr)
+				return repo
+			},
+			RuntimeContextRepoFn: unusedRuntimeContextRepo,
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixRuntimeModel(RuntimeID), nil)
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, objectID).Return(fixRuntimeLabels(), nil)
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID}).Return(map[string]map[string]interface{}{
+					ApplicationID: fixApplicationLabelsMap(),
+				}, nil)
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, objectID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeID), nil)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error for runtime if fetching application labels fails",
+			UIDServiceFn: func() *automock.UuidService {
+				uidService := &automock.UuidService{}
+				uidService.On("Generate").Return(fixUUID())
+				return uidService
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, Tnt, &runtimeLblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, Tnt, fixUUID(), &runtimeLblInput).Return(nil)
+				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedFormation, nil).Once()
+				return formationRepo
+			},
+			LabelDefServiceFn: unusedLabelDefServiceFn,
+			AsaRepoFn:         unusedASARepo,
+			AsaServiceFN:      unusedASAService,
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{fixApplicationModel(ApplicationID)}, nil)
+				return repo
+			},
+			WebhookConverterFN:        unusedWebhookConverter,
+			WebhookClientFN:           unusedWebhookClient,
+			ApplicationTemplateRepoFN: unusedAppTemplateRepository,
+			RuntimeContextRepoFn:      unusedRuntimeContextRepo,
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixRuntimeModel(RuntimeID), nil)
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, objectID).Return(fixRuntimeLabels(), nil)
+				repo.On("ListForObjectIDs", ctx, Tnt, model.ApplicationLabelableObject, []string{ApplicationID}).Return(nil, testErr)
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, objectID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeID), nil)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "success for runtime if there are no applications to notify",
+			UIDServiceFn: func() *automock.UuidService {
+				uidService := &automock.UuidService{}
+				uidService.On("Generate").Return(fixUUID())
+				return uidService
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, Tnt, &runtimeLblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, Tnt, fixUUID(), &runtimeLblInput).Return(nil)
+				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedFormation, nil).Once()
+				return formationRepo
+			},
+			LabelDefServiceFn: unusedLabelDefServiceFn,
+			AsaRepoFn:         unusedASARepo,
+			AsaServiceFN:      unusedASAService,
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return([]*model.Application{}, nil)
+				return repo
+			},
+			WebhookConverterFN:        unusedWebhookConverter,
+			WebhookClientFN:           unusedWebhookClient,
+			ApplicationTemplateRepoFN: unusedAppTemplateRepository,
+			RuntimeContextRepoFn:      unusedRuntimeContextRepo,
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixRuntimeModel(RuntimeID), nil)
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, objectID).Return(fixRuntimeLabels(), nil)
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, objectID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeID), nil)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     inputFormation,
+			ExpectedFormation:  expectedFormation,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "error for runtime if fetching applications fails",
+			UIDServiceFn: func() *automock.UuidService {
+				uidService := &automock.UuidService{}
+				uidService.On("Generate").Return(fixUUID())
+				return uidService
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, Tnt, &runtimeLblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, Tnt, fixUUID(), &runtimeLblInput).Return(nil)
+				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedFormation, nil).Once()
+				return formationRepo
+			},
+			LabelDefServiceFn: unusedLabelDefServiceFn,
+			AsaRepoFn:         unusedASARepo,
+			AsaServiceFN:      unusedASAService,
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByScenariosNoPaging", ctx, Tnt, []string{expectedFormation.Name}).Return(nil, testErr)
+				return repo
+			},
+			WebhookConverterFN:        unusedWebhookConverter,
+			WebhookClientFN:           unusedWebhookClient,
+			ApplicationTemplateRepoFN: unusedAppTemplateRepository,
+			RuntimeContextRepoFn:      unusedRuntimeContextRepo,
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixRuntimeModel(RuntimeID), nil)
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, objectID).Return(fixRuntimeLabels(), nil)
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, objectID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(fixWebhookModel(WebhookID, RuntimeID), nil)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error for runtime if fetching webhooks fails",
+			UIDServiceFn: func() *automock.UuidService {
+				uidService := &automock.UuidService{}
+				uidService.On("Generate").Return(fixUUID())
+				return uidService
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, Tnt, &runtimeLblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, Tnt, fixUUID(), &runtimeLblInput).Return(nil)
+				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedFormation, nil).Once()
+				return formationRepo
+			},
+			LabelDefServiceFn:         unusedLabelDefServiceFn,
+			AsaRepoFn:                 unusedASARepo,
+			AsaServiceFN:              unusedASAService,
+			ApplicationRepoFN:         unusedApplicationRepo,
+			WebhookConverterFN:        unusedWebhookConverter,
+			WebhookClientFN:           unusedWebhookClient,
+			ApplicationTemplateRepoFN: unusedAppTemplateRepository,
+			RuntimeContextRepoFn:      unusedRuntimeContextRepo,
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixRuntimeModel(RuntimeID), nil)
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, objectID).Return(fixRuntimeLabels(), nil)
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, objectID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, testErr)
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error for runtime if fetching runtime labels fails",
+			UIDServiceFn: func() *automock.UuidService {
+				uidService := &automock.UuidService{}
+				uidService.On("Generate").Return(fixUUID())
+				return uidService
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, Tnt, &runtimeLblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, Tnt, fixUUID(), &runtimeLblInput).Return(nil)
+				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedFormation, nil).Once()
+				return formationRepo
+			},
+			LabelDefServiceFn:         unusedLabelDefServiceFn,
+			AsaRepoFn:                 unusedASARepo,
+			AsaServiceFN:              unusedASAService,
+			ApplicationRepoFN:         unusedApplicationRepo,
+			WebhookConverterFN:        unusedWebhookConverter,
+			WebhookClientFN:           unusedWebhookClient,
+			ApplicationTemplateRepoFN: unusedAppTemplateRepository,
+			RuntimeContextRepoFn:      unusedRuntimeContextRepo,
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixRuntimeModel(RuntimeID), nil)
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, objectID).Return(nil, testErr)
+				return repo
+			},
+			WebhookRepoFN:      unusedWebhookRepository,
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error for runtime if fetching runtime fails",
+			UIDServiceFn: func() *automock.UuidService {
+				uidService := &automock.UuidService{}
+				uidService.On("Generate").Return(fixUUID())
+				return uidService
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, Tnt, &runtimeLblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
+				labelService.On("CreateLabel", ctx, Tnt, fixUUID(), &runtimeLblInput).Return(nil)
+				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedFormation, nil).Once()
+				return formationRepo
+			},
+			LabelDefServiceFn:         unusedLabelDefServiceFn,
+			AsaRepoFn:                 unusedASARepo,
+			AsaServiceFN:              unusedASAService,
+			ApplicationRepoFN:         unusedApplicationRepo,
+			WebhookConverterFN:        unusedWebhookConverter,
+			WebhookClientFN:           unusedWebhookClient,
+			ApplicationTemplateRepoFN: unusedAppTemplateRepository,
+			RuntimeContextRepoFn:      unusedRuntimeContextRepo,
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, objectID).Return(nil, testErr)
+				return repo
+			},
+			LabelRepoFN:        unusedLabelRepo,
+			WebhookRepoFN:      unusedWebhookRepository,
+			ObjectType:         graphql.FormationObjectTypeRuntime,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: testErr.Error(),
 		},
 	}
 
@@ -3469,7 +4111,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -3515,7 +4157,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 							Labels:              fixApplicationTemplateLabelsMap(),
 						},
 						Application: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(),
+							Application: fixApplicationModel(ApplicationID),
 							Labels:      fixApplicationLabelsMap(),
 						},
 						Runtime: &webhook.RuntimeWithLabels{
@@ -3536,7 +4178,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 							Labels:              fixApplicationTemplateLabelsMap(),
 						},
 						Application: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(),
+							Application: fixApplicationModel(ApplicationID),
 							Labels:      fixApplicationLabelsMap(),
 						},
 						Runtime: &webhook.RuntimeWithLabels{
@@ -3592,7 +4234,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -3636,7 +4278,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 							Labels:              fixApplicationTemplateLabelsMap(),
 						},
 						Application: &webhook.ApplicationWithLabels{
-							Application: fixApplicationModel(),
+							Application: fixApplicationModel(ApplicationID),
 							Labels:      fixApplicationLabelsMap(),
 						},
 						Runtime: &webhook.RuntimeWithLabels{
@@ -3691,7 +4333,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -3762,7 +4404,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -3827,7 +4469,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -3891,7 +4533,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -3950,7 +4592,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -4006,7 +4648,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -4061,7 +4703,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -4112,7 +4754,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -4159,7 +4801,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
@@ -4205,7 +4847,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModel(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
