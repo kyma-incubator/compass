@@ -31,7 +31,7 @@ func PrepareMTLSClient(cfg *httpbroker.Config, cache CertificateCache) *http.Cli
 }
 
 // PrepareHttpClient creates a http client with given http config
-func PrepareHttpClient(cfg *httpbroker.Config) (*http.Client, error) {
+func PrepareHttpClient(cfg *httpbroker.Config) *http.Client {
 	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(httpbroker.NewHTTPTransport(cfg)))
 
 	unsecuredClient := &http.Client{
@@ -41,13 +41,12 @@ func PrepareHttpClient(cfg *httpbroker.Config) (*http.Client, error) {
 
 	basicProvider := auth.NewBasicAuthorizationProvider()
 	tokenProvider := auth.NewTokenAuthorizationProvider(unsecuredClient)
-	saTokenProvider := auth.NewServiceAccountTokenAuthorizationProvider()
 
-	securedTransport := httputil.NewSecuredTransport(httpTransport, basicProvider, tokenProvider, saTokenProvider)
+	securedTransport := httputil.NewSecuredTransport(httpTransport, basicProvider, tokenProvider)
 	securedClient := &http.Client{
 		Transport: securedTransport,
 		Timeout:   cfg.Timeout,
 	}
 
-	return securedClient, nil
+	return securedClient
 }

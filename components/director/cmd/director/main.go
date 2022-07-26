@@ -204,7 +204,15 @@ func main() {
 
 	startPairingAdaptersWatcher(ctx, k8sClient, pa, cfg.PairingAdapterCfg)
 
-	httpClient := authpkg.PrepareHTTPClientWithSSLValidation(cfg.ClientTimeout, cfg.SkipSSLValidation)
+	httpClient := &http.Client{
+		Timeout:   cfg.ClientTimeout,
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	securedHTTPClient := authpkg.PrepareHTTPClientWithSSLValidation(cfg.ClientTimeout, cfg.SkipSSLValidation)
 
 	cfg.SelfRegConfig.ClientTimeout = cfg.ClientTimeout
 
@@ -250,6 +258,7 @@ func main() {
 		httpClient,
 		internalFQDNHTTPClient,
 		internalGatewayHTTPClient,
+		securedHTTPClient,
 		mtlsHTTPClient,
 		cfg.SelfRegConfig,
 		cfg.OneTimeToken.Length,

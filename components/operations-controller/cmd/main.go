@@ -18,6 +18,9 @@ package main
 
 import (
 	"context"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	httpbroker "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
+	"net/http"
 	"os"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
@@ -110,8 +113,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	httpClient, err := utils.PrepareHttpClient(cfg.HttpClient)
-	fatalOnError(err)
+	securedHTTPClient := utils.PrepareHttpClient(cfg.HttpClient)
+
+	internalGatewayHTTPClient := &http.Client{
+		Timeout:   cfg.HttpClient.Timeout,
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(httputil.NewHTTPTransportWrapper(httpbroker.NewHTTPTransport(cfg.HttpClient)), "Authorization")),
+	}
 
 	certCache, err := certloader.StartCertLoader(ctx, certloader.Config{
 		ExternalClientCertSecret:  cfg.ExternalClient.CertSecret,
@@ -122,7 +129,7 @@ func main() {
 
 	httpMTLSClient := utils.PrepareMTLSClient(cfg.HttpClient, certCache)
 
-	directorClient, err := director.NewClient(cfg.Director.OperationEndpoint, cfg.GraphQLClient, httpClient)
+	directorClient, err := director.NewClient(cfg.Director.OperationEndpoint, cfg.GraphQLClient, internalGatewayHTTPClient)
 	fatalOnError(err)
 
 	collector := collector.NewCollector()
@@ -131,7 +138,7 @@ func main() {
 		status.NewManager(mgr.GetClient()),
 		k8s.NewClient(mgr.GetClient()),
 		directorClient,
-		webhookclient.NewClient(httpClient, httpMTLSClient),
+		webhookclient.NewClient(securedHTTPClient, httpMTLSClient),
 		collector)
 
 	if err = controller.SetupWithManager(mgr); err != nil {

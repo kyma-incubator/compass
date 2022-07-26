@@ -58,9 +58,8 @@ func PrepareHTTPClientWithSSLValidation(timeout time.Duration, skipSSLValidation
 
 	basicProvider := NewBasicAuthorizationProvider()
 	tokenProvider := NewTokenAuthorizationProvider(unsecuredClient)
-	saTokenProvider := NewServiceAccountTokenAuthorizationProvider()
 
-	securedTransport := httputil.NewSecuredTransport(httputil.NewCorrelationIDTransport(roundTripper), basicProvider, tokenProvider, saTokenProvider)
+	securedTransport := httputil.NewSecuredTransport(httputil.NewCorrelationIDTransport(roundTripper), basicProvider, tokenProvider)
 	securedClient := &http.Client{
 		Timeout:   timeout,
 		Transport: securedTransport,

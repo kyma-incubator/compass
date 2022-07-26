@@ -56,8 +56,10 @@ func (c *SecuredTransport) RoundTrip(request *http.Request) (*http.Response, err
 		return nil, err
 	}
 
-	logger.Debug("Successfully prepared authorization for request")
-	request.Header.Set("Authorization", authorization)
+	if authorization != "" {
+		logger.Debug("Successfully prepared authorization for request")
+		request.Header.Set("Authorization", authorization)
+	}
 
 	return c.roundTripper.RoundTrip(request)
 }
@@ -90,5 +92,6 @@ func (c *SecuredTransport) getAuthorizationFromProvider(ctx context.Context) (st
 		return authorization, nil
 	}
 
-	return "", errors.New("context did not match any authorization provider")
+	log.C(ctx).Info("Context did not match any authorization provider.")
+	return "", nil
 }
