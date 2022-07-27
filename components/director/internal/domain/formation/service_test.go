@@ -4341,7 +4341,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{in.Name}, []string{RuntimeID, RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
 				return repo
-
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     in,
@@ -4438,7 +4437,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{in.Name}, []string{RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
 				return repo
-
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     in,
@@ -4505,7 +4503,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{in.Name}, []string{RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
 				return repo
-
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     in,
@@ -4565,7 +4562,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{in.Name}, []string{RuntimeContextRuntimeID}).Return([]*model.RuntimeContext{fixRuntimeContextModel()}, nil)
 				return repo
-
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     in,
@@ -4625,7 +4621,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 				repo := &automock.RuntimeContextRepository{}
 				repo.On("ListByScenariosAndRuntimeIDs", ctx, Tnt, []string{in.Name}, []string{RuntimeContextRuntimeID}).Return(nil, testErr)
 				return repo
-
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     in,
