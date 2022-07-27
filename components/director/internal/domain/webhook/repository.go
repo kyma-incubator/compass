@@ -181,6 +181,20 @@ func (r *repository) ListByApplicationTemplateID(ctx context.Context, applicatio
 	return convertToWebhooks(entities, r)
 }
 
+func (r *repository) ListByApplicationTemplates(ctx context.Context) ([]*model.Webhook, error) {
+	var entities Collection
+
+	conditions := repo.Conditions{
+		repo.NewNotNullCondition("app_template_id"),
+	}
+
+	if err := r.listerGlobal.ListGlobal(ctx, &entities, conditions...); err != nil {
+		return nil, err
+	}
+
+	return convertToWebhooks(entities, r)
+}
+
 // Create missing godoc
 func (r *repository) Create(ctx context.Context, tenant string, item *model.Webhook) error {
 	if item == nil {

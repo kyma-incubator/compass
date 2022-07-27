@@ -1,6 +1,7 @@
 package accessstrategy
 
 import (
+	"context"
 	"crypto/tls"
 	"net/http"
 
@@ -16,19 +17,23 @@ type HTTPRoundTripper interface {
 	GetTransport() *http.Transport
 }
 
+const tenantHeader = "tenant"
+
 type cmpMTLSAccessStrategyExecutor struct {
-	certCache certloader.Cache
+	certCache          certloader.Cache
+	tenantProviderFunc func(ctx context.Context) (string, error)
 }
 
 // NewCMPmTLSAccessStrategyExecutor creates a new Executor for the CMP mTLS Access Strategy
-func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache) *cmpMTLSAccessStrategyExecutor {
+func NewCMPmTLSAccessStrategyExecutor(certCache certloader.Cache, tenantProviderFunc func(ctx context.Context) (string, error)) *cmpMTLSAccessStrategyExecutor {
 	return &cmpMTLSAccessStrategyExecutor{
-		certCache: certCache,
+		certCache:          certCache,
+		tenantProviderFunc: tenantProviderFunc,
 	}
 }
 
 // Execute performs the access strategy's specific execution logic
-func (as *cmpMTLSAccessStrategyExecutor) Execute(baseClient *http.Client, documentURL string) (*http.Response, error) {
+func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient *http.Client, documentURL, tnt string) (*http.Response, error) {
 	clientCert := as.certCache.Get()
 	if clientCert == nil {
 		return nil, errors.New("did not find client certificate in the cache")
@@ -53,5 +58,21 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(baseClient *http.Client, docume
 		Transport: tr,
 	}
 
-	return client.Get(documentURL)
+	req, err := http.NewRequest("GET", documentURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if as.tenantProviderFunc != nil {
+		tenant, err := as.tenantProviderFunc(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set(tenantHeader, tenant)
+	} else if len(tnt) > 0 {
+		req.Header.Set(tenantHeader, tnt)
+	}
+
+	return client.Do(req)
 }
