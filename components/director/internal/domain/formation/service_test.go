@@ -734,6 +734,17 @@ func TestServiceAssignFormation(t *testing.T) {
 	}
 
 	objectID := "123"
+
+	applicationLblNoFormations := &model.Label{
+		ID:         "123",
+		Tenant:     str.Ptr(Tnt),
+		Key:        model.ScenariosKey,
+		Value:      []interface{}{},
+		ObjectID:   objectID,
+		ObjectType: model.ApplicationLabelableObject,
+		Version:    0,
+	}
+
 	applicationLbl := &model.Label{
 		ID:         "123",
 		Tenant:     str.Ptr(Tnt),
@@ -756,6 +767,16 @@ func TestServiceAssignFormation(t *testing.T) {
 		Value:      []string{model.DefaultScenario},
 		ObjectID:   objectID,
 		ObjectType: model.ApplicationLabelableObject,
+		Version:    0,
+	}
+
+	runtimeLblNoFormations := &model.Label{
+		ID:         "123",
+		Tenant:     str.Ptr(Tnt),
+		Key:        model.ScenariosKey,
+		Value:      []interface{}{},
+		ObjectID:   objectID,
+		ObjectType: model.RuntimeLabelableObject,
 		Version:    0,
 	}
 
@@ -857,7 +878,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			UIDServiceFn: unusedUUIDService,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationLblInput).Return(applicationLbl, nil)
+				labelService.On("GetLabel", ctx, Tnt, &applicationLblInput).Return(applicationLblNoFormations, nil)
 				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &applicationLblInput).Return(nil)
 				return labelService
 			},
@@ -1045,7 +1066,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			UIDServiceFn: unusedUUIDService,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeLblInput).Return(runtimeLbl, nil)
+				labelService.On("GetLabel", ctx, Tnt, &runtimeLblInput).Return(runtimeLblNoFormations, nil)
 				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &runtimeLblInput).Return(nil)
 				return labelService
 			},
@@ -1322,7 +1343,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			UIDServiceFn: unusedUUIDService,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationLblInput).Return(applicationLbl, nil)
+				labelService.On("GetLabel", ctx, Tnt, &applicationLblInput).Return(applicationLblNoFormations, nil)
 				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &applicationLblInput).Return(testErr)
 				return labelService
 			},
@@ -1475,7 +1496,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			UIDServiceFn: unusedUUIDService,
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &runtimeLblInput).Return(runtimeLbl, nil)
+				labelService.On("GetLabel", ctx, Tnt, &runtimeLblInput).Return(runtimeLblNoFormations, nil)
 				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &runtimeLblInput).Return(testErr)
 				return labelService
 			},
@@ -2826,7 +2847,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			ID:         "1",
 			Tenant:     &tnt,
 			Key:        "scenarios",
-			Value:      []interface{}{testFormationName},
+			Value:      []interface{}{},
 			ObjectID:   rtmContexts[0].ID,
 			ObjectType: model.RuntimeContextLabelableObject,
 			Version:    0,
@@ -2835,7 +2856,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			ID:         "2",
 			Tenant:     &tnt,
 			Key:        "scenarios",
-			Value:      []interface{}{testFormationName},
+			Value:      []interface{}{},
 			ObjectID:   rtmContexts[1].ID,
 			ObjectType: model.RuntimeContextLabelableObject,
 			Version:    0,
@@ -2846,7 +2867,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 		ID:         "1",
 		Tenant:     &tnt,
 		Key:        "scenarios",
-		Value:      []interface{}{testFormationName},
+		Value:      []interface{}{},
 		ObjectID:   rtmIDs[0],
 		ObjectType: model.RuntimeLabelableObject,
 		Version:    0,
@@ -2860,6 +2881,8 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 		RuntimeContextRepoFn          func() *automock.RuntimeContextRepository
 		FormationRepositoryFn         func() *automock.FormationRepository
 		FormationTemplateRepositoryFn func() *automock.FormationTemplateRepository
+		WebhookRepoFN                 func() *automock.WebhookRepository
+		LabelRepoFN                   func() *automock.LabelRepository
 		LabelServiceFn                func() *automock.LabelService
 		InputASA                      model.AutomaticScenarioAssignment
 		ExpectedASA                   model.AutomaticScenarioAssignment
@@ -2879,6 +2902,8 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				runtimeRepo := &automock.RuntimeRepository{}
 				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, runtimeLblFilters).Return(ownedRuntimes, nil).Once()
 				runtimeRepo.On("ListAll", ctx, TargetTenantID, runtimeLblFilters).Return(runtimes, nil).Once()
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[0].ID).Return(nil, nil)
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[1].ID).Return(nil, nil)
 				return runtimeRepo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
@@ -2889,7 +2914,28 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[0], nil).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
+				runtimeContextRepo.On("GetByID", ctx, tenantID.String(), rtmContexts[0].ID).Return(&model.RuntimeContext{
+					RuntimeID: runtimes[0].ID,
+				}, nil)
+				runtimeContextRepo.On("GetByID", ctx, tenantID.String(), rtmContexts[1].ID).Return(&model.RuntimeContext{
+					RuntimeID: runtimes[1].ID,
+				}, nil)
+
 				return runtimeContextRepo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimes[0].ID).Return(nil, nil)
+				labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimes[1].ID).Return(nil, nil)
+				labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeContextLabelableObject, rtmContexts[0].ID).Return(nil, nil)
+				labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeContextLabelableObject, rtmContexts[1].ID).Return(nil, nil)
+				return labelRepo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), runtimes[0].ID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), runtimes[1].ID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[1].ID))
+				return webhookRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
@@ -2931,6 +2977,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				runtimeRepo := &automock.RuntimeRepository{}
 				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, runtimeLblFilters).Return(ownedRuntimes, nil).Once()
 				runtimeRepo.On("ListAll", ctx, TargetTenantID, runtimeLblFilters).Return(runtimes, nil).Once()
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[0].ID).Return(nil, nil)
 				return runtimeRepo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
@@ -2941,6 +2988,10 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[0], nil).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
+
+				runtimeContextRepo.On("GetByID", ctx, tenantID.String(), rtmContexts[0].ID).Return(&model.RuntimeContext{
+					RuntimeID: runtimes[0].ID,
+				}, nil)
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -2965,6 +3016,17 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				svc.On("UpdateLabel", ctx, tnt, expectedRtmCtxLabels[1].ID, runtimeCtxLblInputs[1]).Return(testErr)
 				return svc
 			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), runtimes[0].ID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+				return webhookRepo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimes[0].ID).Return(nil, nil)
+				labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeContextLabelableObject, rtmContexts[0].ID).Return(nil, nil)
+				return labelRepo
+			},
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage: testErr.Error(),
@@ -2983,6 +3045,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				runtimeRepo := &automock.RuntimeRepository{}
 				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, runtimeLblFilters).Return(ownedRuntimes, nil).Once()
 				runtimeRepo.On("ListAll", ctx, TargetTenantID, runtimeLblFilters).Return(runtimes, nil).Once()
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[0].ID).Return(nil, nil)
 				return runtimeRepo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
@@ -3009,6 +3072,16 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				svc.On("UpdateLabel", ctx, tnt, expectedRuntimeLabel.ID, runtimeLblInputs[0]).Return(nil)
 				return svc
 			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), runtimes[0].ID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+				return webhookRepo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimes[0].ID).Return(nil, nil)
+				return labelRepo
+			},
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage: testErr.Error(),
@@ -3027,6 +3100,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				runtimeRepo := &automock.RuntimeRepository{}
 				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, runtimeLblFilters).Return(ownedRuntimes, nil).Once()
 				runtimeRepo.On("ListAll", ctx, TargetTenantID, runtimeLblFilters).Return(nil, testErr).Once()
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[0].ID).Return(nil, nil)
 				return runtimeRepo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
@@ -3050,6 +3124,16 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				svc.On("GetLabel", ctx, tnt, runtimeLblInputs[0]).Return(expectedRuntimeLabel, nil)
 				svc.On("UpdateLabel", ctx, tnt, expectedRuntimeLabel.ID, runtimeLblInputs[0]).Return(nil)
 				return svc
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), runtimes[0].ID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+				return webhookRepo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimes[0].ID).Return(nil, nil)
+				return labelRepo
 			},
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        model.AutomaticScenarioAssignment{},
@@ -3090,6 +3174,8 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				svc.On("GetLabel", ctx, tnt, runtimeLblInputs[0]).Return(nil, testErr)
 				return svc
 			},
+			WebhookRepoFN:      unusedWebhookRepository,
+			LabelRepoFN:        unusedLabelRepo,
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage: testErr.Error(),
@@ -3124,6 +3210,8 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
+			WebhookRepoFN:      unusedWebhookRepository,
+			LabelRepoFN:        unusedLabelRepo,
 			LabelServiceFn:     unusedLabelService,
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        model.AutomaticScenarioAssignment{},
@@ -3155,6 +3243,8 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
+			WebhookRepoFN:      unusedWebhookRepository,
+			LabelRepoFN:        unusedLabelRepo,
 			LabelServiceFn:     unusedLabelService,
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        model.AutomaticScenarioAssignment{},
@@ -3182,6 +3272,8 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(nil, testErr).Once()
 				return repo
 			},
+			WebhookRepoFN:      unusedWebhookRepository,
+			LabelRepoFN:        unusedLabelRepo,
 			LabelServiceFn:     unusedLabelService,
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        model.AutomaticScenarioAssignment{},
@@ -3204,6 +3296,8 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				repo.On("GetByName", ctx, testFormationName, tnt).Return(nil, testErr).Times(1)
 				return repo
 			},
+			WebhookRepoFN:                 unusedWebhookRepository,
+			LabelRepoFN:                   unusedLabelRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
 			LabelServiceFn:                unusedLabelService,
 			InputASA:                      fixModel(testFormationName),
@@ -3225,6 +3319,8 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			LabelServiceFn:                unusedLabelService,
 			FormationRepositoryFn:         unusedFormationRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
+			LabelRepoFN:                   unusedLabelRepo,
 			InputASA:                      fixModel(ScenarioName),
 			ExpectedASA:                   model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage:            "a given scenario already has an assignment",
@@ -3240,6 +3336,8 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			LabelServiceFn:                unusedLabelService,
 			FormationRepositoryFn:         unusedFormationRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
+			LabelRepoFN:                   unusedLabelRepo,
 			InputASA:                      fixModel(ScenarioName),
 			ExpectedASA:                   model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage:            apperrors.NewNotFoundError(resource.AutomaticScenarioAssigment, fixModel(ScenarioName).ScenarioName).Error(),
@@ -3259,6 +3357,8 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			LabelServiceFn:                unusedLabelService,
 			FormationRepositoryFn:         unusedFormationRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
+			LabelRepoFN:                   unusedLabelRepo,
 			InputASA:                      fixModel(ScenarioName),
 			ExpectedASA:                   model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage:            "while persisting Assignment: some error",
@@ -3276,6 +3376,8 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			LabelServiceFn:                unusedLabelService,
 			FormationRepositoryFn:         unusedFormationRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
+			LabelRepoFN:                   unusedLabelRepo,
 			InputASA:                      fixModel(ScenarioName),
 			ExpectedASA:                   model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage:            "while ensuring that `scenarios` label definition exist: some error",
@@ -3294,6 +3396,8 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			LabelServiceFn:                unusedLabelService,
 			FormationRepositoryFn:         unusedFormationRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
+			LabelRepoFN:                   unusedLabelRepo,
 			InputASA:                      fixModel(ScenarioName),
 			ExpectedASA:                   model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage:            "while getting available scenarios: some error",
@@ -3310,8 +3414,10 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			formationRepo := testCase.FormationRepositoryFn()
 			formationTemplateRepo := testCase.FormationTemplateRepositoryFn()
 			lblService := testCase.LabelServiceFn()
+			webhookRepo := testCase.WebhookRepoFN()
+			labelRepo := testCase.LabelRepoFN()
 
-			svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, lblService, nil, labelDefService, asaRepo, nil, tenantSvc, runtimeRepo, runtimeContextRepo, nil, nil, nil, nil, nil)
+			svc := formation.NewService(nil, labelRepo, formationRepo, formationTemplateRepo, lblService, nil, labelDefService, asaRepo, nil, tenantSvc, runtimeRepo, runtimeContextRepo, webhookRepo, nil, nil, nil, nil)
 
 			// WHEN
 			actual, err := svc.CreateAutomaticScenarioAssignment(ctx, testCase.InputASA)
@@ -3326,7 +3432,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 				require.Equal(t, testCase.ExpectedASA, actual)
 			}
 
-			mock.AssertExpectationsForObjects(t, tenantSvc, asaRepo, labelDefService, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService)
+			mock.AssertExpectationsForObjects(t, tenantSvc, asaRepo, labelDefService, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService, webhookRepo, labelRepo)
 		})
 	}
 
@@ -3601,6 +3707,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 		FormationTemplateRepositoryFn func() *automock.FormationTemplateRepository
 		LabelServiceFn                func() *automock.LabelService
 		LabelRepositoryFn             func() *automock.LabelRepository
+		WebhookRepoFN                 func() *automock.WebhookRepository
 		InputASA                      model.AutomaticScenarioAssignment
 		ExpectedASA                   model.AutomaticScenarioAssignment
 		ExpectedErrMessage            string
@@ -3618,6 +3725,9 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				runtimeRepo := &automock.RuntimeRepository{}
 				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, runtimeLblFilters).Return(ownedRuntimes, nil).Once()
 				runtimeRepo.On("ListAll", ctx, TargetTenantID, runtimeLblFilters).Return(runtimes, nil).Once()
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[0].ID).Return(nil, nil)
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[1].ID).Return(nil, nil)
+
 				return runtimeRepo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
@@ -3628,6 +3738,13 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[0], nil).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
+
+				runtimeContextRepo.On("GetByID", ctx, tenantID.String(), rtmContexts[0].ID).Return(&model.RuntimeContext{
+					RuntimeID: runtimes[0].ID,
+				}, nil)
+				runtimeContextRepo.On("GetByID", ctx, tenantID.String(), rtmContexts[1].ID).Return(&model.RuntimeContext{
+					RuntimeID: runtimes[1].ID,
+				}, nil)
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -3654,7 +3771,18 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimes[0].ID, model.ScenariosKey).Return(nil).Once()
 				repo.On("Delete", ctx, tnt, model.RuntimeContextLabelableObject, rtmContexts[0].ID, model.ScenariosKey).Return(nil).Once()
 				repo.On("Delete", ctx, tnt, model.RuntimeContextLabelableObject, rtmContexts[1].ID, model.ScenariosKey).Return(nil).Once()
+
+				repo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimes[0].ID).Return(nil, nil)
+				repo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimes[1].ID).Return(nil, nil)
+				repo.On("ListForObject", ctx, tenantID.String(), model.RuntimeContextLabelableObject, rtmContexts[0].ID).Return(nil, nil)
+				repo.On("ListForObject", ctx, tenantID.String(), model.RuntimeContextLabelableObject, rtmContexts[1].ID).Return(nil, nil)
 				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), runtimes[0].ID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), runtimes[1].ID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+				return webhookRepo
 			},
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        fixModel(testFormationName),
@@ -3673,6 +3801,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				runtimeRepo := &automock.RuntimeRepository{}
 				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, runtimeLblFilters).Return(ownedRuntimes, nil).Once()
 				runtimeRepo.On("ListAll", ctx, TargetTenantID, runtimeLblFilters).Return(runtimes, nil).Once()
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[0].ID).Return(nil, nil)
 				return runtimeRepo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
@@ -3683,6 +3812,10 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[0], nil).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
+
+				runtimeContextRepo.On("GetByID", ctx, tenantID.String(), rtmContexts[0].ID).Return(&model.RuntimeContext{
+					RuntimeID: runtimes[0].ID,
+				}, nil)
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -3709,7 +3842,15 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimes[0].ID, model.ScenariosKey).Return(nil).Once()
 				repo.On("Delete", ctx, tnt, model.RuntimeContextLabelableObject, rtmContexts[0].ID, model.ScenariosKey).Return(nil).Once()
 				repo.On("Delete", ctx, tnt, model.RuntimeContextLabelableObject, rtmContexts[1].ID, model.ScenariosKey).Return(testErr).Once()
+
+				repo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimes[0].ID).Return(nil, nil)
+				repo.On("ListForObject", ctx, tenantID.String(), model.RuntimeContextLabelableObject, rtmContexts[0].ID).Return(nil, nil)
 				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), runtimes[0].ID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+				return webhookRepo
 			},
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        model.AutomaticScenarioAssignment{},
@@ -3728,6 +3869,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				runtimeRepo := &automock.RuntimeRepository{}
 				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, runtimeLblFilters).Return(ownedRuntimes, nil).Once()
 				runtimeRepo.On("ListAll", ctx, TargetTenantID, runtimeLblFilters).Return(runtimes, nil).Once()
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[0].ID).Return(nil, nil)
 				return runtimeRepo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
@@ -3756,7 +3898,13 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimes[0].ID, model.ScenariosKey).Return(nil).Once()
+				repo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimes[0].ID).Return(nil, nil)
 				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), runtimes[0].ID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+				return webhookRepo
 			},
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        model.AutomaticScenarioAssignment{},
@@ -3775,6 +3923,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				runtimeRepo := &automock.RuntimeRepository{}
 				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, runtimeLblFilters).Return(ownedRuntimes, nil).Once()
 				runtimeRepo.On("ListAll", ctx, TargetTenantID, runtimeLblFilters).Return(nil, testErr).Once()
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[0].ID).Return(nil, nil)
 				return runtimeRepo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
@@ -3801,7 +3950,13 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimes[0].ID, model.ScenariosKey).Return(nil).Once()
+				repo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimes[0].ID).Return(nil, nil)
 				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), runtimes[0].ID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+				return webhookRepo
 			},
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        model.AutomaticScenarioAssignment{},
@@ -3846,6 +4001,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimes[0].ID, model.ScenariosKey).Return(testErr).Once()
 				return repo
 			},
+			WebhookRepoFN:      unusedWebhookRepository,
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage: testErr.Error(),
@@ -3880,6 +4036,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			},
 			LabelServiceFn:     unusedLabelService,
 			LabelRepositoryFn:  unusedLabelRepo,
+			WebhookRepoFN:      unusedWebhookRepository,
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage: testErr.Error(),
@@ -3910,6 +4067,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			},
 			LabelServiceFn:     unusedLabelService,
 			LabelRepositoryFn:  unusedLabelRepo,
+			WebhookRepoFN:      unusedWebhookRepository,
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage: testErr.Error(),
@@ -3936,6 +4094,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			},
 			LabelServiceFn:     unusedLabelService,
 			LabelRepositoryFn:  unusedLabelRepo,
+			WebhookRepoFN:      unusedWebhookRepository,
 			InputASA:           fixModel(testFormationName),
 			ExpectedASA:        model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage: testErr.Error(),
@@ -3958,6 +4117,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
 			LabelServiceFn:                unusedLabelService,
 			LabelRepositoryFn:             unusedLabelRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
 			InputASA:                      fixModel(testFormationName),
 			ExpectedASA:                   model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage:            testErr.Error(),
@@ -3976,6 +4136,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
 			LabelServiceFn:                unusedLabelService,
 			LabelRepositoryFn:             unusedLabelRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
 			InputASA:                      fixModel(testFormationName),
 			ExpectedASA:                   model.AutomaticScenarioAssignment{},
 			ExpectedErrMessage:            testErr.Error(),
@@ -3993,8 +4154,9 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			formationTemplateRepo := testCase.FormationTemplateRepositoryFn()
 			lblService := testCase.LabelServiceFn()
 			lblRepo := testCase.LabelRepositoryFn()
+			webhookRepo := testCase.WebhookRepoFN()
 
-			svc := formation.NewService(nil, lblRepo, formationRepo, formationTemplateRepo, lblService, nil, labelDefService, asaRepo, nil, tenantSvc, runtimeRepo, runtimeContextRepo, nil, nil, nil, nil, nil)
+			svc := formation.NewService(nil, lblRepo, formationRepo, formationTemplateRepo, lblService, nil, labelDefService, asaRepo, nil, tenantSvc, runtimeRepo, runtimeContextRepo, webhookRepo, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.DeleteAutomaticScenarioAssignment(ctx, testCase.InputASA)
@@ -4007,7 +4169,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			mock.AssertExpectationsForObjects(t, tenantSvc, asaRepo, labelDefService, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService, lblRepo)
+			mock.AssertExpectationsForObjects(t, tenantSvc, asaRepo, labelDefService, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService, lblRepo, webhookRepo)
 		})
 	}
 
@@ -4102,7 +4264,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 			ID:         "1",
 			Tenant:     &tnt,
 			Key:        "scenarios",
-			Value:      []interface{}{testFormationName},
+			Value:      []interface{}{},
 			ObjectID:   rtmContexts[0].ID,
 			ObjectType: model.RuntimeContextLabelableObject,
 			Version:    0,
@@ -4111,7 +4273,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 			ID:         "2",
 			Tenant:     &tnt,
 			Key:        "scenarios",
-			Value:      []interface{}{testFormationName},
+			Value:      []interface{}{},
 			ObjectID:   rtmContexts[1].ID,
 			ObjectType: model.RuntimeContextLabelableObject,
 			Version:    0,
@@ -4122,7 +4284,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 		ID:         "1",
 		Tenant:     &tnt,
 		Key:        "scenarios",
-		Value:      []interface{}{testFormationName},
+		Value:      []interface{}{},
 		ObjectID:   rtmIDs[0],
 		ObjectType: model.RuntimeLabelableObject,
 		Version:    0,
@@ -4135,6 +4297,8 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 		FormationRepositoryFn         func() *automock.FormationRepository
 		FormationTemplateRepositoryFn func() *automock.FormationTemplateRepository
 		LabelServiceFn                func() *automock.LabelService
+		LabelRepositoryFn             func() *automock.LabelRepository
+		WebhookRepositoryFn           func() *automock.WebhookRepository
 		InputASA                      model.AutomaticScenarioAssignment
 		ExpectedErrMessage            string
 	}{
@@ -4144,6 +4308,8 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				runtimeRepo := &automock.RuntimeRepository{}
 				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, runtimeLblFilters).Return(ownedRuntimes, nil).Once()
 				runtimeRepo.On("ListAll", ctx, TargetTenantID, runtimeLblFilters).Return(runtimes, nil).Once()
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[0].ID).Return(nil, nil)
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[1].ID).Return(nil, nil)
 				return runtimeRepo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
@@ -4154,6 +4320,13 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[0], nil).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
+
+				runtimeContextRepo.On("GetByID", ctx, tenantID.String(), rtmContexts[0].ID).Return(&model.RuntimeContext{
+					RuntimeID: runtimes[0].ID,
+				}, nil)
+				runtimeContextRepo.On("GetByID", ctx, tenantID.String(), rtmContexts[1].ID).Return(&model.RuntimeContext{
+					RuntimeID: runtimes[1].ID,
+				}, nil)
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -4178,6 +4351,20 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				svc.On("UpdateLabel", ctx, tnt, expectedRtmCtxLabels[1].ID, runtimeCtxLblInputs[1]).Return(nil)
 				return svc
 			},
+			WebhookRepositoryFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), rtmIDs[0], model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), rtmIDs[1], model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+				return webhookRepo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, rtmIDs[0]).Return(nil, nil)
+				labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, rtmIDs[1]).Return(nil, nil)
+				labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeContextLabelableObject, rtmContexts[0].ID).Return(nil, nil)
+				labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeContextLabelableObject, rtmContexts[1].ID).Return(nil, nil)
+				return labelRepo
+			},
 			InputASA:           fixModel(testFormationName),
 			ExpectedErrMessage: "",
 		},
@@ -4187,6 +4374,8 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				runtimeRepo := &automock.RuntimeRepository{}
 				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, runtimeLblFilters).Return(ownedRuntimes, nil).Once()
 				runtimeRepo.On("ListAll", ctx, TargetTenantID, runtimeLblFilters).Return(runtimes, nil).Once()
+
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[0].ID).Return(nil, nil)
 				return runtimeRepo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
@@ -4197,6 +4386,10 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[0], nil).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
+
+				runtimeContextRepo.On("GetByID", ctx, tenantID.String(), rtmContexts[0].ID).Return(&model.RuntimeContext{
+					RuntimeID: runtimes[0].ID,
+				}, nil)
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -4221,6 +4414,17 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				svc.On("UpdateLabel", ctx, tnt, expectedRtmCtxLabels[1].ID, runtimeCtxLblInputs[1]).Return(testErr)
 				return svc
 			},
+			WebhookRepositoryFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), rtmIDs[0], model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+				return webhookRepo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, rtmIDs[0]).Return(nil, nil)
+				labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeContextLabelableObject, rtmContexts[0].ID).Return(nil, nil)
+				return labelRepo
+			},
 			InputASA:           fixModel(testFormationName),
 			ExpectedErrMessage: testErr.Error(),
 		},
@@ -4230,6 +4434,8 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				runtimeRepo := &automock.RuntimeRepository{}
 				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, runtimeLblFilters).Return(ownedRuntimes, nil).Once()
 				runtimeRepo.On("ListAll", ctx, TargetTenantID, runtimeLblFilters).Return(runtimes, nil).Once()
+
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[0].ID).Return(nil, nil)
 				return runtimeRepo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
@@ -4256,6 +4462,16 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				svc.On("UpdateLabel", ctx, tnt, expectedRuntimeLabel.ID, runtimeLblInputs[0]).Return(nil)
 				return svc
 			},
+			WebhookRepositoryFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), rtmIDs[0], model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+				return webhookRepo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, rtmIDs[0]).Return(nil, nil)
+				return labelRepo
+			},
 			InputASA:           fixModel(testFormationName),
 			ExpectedErrMessage: testErr.Error(),
 		},
@@ -4265,6 +4481,8 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				runtimeRepo := &automock.RuntimeRepository{}
 				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, runtimeLblFilters).Return(ownedRuntimes, nil).Once()
 				runtimeRepo.On("ListAll", ctx, TargetTenantID, runtimeLblFilters).Return(nil, testErr).Once()
+
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[0].ID).Return(nil, nil)
 				return runtimeRepo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
@@ -4288,6 +4506,16 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				svc.On("GetLabel", ctx, tnt, runtimeLblInputs[0]).Return(expectedRuntimeLabel, nil)
 				svc.On("UpdateLabel", ctx, tnt, expectedRuntimeLabel.ID, runtimeLblInputs[0]).Return(nil)
 				return svc
+			},
+			WebhookRepositoryFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), rtmIDs[0], model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+				return webhookRepo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, rtmIDs[0]).Return(nil, nil)
+				return labelRepo
 			},
 			InputASA:           fixModel(testFormationName),
 			ExpectedErrMessage: testErr.Error(),
@@ -4319,8 +4547,10 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				svc.On("GetLabel", ctx, tnt, runtimeLblInputs[0]).Return(nil, testErr)
 				return svc
 			},
-			InputASA:           fixModel(testFormationName),
-			ExpectedErrMessage: testErr.Error(),
+			LabelRepositoryFn:   unusedLabelRepo,
+			WebhookRepositoryFn: unusedWebhookRepository,
+			InputASA:            fixModel(testFormationName),
+			ExpectedErrMessage:  testErr.Error(),
 		},
 		{
 			Name: "Returns error when checking if runtime exists by id fails",
@@ -4344,9 +4574,11 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
-			LabelServiceFn:     unusedLabelService,
-			InputASA:           fixModel(testFormationName),
-			ExpectedErrMessage: testErr.Error(),
+			LabelRepositoryFn:   unusedLabelRepo,
+			WebhookRepositoryFn: unusedWebhookRepository,
+			LabelServiceFn:      unusedLabelService,
+			InputASA:            fixModel(testFormationName),
+			ExpectedErrMessage:  testErr.Error(),
 		},
 		{
 			Name: "Returns error when listing owned runtimes fails",
@@ -4366,9 +4598,11 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
-			LabelServiceFn:     unusedLabelService,
-			InputASA:           fixModel(testFormationName),
-			ExpectedErrMessage: testErr.Error(),
+			LabelRepositoryFn:   unusedLabelRepo,
+			WebhookRepositoryFn: unusedWebhookRepository,
+			LabelServiceFn:      unusedLabelService,
+			InputASA:            fixModel(testFormationName),
+			ExpectedErrMessage:  testErr.Error(),
 		},
 		{
 			Name:                 "Returns error getting formation template by ID fails",
@@ -4384,9 +4618,11 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(nil, testErr).Once()
 				return repo
 			},
-			LabelServiceFn:     unusedLabelService,
-			InputASA:           fixModel(testFormationName),
-			ExpectedErrMessage: testErr.Error(),
+			LabelRepositoryFn:   unusedLabelRepo,
+			WebhookRepositoryFn: unusedWebhookRepository,
+			LabelServiceFn:      unusedLabelService,
+			InputASA:            fixModel(testFormationName),
+			ExpectedErrMessage:  testErr.Error(),
 		},
 		{
 			Name:                 "Returns error getting formation by name fails",
@@ -4397,6 +4633,8 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				repo.On("GetByName", ctx, testFormationName, tnt).Return(nil, testErr).Times(1)
 				return repo
 			},
+			LabelRepositoryFn:             unusedLabelRepo,
+			WebhookRepositoryFn:           unusedWebhookRepository,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
 			LabelServiceFn:                unusedLabelService,
 			InputASA:                      fixModel(testFormationName),
@@ -4411,8 +4649,10 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 			formationRepo := testCase.FormationRepositoryFn()
 			formationTemplateRepo := testCase.FormationTemplateRepositoryFn()
 			lblService := testCase.LabelServiceFn()
+			labelRepo := testCase.LabelRepositoryFn()
+			webhookRepo := testCase.WebhookRepositoryFn()
 
-			svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, lblService, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo, nil, nil, nil, nil, nil)
+			svc := formation.NewService(nil, labelRepo, formationRepo, formationTemplateRepo, lblService, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo, webhookRepo, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.EnsureScenarioAssigned(ctx, testCase.InputASA)
@@ -4425,7 +4665,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			mock.AssertExpectationsForObjects(t, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService)
+			mock.AssertExpectationsForObjects(t, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService, labelRepo, webhookRepo)
 		})
 	}
 }
@@ -4544,6 +4784,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 		FormationTemplateRepositoryFn func() *automock.FormationTemplateRepository
 		LabelServiceFn                func() *automock.LabelService
 		LabelRepositoryFn             func() *automock.LabelRepository
+		WebhookRepositoryFn           func() *automock.WebhookRepository
 		InputASA                      model.AutomaticScenarioAssignment
 		ExpectedErrMessage            string
 	}{
@@ -4558,6 +4799,9 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				runtimeRepo := &automock.RuntimeRepository{}
 				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, runtimeLblFilters).Return(ownedRuntimes, nil).Once()
 				runtimeRepo.On("ListAll", ctx, TargetTenantID, runtimeLblFilters).Return(runtimes, nil).Once()
+
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[0].ID).Return(nil, nil)
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[1].ID).Return(nil, nil)
 				return runtimeRepo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
@@ -4568,6 +4812,13 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[0], nil).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
+
+				runtimeContextRepo.On("GetByID", ctx, tenantID.String(), rtmContexts[0].ID).Return(&model.RuntimeContext{
+					RuntimeID: runtimes[0].ID,
+				}, nil)
+				runtimeContextRepo.On("GetByID", ctx, tenantID.String(), rtmContexts[1].ID).Return(&model.RuntimeContext{
+					RuntimeID: runtimes[1].ID,
+				}, nil)
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -4594,7 +4845,18 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimes[0].ID, model.ScenariosKey).Return(nil).Once()
 				repo.On("Delete", ctx, tnt, model.RuntimeContextLabelableObject, rtmContexts[0].ID, model.ScenariosKey).Return(nil).Once()
 				repo.On("Delete", ctx, tnt, model.RuntimeContextLabelableObject, rtmContexts[1].ID, model.ScenariosKey).Return(nil).Once()
+
+				repo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimes[0].ID).Return(nil, nil)
+				repo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimes[1].ID).Return(nil, nil)
+				repo.On("ListForObject", ctx, tenantID.String(), model.RuntimeContextLabelableObject, rtmContexts[0].ID).Return(nil, nil)
+				repo.On("ListForObject", ctx, tenantID.String(), model.RuntimeContextLabelableObject, rtmContexts[1].ID).Return(nil, nil)
 				return repo
+			},
+			WebhookRepositoryFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), runtimes[0].ID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), runtimes[1].ID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+				return webhookRepo
 			},
 			InputASA:           fixModel(testFormationName),
 			ExpectedErrMessage: "",
@@ -4610,6 +4872,8 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				runtimeRepo := &automock.RuntimeRepository{}
 				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, runtimeLblFilters).Return(ownedRuntimes, nil).Once()
 				runtimeRepo.On("ListAll", ctx, TargetTenantID, runtimeLblFilters).Return(runtimes, nil).Once()
+
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[0].ID).Return(nil, nil)
 				return runtimeRepo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
@@ -4620,6 +4884,10 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[0]).Return(rtmContexts[0], nil).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[1]).Return(nil, apperrors.NewNotFoundError(resource.RuntimeContext, rtmContexts[0].ID)).Once()
 				runtimeContextRepo.On("GetByRuntimeID", ctx, TargetTenantID, rtmIDs[2]).Return(rtmContexts[1], nil).Once()
+
+				runtimeContextRepo.On("GetByID", ctx, tenantID.String(), rtmContexts[0].ID).Return(&model.RuntimeContext{
+					RuntimeID: runtimes[0].ID,
+				}, nil)
 				return runtimeContextRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
@@ -4646,7 +4914,15 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimes[0].ID, model.ScenariosKey).Return(nil).Once()
 				repo.On("Delete", ctx, tnt, model.RuntimeContextLabelableObject, rtmContexts[0].ID, model.ScenariosKey).Return(nil).Once()
 				repo.On("Delete", ctx, tnt, model.RuntimeContextLabelableObject, rtmContexts[1].ID, model.ScenariosKey).Return(testErr).Once()
+
+				repo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimes[0].ID).Return(nil, nil)
+				repo.On("ListForObject", ctx, tenantID.String(), model.RuntimeContextLabelableObject, rtmContexts[0].ID).Return(nil, nil)
 				return repo
+			},
+			WebhookRepositoryFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), runtimes[0].ID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+				return webhookRepo
 			},
 			InputASA:           fixModel(testFormationName),
 			ExpectedErrMessage: testErr.Error(),
@@ -4662,6 +4938,8 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				runtimeRepo := &automock.RuntimeRepository{}
 				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, runtimeLblFilters).Return(ownedRuntimes, nil).Once()
 				runtimeRepo.On("ListAll", ctx, TargetTenantID, runtimeLblFilters).Return(runtimes, nil).Once()
+
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[0].ID).Return(nil, nil)
 				return runtimeRepo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
@@ -4690,7 +4968,14 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimes[0].ID, model.ScenariosKey).Return(nil).Once()
+
+				repo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimes[0].ID).Return(nil, nil)
 				return repo
+			},
+			WebhookRepositoryFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), runtimes[0].ID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+				return webhookRepo
 			},
 			InputASA:           fixModel(testFormationName),
 			ExpectedErrMessage: testErr.Error(),
@@ -4706,6 +4991,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				runtimeRepo := &automock.RuntimeRepository{}
 				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenantID, runtimeLblFilters).Return(ownedRuntimes, nil).Once()
 				runtimeRepo.On("ListAll", ctx, TargetTenantID, runtimeLblFilters).Return(nil, testErr).Once()
+				runtimeRepo.On("GetByID", ctx, tenantID.String(), runtimes[0].ID).Return(nil, nil)
 				return runtimeRepo
 			},
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
@@ -4732,7 +5018,14 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			LabelRepositoryFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
 				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimes[0].ID, model.ScenariosKey).Return(nil).Once()
+
+				repo.On("ListForObject", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimes[0].ID).Return(nil, nil)
 				return repo
+			},
+			WebhookRepositoryFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("GetByIDAndWebhookType", ctx, tenantID.String(), runtimes[0].ID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, runtimes[0].ID))
+				return webhookRepo
 			},
 			InputASA:           fixModel(testFormationName),
 			ExpectedErrMessage: testErr.Error(),
@@ -4774,8 +5067,9 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				repo.On("Delete", ctx, tnt, model.RuntimeLabelableObject, runtimes[0].ID, model.ScenariosKey).Return(testErr).Once()
 				return repo
 			},
-			InputASA:           fixModel(testFormationName),
-			ExpectedErrMessage: testErr.Error(),
+			WebhookRepositoryFn: unusedWebhookRepository,
+			InputASA:            fixModel(testFormationName),
+			ExpectedErrMessage:  testErr.Error(),
 		},
 		{
 			Name:      "Returns error when checking if runtime exists by id fails",
@@ -4800,10 +5094,11 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
-			LabelServiceFn:     unusedLabelService,
-			LabelRepositoryFn:  unusedLabelRepo,
-			InputASA:           fixModel(testFormationName),
-			ExpectedErrMessage: testErr.Error(),
+			WebhookRepositoryFn: unusedWebhookRepository,
+			LabelServiceFn:      unusedLabelService,
+			LabelRepositoryFn:   unusedLabelRepo,
+			InputASA:            fixModel(testFormationName),
+			ExpectedErrMessage:  testErr.Error(),
 		},
 		{
 			Name:      "Returns error when listing owned runtimes fails",
@@ -4824,10 +5119,11 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
-			LabelServiceFn:     unusedLabelService,
-			LabelRepositoryFn:  unusedLabelRepo,
-			InputASA:           fixModel(testFormationName),
-			ExpectedErrMessage: testErr.Error(),
+			WebhookRepositoryFn: unusedWebhookRepository,
+			LabelServiceFn:      unusedLabelService,
+			LabelRepositoryFn:   unusedLabelRepo,
+			InputASA:            fixModel(testFormationName),
+			ExpectedErrMessage:  testErr.Error(),
 		},
 		{
 			Name:                 "Returns error when getting formation template by id fails",
@@ -4844,10 +5140,11 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(nil, testErr).Once()
 				return repo
 			},
-			LabelServiceFn:     unusedLabelService,
-			LabelRepositoryFn:  unusedLabelRepo,
-			InputASA:           fixModel(testFormationName),
-			ExpectedErrMessage: testErr.Error(),
+			LabelServiceFn:      unusedLabelService,
+			LabelRepositoryFn:   unusedLabelRepo,
+			WebhookRepositoryFn: unusedWebhookRepository,
+			InputASA:            fixModel(testFormationName),
+			ExpectedErrMessage:  testErr.Error(),
 		},
 		{
 			Name:                 "Returns error when getting formation by name fails",
@@ -4860,6 +5157,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				return repo
 			},
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			WebhookRepositoryFn:           unusedWebhookRepository,
 			LabelServiceFn:                unusedLabelService,
 			LabelRepositoryFn:             unusedLabelRepo,
 			InputASA:                      fixModel(testFormationName),
@@ -4876,8 +5174,9 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			formationTemplateRepo := testCase.FormationTemplateRepositoryFn()
 			lblService := testCase.LabelServiceFn()
 			lblRepo := testCase.LabelRepositoryFn()
+			webhookRepo := testCase.WebhookRepositoryFn()
 
-			svc := formation.NewService(nil, lblRepo, formationRepo, formationTemplateRepo, lblService, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, nil, nil, nil, nil, nil)
+			svc := formation.NewService(nil, lblRepo, formationRepo, formationTemplateRepo, lblService, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, webhookRepo, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.RemoveAssignedScenario(ctx, testCase.InputASA)
@@ -4890,7 +5189,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			mock.AssertExpectationsForObjects(t, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService, lblRepo, asaRepo)
+			mock.AssertExpectationsForObjects(t, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, lblService, lblRepo, asaRepo, webhookRepo)
 		})
 	}
 }
