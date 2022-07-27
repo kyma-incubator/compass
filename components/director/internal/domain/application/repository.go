@@ -349,7 +349,6 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 }
 
 // ListByScenariosNoPaging lists all applications that are in any of the given scenarios
-// TODO: Add hiding selector
 func (r *pgRepository) ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error) {
 	tenantUUID, err := uuid.Parse(tenant)
 	if err != nil {

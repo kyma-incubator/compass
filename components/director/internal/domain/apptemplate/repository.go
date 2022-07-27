@@ -108,6 +108,9 @@ func (r *repository) GetByFilters(ctx context.Context, filter []*labelfilter.Lab
 }
 
 func (r *repository) ListByIDs(ctx context.Context, ids []string) ([]*model.ApplicationTemplate, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
 	var entities EntityCollection
 	if err := r.listerGlobal.ListGlobal(ctx, &entities, repo.NewInConditionForStringValues("id", ids)); err != nil {
 		return nil, err

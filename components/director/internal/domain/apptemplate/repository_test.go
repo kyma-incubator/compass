@@ -2,6 +2,7 @@ package apptemplate_test
 
 import (
 	"context"
+	"database/sql/driver"
 	"regexp"
 	"testing"
 
@@ -663,4 +664,55 @@ func TestRepository_Delete(t *testing.T) {
 		require.Error(t, err)
 		assert.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
+}
+
+func TestRepository_ListByIDs(t *testing.T) {
+	webhooksModel := fixModelApplicationWebhooks(testWebhookID, testID)
+	appTemplateModel := fixModelApplicationTemplate(testID, testName, webhooksModel)
+	appTemplateEntity := fixEntityApplicationTemplate(t, testID, testName)
+	suite := testdb.RepoListTestSuite{
+		Name:       "Get Formation Template By ID",
+		MethodName: "ListByIDs",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, name, description, application_namespace, application_input, placeholders, access_level FROM public.app_templates WHERE id IN ($1)`),
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(appTemplateEntity.ID, appTemplateEntity.Name, appTemplateEntity.Description, appTemplateEntity.ApplicationNamespace, appTemplateEntity.ApplicationInputJSON, appTemplateEntity.PlaceholdersJSON, appTemplateEntity.AccessLevel)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+				Args: []driver.Value{testID},
+			},
+		},
+		ExpectedModelEntities: []interface{}{appTemplateModel},
+		ExpectedDBEntities:    []interface{}{appTemplateEntity},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       apptemplate.NewRepository,
+		MethodArgs:                []interface{}{[]string{testID}},
+		DisableConverterErrorTest: false,
+	}
+
+	suite.Run(t)
+
+	// Additional test - empty slice because test suite returns empty result given valid query
+	t.Run("returns empty slice given no scenarios", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+		repository := apptemplate.NewRepository(nil)
+
+		// WHEN
+		actual, err := repository.ListByIDs(ctx, []string{})
+
+		// THEN
+		assert.NoError(t, err)
+		assert.Nil(t, actual)
+	})
+}
+
+func fixColumns() []string {
+	return []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level"}
 }

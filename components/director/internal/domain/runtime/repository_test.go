@@ -90,6 +90,41 @@ func TestPgRepository_GetByFiltersAndID(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestPgRepository_GetByFilters(t *testing.T) {
+	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum")
+	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum")
+
+	suite := testdb.RepoGetTestSuite{
+		Name: "Get Runtime By Filters",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp FROM public.runtimes WHERE 
+												id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3]) 
+												AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $4))`),
+				Args:     []driver.Value{tenantID, model.ScenariosKey, "scenario", tenantID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(rtModel.ID, rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.CreationTimestamp)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       runtime.NewRepository,
+		ExpectedModelEntity:       rtModel,
+		ExpectedDBEntity:          rtEntity,
+		MethodName:                "GetByFilters",
+		MethodArgs:                []interface{}{tenantID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, `$[*] ? ( @ == "scenario" )`)}},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
 func TestPgRepository_GetByFiltersGlobal_ShouldReturnRuntimeModelForRuntimeEntity(t *testing.T) {
 	// GIVEN
 	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum")
