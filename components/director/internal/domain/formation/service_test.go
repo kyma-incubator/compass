@@ -91,7 +91,7 @@ func TestServiceList(t *testing.T) {
 			// GIVEN
 			formationRepo := testCase.FormationRepoFn()
 
-			svc := formation.NewService(nil, nil, formationRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := formation.NewService(nil, nil, formationRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			actual, err := svc.List(ctx, testCase.InputPageSize, cursor)
@@ -153,7 +153,7 @@ func TestServiceGet(t *testing.T) {
 			// GIVEN
 			formationRepo := testCase.FormationRepoFn()
 
-			svc := formation.NewService(nil, nil, formationRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+			svc := formation.NewService(nil, nil, formationRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			actual, err := svc.Get(ctx, testCase.InputID)
@@ -450,7 +450,7 @@ func TestServiceCreateFormation(t *testing.T) {
 				formationTemplateRepoMock = testCase.FormationTemplateRepoFn()
 			}
 
-			svc := formation.NewService(lblDefRepo, nil, formationRepoMock, formationTemplateRepoMock, nil, uuidSvcMock, lblDefService, nil, nil, nil, nil, nil)
+			svc := formation.NewService(lblDefRepo, nil, formationRepoMock, formationTemplateRepoMock, nil, uuidSvcMock, lblDefService, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			actual, err := svc.CreateFormation(ctx, Tnt, in, testCase.TemplateName)
@@ -687,7 +687,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 				formationRepoMock = testCase.FormationRepoFn()
 			}
 
-			svc := formation.NewService(lblDefRepo, nil, formationRepoMock, nil, nil, nil, lblDefService, nil, nil, nil, nil, nil)
+			svc := formation.NewService(lblDefRepo, nil, formationRepoMock, nil, nil, nil, lblDefService, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			actual, err := svc.DeleteFormation(ctx, Tnt, testCase.InputFormation)
@@ -792,6 +792,12 @@ func TestServiceAssignFormation(t *testing.T) {
 		AsaServiceFN                  func() *automock.AutomaticFormationAssignmentService
 		RuntimeRepoFN                 func() *automock.RuntimeRepository
 		RuntimeContextRepoFn          func() *automock.RuntimeContextRepository
+		ApplicationRepoFN             func() *automock.ApplicationRepository
+		WebhookRepoFN                 func() *automock.WebhookRepository
+		WebhookConverterFN            func() *automock.WebhookConverter
+		WebhookClientFN               func() *automock.WebhookClient
+		ApplicationTemplateRepoFN     func() *automock.ApplicationTemplateRepository
+		LabelRepoFN                   func() *automock.LabelRepository
 		FormationRepositoryFn         func() *automock.FormationRepository
 		FormationTemplateRepositoryFn func() *automock.FormationTemplateRepository
 		ObjectType                    graphql.FormationObjectType
@@ -823,10 +829,28 @@ func TestServiceAssignFormation(t *testing.T) {
 			RuntimeRepoFN:                 unusedRuntimeRepo,
 			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
-			ObjectType:                    graphql.FormationObjectTypeApplication,
-			InputFormation:                inputFormation,
-			ExpectedFormation:             expectedFormation,
-			ExpectedErrMessage:            "",
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, Tnt, objectID).Return(&model.Application{}, nil)
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.ApplicationLabelableObject, objectID).Return(nil, nil)
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
+				return repo
+			},
+			WebhookConverterFN:        unusedWebhookConverter,
+			WebhookClientFN:           unusedWebhookClient,
+			ApplicationTemplateRepoFN: unusedAppTemplateRepository,
+			ObjectType:                graphql.FormationObjectTypeApplication,
+			InputFormation:            inputFormation,
+			ExpectedFormation:         expectedFormation,
+			ExpectedErrMessage:        "",
 		},
 		{
 			Name:         "success for application if formation is already added",
@@ -842,6 +866,24 @@ func TestServiceAssignFormation(t *testing.T) {
 				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedFormation, nil).Once()
 				return formationRepo
 			},
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, Tnt, objectID).Return(&model.Application{}, nil)
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.ApplicationLabelableObject, objectID).Return(nil, nil)
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
+				return repo
+			},
+			WebhookConverterFN:            unusedWebhookConverter,
+			WebhookClientFN:               unusedWebhookClient,
+			ApplicationTemplateRepoFN:     unusedAppTemplateRepository,
 			LabelDefServiceFn:             unusedLabelDefServiceFn,
 			AsaRepoFn:                     unusedASARepo,
 			AsaServiceFN:                  unusedASAService,
@@ -879,12 +921,30 @@ func TestServiceAssignFormation(t *testing.T) {
 				formationRepo.On("GetByName", ctx, secondTestFormationName, Tnt).Return(expectedSecondFormation, nil).Once()
 				return formationRepo
 			},
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, Tnt, objectID).Return(&model.Application{}, nil)
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.ApplicationLabelableObject, objectID).Return(nil, nil)
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
+				return repo
+			},
 			LabelDefServiceFn:             unusedLabelDefServiceFn,
 			AsaRepoFn:                     unusedASARepo,
 			AsaServiceFN:                  unusedASAService,
 			RuntimeRepoFN:                 unusedRuntimeRepo,
 			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			WebhookConverterFN:            unusedWebhookConverter,
+			WebhookClientFN:               unusedWebhookClient,
+			ApplicationTemplateRepoFN:     unusedAppTemplateRepository,
 			ObjectType:                    graphql.FormationObjectTypeApplication,
 			InputFormation:                inputSecondFormation,
 			ExpectedFormation:             expectedSecondFormation,
@@ -903,6 +963,24 @@ func TestServiceAssignFormation(t *testing.T) {
 				labelService.On("CreateLabel", ctx, Tnt, fixUUID(), &applicationLblInputInDefaultScenario).Return(nil)
 				return labelService
 			},
+			WebhookConverterFN: unusedWebhookConverter,
+			WebhookClientFN:    unusedWebhookClient,
+			ApplicationRepoFN: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, Tnt, objectID).Return(&model.Application{}, nil)
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.ApplicationLabelableObject, objectID).Return(nil, nil)
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
+				return repo
+			},
+			ApplicationTemplateRepoFN:     unusedAppTemplateRepository,
 			FormationRepositoryFn:         unusedFormationRepo,
 			LabelDefServiceFn:             unusedLabelDefServiceFn,
 			AsaRepoFn:                     unusedASARepo,
@@ -933,11 +1011,29 @@ func TestServiceAssignFormation(t *testing.T) {
 				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedFormation, nil).Once()
 				return formationRepo
 			},
+			ApplicationRepoFN:         unusedApplicationRepo,
+			WebhookConverterFN:        unusedWebhookConverter,
+			WebhookClientFN:           unusedWebhookClient,
+			ApplicationTemplateRepoFN: unusedAppTemplateRepository,
+			RuntimeContextRepoFn:      unusedRuntimeContextRepo,
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, objectID).Return(nil, nil)
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, objectID).Return(nil, nil)
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, objectID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, objectID))
+				return repo
+			},
 			LabelDefServiceFn:             unusedLabelDefServiceFn,
 			AsaRepoFn:                     unusedASARepo,
 			AsaServiceFN:                  unusedASAService,
-			RuntimeRepoFN:                 unusedRuntimeRepo,
-			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
 			ObjectType:                    graphql.FormationObjectTypeRuntime,
 			InputFormation:                inputFormation,
@@ -958,10 +1054,28 @@ func TestServiceAssignFormation(t *testing.T) {
 				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedFormation, nil).Once()
 				return formationRepo
 			},
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, objectID).Return(nil, nil)
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, objectID).Return(nil, nil)
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, objectID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, objectID))
+				return repo
+			},
+			ApplicationRepoFN:             unusedApplicationRepo,
+			WebhookConverterFN:            unusedWebhookConverter,
+			WebhookClientFN:               unusedWebhookClient,
+			ApplicationTemplateRepoFN:     unusedAppTemplateRepository,
 			LabelDefServiceFn:             unusedLabelDefServiceFn,
 			AsaRepoFn:                     unusedASARepo,
 			AsaServiceFN:                  unusedASAService,
-			RuntimeRepoFN:                 unusedRuntimeRepo,
 			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
 			ObjectType:                    graphql.FormationObjectTypeRuntime,
@@ -995,10 +1109,28 @@ func TestServiceAssignFormation(t *testing.T) {
 				formationRepo.On("GetByName", ctx, secondTestFormationName, Tnt).Return(expectedSecondFormation, nil).Once()
 				return formationRepo
 			},
+			ApplicationRepoFN:         unusedApplicationRepo,
+			WebhookConverterFN:        unusedWebhookConverter,
+			WebhookClientFN:           unusedWebhookClient,
+			ApplicationTemplateRepoFN: unusedAppTemplateRepository,
+			RuntimeRepoFN: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("GetByID", ctx, Tnt, objectID).Return(nil, nil)
+				return repo
+			},
+			LabelRepoFN: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, Tnt, model.RuntimeLabelableObject, objectID).Return(nil, nil)
+				return repo
+			},
+			WebhookRepoFN: func() *automock.WebhookRepository {
+				repo := &automock.WebhookRepository{}
+				repo.On("GetByIDAndWebhookType", ctx, Tnt, objectID, model.RuntimeWebhookReference, model.WebhookTypeConfigurationChanged).Return(nil, apperrors.NewNotFoundError(resource.Webhook, objectID))
+				return repo
+			},
 			LabelDefServiceFn:             unusedLabelDefServiceFn,
 			AsaRepoFn:                     unusedASARepo,
 			AsaServiceFN:                  unusedASAService,
-			RuntimeRepoFN:                 unusedRuntimeRepo,
 			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
 			ObjectType:                    graphql.FormationObjectTypeRuntime,
@@ -1029,7 +1161,13 @@ func TestServiceAssignFormation(t *testing.T) {
 
 				return asaRepo
 			},
-			AsaServiceFN: unusedASAService,
+			AsaServiceFN:              unusedASAService,
+			ApplicationRepoFN:         unusedApplicationRepo,
+			LabelRepoFN:               unusedLabelRepo,
+			WebhookRepoFN:             unusedWebhookRepository,
+			WebhookConverterFN:        unusedWebhookConverter,
+			WebhookClientFN:           unusedWebhookClient,
+			ApplicationTemplateRepoFN: unusedAppTemplateRepository,
 			RuntimeRepoFN: func() *automock.RuntimeRepository {
 				runtimeRepo := &automock.RuntimeRepository{}
 				runtimeRepo.On("ListOwnedRuntimes", ctx, TargetTenant, runtimeLblFilters).Return(make([]*model.Runtime, 0), nil).Once()
@@ -1072,6 +1210,12 @@ func TestServiceAssignFormation(t *testing.T) {
 			AsaRepoFn:                     unusedASARepo,
 			AsaServiceFN:                  unusedASAService,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			ApplicationRepoFN:             unusedApplicationRepo,
+			LabelRepoFN:                   unusedLabelRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
+			WebhookConverterFN:            unusedWebhookConverter,
+			WebhookClientFN:               unusedWebhookClient,
+			ApplicationTemplateRepoFN:     unusedAppTemplateRepository,
 			ObjectType:                    graphql.FormationObjectTypeApplication,
 			InputFormation:                inputFormation,
 			ExpectedErrMessage:            testErr.Error(),
@@ -1091,6 +1235,12 @@ func TestServiceAssignFormation(t *testing.T) {
 			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
 			AsaServiceFN:                  unusedASAService,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			ApplicationRepoFN:             unusedApplicationRepo,
+			LabelRepoFN:                   unusedLabelRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
+			WebhookConverterFN:            unusedWebhookConverter,
+			WebhookClientFN:               unusedWebhookClient,
+			ApplicationTemplateRepoFN:     unusedAppTemplateRepository,
 			ObjectType:                    graphql.FormationObjectTypeApplication,
 			InputFormation:                inputFormation,
 			ExpectedErrMessage:            testErr.Error(),
@@ -1124,6 +1274,12 @@ func TestServiceAssignFormation(t *testing.T) {
 			RuntimeRepoFN:                 unusedRuntimeRepo,
 			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			ApplicationRepoFN:             unusedApplicationRepo,
+			LabelRepoFN:                   unusedLabelRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
+			WebhookConverterFN:            unusedWebhookConverter,
+			WebhookClientFN:               unusedWebhookClient,
+			ApplicationTemplateRepoFN:     unusedAppTemplateRepository,
 			ObjectType:                    graphql.FormationObjectTypeApplication,
 			InputFormation:                inputFormation,
 			ExpectedErrMessage:            "cannot convert label value to slice of strings",
@@ -1151,6 +1307,12 @@ func TestServiceAssignFormation(t *testing.T) {
 			RuntimeRepoFN:                 unusedRuntimeRepo,
 			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			ApplicationRepoFN:             unusedApplicationRepo,
+			LabelRepoFN:                   unusedLabelRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
+			WebhookConverterFN:            unusedWebhookConverter,
+			WebhookClientFN:               unusedWebhookClient,
+			ApplicationTemplateRepoFN:     unusedAppTemplateRepository,
 			ObjectType:                    graphql.FormationObjectTypeApplication,
 			InputFormation:                inputFormation,
 			ExpectedErrMessage:            "cannot cast label value as a string",
@@ -1171,6 +1333,12 @@ func TestServiceAssignFormation(t *testing.T) {
 			RuntimeRepoFN:                 unusedRuntimeRepo,
 			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			ApplicationRepoFN:             unusedApplicationRepo,
+			LabelRepoFN:                   unusedLabelRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
+			WebhookConverterFN:            unusedWebhookConverter,
+			WebhookClientFN:               unusedWebhookClient,
+			ApplicationTemplateRepoFN:     unusedAppTemplateRepository,
 			ObjectType:                    graphql.FormationObjectTypeApplication,
 			InputFormation:                inputFormation,
 			ExpectedErrMessage:            testErr.Error(),
@@ -1195,6 +1363,12 @@ func TestServiceAssignFormation(t *testing.T) {
 			RuntimeRepoFN:                 unusedRuntimeRepo,
 			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			ApplicationRepoFN:             unusedApplicationRepo,
+			LabelRepoFN:                   unusedLabelRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
+			WebhookConverterFN:            unusedWebhookConverter,
+			WebhookClientFN:               unusedWebhookClient,
+			ApplicationTemplateRepoFN:     unusedAppTemplateRepository,
 			ObjectType:                    graphql.FormationObjectTypeRuntime,
 			InputFormation:                inputFormation,
 			ExpectedErrMessage:            testErr.Error(),
@@ -1214,6 +1388,12 @@ func TestServiceAssignFormation(t *testing.T) {
 			RuntimeRepoFN:                 unusedRuntimeRepo,
 			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			ApplicationRepoFN:             unusedApplicationRepo,
+			LabelRepoFN:                   unusedLabelRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
+			WebhookConverterFN:            unusedWebhookConverter,
+			WebhookClientFN:               unusedWebhookClient,
+			ApplicationTemplateRepoFN:     unusedAppTemplateRepository,
 			ObjectType:                    graphql.FormationObjectTypeRuntime,
 			InputFormation:                inputFormation,
 			ExpectedErrMessage:            testErr.Error(),
@@ -1247,6 +1427,12 @@ func TestServiceAssignFormation(t *testing.T) {
 			RuntimeRepoFN:                 unusedRuntimeRepo,
 			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			ApplicationRepoFN:             unusedApplicationRepo,
+			LabelRepoFN:                   unusedLabelRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
+			WebhookConverterFN:            unusedWebhookConverter,
+			WebhookClientFN:               unusedWebhookClient,
+			ApplicationTemplateRepoFN:     unusedAppTemplateRepository,
 			ObjectType:                    graphql.FormationObjectTypeRuntime,
 			InputFormation:                inputFormation,
 			ExpectedErrMessage:            "cannot convert label value to slice of strings",
@@ -1274,6 +1460,12 @@ func TestServiceAssignFormation(t *testing.T) {
 			RuntimeRepoFN:                 unusedRuntimeRepo,
 			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			ApplicationRepoFN:             unusedApplicationRepo,
+			LabelRepoFN:                   unusedLabelRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
+			WebhookConverterFN:            unusedWebhookConverter,
+			WebhookClientFN:               unusedWebhookClient,
+			ApplicationTemplateRepoFN:     unusedAppTemplateRepository,
 			ObjectType:                    graphql.FormationObjectTypeRuntime,
 			InputFormation:                inputFormation,
 			ExpectedErrMessage:            "cannot cast label value as a string",
@@ -1294,6 +1486,12 @@ func TestServiceAssignFormation(t *testing.T) {
 			RuntimeRepoFN:                 unusedRuntimeRepo,
 			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			ApplicationRepoFN:             unusedApplicationRepo,
+			LabelRepoFN:                   unusedLabelRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
+			WebhookConverterFN:            unusedWebhookConverter,
+			WebhookClientFN:               unusedWebhookClient,
+			ApplicationTemplateRepoFN:     unusedAppTemplateRepository,
 			ObjectType:                    graphql.FormationObjectTypeRuntime,
 			InputFormation:                inputFormation,
 			ExpectedErrMessage:            testErr.Error(),
@@ -1314,6 +1512,12 @@ func TestServiceAssignFormation(t *testing.T) {
 			RuntimeRepoFN:                 unusedRuntimeRepo,
 			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			ApplicationRepoFN:             unusedApplicationRepo,
+			LabelRepoFN:                   unusedLabelRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
+			WebhookConverterFN:            unusedWebhookConverter,
+			WebhookClientFN:               unusedWebhookClient,
+			ApplicationTemplateRepoFN:     unusedAppTemplateRepository,
 			ObjectType:                    graphql.FormationObjectTypeTenant,
 			InputFormation:                inputFormation,
 			ExpectedErrMessage:            testErr.Error(),
@@ -1346,6 +1550,12 @@ func TestServiceAssignFormation(t *testing.T) {
 			RuntimeRepoFN:                 unusedRuntimeRepo,
 			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			ApplicationRepoFN:             unusedApplicationRepo,
+			LabelRepoFN:                   unusedLabelRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
+			WebhookConverterFN:            unusedWebhookConverter,
+			WebhookClientFN:               unusedWebhookClient,
+			ApplicationTemplateRepoFN:     unusedAppTemplateRepository,
 			ObjectType:                    graphql.FormationObjectTypeTenant,
 			InputFormation:                inputFormation,
 			ExpectedErrMessage:            testErr.Error(),
@@ -1382,6 +1592,12 @@ func TestServiceAssignFormation(t *testing.T) {
 			RuntimeRepoFN:                 unusedRuntimeRepo,
 			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			ApplicationRepoFN:             unusedApplicationRepo,
+			LabelRepoFN:                   unusedLabelRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
+			WebhookConverterFN:            unusedWebhookConverter,
+			WebhookClientFN:               unusedWebhookClient,
+			ApplicationTemplateRepoFN:     unusedAppTemplateRepository,
 			ObjectType:                    graphql.FormationObjectTypeApplication,
 			InputFormation:                inputSecondFormation,
 			ExpectedFormation:             expectedSecondFormation,
@@ -1398,6 +1614,12 @@ func TestServiceAssignFormation(t *testing.T) {
 			RuntimeRepoFN:                 unusedRuntimeRepo,
 			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
 			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
+			ApplicationRepoFN:             unusedApplicationRepo,
+			LabelRepoFN:                   unusedLabelRepo,
+			WebhookRepoFN:                 unusedWebhookRepository,
+			WebhookConverterFN:            unusedWebhookConverter,
+			WebhookClientFN:               unusedWebhookClient,
+			ApplicationTemplateRepoFN:     unusedAppTemplateRepository,
 			ObjectType:                    "UNKNOWN",
 			InputFormation:                inputFormation,
 			ExpectedErrMessage:            "unknown formation type",
@@ -1417,12 +1639,18 @@ func TestServiceAssignFormation(t *testing.T) {
 			runtimeContextRepo := testCase.RuntimeContextRepoFn()
 			formationRepo := testCase.FormationRepositoryFn()
 			formationTemplateRepo := testCase.FormationTemplateRepositoryFn()
+			applicationRepo := testCase.ApplicationRepoFN()
+			webhookRepo := testCase.WebhookRepoFN()
+			webhookConverter := testCase.WebhookConverterFN()
+			webhookClient := testCase.WebhookClientFN()
+			appTemplateRepo := testCase.ApplicationTemplateRepoFN()
+			labelRepo := testCase.LabelRepoFN()
 
 			if testCase.TenantServiceFn != nil {
 				tenantSvc = testCase.TenantServiceFn()
 			}
 
-			svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, labelService, uidService, labelDefService, asaRepo, asaService, tenantSvc, runtimeRepo, runtimeContextRepo)
+			svc := formation.NewService(nil, labelRepo, formationRepo, formationTemplateRepo, labelService, uidService, labelDefService, asaRepo, asaService, tenantSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, applicationRepo, appTemplateRepo, webhookConverter)
 
 			// WHEN
 			actual, err := svc.AssignFormation(ctx, Tnt, objectID, testCase.ObjectType, testCase.InputFormation)
@@ -2285,7 +2513,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			runtimeContextRepo := testCase.RuntimeContextRepoFn()
 			formationRepo := testCase.FormationRepositoryFn()
 			formationTemplateRepo := testCase.FormationTemplateRepositoryFn()
-			svc := formation.NewService(nil, labelRepo, formationRepo, formationTemplateRepo, labelService, uidService, nil, asaRepo, asaService, nil, runtimeRepo, runtimeContextRepo)
+			svc := formation.NewService(nil, labelRepo, formationRepo, formationTemplateRepo, labelService, uidService, nil, asaRepo, asaService, nil, runtimeRepo, runtimeContextRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			actual, err := svc.UnassignFormation(ctx, Tnt, objectID, testCase.ObjectType, testCase.InputFormation)
@@ -2869,7 +3097,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			formationTemplateRepo := testCase.FormationTemplateRepositoryFn()
 			lblService := testCase.LabelServiceFn()
 
-			svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, lblService, nil, labelDefService, asaRepo, nil, tenantSvc, runtimeRepo, runtimeContextRepo)
+			svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, lblService, nil, labelDefService, asaRepo, nil, tenantSvc, runtimeRepo, runtimeContextRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			actual, err := svc.CreateAutomaticScenarioAssignment(ctx, testCase.InputASA)
@@ -2890,7 +3118,7 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 
 	t.Run("returns error on missing tenant in context", func(t *testing.T) {
 		// GIVEN
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := svc.CreateAutomaticScenarioAssignment(context.TODO(), fixModel(ScenarioName))
@@ -2951,7 +3179,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo, formationRepo, formationTemplateRepo)
 
-		svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, nil)
+		svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, models)
@@ -2977,7 +3205,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, mockRepo, runtimeRepo, formationRepo, formationTemplateRepo)
 
-		svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, nil)
+		svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, mockRepo, nil, nil, runtimeRepo, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, models)
@@ -2989,7 +3217,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 
 	t.Run("return error when input slice is empty", func(t *testing.T) {
 		// GIVEN
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, []*model.AutomaticScenarioAssignment{})
@@ -3012,7 +3240,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 			},
 		}
 
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, modelsWithDifferentSelectors)
 
@@ -3029,7 +3257,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, mockRepo)
 
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, nil, nil)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, mockRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		err := svc.DeleteManyASAForSameTargetTenant(ctx, models)
 
@@ -3038,7 +3266,7 @@ func TestService_DeleteManyASAForSameTargetTenant(t *testing.T) {
 	})
 
 	t.Run("returns error when empty tenant", func(t *testing.T) {
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		err := svc.DeleteManyASAForSameTargetTenant(context.TODO(), models)
 		require.EqualError(t, err, "cannot read tenant from context")
 	})
@@ -3552,7 +3780,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			lblService := testCase.LabelServiceFn()
 			lblRepo := testCase.LabelRepositoryFn()
 
-			svc := formation.NewService(nil, lblRepo, formationRepo, formationTemplateRepo, lblService, nil, labelDefService, asaRepo, nil, tenantSvc, runtimeRepo, runtimeContextRepo)
+			svc := formation.NewService(nil, lblRepo, formationRepo, formationTemplateRepo, lblService, nil, labelDefService, asaRepo, nil, tenantSvc, runtimeRepo, runtimeContextRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.DeleteAutomaticScenarioAssignment(ctx, testCase.InputASA)
@@ -3571,7 +3799,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 
 	t.Run("returns error on missing tenant in context", func(t *testing.T) {
 		// GIVEN
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := svc.CreateAutomaticScenarioAssignment(context.TODO(), fixModel(ScenarioName))
@@ -3970,7 +4198,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 			formationTemplateRepo := testCase.FormationTemplateRepositoryFn()
 			lblService := testCase.LabelServiceFn()
 
-			svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, lblService, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo)
+			svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, lblService, nil, nil, nil, nil, nil, runtimeRepo, runtimeContextRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.EnsureScenarioAssigned(ctx, testCase.InputASA)
@@ -4435,7 +4663,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			lblService := testCase.LabelServiceFn()
 			lblRepo := testCase.LabelRepositoryFn()
 
-			svc := formation.NewService(nil, lblRepo, formationRepo, formationTemplateRepo, lblService, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo)
+			svc := formation.NewService(nil, lblRepo, formationRepo, formationTemplateRepo, lblService, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			err := svc.RemoveAssignedScenario(ctx, testCase.InputASA)
@@ -4655,7 +4883,7 @@ func TestService_MergeScenariosFromInputLabelsAndAssignments(t *testing.T) {
 			formationRepo := testCase.FormationRepoFn()
 			formationTemplateRepo := testCase.FormationTemplateRepoFn()
 
-			svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo)
+			svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			actualScenarios, err := svc.MergeScenariosFromInputLabelsAndAssignments(ctx, testCase.InputLabels, runtimeID)
@@ -5015,7 +5243,7 @@ func TestService_GetScenariosFromMatchingASAs(t *testing.T) {
 			formationRepo := testCase.FormationRepoFn()
 			formationTemplateRepo := testCase.FormationTemplateRepoFn()
 
-			svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo)
+			svc := formation.NewService(nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, asaRepo, nil, nil, runtimeRepo, runtimeContextRepo, nil, nil, nil, nil, nil)
 
 			// WHEN
 			scenarios, err := svc.GetScenariosFromMatchingASAs(ctx, testCase.ObjectID, testCase.ObjectType)
@@ -5061,7 +5289,7 @@ func TestService_GetFormationsForObject(t *testing.T) {
 		labelService := &automock.LabelService{}
 		labelService.On("GetLabel", ctx, tenantID.String(), labelInput).Return(label, nil).Once()
 
-		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, nil, nil, nil, nil, nil)
+		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		formations, err := svc.GetFormationsForObject(ctx, tenantID.String(), model.RuntimeLabelableObject, id)
@@ -5079,7 +5307,7 @@ func TestService_GetFormationsForObject(t *testing.T) {
 		labelService := &automock.LabelService{}
 		labelService.On("GetLabel", ctx, tenantID.String(), labelInput).Return(nil, errors.New(testErr)).Once()
 
-		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, nil, nil, nil, nil, nil)
+		svc := formation.NewService(nil, nil, nil, nil, labelService, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		formations, err := svc.GetFormationsForObject(ctx, tenantID.String(), model.RuntimeLabelableObject, id)
