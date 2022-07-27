@@ -4705,23 +4705,23 @@ func TestService_GetScenariosFromMatchingASAs(t *testing.T) {
 		},
 	}
 
-	rtmIDs := []string{"123", "456", "789"}
-	rtmNames := []string{"first", "second", "third"}
+	//rtmIDs := []string{"123", "456", "789"}
+	//rtmNames := []string{"first", "second", "third"}
 
-	runtimes := []*model.Runtime{
-		{
-			ID:   rtmIDs[0],
-			Name: rtmNames[0],
-		},
-		{
-			ID:   rtmIDs[1],
-			Name: rtmNames[1],
-		},
-		{
-			ID:   rtmIDs[2],
-			Name: rtmNames[2],
-		},
-	}
+	//runtimes := []*model.Runtime{
+	//	{
+	//		ID:   rtmIDs[0],
+	//		Name: rtmNames[0],
+	//	},
+	//	{
+	//		ID:   rtmIDs[1],
+	//		Name: rtmNames[1],
+	//	},
+	//	{
+	//		ID:   rtmIDs[2],
+	//		Name: rtmNames[2],
+	//	},
+	//}
 
 	testCases := []struct {
 		Name                     string
@@ -4780,118 +4780,16 @@ func TestService_GetScenariosFromMatchingASAs(t *testing.T) {
 			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
 				runtimeContextRepo := &automock.RuntimeContextRepository{}
 				runtimeContextRepo.On("Exists", ctx, testScenarios[0].TargetTenantID, RuntimeContextID).Return(true, nil).Once()
-
-				runtimeContextRepo.On("Exists", ctx, testScenarios[1].TargetTenantID, RuntimeContextID).Return(false, nil).Once()
-				runtimeContextRepo.On("Exists", ctx, testScenarios[1].TargetTenantID, RuntimeContextID).Return(false, nil).Once()
 				runtimeContextRepo.On("Exists", ctx, testScenarios[1].TargetTenantID, RuntimeContextID).Return(false, nil).Once()
 				return runtimeContextRepo
 			},
-			RuntimeRepoFn: func() *automock.RuntimeRepository {
-				runtimeRepo := &automock.RuntimeRepository{}
-				runtimeRepo.On("ListAll", ctx, testScenarios[0].TargetTenantID, runtimeLblFilters).Return(runtimes, nil).Once()
-				runtimeRepo.On("ListAll", ctx, testScenarios[1].TargetTenantID, runtimeLblFilters).Return(runtimes, nil).Once()
-				return runtimeRepo
-			},
-			FormationRepoFn: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, ScenarioName, testScenarios[0].Tenant).Return(formations[0], nil).Once()
-				formationRepo.On("GetByName", ctx, ScenarioName2, testScenarios[1].Tenant).Return(formations[1], nil).Once()
-				return formationRepo
-			},
-			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
-				formationTemplateRepo := &automock.FormationTemplateRepository{}
-				formationTemplateRepo.On("Get", ctx, formations[0].FormationTemplateID).Return(&formationTemplate, nil).Once()
-				formationTemplateRepo.On("Get", ctx, formations[1].FormationTemplateID).Return(&formationTemplate, nil).Once()
-				return formationTemplateRepo
-			},
-			ObjectID:          RuntimeContextID,
-			ObjectType:        graphql.FormationObjectTypeRuntimeContext,
-			ExpectedError:     nil,
-			ExpectedScenarios: []string{ScenarioName},
-		},
-		{
-			Name: "Returns error for runtime context when checking if runtime exists for a runtime ctx",
-			ScenarioAssignmentRepoFn: func() *automock.AutomaticFormationAssignmentRepository {
-				repo := &automock.AutomaticFormationAssignmentRepository{}
-				repo.On("ListAll", ctx, tenantID.String()).Return(testScenarios, nil)
-				return repo
-			},
-			RuntimeContextRepoFn: func() *automock.RuntimeContextRepository {
-				runtimeContextRepo := &automock.RuntimeContextRepository{}
-				runtimeContextRepo.On("Exists", ctx, testScenarios[0].TargetTenantID, RuntimeContextID).Return(false, testErr).Once()
-				return runtimeContextRepo
-			},
-			RuntimeRepoFn: func() *automock.RuntimeRepository {
-				runtimeRepo := &automock.RuntimeRepository{}
-				runtimeRepo.On("ListAll", ctx, testScenarios[0].TargetTenantID, runtimeLblFilters).Return(runtimes, nil).Once()
-				return runtimeRepo
-			},
-			FormationRepoFn: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, ScenarioName, testScenarios[0].Tenant).Return(formations[0], nil).Once()
-				return formationRepo
-			},
-			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
-				formationTemplateRepo := &automock.FormationTemplateRepository{}
-				formationTemplateRepo.On("Get", ctx, formations[0].FormationTemplateID).Return(&formationTemplate, nil).Once()
-				return formationTemplateRepo
-			},
-			ObjectID:          RuntimeContextID,
-			ObjectType:        graphql.FormationObjectTypeRuntimeContext,
-			ExpectedError:     testErr,
-			ExpectedScenarios: nil,
-		},
-		{
-			Name: "Returns error for runtime context when listing all runtimes fails",
-			ScenarioAssignmentRepoFn: func() *automock.AutomaticFormationAssignmentRepository {
-				repo := &automock.AutomaticFormationAssignmentRepository{}
-				repo.On("ListAll", ctx, tenantID.String()).Return(testScenarios, nil)
-				return repo
-			},
-			RuntimeContextRepoFn: unusedRuntimeContextRepo,
-			RuntimeRepoFn: func() *automock.RuntimeRepository {
-				runtimeRepo := &automock.RuntimeRepository{}
-				runtimeRepo.On("ListAll", ctx, testScenarios[0].TargetTenantID, runtimeLblFilters).Return(nil, testErr).Once()
-				return runtimeRepo
-			},
-			FormationRepoFn: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, ScenarioName, testScenarios[0].Tenant).Return(formations[0], nil).Once()
-				return formationRepo
-			},
-			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
-				formationTemplateRepo := &automock.FormationTemplateRepository{}
-				formationTemplateRepo.On("Get", ctx, formations[0].FormationTemplateID).Return(&formationTemplate, nil).Once()
-				return formationTemplateRepo
-			},
-			ObjectID:          RuntimeContextID,
-			ObjectType:        graphql.FormationObjectTypeRuntimeContext,
-			ExpectedError:     testErr,
-			ExpectedScenarios: nil,
-		},
-		{
-			Name: "Returns error for runtime context getting formation template runtime type fails",
-			ScenarioAssignmentRepoFn: func() *automock.AutomaticFormationAssignmentRepository {
-				repo := &automock.AutomaticFormationAssignmentRepository{}
-				repo.On("ListAll", ctx, tenantID.String()).Return(testScenarios, nil)
-				return repo
-			},
-			RuntimeContextRepoFn: unusedRuntimeContextRepo,
-			RuntimeRepoFn:        unusedRuntimeRepo,
-			FormationRepoFn: func() *automock.FormationRepository {
-				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, ScenarioName, testScenarios[0].Tenant).Return(formations[0], nil).Once()
-				return formationRepo
-			},
-			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
-				formationTemplateRepo := &automock.FormationTemplateRepository{}
-				formationTemplateRepo.On("Get", ctx, formations[0].FormationTemplateID).Return(nil, testErr).Once()
-				return formationTemplateRepo
-			},
-			ObjectID:          RuntimeContextID,
-			ObjectType:        graphql.FormationObjectTypeRuntimeContext,
-			ExpectedError:     testErr,
-			ExpectedScenarios: nil,
+			RuntimeRepoFn:           unusedRuntimeRepo,
+			FormationRepoFn:         unusedFormationRepo,
+			FormationTemplateRepoFn: unusedFormationTemplateRepo,
+			ObjectID:                RuntimeContextID,
+			ObjectType:              graphql.FormationObjectTypeRuntimeContext,
+			ExpectedError:           nil,
+			ExpectedScenarios:       []string{ScenarioName},
 		},
 		{
 			Name: "Returns error for runtime when checking if the runtime has context fails",

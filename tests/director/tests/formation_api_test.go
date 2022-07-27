@@ -573,7 +573,7 @@ func TestTenantFormationFlow(t *testing.T) {
 
 func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 	t := testingx.NewT(stdT)
-	t.Run("Runtime contexts formation processing from ASA", func(t *testing.T) {
+	t.Run("Create Automatic Scenario Assignment AFTER runtime creation", func(t *testing.T) {
 		ctx := context.Background()
 		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID // in local set up the parent is testDefaultTenant
 
@@ -703,6 +703,131 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			checkRuntimeFormationLabelIsMissing(t, ctx, subscriptionConsumerAccountID, kymaRuntime.ID)
 		})
 	})
+
+	t.Run("Create Automatic Scenario Assignment BEFORE runtime creation", func(t *testing.T) {
+		ctx := context.Background()
+		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID // in local set up the parent is testDefaultTenant
+
+		subscriptionConsumerAccountID := conf.TestConsumerAccountID
+		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID // in local set up the parent is ApplicationsForRuntimeTenantName
+
+		subscriptionConsumerTenantID := conf.TestConsumerTenantID
+
+		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
+		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
+		// Create kyma formation template
+		kymaFormationTmplName := "kyma-formation-template-name"
+		kymaFT := createFormationTemplate(t, ctx, "kyma", kymaFormationTmplName, conf.KymaRuntimeTypeLabelValue, graphql.ArtifactTypeEnvironmentInstance)
+		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, kymaFT.ID)
+
+		// Create provider formation template
+		providerFormationTmplName := "provider-formation-template-name"
+		providerFT := createFormationTemplate(t, ctx, "provider", providerFormationTmplName, conf.SubscriptionProviderAppNameValue, graphql.ArtifactTypeSubscription)
+		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, providerFT.ID)
+
+		// Create kyma formation
+		kymaFormationName := "kyma-formation-name"
+		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, kymaFormationName, &kymaFormationTmplName)
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, kymaFormationName)
+
+		// Create provider formation
+		providerFormationName := "provider-formation-name"
+		fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName, &providerFormationTmplName)
+		defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, providerFormationName)
+
+		t.Run("Register kyma runtime and validate scenarios label", func(t *testing.T) {
+			// Create Automatic Scenario Assignment for kyma formation
+			assignTenantToFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, kymaFormationName)
+			defer unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, kymaFormationName)
+
+			// Register kyma runtime
+			kymaRtmInput := fixtures.FixRuntimeRegisterInput("kyma-runtime")
+			kymaRuntime := registerKymaRuntime(t, ctx, subscriptionConsumerSubaccountID, kymaRtmInput)
+			defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &kymaRuntime)
+
+			t.Logf("Assert scenarios label exists after assigning tenant with ID: %q to formation", subscriptionConsumerSubaccountID)
+			checkRuntimeFormationLabelsExists(t, ctx, subscriptionConsumerAccountID, kymaRuntime.ID, "scenarios", []string{kymaFormationName})
+		})
+
+		t.Run("Register provider runtime and validate scenarios label", func(t *testing.T) {
+			// Create Automatic Scenario Assignment for provider formation
+			assignTenantToFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, providerFormationName)
+			defer unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, providerFormationName)
+
+			// Register provider runtime
+			providerRuntimeInput := graphql.RuntimeRegisterInput{
+				Name:        "providerRuntime",
+				Description: ptr.String("providerRuntime-description"),
+				Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue, tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
+			}
+
+			providerRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntimeInput)
+			defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntime)
+			require.NotEmpty(t, providerRuntime.ID)
+
+			selfRegLabelValue, ok := providerRuntime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
+			require.True(t, ok)
+			require.Contains(t, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+providerRuntime.ID)
+
+			httpClient := &http.Client{
+				Timeout: 10 * time.Second,
+				Transport: &http.Transport{
+					TLSClientConfig: &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation},
+				},
+			}
+
+			depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
+			require.NoError(t, err)
+			response, err := httpClient.Do(depConfigureReq)
+			require.NoError(t, err)
+			defer func() {
+				if err := response.Body.Close(); err != nil {
+					t.Logf("Could not close response body %s", err)
+				}
+			}()
+			require.Equal(t, http.StatusOK, response.StatusCode)
+
+			apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
+			subscribeReq, err := http.NewRequest(http.MethodPost, conf.SubscriptionConfig.URL+apiPath, bytes.NewBuffer([]byte("{\"subscriptionParams\": {}}")))
+			require.NoError(t, err)
+			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+			subscribeReq.Header.Add(subscription.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
+			subscribeReq.Header.Add(subscription.ContentTypeHeader, subscription.ContentTypeApplicationJson)
+			subscribeReq.Header.Add(conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
+
+			// unsubscribe request execution to ensure no resources/subscriptions are left unintentionally due to old unsubscribe failures or broken tests in the middle.
+			// In case there isn't subscription it will fail-safe without error
+			subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+			t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
+			resp, err := httpClient.Do(subscribeReq)
+			require.NoError(t, err)
+			defer func() {
+				if err := resp.Body.Close(); err != nil {
+					t.Logf("Could not close response body %s", err)
+				}
+			}()
+			body, err := ioutil.ReadAll(resp.Body)
+			require.NoError(t, err)
+			require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
+
+			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+			subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
+			require.NotEmpty(t, subJobStatusPath)
+			subJobStatusURL := conf.SubscriptionConfig.URL + subJobStatusPath
+			require.Eventually(t, func() bool {
+				return subscription.GetSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == subscription.JobSucceededStatus
+			}, subscription.EventuallyTimeout, subscription.EventuallyTick)
+			t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
+
+			// Validate scenarios label
+			t.Logf("Assert scenarios label after assigning tenant with ID: %q to formation", subscriptionConsumerSubaccountID)
+			checkRuntimeContextFormationLabelsForRuntime(t, ctx, subscriptionConsumerAccountID, providerRuntime.ID, "scenarios", []string{providerFormationName})
+		})
+	})
 }
 
 func assignTenantToFormation(t *testing.T, ctx context.Context, objectID, tenantID, formationName string) {
@@ -767,6 +892,7 @@ func checkRuntimeFormationLabelIsMissing(t *testing.T, ctx context.Context, tena
 	rtm := graphql.RuntimeExt{}
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, rtmRequest, &rtm)
 	require.NoError(t, err)
+	require.Equal(t, rtmID, rtm.ID)
 
 	scenariosLabel, hasScenario := rtm.Labels["scenarios"].([]interface{})
 	require.False(t, hasScenario)
@@ -778,6 +904,9 @@ func checkRuntimeContextFormationLabelsForRuntime(t *testing.T, ctx context.Cont
 	rtm := graphql.RuntimeExt{}
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, rtmRequest, &rtm)
 	require.NoError(t, err)
+	require.Equal(t, rtmID, rtm.ID)
+	require.NotEmpty(t, rtm.RuntimeContexts)
+	require.NotEmpty(t, rtm.RuntimeContexts.Data)
 
 	for _, rtCtx := range rtm.RuntimeContexts.Data {
 		scenariosLabel, ok := rtCtx.Labels[formationLabelKey].([]interface{})
@@ -796,6 +925,9 @@ func checkRuntimeContextFormationLabelsForRuntimeIsMissing(t *testing.T, ctx con
 	rtm := graphql.RuntimeExt{}
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, rtmRequest, &rtm)
 	require.NoError(t, err)
+	require.Equal(t, rtmID, rtm.ID)
+	require.NotEmpty(t, rtm.RuntimeContexts)
+	require.NotEmpty(t, rtm.RuntimeContexts.Data)
 
 	for _, rtCtx := range rtm.RuntimeContexts.Data {
 		scenariosLabel, hasScenario := rtCtx.Labels[formationLabelKey].([]interface{})
@@ -809,6 +941,8 @@ func checkRuntimeContextFormationLabels(t *testing.T, ctx context.Context, tenan
 	rtm := graphql.RuntimeExt{}
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, rtmRequest, &rtm)
 	require.NoError(t, err)
+	require.Equal(t, rtmID, rtm.ID)
+	require.NotEmpty(t, rtm.RuntimeContext)
 
 	scenariosLabel, ok := rtm.RuntimeContext.Labels[formationLabelKey].([]interface{})
 	require.True(t, ok)
