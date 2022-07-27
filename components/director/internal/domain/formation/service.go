@@ -276,9 +276,17 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 }
 
 // AssignFormation assigns object based on graphql.FormationObjectType.
-// For objectTypes graphql.FormationObjectType is graphql.FormationObjectTypeApplication, graphql.FormationObjectTypeRuntime and
+//
+// When objectType graphql.FormationObjectType is graphql.FormationObjectTypeApplication, graphql.FormationObjectTypeRuntime and
 // graphql.FormationObjectTypeRuntimeContext it adds the provided formation to the scenario label of the entity if such exists,
 // otherwise new scenario label is created for the entity with the provided formation.
+//
+// Additionally, a notification is sent to each runtime that needs to be notified (has a configuration change webhook) and is part of the formation either directly or via runtimeContext.
+// 		- If objectType is graphql.FormationObjectTypeApplication, a notification for the assigned application is sent to all the runtimes
+//			that are in the formation (either directly or via runtimeContext) and has configuration change webhooks.
+// 		- If objectType is graphql.FormationObjectTypeRuntime or graphql.FormationObjectTypeRuntimeContext, and the runtime has configuration change webhook,
+//			a notification for each application in the formation is sent to this runtime.
+//
 // If the graphql.FormationObjectType is graphql.FormationObjectTypeTenant it will
 // create automatic scenario assignment with the caller and target tenant.
 func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
@@ -350,11 +358,20 @@ func (s *service) assign(ctx context.Context, tnt, objectID string, objectType g
 }
 
 // UnassignFormation unassigns object base on graphql.FormationObjectType.
+//
 // For objectType graphql.FormationObjectTypeApplication it removes the provided formation from the
 // scenario label of the application.
+//
 // For objectTypes graphql.FormationObjectTypeRuntime and graphql.FormationObjectTypeRuntimeContext
 // it removes the formation from the scenario label of the runtime/runtime context if the provided
 // formation is NOT assigned from ASA and does nothing if it is assigned from ASA.
+//
+// Additionally, a notification is sent to each runtime that needs to be notified (has a configuration change webhook) and is part of the formation either directly or via runtimeContext.
+// 		- If objectType is graphql.FormationObjectTypeApplication, a notification for the unassigned application is sent to all the runtimes
+//			that are in the formation (either directly or via runtimeContext) and has configuration change webhooks.
+// 		- If objectType is graphql.FormationObjectTypeRuntime or graphql.FormationObjectTypeRuntimeContext, and the runtime has configuration change webhook,
+//			a notification for each application in the formation is sent to this runtime.
+//
 // For objectType graphql.FormationObjectTypeTenant it will
 // delete the automatic scenario assignment with the caller and target tenant.
 func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
@@ -988,7 +1005,10 @@ func (s *service) modifyFormations(ctx context.Context, tnt, formationName strin
 		return err
 	}
 
-	formations = modificationFunc(formations, formationName)
+	formations, err = modificationFunc(formations, formationName)
+	if err != nil {
+		return err
+	}
 
 	schema, err := labeldef.NewSchemaForFormations(formations)
 	if err != nil {
@@ -1024,7 +1044,11 @@ func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID st
 		return err
 	}
 
-	formations := modificationFunc(existingFormations, formation.Name)
+	formations, err := modificationFunc(existingFormations, formation.Name)
+	if err != nil {
+		return err
+	}
+
 	// can not set scenario label to empty value, violates the scenario label definition
 	if len(formations) == 0 {
 		return s.labelRepository.Delete(ctx, tnt, objectType, objectID, model.ScenariosKey)
@@ -1035,19 +1059,19 @@ func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID st
 	return s.labelService.UpdateLabel(ctx, tnt, existingLabel.ID, labelInput)
 }
 
-type modificationFunc func([]string, string) []string
+type modificationFunc func([]string, string) ([]string, error)
 
-func addFormation(formations []string, formation string) []string {
+func addFormation(formations []string, formation string) ([]string, error) {
 	for _, f := range formations {
 		if f == formation {
-			return formations
+			return nil, apperrors.NewNotUniqueErrorWithMessage(resource.Formations, fmt.Sprintf("Formation %s already exists", formation))
 		}
 	}
 
-	return append(formations, formation)
+	return append(formations, formation), nil
 }
 
-func deleteFormation(formations []string, formation string) []string {
+func deleteFormation(formations []string, formation string) ([]string, error) {
 	filteredFormations := make([]string, 0, len(formations))
 	for _, f := range formations {
 		if f != formation {
@@ -1055,7 +1079,7 @@ func deleteFormation(formations []string, formation string) []string {
 		}
 	}
 
-	return filteredFormations
+	return filteredFormations, nil
 }
 
 func newLabelInput(formation, objectID string, objectType model.LabelableObject) *model.LabelInput {
