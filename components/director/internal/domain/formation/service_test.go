@@ -4705,24 +4705,6 @@ func TestService_GetScenariosFromMatchingASAs(t *testing.T) {
 		},
 	}
 
-	//rtmIDs := []string{"123", "456", "789"}
-	//rtmNames := []string{"first", "second", "third"}
-
-	//runtimes := []*model.Runtime{
-	//	{
-	//		ID:   rtmIDs[0],
-	//		Name: rtmNames[0],
-	//	},
-	//	{
-	//		ID:   rtmIDs[1],
-	//		Name: rtmNames[1],
-	//	},
-	//	{
-	//		ID:   rtmIDs[2],
-	//		Name: rtmNames[2],
-	//	},
-	//}
-
 	testCases := []struct {
 		Name                     string
 		ScenarioAssignmentRepoFn func() *automock.AutomaticFormationAssignmentRepository
