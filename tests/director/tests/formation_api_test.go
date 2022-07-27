@@ -288,11 +288,11 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	t.Log("Check if new scenario label value was set correctly")
 	checkRuntimeFormationLabelsExists(t, ctx, tenantId, rtm.ID, labelKey, []string{asaFormation, newFormation})
 
-	t.Logf("Assign runtime to formation %s which was already assigned by ASA", asaFormation)
+	t.Logf("Assign runtime to formation %s which was already assigned by ASA should fail with conflict", asaFormation)
 	assignReq = fixtures.FixAssignFormationRequest(rtm.ID, "RUNTIME", asaFormation)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
-	require.NoError(t, err)
-	require.Equal(t, asaFormation, assignFormation.Name)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Object is not unique")
 
 	t.Log("Check if the formation label value is still assigned")
 	checkRuntimeFormationLabelsExists(t, ctx, tenantId, rtm.ID, labelKey, []string{asaFormation, newFormation})
@@ -446,11 +446,11 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	t.Log("Check if new scenario label value was set correctly")
 	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, labelKey, []string{asaFormation, asaFormation2, newFormation})
 
-	t.Logf("Assign runtime context to formation %s which was already assigned by ASA", asaFormation)
+	t.Logf("Assign runtime context to formation %s which was already assigned by ASA should fail with conflict", asaFormation)
 	assignReq = fixtures.FixAssignFormationRequest(runtimeContext.ID, "RUNTIME_CONTEXT", asaFormation)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, assignReq, &assignFormation)
-	require.NoError(t, err)
-	require.Equal(t, asaFormation, assignFormation.Name)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Object is not unique")
 
 	t.Log("Check if the formation label value is still assigned")
 	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, labelKey, []string{asaFormation, asaFormation2, newFormation})
