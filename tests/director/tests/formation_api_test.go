@@ -780,7 +780,7 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 	})
 }
 
-func validateRuntimesScenariosLabels(t *testing.T, ctx context.Context, subscriptionConsumerAccountID, kymaFormationName, providerFormationName, kymaRuntimeID, providerRuntimeID string)  {
+func validateRuntimesScenariosLabels(t *testing.T, ctx context.Context, subscriptionConsumerAccountID, kymaFormationName, providerFormationName, kymaRuntimeID, providerRuntimeID string) {
 	t.Log("Assert kyma runtime HAS only kyma scenarios label")
 	checkRuntimeFormationLabelsExists(t, ctx, subscriptionConsumerAccountID, kymaRuntimeID, "scenarios", []string{kymaFormationName})
 
