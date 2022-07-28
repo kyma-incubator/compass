@@ -881,22 +881,6 @@ func checkRuntimeContextFormationLabelsForRuntime(t *testing.T, ctx context.Cont
 	}
 }
 
-func checkRuntimeContextFormationLabelsForRuntimeIsMissing(t *testing.T, ctx context.Context, tenantID, rtmID, formationLabelKey string) {
-	rtmRequest := fixtures.FixGetRuntimeContextsRequest(rtmID)
-	rtm := graphql.RuntimeExt{}
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, rtmRequest, &rtm)
-	require.NoError(t, err)
-	require.Equal(t, rtmID, rtm.ID)
-	require.NotEmpty(t, rtm.RuntimeContexts)
-	require.NotEmpty(t, rtm.RuntimeContexts.Data)
-
-	for _, rtCtx := range rtm.RuntimeContexts.Data {
-		scenariosLabel, hasScenario := rtCtx.Labels[formationLabelKey].([]interface{})
-		require.False(t, hasScenario)
-		require.Empty(t, scenariosLabel)
-	}
-}
-
 func checkRuntimeContextFormationLabels(t *testing.T, ctx context.Context, tenantID, rtmID, rtmCtxID, formationLabelKey string, expectedFormations []string) {
 	rtmRequest := fixtures.FixRuntimeContextRequest(rtmID, rtmCtxID)
 	rtm := graphql.RuntimeExt{}
