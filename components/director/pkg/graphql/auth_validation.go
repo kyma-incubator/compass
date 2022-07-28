@@ -27,10 +27,11 @@ func (i CredentialDataInput) Validate() error {
 	return validation.Errors{
 		"Rule.ExactlyOneNotNil": inputvalidation.ValidateExactlyOneNotNil(
 			"exactly one credential input has to be specified",
-			i.Basic, i.Oauth,
+			i.Basic, i.Oauth, i.CertificateOAuth,
 		),
-		"Basic": validation.Validate(i.Basic),
-		"Oauth": validation.Validate(i.Oauth),
+		"Basic":            validation.Validate(i.Basic),
+		"Oauth":            validation.Validate(i.Oauth),
+		"CertificateOAuth": validation.Validate(i.CertificateOAuth),
 	}.Filter()
 }
 
