@@ -53,6 +53,15 @@ func (i OAuthCredentialDataInput) Validate() error {
 }
 
 // Validate missing godoc
+func (i CertificateOAuthCredentialDataInput) Validate() error {
+	return validation.ValidateStruct(&i,
+		validation.Field(&i.ClientID, validation.Required),
+		validation.Field(&i.Certificate, validation.Required),
+		validation.Field(&i.URL, validation.Required, is.URL),
+	)
+}
+
+// Validate missing godoc
 func (i CredentialRequestAuthInput) Validate() error {
 	return validation.ValidateStruct(&i,
 		validation.Field(&i.Csrf, validation.Required),
