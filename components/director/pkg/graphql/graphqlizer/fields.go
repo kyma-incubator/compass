@@ -396,7 +396,11 @@ func (fp *GqlFieldsProvider) ForAuth() string {
 					clientId
 					clientSecret
 					url
-					
+				}
+.				...  on CertificateOAuthCredentialData {
+					clientId
+					certificate
+					url
 				}
 			}
 			oneTimeToken {
@@ -421,7 +425,11 @@ func (fp *GqlFieldsProvider) ForAuth() string {
 					clientId
 					clientSecret
 					url
-					
+				  }
+				  ...  on CertificateOAuthCredentialData {
+					clientId
+					certificate
+					url
 				  }
 			    }
 				additionalHeaders
