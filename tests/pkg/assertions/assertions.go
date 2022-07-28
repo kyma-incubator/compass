@@ -77,6 +77,8 @@ func AssertAuth(t *testing.T, in *graphql.AuthInput, actual *graphql.Auth) {
 	AssertHttpHeaders(t, in.AdditionalHeadersSerialized, &actual.AdditionalHeaders)
 	AssertQueryParams(t, in.AdditionalQueryParamsSerialized, &actual.AdditionalQueryParams)
 
+	fmt.Printf("ALEX %+v", actual.Credential)
+
 	if in.Credential != nil {
 		if in.Credential.Basic != nil {
 			basic, ok := actual.Credential.(*graphql.BasicCredentialData)
@@ -90,6 +92,12 @@ func AssertAuth(t *testing.T, in *graphql.AuthInput, actual *graphql.Auth) {
 			assert.Equal(t, in.Credential.Oauth.URL, o.URL)
 			assert.Equal(t, in.Credential.Oauth.ClientSecret, o.ClientSecret)
 			assert.Equal(t, in.Credential.Oauth.ClientID, o.ClientID)
+		} else if in.Credential.CertificateOAuth != nil {
+			o, ok := actual.Credential.(*graphql.CertificateOAuthCredentialData)
+			require.True(t, ok)
+			assert.Equal(t, in.Credential.CertificateOAuth.URL, o.URL)
+			assert.Equal(t, in.Credential.CertificateOAuth.Certificate, o.Certificate)
+			assert.Equal(t, in.Credential.CertificateOAuth.ClientID, o.ClientID)
 		}
 	}
 
@@ -109,6 +117,12 @@ func AssertAuth(t *testing.T, in *graphql.AuthInput, actual *graphql.Auth) {
 				assert.Equal(t, in.RequestAuth.Csrf.Credential.Oauth.URL, o.URL)
 				assert.Equal(t, in.RequestAuth.Csrf.Credential.Oauth.ClientSecret, o.ClientSecret)
 				assert.Equal(t, in.RequestAuth.Csrf.Credential.Oauth.ClientID, o.ClientID)
+			} else if in.RequestAuth.Csrf.Credential.CertificateOAuth != nil {
+				o, ok := actual.RequestAuth.Csrf.Credential.(*graphql.CertificateOAuthCredentialData)
+				require.True(t, ok)
+				assert.Equal(t, in.RequestAuth.Csrf.Credential.CertificateOAuth.URL, o.URL)
+				assert.Equal(t, in.RequestAuth.Csrf.Credential.CertificateOAuth.Certificate, o.Certificate)
+				assert.Equal(t, in.RequestAuth.Csrf.Credential.CertificateOAuth.ClientID, o.ClientID)
 			}
 		}
 		assert.Equal(t, in.RequestAuth.Csrf.AdditionalQueryParams, actual.RequestAuth.Csrf.AdditionalQueryParams)
