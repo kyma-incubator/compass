@@ -42,10 +42,6 @@ func GetRequestWithCredentials(ctx context.Context, client *http.Client, url, tn
 		resp, err = secureClient(ctx, client, auth).Do(req)
 	}
 
-	//if auth.Credential.CertificateOAuth != nil {
-	//	// TODO:
-	//}
-
 	return resp, err
 }
 
