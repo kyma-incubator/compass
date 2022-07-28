@@ -397,7 +397,7 @@ func (fp *GqlFieldsProvider) ForAuth() string {
 					clientSecret
 					url
 				}
-.				...  on CertificateOAuthCredentialData {
+				...  on CertificateOAuthCredentialData {
 					clientId
 					certificate
 					url
@@ -434,7 +434,7 @@ func (fp *GqlFieldsProvider) ForAuth() string {
 			    }
 				additionalHeaders
 				additionalQueryParams
-			}
+			  }
 			}
 		`
 }
