@@ -168,16 +168,6 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 
 	ctx = tenant.SaveToContext(ctx, consumerInternalTenant, subaccountTenantID)
 
-	rtmCtxID, err := s.runtimeCtxSvc.Create(ctx, model.RuntimeContextInput{
-		Key:       s.subscriptionLabelKey,
-		Value:     consumerTenantID,
-		RuntimeID: runtime.ID,
-	})
-	if err != nil {
-		log.C(ctx).Errorf("An error occurred while creating runtime context with key: %q and value: %q, and runtime ID: %q: %v", s.subscriptionLabelKey, consumerTenantID, runtime.ID, err)
-		return false, errors.Wrapf(err, "while creating runtime context with value: %q and runtime ID: %q during subscription", consumerTenantID, runtime.ID)
-	}
-
 	m2mTable, ok := resource.Runtime.TenantAccessTable()
 	if !ok {
 		return false, errors.Errorf("entity %s does not have access table", resource.Runtime)
@@ -189,6 +179,16 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 		Owner:      false,
 	}); err != nil {
 		return false, err
+	}
+
+	rtmCtxID, err := s.runtimeCtxSvc.Create(ctx, model.RuntimeContextInput{
+		Key:       s.subscriptionLabelKey,
+		Value:     consumerTenantID,
+		RuntimeID: runtime.ID,
+	})
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while creating runtime context with key: %q and value: %q, and runtime ID: %q: %v", s.subscriptionLabelKey, consumerTenantID, runtime.ID, err)
+		return false, errors.Wrapf(err, "while creating runtime context with value: %q and runtime ID: %q during subscription", consumerTenantID, runtime.ID)
 	}
 
 	log.C(ctx).Infof("Creating label for runtime context with ID: %q with key: %q and value: %q", rtmCtxID, s.consumerSubaccountLabelKey, subaccountTenantID)
