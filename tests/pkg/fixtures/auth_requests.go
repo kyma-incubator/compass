@@ -47,16 +47,17 @@ func FixOauthAuth(t require.TestingT) *graphql.AuthInput {
 
 func FixCertificateOauthAuth(t require.TestingT) *graphql.AuthInput {
 	additionalHeaders, err := graphql.NewHTTPHeadersSerialized(map[string][]string{
-		"header-A": []string{"ha1", "ha2"},
-		"header-B": []string{"hb1", "hb2"},
+		"header-A": {"ha1", "ha2"},
+		"header-B": {"hb1", "hb2"},
 	})
 	require.NoError(t, err)
 
 	additionalQueryParams, err := graphql.NewQueryParamsSerialized(map[string][]string{
-		"qA": []string{"qa1", "qa2"},
-		"qB": []string{"qb1", "qb2"},
+		"qA": {"qa1", "qa2"},
+		"qB": {"qb1", "qb2"},
 	})
 	require.NoError(t, err)
+
 	return &graphql.AuthInput{
 		Credential:                      FixCertificateOAuthCredential(),
 		AdditionalHeadersSerialized:     &additionalHeaders,
