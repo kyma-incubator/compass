@@ -18,15 +18,20 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-func HandleFuncOrdConfig(baseURLOverride, accessStrategy string) func(rw http.ResponseWriter, req *http.Request) {
-	return HandleFuncOrdConfigWithDocPath(baseURLOverride, "/open-resource-discovery/v1/documents/example1", accessStrategy)
+func HandleFuncOrdConfig(baseURLOverride, accessStrategy string, isMultiTenant bool) func(rw http.ResponseWriter, req *http.Request) {
+	return HandleFuncOrdConfigWithDocPath(baseURLOverride, "/open-resource-discovery/v1/documents/example1", accessStrategy, isMultiTenant)
 }
 
-func HandleFuncOrdConfigWithDocPath(baseURLOverride, docPath, accessStrategy string) func(rw http.ResponseWriter, req *http.Request) {
+func HandleFuncOrdConfigWithDocPath(baseURLOverride, docPath, accessStrategy string, isMultiTenant bool) func(rw http.ResponseWriter, req *http.Request) {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		var baseURLFormat string
 		if len(baseURLOverride) > 0 {
 			baseURLFormat = fmt.Sprintf(`"baseUrl": "%s",`, baseURLOverride)
+		}
+
+		if tnt := req.Header.Get("Tenant"); isMultiTenant && len(tnt) == 0 {
+			httphelpers.WriteError(rw, errors.New("tenant header is missing"), http.StatusInternalServerError)
+			return
 		}
 
 		rw.WriteHeader(http.StatusOK)

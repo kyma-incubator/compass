@@ -316,8 +316,12 @@ github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-2022022
 github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220225101454-1e11cf2f8a9b/go.mod h1:EPQuWKlrkBDEK2Fj4G3qrnPCQhAvM48z7JzbWD2dUts=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20220225101454-1e11cf2f8a9b h1:CTvWA/b4sbr4D91mmmHUEZYM6iWi0BXtDOCNxG0BwSI=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20220225101454-1e11cf2f8a9b/go.mod h1:wGzvH5XWBA34gt7cb+UVrovLHsIqjNddzP+DkPBZ3u0=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220622101746-715bb21a6e3a h1:ILhp7Dy2cNiPAa7t6/SUnKD/c30qCjSweYZ+CS7Ykm0=
-github.com/kyma-incubator/compass/components/director v0.0.0-20220622101746-715bb21a6e3a/go.mod h1:V4nDMsJUfGIEoYs/tYj64qfkbt0Z0wFTQ/LYIedal9o=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220725060300-2aff5f70cb7c h1:H3mGGCDgPCZ56FfXtcOTjMriypghwWvYAUpnTOFAx3A=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220725060300-2aff5f70cb7c/go.mod h1:V4nDMsJUfGIEoYs/tYj64qfkbt0Z0wFTQ/LYIedal9o=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220726135857-8807c96c2e68 h1:lMSp9SRvs4HRJPd8cRdel5eMfwQJ5ZJD89LZvsv6flc=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220726135857-8807c96c2e68/go.mod h1:V4nDMsJUfGIEoYs/tYj64qfkbt0Z0wFTQ/LYIedal9o=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220726140142-2e8e42771b64 h1:tjXYXDTbx6foafehDDP1WPmzfrY/wDvz/+BSfO4/qww=
+github.com/kyma-incubator/compass/components/director v0.0.0-20220726140142-2e8e42771b64/go.mod h1:V4nDMsJUfGIEoYs/tYj64qfkbt0Z0wFTQ/LYIedal9o=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20220225101454-1e11cf2f8a9b h1:4R8r0Us/Arb5LyJojWuLJFImHLolGNKSsJGubZqoapY=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20220225101454-1e11cf2f8a9b/go.mod h1:GW13QCwxZX0gyEBKypJ0OX1VRyOrKe1BFvL4q1RZODY=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20220225101454-1e11cf2f8a9b h1:oxx4DknU9x54foCUWRoFzaSK7Z1Xpj0eG6Fr1gPQkOI=

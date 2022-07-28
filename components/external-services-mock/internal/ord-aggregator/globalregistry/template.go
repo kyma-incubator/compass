@@ -27,14 +27,50 @@ const ordDocument = `{
    "$schema":"./spec/v1/generated/Document.schema.json",
    "openResourceDiscovery":"1.2",
    "description":"Global Registry Test Document",
-   "products":[
-		{
-		  "ordId": "sap:product:SAPCloudPlatform:",
-		  "title": "SAP Business Technology Platform",
-		  "shortDescription": "Accelerate business outcomes with integration, data to value, and extensibility.",
-		  "vendor": "sap:vendor:SAP:"
-		}
-   ],
+   "products": [
+    {
+      "ordId": "sap:product:SAPS4HANACloud:",
+      "title": "SAP S/4HANA Cloud",
+      "shortDescription": "The next generation digital core designed to help you run simple\nin a digital economy. It provides the industry-specific capabilities and cloud\nbenefits that your business needs.",
+      "vendor": "sap:vendor:SAP:",
+      "labels": {
+        "logo": [
+          "https://cloudintegration.hana.ondemand.com/falcon-assets/logos/products/SAPS4HANACloud_MINI.svg"
+        ]
+      }
+    },
+    {
+      "ordId": "sap:product:SAPS4HANA:",
+      "title": "SAP S/4HANA",
+      "shortDescription": "A future-ready ERP system with built-in intelligent technologies,\nincluding AI, machine learning, and advanced analytics which transforms business\nprocesses with intelligent automation.",
+      "vendor": "sap:vendor:SAP:",
+      "labels": {
+        "logo": [
+          "https://cloudintegration.hana.ondemand.com/falcon-assets/logos/products/SAPS4HANA_MINI.svg"
+        ]
+      }
+    },
+    {
+      "ordId": "sap:product:SAPCloudPlatform:",
+      "title": "SAP Business Technology Platform",
+      "shortDescription": "Accelerate business outcomes with integration, data to value, and extensibility.",
+      "vendor": "sap:vendor:SAP:"
+    },
+    {
+      "ordId": "sap:product:SAPS4HANAUtilities:",
+      "title": "SAP S/4HANA Utilities",
+      "shortDescription": "Provides an intelligent and integrated ERP system for utilities that runs on our in-memory database, SAP HANA.",
+      "vendor": "sap:vendor:SAP:",
+      "parent": "sap:product:SAPS4HANA:"
+    },
+    {
+      "ordId": "sap:product:SAPTransactionalBankingforSAPS4HANA:",
+      "title": "SAP Transactional Banking for SAP S/4HANA",
+      "shortDescription": "SAP Transactional Banking for SAP S/4HANA is an open core banking platform, which is based on an architecture that ensures real-time processing and continuous availability.",
+      "vendor": "sap:vendor:SAP:",
+      "parent": "sap:product:SAPS4HANA:"
+    }
+  ],
    "vendors":[
 		{
 		  "ordId": "sap:vendor:SAP:",

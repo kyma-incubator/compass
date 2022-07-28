@@ -3,6 +3,7 @@ package fixtures
 import (
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	gcli "github.com/machinebox/graphql"
 )
@@ -34,6 +35,15 @@ func FixCreateFormationRequest(formationName string) *gcli.Request {
 				}`, formationName, testctx.Tc.GQLFieldsProvider.ForFormation()))
 }
 
+func FixCreateFormationWithTemplateRequest(formationInput string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation{
+				  result: createFormation(formation: %s){
+					%s
+				  }
+				}`, formationInput, testctx.Tc.GQLFieldsProvider.ForFormation()))
+}
+
 func FixDeleteFormationRequest(formationName string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{
@@ -59,4 +69,11 @@ func FixUnassignFormationRequest(objID, objType, formationName string) *gcli.Req
 				%s
 			  }
 			}`, objID, objType, formationName, testctx.Tc.GQLFieldsProvider.ForFormation()))
+}
+
+func FixFormationInput(formationName string, formationTemplateName *string) graphql.FormationInput {
+	return graphql.FormationInput{
+		Name:         formationName,
+		TemplateName: formationTemplateName,
+	}
 }
