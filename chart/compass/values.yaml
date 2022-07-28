@@ -150,11 +150,7 @@ global:
       version: "PR-68"
     e2e_tests:
       dir:
-<<<<<<< HEAD
       version: "PR-2475"
-=======
-      version: "PR-2500"
->>>>>>> main
   isLocalEnv: false
   isForTesting: false
   oauth2:
