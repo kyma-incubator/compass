@@ -392,14 +392,14 @@ func (fp *GqlFieldsProvider) ForAuth() string {
 					username
 					password
 				}
-				...  on OAuthCredentialData {
-					clientId
-					clientSecret
-					url
-				}
 				...  on CertificateOAuthCredentialData {
 					clientId
 					certificate
+					url
+				}
+   				...  on OAuthCredentialData {
+					clientId
+					clientSecret
 					url
 				}
 			}
