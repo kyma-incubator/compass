@@ -77,8 +77,6 @@ func AssertAuth(t *testing.T, in *graphql.AuthInput, actual *graphql.Auth) {
 	AssertHttpHeaders(t, in.AdditionalHeadersSerialized, &actual.AdditionalHeaders)
 	AssertQueryParams(t, in.AdditionalQueryParamsSerialized, &actual.AdditionalQueryParams)
 
-	fmt.Printf("ALEX %+v", actual.Credential)
-
 	if in.Credential != nil {
 		if in.Credential.Basic != nil {
 			basic, ok := actual.Credential.(*graphql.BasicCredentialData)
