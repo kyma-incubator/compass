@@ -20,7 +20,7 @@ func newAuthorizedHTTPClient(timeout time.Duration) *http.Client {
 	}
 
 	return &http.Client{
-		Transport: httputil.NewCorrelationIDTransport(transport),
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(transport)),
 		Timeout:   timeout,
 	}
 }

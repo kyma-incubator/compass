@@ -117,7 +117,7 @@ func TestGettingTokenWithMTLSThroughFQN(t *testing.T) {
 	require.NoError(t, err)
 
 	client := http.Client{
-		Transport: director_http.NewServiceAccountTokenTransport(http.DefaultTransport),
+		Transport: director_http.NewServiceAccountTokenTransport(director_http.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
 	}
 
 	resp, err := client.Do(req)
