@@ -85,9 +85,9 @@ func FixOAuthCredential() *graphql.CredentialDataInput {
 func FixCertificateOAuthCredential() *graphql.CredentialDataInput {
 	return &graphql.CredentialDataInput{
 		CertificateOAuth: &graphql.CertificateOAuthCredentialDataInput{
-			URL:         "url.net",
+			URL:         "https://url.net",
 			Certificate: "cert-data",
-			ClientID:    "clientid",
+			ClientID:    "clientid-here",
 		}}
 }
 

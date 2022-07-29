@@ -7,6 +7,7 @@ import (
 type credential struct {
 	*BasicCredentialData
 	*OAuthCredentialData
+	*CertificateOAuthCredentialData
 }
 
 // OneTimeTokenDTO this a model for transportation of one-time tokens, because the json marshaller cannot unmarshal to either of the types OTTForApp or OTTForRuntime
@@ -70,8 +71,11 @@ func (csrf *CSRFTokenCredentialRequestAuth) UnmarshalJSON(data []byte) error {
 func retrieveCredential(unmarshaledCredential credential) CredentialData {
 	if unmarshaledCredential.BasicCredentialData != nil {
 		return unmarshaledCredential.BasicCredentialData
+	} else if unmarshaledCredential.OAuthCredentialData != nil {
+		return unmarshaledCredential.OAuthCredentialData
 	}
-	return unmarshaledCredential.OAuthCredentialData
+
+	return unmarshaledCredential.CertificateOAuthCredentialData
 }
 
 func retrieveOneTimeToken(ottDTO *oneTimeTokenDTO) OneTimeToken {
