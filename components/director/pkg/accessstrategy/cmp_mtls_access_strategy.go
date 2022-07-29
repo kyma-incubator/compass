@@ -45,7 +45,7 @@ func (as *cmpMTLSAccessStrategyExecutor) Execute(ctx context.Context, baseClient
 		case *http.Transport:
 			tr = v.Clone()
 		case HTTPRoundTripper:
-			tr = v.GetTransport()
+			tr = v.GetTransport().Clone()
 		default:
 			return nil, errors.New("unsupported transport type")
 		}
