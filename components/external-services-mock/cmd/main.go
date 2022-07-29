@@ -102,7 +102,7 @@ func claimsFunc(uniqueAttrKey, uniqueAttrValue, clientID, tenantID, identity, is
 			"tenant":      tenantID,
 			"identity":    identity,
 			"iss":         iss,
-			"exp":         time.Now().Unix() + int64(time.Minute.Seconds()*10),
+			"exp":         time.Now().Unix() + int64(time.Minute.Seconds()*20),
 		}
 	}
 }
