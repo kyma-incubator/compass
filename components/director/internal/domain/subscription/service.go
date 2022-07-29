@@ -182,7 +182,6 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 		return false, err
 	}
 
-	log.C(ctx).Infof("Creating runtime context for runtime with ID: %q and key: %q and value: %q", runtime.ID, s.subscriptionLabelKey, consumerTenantID)
 	rtmCtxID, err := s.runtimeCtxSvc.Create(ctx, model.RuntimeContextInput{
 		Key:       s.subscriptionLabelKey,
 		Value:     consumerTenantID,
