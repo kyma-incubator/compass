@@ -107,11 +107,15 @@ func retrieveCredential(data []byte) (CredentialData, error) {
 		return &oauthCredential.OAuthCredentialData, nil
 	}
 
-	var CertOAuthCredential struct {
+	var certOAuthCredential struct {
 		CertificateOAuthCredentialData `json:"credential"`
 	}
-	if err := json.Unmarshal(data, &CertOAuthCredential); err != nil {
-		return &CertOAuthCredential.CertificateOAuthCredentialData, nil
+	if err := json.Unmarshal(data, &certOAuthCredential); err != nil {
+		return &certOAuthCredential.CertificateOAuthCredentialData, nil
+	}
+
+	if isCertificateOAuth := isCredentialStructFullWithData(certOAuthCredential.CertificateOAuthCredentialData); isCertificateOAuth {
+		return &certOAuthCredential.CertificateOAuthCredentialData, nil
 	}
 
 	return nil, nil
