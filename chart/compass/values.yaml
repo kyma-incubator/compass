@@ -144,7 +144,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2500"
+      version: "PR-2510"
     console:
       dir:
       version: "PR-68"
