@@ -460,3 +460,7 @@ func gqlPtrsToWebhooks(in []*graphql.Webhook) (webhookPtrs []graphql.Webhook) {
 	}
 	return
 }
+
+func fixColumns() []string {
+	return []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level"}
+}

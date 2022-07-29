@@ -388,27 +388,6 @@ func (r *pgRepository) ListByScenariosNoPaging(ctx context.Context, tenant strin
 	return items, nil
 }
 
-// ListByIDs lists all runtimes with given IDs
-func (r *pgRepository) ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Application, error) {
-	if len(ids) == 0 {
-		return nil, nil
-	}
-	var entities EntityCollection
-
-	if err := r.lister.List(ctx, resource.Runtime, tenant, &entities, repo.NewInConditionForStringValues("id", ids)); err != nil {
-		return nil, err
-	}
-
-	items := make([]*model.Application, 0, len(entities))
-
-	for _, appEnt := range entities {
-		m := r.conv.FromEntity(&appEnt)
-		items = append(items, m)
-	}
-
-	return items, nil
-}
-
 // Create missing godoc
 func (r *pgRepository) Create(ctx context.Context, tenant string, model *model.Application) error {
 	if model == nil {

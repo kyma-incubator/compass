@@ -38,7 +38,7 @@ type TemplateInput interface {
 	ParseHeadersTemplate(tmpl *string) (http.Header, error)
 }
 
-// Mode missing godoc
+// Mode is an enum for the mode of the webhook (sync or async)
 type Mode string
 
 // ResponseObject struct contains parts of response that might be needed for later processing of Webhook response

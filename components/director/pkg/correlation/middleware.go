@@ -112,7 +112,6 @@ func HeadersFromContext(ctx context.Context) Headers {
 }
 
 // CorrelationIDFromContext returns correlation id from the given context
-// TODO: Unit tests
 func CorrelationIDFromContext(ctx context.Context) string {
 	return HeadersFromContext(ctx)[RequestIDHeaderKey]
 }

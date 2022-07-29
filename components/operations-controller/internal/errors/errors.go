@@ -42,13 +42,6 @@ func NewFatalReconcileError(message string) *FatalReconcileErr {
 	}
 }
 
-// NewFatalReconcileError constructs a new FatalReconcileErr based on the provided error
-func NewFatalReconcileErrorFromExisting(err error) *FatalReconcileErr {
-	return &FatalReconcileErr{
-		error: err,
-	}
-}
-
 // IsWebhookStatusGoneErr check whether an error is a WebhookStatusGoneErr
 // and returns true if so.
 func IsWebhookStatusGoneErr(err error) (ok bool) {

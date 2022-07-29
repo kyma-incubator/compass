@@ -712,7 +712,3 @@ func TestRepository_ListByIDs(t *testing.T) {
 		assert.Nil(t, actual)
 	})
 }
-
-func fixColumns() []string {
-	return []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level"}
-}

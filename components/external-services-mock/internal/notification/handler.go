@@ -89,12 +89,6 @@ func (h *Handler) Delete(writer http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var result interface{}
-	if err := json.Unmarshal(bodyBytes, &result); err != nil {
-		httphelpers.WriteError(writer, errors.Wrap(err, "body is not a valid JSON"), http.StatusBadRequest)
-		return
-	}
-
 	h.mappings[id] = append(h.mappings[id], Response{
 		Operation:     Unassign,
 		ApplicationID: &applicationId,
