@@ -45,14 +45,14 @@ type MtlsClientCreator func(cache CertificateCache, skipSSLValidation bool, time
 
 // DefaultMtlsClientCreator is the default http client creator
 func DefaultMtlsClientCreator(cc CertificateCache, skipSSLValidation bool, timeout time.Duration) *http.Client {
-	httpTransport := httpdirector.NewCorrelationIDTransport(&http.Transport{
+	httpTransport := httpdirector.NewCorrelationIDTransport(httpdirector.NewHTTPTransportWrapper(&http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: skipSSLValidation,
 			GetClientCertificate: func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
 				return cc.Get(), nil
 			},
 		},
-	})
+	}))
 
 	return &http.Client{
 		Transport: httpTransport,

@@ -164,7 +164,7 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 
 	httpClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
-		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
 	}
 
 	directorClientProvider := director.NewClientProvider(cfg.Director.URL, cfg.Director.ClientTimeout, cfg.Director.SkipSSLValidation)

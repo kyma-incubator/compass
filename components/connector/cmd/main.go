@@ -170,7 +170,7 @@ func newInternalGraphQLClient(URL string, timeout time.Duration, skipSSLValidati
 	}
 
 	client := &http.Client{
-		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(tr, "Authorization")),
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(httputil.NewHTTPTransportWrapper(tr), "Authorization")),
 		Timeout:   timeout,
 	}
 
