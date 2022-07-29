@@ -19,20 +19,22 @@ type RuntimeRepository struct {
 	mock.Mock
 }
 
-// Exists provides a mock function with given fields: ctx, tenant, id
-func (_m *RuntimeRepository) Exists(ctx context.Context, tenant string, id string) (bool, error) {
-	ret := _m.Called(ctx, tenant, id)
+// GetByFiltersAndID provides a mock function with given fields: ctx, tenant, id, filter
+func (_m *RuntimeRepository) GetByFiltersAndID(ctx context.Context, tenant string, id string, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
+	ret := _m.Called(ctx, tenant, id, filter)
 
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) bool); ok {
-		r0 = rf(ctx, tenant, id)
+	var r0 *model.Runtime
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, []*labelfilter.LabelFilter) *model.Runtime); ok {
+		r0 = rf(ctx, tenant, id, filter)
 	} else {
-		r0 = ret.Get(0).(bool)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Runtime)
+		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, tenant, id)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, []*labelfilter.LabelFilter) error); ok {
+		r1 = rf(ctx, tenant, id, filter)
 	} else {
 		r1 = ret.Error(1)
 	}

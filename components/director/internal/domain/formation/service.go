@@ -34,17 +34,16 @@ type labelRepository interface {
 
 //go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeRepository interface {
+	GetByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
 	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	ListOwnedRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
-	Exists(ctx context.Context, tenant, id string) (bool, error)
 	OwnerExistsByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (bool, error)
 }
 
 //go:generate mockery --exported --name=runtimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeContextRepository interface {
 	GetByRuntimeID(ctx context.Context, tenant, runtimeID string) (*model.RuntimeContext, error)
-	ListAll(ctx context.Context, tenant string) ([]*model.RuntimeContext, error)
-	Exists(ctx context.Context, tenant, id string) (bool, error)
+	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
 	ExistsByRuntimeID(ctx context.Context, tenant, rtmID string) (bool, error)
 }
 
@@ -488,6 +487,7 @@ func (s *service) MergeScenariosFromInputLabelsAndAssignments(ctx context.Contex
 // In order to do that, the ASAs should be searched in the caller tenant as this is the tenant that modifies the runtime and this is the tenant that the ASA
 // produced labels should be added to.
 func (s *service) GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error) {
+	log.C(ctx).Infof("Getting scenarios matching from ASA for object with ID: %q and type: %q", objectID, objType)
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -502,9 +502,9 @@ func (s *service) GetScenariosFromMatchingASAs(ctx context.Context, objectID str
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listinng Automatic Scenario Assignments in tenant: %s", tenantID)
 	}
+	log.C(ctx).Infof("Found %d ASA(s) in tenant with ID: %q", len(scenarioAssignments), tenantID)
 
 	matchingASAs := make([]*model.AutomaticScenarioAssignment, 0, len(scenarioAssignments))
-
 	for _, scenarioAssignment := range scenarioAssignments {
 		matches, err := matchFunc(ctx, scenarioAssignment, objectID)
 		if err != nil {
@@ -519,6 +519,8 @@ func (s *service) GetScenariosFromMatchingASAs(ctx context.Context, objectID str
 	for _, sa := range matchingASAs {
 		scenarios = append(scenarios, sa.ScenarioName)
 	}
+	log.C(ctx).Infof("Matched scenarios from ASA are: %v", scenarios)
+
 	return scenarios, nil
 }
 
@@ -566,24 +568,26 @@ func (s *service) isASAMatchingRuntimeContext(ctx context.Context, asa *model.Au
 		return false, err
 	}
 
-	lblFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery("runtimeType", fmt.Sprintf("\"%s\"", runtimeType))}
+	runtimeTypeKey := "runtimeType"
+	lblFilters := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(runtimeTypeKey, fmt.Sprintf("\"%s\"", runtimeType))}
 
-	runtimes, err := s.runtimeRepo.ListAll(ctx, asa.TargetTenantID, lblFilters)
+	rtmCtx, err := s.runtimeContextRepo.GetByID(ctx, asa.TargetTenantID, runtimeContextID)
 	if err != nil {
-		return false, errors.Wrapf(err, "while listing runtimes with runtime type %q", runtimeType)
+		if apperrors.IsNotFoundError(err) {
+			return false, nil
+		}
+		return false, errors.Wrapf(err, "while getting runtime contexts with ID: %q", runtimeContextID)
 	}
 
-	for _, r := range runtimes {
-		hasRuntimeContext, err := s.runtimeContextRepo.Exists(ctx, asa.TargetTenantID, runtimeContextID)
-		if err != nil {
-			return false, errors.Wrapf(err, "while getting runtime contexts for runtime with id %q", r.ID)
+	_, err = s.runtimeRepo.GetByFiltersAndID(ctx, asa.TargetTenantID, rtmCtx.RuntimeID, lblFilters)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			return false, nil
 		}
-		if hasRuntimeContext {
-			return true, nil
-		}
+		return false, errors.Wrapf(err, "while getting runtime with ID: %q and label with key: %q and value: %q", rtmCtx.RuntimeID, runtimeTypeKey, runtimeType)
 	}
 
-	return false, nil
+	return true, nil
 }
 
 func (s *service) isFormationComingFromASA(ctx context.Context, objectID, formation string, objectType graphql.FormationObjectType) (bool, error) {
@@ -639,6 +643,7 @@ func (s *service) modifyFormations(ctx context.Context, tnt, formationName strin
 }
 
 func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID string, formation model.Formation, objectType model.LabelableObject, modificationFunc modificationFunc) error {
+	log.C(ctx).Infof("Modifying formation with name: %q for object with type: %q and ID: %q", formation.Name, objectType, objectID)
 	labelInput := newLabelInput(formation.Name, objectID, objectType)
 
 	existingLabel, err := s.labelService.GetLabel(ctx, tnt, labelInput)
