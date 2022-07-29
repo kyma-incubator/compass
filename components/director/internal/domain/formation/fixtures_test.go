@@ -2,7 +2,12 @@ package formation_test
 
 import (
 	"context"
+	"encoding/json"
+	"time"
+
 	"fmt"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -43,22 +48,28 @@ var (
 )
 
 const (
-	TargetTenantID          = "targetTenantID"
-	ScenarioName            = "scenario-A"
-	ScenarioName2           = "scenario-B"
-	ErrMsg                  = "some error"
-	Tnt                     = "953ac686-5773-4ad0-8eb1-2349e931f852"
-	TargetTenant            = "targetTenant"
-	ExternalTnt             = "external-tnt"
-	TenantID2               = "18271026-3998-4391-be58-b783a09fcca8"
-	TargetTenantID2         = "targetTenantID2"
-	RuntimeID               = "rt-id"
-	RuntimeContextID        = "rt-ctx-id"
-	FormationTemplateID     = "bda5378d-caa1-4ee4-b8bf-f733e180fbf9"
-	FormationID             = "cf7e396b-ee70-4a47-9aff-9fa9bfa466c1"
-	testFormationName       = "test-formation"
-	secondTestFormationName = "second-formation"
-	runtimeType             = "runtimeType"
+	TargetTenantID             = "targetTenantID"
+	ScenarioName               = "scenario-A"
+	ScenarioName2              = "scenario-B"
+	ErrMsg                     = "some error"
+	Tnt                        = "953ac686-5773-4ad0-8eb1-2349e931f852"
+	TargetTenant               = "targetTenant"
+	ExternalTnt                = "external-tnt"
+	TenantID2                  = "18271026-3998-4391-be58-b783a09fcca8"
+	TargetTenantID2            = "targetTenantID2"
+	WebhookID                  = "b5a62a7d-6805-43f9-a3be-370d2d125f0f"
+	RuntimeID                  = "rt-id"
+	WebhookForRuntimeContextID = "5202f196-46d7-4d1e-be50-434dd9fcd157"
+	RuntimeContextRuntimeID    = "rt-ctx-rt-id"
+	RuntimeContextID           = "rt-ctx-id"
+	FormationTemplateID        = "bda5378d-caa1-4ee4-b8bf-f733e180fbf9"
+	FormationID                = "cf7e396b-ee70-4a47-9aff-9fa9bfa466c1"
+	testFormationName          = "test-formation"
+	secondTestFormationName    = "second-formation"
+	ApplicationID              = "04f3568d-3e0c-4f6b-b646-e6979e9d060c"
+	Application2ID             = "6f5389cf-4f9e-46b3-9870-624d792d94ad"
+	ApplicationTemplateID      = "58963c6f-24f6-4128-a05c-51d5356e7e09"
+	runtimeType                = "runtimeType"
 )
 
 func unusedLabelService() *automock.LabelService {
@@ -89,11 +100,30 @@ func unusedRuntimeContextRepo() *automock.RuntimeContextRepository {
 	return &automock.RuntimeContextRepository{}
 }
 
+func unusedApplicationRepo() *automock.ApplicationRepository {
+	return &automock.ApplicationRepository{}
+}
+
+func unusedWebhookRepository() *automock.WebhookRepository {
+	return &automock.WebhookRepository{}
+}
+
+func unusedAppTemplateRepository() *automock.ApplicationTemplateRepository {
+	return &automock.ApplicationTemplateRepository{}
+}
+
+func unusedWebhookConverter() *automock.WebhookConverter {
+	return &automock.WebhookConverter{}
+}
+
+func unusedWebhookClient() *automock.WebhookClient {
+	return &automock.WebhookClient{}
+}
+
 func unusedLabelDefService() *automock.LabelDefService {
 	return &automock.LabelDefService{}
 }
 
-// UnusedUUIDService returns a mock uid service that does not expect to get called
 func unusedUUIDService() *automock.UuidService {
 	return &automock.UuidService{}
 }
@@ -177,6 +207,131 @@ func fixFormationTemplateModel() *model.FormationTemplate {
 		RuntimeType:            "runtimeTypes",
 		RuntimeTypeDisplayName: "runtimeDisplayName",
 		RuntimeArtifactKind:    model.RuntimeArtifactKindEnvironmentInstance,
+	}
+}
+
+func fixApplicationModelWithoutTemplate(applicationID string) *model.Application {
+	appModel := fixApplicationModel(applicationID)
+	appModel.ApplicationTemplateID = nil
+	return appModel
+}
+
+func fixApplicationModel(applicationID string) *model.Application {
+	return &model.Application{
+		ProviderName:          str.Ptr("application-provider"),
+		ApplicationTemplateID: str.Ptr(ApplicationTemplateID),
+		Name:                  "application-name",
+		Description:           str.Ptr("detailed application description"),
+		Status: &model.ApplicationStatus{
+			Condition: model.ApplicationStatusConditionInitial,
+			Timestamp: time.Time{},
+		},
+		HealthCheckURL:      str.Ptr("localhost/healthz"),
+		BaseURL:             str.Ptr("base_url"),
+		OrdLabels:           json.RawMessage("[]"),
+		CorrelationIDs:      json.RawMessage("[]"),
+		SystemStatus:        str.Ptr("reachable"),
+		DocumentationLabels: json.RawMessage("[]"),
+		BaseEntity: &model.BaseEntity{
+			ID:        applicationID,
+			Ready:     true,
+			Error:     nil,
+			CreatedAt: &time.Time{},
+			UpdatedAt: &time.Time{},
+			DeletedAt: &time.Time{},
+		},
+	}
+}
+
+func fixApplicationLabelsMap() map[string]interface{} {
+	return map[string]interface{}{
+		"app-label-key": "app-label-value",
+	}
+}
+
+func fixApplicationTemplateLabelsMap() map[string]interface{} {
+	return map[string]interface{}{
+		"apptemplate-label-key": "apptemplate-label-value",
+	}
+}
+
+func fixRuntimeLabelsMap() map[string]interface{} {
+	return map[string]interface{}{
+		"runtime-label-key": "runtime-label-value",
+	}
+}
+
+func fixRuntimeContextLabelsMap() map[string]interface{} {
+	return map[string]interface{}{
+		"runtime-context-label-key": "runtime-context-label-value",
+	}
+}
+
+func fixApplicationLabels() map[string]*model.Label {
+	return map[string]*model.Label{
+		"app-label-key": {Key: "app-label-key", Value: "app-label-value"},
+	}
+}
+
+func fixApplicationTemplateLabels() map[string]*model.Label {
+	return map[string]*model.Label{
+		"apptemplate-label-key": {Key: "apptemplate-label-key", Value: "apptemplate-label-value"},
+	}
+}
+
+func fixRuntimeLabels() map[string]*model.Label {
+	return map[string]*model.Label{
+		"runtime-label-key": {Key: "runtime-label-key", Value: "runtime-label-value"},
+	}
+}
+
+func fixRuntimeContextLabels() map[string]*model.Label {
+	return map[string]*model.Label{
+		"runtime-context-label-key": {Key: "runtime-context-label-key", Value: "runtime-context-label-value"},
+	}
+}
+
+func fixWebhookModel(webhookID, runtimeID string) *model.Webhook {
+	return &model.Webhook{
+		ID:         webhookID,
+		ObjectID:   runtimeID,
+		ObjectType: model.RuntimeWebhookReference,
+		Type:       model.WebhookTypeConfigurationChanged,
+	}
+}
+
+func fixWebhookGQLModel(webhookID, runtimeID string) *graphql.Webhook {
+	return &graphql.Webhook{
+		ID:        webhookID,
+		RuntimeID: str.Ptr(runtimeID),
+		Type:      graphql.WebhookTypeConfigurationChanged,
+	}
+}
+
+func fixApplicationTemplateModel() *model.ApplicationTemplate {
+	return &model.ApplicationTemplate{
+		ID:                   ApplicationTemplateID,
+		Name:                 "application template",
+		Description:          str.Ptr("some very detailed description"),
+		ApplicationInputJSON: `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`,
+	}
+}
+
+func fixRuntimeModel(runtimeID string) *model.Runtime {
+	return &model.Runtime{
+		ID:                runtimeID,
+		Name:              "runtime name",
+		Description:       str.Ptr("some description"),
+		CreationTimestamp: time.Time{},
+	}
+}
+
+func fixRuntimeContextModel() *model.RuntimeContext {
+	return &model.RuntimeContext{
+		ID:        RuntimeContextID,
+		RuntimeID: RuntimeContextRuntimeID,
+		Key:       "some-key",
+		Value:     "some-value",
 	}
 }
 

@@ -46,7 +46,7 @@ func main() {
 	exitOnError(ctx, err, "Error while loading app config")
 
 	oAuth20HTTPClient := &http.Client{
-		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport)))),
 		Timeout:   cfg.OAuth20.HTTPClientTimeout,
 	}
 	adminURL, err := url.Parse(cfg.OAuth20.URL)

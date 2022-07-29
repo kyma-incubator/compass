@@ -145,10 +145,14 @@ func fixApplicationWebhookEntity(t *testing.T) *webhook.Entity {
 }
 
 func fixApplicationWebhookEntityWithID(t *testing.T, id string) *webhook.Entity {
+	return fixApplicationWebhookEntityWithIDAndWebhookType(t, id, model.WebhookTypeConfigurationChanged)
+}
+
+func fixApplicationWebhookEntityWithIDAndWebhookType(t *testing.T, id string, whType model.WebhookType) *webhook.Entity {
 	return &webhook.Entity{
 		ID:             id,
 		ApplicationID:  repo.NewValidNullableString(givenApplicationID()),
-		Type:           string(model.WebhookTypeConfigurationChanged),
+		Type:           string(whType),
 		URL:            repo.NewValidNullableString("http://kyma.io"),
 		Mode:           repo.NewValidNullableString(string(model.WebhookModeSync)),
 		Auth:           sql.NullString{Valid: true, String: fixAuthAsAString(t)},
