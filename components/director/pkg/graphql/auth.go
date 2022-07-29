@@ -111,7 +111,7 @@ func retrieveCredential(data []byte) (CredentialData, error) {
 		CertificateOAuthCredentialData `json:"credential"`
 	}
 	if err := json.Unmarshal(data, &certOAuthCredential); err != nil {
-		return &certOAuthCredential.CertificateOAuthCredentialData, nil
+		return nil, err
 	}
 
 	if isCertificateOAuth := isCredentialStructFullWithData(certOAuthCredential.CertificateOAuthCredentialData); isCertificateOAuth {
