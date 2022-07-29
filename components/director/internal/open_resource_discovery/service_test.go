@@ -326,8 +326,6 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		return client
 	}
 
-	//comm
-
 	testCases := []struct {
 		Name              string
 		TransactionerFn   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
