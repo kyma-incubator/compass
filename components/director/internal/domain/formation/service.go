@@ -396,14 +396,18 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return &formation, nil
 		}
 
-		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
-			return nil, err
-		}
-
 		formationFromDB, err := s.getFormationByName(ctx, formation.Name, tnt)
 		if err != nil {
 			return nil, err
 		}
+
+		if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), deleteFormation); err != nil {
+			if apperrors.IsNotFoundError(err) {
+				return formationFromDB, nil
+			}
+			return nil, err
+		}
+
 		requests, err := s.generateNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
