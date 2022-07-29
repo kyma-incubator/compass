@@ -477,6 +477,7 @@ func TestORDAggregator(stdT *testing.T) {
 	t.Run("Verifying ORD Document for subscribed tenant", func(t *testing.T) {
 		//comment to trigger the integration job
 		fmt.Println("TRIGGER THE INTEGRATION JOB")
+		print()
 		ctx := context.Background()
 
 		apisMap := make(map[string]string)
@@ -918,4 +919,8 @@ func fixAppTemplateInput(name, webhookURL string) directorSchema.ApplicationTemp
 	input.Labels[tenantfetcher.RegionKey] = testConfig.SubscriptionConfig.SelfRegRegion
 
 	return input
+}
+
+func print() {
+	fmt.Printf("PRINT FUNC")
 }
