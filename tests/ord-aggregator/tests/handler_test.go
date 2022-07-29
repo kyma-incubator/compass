@@ -476,6 +476,7 @@ func TestORDAggregator(stdT *testing.T) {
 	})
 	t.Run("Verifying ORD Document for subscribed tenant", func(t *testing.T) {
 		//comment to trigger the integration job
+		fmt.Println("TRIGGER THE INTEGRATION JOB")
 		ctx := context.Background()
 
 		apisMap := make(map[string]string)
