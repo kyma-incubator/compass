@@ -2,6 +2,7 @@ package ord
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -159,6 +160,7 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 
 func (s *Service) listAppPage(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	//comment to trigger the director job
+	print()
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -944,4 +946,8 @@ func addFieldToLogger(ctx context.Context, fieldName, fieldValue string) context
 	logger := log.LoggerFromContext(ctx)
 	logger = logger.WithField(fieldName, fieldValue)
 	return log.ContextWithLogger(ctx, logger)
+}
+
+func print() {
+	fmt.Printf("PRINT FUNC")
 }
