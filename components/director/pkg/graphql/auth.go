@@ -10,6 +10,19 @@ type credential struct {
 	*CertificateOAuthCredentialData
 }
 
+//
+//type basic struct {
+//	*BasicCredentialData
+//}
+//
+//type ouath struct {
+//	*OAuthCredentialData
+//}
+//
+//type certOAuth struct {
+//	*CertificateOAuthCredentialData
+//}
+
 // OneTimeTokenDTO this a model for transportation of one-time tokens, because the json marshaller cannot unmarshal to either of the types OTTForApp or OTTForRuntime
 type OneTimeTokenDTO struct {
 	TokenWithURL
@@ -29,9 +42,30 @@ func (*OneTimeTokenDTO) IsOneTimeToken() {}
 func (a *Auth) UnmarshalJSON(data []byte) error {
 	type Alias Auth
 
+	//var a1 struct {
+	//	Credential basic `json:"credential"`
+	//}
+	//if err := json.Unmarshal(data, &a1); err != nil {
+	//	return err
+	//}
+	//
+	//var a2 struct {
+	//	Credential ouath `json:"credential"`
+	//}
+	//if err := json.Unmarshal(data, &a2); err != nil {
+	//	return err
+	//}
+	//
+	//var a3 struct {
+	//	Credential certOAuth `json:"credential"`
+	//}
+	//if err := json.Unmarshal(data, &a3); err != nil {
+	//	return err
+	//}
+
 	aux := &struct {
 		*Alias
-		Credential   credential       `json:"credential"`
+		//Credential   credential       `json:"credential"`
 		OneTimeToken *oneTimeTokenDTO `json:"oneTimeToken"`
 	}{
 		Alias: (*Alias)(a),
@@ -40,7 +74,7 @@ func (a *Auth) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	a.Credential = retrieveCredential(aux.Credential)
+	//a.Credential = retrieveCredential(aux.Credential)
 	if aux.OneTimeToken != nil {
 		a.OneTimeToken = retrieveOneTimeToken(aux.OneTimeToken)
 	}
