@@ -368,9 +368,9 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeUpdateI
 	}
 	log.C(ctx).Debugf("Successfully stripped protected labels. Resulting labels after operation are: %+v", in.Labels)
 
-	protectedAndScenariosPattern := s.protectedLabelPattern + "|^" + model.ScenariosKey + "$"
+	unmodifiablePattern := s.protectedLabelPattern + "|^" + model.ScenariosKey + "$" + "|" + s.immutableLabelPattern
 	// NOTE: The db layer does not support OR currently so multiple label patterns can't be implemented easily
-	if err = s.labelRepo.DeleteByKeyNegationPattern(ctx, rtmTenant, model.RuntimeLabelableObject, id, protectedAndScenariosPattern); err != nil {
+	if err = s.labelRepo.DeleteByKeyNegationPattern(ctx, rtmTenant, model.RuntimeLabelableObject, id, unmodifiablePattern); err != nil {
 		return errors.Wrapf(err, "while deleting all labels for Runtime")
 	}
 
@@ -519,6 +519,21 @@ func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string)
 	}
 
 	return nil
+}
+
+// UnsafeExtractModifiableLabels returns all labels except the protected and immutable labels
+func (s *service) UnsafeExtractModifiableLabels(labels map[string]interface{}) (map[string]interface{}, error) {
+	result := make(map[string]interface{})
+	for labelKey, lbl := range labels {
+		modifiable, err := isLabelModifiable(labelKey, s.protectedLabelPattern, s.immutableLabelPattern)
+		if err != nil {
+			return result, err
+		}
+		if modifiable {
+			result[labelKey] = lbl
+		}
+	}
+	return result, nil
 }
 
 func (s *service) ensureRuntimeExists(ctx context.Context, tnt string, runtimeID string) error {
