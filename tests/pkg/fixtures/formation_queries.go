@@ -85,8 +85,8 @@ func UnassignFormationWithTenantObjectType(t require.TestingT, ctx context.Conte
 	return &formation
 }
 
-func CleanupFormationWithTenantObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, tenantID, parent string) *graphql.Formation {
-	unassignRequest := FixUnassignFormationRequest(tenantID, string(graphql.FormationObjectTypeTenant), in.Name)
+func CleanupFormationWithTenantObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, name string, tenantID, parent string) *graphql.Formation {
+	unassignRequest := FixUnassignFormationRequest(tenantID, string(graphql.FormationObjectTypeTenant), name)
 
 	formation := graphql.Formation{}
 

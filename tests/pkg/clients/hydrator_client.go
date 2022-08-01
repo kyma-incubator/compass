@@ -21,11 +21,11 @@ type HydratorClient struct {
 
 func NewHydratorClient(validatorURL string) *HydratorClient {
 	httpClient := &http.Client{
-		Transport: httputil.NewServiceAccountTokenTransport(&http.Transport{ // Needed because hydrators are behind PeerAuthentication
+		Transport: httputil.NewServiceAccountTokenTransport(httputil.NewHTTPTransportWrapper(&http.Transport{ // Needed because hydrators are behind PeerAuthentication
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},
-		}),
+		})),
 	}
 
 	return &HydratorClient{

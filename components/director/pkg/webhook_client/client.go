@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package webhook
+package webhookclient
 
 import (
 	"bytes"
@@ -24,17 +24,17 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
-	recerr "github.com/kyma-incubator/compass/components/operations-controller/internal/errors"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/log"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	web_hook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/pkg/errors"
 )
 
@@ -45,6 +45,7 @@ type client struct {
 	mtlsClient *http.Client
 }
 
+// NewClient creates a new webhook client
 func NewClient(httpClient *http.Client, mtlsClient *http.Client) *client {
 	return &client{
 		httpClient: httpClient,
@@ -52,12 +53,12 @@ func NewClient(httpClient *http.Client, mtlsClient *http.Client) *client {
 	}
 }
 
-func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, error) {
+func (c *client) Do(ctx context.Context, request *Request) (*webhook.Response, error) {
 	var err error
 	webhook := request.Webhook
 
 	if webhook.OutputTemplate == nil {
-		return nil, recerr.NewFatalReconcileError("missing output template")
+		return nil, errors.Errorf("missing output template")
 	}
 
 	var method string
@@ -65,21 +66,21 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 	if webhook.URLTemplate != nil {
 		resultURL, err := request.Object.ParseURLTemplate(webhook.URLTemplate)
 		if err != nil {
-			return nil, recerr.NewFatalReconcileErrorFromExisting(errors.Wrap(err, "unable to parse webhook URL"))
+			return nil, errors.Wrap(err, "unable to parse webhook URL")
 		}
 		url = resultURL.Path
 		method = *resultURL.Method
 	}
 
 	if url == nil {
-		return nil, recerr.NewFatalReconcileError("missing webhook url")
+		return nil, errors.Errorf("missing webhook url")
 	}
 
 	body := []byte(emptyBody)
 	if webhook.InputTemplate != nil {
 		body, err = request.Object.ParseInputTemplate(webhook.InputTemplate)
 		if err != nil {
-			return nil, recerr.NewFatalReconcileErrorFromExisting(errors.Wrap(err, "unable to parse webhook input body"))
+			return nil, errors.Wrap(err, "unable to parse webhook input body")
 		}
 	}
 
@@ -87,7 +88,7 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 	if webhook.HeaderTemplate != nil {
 		headers, err = request.Object.ParseHeadersTemplate(webhook.HeaderTemplate)
 		if err != nil {
-			return nil, recerr.NewFatalReconcileErrorFromExisting(errors.Wrap(err, "unable to parse webhook headers"))
+			return nil, errors.Wrap(err, "unable to parse webhook headers")
 		}
 	}
 
@@ -95,7 +96,7 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 
 	req, err := http.NewRequestWithContext(ctx, method, *url, bytes.NewBuffer(body))
 	if err != nil {
-		return nil, recerr.NewFatalReconcileErrorFromExisting(err)
+		return nil, err
 	}
 
 	req.Header = headers
@@ -121,7 +122,7 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 
 	response, err := responseObject.ParseOutputTemplate(webhook.OutputTemplate)
 	if err != nil {
-		return nil, recerr.NewFatalReconcileErrorFromExisting(errors.Wrap(err, "unable to parse response into webhook output template"))
+		return nil, errors.Wrap(err, "unable to parse response into webhook output template")
 	}
 
 	if err = checkForGoneStatus(resp, response.GoneStatusCode); err != nil {
@@ -132,25 +133,25 @@ func (c *client) Do(ctx context.Context, request *Request) (*web_hook.Response, 
 	isAsyncWebhook := webhook.Mode != nil && *webhook.Mode == graphql.WebhookModeAsync
 
 	if isLocationEmpty && isAsyncWebhook {
-		return nil, errors.New(fmt.Sprintf("missing location url after executing async webhook: HTTP response status %+v with body %s", resp.Status, responseObject.Body))
+		return nil, errors.Errorf("missing location url after executing async webhook: HTTP response status %+v with body %s", resp.Status, responseObject.Body)
 	}
 
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
 }
 
-func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.ResponseStatus, error) {
+func (c *client) Poll(ctx context.Context, request *PollRequest) (*webhook.ResponseStatus, error) {
 	var err error
 	webhook := request.Webhook
 
 	if webhook.StatusTemplate == nil {
-		return nil, recerr.NewFatalReconcileError("missing status template")
+		return nil, errors.Errorf("missing status template")
 	}
 
 	headers := http.Header{}
 	if webhook.HeaderTemplate != nil {
 		headers, err = request.Object.ParseHeadersTemplate(webhook.HeaderTemplate)
 		if err != nil {
-			return nil, recerr.NewFatalReconcileErrorFromExisting(errors.Wrap(err, "unable to parse webhook headers"))
+			return nil, errors.Wrap(err, "unable to parse webhook headers")
 		}
 	}
 
@@ -158,7 +159,7 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, request.PollURL, nil)
 	if err != nil {
-		return nil, recerr.NewFatalReconcileErrorFromExisting(err)
+		return nil, err
 	}
 
 	req.Header = headers
@@ -183,7 +184,7 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*web_hook.Resp
 
 	response, err := responseObject.ParseStatusTemplate(webhook.StatusTemplate)
 	if err != nil {
-		return nil, recerr.NewFatalReconcileErrorFromExisting(errors.Wrap(err, "unable to parse response status into status template"))
+		return nil, errors.Wrap(err, "unable to parse response status into status template")
 	}
 
 	return response, checkForErr(resp, response.SuccessStatusCode, response.Error)
@@ -205,7 +206,7 @@ func (c *client) executeRequestWithCorrectClient(ctx context.Context, req *http.
 	}
 }
 
-func parseResponseObject(resp *http.Response) (*web_hook.ResponseObject, error) {
+func parseResponseObject(resp *http.Response) (*webhook.ResponseObject, error) {
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -231,20 +232,20 @@ func parseResponseObject(resp *http.Response) (*web_hook.ResponseObject, error) 
 		headers[key] = value[0]
 	}
 
-	return &web_hook.ResponseObject{
+	return &webhook.ResponseObject{
 		Headers: headers,
 		Body:    body,
 	}, nil
 }
 
-func checkForErr(resp *http.Response, successStatusCode *int, error *string) error {
+func checkForErr(resp *http.Response, successStatusCode *int, errorMessage *string) error {
 	var errMsg string
 	if *successStatusCode != resp.StatusCode {
 		errMsg += fmt.Sprintf("response success status code was not met - expected %d, got %d; ", *successStatusCode, resp.StatusCode)
 	}
 
-	if error != nil && *error != "" {
-		errMsg += fmt.Sprintf("received error while polling external system: %s", *error)
+	if errorMessage != nil && *errorMessage != "" {
+		errMsg += fmt.Sprintf("received error while calling external system: %s", *errorMessage)
 	}
 
 	if errMsg != "" {
@@ -256,7 +257,7 @@ func checkForErr(resp *http.Response, successStatusCode *int, error *string) err
 
 func checkForGoneStatus(resp *http.Response, goneStatusCode *int) error {
 	if goneStatusCode != nil && resp.StatusCode == *goneStatusCode {
-		return recerr.NewWebhookStatusGoneErr(*goneStatusCode)
+		return NewWebhookStatusGoneErr(*goneStatusCode)
 	}
 	return nil
 }

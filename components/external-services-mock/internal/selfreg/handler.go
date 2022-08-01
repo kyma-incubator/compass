@@ -105,6 +105,7 @@ func (h *Handler) HandleSelfRegCleanup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	delete(SelfRegistrations, name)
 	w.WriteHeader(http.StatusOK)
 }
 

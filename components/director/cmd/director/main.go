@@ -9,6 +9,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
+
+	authpkg "github.com/kyma-incubator/compass/components/director/pkg/auth"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/retry"
 
 	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
@@ -40,7 +45,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/bundleinstanceauth"
@@ -201,11 +205,14 @@ func main() {
 
 	httpClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
-		Transport: httputil.NewCorrelationIDTransport(http.DefaultTransport),
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
+
+	securedHTTPClient := authpkg.PrepareHTTPClientWithSSLValidation(cfg.ClientTimeout, cfg.SkipSSLValidation)
+
 	cfg.SelfRegConfig.ClientTimeout = cfg.ClientTimeout
 
 	internalClientTransport := &http.Transport{
@@ -216,12 +223,12 @@ func main() {
 
 	internalFQDNHTTPClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
-		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(http.DefaultTransport)),
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport)))),
 	}
 
 	internalGatewayHTTPClient := &http.Client{
 		Timeout:   cfg.ClientTimeout,
-		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(internalClientTransport, mp_authenticator.AuthorizationHeaderKey)),
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(httputil.NewHTTPTransportWrapper(internalClientTransport), mp_authenticator.AuthorizationHeaderKey)),
 	}
 
 	appRepo := applicationRepo()
@@ -234,6 +241,8 @@ func main() {
 
 	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
 	retryHTTPExecutor := retry.NewHTTPExecutor(&cfg.RetryConfig)
+
+	mtlsHTTPClient := authpkg.PrepareMTLSClientWithSSLValidation(cfg.ClientTimeout, certCache, cfg.SkipSSLValidation)
 
 	rootResolver, err := domain.NewRootResolver(
 		&normalizer.DefaultNormalizator{},
@@ -248,6 +257,8 @@ func main() {
 		httpClient,
 		internalFQDNHTTPClient,
 		internalGatewayHTTPClient,
+		securedHTTPClient,
+		mtlsHTTPClient,
 		cfg.SelfRegConfig,
 		cfg.OneTimeToken.Length,
 		adminURL,
@@ -269,7 +280,7 @@ func main() {
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
-	claimsValidator := claims.NewValidator(transact, runtimeSvc(cfg), runtimeCtxSvc(cfg), appTemplateSvc(), applicationSvc(cfg, httpClient, certCache), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey, cfg.Features.TokenPrefix)
+	claimsValidator := claims.NewValidator(transact, runtimeSvc(cfg, httpClient, mtlsHTTPClient), runtimeCtxSvc(cfg, httpClient, mtlsHTTPClient), appTemplateSvc(), applicationSvc(cfg, httpClient, mtlsHTTPClient, certCache), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey, cfg.Features.TokenPrefix)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
 	authMiddleware := mp_authenticator.New(httpClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claimsValidator)
@@ -593,10 +604,23 @@ func appUpdaterFunc(appRepo application.ApplicationRepository) operation.Resourc
 	}
 }
 
-func runtimeSvc(cfg config) claims.RuntimeService {
+func runtimeSvc(cfg config, securedHTTPClient, mtlsHTTPClient *http.Client) claims.RuntimeService {
 	asaConverter := scenarioassignment.NewConverter()
 	authConverter := auth.NewConverter()
 	webhookConverter := webhook.NewConverter(authConverter)
+	frConverter := fetchrequest.NewConverter(authConverter)
+	versionConverter := version.NewConverter()
+	docConverter := document.NewConverter(frConverter)
+	specConverter := spec.NewConverter(frConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	bundleConverter := bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	appConverter := application.NewConverter(webhookConverter, bundleConverter)
+	appRepo := application.NewRepository(appConverter)
+	webhookRepo := webhook.NewRepository(webhookConverter)
+
+	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 	labelConverter := label.NewConverter()
 	labelDefinitionConverter := labeldef.NewConverter()
 	runtimeContextConverter := runtimectx.NewConverter()
@@ -619,13 +643,14 @@ func runtimeSvc(cfg config) claims.RuntimeService {
 	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo)
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
+	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, appRepo, appTemplateRepo, webhookConverter)
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, runtimeRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 
 	return runtime.NewService(runtimeRepo, labelRepo, labelDefinitionSvc, labelSvc, uidSvc, formationSvc, tenantSvc, webhookService(), runtimeContextSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern, cfg.Features.RuntimeTypeLabelKey, cfg.Features.KymaRuntimeTypeLabelValue)
 }
 
-func runtimeCtxSvc(cfg config) claims.RuntimeCtxService {
+func runtimeCtxSvc(cfg config, securedHTTPClient, mtlsHTTPClient *http.Client) claims.RuntimeCtxService {
 	runtimeContextConverter := runtimectx.NewConverter()
 	labelConverter := label.NewConverter()
 	labelDefinitionConverter := labeldef.NewConverter()
@@ -636,7 +661,19 @@ func runtimeCtxSvc(cfg config) claims.RuntimeCtxService {
 	runtimeConverter := runtime.NewConverter(webhookConverter)
 	formationConv := formation.NewConverter()
 	formationTemplateConverter := formationtemplate.NewConverter()
+	frConverter := fetchrequest.NewConverter(authConverter)
+	versionConverter := version.NewConverter()
+	docConverter := document.NewConverter(frConverter)
+	specConverter := spec.NewConverter(frConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	bundleConverter := bundle.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	appConverter := application.NewConverter(webhookConverter, bundleConverter)
+	appRepo := application.NewRepository(appConverter)
+	webhookRepo := webhook.NewRepository(webhookConverter)
 
+	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConverter)
 	labelRepo := label.NewRepository(labelConverter)
 	labelDefinitionRepo := labeldef.NewRepository(labelDefinitionConverter)
@@ -651,7 +688,8 @@ func runtimeCtxSvc(cfg config) claims.RuntimeCtxService {
 	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
 	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo)
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
+	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, appRepo, appTemplateRepo, webhookConverter)
 
 	return runtimectx.NewService(runtimeContextRepo, labelRepo, runtimeRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 }
@@ -683,7 +721,7 @@ func appTemplateSvc() claims.ApplicationTemplateService {
 	return apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
 }
 
-func applicationSvc(cfg config, httpClient *http.Client, certCache certloader.Cache) claims.ApplicationService {
+func applicationSvc(cfg config, securedHTTPClient, mtlsHTTPClient *http.Client, certCache certloader.Cache) claims.ApplicationService {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	webhookConverter := webhook.NewConverter(authConverter)
@@ -719,7 +757,7 @@ func applicationSvc(cfg config, httpClient *http.Client, certCache certloader.Ca
 	apiConverter := api.NewConverter(versionConverter, specConverter)
 	apiRepo := api.NewRepository(apiConverter)
 	specRepo := spec.NewRepository(specConverter)
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider(certCache))
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, securedHTTPClient, accessstrategy.NewDefaultExecutorProvider(certCache))
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceConv := bundlereferences.NewConverter()
 	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
@@ -744,10 +782,14 @@ func applicationSvc(cfg config, httpClient *http.Client, certCache certloader.Ca
 	runtimeContextConv := runtimectx.NewConverter()
 	runtimeContextRepo := runtimectx.NewRepository(runtimeContextConv)
 
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo)
-
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
 	applicationRepo := application.NewRepository(appConverter)
+
+	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
+
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, applicationRepo, appTemplateRepo, webhookConverter)
 
 	return application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegConfig.SelfRegisterDistinguishLabelKey)
 }
