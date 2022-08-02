@@ -9,6 +9,7 @@ import (
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -158,10 +159,11 @@ type service struct {
 	applicationRepository         applicationRepository
 	applicationTemplateRepository applicationTemplateRepository
 	webhookConverter              webhookConverter
+	runtimeTypeLabelKey         string
 }
 
 // NewService creates formation service
-func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, webhookRepository webhookRepository, webhookClient webhookClient, applicationRepository applicationRepository, applicationTemplateRepository applicationTemplateRepository, webhookConverter webhookConverter) *service {
+func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, webhookRepository webhookRepository, webhookClient webhookClient, applicationRepository applicationRepository, applicationTemplateRepository applicationTemplateRepository, webhookConverter webhookConverter, runtimeTypeLabelKey string) *service {
 	return &service{
 		labelDefRepository:            labelDefRepository,
 		labelRepository:               labelRepository,
@@ -180,6 +182,7 @@ func NewService(labelDefRepository labelDefRepository, labelRepository labelRepo
 		applicationRepository:         applicationRepository,
 		applicationTemplateRepository: applicationTemplateRepository,
 		webhookConverter:              webhookConverter,
+		runtimeTypeLabelKey:         runtimeTypeLabelKey,
 	}
 }
 
@@ -1054,8 +1057,38 @@ func (s *service) modifyFormations(ctx context.Context, tnt, formationName strin
 
 func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID string, formation model.Formation, objectType model.LabelableObject, modificationFunc modificationFunc) error {
 	log.C(ctx).Infof("Modifying formation with name: %q for object with type: %q and ID: %q", formation.Name, objectType, objectID)
-	labelInput := newLabelInput(formation.Name, objectID, objectType)
+	if formation.Name != "DEFAULT" {
+		formationEntity, err := s.formationRepository.GetByName(ctx, formation.Name, tnt)
+		spew.Dump(formationEntity)
+		if err != nil {
+			return err
+		}
+		formationTemplate, err := s.formationTemplateRepository.Get(ctx, formationEntity.FormationTemplateID)
+		spew.Dump(formationTemplate)
+		if err != nil {
+			return err
+		}
+		if objectType == model.RuntimeLabelableObject {
+			runtimeTypeLabel, err := s.labelService.GetLabel(ctx, tnt, &model.LabelInput{
+				Key:        s.runtimeTypeLabelKey,
+				Value:      nil,
+				ObjectID:   objectID,
+				ObjectType: model.RuntimeLabelableObject,
+				Version:    0,
+			})
+			spew.Dump(runtimeTypeLabel)
+			if err != nil {
+				spew.Dump(err)
+				return err
+			}
+			runtimeType := runtimeTypeLabel.Value.(string)
+			if runtimeType != formationTemplate.RuntimeType {
+				return apperrors.NewInvalidOperationError(fmt.Sprintf("unsupported runtimeType %q for formation template %q, allowing only %q", runtimeType, formationTemplate.Name, formationTemplate.RuntimeType))
+			}
+		}
+	}
 
+	labelInput := newLabelInput(formation.Name, objectID, objectType)
 	existingLabel, err := s.labelService.GetLabel(ctx, tnt, labelInput)
 	if err != nil {
 		return err
