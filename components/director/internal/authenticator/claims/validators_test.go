@@ -43,7 +43,7 @@ const (
 
 func TestValidator_Validate(t *testing.T) {
 	providerLabelKey := "providerName"
-	consumerSubaccountLabelKey := "consumer_subaccount_id"
+	consumerSubaccountLabelKey := "global_subaccount_id"
 	tokenPrefix := "prefix-"
 	testErr := errors.New("test")
 
