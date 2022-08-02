@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/pkg/errors"
@@ -49,9 +51,15 @@ func TestValidator_Validate(t *testing.T) {
 
 	runtime := &model.Runtime{ID: runtimeID, Name: "rt"}
 
-	expectedFilters := []*labelfilter.LabelFilter{
+	expectedRuntimeFilters := []*labelfilter.LabelFilter{
 		labelfilter.NewForKeyWithQuery(providerLabelKey, fmt.Sprintf("\"%s\"", clientID)),
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
+	}
+
+	expectedAppTemplateFilters := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(providerLabelKey, fmt.Sprintf("\"%s\"", clientID)),
+		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
+		labelfilter.NewForKeyWithQuery(scenarioassignment.SubaccountIDKey, fmt.Sprintf("\"%s\"", providerExtTenantID)),
 	}
 
 	rtmCtxWithConsumerSubaccountLabel := &model.RuntimeContextPage{
@@ -168,7 +176,7 @@ func TestValidator_Validate(t *testing.T) {
 			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				runtimeSvc := &automock.RuntimeService{}
-				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(runtime, nil).Once()
+				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedRuntimeFilters).Return(runtime, nil).Once()
 				return runtimeSvc
 			},
 			RuntimeCtxSvcFn: func() *automock.RuntimeCtxService {
@@ -182,12 +190,12 @@ func TestValidator_Validate(t *testing.T) {
 			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				runtimeSvc := &automock.RuntimeService{}
-				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(nil, testErr).Once()
+				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedRuntimeFilters).Return(nil, testErr).Once()
 				return runtimeSvc
 			},
 			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(applicationTemplate, nil).Once()
+				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedAppTemplateFilters).Return(applicationTemplate, nil).Once()
 				return appTemplateSvc
 			},
 			ApplicationServiceFn: func() *automock.ApplicationService {
@@ -202,12 +210,12 @@ func TestValidator_Validate(t *testing.T) {
 			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				runtimeSvc := &automock.RuntimeService{}
-				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(runtime, nil).Once()
+				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedRuntimeFilters).Return(runtime, nil).Once()
 				return runtimeSvc
 			},
 			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(applicationTemplate, nil).Once()
+				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedAppTemplateFilters).Return(applicationTemplate, nil).Once()
 				return appTemplateSvc
 			},
 			ApplicationServiceFn: func() *automock.ApplicationService {
@@ -227,7 +235,7 @@ func TestValidator_Validate(t *testing.T) {
 			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				runtimeSvc := &automock.RuntimeService{}
-				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(runtime, nil).Once()
+				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedRuntimeFilters).Return(runtime, nil).Once()
 				return runtimeSvc
 			},
 			RuntimeCtxSvcFn: func() *automock.RuntimeCtxService {
@@ -237,7 +245,7 @@ func TestValidator_Validate(t *testing.T) {
 			},
 			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(applicationTemplate, nil).Once()
+				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedAppTemplateFilters).Return(applicationTemplate, nil).Once()
 				return appTemplateSvc
 			},
 			ApplicationServiceFn: func() *automock.ApplicationService {
@@ -252,7 +260,7 @@ func TestValidator_Validate(t *testing.T) {
 			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				runtimeSvc := &automock.RuntimeService{}
-				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(runtime, nil).Once()
+				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedRuntimeFilters).Return(runtime, nil).Once()
 				return runtimeSvc
 			},
 			RuntimeCtxSvcFn: func() *automock.RuntimeCtxService {
@@ -270,7 +278,7 @@ func TestValidator_Validate(t *testing.T) {
 			},
 			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(applicationTemplate, nil).Once()
+				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedAppTemplateFilters).Return(applicationTemplate, nil).Once()
 				return appTemplateSvc
 			},
 			ApplicationServiceFn: func() *automock.ApplicationService {
@@ -320,12 +328,12 @@ func TestValidator_Validate(t *testing.T) {
 			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				runtimeSvc := &automock.RuntimeService{}
-				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(nil, testErr).Once()
+				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedRuntimeFilters).Return(nil, testErr).Once()
 				return runtimeSvc
 			},
 			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(applicationTemplate, nil).Once()
+				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedAppTemplateFilters).Return(applicationTemplate, nil).Once()
 				return appTemplateSvc
 			},
 			ApplicationServiceFn: func() *automock.ApplicationService {
@@ -333,6 +341,45 @@ func TestValidator_Validate(t *testing.T) {
 				applicationSvc.On("ListAll", contextThatHasTenant(consumerTenantID)).Return(applications, nil).Once()
 				return applicationSvc
 			},
+		},
+		{
+			Name:   "Consumer-provider flow: Error while getting application template in provider tenant",
+			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+			RuntimeServiceFn: func() *automock.RuntimeService {
+				runtimeSvc := &automock.RuntimeService{}
+				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedRuntimeFilters).Return(nil, testErr).Once()
+				return runtimeSvc
+			},
+			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedAppTemplateFilters).Return(nil, testErr).Once()
+				return appTemplateSvc
+			},
+			ApplicationServiceFn: func() *automock.ApplicationService {
+				applicationSvc := &automock.ApplicationService{}
+				return applicationSvc
+			},
+			ExpectedErr: testErr.Error(),
+		},
+		{
+			Name:   "Consumer-provider flow: Error occurred while listing consumer applications",
+			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+			RuntimeServiceFn: func() *automock.RuntimeService {
+				runtimeSvc := &automock.RuntimeService{}
+				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedRuntimeFilters).Return(nil, testErr).Once()
+				return runtimeSvc
+			},
+			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedAppTemplateFilters).Return(applicationTemplate, nil).Once()
+				return appTemplateSvc
+			},
+			ApplicationServiceFn: func() *automock.ApplicationService {
+				applicationSvc := &automock.ApplicationService{}
+				applicationSvc.On("ListAll", contextThatHasTenant(consumerTenantID)).Return(nil, testErr).Once()
+				return applicationSvc
+			},
+			ExpectedErr: testErr.Error(),
 		},
 	}
 

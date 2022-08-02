@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -188,14 +190,16 @@ func (v *validator) validateApplicationProvider(ctx context.Context, claims Clai
 		return apperrors.NewUnauthorizedError("could not determine token's region")
 	}
 
+	providerInternalTenantID := claims.Tenant[tenantmapping.ProviderTenantKey]
+	providerExternalTenantID := claims.Tenant[tenantmapping.ProviderExternalTenantKey]
+
 	tokenClientID := strings.TrimPrefix(claims.TokenClientID, v.tokenPrefix)
 	filters := []*labelfilter.LabelFilter{
 		labelfilter.NewForKeyWithQuery(v.subscriptionProviderLabelKey, fmt.Sprintf("\"%s\"", tokenClientID)),
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", claims.Region)),
+		labelfilter.NewForKeyWithQuery(scenarioassignment.SubaccountIDKey, fmt.Sprintf("\"%s\"", providerExternalTenantID)),
 	}
 
-	providerInternalTenantID := claims.Tenant[tenantmapping.ProviderTenantKey]
-	providerExternalTenantID := claims.Tenant[tenantmapping.ProviderExternalTenantKey]
 	ctxWithProviderTenant := tenant.SaveToContext(ctx, providerInternalTenantID, providerExternalTenantID)
 
 	log.C(ctx).Infof("Get application template in provider tenant %s for labels %s: %s and %s: %s", providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, tokenClientID)

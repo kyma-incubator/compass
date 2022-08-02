@@ -31,7 +31,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 
 		subscriptionProviderSubaccountID := conf.TestProviderSubaccountID
 		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID
-		subscriptionConsumerTenantID := conf.TestConsumerTenantID // ba49f1aa-ddc1-43ff-943c-fe949857a34a
+		subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
 		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
 		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
@@ -119,7 +119,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			output := graphql.BundleExt{}
 
 			t.Log("Try to create bundle")
-			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionProviderSubaccountID, addBndlRequest, &output)
+			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addBndlRequest, &output)
 
 			//Verify that Bundle can be created
 			require.NoError(t, err)
@@ -167,10 +167,11 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			output := graphql.BundleExt{}
 
 			t.Log("Try to create bundle")
-			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionProviderSubaccountID, addBndlRequest, &output)
+			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addBndlRequest, &output)
 
 			//Verify that Bundle cannot be created after unsubscribtion
 			require.Error(t, err)
+			require.Contains(t, err.Error(), fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the applications table for any application templates in the provider tenant", subscriptionConsumerSubaccountID))
 		})
 
 		t.Run("Unsubscribe tenant to Application flow", func(t *testing.T) {
