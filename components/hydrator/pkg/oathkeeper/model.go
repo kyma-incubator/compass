@@ -29,6 +29,8 @@ const (
 	OAuth2Flow AuthFlow = "OAuth2"
 	// JWTAuthFlow missing godoc
 	JWTAuthFlow AuthFlow = "JWT"
+	// ConsumerProviderFlow is using when we have consumer-provider and subscription relationship between them
+	ConsumerProviderFlow AuthFlow = "Consumer-Provider"
 
 	// ClientIDKey missing godoc
 	ClientIDKey = "client_id"
@@ -46,6 +48,8 @@ const (
 	ClientIDTokenKey = "client-id-from-token"
 	// ExternalTenantKey missing godoc
 	ExternalTenantKey = "tenant"
+	// UserContextKey is a header key containing consumer data
+	UserContextKey = "user_context"
 	// ScopesKey missing godoc
 	ScopesKey = "scope"
 

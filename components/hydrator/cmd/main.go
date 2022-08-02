@@ -217,11 +217,12 @@ func getTenantMappingHandlerFunc(authenticators []authenticator.Config, clientPr
 	}
 
 	objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-		tenantmappingconst.UserObjectContextProvider:          tenantmapping.NewUserContextProvider(clientProvider.Client(), staticGroupsRepo),
-		tenantmappingconst.SystemAuthObjectContextProvider:    tenantmapping.NewSystemAuthContextProvider(clientProvider.Client(), cfgProvider),
-		tenantmappingconst.AuthenticatorObjectContextProvider: tenantmapping.NewAuthenticatorContextProvider(clientProvider.Client(), authenticators),
-		tenantmappingconst.CertServiceObjectContextProvider:   tenantmapping.NewCertServiceContextProvider(clientProvider.Client(), cfgProvider),
-		tenantmappingconst.TenantHeaderObjectContextProvider:  tenantmapping.NewAccessLevelContextProvider(clientProvider.Client()),
+		tenantmappingconst.UserObjectContextProvider:             tenantmapping.NewUserContextProvider(clientProvider.Client(), staticGroupsRepo),
+		tenantmappingconst.SystemAuthObjectContextProvider:       tenantmapping.NewSystemAuthContextProvider(clientProvider.Client(), cfgProvider),
+		tenantmappingconst.AuthenticatorObjectContextProvider:    tenantmapping.NewAuthenticatorContextProvider(clientProvider.Client(), authenticators),
+		tenantmappingconst.CertServiceObjectContextProvider:      tenantmapping.NewCertServiceContextProvider(clientProvider.Client(), cfgProvider),
+		tenantmappingconst.TenantHeaderObjectContextProvider:     tenantmapping.NewAccessLevelContextProvider(clientProvider.Client()),
+		tenantmappingconst.ConsumerProviderObjectContextProvider: tenantmapping.NewConsumerContextProvider(clientProvider.Client()),
 	}
 	reqDataParser := oathkeeper.NewReqDataParser()
 
