@@ -9,5 +9,6 @@ type SystemBrokerTestConfig struct {
 	ConnectorURL                   string
 	ORDServiceURL                  string
 	SkipSSLValidation              bool
+	GatewayOauth                   string
 	CertLoaderConfig               certloader.Config
 }

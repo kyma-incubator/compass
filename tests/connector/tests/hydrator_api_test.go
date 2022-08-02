@@ -25,10 +25,8 @@ func TestHydrators(t *testing.T) {
 	appID := app.ID
 
 	input := fixtures.FixRuntimeRegisterInput("test-hydrators-runtime")
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &input)
+	runtime := fixtures.RegisterKymaRuntime(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, input, cfg.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &runtime)
-	require.NoError(t, err)
-	require.NotEmpty(t, runtime.ID)
 	runtimeID := runtime.ID
 
 	hash := "df6ab69b34100a1808ddc6211010fa289518f14606d0c8eaa03a0f53ecba578a"

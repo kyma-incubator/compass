@@ -14,11 +14,9 @@ import (
 
 func TestTokens(t *testing.T) {
 	input := fixtures.FixRuntimeRegisterInput("test-tokens-runtime")
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &input)
+	runtime := fixtures.RegisterKymaRuntime(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, input, cfg.GatewayOauth)
 
 	defer fixtures.CleanupRuntime(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &runtime)
-	require.NoError(t, err)
-	require.NotEmpty(t, runtime.ID)
 	runtimeID := runtime.ID
 
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, graphql.ApplicationRegisterInput{

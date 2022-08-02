@@ -63,10 +63,8 @@ func TestUpdateRuntime_ValidationSuccess(t *testing.T) {
 
 	input := fixRuntimeInput("validation-test-rtm")
 
-	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+	rtm := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
-	require.NoError(t, err)
-	require.NotEmpty(t, rtm.ID)
 
 	runtimeIn := fixRuntimeUpdateInput("012345Myaccount_Runtime")
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(runtimeIn)
@@ -89,10 +87,8 @@ func TestUpdateRuntime_ValidationFailure(t *testing.T) {
 
 	input := fixRuntimeInput("validation-test-rtm")
 
-	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+	rtm := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
-	require.NoError(t, err)
-	require.NotEmpty(t, rtm.ID)
 
 	runtimeIn := fixRuntimeUpdateInput("my runtime")
 	inputString, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(runtimeIn)
@@ -187,16 +183,14 @@ func TestSetRuntimeLabel_Validation(t *testing.T) {
 
 	input := fixRuntimeInput("validation-test-rtm")
 
-	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+	rtm := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
-	require.NoError(t, err)
-	require.NotEmpty(t, rtm.ID)
 
 	request := fixtures.FixSetRuntimeLabelRequest(rtm.ID, strings.Repeat("x", 257), "")
 	var result graphql.Label
 
 	// WHEN
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &result)
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &result)
 
 	// THEN
 	require.Error(t, err)

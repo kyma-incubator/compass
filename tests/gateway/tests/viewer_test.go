@@ -91,10 +91,8 @@ func TestViewerQuery(t *testing.T) {
 		}
 
 		t.Log("Register Runtime via Certificate Secured Client")
-		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &runtimeInput)
+		runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, runtimeInput, testConfig.GatewayOauth)
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &runtime)
-		require.NoError(t, err)
-		require.NotEmpty(t, runtime.ID)
 
 		t.Logf("Registered Runtime with [id=%s]", runtime.ID)
 
@@ -113,7 +111,7 @@ func TestViewerQuery(t *testing.T) {
 		viewer := graphql.Viewer{}
 		req := fixtures.FixGetViewerRequest()
 
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, req, &viewer)
+		err := testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, req, &viewer)
 		require.NoError(t, err)
 		assert.Equal(t, runtime.ID, viewer.ID)
 		assert.Equal(t, graphql.ViewerTypeRuntime, viewer.Type)

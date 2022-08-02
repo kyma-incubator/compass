@@ -31,7 +31,7 @@ const (
 )
 
 var (
-	runtimeInput = &graphql.RuntimeRegisterInput{
+	runtimeInput = graphql.RuntimeRegisterInput{
 		Name: testRuntimeName,
 	}
 	applicationInput = graphql.ApplicationRegisterInput{
@@ -52,15 +52,13 @@ var (
 )
 
 func TestSystemBrokerAuthentication(t *testing.T) {
-	runtimeInput = &graphql.RuntimeRegisterInput{
+	runtimeInput = graphql.RuntimeRegisterInput{
 		Name: testRuntimeName,
 	}
 
 	logrus.Infof("registering runtime with name: %s, within tenant: %s", runtimeInput.Name, testCtx.Tenant)
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, runtimeInput)
+	runtime := fixtures.RegisterKymaRuntime(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, runtimeInput, testCtx.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, &runtime)
-	require.NoError(t, err)
-	require.NotEmpty(t, runtime.ID)
 
 	securedClient, configuration, certChain := getSecuredClientByContext(t, testCtx, runtime.ID)
 
@@ -121,10 +119,8 @@ func TestSystemBrokerAuthentication(t *testing.T) {
 
 func TestCallingORDServiceWithCert(t *testing.T) {
 	logrus.Infof("registering runtime with name: %s, within tenant: %s", runtimeInput.Name, testCtx.Tenant)
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, runtimeInput)
+	runtime := fixtures.RegisterKymaRuntime(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, runtimeInput, testCtx.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, &runtime)
-	require.NoError(t, err)
-	require.NotEmpty(t, runtime.ID)
 
 	app, err := fixtures.RegisterApplicationFromInput(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, applicationInput)
 	defer fixtures.CleanupApplication(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, &app)

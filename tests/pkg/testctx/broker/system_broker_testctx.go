@@ -20,6 +20,7 @@ type SystemBrokerTestContext struct {
 
 	SystemBrokerURL string
 	ORDServiceURL   string
+	GatewayOauth    string
 
 	ClientKey *rsa.PrivateKey
 
@@ -49,6 +50,7 @@ func NewSystemBrokerTestContext(cfg config.SystemBrokerTestConfig) (*SystemBroke
 		SystemBrokerURL:             cfg.SystemBrokerURL,
 		ORDServiceURL:               cfg.ORDServiceURL,
 		ClientKey:                   clientKey,
+		GatewayOauth:                cfg.GatewayOauth,
 		ConnectorTokenSecuredClient: clients.NewTokenSecuredClient(cfg.ConnectorURL),
 		CertSecuredGraphQLClient:    gql.NewCertAuthorizedGraphQLClientWithCustomURL(cfg.DirectorExternalCertSecuredURL, cc.Get().PrivateKey, cc.Get().Certificate, cfg.SkipSSLValidation),
 	}, nil

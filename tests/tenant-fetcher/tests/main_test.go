@@ -45,6 +45,7 @@ type testConfig struct {
 	SelfRegDistinguishLabelKey       string
 	SelfRegDistinguishLabelValue     string
 	SelfRegRegion                    string
+	GatewayOauth                     string
 	CertLoaderConfig                 certloader.Config
 }
 

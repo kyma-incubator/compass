@@ -63,18 +63,15 @@ func TestGenerateClientCredentialsToRuntime(t *testing.T) {
 	input := fixRuntimeInput(name)
 
 	t.Log("Create runtime")
-	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+	rtm := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
-	require.NotEmpty(t, rtm)
-	require.NotEmpty(t, rtm.ID)
-	require.NoError(t, err)
 
 	generateRuntimeClientCredentialsRequest := fixtures.FixRequestClientCredentialsForRuntime(rtm.ID)
 	rtmAuth := graphql.RuntimeSystemAuth{}
 
 	// WHEN
 	t.Log("Generate client credentials for runtime")
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, generateRuntimeClientCredentialsRequest, &rtmAuth)
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, generateRuntimeClientCredentialsRequest, &rtmAuth)
 	require.NoError(t, err)
 
 	//THEN
@@ -226,11 +223,8 @@ func TestDeleteSystemAuthFromRuntime(t *testing.T) {
 	input := fixRuntimeInput(name)
 
 	t.Log("Create runtime")
-	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+	rtm := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
-	require.NotEmpty(t, rtm)
-	require.NotEmpty(t, rtm.ID)
-	require.NoError(t, err)
 
 	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, ctx, certSecuredGraphQLClient, tenantId, rtm.ID)
 	require.NotEmpty(t, rtmAuth)
@@ -240,7 +234,7 @@ func TestDeleteSystemAuthFromRuntime(t *testing.T) {
 
 	// WHEN
 	t.Log("Delete system auth for runtime")
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteSystemAuthForRuntimeRequest, &deleteOutput)
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteSystemAuthForRuntimeRequest, &deleteOutput)
 	require.NoError(t, err)
 	require.NotEmpty(t, deleteOutput)
 
@@ -260,11 +254,8 @@ func TestDeleteSystemAuthFromRuntimeUsingApplicationMutationShouldReportError(t 
 	input := fixRuntimeInput(name)
 
 	t.Log("Create runtime")
-	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+	rtm := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
-	require.NotEmpty(t, rtm)
-	require.NotEmpty(t, rtm.ID)
-	require.NoError(t, err)
 
 	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, ctx, certSecuredGraphQLClient, tenantId, rtm.ID)
 	require.NotEmpty(t, rtmAuth)
@@ -275,7 +266,7 @@ func TestDeleteSystemAuthFromRuntimeUsingApplicationMutationShouldReportError(t 
 
 	// WHEN
 	t.Log("Delete system auth for runtime using application mutation")
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteSystemAuthForApplicationRequest, &deleteOutput)
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteSystemAuthForApplicationRequest, &deleteOutput)
 
 	//THEN
 	require.Error(t, err)
@@ -291,11 +282,8 @@ func TestDeleteSystemAuthFromRuntimeUsingIntegrationSystemMutationShouldReportEr
 	input := fixRuntimeInput(name)
 
 	t.Log("Create runtime")
-	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+	rtm := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
-	require.NotEmpty(t, rtm)
-	require.NotEmpty(t, rtm.ID)
-	require.NoError(t, err)
 
 	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, ctx, certSecuredGraphQLClient, tenantId, rtm.ID)
 	require.NotEmpty(t, rtmAuth)
@@ -306,7 +294,7 @@ func TestDeleteSystemAuthFromRuntimeUsingIntegrationSystemMutationShouldReportEr
 
 	// WHEN
 	t.Log("Delete system auth for runtime using integration system mutation")
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteSystemAuthForIntegrationSystemRequest, &deleteOutput)
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, deleteSystemAuthForIntegrationSystemRequest, &deleteOutput)
 
 	//THEN
 	require.Error(t, err)

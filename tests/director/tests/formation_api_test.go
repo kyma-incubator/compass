@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
@@ -249,7 +251,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	rtmInput.Description = &rtmDesc
 	rtmInput.Labels[selectorKey] = subaccountID
 
-	rtm := registerKymaRuntime(t, ctx, subaccountID, rtmInput)
+	rtm := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, rtmInput, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, &rtm)
 
 	t.Logf("Should create formation: %s", unusedFormationName)
@@ -383,7 +385,7 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	}
 
 	t.Log("Create runtime")
-	rtm := registerKymaRuntime(t, ctx, subaccountID, rtmInput)
+	rtm := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, rtmInput, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, &rtm)
 
 	t.Log("Create runtimeContext")
@@ -654,7 +656,7 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 
 		// Register kyma runtime
 		kymaRtmInput := fixtures.FixRuntimeRegisterInput("kyma-runtime")
-		kymaRuntime := registerKymaRuntime(t, ctx, subscriptionConsumerSubaccountID, kymaRtmInput)
+		kymaRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, kymaRtmInput, conf.GatewayOauth)
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &kymaRuntime)
 
 		// Create kyma formation template
@@ -703,6 +705,42 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			checkRuntimeFormationLabelIsMissing(t, ctx, subscriptionConsumerAccountID, kymaRuntime.ID)
 		})
 	})
+}
+
+func TestFormationRuntimeTypeWhileAssigning(t *testing.T) {
+	ctx := context.TODO()
+
+	formationTemplateName := "new-formation-template"
+	runtimeType := "some-new-runtime-type"
+	formationName := "test-formation"
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	formationTemplate := fixtures.FixFormationTemplateWithType(formationTemplateName, runtimeType)
+	actualFormationTemplate := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplate)
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, actualFormationTemplate.ID)
+
+	formation := fixtures.FixFormationInput(formationName, str.Ptr(formationTemplateName))
+	formationInputGQL, err := testctx.Tc.Graphqlizer.FormationInputToGQL(formation)
+	require.NoError(t, err)
+
+	createFormationReq := fixtures.FixCreateFormationWithTemplateRequest(formationInputGQL)
+	actualFormation := graphql.Formation{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, createFormationReq, &actualFormation)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, formation, actualFormation.ID, graphql.FormationObjectTypeRuntime, tenantId)
+	require.NoError(t, err)
+
+	inRuntime := fixtures.FixRuntimeRegisterInput("test-runtime")
+	actualRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, inRuntime, conf.GatewayOauth)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &actualRuntime)
+	require.Equal(t, conf.KymaRuntimeTypeLabelValue, actualRuntime.Labels[conf.RuntimeTypeLabelKey])
+
+	createRequest := fixtures.FixAssignFormationRequest(actualRuntime.ID, string(graphql.FormationObjectTypeRuntime), formationName)
+	formationResultFormation := graphql.Formation{}
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createRequest, &formationResultFormation)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, formation, actualRuntime.ID, graphql.FormationObjectTypeRuntime, tenantId)
+	require.Empty(t, formationResultFormation)
+	require.EqualError(t, err, "graphql: The operation is not allowed [reason=unsupported runtimeType \"kyma\" for formation template \"new-formation-template\", allowing only \"some-new-runtime-type\"]")
 }
 
 func assignTenantToFormation(t *testing.T, ctx context.Context, objectID, tenantID, formationName string) {

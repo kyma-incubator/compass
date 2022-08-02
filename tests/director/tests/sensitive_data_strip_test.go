@@ -39,7 +39,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 	t.Log(fmt.Sprintf("Registering runtime %q", runtimeName))
 	runtimeRegInput := fixRuntimeInput(runtimeName)
 
-	runtime := registerKymaRuntime(t, ctx, tenantId, runtimeRegInput)
+	runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, runtimeRegInput, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
 
 	t.Log(fmt.Sprintf("Requesting OAuth client for runtime %q", runtimeName))

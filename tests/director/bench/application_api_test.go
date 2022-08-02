@@ -28,6 +28,8 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 	runtime := fixtures.FixRuntimeRegisterInput("runtime")
 	(runtime.Labels)["scenarios"] = []string{conf.DefaultScenario}
 	(runtime.Labels)["isNormalized"] = "false"
+	// TODO Fix workaround
+	(runtime.Labels)[conf.RuntimeTypeLabelKey] = conf.KymaRuntimeTypeLabelValue
 
 	rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(b, ctx, certSecuredGraphQLClient, tenantID, &runtime)
 	defer fixtures.CleanupRuntime(b, ctx, certSecuredGraphQLClient, tenantID, &rt)

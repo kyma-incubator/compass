@@ -22,6 +22,9 @@ type config struct {
 	DirectorExternalCertSecuredURL string
 	SkipSSLValidation              bool `envconfig:"default=false"`
 	CertLoaderConfig               certloader.Config
+	RuntimeTypeLabelKey            string `envconfig:"APP_RUNTIME_TYPE_LABEL_KEY,default=runtimeType"`
+	KymaRuntimeTypeLabelValue      string `envconfig:"APP_KYMA_RUNTIME_TYPE_LABEL_VALUE,default=kyma"`
+	GatewayOauth                   string
 }
 
 var (
