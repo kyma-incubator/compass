@@ -70,7 +70,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 		}()
 		require.Equal(t, http.StatusOK, response.StatusCode)
 
-		t.Run("Subscribe tenant to Application flow", func(t *testing.T) {
+		t.Run("Subscribe tenant flow: Application is created successfully in consumer subaccount as a result of subscription", func(t *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
@@ -88,7 +88,31 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
 		})
 
-		t.Run("Subscribe tenant to Application flow and add bundle", func(t *testing.T) {
+		t.Run("Unsubscribe tenant flow: Application is deleted successfully in consumer subaccount as a result of unsubscription", func(t *testing.T) {
+			//GIVEN
+			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
+
+			actualAppPage := graphql.ApplicationPage{}
+			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualAppPage.Data, 1)
+			require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
+
+			// WHEN
+			subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+			// THEN
+			actualAppPage = graphql.ApplicationPage{}
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualAppPage.Data, 0)
+		})
+
+		t.Run("Subscribe tenant flow: Application Provider successfully pushes consumer app metadata (bundle) to consumer application after successful subscription", func(t *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
@@ -127,76 +151,34 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			assertions.AssertBundle(t, &bndlInput, &output)
 		})
 
-		t.Run("Unsubscribe tenant to Application flow and ensure that cannot add bundle", func(t *testing.T) {
-			//GIVEN
-			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
-
-			// Subscribe
-			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
-
-			// Ensure subscription is OK
-			actualAppPage := graphql.ApplicationPage{}
-			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
-			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
-			require.NoError(t, err)
-
-			require.Len(t, actualAppPage.Data, 1)
-			subscribedApplication := actualAppPage.Data[0]
-			require.Equal(t, appTmpl.ID, *subscribedApplication.ApplicationTemplateID)
-
-			// Unsubscribe
-			subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-
-			// Ensure Unsubscription is OK
-			actualAppPage = graphql.ApplicationPage{}
-			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
-			require.NoError(t, err)
-
-			require.Len(t, actualAppPage.Data, 0)
-
-			//Create Bundle
+		t.Run("Subscribe tenant flow: Application Provider is denied querying and pushing consumer app metadata (bundle) without previously created subscription", func(t *testing.T) {
+			//Create consumer token
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
 			headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
+
+			actualAppPage := graphql.ApplicationPage{}
+			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
+			getSrcAppReq.Header = headers
+			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getSrcAppReq, &actualAppPage)
+			require.Error(t, err)
+			require.Contains(t, err.Error(), fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the applications table for any application templates in the provider tenant", subscriptionConsumerSubaccountID))
 
 			//Create Bundle
 			bndlInput := fixtures.FixBundleCreateInputWithRelatedObjects(t, "bndl-app-1")
 			bndl, err := testctx.Tc.Graphqlizer.BundleCreateInputToGQL(bndlInput)
 			require.NoError(t, err)
-			addBndlRequest := fixtures.FixAddBundleRequest(subscribedApplication.ID, bndl)
+			addBndlRequest := fixtures.FixAddBundleRequest("non-existent-consumer-app-id", bndl) // app id value (in this case 'non-existent-consumer-app-id') doesn't really matter as we're testing the claims validator logic which gets hit before the service/repo layers
 			addBndlRequest.Header = headers
 			output := graphql.BundleExt{}
 
 			t.Log("Try to create bundle")
 			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addBndlRequest, &output)
 
-			//Verify that Bundle cannot be created after unsubscribtion
+			//Verify that Bundle cannot be created after unsubscription
 			require.Error(t, err)
 			require.Contains(t, err.Error(), fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the applications table for any application templates in the provider tenant", subscriptionConsumerSubaccountID))
 		})
 
-		t.Run("Unsubscribe tenant to Application flow", func(t *testing.T) {
-			//GIVEN
-			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
-			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
-
-			actualAppPage := graphql.ApplicationPage{}
-			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
-			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
-			require.NoError(t, err)
-
-			require.Len(t, actualAppPage.Data, 1)
-			require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
-
-			// WHEN
-			subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
-
-			// THEN
-			actualAppPage = graphql.ApplicationPage{}
-			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
-			require.NoError(t, err)
-
-			require.Len(t, actualAppPage.Data, 0)
-		})
 	})
 }
 
