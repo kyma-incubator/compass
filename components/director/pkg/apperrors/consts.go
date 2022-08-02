@@ -58,6 +58,8 @@ const (
 	InternalServerErrMsgF = "Internal Server Error: %s"
 	// NotUniqueMsg is the error message for NotUnique errors.
 	NotUniqueMsg = "Object is not unique"
+	// NotUniqueMsgF is the error message format for NotUnique errors with custom message.
+	NotUniqueMsgF = "Object is not unique: %s"
 	// TenantRequiredMsg is the error message for TenantRequired errors.
 	TenantRequiredMsg = "Tenant is required"
 	// TenantNotFoundMsg is the error message for TenantNotFound errors.

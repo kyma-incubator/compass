@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -115,6 +117,7 @@ func (s *service) Exist(ctx context.Context, id string) (bool, error) {
 // Create creates RuntimeContext using `in`. Retrieves all formations from ASAs matching the RuntimeContext
 // and assigns it to each formation
 func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (string, error) {
+	log.C(ctx).Infof("Creating runtime context for runtime with ID: %q and key: %q and value: %q", in.RuntimeID, in.Key, in.Value)
 	rtmCtxTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return "", errors.Wrapf(err, "while loading tenant from context")
@@ -139,13 +142,14 @@ func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (str
 		}
 
 		if len(scenariosFromAssignments) == 0 {
+			log.C(ctx).Infof("No scenarios found for runtime context with ID: %q that matched ASA", id)
 			return id, nil
 		}
 
 		// If we have a runtime with runtime context(s) we need to assign only the runtime context(s) to the formation.
 		// But if we create ASA in the provider account before registering runtime, the runtime will be assigned to the formation.
 		// And then if we register runtime context for this runtime, the runtime context will be assigned to the formation as well.
-		ownedRuntimeExists, err := s.runtimeRepo.OwnerExists(ctxWithParentTenant, tnt.Parent, in.RuntimeID)
+		ownedRuntimeExists, err := s.runtimeRepo.OwnerExists(ctx, rtmCtxTenant, in.RuntimeID)
 		if err != nil {
 			return "", errors.Wrapf(err, "while checking if runtime with id %q exists", in.RuntimeID)
 		}

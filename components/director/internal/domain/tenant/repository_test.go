@@ -3,9 +3,13 @@ package tenant_test
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
+	"fmt"
 	"regexp"
+	"strings"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -502,6 +506,142 @@ func TestPgRepository_ListPageBySearchTerm(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, "while listing tenants from DB: Internal Server Error: unable to fetch database from context")
 	})
+}
+
+func TestPgRepository_ListByExternalTenants(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		initializedVal := true
+		tntModel := &model.BusinessTenantMapping{ID: id(), ExternalTenant: id(), Initialized: &initializedVal}
+		tntEntity := &tenantEntity.Entity{ID: tntModel.ID, ExternalTenant: tntModel.ExternalTenant, Initialized: &initializedVal}
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromEntity", tntEntity).Return(tntModel).Once()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		rowsToReturn := fixSQLRowsWithComputedValues([]sqlRowWithComputedValues{{sqlRow: sqlRow{id: tntModel.ID, externalTenant: tntModel.ExternalTenant}, initialized: &initializedVal}})
+
+		query := `SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant IN ($1)`
+
+		dbMock.ExpectQuery(regexp.QuoteMeta(query)).
+			WithArgs(tntModel.ExternalTenant).
+			WillReturnRows(rowsToReturn)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(mockConverter)
+
+		// WHEN
+		result, err := tenantMappingRepo.ListByExternalTenants(ctx, []string{tntModel.ExternalTenant})
+
+		// THEN
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, []*model.BusinessTenantMapping{tntModel}, result)
+	})
+
+	t.Run("Success when high load of tenants is requested", func(t *testing.T) {
+		// GIVEN
+		initializedVal := true
+		tntModel := &model.BusinessTenantMapping{ID: id(), ExternalTenant: id(), Initialized: &initializedVal}
+		tntEntity := &tenantEntity.Entity{ID: tntModel.ID, ExternalTenant: tntModel.ExternalTenant, Initialized: &initializedVal}
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("FromEntity", tntEntity).Return(tntModel).Once()
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		rowsToReturn := fixSQLRowsWithComputedValues([]sqlRowWithComputedValues{{sqlRow: sqlRow{id: tntModel.ID, externalTenant: tntModel.ExternalTenant}, initialized: &initializedVal}})
+
+		// get first chunk of tenant IDs
+		firstChunkIDs := chunkSizedTenantIDs(49999)
+		firstChunkIDs = append(firstChunkIDs, tntModel.ExternalTenant)
+		firstChunkQuery, firstChunkQueryArgs := buildQueryWithTenantIDs(firstChunkIDs)
+		dbMock.ExpectQuery(regexp.QuoteMeta(firstChunkQuery)).
+			WithArgs(firstChunkQueryArgs...).
+			WillReturnRows(rowsToReturn)
+
+		// get second chunk of tenant IDs
+		secondChunkIDs := chunkSizedTenantIDs(100)
+		secondChunkQuery, secondChunkIDsChunkQueryArgs := buildQueryWithTenantIDs(secondChunkIDs)
+		dbMock.ExpectQuery(regexp.QuoteMeta(secondChunkQuery)).
+			WithArgs(secondChunkIDsChunkQueryArgs...).
+			WillReturnRows(fixSQLRowsWithComputedValues([]sqlRowWithComputedValues{}))
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(mockConverter)
+
+		// WHEN
+		result, err := tenantMappingRepo.ListByExternalTenants(ctx, append(firstChunkIDs, secondChunkIDs...))
+
+		// THEN
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		assert.Equal(t, []*model.BusinessTenantMapping{tntModel}, result)
+	})
+
+	t.Run("Error when listing", func(t *testing.T) {
+		// GIVEN
+		externalTenantID := id()
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant IN ($1)`)).
+			WithArgs(externalTenantID).
+			WillReturnError(testError)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		tenantMappingRepo := tenant.NewRepository(mockConverter)
+
+		// WHEN
+		result, err := tenantMappingRepo.ListByExternalTenants(ctx, []string{externalTenantID})
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "Unexpected error while executing SQL query")
+		require.Nil(t, result)
+	})
+
+	t.Run("Error when missing persistence context", func(t *testing.T) {
+		// GIVEN
+		repo := tenant.NewRepository(nil)
+		ctx := context.TODO()
+
+		// WHEN
+		_, err := repo.ListByExternalTenants(ctx, []string{id()})
+
+		// THEN
+		require.EqualError(t, err, "Internal Server Error: unable to fetch database from context")
+	})
+}
+
+func buildQueryWithTenantIDs(ids []string) (string, []driver.Value) {
+	argumentValues := make([]driver.Value, 0)
+	var sb strings.Builder
+	for i, id := range ids {
+		argumentValues = append(argumentValues, id)
+		sb.WriteString(fmt.Sprintf("$%d", i+1))
+		if i < len(ids)-1 {
+			sb.WriteString(", ")
+		}
+	}
+
+	queryFormat := `SELECT id, external_name, external_tenant, parent, type, provider_name, status FROM public.business_tenant_mappings WHERE external_tenant IN (%s)`
+	query := fmt.Sprintf(queryFormat, sb.String())
+
+	return query, argumentValues
+}
+
+func chunkSizedTenantIDs(chunkSize int) []string {
+	ids := make([]string, chunkSize)
+	for i := 0; i < chunkSize; i++ {
+		ids[i] = id()
+	}
+	return ids
 }
 
 func TestPgRepository_Update(t *testing.T) {
@@ -1020,4 +1160,8 @@ func mockDBError(t *testing.T, runtimeID string) (*sqlx.DB, testdb.DBMock) {
 	dbMock.ExpectQuery(regexp.QuoteMeta(selectTenantsQuery)).
 		WithArgs(runtimeID, runtimeID).WillReturnError(testError)
 	return db, dbMock
+}
+
+func id() string {
+	return uuid.New().String()
 }

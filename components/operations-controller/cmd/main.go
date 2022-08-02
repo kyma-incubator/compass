@@ -18,7 +18,13 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"os"
+
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	httpbroker "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
+
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
 	"github.com/pkg/errors"
 
@@ -35,7 +41,6 @@ import (
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/k8s"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/k8s/status"
 	collector "github.com/kyma-incubator/compass/components/operations-controller/internal/metrics"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/env"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -109,15 +114,23 @@ func main() {
 		os.Exit(1)
 	}
 
-	httpClient, err := utils.PrepareHttpClient(cfg.HttpClient)
-	fatalOnError(err)
+	securedHTTPClient := utils.PrepareHttpClient(cfg.HttpClient)
 
-	certCache, err := certloader.StartCertLoader(ctx, cfg.ExternalClientCertSecret)
+	internalGatewayHTTPClient := &http.Client{
+		Timeout:   cfg.HttpClient.Timeout,
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewServiceAccountTokenTransportWithHeader(httputil.NewHTTPTransportWrapper(httpbroker.NewHTTPTransport(cfg.HttpClient)), "Authorization")),
+	}
+
+	certCache, err := certloader.StartCertLoader(ctx, certloader.Config{
+		ExternalClientCertSecret:  cfg.ExternalClient.CertSecret,
+		ExternalClientCertCertKey: cfg.ExternalClient.CertKey,
+		ExternalClientCertKeyKey:  cfg.ExternalClient.KeyKey,
+	})
 	fatalOnError(errors.Wrapf(err, "Failed to initialize certificate loader"))
 
 	httpMTLSClient := utils.PrepareMTLSClient(cfg.HttpClient, certCache)
 
-	directorClient, err := director.NewClient(cfg.Director.OperationEndpoint, cfg.GraphQLClient, httpClient)
+	directorClient, err := director.NewClient(cfg.Director.OperationEndpoint, cfg.GraphQLClient, internalGatewayHTTPClient)
 	fatalOnError(err)
 
 	collector := collector.NewCollector()
@@ -126,7 +139,7 @@ func main() {
 		status.NewManager(mgr.GetClient()),
 		k8s.NewClient(mgr.GetClient()),
 		directorClient,
-		webhook.NewClient(httpClient, httpMTLSClient),
+		webhookclient.NewClient(securedHTTPClient, httpMTLSClient),
 		collector)
 
 	if err = controller.SetupWithManager(mgr); err != nil {

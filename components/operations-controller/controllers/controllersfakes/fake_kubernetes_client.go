@@ -51,15 +51,16 @@ func (fake *FakeKubernetesClient) Delete(arg1 context.Context, arg2 client.Objec
 		arg2 client.Object
 		arg3 []client.DeleteOption
 	}{arg1, arg2, arg3})
+	stub := fake.DeleteStub
+	fakeReturns := fake.deleteReturns
 	fake.recordInvocation("Delete", []interface{}{arg1, arg2, arg3})
 	fake.deleteMutex.Unlock()
-	if fake.DeleteStub != nil {
-		return fake.DeleteStub(arg1, arg2, arg3...)
+	if stub != nil {
+		return stub(arg1, arg2, arg3...)
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.deleteReturns
 	return fakeReturns.result1
 }
 
@@ -112,15 +113,16 @@ func (fake *FakeKubernetesClient) Get(arg1 context.Context, arg2 types.Namespace
 		arg1 context.Context
 		arg2 types.NamespacedName
 	}{arg1, arg2})
+	stub := fake.GetStub
+	fakeReturns := fake.getReturns
 	fake.recordInvocation("Get", []interface{}{arg1, arg2})
 	fake.getMutex.Unlock()
-	if fake.GetStub != nil {
-		return fake.GetStub(arg1, arg2)
+	if stub != nil {
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.getReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 

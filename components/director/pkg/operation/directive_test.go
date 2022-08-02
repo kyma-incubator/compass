@@ -717,7 +717,7 @@ func TestHandleOperation(t *testing.T) {
 					headers[key] = value[0]
 				}
 
-				expectedRequestObject := &webhook.RequestObject{
+				expectedRequestObject := &webhook.ApplicationLifecycleWebhookRequestObject{
 					Application: mockedNextResponse().(webhook.Resource),
 					TenantID:    tenantID,
 					Headers:     headers,
@@ -831,7 +831,7 @@ func TestHandleOperation(t *testing.T) {
 			headers[key] = value[0]
 		}
 
-		expectedRequestObject := &webhook.RequestObject{
+		expectedRequestObject := &webhook.ApplicationLifecycleWebhookRequestObject{
 			Application: mockedNextResponse().(webhook.Resource),
 			TenantID:    tenantID,
 			Headers:     headers,
@@ -907,7 +907,7 @@ func TestHandleOperation(t *testing.T) {
 			headers[key] = value[0]
 		}
 
-		expectedRequestObject := &webhook.RequestObject{
+		expectedRequestObject := &webhook.ApplicationLifecycleWebhookRequestObject{
 			Application: mockedNextResponse().(webhook.Resource),
 			TenantID:    tenantID,
 			Headers:     headers,
@@ -980,7 +980,7 @@ func TestHandleOperation(t *testing.T) {
 			headers[key] = value[0]
 		}
 
-		expectedRequestObject := &webhook.RequestObject{
+		expectedRequestObject := &webhook.ApplicationLifecycleWebhookRequestObject{
 			Application: mockedNextResponse().(webhook.Resource),
 			TenantID:    tenantID,
 			Headers:     headers,
@@ -1056,7 +1056,7 @@ func TestHandleOperation(t *testing.T) {
 			headers[key] = value[0]
 		}
 
-		expectedRequestObject := &webhook.RequestObject{
+		expectedRequestObject := &webhook.ApplicationLifecycleWebhookRequestObject{
 			Application: mockedNextResponse().(webhook.Resource),
 			TenantID:    tenantID,
 			Headers:     headers,
@@ -1132,7 +1132,7 @@ func TestHandleOperation(t *testing.T) {
 			headers[key] = value[0]
 		}
 
-		expectedRequestObject := &webhook.RequestObject{
+		expectedRequestObject := &webhook.ApplicationLifecycleWebhookRequestObject{
 			Application: mockedNextResponse().(webhook.Resource),
 			TenantID:    tenantID,
 			Headers:     headers,

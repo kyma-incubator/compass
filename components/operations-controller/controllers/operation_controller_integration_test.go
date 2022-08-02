@@ -22,6 +22,10 @@ import (
 	"path/filepath"
 	"time"
 
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
+
+	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -38,7 +42,6 @@ import (
 	"github.com/kyma-incubator/compass/components/operations-controller/controllers/controllersfakes"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/k8s"
 	"github.com/kyma-incubator/compass/components/operations-controller/internal/k8s/status"
-	"github.com/kyma-incubator/compass/components/operations-controller/internal/webhook"
 	"github.com/kyma-incubator/compass/components/system-broker/pkg/director"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -182,7 +185,7 @@ func TestController_Scenarios(t *testing.T) {
 	t.Run("Successful Async Webhook flow due to gone status", func(t *testing.T) {
 		mode := graphql.WebhookModeAsync
 		goneStatusCode := 410
-		expectedErr := errors.NewWebhookStatusGoneErr(goneStatusCode)
+		expectedErr := webhookclient.NewWebhookStatusGoneErr(goneStatusCode)
 		application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &mode})
 
 		directorClient.FetchApplicationReturns(application, nil)
@@ -672,7 +675,7 @@ func TestController_Scenarios(t *testing.T) {
 	t.Run("Successful Sync Webhook flow due to gone status", func(t *testing.T) {
 		mode := graphql.WebhookModeSync
 		goneStatusCode := 410
-		expectedErr := errors.NewWebhookStatusGoneErr(goneStatusCode)
+		expectedErr := webhookclient.NewWebhookStatusGoneErr(goneStatusCode)
 		application := prepareApplicationOutput(&graphql.Application{BaseEntity: &graphql.BaseEntity{}}, graphql.Webhook{ID: webhookGUID, Mode: &mode})
 
 		directorClient.FetchApplicationReturns(application, nil)

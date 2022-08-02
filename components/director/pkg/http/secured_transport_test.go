@@ -47,7 +47,7 @@ func TestSecuredTransport_RoundTripSuccessfullyObtainsAuthorizationFromCorrectAu
 	require.NoError(t, err)
 }
 
-func TestSecuredTransport_RoundTripCouldNotObtainAuthorizationWhenNoAuthorizationProviderMatches(t *testing.T) {
+func TestSecuredTransport_RoundTripDoesNotSetAuthorizationWhenNoAuthorizationProviderMatches(t *testing.T) {
 	const accessToken = "accessToken"
 
 	transport := &httpfakes.FakeHTTPRoundTripper{}
@@ -76,7 +76,7 @@ func TestSecuredTransport_RoundTripCouldNotObtainAuthorizationWhenNoAuthorizatio
 
 	securedTransport := httputil.NewSecuredTransport(transport, tokenAuthorizationProvider)
 	_, err = securedTransport.RoundTrip(request)
-	require.EqualError(t, err, "context did not match any authorization provider")
+	require.NoError(t, err)
 	require.Equal(t, request.URL, testURL)
 }
 
