@@ -620,7 +620,7 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 
 			// Register kyma runtime
 			kymaRtmInput := fixtures.FixRuntimeRegisterInput("kyma-runtime")
-			kymaRuntime := registerKymaRuntime(t, ctx, subscriptionConsumerSubaccountID, kymaRtmInput)
+			kymaRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, kymaRtmInput, conf.GatewayOauth)
 			defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &kymaRuntime)
 
 			// Register provider runtime
