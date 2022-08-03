@@ -103,8 +103,6 @@ spec:
               value: "{{ .Values.global.tenantFetcher.server.regionPathParam }}"
             - name: APP_JWKS_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.authentication.jwksEndpoint }}"
-            - name: APP_ALLOW_JWT_SIGNING_NONE
-              value: "true"
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
               value: {{ .Values.global.tenantFetcher.requiredAuthScope | quote }}
             - name: APP_FETCH_TENANT_ON_DEMAND_SCOPE
