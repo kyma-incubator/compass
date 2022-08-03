@@ -2,6 +2,7 @@ package tests
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -9,6 +10,11 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	plusDelimiter  = "+"
+	commaDelimiter = ","
 )
 
 func TestGetInfo(t *testing.T) {
@@ -30,8 +36,10 @@ func TestGetInfo(t *testing.T) {
 	err = json.NewDecoder(resp.Body).Decode(&info)
 	require.NoError(t, err)
 
-	require.Equal(t, conf.CertSubject, info.Subject)
-	require.Equal(t, conf.CertIssuer, info.Issuer)
+	expectedIssuer, expectedSubject := getExpectedFields(t)
+
+	require.Equal(t, expectedSubject, info.Subject)
+	require.Equal(t, expectedIssuer, info.Issuer)
 }
 
 func TestCallingInfoEndpointFailForMethodsOtherThanGet(t *testing.T) {
@@ -58,4 +66,19 @@ func infoEndpoint() string {
 		infoEndpoint = infoEndpoint + conf.InfoUrl
 	}
 	return infoEndpoint
+}
+
+func getExpectedFields(t *testing.T) (string, string) {
+	clientCert := cc.Get()
+	require.NotNil(t, clientCert)
+	require.NotEmpty(t, clientCert.Certificate)
+
+	parsedClientCert, err := x509.ParseCertificate(clientCert.Certificate[0])
+	require.NoError(t, err)
+
+	return replaceDelimiter(parsedClientCert.Issuer.String()), replaceDelimiter(parsedClientCert.Subject.String())
+}
+
+func replaceDelimiter(input string) string {
+	return strings.ReplaceAll(input, plusDelimiter, commaDelimiter)
 }
