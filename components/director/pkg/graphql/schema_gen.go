@@ -52,12 +52,11 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
-	AppMetadataValidation func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
-	Async                 func(ctx context.Context, obj interface{}, next graphql.Resolver, operationType OperationType, webhookType *WebhookType, idField *string) (res interface{}, err error)
-	HasScenario           func(ctx context.Context, obj interface{}, next graphql.Resolver, applicationProvider string, idField string) (res interface{}, err error)
-	HasScopes             func(ctx context.Context, obj interface{}, next graphql.Resolver, path string) (res interface{}, err error)
-	Sanitize              func(ctx context.Context, obj interface{}, next graphql.Resolver, path string) (res interface{}, err error)
-	Validate              func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
+	Async       func(ctx context.Context, obj interface{}, next graphql.Resolver, operationType OperationType, webhookType *WebhookType, idField *string) (res interface{}, err error)
+	HasScenario func(ctx context.Context, obj interface{}, next graphql.Resolver, applicationProvider string, idField string) (res interface{}, err error)
+	HasScopes   func(ctx context.Context, obj interface{}, next graphql.Resolver, path string) (res interface{}, err error)
+	Sanitize    func(ctx context.Context, obj interface{}, next graphql.Resolver, path string) (res interface{}, err error)
+	Validate    func(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -4156,10 +4155,6 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	&ast.Source{Name: "schema.graphql", Input: `"""
-appMetadataValidation directive is added to application metadata mutations to protect them
-"""
-directive @appMetadataValidation on FIELD_DEFINITION
-"""
 Async directive is added to mutations which are capable of being executed in asynchronious matter
 """
 directive @async(operationType: OperationType!, webhookType: WebhookType, idField: String) on FIELD_DEFINITION
@@ -5643,17 +5638,17 @@ type Mutation {
 	**Examples**
 	- [add api definition to bundle](examples/add-api-definition-to-bundle/add-api-definition-to-bundle.graphql)
 	"""
-	addAPIDefinitionToBundle(bundleID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToBundle") @appMetadataValidation
+	addAPIDefinitionToBundle(bundleID: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPIDefinitionToBundle")
 	"""
 	**Examples**
 	- [update api definition](examples/update-api-definition/update-api-definition.graphql)
 	"""
-	updateAPIDefinition(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPIDefinition") @appMetadataValidation
+	updateAPIDefinition(id: ID!, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.updateAPIDefinition")
 	"""
 	**Examples**
 	- [delete api definition](examples/delete-api-definition/delete-api-definition.graphql)
 	"""
-	deleteAPIDefinition(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPIDefinition") @appMetadataValidation
+	deleteAPIDefinition(id: ID!): APIDefinition! @hasScopes(path: "graphql.mutation.deleteAPIDefinition")
 	"""
 	**Examples**
 	- [refetch api spec](examples/refetch-api-spec/refetch-api-spec.graphql)
@@ -5673,17 +5668,17 @@ type Mutation {
 	**Examples**
 	- [add event definition to bundle](examples/add-event-definition-to-bundle/add-event-definition-to-bundle.graphql)
 	"""
-	addEventDefinitionToBundle(bundleID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToBundle") @appMetadataValidation
+	addEventDefinitionToBundle(bundleID: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.addEventDefinitionToBundle")
 	"""
 	**Examples**
 	- [update event definition](examples/update-event-definition/update-event-definition.graphql)
 	"""
-	updateEventDefinition(id: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.updateEventDefinition") @appMetadataValidation
+	updateEventDefinition(id: ID!, in: EventDefinitionInput! @validate): EventDefinition! @hasScopes(path: "graphql.mutation.updateEventDefinition")
 	"""
 	**Examples**
 	- [delete event definition](examples/delete-event-definition/delete-event-definition.graphql)
 	"""
-	deleteEventDefinition(id: ID!): EventDefinition! @hasScopes(path: "graphql.mutation.deleteEventDefinition") @appMetadataValidation
+	deleteEventDefinition(id: ID!): EventDefinition! @hasScopes(path: "graphql.mutation.deleteEventDefinition")
 	refetchEventDefinitionSpec(eventID: ID!): EventSpec! @hasScopes(path: "graphql.mutation.refetchEventDefinitionSpec")
 	"""
 	**Examples**
@@ -5787,17 +5782,17 @@ type Mutation {
 	**Examples**
 	- [add bundle](examples/add-bundle/add-bundle.graphql)
 	"""
-	addBundle(applicationID: ID!, in: BundleCreateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.addBundle") @appMetadataValidation
+	addBundle(applicationID: ID!, in: BundleCreateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.addBundle")
 	"""
 	**Examples**
 	- [update bundle](examples/update-bundle/update-bundle.graphql)
 	"""
-	updateBundle(id: ID!, in: BundleUpdateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.updateBundle") @appMetadataValidation
+	updateBundle(id: ID!, in: BundleUpdateInput! @validate): Bundle! @hasScopes(path: "graphql.mutation.updateBundle")
 	"""
 	**Examples**
 	- [delete bundle](examples/delete-bundle/delete-bundle.graphql)
 	"""
-	deleteBundle(id: ID!): Bundle! @hasScopes(path: "graphql.mutation.deleteBundle") @appMetadataValidation
+	deleteBundle(id: ID!): Bundle! @hasScopes(path: "graphql.mutation.deleteBundle")
 	"""
 	**Examples**
 	- [create automatic scenario assignment](examples/create-automatic-scenario-assignment/create-automatic-scenario-assignment.graphql)
@@ -16824,14 +16819,8 @@ func (ec *executionContext) _Mutation_addAPIDefinitionToBundle(ctx context.Conte
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.AppMetadataValidation == nil {
-				return nil, errors.New("directive appMetadataValidation is not implemented")
-			}
-			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -16895,14 +16884,8 @@ func (ec *executionContext) _Mutation_updateAPIDefinition(ctx context.Context, f
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.AppMetadataValidation == nil {
-				return nil, errors.New("directive appMetadataValidation is not implemented")
-			}
-			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -16966,14 +16949,8 @@ func (ec *executionContext) _Mutation_deleteAPIDefinition(ctx context.Context, f
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.AppMetadataValidation == nil {
-				return nil, errors.New("directive appMetadataValidation is not implemented")
-			}
-			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -17752,14 +17729,8 @@ func (ec *executionContext) _Mutation_addEventDefinitionToBundle(ctx context.Con
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.AppMetadataValidation == nil {
-				return nil, errors.New("directive appMetadataValidation is not implemented")
-			}
-			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -17823,14 +17794,8 @@ func (ec *executionContext) _Mutation_updateEventDefinition(ctx context.Context,
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.AppMetadataValidation == nil {
-				return nil, errors.New("directive appMetadataValidation is not implemented")
-			}
-			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -17894,14 +17859,8 @@ func (ec *executionContext) _Mutation_deleteEventDefinition(ctx context.Context,
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.AppMetadataValidation == nil {
-				return nil, errors.New("directive appMetadataValidation is not implemented")
-			}
-			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -19228,14 +19187,8 @@ func (ec *executionContext) _Mutation_addBundle(ctx context.Context, field graph
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.AppMetadataValidation == nil {
-				return nil, errors.New("directive appMetadataValidation is not implemented")
-			}
-			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -19299,14 +19252,8 @@ func (ec *executionContext) _Mutation_updateBundle(ctx context.Context, field gr
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.AppMetadataValidation == nil {
-				return nil, errors.New("directive appMetadataValidation is not implemented")
-			}
-			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}
@@ -19370,14 +19317,8 @@ func (ec *executionContext) _Mutation_deleteBundle(ctx context.Context, field gr
 			}
 			return ec.directives.HasScopes(ctx, nil, directive0, path)
 		}
-		directive2 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.AppMetadataValidation == nil {
-				return nil, errors.New("directive appMetadataValidation is not implemented")
-			}
-			return ec.directives.AppMetadataValidation(ctx, nil, directive1)
-		}
 
-		tmp, err := directive2(rctx)
+		tmp, err := directive1(rctx)
 		if err != nil {
 			return nil, err
 		}

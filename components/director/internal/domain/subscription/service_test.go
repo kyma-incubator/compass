@@ -43,7 +43,7 @@ const (
 	runtimeM2MTableName        = "tenant_runtimes"
 
 	subscriptionProviderIDLabelKey = "subscriptionProviderId"
-	consumerSubaccountLabelKey     = "consumer_subaccount_id"
+	consumerSubaccountLabelKey     = "global_subaccount_id"
 	subscriptionLabelKey           = "subscription"
 	subscriptionAppNameLabelKey    = "runtimeType"
 )
