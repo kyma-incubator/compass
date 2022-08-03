@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"net/http"
 	"strings"
 	"testing"
@@ -242,6 +243,7 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 	require.NotEmpty(t, appTemplateOutput)
 
 	appTemplateInput.Labels[conf.SelfRegLabelKey] = appTemplateOutput.Labels[conf.SelfRegLabelKey]
+	appTemplateInput.Labels[tenantfetcher.RegionKey] = appTemplateOutput.Labels[tenantfetcher.RegionKey]
 	appTemplateInput.Labels["global_subaccount_id"] = tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": fmt.Sprintf("%s (%s)", templateName, conf.SelfRegRegion)}
 	assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)

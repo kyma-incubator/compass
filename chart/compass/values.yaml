@@ -64,6 +64,7 @@ global:
       id: f8075207-1478-4a80-bd26-24a4785a2bfd
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+      region: "eu-1"
     - name: TestProviderSubaccountRegion2
       id: 731b7bc4-5472-41d2-a447-e4c0f45de739
       type: subaccount
