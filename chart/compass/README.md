@@ -49,18 +49,14 @@ deployment:
   maxReplicas: 1
 ```
 
-These values can be overridden with the following `ConfigMap`:
+These values can be overridden with the following override file passed to Compass installation script:
 ```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  labels:
-    installer: overrides
-    component: compass
-  name: compass-overrides
-  namespace: compass-installer
-data:
-    global.ingress.domainName: "dev.compass.com"
-    global.director.clientIDHeaderKey: "X-Client-ID"
-    director.deployment.maxReplicas: "3"
+global:
+    ingress:
+        domainName: dev.compass.com
+    director:
+        clientIDHeaderKey: X-Client-ID
+director:
+    deployment:
+        maxReplicas: 3
 ```

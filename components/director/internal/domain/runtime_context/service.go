@@ -149,7 +149,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (str
 		// If we have a runtime with runtime context(s) we need to assign only the runtime context(s) to the formation.
 		// But if we create ASA in the provider account before registering runtime, the runtime will be assigned to the formation.
 		// And then if we register runtime context for this runtime, the runtime context will be assigned to the formation as well.
-		ownedRuntimeExists, err := s.runtimeRepo.OwnerExists(ctxWithParentTenant, tnt.Parent, in.RuntimeID)
+		ownedRuntimeExists, err := s.runtimeRepo.OwnerExists(ctx, rtmCtxTenant, in.RuntimeID)
 		if err != nil {
 			return "", errors.Wrapf(err, "while checking if runtime with id %q exists", in.RuntimeID)
 		}

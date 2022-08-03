@@ -20,12 +20,6 @@ do
     key="$1"
 
     case ${key} in
-        --kyma-release)
-            checkInputParameterValue "${2}"
-            KYMA_RELEASE="$2"
-            shift
-            shift
-            ;;
          --kyma-installation)
             checkInputParameterValue "${2}"
             KYMA_INSTALLATION="$2"
@@ -93,17 +87,7 @@ fi
 
 trap "rm -f ${MINIMAL_OVERRIDES_TEMP} ${FULL_OVERRIDES_TEMP}" EXIT INT TERM
 
-if [[ $KYMA_RELEASE == *PR-* ]]; then
-  KYMA_TAG=$(curl -L https://storage.googleapis.com/kyma-development-artifacts/${KYMA_RELEASE}/kyma-installer-cluster.yaml | grep 'image: eu.gcr.io/kyma-project/kyma-installer:'| sed 's+image: eu.gcr.io/kyma-project/kyma-installer:++g' | tr -d '[:space:]')
-  if [ -z "$KYMA_TAG" ]; then echo "ERROR: Kyma artifacts for ${KYMA_RELEASE} not found."; exit 1; fi
-  KYMA_SOURCE="eu.gcr.io/kyma-project/kyma-installer:${KYMA_TAG}"
-elif [[ $KYMA_RELEASE == main ]]; then
-  KYMA_SOURCE="main"
-elif [[ $KYMA_RELEASE == *main-* ]]; then
-  KYMA_SOURCE=$(echo $KYMA_RELEASE | sed 's+main-++g' | tr -d '[:space:]')
-else
-  KYMA_SOURCE="${KYMA_RELEASE}"
-fi
+KYMA_SOURCE=$(<"${ROOT_PATH}"/installation/resources/KYMA_VERSION)
 
 echo "Using Kyma source ${KYMA_SOURCE}"
 

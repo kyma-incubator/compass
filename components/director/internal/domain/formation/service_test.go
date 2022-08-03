@@ -4057,6 +4057,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(nil, testErr)
 				return labelService
 			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				return formationRepo
+			},
 			AsaRepoFN: func() *automock.AutomaticFormationAssignmentRepository {
 				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
 				asaRepo.On("ListAll", ctx, Tnt).Return(nil, nil)
@@ -4087,6 +4092,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 				}, nil)
 				return labelService
 			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				return formationRepo
+			},
 			AsaRepoFN: func() *automock.AutomaticFormationAssignmentRepository {
 				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
 				asaRepo.On("ListAll", ctx, Tnt).Return(nil, nil)
@@ -4111,6 +4121,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 				}, nil)
 				return labelService
 			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				return formationRepo
+			},
 			AsaRepoFN: func() *automock.AutomaticFormationAssignmentRepository {
 				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
 				asaRepo.On("ListAll", ctx, Tnt).Return(nil, nil)
@@ -4131,6 +4146,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 				labelRepo := &automock.LabelRepository{}
 				labelRepo.On("Delete", ctx, Tnt, model.RuntimeLabelableObject, objectID, model.ScenariosKey).Return(testErr)
 				return labelRepo
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				return formationRepo
 			},
 			AsaRepoFN: func() *automock.AutomaticFormationAssignmentRepository {
 				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
@@ -4154,6 +4174,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 					Version:    0,
 				}).Return(testErr)
 				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expected, nil).Once()
+				return formationRepo
 			},
 			AsaRepoFN: func() *automock.AutomaticFormationAssignmentRepository {
 				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
@@ -4195,18 +4220,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 		{
 			Name: "error when fetching formation fails",
-			LabelServiceFn: func() *automock.LabelService {
-				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, runtimeLblInput).Return(runtimeLbl, nil)
-				labelService.On("UpdateLabel", ctx, Tnt, runtimeLbl.ID, &model.LabelInput{
-					Key:        model.ScenariosKey,
-					Value:      []string{secondTestFormationName},
-					ObjectID:   objectID,
-					ObjectType: model.RuntimeLabelableObject,
-					Version:    0,
-				}).Return(nil)
-				return labelService
-			},
 			AsaRepoFN: func() *automock.AutomaticFormationAssignmentRepository {
 				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
 				asaRepo.On("ListAll", ctx, Tnt).Return(nil, nil)
@@ -7411,7 +7424,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("GetByName", ctx, testFormationName, tnt).Return(&modelFormation, nil).Times(3)
+				repo.On("GetByName", ctx, testFormationName, tnt).Return(&modelFormation, nil).Times(4)
 				return repo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -7574,7 +7587,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("GetByName", ctx, testFormationName, tnt).Return(&modelFormation, nil).Once()
+				repo.On("GetByName", ctx, testFormationName, tnt).Return(&modelFormation, nil).Twice()
 				return repo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -8483,7 +8496,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("GetByName", ctx, testFormationName, tnt).Return(&modelFormation, nil).Times(3)
+				repo.On("GetByName", ctx, testFormationName, tnt).Return(&modelFormation, nil).Times(4)
 				return repo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -8640,7 +8653,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("GetByName", ctx, testFormationName, tnt).Return(&modelFormation, nil).Once()
+				repo.On("GetByName", ctx, testFormationName, tnt).Return(&modelFormation, nil).Twice()
 				return repo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
