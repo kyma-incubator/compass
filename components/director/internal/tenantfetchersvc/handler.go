@@ -2,6 +2,7 @@ package tenantfetchersvc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -60,6 +61,9 @@ type HandlerConfig struct {
 
 	TenantInsertChunkSize int `envconfig:"default=500"`
 	TenantProviderConfig
+
+	TenantDependenciesConfigPath string                  `envconfig:"APP_TENANT_REGION_DEPENDENCIES_CONFIG_PATH"`
+	RegionToDependenciesConfig   map[string][]Dependency `envconfig:"-"`
 }
 
 // TenantProviderConfig includes the configuration for tenant providers - the tenant ID json property names, the subdomain property name, and the tenant provider name.
@@ -73,6 +77,10 @@ type TenantProviderConfig struct {
 	ProviderSubaccountIDProperty        string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY,default=providerSubaccountIdProperty"`
 	ConsumerTenantIDProperty            string `envconfig:"APP_TENANT_PROVIDER_CONSUMER_TENANT_ID_PROPERTY,default=consumerTenantIdProperty"`
 	SubscriptionProviderAppNameProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY,default=subscriptionProviderAppNameProperty"`
+}
+
+type Dependency struct {
+	Xsappname string `json:"xsappname"`
 }
 
 // EventsConfig contains configuration for Events API requests
@@ -166,15 +174,29 @@ func (h *handler) Dependencies(writer http.ResponseWriter, request *http.Request
 	ctx := request.Context()
 
 	vars := mux.Vars(request)
-	_, ok := vars[h.config.RegionPathParam]
+	region, ok := vars[h.config.RegionPathParam]
 	if !ok {
 		log.C(ctx).Error("Region path parameter is missing from request")
 		http.Error(writer, "Region path parameter is missing from request", http.StatusBadRequest)
 		return
 	}
 
+	dependencies, ok := h.config.RegionToDependenciesConfig[region]
+	if !ok {
+		log.C(ctx).Errorf("Invalid region provided: %s", region)
+		http.Error(writer, fmt.Sprintf("Invalid region provided: %s", region), http.StatusBadRequest)
+		return
+	}
+
+	bytes, err := json.Marshal(dependencies)
+	if err != nil {
+		log.C(ctx).WithError(err).Error("Failed to marshal response body for dependencies request")
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
+		return
+	}
+
 	writer.Header().Set("Content-Type", "application/json")
-	if _, err := writer.Write([]byte("[]")); err != nil {
+	if _, err := writer.Write(bytes); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to write response body for dependencies request")
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return

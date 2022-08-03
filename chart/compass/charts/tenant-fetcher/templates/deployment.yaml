@@ -42,7 +42,7 @@ spec:
       volumes:
       - name: dependencies-config
         configMap:
-        name: {{ .Values.global.tenantFetcher.dependenciesConfig.configMapName }}
+          name: {{ .Values.global.tenantFetcher.dependenciesConfig.configMapName }}
       containers:
         - name: {{ .Chart.Name }}
           image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
@@ -96,13 +96,15 @@ spec:
             - name: APP_REGIONAL_DEPENDENCIES_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.server.dependenciesEndpoint }}"
             - name: APP_TENANT_REGION_DEPENDENCIES_CONFIG_PATH
-              value: "{{ .Values.global.tenantFetcher.dependenciesConfig.path }}/{{ .Values.global.tenantFetcher.dependenciesConfig.key }}"
+              value: "{{ .Values.global.tenantFetcher.dependenciesConfig.path }}/{{ .Values.global.tenantFetcher.dependenciesConfig.file }}"
             - name: APP_TENANT_PATH_PARAM
               value: "{{ .Values.global.tenantFetcher.server.tenantPathParam }}"
             - name: APP_REGION_PATH_PARAM
               value: "{{ .Values.global.tenantFetcher.server.regionPathParam }}"
             - name: APP_JWKS_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.authentication.jwksEndpoint }}"
+            - name: APP_ALLOW_JWT_SIGNING_NONE
+              value: "true"
             - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
               value: {{ .Values.global.tenantFetcher.requiredAuthScope | quote }}
             - name: APP_FETCH_TENANT_ON_DEMAND_SCOPE
@@ -351,7 +353,7 @@ spec:
             {{- end }}
           volumeMounts:
           - name: dependencies-config
-            mountPath: {{ .Values.global.tenantFetcher.dependenciesConfig.path }}
+            mountPath: "{{ .Values.global.tenantFetcher.dependenciesConfig.path }}"
             readOnly: true
           livenessProbe:
             httpGet:

@@ -545,8 +545,8 @@ global:
       regionPathParam: "region"
     dependenciesConfig:
       configMapName: "dependencies-config"
-      key: "keyConfig"
-      path: "/tmp"
+      file: "dependencies.json"
+      path: "/cfg/dependencies"
     containerName: "tenant-fetcher"
     oauth:
       client: "client_id"

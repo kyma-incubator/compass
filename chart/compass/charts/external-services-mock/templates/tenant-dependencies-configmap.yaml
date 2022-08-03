@@ -8,7 +8,7 @@ metadata:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
 data:
-  keyConfig: |
+  dependencies.json: |
     {
       "europe": ["appname1"],
       "us": ["appname2"]
