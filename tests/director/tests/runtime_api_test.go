@@ -603,7 +603,7 @@ func TestRuntimeRegisterUpdateAndUnregisterWithCertificate(t *testing.T) {
 		require.Equal(t, runtimeUpdateInput.Name, actualRuntime.Name)
 		require.Equal(t, *runtimeUpdateInput.Description, *actualRuntime.Description)
 		require.Equal(t, runtimeStatusCond, actualRuntime.Status.Condition)
-		require.Equal(t, len(actualRuntime.Labels), 3) // two labels from the runtime input plus one additional label, added during runtime update(isNormalized)
+		require.Equal(t, 4, len(actualRuntime.Labels)) // two labels from the runtime input, one additional label, added during runtime update(isNormalized) plus the self-reg label
 
 		t.Log("Successfully delete runtime using certificate")
 		// WHEN
