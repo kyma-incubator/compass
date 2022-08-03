@@ -739,17 +739,8 @@ func TestUnpairApplication(t *testing.T) {
 		defaultValue := "DEFAULT"
 		scenarios := []string{defaultValue, "test-scenario"}
 		runtimeInput.Labels[ScenariosLabel] = scenarios
-		//runtimeInputWithNormalizationGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(runtimeInput)
-		//require.NoError(t, err)
-		//registerRuntimeRequest := fixtures.FixRegisterRuntimeRequest(runtimeInputWithNormalizationGQL)
-
-		// runtime := graphql.RuntimeExt{}
-		// err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, registerRuntimeRequest, &runtime)
 		runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInput, conf.GatewayOauth)
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtime)
-
-		//require.NoError(t, err)
-		//require.NotEmpty(t, runtime.ID)
 
 		applicationInput := fixtures.FixSampleApplicationRegisterInput("first")
 		applicationInput.Labels = graphql.Labels{ScenariosLabel: scenarios}

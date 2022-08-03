@@ -3,13 +3,13 @@ package formation
 import (
 	"context"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -159,7 +159,7 @@ type service struct {
 	applicationRepository         applicationRepository
 	applicationTemplateRepository applicationTemplateRepository
 	webhookConverter              webhookConverter
-	runtimeTypeLabelKey         string
+	runtimeTypeLabelKey           string
 }
 
 // NewService creates formation service
@@ -182,7 +182,7 @@ func NewService(labelDefRepository labelDefRepository, labelRepository labelRepo
 		applicationRepository:         applicationRepository,
 		applicationTemplateRepository: applicationTemplateRepository,
 		webhookConverter:              webhookConverter,
-		runtimeTypeLabelKey:         runtimeTypeLabelKey,
+		runtimeTypeLabelKey:           runtimeTypeLabelKey,
 	}
 }
 
@@ -317,6 +317,36 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 	}
 }
 
+func (s *service) isValidRuntimeType(ctx context.Context, tnt string, objectID string, formation model.Formation) error {
+	formationEntity, err := s.formationRepository.GetByName(ctx, formation.Name, tnt)
+	spew.Dump(formationEntity)
+	if err != nil {
+		return err
+	}
+	formationTemplate, err := s.formationTemplateRepository.Get(ctx, formationEntity.FormationTemplateID)
+	spew.Dump(formationTemplate)
+	if err != nil {
+		return err
+	}
+	runtimeTypeLabel, err := s.labelService.GetLabel(ctx, tnt, &model.LabelInput{
+		Key:        s.runtimeTypeLabelKey,
+		Value:      nil,
+		ObjectID:   objectID,
+		ObjectType: model.RuntimeLabelableObject,
+		Version:    0,
+	})
+	spew.Dump(runtimeTypeLabel)
+	if err != nil {
+		spew.Dump(err)
+		return err
+	}
+	runtimeType := runtimeTypeLabel.Value.(string)
+	if runtimeType != formationTemplate.RuntimeType {
+		return apperrors.NewInvalidOperationError(fmt.Sprintf("unsupported runtimeType %q for formation template %q, allowing only %q", runtimeType, formationTemplate.Name, formationTemplate.RuntimeType))
+	}
+	return nil
+}
+
 func (s *service) createWebhookRequest(ctx context.Context, webhook *model.Webhook, input *webhookdir.FormationConfigurationChangeInput) (*webhookclient.Request, error) {
 	gqlWebhook, err := s.webhookConverter.ToGraphQL(webhook)
 	if err != nil {
@@ -346,11 +376,23 @@ func (s *service) assign(ctx context.Context, tnt, objectID string, objectType g
 				return nil, err
 			}
 
+			if formation.Name != "DEFAULT" && objectType == graphql.FormationObjectTypeRuntime {
+				err = s.isValidRuntimeType(ctx, tnt, objectID, formation)
+				if err != nil {
+					return nil, err
+				}
+			}
 			return s.getFormationByName(ctx, formation.Name, tnt)
 		}
 		return nil, err
 	}
 
+	if formation.Name != "DEFAULT" && objectType == graphql.FormationObjectTypeRuntime {
+		err := s.isValidRuntimeType(ctx, tnt, objectID, formation)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return s.getFormationByName(ctx, formation.Name, tnt)
 }
 
@@ -1057,36 +1099,6 @@ func (s *service) modifyFormations(ctx context.Context, tnt, formationName strin
 
 func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID string, formation model.Formation, objectType model.LabelableObject, modificationFunc modificationFunc) error {
 	log.C(ctx).Infof("Modifying formation with name: %q for object with type: %q and ID: %q", formation.Name, objectType, objectID)
-	if formation.Name != "DEFAULT" {
-		formationEntity, err := s.formationRepository.GetByName(ctx, formation.Name, tnt)
-		spew.Dump(formationEntity)
-		if err != nil {
-			return err
-		}
-		formationTemplate, err := s.formationTemplateRepository.Get(ctx, formationEntity.FormationTemplateID)
-		spew.Dump(formationTemplate)
-		if err != nil {
-			return err
-		}
-		if objectType == model.RuntimeLabelableObject {
-			runtimeTypeLabel, err := s.labelService.GetLabel(ctx, tnt, &model.LabelInput{
-				Key:        s.runtimeTypeLabelKey,
-				Value:      nil,
-				ObjectID:   objectID,
-				ObjectType: model.RuntimeLabelableObject,
-				Version:    0,
-			})
-			spew.Dump(runtimeTypeLabel)
-			if err != nil {
-				spew.Dump(err)
-				return err
-			}
-			runtimeType := runtimeTypeLabel.Value.(string)
-			if runtimeType != formationTemplate.RuntimeType {
-				return apperrors.NewInvalidOperationError(fmt.Sprintf("unsupported runtimeType %q for formation template %q, allowing only %q", runtimeType, formationTemplate.Name, formationTemplate.RuntimeType))
-			}
-		}
-	}
 
 	labelInput := newLabelInput(formation.Name, objectID, objectType)
 	existingLabel, err := s.labelService.GetLabel(ctx, tnt, labelInput)
