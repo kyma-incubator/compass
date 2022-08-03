@@ -101,7 +101,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 			ParentID:    "",
 			Initialized: nil,
 			Labels:      nil,
-			Provider: testProvider,
+			Provider:    testProvider,
 		}
 
 		// THEN
@@ -211,7 +211,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 				ParentID:    "",
 				Initialized: nil,
 				Labels:      nil,
-				Provider: testProvider,
+				Provider:    testProvider,
 			},
 		}
 
@@ -255,7 +255,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 				ParentID:    parent,
 				Initialized: nil,
 				Labels:      nil,
-				Provider: testProvider,
+				Provider:    testProvider,
 			},
 			{
 				ID:          externalTenants[1],
@@ -265,7 +265,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 				ParentID:    parent,
 				Initialized: nil,
 				Labels:      nil,
-				Provider: testProvider,
+				Provider:    testProvider,
 			},
 		}
 
