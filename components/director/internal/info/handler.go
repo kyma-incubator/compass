@@ -3,11 +3,12 @@ package info
 import (
 	"context"
 	"crypto/x509"
+	"net/http"
+	"strings"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
-	"net/http"
-	"strings"
 
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 
@@ -22,8 +23,6 @@ const (
 // Config contains the data that should be exported on the info endpoint
 type Config struct {
 	APIEndpoint string `envconfig:"APP_INFO_API_ENDPOINT,default=/v1/info" json:"-"`
-	Issuer      string `envconfig:"APP_INFO_CERT_ISSUER"`
-	Subject     string `envconfig:"APP_INFO_CERT_SUBJECT"`
 	RootCA      string `envconfig:"APP_INFO_ROOT_CA"`
 }
 

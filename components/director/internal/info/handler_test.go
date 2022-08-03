@@ -2,10 +2,11 @@ package info_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
 	"github.com/kyma-incubator/compass/components/director/internal/info"
 
