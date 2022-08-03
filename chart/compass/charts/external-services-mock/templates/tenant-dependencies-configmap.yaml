@@ -1,0 +1,16 @@
+{{- if eq .Values.global.externalServicesMock.tenantDependenciesConfig.manage true }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.global.tenantFetcher.dependenciesConfig.configMapName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+data:
+  keyConfig: |
+    {
+      "europe": ["appname1"],
+      "us": ["appname2"]
+    }
+{{end}}

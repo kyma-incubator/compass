@@ -29,6 +29,8 @@ global:
   externalServicesMock:
     auditlog:
       applyMockConfiguration: true
+    tenantDependenciesConfig:
+      manage: true
     enabled: true
     oauthSecret:
       manage: true
