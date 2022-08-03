@@ -213,11 +213,11 @@ func TestCreateApplicationTemplate_SameNamesAndDifferentRegions(t *testing.T) {
 
 	appTemplateTwoInput := fixAppTemplateInputWithRegionAndDistinguishLabel(appTemplateName, appTemplateTwoRegion, "other-distinguished-label")
 
-	directorCertClientRegion2 := CreateDirectorCertClientForRegion2(t, ctx)
+	directorCertClientForAnotherRegion := createDirectorCertClientForAnotherRegion(t, ctx)
 
 	t.Log("Create second application template")
-	appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertClientRegion2, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwoInput)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertClientRegion2, tenant.TestTenants.GetDefaultTenantID(), &appTemplateTwo)
+	appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertClientForAnotherRegion, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwoInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertClientForAnotherRegion, tenant.TestTenants.GetDefaultTenantID(), &appTemplateTwo)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplateTwo.ID)
@@ -562,7 +562,7 @@ func TestQueryApplicationTemplates(t *testing.T) {
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate1)
 	require.NoError(t, err)
 
-	directorCertClientRegion2 := CreateDirectorCertClientForRegion2(t, ctx)
+	directorCertClientRegion2 := createDirectorCertClientForAnotherRegion(t, ctx)
 
 	appTmplInput2 := fixAppTemplateInputWithRegion(name2, conf.SubscriptionConfig.SelfRegRegion2)
 	appTemplate2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertClientRegion2, tenantId, appTmplInput2)
@@ -664,7 +664,7 @@ func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTmpl)
 	require.NoError(t, err)
 
-	directorCertSecuredClient := CreateDirectorCertClientForRegion2(t, ctx)
+	directorCertSecuredClient := createDirectorCertClientForAnotherRegion(t, ctx)
 
 	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: appTemplateName, Values: []*graphql.TemplateValueInput{
 		{
@@ -785,7 +785,7 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	assert.Equal(t, urlUpdated, *actualWebhook.URL)
 }
 
-func CreateDirectorCertClientForRegion2(t *testing.T, ctx context.Context) *gcli.Client {
+func createDirectorCertClientForAnotherRegion(t *testing.T, ctx context.Context) *gcli.Client {
 	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
 	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
 		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,

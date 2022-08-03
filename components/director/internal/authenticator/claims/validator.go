@@ -206,7 +206,7 @@ func (v *validator) validateApplicationProvider(ctx context.Context, claims Clai
 	applicationTemplate, err := v.appTemplateSvc.GetByFilters(ctxWithProviderTenant, filters)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Error while getting application template in provider tenant %s for labels %s: %s and %s: %s: %v", providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, tokenClientID, err)
-		return errors.Wrapf(err, "failed to get application template in tenant %s for labels %s: %s and %s: %s", providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, tokenClientID)
+		return errors.Wrapf(err, "failed to find application template in tenant %s associated with %s: %q and %s: %q", providerExternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, tokenClientID)
 	}
 	log.C(ctx).Infof("Found application template with ID %q in provider tenant %s for labels %s: %s and %s: %s", applicationTemplate.ID, providerInternalTenantID, tenant.RegionLabelKey, claims.Region, v.subscriptionProviderLabelKey, tokenClientID)
 
