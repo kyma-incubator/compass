@@ -118,7 +118,7 @@ global:
       version: "PR-2501"
     director:
       dir:
-      version: "PR-2512"
+      version: "PR-2475"
     hydrator:
       dir:
       version: "PR-2501"
@@ -150,7 +150,7 @@ global:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2518"
+      version: "PR-2475"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -213,7 +213,7 @@ global:
       path: "/v1/info"
     subscription:
       subscriptionProviderLabelKey: "subscriptionProviderId"
-      consumerSubaccountLabelKey: "consumer_subaccount_id"
+      consumerSubaccountLabelKey: "global_subaccount_id"
       subscriptionLabelKey: "subscription"
       tokenPrefix: "sb-"
     selfRegister:
