@@ -18,6 +18,7 @@ PATH_TO_HYDRATOR_VALUES="$CURRENT_DIR/../../chart/compass/charts/hydrator/values
 PATH_TO_COMPASS_OIDC_CONFIG_FILE="$HOME/.compass.yaml"
 MIGRATOR_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/migrator-job.yaml)
 UPDATE_EXPECTED_SCHEMA_VERSION_FILE=$(cat "$ROOT_PATH"/chart/compass/templates/update-expected-schema-version-job.yaml)
+SCHEMA_MIGRATOR_COMPONENT_PATH=${ROOT_PATH}/components/schema-migrator
 RESET_VALUES_YAML=true
 
 K3D_MEMORY=8192MB
@@ -30,11 +31,6 @@ do
     key="$1"
 
     case ${key} in
-        --kyma-release)
-            checkInputParameterValue "${2}"
-            KYMA_RELEASE="${2}"
-            shift # past argument
-        ;;
         --kyma-installation)
             checkInputParameterValue "${2}"
             KYMA_INSTALLATION="${2}"
@@ -176,10 +172,6 @@ else
   fi
 fi
 
-if [ -z "$KYMA_RELEASE" ]; then
-  KYMA_RELEASE=$(<"${ROOT_PATH}"/installation/resources/KYMA_VERSION)
-fi
-
 if [ -z "$KYMA_INSTALLATION" ]; then
   KYMA_INSTALLATION="minimal"
 fi
@@ -195,18 +187,44 @@ if [[ ${DUMP_DB} ]]; then
         sed -i 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/update-expected-schema-version-job.yaml
     fi
 
+    REMOTE_VERSIONS=($(gsutil ls -R gs://sap-cp-cmp-dev-db-dump/ | grep -o -E '[0-9]+' | sed -e 's/^0\+//' | sort -r))
+    LOCAL_VERSIONS=($(ls "$SCHEMA_MIGRATOR_COMPONENT_PATH"/migrations/director | grep -o -E '^[0-9]+' | sed -e 's/^0\+//' | sort -ru))
 
-    if [[ ! -f ${ROOT_PATH}/components/schema-migrator/seeds/dump.sql ]]; then
-        echo -e "${YELLOW}Will pull DB dump from GCR bucket${NC}"
-        gsutil cp gs://sap-cp-cmp-dev-db-dump/dump.sql ${ROOT_PATH}/components/schema-migrator/seeds/dump.sql
+    SCHEMA_VERSION=""
+    for r in "${REMOTE_VERSIONS[@]}"; do
+       for l in "${LOCAL_VERSIONS[@]}"; do
+          if [[ "$r" == "$l" ]]; then
+            SCHEMA_VERSION=$r
+            break 2;
+          fi
+       done
+    done
+
+    if [[ -z $SCHEMA_VERSION ]]; then
+      echo -e "${RED}\$SCHEMA_VERSION variable cannot be empty${NC}"
+    fi
+
+    echo -e "${YELLOW}Check if there is DB dump in GCS bucket with migration number: $SCHEMA_VERSION...${NC}"
+    gsutil -q stat gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}".sql
+    STATUS=$?
+
+    if [[ $STATUS ]]; then
+      echo -e "${GREEN}DB dump with migration number: $SCHEMA_VERSION exists in the bucket. Will use it...${NC}"
     else
-        echo -e "${GREEN}DB dump already exists on system, will reuse it${NC}"
+      echo -e "${RED}There is no DB dump with migration number: $SCHEMA_VERSION in the bucket.${NC}"
+      exit 1
+    fi
+
+    if [[ ! -f ${SCHEMA_MIGRATOR_COMPONENT_PATH}/seeds/dump-${SCHEMA_VERSION}.sql ]]; then
+        echo -e "${YELLOW}There is no dump with number: $SCHEMA_VERSION locally. Will pull the DB dump from GCR bucket...${NC}"
+        gsutil cp gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}".sql "$SCHEMA_MIGRATOR_COMPONENT_PATH"/seeds/dump-"${SCHEMA_VERSION}".sql
+    else
+        echo -e "${GREEN}DB dump already exists on the local system, will reuse it${NC}"
     fi
 fi
 
 if [[ ! ${SKIP_K3D_START} ]]; then
   echo "Provisioning k3d cluster..."
-  # todo cpu limit
   kyma provision k3d \
   --k3s-arg '--kube-apiserver-arg=anonymous-auth=true@server:*' \
   --k3s-arg '--kube-apiserver-arg=feature-gates=ServiceAccountIssuerDiscovery=true@server:*' \
@@ -231,7 +249,7 @@ if [[ ${DUMP_DB} ]]; then
 fi
 
 if [[ ! ${SKIP_KYMA_START} ]]; then
-  LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh --kyma-release ${KYMA_RELEASE} --kyma-installation ${KYMA_INSTALLATION}
+  LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh --kyma-installation ${KYMA_INSTALLATION}
   kubectl set image -n kyma-system cronjob/oathkeeper-jwks-rotator keys-generator=oryd/oathkeeper:v0.38.23
   kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "*/1 * * * *"}}'
   until [[ $(kubectl get cronjob -n kyma-system oathkeeper-jwks-rotator --output=jsonpath={.status.lastScheduleTime}) ]]; do

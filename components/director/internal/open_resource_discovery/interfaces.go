@@ -18,6 +18,7 @@ type labelRepository interface {
 type WebhookService interface {
 	ListForApplication(ctx context.Context, applicationID string) ([]*model.Webhook, error)
 	ListForApplicationWithSelectForUpdate(ctx context.Context, applicationID string) ([]*model.Webhook, error)
+	ListForApplicationTemplates(ctx context.Context) ([]*model.Webhook, error)
 }
 
 // ApplicationService is responsible for the service-layer Application operations.
@@ -128,4 +129,5 @@ type TombstoneService interface {
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantService interface {
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
+	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }

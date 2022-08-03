@@ -113,7 +113,6 @@ istio-configuration:
             cpu: 50m
             memory: 160Mi
     pilot:
-      jwksResolverExtraRootCA: __CERT__
       resources:
         limits:
           memory: 2048Mi
@@ -244,8 +243,6 @@ ory:
             enabled: false
           jwt:
             config:
-              jwks_urls:
-                - __URL__
               scope_strategy: wildcard
             enabled: true
           noop:

@@ -18,13 +18,13 @@ func NewAuthorizedGraphQLClient(url string, timeout time.Duration, rq *http.Requ
 }
 
 type authenticatedTransport struct {
-	http.Transport
+	*http.Transport
 	authorizationHeaderValue string
 }
 
 func newAuthorizedHTTPClient(authorizationHeaderValue string, timeout time.Duration) *http.Client {
 	transport := &authenticatedTransport{
-		Transport: http.Transport{
+		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 		authorizationHeaderValue: authorizationHeaderValue,
@@ -39,4 +39,15 @@ func newAuthorizedHTTPClient(authorizationHeaderValue string, timeout time.Durat
 func (t *authenticatedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Set("Authorization", t.authorizationHeaderValue)
 	return t.Transport.RoundTrip(req)
+}
+
+func (t *authenticatedTransport) Clone() httputil.HTTPRoundTripper {
+	return &authenticatedTransport{
+		Transport:                t.Transport.Clone(),
+		authorizationHeaderValue: t.authorizationHeaderValue,
+	}
+}
+
+func (t *authenticatedTransport) GetTransport() *http.Transport {
+	return t.Transport
 }

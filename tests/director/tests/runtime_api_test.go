@@ -245,18 +245,11 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 	givenInput.Description = ptr.String("runtime-1-description")
 	givenInput.Labels["global_subaccount_id"] = []interface{}{subaccount}
 
-	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeRegisterInputToGQL(givenInput)
-	require.NoError(t, err)
-	actualRuntime := graphql.RuntimeExt{}
-
 	// WHEN
-	registerReq := fixtures.FixRegisterRuntimeRequest(runtimeInGQL)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, registerReq, &actualRuntime)
-	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &actualRuntime)
+	actualRuntime := registerKymaRuntime(t, ctx, subaccount, givenInput)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccount, &actualRuntime)
 
 	//THEN
-	require.NoError(t, err)
-	require.NotEmpty(t, actualRuntime.ID)
 	assertions.AssertRuntime(t, givenInput, actualRuntime, conf.DefaultScenarioEnabled, true)
 
 	// update label definition
@@ -270,7 +263,7 @@ func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
 
 	// WHEN
 	assignFormationReq := fixtures.FixAssignFormationRequest(subaccount, string(graphql.FormationObjectTypeTenant), givenFormation.Name)
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, assignFormationReq, &actualFormation)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, assignFormationReq, &actualFormation)
 
 	// THEN
 	require.NoError(t, err)
@@ -843,4 +836,32 @@ func fixRuntimeUpdateWithSelfRegLabelsInput(name string) graphql.RuntimeUpdateIn
 	delete(input.Labels, "placeholder")
 
 	return input
+}
+
+func registerKymaRuntime(t *testing.T, ctx context.Context, tenantID string, runtimeInput graphql.RuntimeRegisterInput) graphql.RuntimeExt {
+	intSysName := "runtime-integration-system"
+
+	t.Logf("Creating integration system with name: %q", intSysName)
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSysName)
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+	t.Logf("Registering runtime with name %q with integration system credentials...", runtimeInput.Name)
+	kymaRuntime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenantID, &runtimeInput)
+	require.NoError(t, err)
+	require.NotEmpty(t, kymaRuntime.ID)
+
+	return kymaRuntime
 }

@@ -2,29 +2,30 @@
 
 ### Installation of external services mock
 
-1. To install external services mock, you can use the Compass installer with some overrides like the following:
+1. To install external services mock, you can pass additional overrides file to the Compass installation script:
 
+Save the following .yaml with external services mock overrides into a file (for example: externalServicesMockOverrides.yaml)
 ```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  labels:
-    installer: overrides
-    component: compass
-  annotations:
-    strategy.spinnaker.io/replace: "false"
-  name: compass-overrides-e2e-tests
-  namespace: compass-installer
-data:
-  global.externalServicesMock.enabled: "true"
-  global.externalServicesMock.auditlog.applyMockConfiguration: "false"
+global:
+  externalServicesMock:
+      enabled: true
+      auditlog:
+        applyMockConfiguration: false
 ```
+
+And then, start the Compass installation by using the following command that installs external services mock too:
+
+```bash
+<script from ../../installation/scripts/install-compass.sh> --overrides-file <pass all override files used for initial Compass installation> --overrides-file <file from above step - e.g. externalServicesMockOverrides.yaml> --timeout <e.g: 30m0s>
+```
+
 Since we want to reuse the real auditlog configurations (configmaps & secrets) in the external services mock auditlog tests, it is requred to set  `global.externalServicesMock.auditlog.applyMockConfiguration: "false"`.  
-When, you start the Compass installer again on an already existing Compass installation, it only installs the external services mock as an addition to the existing installation.
 
-2. After the tests are carried out, you must delete the `ConfigMap` resource with the overrides.
-3. To remove the external services mock, run the Compass installer again. 
+2. To remove the external services mock, run the script for Compass installation and make sure that the external services mock overrides file is excluded:
 
+```bash
+<script from ../../installation/scripts/install-compass.sh> --overrides-file <pass all override files used for initial Compass installation> --timeout <e.g: 30m0s>
+```
 
 Note that some resources, such as, secrets from external services mock chart, must be guarded and not created in case the auditlog is disabled when installing external services mock.
 

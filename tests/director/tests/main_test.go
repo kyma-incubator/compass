@@ -36,11 +36,14 @@ type DirectorConfig struct {
 	CertLoaderConfig               certloader.Config
 	certprovider.ExternalCertProviderConfig
 	SubscriptionConfig                     subscription.Config
+	TestProviderAccountID                  string
 	TestProviderSubaccountID               string
-	TestProviderSubaccountIDRegion2        string
+	TestConsumerAccountID                  string
 	TestConsumerSubaccountID               string
 	TestConsumerTenantID                   string
+	TestProviderSubaccountIDRegion2        string
 	ExternalServicesMockBaseURL            string
+	ExternalServicesMockMtlsSecuredURL     string
 	TokenPath                              string
 	SubscriptionProviderAppNameValue       string
 	ConsumerSubaccountLabelKey             string
@@ -51,6 +54,11 @@ type DirectorConfig struct {
 	CertSvcInstanceTestIntSystemSecretName string `envconfig:"CERT_SVC_INSTANCE_TEST_INTEGRATION_SYSTEM_SECRET_NAME"`
 	ExternalCertTestIntSystemOUSubaccount  string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT"`
 	ExternalCertTestIntSystemCommonName    string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN"`
+	ConsumerTokenURL                       string
+	ProviderClientID                       string
+	ProviderClientSecret                   string
+	BasicUsername                          string
+	BasicPassword                          string
 }
 
 type BaseDirectorConfig struct {
@@ -60,6 +68,7 @@ type BaseDirectorConfig struct {
 var (
 	conf                     = &DirectorConfig{}
 	certSecuredGraphQLClient *graphql.Client
+	cc                       certloader.Cache
 )
 
 func TestMain(m *testing.M) {
@@ -70,7 +79,8 @@ func TestMain(m *testing.M) {
 
 	ctx := context.Background()
 
-	cc, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
+	var err error
+	cc, err = certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}

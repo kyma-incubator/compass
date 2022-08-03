@@ -96,6 +96,15 @@ func NewNotUniqueError(resourceType resource.Type) error {
 	}
 }
 
+// NewNotUniqueErrorWithMessage constructs a new NotUniqueError with a custom message
+func NewNotUniqueErrorWithMessage(resourceType resource.Type, message string) error {
+	return Error{
+		errorCode: NotUnique,
+		Message:   fmt.Sprintf(NotUniqueMsgF, message),
+		arguments: map[string]string{"object": string(resourceType)},
+	}
+}
+
 // NewNotUniqueNameError missing godoc
 func NewNotUniqueNameError(resourceType resource.Type) error {
 	return Error{

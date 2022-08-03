@@ -5,9 +5,8 @@ import (
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
@@ -24,7 +23,7 @@ import (
 // Config is configuration for the tenant subscription flow
 type Config struct {
 	ProviderLabelKey           string `envconfig:"APP_SUBSCRIPTION_PROVIDER_LABEL_KEY,default=subscriptionProviderId"`
-	ConsumerSubaccountLabelKey string `envconfig:"APP_CONSUMER_SUBACCOUNT_LABEL_KEY,default=consumer_subaccount_id"`
+	ConsumerSubaccountLabelKey string `envconfig:"APP_CONSUMER_SUBACCOUNT_LABEL_KEY,default=global_subaccount_id"`
 	SubscriptionLabelKey       string `envconfig:"APP_SUBSCRIPTION_LABEL_KEY,default=subscription"`
 	RuntimeTypeLabelKey        string `envconfig:"APP_RUNTIME_TYPE_LABEL_KEY,default=runtimeType"`
 }
@@ -168,17 +167,6 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 
 	ctx = tenant.SaveToContext(ctx, consumerInternalTenant, subaccountTenantID)
 
-	log.C(ctx).Infof("Creating runtime context for runtime with ID: %q and key: %q and value: %q", runtime.ID, s.subscriptionLabelKey, consumerTenantID)
-	rtmCtxID, err := s.runtimeCtxSvc.Create(ctx, model.RuntimeContextInput{
-		Key:       s.subscriptionLabelKey,
-		Value:     consumerTenantID,
-		RuntimeID: runtime.ID,
-	})
-	if err != nil {
-		log.C(ctx).Errorf("An error occurred while creating runtime context with key: %q and value: %q, and runtime ID: %q: %v", s.subscriptionLabelKey, consumerTenantID, runtime.ID, err)
-		return false, errors.Wrapf(err, "while creating runtime context with value: %q and runtime ID: %q during subscription", consumerTenantID, runtime.ID)
-	}
-
 	m2mTable, ok := resource.Runtime.TenantAccessTable()
 	if !ok {
 		return false, errors.Errorf("entity %s does not have access table", resource.Runtime)
@@ -190,6 +178,16 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 		Owner:      false,
 	}); err != nil {
 		return false, err
+	}
+
+	rtmCtxID, err := s.runtimeCtxSvc.Create(ctx, model.RuntimeContextInput{
+		Key:       s.subscriptionLabelKey,
+		Value:     consumerTenantID,
+		RuntimeID: runtime.ID,
+	})
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while creating runtime context with key: %q and value: %q, and runtime ID: %q: %v", s.subscriptionLabelKey, consumerTenantID, runtime.ID, err)
+		return false, errors.Wrapf(err, "while creating runtime context with value: %q and runtime ID: %q during subscription", consumerTenantID, runtime.ID)
 	}
 
 	log.C(ctx).Infof("Creating label for runtime context with ID: %q with key: %q and value: %q", rtmCtxID, s.consumerSubaccountLabelKey, subaccountTenantID)
@@ -393,7 +391,7 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 		appCreateInputModel.Labels = make(map[string]interface{})
 	}
 	appCreateInputModel.Labels["managed"] = "false"
-	appCreateInputModel.Labels[scenarioassignment.SubaccountIDKey] = subscribedSubaccountID
+	appCreateInputModel.Labels[s.consumerSubaccountLabelKey] = subscribedSubaccountID
 	appCreateInputModel.LocalTenantID = &consumerTenantID
 
 	log.C(ctx).Infof("Creating an Application with name %q from Application Template with name %q", subscribedAppName, appTemplate.Name)

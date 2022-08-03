@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"context"
+	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
@@ -30,10 +31,35 @@ func CreateFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Cl
 	return formation
 }
 
+func CreateFormationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, formationName string, formationTemplateName *string) graphql.Formation {
+	t.Logf("Creating formation with name: %q from template with name: %q", formationName, *formationTemplateName)
+	formationInput := FixFormationInput(formationName, formationTemplateName)
+	formationInputGQL, err := testctx.Tc.Graphqlizer.FormationInputToGQL(formationInput)
+	require.NoError(t, err)
+
+	var formation graphql.Formation
+	createFormationReq := FixCreateFormationWithTemplateRequest(formationInputGQL)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, createFormationReq, &formation)
+	require.NoError(t, err)
+	require.Equal(t, formationName, formation.Name)
+
+	return formation
+}
+
 func DeleteFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, formationName string) *graphql.Formation {
 	deleteRequest := FixDeleteFormationRequest(formationName)
 	var deleteFormation graphql.Formation
 	err := testctx.Tc.RunOperation(ctx, gqlClient, deleteRequest, &deleteFormation)
+	assertions.AssertNoErrorForOtherThanNotFound(t, err)
+
+	return &deleteFormation
+}
+
+func DeleteFormationWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, formationName string) *graphql.Formation {
+	t.Logf("Deleting formation with name: %q", formationName)
+	deleteRequest := FixDeleteFormationRequest(formationName)
+	var deleteFormation graphql.Formation
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, deleteRequest, &deleteFormation)
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 
 	return &deleteFormation
@@ -59,8 +85,8 @@ func UnassignFormationWithTenantObjectType(t require.TestingT, ctx context.Conte
 	return &formation
 }
 
-func CleanupFormationWithTenantObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, tenantID, parent string) *graphql.Formation {
-	unassignRequest := FixUnassignFormationRequest(tenantID, string(graphql.FormationObjectTypeTenant), in.Name)
+func CleanupFormationWithTenantObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, name string, tenantID, parent string) *graphql.Formation {
+	unassignRequest := FixUnassignFormationRequest(tenantID, string(graphql.FormationObjectTypeTenant), name)
 
 	formation := graphql.Formation{}
 

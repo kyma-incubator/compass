@@ -22,9 +22,9 @@ func newCertificateSecuredConnectorClient(endpoint string, tlsCert tls.Certifica
 		InsecureSkipVerify: true,
 	}
 
-	tr := httputil.NewCorrelationIDTransport(&http.Transport{
+	tr := httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(&http.Transport{
 		TLSClientConfig: tlsConfig,
-	})
+	}))
 
 	httpClient := &http.Client{
 		Transport: tr,

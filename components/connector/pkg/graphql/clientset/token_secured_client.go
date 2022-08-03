@@ -21,11 +21,11 @@ type TokenSecuredClient struct {
 }
 
 func newTokenSecuredClient(endpoint string, opts *clientsetOptions) *TokenSecuredClient {
-	tr := httputil.NewCorrelationIDTransport(&http.Transport{
+	tr := httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(&http.Transport{
 		TLSClientConfig: &tls.Config{
 			InsecureSkipVerify: opts.skipTLSVerify,
 		},
-	})
+	}))
 
 	httpClient := &http.Client{
 		Transport: tr,

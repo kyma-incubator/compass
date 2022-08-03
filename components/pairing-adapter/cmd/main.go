@@ -34,7 +34,7 @@ func main() {
 
 	transport := &http.Transport{}
 	client := &http.Client{
-		Transport: httputil.NewCorrelationIDTransport(transport),
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(transport)),
 		Timeout:   conf.ClientTimeout,
 	}
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, client)
@@ -49,7 +49,7 @@ func main() {
 		}
 		client = cc.Client(ctx)
 	case adapter.AuthTypeMTLS:
-		certCache, err := certloader.StartCertLoader(ctx, conf.Auth.ExternalClientCertSecret)
+		certCache, err := certloader.StartCertLoader(ctx, conf.Auth.Config)
 		exitOnError(err, "Failed to initialize certificate loader")
 		transport.TLSClientConfig = &tls.Config{
 			InsecureSkipVerify: conf.Auth.SkipSSLVerify,
