@@ -167,17 +167,18 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 		Transport: httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
 	}
 
-	directorClientProvider := director.NewClientProvider(cfg.Director.URL, cfg.Director.ClientTimeout, cfg.Director.SkipSSLValidation)
+	internalDirectorClientProvider := director.NewClientProvider(cfg.Director.InternalURL, cfg.Director.ClientTimeout, cfg.Director.SkipSSLValidation)
+	internalGatewayClientProvider := director.NewClientProvider(cfg.Director.InternalGatewayURL, cfg.Director.ClientTimeout, cfg.Director.SkipSSLValidation)
 	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 
 	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.Handler.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc := getRuntimeMappingHandlerFunc(ctx, directorClientProvider, cfg.JWKSSyncPeriod)
+	runtimeMappingHandlerFunc := getRuntimeMappingHandlerFunc(ctx, internalDirectorClientProvider, cfg.JWKSSyncPeriod)
 
 	logger.Infof("Registering Authentication Mapping endpoint on %s...", cfg.Handler.AuthenticationMappingEndpoint)
 	authnMappingHandlerFunc := authnmappinghandler.NewHandler(oathkeeper.NewReqDataParser(), httpClient, authnmappinghandler.DefaultTokenVerifierProvider, authenticators)
 
 	logger.Infof("Registering Tenant Mapping endpoint on %s...", cfg.Handler.TenantMappingEndpoint)
-	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(authenticators, directorClientProvider, cfg.StaticGroupsSrc, cfgProvider, metricsCollector)
+	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(authenticators, internalDirectorClientProvider, internalGatewayClientProvider, cfg.StaticGroupsSrc, cfgProvider, metricsCollector)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	logger.Infof("Registering Certificate Resolver endpoint on %s...", cfg.Handler.CertResolverEndpoint)
@@ -185,7 +186,7 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	logger.Infof("Registering Connector Token Resolver endpoint on %s...", cfg.Handler.TokenResolverEndpoint)
-	connectorTokenResolverHandlerFunc := getTokenResolverHandler(directorClientProvider)
+	connectorTokenResolverHandlerFunc := getTokenResolverHandler(internalDirectorClientProvider)
 
 	router.HandleFunc(cfg.Handler.RuntimeMappingEndpoint, metricsCollector.HandlerInstrumentation(runtimeMappingHandlerFunc))
 	router.HandleFunc(cfg.Handler.AuthenticationMappingEndpoint, metricsCollector.HandlerInstrumentation(authnMappingHandlerFunc))
@@ -210,19 +211,19 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 	return provider
 }
 
-func getTenantMappingHandlerFunc(authenticators []authenticator.Config, clientProvider director.ClientProvider, staticGroupsSrc string, cfgProvider *configprovider.Provider, metricsCollector *metrics.Collector) (*tenantmapping.Handler, error) {
+func getTenantMappingHandlerFunc(authenticators []authenticator.Config, internalDirectorClientProvider, internalGatewayClientProvider director.ClientProvider, staticGroupsSrc string, cfgProvider *configprovider.Provider, metricsCollector *metrics.Collector) (*tenantmapping.Handler, error) {
 	staticGroupsRepo, err := tenantmapping.NewStaticGroupRepository(staticGroupsSrc)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating StaticGroup repository instance")
 	}
 
 	objectContextProviders := map[string]tenantmapping.ObjectContextProvider{
-		tenantmappingconst.UserObjectContextProvider:             tenantmapping.NewUserContextProvider(clientProvider.Client(), staticGroupsRepo),
-		tenantmappingconst.SystemAuthObjectContextProvider:       tenantmapping.NewSystemAuthContextProvider(clientProvider.Client(), cfgProvider),
-		tenantmappingconst.AuthenticatorObjectContextProvider:    tenantmapping.NewAuthenticatorContextProvider(clientProvider.Client(), authenticators),
-		tenantmappingconst.CertServiceObjectContextProvider:      tenantmapping.NewCertServiceContextProvider(clientProvider.Client(), cfgProvider),
-		tenantmappingconst.TenantHeaderObjectContextProvider:     tenantmapping.NewAccessLevelContextProvider(clientProvider.Client()),
-		tenantmappingconst.ConsumerProviderObjectContextProvider: tenantmapping.NewConsumerContextProvider(clientProvider.Client()),
+		tenantmappingconst.UserObjectContextProvider:             tenantmapping.NewUserContextProvider(internalDirectorClientProvider.Client(), staticGroupsRepo),
+		tenantmappingconst.SystemAuthObjectContextProvider:       tenantmapping.NewSystemAuthContextProvider(internalDirectorClientProvider.Client(), cfgProvider),
+		tenantmappingconst.AuthenticatorObjectContextProvider:    tenantmapping.NewAuthenticatorContextProvider(internalDirectorClientProvider.Client(), authenticators),
+		tenantmappingconst.CertServiceObjectContextProvider:      tenantmapping.NewCertServiceContextProvider(internalDirectorClientProvider.Client(), cfgProvider),
+		tenantmappingconst.TenantHeaderObjectContextProvider:     tenantmapping.NewAccessLevelContextProvider(internalDirectorClientProvider.Client()),
+		tenantmappingconst.ConsumerProviderObjectContextProvider: tenantmapping.NewConsumerContextProvider(internalGatewayClientProvider.Client()),
 	}
 	reqDataParser := oathkeeper.NewReqDataParser()
 

@@ -30,9 +30,10 @@ type Client interface {
 }
 
 type Config struct {
-	URL               string        `envconfig:"default=http://127.0.0.1:3000/graphql"`
-	ClientTimeout     time.Duration `envconfig:"default=115s"`
-	SkipSSLValidation bool          `envconfig:"default=false"`
+	InternalURL        string        `envconfig:"default=http://127.0.0.1:3000/graphql"`
+	InternalGatewayURL string        `envconfig:"default=http://127.0.0.1:3000/graphql"`
+	ClientTimeout      time.Duration `envconfig:"default=115s"`
+	SkipSSLValidation  bool          `envconfig:"default=false"`
 }
 
 type client struct {

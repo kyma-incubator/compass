@@ -62,8 +62,10 @@ spec:
               value: "0.0.0.0:{{ .Values.deployment.args.containerPort }}"
             - name: APP_ROOT_API
               value: "{{ .Values.global.hydrator.prefix }}"
-            - name: APP_DIRECTOR_URL
+            - name: APP_DIRECTOR_INTERNAL_URL
               value: "https://{{ .Values.global.director.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}/graphql"
+            - name: APP_DIRECTOR_INTERNAL_GATEWAY_URL
+              value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_DIRECTOR_SKIP_SSL_VALIDATION
               value: {{ .Values.global.hydrator.http.client.skipSSLValidation | quote }}
             - name: APP_CONFIGURATION_FILE
