@@ -22,7 +22,7 @@ run:
 	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-istio-local-0 -c istio-tests -- ./istio.test test -run=$(testName) -test.v
 
 sandbox-deploy-test:
-	env GOOS=linux go test -c ./tests -o istio.test
+	env GOOS=linux GOARCH=amd64 go test -c ./tests -o istio.test
 	kubectl cp ./istio.test kyma-system/oct-tp-compass-e2e-tests-compass-e2e-istio-local-0:/ -c istio-tests
 	rm ./istio.test
 
