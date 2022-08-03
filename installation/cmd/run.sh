@@ -31,11 +31,6 @@ do
     key="$1"
 
     case ${key} in
-        --kyma-release)
-            checkInputParameterValue "${2}"
-            KYMA_RELEASE="${2}"
-            shift # past argument
-        ;;
         --kyma-installation)
             checkInputParameterValue "${2}"
             KYMA_INSTALLATION="${2}"
@@ -177,10 +172,6 @@ else
   fi
 fi
 
-if [ -z "$KYMA_RELEASE" ]; then
-  KYMA_RELEASE=$(<"${ROOT_PATH}"/installation/resources/KYMA_VERSION)
-fi
-
 if [ -z "$KYMA_INSTALLATION" ]; then
   KYMA_INSTALLATION="minimal"
 fi
@@ -234,7 +225,6 @@ fi
 
 if [[ ! ${SKIP_K3D_START} ]]; then
   echo "Provisioning k3d cluster..."
-  # todo cpu limit
   kyma provision k3d \
   --k3s-arg '--kube-apiserver-arg=anonymous-auth=true@server:*' \
   --k3s-arg '--kube-apiserver-arg=feature-gates=ServiceAccountIssuerDiscovery=true@server:*' \
@@ -259,7 +249,7 @@ if [[ ${DUMP_DB} ]]; then
 fi
 
 if [[ ! ${SKIP_KYMA_START} ]]; then
-  LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh --kyma-release ${KYMA_RELEASE} --kyma-installation ${KYMA_INSTALLATION}
+  LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh --kyma-installation ${KYMA_INSTALLATION}
   kubectl set image -n kyma-system cronjob/oathkeeper-jwks-rotator keys-generator=oryd/oathkeeper:v0.38.23
   kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "*/1 * * * *"}}'
   until [[ $(kubectl get cronjob -n kyma-system oathkeeper-jwks-rotator --output=jsonpath={.status.lastScheduleTime}) ]]; do
