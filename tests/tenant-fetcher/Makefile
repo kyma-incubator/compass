@@ -24,7 +24,7 @@ run:
 	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-tenant-fetcher-local-0 -c tenant-fetcher-tests -- ./tenant-fetcher.test -test.run $(testName) -test.v
 
 sandbox-deploy-test:
-	env GOOS=linux go test -c ./tests -o tenant-fetcher.test
+	env GOOS=linux GOARCH=amd64 go test -c ./tests -o tenant-fetcher.test
 	kubectl cp ./tenant-fetcher.test kyma-system/oct-tp-compass-e2e-tests-compass-e2e-tenant-fetcher-local-0:/ -c tenant-fetcher-tests
 	rm ./tenant-fetcher.test
 
