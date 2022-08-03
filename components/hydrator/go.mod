@@ -10,7 +10,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220327143459-11b81bddcce9
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20220420124254-ee69592dca21
-	github.com/kyma-incubator/compass/components/director v0.0.0-20220725081615-3c96f313921b
+	github.com/kyma-incubator/compass/components/director v0.0.0-20220803145251-adcd4fea489b
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459-11b81bddcce9 // indirect
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.19
@@ -23,11 +23,6 @@ require (
 	github.com/vrischmann/envconfig v1.3.0
 	k8s.io/api v0.20.2 // DO NOT BUMP
 	k8s.io/apimachinery v0.20.2 // DO NOT BUMP
-)
-
-// todo::: remove
-replace (
-	github.com/kyma-incubator/compass/components/director => /Users/I507827/SAPDevelop/go-workspace/src/github.com/kyma-incubator/compass/components/director
 )
 
 require (

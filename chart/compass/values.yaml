@@ -118,10 +118,10 @@ global:
       version: "PR-2501"
     director:
       dir:
-      version: "PR-2501"
+      version: "PR-2521"
     hydrator:
       dir:
-      version: "PR-2501"
+      version: "PR-2521"
     gateway:
       dir:
       version: "PR-2501"
