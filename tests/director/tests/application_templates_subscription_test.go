@@ -92,6 +92,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
+			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
 			actualAppPage := graphql.ApplicationPage{}
 			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
@@ -159,7 +160,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			subscribedApplicationExt := actualAppPageExt.Data[0]
 
 			require.Equal(t, appTmpl.ID, *subscribedApplicationExt.ApplicationTemplateID)
-			require.Len(t, subscribedApplicationExt.Bundles.TotalCount, 1)
+			require.Equal(t, 1, subscribedApplicationExt.Bundles.TotalCount)
 			require.Equal(t, bundleOutput.ID, subscribedApplicationExt.Bundles.Data[0].ID)
 
 		})
@@ -169,6 +170,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
 			headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
 
+			// List Applications
 			actualAppPage := graphql.ApplicationPage{}
 			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
 			getSrcAppReq.Header = headers
@@ -219,12 +221,13 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
 			headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
 
+			// List Applications
 			actualAppPage = graphql.ApplicationPage{}
 			getSrcAppReq.Header = headers
 			err = testctx.Tc.RunOperation(ctx, directorCertClientForAnotherRegion, getSrcAppReq, &actualAppPage)
 			require.Error(t, err)
 
-			expectedErrMsg := fmt.Sprintf("failed to find application template in tenant %s", subscriptionProviderSubaccountID)
+			expectedErrMsg := "failed to find application template in tenant"
 			require.Contains(t, err.Error(), expectedErrMsg)
 
 			// Create Bundle
