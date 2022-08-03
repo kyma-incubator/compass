@@ -369,30 +369,34 @@ func (s *service) sendNotifications(ctx context.Context, notifications []*webhoo
 }
 
 func (s *service) assign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
-	if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), addFormation); err != nil {
-		if apperrors.IsNotFoundError(err) {
-			labelInput := newLabelInput(formation.Name, objectID, objectTypeToLabelableObject(objectType))
-			if err = s.labelService.CreateLabel(ctx, tnt, s.uuidService.Generate(), labelInput); err != nil {
-				return nil, err
-			}
-
-			if formation.Name != "DEFAULT" && objectType == graphql.FormationObjectTypeRuntime {
-				err = s.isValidRuntimeType(ctx, tnt, objectID, formation)
-				if err != nil {
-					return nil, err
-				}
-			}
-			return s.getFormationByName(ctx, formation.Name, tnt)
-		}
-		return nil, err
-	}
-
 	if formation.Name != "DEFAULT" && objectType == graphql.FormationObjectTypeRuntime {
 		err := s.isValidRuntimeType(ctx, tnt, objectID, formation)
 		if err != nil {
 			return nil, err
 		}
 	}
+	if formation.Name != "DEFAULT" && objectType == graphql.FormationObjectTypeRuntimeContext {
+		runtimeCtx, err := s.runtimeContextRepo.GetByID(ctx, tnt, objectID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting runtime context")
+		}
+		err = s.isValidRuntimeType(ctx, tnt, runtimeCtx.RuntimeID, formation)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), addFormation); err != nil {
+		if apperrors.IsNotFoundError(err) {
+			labelInput := newLabelInput(formation.Name, objectID, objectTypeToLabelableObject(objectType))
+			if err = s.labelService.CreateLabel(ctx, tnt, s.uuidService.Generate(), labelInput); err != nil {
+				return nil, err
+			}
+			return s.getFormationByName(ctx, formation.Name, tnt)
+		}
+		return nil, err
+	}
+
 	return s.getFormationByName(ctx, formation.Name, tnt)
 }
 
