@@ -802,6 +802,55 @@ func TestSelfRegMoreThanOneProviderRuntime(t *testing.T) {
 	require.Empty(t, secondRuntimeExt)
 }
 
+func TestRuntimeTypeImmutability(t *testing.T) {
+	ctx := context.Background()
+
+	// Runtime with runtimeType label
+	runtimeInput := graphql.RuntimeRegisterInput{
+		Name:        "runtime",
+		Description: ptr.String("runtime-description"),
+		Labels:      graphql.Labels{conf.RuntimeTypeLabelKey: "test-type", tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
+	}
+
+	t.Logf("Registering runtime with labels %q and %q...", conf.RuntimeTypeLabelKey, tenantfetcher.RegionKey)
+	runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtimeInput)
+	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &runtime)
+	require.NotEmpty(t, runtime.ID)
+	require.Equal(t, len(runtime.Labels), 2)
+	strLbl, ok := runtime.Labels[tenantfetcher.RegionKey].(string)
+	require.True(t, ok)
+	require.Equal(t, strLbl, conf.SubscriptionConfig.SelfRegRegion)
+	strLbl, ok = runtime.Labels[IsNormalizedLabel].(string)
+	require.True(t, ok)
+	require.Equal(t, strLbl, "true")
+	require.NotContains(t, runtime.Labels, conf.RuntimeTypeLabelKey)
+
+	// Update runtime with runtimeType label
+	updateRuntimeInput := graphql.RuntimeUpdateInput{
+		Name:        "updated-runtime",
+		Description: ptr.String("updated-runtime-description"),
+		Labels:      graphql.Labels{conf.RuntimeTypeLabelKey: "updated-test-type", tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
+	}
+	runtimeUpdateInGQL, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(updateRuntimeInput)
+	require.NoError(t, err)
+	updateRuntimeReq := fixtures.FixUpdateRuntimeRequest(runtime.ID, runtimeUpdateInGQL)
+	t.Logf("Updating runtime with labels %q and %q...", conf.RuntimeTypeLabelKey, tenantfetcher.RegionKey)
+
+	updatedRuntime := graphql.RuntimeExt{}
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateRuntimeReq, &updatedRuntime)
+	require.NoError(t, err)
+	require.Equal(t, "updated-runtime", updatedRuntime.Name)
+	require.Equal(t, "updated-runtime-description", *updatedRuntime.Description)
+	require.Equal(t, len(updatedRuntime.Labels), 2)
+	strLbl, ok = updatedRuntime.Labels[tenantfetcher.RegionKey].(string)
+	require.True(t, ok)
+	require.Equal(t, strLbl, conf.SubscriptionConfig.SelfRegRegion)
+	strLbl, ok = runtime.Labels[IsNormalizedLabel].(string)
+	require.True(t, ok)
+	require.Equal(t, strLbl, "true")
+	require.NotContains(t, updatedRuntime.Labels, conf.RuntimeTypeLabelKey)
+}
+
 func fixRuntimeInput(name string) graphql.RuntimeRegisterInput {
 	input := fixtures.FixRuntimeRegisterInput(name)
 	delete(input.Labels, "placeholder")
