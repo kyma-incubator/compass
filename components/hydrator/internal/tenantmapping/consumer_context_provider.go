@@ -6,6 +6,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
+	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	directorErrors "github.com/kyma-incubator/compass/components/hydrator/internal/director"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
@@ -66,13 +67,33 @@ func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData 
 	if !ok {
 		return ObjectContext{}, errors.New(fmt.Sprintf("region label not found for tenant with ID: %q", tenantMapping.ID))
 	}
-	authDetails.Region = region.(string)
+	regionStr := region.(string)
+	authDetails.Region = regionStr
 
 	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), c.tenantKeys, userCtxData.scopes, mergeWithOtherScopes, authDetails.Region, userCtxData.clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.ConsumerProviderObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
-	log.C(ctx).Infof("Upserting subdomain label with value: %q for tenant with ID: %q", userCtxData.subdomain, tenantMapping.ID)
-	//c.directorClient.UpsertLabel(ctx, tenantMapping.ID, lblInput)
+	subdomain, exists := tenantMapping.Labels["subdomain"]
+	if !exists {
+		log.C(ctx).Warningf("subdomain label not found for tenant with ID: %q", tenantMapping.ID)
+		tenantMapping.Labels["subdomain"] = subdomain
+	}
+
+	subdomainString := subdomain.(string)
+	tenantToUpdate := &schema.BusinessTenantMappingInput{
+		Name:           *tenantMapping.Name,
+		ExternalTenant: tenantMapping.ID,
+		Type:           tenantMapping.Type,
+		Parent:         &tenantMapping.ParentID,
+		Region:         &regionStr,
+		Subdomain:      &subdomainString,
+		Provider:       tenantMapping.Provider,
+	}
+
+	if err := c.directorClient.UpdateTenant(ctx, tenantMapping.ID, tenantToUpdate); err != nil {
+		log.C(ctx).Errorf("an error occurred while updating tenant with ID: %q: %v", tenantMapping.ID, err)
+		return ObjectContext{}, err
+	}
 
 	return objCtx, nil
 }
@@ -101,7 +122,7 @@ func (c *consumerContextProvider) Match(_ context.Context, data oathkeeper.ReqDa
 }
 
 func (c *consumerContextProvider) getUserContextData(userContextHeader string) (*userContextData, error) {
-	clientID := gjson.Get(userContextHeader, "client_id").String()
+	clientID := gjson.Get(userContextHeader, "client_id").String() // todo::: extract + other properties as well
 	if clientID == "" {
 		return &userContextData{}, apperrors.NewInvalidDataError("could not find client_id property")
 	}

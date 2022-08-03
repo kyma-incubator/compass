@@ -28,7 +28,7 @@ type DirectorClient interface {
 	GetTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetSystemAuthByID(ctx context.Context, authID string) (*model.SystemAuth, error)
 	UpdateSystemAuth(ctx context.Context, sysAuth *model.SystemAuth) (director.UpdateAuthResult, error)
-	//UpsertLabel(ctx context.Context, tenantID string, labelInput)
+	UpdateTenant(ctx context.Context, tenantID string, tenant *schema.BusinessTenantMappingInput) error
 }
 
 // ScopesGetter missing godoc

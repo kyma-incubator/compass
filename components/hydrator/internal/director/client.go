@@ -2,7 +2,10 @@ package director
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 
 	authConv "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/model"
@@ -23,6 +26,7 @@ type Client interface {
 	UpdateSystemAuth(ctx context.Context, sysAuth *model.SystemAuth) (UpdateAuthResult, error)
 	InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) error
 	GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (*schema.Runtime, error)
+	UpdateTenant(ctx context.Context, tenantID string, tenant *schema.BusinessTenantMappingInput) error
 }
 
 type Config struct {
@@ -62,6 +66,7 @@ type RuntimeResponse struct {
 type UpdateAuthResult struct {
 	ID string `json:"id"`
 }
+
 type UpdateSystemAuthResponse struct {
 	Result UpdateAuthResult `json:"result"`
 }
@@ -177,6 +182,23 @@ func (c *client) GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (*s
 	}
 
 	return response.Result, nil
+}
+
+func (c *client) UpdateTenant(ctx context.Context, tenantID string, tenant *schema.BusinessTenantMappingInput) error {
+	fieldProvider := graphqlizer.GqlFieldsProvider{}
+	gqlizer := graphqlizer.Graphqlizer{}
+	in, err := gqlizer.UpdateTenantsInputToGQL(*tenant)
+	if err != nil {
+		return errors.Wrap(err, "while creating tenants input")
+	}
+
+	tenantsQuery := fmt.Sprintf(`mutation { updateTenant(id: "%s", in:%s) { %s }}`, tenantID, in, fieldProvider.ForTenant())
+
+	if err := c.execute(ctx, c.gqlClient, tenantsQuery, nil); err != nil {
+		return errors.Wrap(err, "while executing GQL query")
+	}
+
+	return nil
 }
 
 func (c *client) execute(ctx context.Context, client *graphql.Client, query string, res interface{}) error {

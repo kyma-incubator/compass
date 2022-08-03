@@ -25,6 +25,11 @@ require (
 	k8s.io/apimachinery v0.20.2 // DO NOT BUMP
 )
 
+// todo::: remove
+replace (
+	github.com/kyma-incubator/compass/components/director => /Users/I507827/SAPDevelop/go-workspace/src/github.com/kyma-incubator/compass/components/director
+)
+
 require (
 	github.com/prometheus/client_golang v1.11.0
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
