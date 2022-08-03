@@ -28,7 +28,7 @@ run:
 	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-external-services-mock-local-0 -c external-services-mock-tests -- ./external-services-mock.test -test.run $(testName) -test.v
 
 sandbox-deploy-test:
-	env GOOS=linux go test -c ./tests -o external-services-mock.test
+	env GOOS=linux GOARCH=amd64 go test -c ./tests -o external-services-mock.test
 	kubectl cp ./external-services-mock.test kyma-system/oct-tp-compass-e2e-tests-compass-e2e-external-services-mock-local-0:/ -c external-services-mock-tests
 	rm ./external-services-mock.test
 
