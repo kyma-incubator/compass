@@ -377,10 +377,7 @@ func registerTenantsHandler(ctx context.Context, router *mux.Router, cfg tenantf
 	subscriber := tenantfetcher.NewSubscriber(directorClient, provisioner)
 
 	dependencies, err := dependenciesConfigToMap(cfg)
-	if err != nil {
-		fmt.Println(err)
-	}
-	//exitOnError(err, "failed to read service dependencies")
+	exitOnError(err, "failed to read service dependencies")
 	cfg.RegionToDependenciesConfig = dependencies
 
 	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(subscriber, cfg)
