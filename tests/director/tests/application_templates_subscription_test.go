@@ -35,7 +35,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 
 		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
 		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
-		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+		appProviderDirectorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
 
@@ -43,8 +43,8 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 		appTemplateName := createAppTemplateName("app-template-name-subscription")
 		appTemplateInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
 
-		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), &appTmpl)
+		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), &appTmpl)
 		require.NoError(t, err)
 		require.NotEmpty(t, appTmpl.ID)
 
@@ -144,16 +144,19 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			bundleOutput := graphql.BundleExt{}
 
 			t.Log("Try to create bundle")
-			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addBndlRequest, &bundleOutput)
+			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertSecuredClient, addBndlRequest, &bundleOutput)
 
 			// Verify that Bundle can be created
 			require.NoError(t, err)
 			require.NotEmpty(t, bundleOutput.ID)
+
+			stripSensitiveFieldValues(&bndlInput, &bundleOutput) // because it would be stripped in the bundleOutput when making the request w/t appProviderDirectorCertSecuredClient
 			assertions.AssertBundle(t, &bndlInput, &bundleOutput)
 
 			// Ensure fetching application returns also the added bundle
 			actualAppPageExt := graphql.ApplicationPageExt{}
-			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPageExt)
+			getSrcAppReq.Header = headers
+			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertSecuredClient, getSrcAppReq, &actualAppPageExt)
 			require.NoError(t, err)
 
 			require.Len(t, actualAppPageExt.Data, 1)
@@ -189,7 +192,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			output := graphql.BundleExt{}
 
 			t.Log("Try to create bundle")
-			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addBndlRequest, &output)
+			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertSecuredClient, addBndlRequest, &output)
 
 			// Verify that Bundle cannot be created after unsubscription
 			require.Error(t, err)
@@ -215,7 +218,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			require.Equal(t, appTmpl.ID, *subscribedApplication.ApplicationTemplateID)
 
 			// Create second certificate client representing an Application Provider from a different region
-			directorCertClientForAnotherRegion := createDirectorCertClientForAnotherRegion(t, ctx)
+			appProviderDirectorCertClientForAnotherRegion := createDirectorCertClientForAnotherRegion(t, ctx)
 
 			// Create consumer token
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
@@ -224,7 +227,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			// List Applications
 			actualAppPage = graphql.ApplicationPage{}
 			getSrcAppReq.Header = headers
-			err = testctx.Tc.RunOperation(ctx, directorCertClientForAnotherRegion, getSrcAppReq, &actualAppPage)
+			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertClientForAnotherRegion, getSrcAppReq, &actualAppPage)
 			require.Error(t, err)
 
 			expectedErrMsg := "failed to find application template in tenant"
@@ -239,7 +242,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			output := graphql.BundleExt{}
 
 			t.Log("Try to create bundle")
-			err = testctx.Tc.RunOperation(ctx, directorCertClientForAnotherRegion, addBndlRequest, &output)
+			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertClientForAnotherRegion, addBndlRequest, &output)
 
 			// Verify that Bundle cannot be created after unsubscription
 			require.Error(t, err)
@@ -287,4 +290,26 @@ func buildSubscriptionRequest(t *testing.T, ctx context.Context, subscriptionCon
 	subscribeReq.Header.Add(conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
 
 	return subscribeReq
+}
+
+func stripSensitiveFieldValues(bundleInput *graphql.BundleCreateInput, bundleOuput *graphql.BundleExt) {
+	for i := range bundleInput.Documents {
+		bundleInput.Documents[i].FetchRequest = nil
+	}
+	for i := range bundleInput.APIDefinitions {
+		bundleInput.APIDefinitions[i].Spec.FetchRequest = nil
+	}
+	for i := range bundleInput.EventDefinitions {
+		bundleInput.EventDefinitions[i].Spec.FetchRequest = nil
+	}
+
+	for i := range bundleOuput.Documents.Data {
+		bundleOuput.Documents.Data[i].FetchRequest = nil
+	}
+	for i := range bundleOuput.APIDefinitions.Data {
+		bundleOuput.APIDefinitions.Data[i].Spec.FetchRequest = nil
+	}
+	for i := range bundleOuput.EventDefinitions.Data {
+		bundleOuput.EventDefinitions.Data[i].Spec.FetchRequest = nil
+	}
 }
