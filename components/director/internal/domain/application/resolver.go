@@ -192,9 +192,9 @@ func NewResolver(transact persistence.Transactioner,
 }
 
 // Applications retrieves all tenant scoped applications.
-// If this method is executed in a certificate flow (certificate + "user_context" header):
-// - It fetches model.ApplicationTemplate by labels: scenarioassignment.SubaccountIDKey, region and selfRegisterDistinguishLabelKey.
-// - Lists all tenant header scoped []model.Application and finds the one created by the previously fetched App Template.
+// If this method is executed in a double authentication flow (i.e. consumerInfo.OnBehalfOf != nil)
+// then it would return 0 or 1 tenant applications - it would return 1 if there exists a tenant application
+// representing a tenant in an Application Provider and 0 if there is none such application.
 func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
@@ -211,7 +211,7 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 
 	if consumerInfo.OnBehalfOf != "" {
 		log.C(ctx).Infof("External tenant with id %s is retrieving application on behalf of tenant with id %s", consumerInfo.ConsumerID, consumerInfo.OnBehalfOf)
-		app, err := r.applicationForTenant(ctx)
+		tenantApp, err := r.getApplicationProviderTenant(ctx, consumerInfo)
 		if err != nil {
 			return nil, err
 		}
@@ -222,7 +222,7 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 		}
 
 		return &graphql.ApplicationPage{
-			Data:       []*graphql.Application{app},
+			Data:       []*graphql.Application{tenantApp},
 			TotalCount: 1,
 			PageInfo: &graphql.PageInfo{
 				StartCursor: "1",
@@ -795,30 +795,33 @@ func (r *Resolver) Bundle(ctx context.Context, obj *graphql.Application, id stri
 	return gqlBundle, nil
 }
 
-func (r *Resolver) applicationForTenant(ctx context.Context) (*graphql.Application, error) {
-	consumerInfo, err := consumer.LoadFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
+// getApplicationProviderTenant should be used when making requests with double authentication, i.e. consumerInfo.OnBehalfOf != nil;
+// The function leverages the knowledge of the provider tenant (it's in consumerInfo.ConsumerID) and consumer tenant (it's already set in the TenantCtx)
+// in order to derive the application template representing an Application Provider and then finding an application among those of the consumer tenant
+// which is associated with that application template.
+// In this way the getApplicationProviderTenant function finds a specific tenant application of a given Application Provider - there should only be one or none.
+func (r *Resolver) getApplicationProviderTenant(ctx context.Context, consumerInfo consumer.Consumer) (*graphql.Application, error) {
 	tokenClientID := strings.TrimPrefix(consumerInfo.TokenClientID, r.tokenPrefix)
 	filters := []*labelfilter.LabelFilter{
 		labelfilter.NewForKeyWithQuery(scenarioassignment.SubaccountIDKey, fmt.Sprintf("\"%s\"", consumerInfo.ConsumerID)),
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", consumerInfo.Region)),
 		labelfilter.NewForKeyWithQuery(r.selfRegisterDistinguishLabelKey, fmt.Sprintf("\"%s\"", tokenClientID)),
 	}
-	appTemplate, err := r.appTemplateSvc.GetByFilters(ctx, filters)
 
+	// Derive application provider's app template
+	appTemplate, err := r.appTemplateSvc.GetByFilters(ctx, filters)
 	if err != nil {
 		log.C(ctx).Infof("No app template found with filter %q = %q, %q = %q, %q = %q", scenarioassignment.SubaccountIDKey, consumerInfo.ConsumerID, tenant.RegionLabelKey, consumerInfo.Region, r.selfRegisterDistinguishLabelKey, tokenClientID)
 		return nil, errors.Wrapf(err, "no app template found with filter %q = %q, %q = %q, %q = %q", scenarioassignment.SubaccountIDKey, consumerInfo.ConsumerID, tenant.RegionLabelKey, consumerInfo.Region, r.selfRegisterDistinguishLabelKey, tokenClientID)
 	}
 
+	// Find the consuming tenant's applications
 	tntApplications, err := r.appSvc.ListAll(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing applications for tenant")
 	}
 
+	// Try to find the application matching the derived provider app template
 	var foundApp *model.Application
 	for _, app := range tntApplications {
 		if str.PtrStrToStr(app.ApplicationTemplateID) == appTemplate.ID {

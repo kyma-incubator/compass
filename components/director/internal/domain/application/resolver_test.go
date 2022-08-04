@@ -1036,7 +1036,7 @@ func TestResolver_Applications(t *testing.T) {
 	}
 }
 
-func TestResolver_Applications_CertFlow(t *testing.T) {
+func TestResolver_Applications_DoubleAuthFlow(t *testing.T) {
 	// GIVEN
 	appTemplateID := "12345678-ae7e-4d1a-8027-520a96d5319d"
 
