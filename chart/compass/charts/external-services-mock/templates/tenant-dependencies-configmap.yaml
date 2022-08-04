@@ -10,7 +10,7 @@ metadata:
 data:
   dependencies.json: |
     {
-      "europe": ["appname1"],
-      "us": ["appname2"]
+      "eu-1": ["xsappname1"],
+      "eu-2": ["xsappname2"]
     }
 {{end}}
