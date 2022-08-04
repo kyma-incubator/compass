@@ -30,7 +30,7 @@ run:
 	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-ns-adapter-local-0 -c ns-adapter-tests -- ./ns-adapter.test -test.run $(testName) -test.v
 
 sandbox-deploy-test:
-	env GOOS=linux go test -c ./tests -o ns-adapter.test
+	env GOOS=linux GOARCH=amd64 go test -c ./tests -o ns-adapter.test
 	kubectl cp ./ns-adapter.test kyma-system/oct-tp-compass-e2e-tests-compass-e2e-ns-adapter-local-0:/ -c ns-adapter-tests
 	rm ./ns-adapter.test
 
