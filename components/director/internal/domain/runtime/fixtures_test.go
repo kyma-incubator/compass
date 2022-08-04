@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	tenantID  = "b91b59f7-2563-40b2-aba9-fef726037aa3"
-	runtimeID = "runtimeID"
+	tenantID    = "b91b59f7-2563-40b2-aba9-fef726037aa3"
+	runtimeID   = "runtimeID"
+	runtimeType = "runtimeType"
 )
 
 var fixColumns = []string{"id", "name", "description", "status_condition", "status_timestamp", "creation_timestamp"}

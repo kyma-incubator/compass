@@ -3,8 +3,11 @@ package tests
 import (
 	"context"
 	"fmt"
-	"strings"
 	"testing"
+
+	str "github.com/kyma-incubator/compass/components/director/pkg/str"
+
+	gcli "github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 
@@ -27,43 +30,82 @@ import (
 )
 
 func TestCreateApplicationTemplate(t *testing.T) {
-	// GIVEN
-	ctx := context.Background()
-	appTemplateName := createAppTemplateName("app-template-name")
-	appTemplateInput := fixAppTemplateInput(appTemplateName)
-	appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
-	require.NoError(t, err)
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		appTemplateName := createAppTemplateName("app-template-name")
+		appTemplateInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
+		appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
+		require.NoError(t, err)
 
-	createApplicationTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplate)
-	output := graphql.ApplicationTemplate{}
+		createApplicationTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplate)
+		output := graphql.ApplicationTemplate{}
 
-	// WHEN
-	t.Log("Create application template")
-	err = testctx.Tc.RunOperationNoTenant(ctx, certSecuredGraphQLClient, createApplicationTemplateRequest, &output)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &output)
+		// WHEN
+		t.Log("Create application template")
+		err = testctx.Tc.RunOperationNoTenant(ctx, certSecuredGraphQLClient, createApplicationTemplateRequest, &output)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &output)
 
-	//THEN
-	require.NoError(t, err)
-	require.NotEmpty(t, output.ID)
+		//THEN
+		require.NoError(t, err)
+		require.NotEmpty(t, output.ID)
 
-	require.NotEmpty(t, output.Name)
-	saveExample(t, createApplicationTemplateRequest.Query(), "create application template")
+		require.NotEmpty(t, output.Name)
+		saveExample(t, createApplicationTemplateRequest.Query(), "create application template")
 
-	t.Log("Check if application template was created")
+		t.Log("Check if application template was created")
 
-	getApplicationTemplateRequest := fixtures.FixApplicationTemplateRequest(output.ID)
-	appTemplateOutput := graphql.ApplicationTemplate{}
+		getApplicationTemplateRequest := fixtures.FixApplicationTemplateRequest(output.ID)
+		appTemplateOutput := graphql.ApplicationTemplate{}
 
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getApplicationTemplateRequest, &appTemplateOutput)
+		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getApplicationTemplateRequest, &appTemplateOutput)
 
-	appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
-	appTemplateInput.Labels["global_subaccount_id"] = conf.ConsumerID
-	appTemplateInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, conf.SubscriptionConfig.SelfRegRegion)
+		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
+		appTemplateInput.Labels["global_subaccount_id"] = conf.ConsumerID
+		appTemplateInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, conf.SubscriptionConfig.SelfRegRegion)
 
-	require.NoError(t, err)
-	require.NotEmpty(t, appTemplateOutput)
-	assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
-	saveExample(t, getApplicationTemplateRequest.Query(), "query application template")
+		require.NoError(t, err)
+		require.NotEmpty(t, appTemplateOutput)
+		assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
+		saveExample(t, getApplicationTemplateRequest.Query(), "query application template")
+	})
+
+	t.Run("Error when Self Registered Application Template already exists for a given region and distinguished label key", func(t *testing.T) {
+		// GIVEN
+		ctx := context.Background()
+		appTemplateName1 := createAppTemplateName("app-template-name-self-reg-1")
+		appTemplateInput1 := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName1)
+		appTemplate1, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput1)
+		require.NoError(t, err)
+
+		createApplicationTemplateRequest1 := fixtures.FixCreateApplicationTemplateRequest(appTemplate1)
+		output1 := graphql.ApplicationTemplate{}
+
+		appTemplateName2 := createAppTemplateName("app-template-name-self-reg-2")
+		appTemplateInput2 := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName2)
+		appTemplate2, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput2)
+		require.NoError(t, err)
+
+		createApplicationTemplateRequest2 := fixtures.FixCreateApplicationTemplateRequest(appTemplate2)
+		output2 := graphql.ApplicationTemplate{}
+
+		t.Log("Create first application template")
+		err = testctx.Tc.RunOperationNoTenant(ctx, certSecuredGraphQLClient, createApplicationTemplateRequest1, &output1)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &output1)
+
+		require.NoError(t, err)
+		require.NotEmpty(t, output1.ID)
+
+		// WHEN
+		t.Log("Create second application template")
+		err = testctx.Tc.RunOperationNoTenant(ctx, certSecuredGraphQLClient, createApplicationTemplateRequest2, &output2)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &output2)
+
+		//THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), fmt.Sprintf("Cannot have more than one application template with labels %q: %q and %q: %q", tenantfetcher.RegionKey, conf.SubscriptionConfig.SelfRegRegion, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue))
+		require.Empty(t, output2.ID)
+	})
 }
 
 func TestCreateApplicationTemplate_ValidApplicationTypeLabel(t *testing.T) {
@@ -108,85 +150,88 @@ func TestCreateApplicationTemplate_InvalidApplicationTypeLabel(t *testing.T) {
 	require.Contains(t, err.Error(), "\"applicationType\" label value does not follow \"<app_template_name> (<region>)\" schema")
 }
 
-func TestCreateApplicationTemplate_SameNames(t *testing.T) {
-	testCases := []struct {
-		Name                 string
-		AppTemplateOneName   string
-		AppTemplateTwoName   string
-		AppTemplateOneRegion string
-		AppTemplateTwoRegion string
-		ExpectError          bool
-		ExpectedErrMessage   string
-	}{
-		{
-			Name:                 "Create two application templates with same names and region",
-			AppTemplateOneName:   "SAP app-template",
-			AppTemplateTwoName:   "SAP app-template",
-			AppTemplateOneRegion: conf.SubscriptionConfig.SelfRegRegion,
-			AppTemplateTwoRegion: conf.SubscriptionConfig.SelfRegRegion,
-			ExpectError:          true,
-			ExpectedErrMessage:   "application template with name \"SAP app-template\" already exists",
-		},
-		{
-			Name:                 "Create two application templates with same names and different regions",
-			AppTemplateOneName:   "SAP app-template",
-			AppTemplateTwoName:   "SAP app-template",
-			AppTemplateOneRegion: conf.SubscriptionConfig.SelfRegRegion,
-			AppTemplateTwoRegion: conf.SubscriptionConfig.SelfRegRegion2,
-			ExpectError:          false,
-		},
-	}
+func TestCreateApplicationTemplate_SameNamesAndRegion(t *testing.T) {
+	ctx := context.Background()
+	appTemplateName := "SAP app-template"
+	appTemplateRegion := conf.SubscriptionConfig.SelfRegRegion
+	appTemplateOneInput := fixAppTemplateInputWithRegion(appTemplateName, appTemplateRegion)
 
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			ctx := context.Background()
-			appTemplateOneInput := fixAppTemplateInputWithRegion(testCase.AppTemplateOneName, testCase.AppTemplateOneRegion)
+	t.Log("Create first application template")
+	appTemplateOne, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOneInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &appTemplateOne)
 
-			t.Log("Create first application template")
-			appTemplateOne, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOneInput)
-			defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &appTemplateOne)
+	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, appTemplateOne.ID)
+	require.NotEmpty(t, appTemplateOne.Name)
 
-			//THEN
-			require.NoError(t, err)
-			require.NotEmpty(t, appTemplateOne.ID)
-			require.NotEmpty(t, appTemplateOne.Name)
+	t.Log("Check if application template one was created")
+	appTemplateOneOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOne.ID)
 
-			t.Log("Check if application template one was created")
-			appTemplateOneOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOne.ID)
+	appTemplateOneInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOneOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
+	appTemplateOneInput.Labels["global_subaccount_id"] = conf.ConsumerID
+	appTemplateOneInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, appTemplateRegion)
 
-			appTemplateOneInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOneOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
-			appTemplateOneInput.Labels["global_subaccount_id"] = conf.ConsumerID
-			appTemplateOneInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", testCase.AppTemplateOneName, testCase.AppTemplateOneRegion)
+	require.NotEmpty(t, appTemplateOneOutput)
+	assertions.AssertApplicationTemplate(t, appTemplateOneInput, appTemplateOneOutput)
 
-			require.NotEmpty(t, appTemplateOneOutput)
-			assertions.AssertApplicationTemplate(t, appTemplateOneInput, appTemplateOneOutput)
+	appTemplateTwoInput := fixAppTemplateInputWithRegionAndDistinguishLabel(appTemplateName, appTemplateRegion, "other-distinguished-label")
 
-			appTemplateTwoInput := fixAppTemplateInputWithRegion(testCase.AppTemplateTwoName, testCase.AppTemplateTwoRegion)
+	t.Log("Create second application template")
+	appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwoInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &appTemplateTwo)
 
-			t.Log("Create second application template")
-			appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwoInput)
-			defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &appTemplateTwo)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "application template with name \"SAP app-template\" already exists")
+}
 
-			if testCase.ExpectError {
-				require.NotNil(t, err)
-				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-			} else {
-				require.NoError(t, err)
-				require.NotEmpty(t, appTemplateTwo.ID)
-				require.NotEmpty(t, appTemplateTwo.Name)
+func TestCreateApplicationTemplate_SameNamesAndDifferentRegions(t *testing.T) {
+	ctx := context.Background()
+	appTemplateName := "SAP app-template"
+	appTemplateOneRegion := conf.SubscriptionConfig.SelfRegRegion
+	appTemplateTwoRegion := conf.SubscriptionConfig.SelfRegRegion2
+	appTemplateOneInput := fixAppTemplateInputWithRegion(appTemplateName, appTemplateOneRegion)
 
-				t.Log("Check if application template two was created")
-				appTemplateTwoOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwo.ID)
+	t.Log("Create first application template")
+	appTemplateOne, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOneInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &appTemplateOne)
 
-				appTemplateTwoInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateTwoOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
-				appTemplateTwoInput.Labels["global_subaccount_id"] = conf.ConsumerID
-				appTemplateTwoInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", testCase.AppTemplateTwoName, testCase.AppTemplateTwoRegion)
+	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, appTemplateOne.ID)
+	require.NotEmpty(t, appTemplateOne.Name)
 
-				require.NotEmpty(t, appTemplateTwoOutput)
-				assertions.AssertApplicationTemplate(t, appTemplateTwoInput, appTemplateTwoOutput)
-			}
-		})
-	}
+	t.Log("Check if application template one was created")
+	appTemplateOneOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOne.ID)
+
+	appTemplateOneInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOneOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
+	appTemplateOneInput.Labels["global_subaccount_id"] = conf.ConsumerID
+	appTemplateOneInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, appTemplateOneRegion)
+
+	require.NotEmpty(t, appTemplateOneOutput)
+	assertions.AssertApplicationTemplate(t, appTemplateOneInput, appTemplateOneOutput)
+
+	appTemplateTwoInput := fixAppTemplateInputWithRegionAndDistinguishLabel(appTemplateName, appTemplateTwoRegion, "other-distinguished-label")
+
+	directorCertClientForAnotherRegion := createDirectorCertClientForAnotherRegion(t, ctx)
+
+	t.Log("Create second application template")
+	appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertClientForAnotherRegion, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwoInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertClientForAnotherRegion, tenant.TestTenants.GetDefaultTenantID(), &appTemplateTwo)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, appTemplateTwo.ID)
+	require.NotEmpty(t, appTemplateTwo.Name)
+
+	t.Log("Check if application template two was created")
+	appTemplateTwoOutput := fixtures.GetApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwo.ID)
+
+	appTemplateTwoInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateTwoOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
+	appTemplateTwoInput.Labels["global_subaccount_id"] = conf.TestProviderSubaccountIDRegion2
+	appTemplateTwoInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, appTemplateTwoRegion)
+
+	require.NotEmpty(t, appTemplateTwoOutput)
+	assertions.AssertApplicationTemplate(t, appTemplateTwoInput, appTemplateTwoOutput)
 }
 
 func TestCreateApplicationTemplate_NotValid(t *testing.T) {
@@ -237,7 +282,7 @@ func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			ctx := context.Background()
-			appTemplateInput := fixAppTemplateInput(testCase.AppTemplateName)
+			appTemplateInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(testCase.AppTemplateName)
 			if testCase.AppInputDescription != nil {
 				appTemplateInput.ApplicationInput.Description = testCase.AppInputDescription
 			}
@@ -277,7 +322,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
-	appTmplInput := fixAppTemplateInput(appTemplateName)
+	appTmplInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate)
 	require.NoError(t, err)
@@ -312,7 +357,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	saveExample(t, updateAppTemplateRequest.Query(), "update application template")
 }
 
-func TestUpdateApplicationTemplate_AlreadyExists(t *testing.T) {
+func TestUpdateApplicationTemplate_AlreadyExistsInTheSameRegion(t *testing.T) {
 	ctx := context.Background()
 	appTemplateOneInput := fixAppTemplateInputWithRegion("SAP app-template", conf.SubscriptionConfig.SelfRegRegion)
 
@@ -324,7 +369,7 @@ func TestUpdateApplicationTemplate_AlreadyExists(t *testing.T) {
 	require.NotEmpty(t, appTemplateOne.ID)
 	require.NotEmpty(t, appTemplateOne.Name)
 
-	appTemplateTwoInput := fixAppTemplateInputWithRegion("SAP app-template-two", conf.SubscriptionConfig.SelfRegRegion)
+	appTemplateTwoInput := fixAppTemplateInputWithRegionAndDistinguishLabel("SAP app-template-two", conf.SubscriptionConfig.SelfRegRegion, "other-label")
 
 	t.Log("Create second application template")
 	appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwoInput)
@@ -344,6 +389,7 @@ func TestUpdateApplicationTemplate_AlreadyExists(t *testing.T) {
 	}
 
 	appTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateUpdateInputToGQL(appTemplateInput)
+	require.NoError(t, err)
 	updateAppTemplateRequest := fixtures.FixUpdateApplicationTemplateRequest(appTemplateTwo.ID, appTemplateGQL)
 
 	updateOutput := graphql.ApplicationTemplate{}
@@ -405,7 +451,7 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 			tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 			t.Log("Create application template")
-			appTmplInput := fixAppTemplateInput(appTemplateName)
+			appTmplInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
 			appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 			defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate)
 
@@ -453,7 +499,7 @@ func TestDeleteApplicationTemplate(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
-	appTmplInput := fixAppTemplateInput(appTemplateName)
+	appTmplInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate)
 	require.NoError(t, err)
@@ -484,7 +530,7 @@ func TestQueryApplicationTemplate(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application template")
-	appTmplInput := fixAppTemplateInput(name)
+	appTmplInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(name)
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate)
 
@@ -511,13 +557,17 @@ func TestQueryApplicationTemplates(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application templates")
-	appTmplInput1 := fixAppTemplateInput(name1)
+	appTmplInput1 := fixAppTemplateInputWithRegion(name1, conf.SubscriptionConfig.SelfRegRegion)
 	appTemplate1, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput1)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate1)
+	require.NoError(t, err)
 
-	appTmplInput2 := fixAppTemplateInput(name2)
-	appTemplate2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput2)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate2)
+	directorCertClientRegion2 := createDirectorCertClientForAnotherRegion(t, ctx)
+
+	appTmplInput2 := fixAppTemplateInputWithRegion(name2, conf.SubscriptionConfig.SelfRegRegion2)
+	appTemplate2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertClientRegion2, tenantId, appTmplInput2)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertClientRegion2, tenantId, &appTemplate2)
+	require.NoError(t, err)
 
 	first := 100
 	after := ""
@@ -532,7 +582,14 @@ func TestQueryApplicationTemplates(t *testing.T) {
 
 	//THEN
 	t.Log("Check if application templates were received")
-	assert.Subset(t, output.Data, []*graphql.ApplicationTemplate{&appTemplate1, &appTemplate2})
+	appTemplateIDs := []string{appTemplate1.ID, appTemplate2.ID}
+	found := 0
+	for _, tmpl := range output.Data {
+		if str.ContainsInSlice(appTemplateIDs, tmpl.ID) {
+			found++
+		}
+	}
+	assert.Equal(t, 2, found)
 	saveExample(t, getApplicationTemplatesRequest.Query(), "query application templates")
 }
 
@@ -540,7 +597,7 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 	appTemplateName := createAppTemplateName("template")
-	appTmplInput := fixAppTemplateInput(appTemplateName)
+	appTmplInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
 	appTmplInput.ApplicationInput.Description = ptr.String("test {{display-name}}")
 	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
 		{
@@ -588,7 +645,7 @@ func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 	// GIVEN
 	ctx := context.TODO()
 	appTemplateName := createAppTemplateName("template")
-	appTmplInput := fixAppTemplateInput(appTemplateName)
+	appTmplInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
 	appTmplInput.ApplicationInput.Description = ptr.String("test {{display-name}}")
 	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
 		{
@@ -607,18 +664,7 @@ func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTmpl)
 	require.NoError(t, err)
 
-	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
-		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
-		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-		CertSvcInstanceTestSecretName:         conf.ExternalCertProviderConfig.CertSvcInstanceTestSecretName,
-		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
-		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertOU, conf.ExternalCertProviderConfig.TestExternalCertOU2, -1),
-		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
-		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
-	}
-	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig)
-	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
+	directorCertSecuredClient := createDirectorCertClientForAnotherRegion(t, ctx)
 
 	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: appTemplateName, Values: []*graphql.TemplateValueInput{
 		{
@@ -638,7 +684,7 @@ func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 
 	// THEN
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "application template with name \"SAP template\" and consumer id \"bad76f69-e5c2-4d55-bca5-240944824b83\" not found")
+	require.Contains(t, err.Error(), fmt.Sprintf("application template with name %q and consumer id %q not found", appTemplateName, conf.TestProviderSubaccountIDRegion2))
 }
 
 func TestAddWebhookToApplicationTemplate(t *testing.T) {
@@ -666,7 +712,7 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 	t.Log("Create application template")
-	appTmplInput := fixAppTemplateInput(name)
+	appTmplInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(name)
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, &appTemplate)
 	require.NoError(t, err)
@@ -739,14 +785,37 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	assert.Equal(t, urlUpdated, *actualWebhook.URL)
 }
 
-func fixAppTemplateInput(name string) graphql.ApplicationTemplateInput {
+func createDirectorCertClientForAnotherRegion(t *testing.T, ctx context.Context) *gcli.Client {
+	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
+		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
+		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
+		CertSvcInstanceTestRegion2SecretName:  conf.ExternalCertProviderConfig.CertSvcInstanceTestRegion2SecretName,
+		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
+		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
+		TestExternalCertSubject:               conf.ExternalCertProviderConfig.TestExternalCertSubjectRegion2,
+		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
+		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
+	}
+	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig)
+	return gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+}
+
+func fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(name string) graphql.ApplicationTemplateInput {
 	return fixAppTemplateInputWithRegion(name, conf.SubscriptionConfig.SelfRegRegion)
 }
 
 func fixAppTemplateInputWithRegion(name, region string) graphql.ApplicationTemplateInput {
 	input := fixtures.FixApplicationTemplate(name)
-	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SubscriptionConfig.SelfRegDistinguishLabelValue}
 	input.Labels[tenantfetcher.RegionKey] = region
+	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
+
+	return input
+}
+
+func fixAppTemplateInputWithRegionAndDistinguishLabel(name, region, distinguishedLabel string) graphql.ApplicationTemplateInput {
+	input := fixAppTemplateInputWithRegion(name, region)
+	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = distinguishedLabel
 
 	return input
 }

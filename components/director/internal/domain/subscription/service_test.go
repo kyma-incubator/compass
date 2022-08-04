@@ -43,7 +43,7 @@ const (
 	runtimeM2MTableName        = "tenant_runtimes"
 
 	subscriptionProviderIDLabelKey = "subscriptionProviderId"
-	consumerSubaccountLabelKey     = "consumer_subaccount_id"
+	consumerSubaccountLabelKey     = "global_subaccount_id"
 	subscriptionLabelKey           = "subscription"
 	subscriptionAppNameLabelKey    = "runtimeType"
 )
@@ -286,6 +286,10 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 				labelSvc.On("UpsertLabel", providerCtx, providerSubaccountID, providerAppNameLabelInput).Return(nil).Once()
 				return labelSvc
 			},
+			TenantAccessMock: func(dbMock testdb.DBMock) {
+				dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO %s ( %s, %s, %s ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents) ON CONFLICT ( tenant_id, id ) DO NOTHING", runtimeM2MTableName, repo.M2MTenantIDColumn, repo.M2MResourceIDColumn, repo.M2MOwnerColumn))).
+					WithArgs(subaccountTenantInternalID, providerRuntimeID, false).WillReturnResult(sqlmock.NewResult(1, 1))
+			},
 			UIDServiceFn:        unusedUUIDSvc,
 			ExpectedErrorOutput: testError.Error(),
 			IsSuccessful:        false,
@@ -298,11 +302,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
-			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
-				rtmCtxSvc := &automock.RuntimeCtxService{}
-				rtmCtxSvc.On("Create", consumerCtx, runtimeCtxInput).Return(runtimeCtxID, nil).Once()
-				return rtmCtxSvc
-			},
+			RuntimeCtxServiceFn: unusedRuntimeContextSvc,
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetInternalTenant", ctx, providerSubaccountID).Return(providerInternalID, nil).Once()

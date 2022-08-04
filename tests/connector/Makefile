@@ -28,7 +28,7 @@ run:
 	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-connector-local-0 -c connector-tests -- ./connector.test -test.run $(testName) -test.v
 
 sandbox-deploy-test:
-	env GOOS=linux go test -c ./tests -o connector.test
+	env GOOS=linux GOARCH=amd64 go test -c ./tests -o connector.test
 	kubectl cp ./connector.test kyma-system/oct-tp-compass-e2e-tests-compass-e2e-connector-local-0:/ -c connector-tests
 	rm ./connector.test
 

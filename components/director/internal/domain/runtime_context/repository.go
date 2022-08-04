@@ -2,6 +2,7 @@ package runtimectx
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
@@ -66,6 +67,11 @@ func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, err
 	return r.existQuerier.Exists(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// ExistsByRuntimeID returns true if a RuntimeContext with the provided runtime ID exists in the database and is visible for `tenant`
+func (r *pgRepository) ExistsByRuntimeID(ctx context.Context, tenant, rtmID string) (bool, error) {
+	return r.existQuerier.Exists(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("runtime_id", rtmID)})
+}
+
 // Delete deletes the RuntimeContext with the provided `id` from the database if `tenant` has the appropriate access to it
 func (r *pgRepository) Delete(ctx context.Context, tenant string, id string) error {
 	return r.deleter.DeleteOne(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
@@ -75,6 +81,16 @@ func (r *pgRepository) Delete(ctx context.Context, tenant string, id string) err
 func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error) {
 	var runtimeCtxEnt RuntimeContext
 	if err := r.singleGetter.Get(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &runtimeCtxEnt); err != nil {
+		return nil, err
+	}
+
+	return r.conv.FromEntity(&runtimeCtxEnt), nil
+}
+
+// GetByRuntimeID retrieves the RuntimeContext by provided runtimeID from the database within the given tenant
+func (r *pgRepository) GetByRuntimeID(ctx context.Context, tenant, runtimeID string) (*model.RuntimeContext, error) {
+	var runtimeCtxEnt RuntimeContext
+	if err := r.singleGetter.Get(ctx, resource.RuntimeContext, tenant, repo.Conditions{repo.NewEqualCondition("runtime_id", runtimeID)}, repo.NoOrderBy, &runtimeCtxEnt); err != nil {
 		return nil, err
 	}
 
@@ -245,6 +261,43 @@ func (r *pgRepository) ListAllForRuntime(ctx context.Context, tenant, runtimeID 
 	var entities RuntimeContextCollection
 
 	if err := r.lister.List(ctx, resource.RuntimeContext, tenant, &entities, repo.NewEqualCondition("runtime_id", runtimeID)); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities), nil
+}
+
+// ListByScenariosAndRuntimeIDs lists all runtime contexts that are in any of the given scenarios and are owned by any of the runtimes provided
+func (r *pgRepository) ListByScenariosAndRuntimeIDs(ctx context.Context, tenant string, scenarios []string, runtimeIDs []string) ([]*model.RuntimeContext, error) {
+	if len(runtimeIDs) == 0 || len(scenarios) == 0 {
+		return nil, nil
+	}
+	tenantUUID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, apperrors.NewInvalidDataError("tenantID is not UUID")
+	}
+
+	var entities RuntimeContextCollection
+
+	// Scenarios query part
+	scenariosFilters := make([]*labelfilter.LabelFilter, 0, len(scenarios))
+	for _, scenarioValue := range scenarios {
+		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
+		scenariosFilters = append(scenariosFilters, labelfilter.NewForKeyWithQuery(model.ScenariosKey, query))
+	}
+
+	scenariosSubquery, scenariosArgs, err := label.FilterQuery(model.RuntimeContextLabelableObject, label.UnionSet, tenantUUID, scenariosFilters)
+	if err != nil {
+		return nil, errors.Wrap(err, "while creating scenarios filter query")
+	}
+
+	var conditions repo.Conditions
+	if scenariosSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", scenariosSubquery, scenariosArgs))
+	}
+	conditions = append(conditions, repo.NewInConditionForStringValues("runtime_id", runtimeIDs))
+
+	if err = r.lister.List(ctx, resource.RuntimeContext, tenant, &entities, conditions...); err != nil {
 		return nil, err
 	}
 

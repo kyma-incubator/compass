@@ -208,7 +208,7 @@ func TestRepository_Exists(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.formations WHERE tenant_id = $1 AND id = $2`),
-				Args:     []driver.Value{FormationID, Tnt},
+				Args:     []driver.Value{Tnt, FormationID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
@@ -222,8 +222,10 @@ func TestRepository_Exists(t *testing.T) {
 		ConverterMockProvider: func() testdb.Mock {
 			return &automock.EntityConverter{}
 		},
-		TargetID: FormationID,
-		TenantID: Tnt,
+		TargetID:   FormationID,
+		TenantID:   Tnt,
+		MethodName: "Exists",
+		MethodArgs: []interface{}{FormationID, Tnt},
 	}
 
 	suite.Run(t)

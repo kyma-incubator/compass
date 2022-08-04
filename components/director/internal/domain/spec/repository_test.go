@@ -466,6 +466,8 @@ func TestRepository_Exists(t *testing.T) {
 		TargetID:            specID,
 		TenantID:            tenant,
 		RefEntity:           model.APISpecReference,
+		MethodName:          "Exists",
+		MethodArgs:          []interface{}{tenant, specID, model.APISpecReference},
 	}
 
 	eventSpecSuite := testdb.RepoExistTestSuite{
@@ -490,6 +492,8 @@ func TestRepository_Exists(t *testing.T) {
 		TargetID:            specID,
 		TenantID:            tenant,
 		RefEntity:           model.EventSpecReference,
+		MethodName:          "Exists",
+		MethodArgs:          []interface{}{tenant, specID, model.EventSpecReference},
 	}
 
 	apiSpecSuite.Run(t)

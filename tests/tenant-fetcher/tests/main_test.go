@@ -100,7 +100,7 @@ func TestMain(m *testing.M) {
 			InsecureSkipVerify: true,
 		},
 	}
-	saTransport := httputil.NewServiceAccountTokenTransportWithHeader(tr, "Authorization")
+	saTransport := httputil.NewServiceAccountTokenTransportWithHeader(httputil.NewHTTPTransportWrapper(tr), "Authorization")
 	client := &http.Client{
 		Transport: saTransport,
 		Timeout:   time.Second * 30,

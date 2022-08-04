@@ -305,58 +305,39 @@ EOF
 function patchKymaServiceMonitorsForMTLS() {
   kymaSvcMonitors=(
     istio-component-monitor
-    kiali
-    logging-fluent-bit
-    logging-loki
-    monitoring-alertmanager
-    monitoring-apiserver
-    monitoring-grafana
     monitoring-kube-state-metrics
-    monitoring-kubelet
-    monitoring-node-exporter
     monitoring-operator
     monitoring-prometheus
     monitoring-prometheus-istio-server-server
-    ory-hydra-maester
-    ory-oathkeeper-maester
-    tracing-jaeger
-    tracing-jaeger-operator
+    monitoring-prometheus-pushgateway
     tracing-metrics
   )
 
   crd="servicemonitors.monitoring.coreos.com"
   namespace="kyma-system"
-  patchContent=$(cat <<"EOF"
-    scheme: https
-    tlsConfig:
-      caFile: /etc/prometheus/secrets/istio.default/root-cert.pem
-      certFile: /etc/prometheus/secrets/istio.default/cert-chain.pem
-      keyFile: /etc/prometheus/secrets/istio.default/key.pem
-      insecureSkipVerify: true
-EOF
-  )
-
-  echo "$patchContent" > tmp_patch_content.yaml
+  scheme="https"
+  tlsConfig='{
+    "caFile": "/etc/prometheus/secrets/istio.default/root-cert.pem",
+    "certFile": "/etc/prometheus/secrets/istio.default/cert-chain.pem",
+    "keyFile": "/etc/prometheus/secrets/istio.default/key.pem",
+    "insecureSkipVerify": true
+  }'
 
   for sm in "${kymaSvcMonitors[@]}"; do
     if kubectl get ${crd} -n ${namespace} "${sm}" > /dev/null; then
-      kubectl get ${crd} -n ${namespace} "${sm}" -o yaml > "${sm}.yaml"
+      kubectl get ${crd} -n ${namespace} "${sm}" -o json > "${sm}.json"
 
-      if [[ "$OSTYPE" == "darwin"* ]]; then
-        sed -i '' -e '/ port:/r tmp_patch_content.yaml' "${sm}.yaml"
-        sed -i '' -e '/ path:/r tmp_patch_content.yaml' "${sm}.yaml"
-      else # assume Linux otherwise
-        sed -i '/ port:/r tmp_patch_content.yaml' "${sm}.yaml"
-        sed -i '/ path:/r tmp_patch_content.yaml' "${sm}.yaml"
-      fi
+      cp "${sm}.json" tmp.json
+      jq --arg newSchema "$scheme" '.spec.endpoints[].scheme = $newSchema' tmp.json > "${sm}.json"
+      cp "${sm}.json" tmp.json
+      jq --argjson newTlsConfig "$tlsConfig" '.spec.endpoints[].tlsConfig = $newTlsConfig' tmp.json > "${sm}.json"
+      rm tmp.json
 
-      kubectl apply -f "${sm}.yaml" || true
+      kubectl apply -f "${sm}.json" || true
 
-      rm "${sm}.yaml"
+      rm "${sm}.json"
     fi
   done
-
-  rm tmp_patch_content.yaml
 }
 
 function removeKymaPeerAuthsForPrometheus() {
