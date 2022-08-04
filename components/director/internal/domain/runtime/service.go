@@ -272,7 +272,7 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 	}
 
 	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
-	if in.Labels, err = unsafeExtractModifiableLabels(in.Labels, s.protectedLabelPattern, s.immutableLabelPattern); err != nil {
+	if in.Labels, err = s.UnsafeExtractModifiableLabels(in.Labels); err != nil {
 		return err
 	}
 	log.C(ctx).Debugf("Successfully stripped protected labels. Resulting labels after operation are: %+v", in.Labels)
@@ -363,7 +363,7 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeUpdateI
 	delete(in.Labels, model.ScenariosKey)
 
 	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
-	if in.Labels, err = unsafeExtractModifiableLabels(in.Labels, s.protectedLabelPattern, s.immutableLabelPattern); err != nil {
+	if in.Labels, err = s.UnsafeExtractModifiableLabels(in.Labels); err != nil {
 		return err
 	}
 	log.C(ctx).Debugf("Successfully stripped protected labels. Resulting labels after operation are: %+v", in.Labels)
@@ -686,20 +686,6 @@ func extractUnProtectedLabels(labels map[string]*model.Label, protectedLabelsKey
 			return nil, err
 		}
 		if !protected {
-			result[labelKey] = label
-		}
-	}
-	return result, nil
-}
-
-func unsafeExtractModifiableLabels(labels map[string]interface{}, protectedLabelsKeyPattern string, immutableLabelsKeyPattern string) (map[string]interface{}, error) {
-	result := make(map[string]interface{})
-	for labelKey, label := range labels {
-		modifiable, err := isLabelModifiable(labelKey, protectedLabelsKeyPattern, immutableLabelsKeyPattern)
-		if err != nil {
-			return result, err
-		}
-		if modifiable {
 			result[labelKey] = label
 		}
 	}
