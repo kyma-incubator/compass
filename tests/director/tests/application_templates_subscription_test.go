@@ -25,7 +25,8 @@ import (
 
 func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 	t := testingx.NewT(stdT)
-	t.Run("When creating app template with a certificate", func(t *testing.T) {
+	t.Run("When creating app template with a certificate", func(stdT *testing.T) {
+		t := testingx.NewT(stdT)
 		// GIVEN
 		ctx := context.Background()
 
@@ -34,7 +35,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 		subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
 		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
-		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
+		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, conf.ExternalCertProviderConfig)
 		appProviderDirectorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
@@ -43,14 +44,14 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 		appTemplateName := createAppTemplateName("app-template-name-subscription")
 		appTemplateInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
 
-		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), &appTmpl)
-		require.NoError(t, err)
-		require.NotEmpty(t, appTmpl.ID)
+		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
+		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), &appTmpl)
+		require.NoError(stdT, err)
+		require.NotEmpty(stdT, appTmpl.ID)
 
 		selfRegLabelValue, ok := appTmpl.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
-		require.True(t, ok)
-		require.Contains(t, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTmpl.ID)
+		require.True(stdT, ok)
+		require.Contains(stdT, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTmpl.ID)
 
 		httpClient := &http.Client{
 			Timeout: 10 * time.Second,
@@ -60,15 +61,15 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 		}
 
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
-		require.NoError(t, err)
+		require.NoError(stdT, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(t, err)
+		require.NoError(stdT, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
-				t.Logf("Could not close response body %s", err)
+				stdT.Logf("Could not close response body %s", err)
 			}
 		}()
-		require.Equal(t, http.StatusOK, response.StatusCode)
+		require.Equal(stdT, http.StatusOK, response.StatusCode)
 
 		t.Run("Application is created successfully in consumer subaccount as a result of subscription", func(t *testing.T) {
 			//GIVEN
