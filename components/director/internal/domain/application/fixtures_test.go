@@ -420,3 +420,13 @@ func fixApplicationLabels(appID, labelKey1, labelKey2 string, labelValue1 []inte
 		},
 	}
 }
+
+func fixModelApplicationTemplate(id, name string) *model.ApplicationTemplate {
+	desc := "Description for template"
+	return &model.ApplicationTemplate{
+		ID:          id,
+		Name:        name,
+		Description: &desc,
+		AccessLevel: model.GlobalApplicationTemplateAccessLevel,
+	}
+}
