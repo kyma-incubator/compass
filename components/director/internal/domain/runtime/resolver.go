@@ -54,6 +54,7 @@ type RuntimeService interface {
 	GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error)
 	ListLabels(ctx context.Context, runtimeID string) (map[string]*model.Label, error)
 	DeleteLabel(ctx context.Context, runtimeID string, key string) error
+	UnsafeExtractModifiableLabels(labels map[string]interface{}) (map[string]interface{}, error)
 }
 
 // ScenarioAssignmentService missing godoc
@@ -295,6 +296,10 @@ func (r *Resolver) RuntimeByTokenIssuer(ctx context.Context, issuer string) (*gr
 func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegisterInput) (*graphql.Runtime, error) {
 	convertedIn, err := r.converter.RegisterInputFromGraphQL(in)
 	if err != nil {
+		return nil, err
+	}
+
+	if convertedIn.Labels, err = r.runtimeService.UnsafeExtractModifiableLabels(convertedIn.Labels); err != nil {
 		return nil, err
 	}
 
