@@ -43,7 +43,6 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// todo::: delete after the test below is adapted
 func TestSelfRegisterFlow(t *testing.T) {
 	ctx := context.Background()
 	accountTenantID := conf.AccountTenantID // accountTenantID is parent of the tenant/subaccountID of the configured certificate client's tenant below
@@ -109,6 +108,7 @@ func TestSelfRegisterFlow(t *testing.T) {
 	require.Equal(t, 1, numOfScenarioLabelDefinitions)
 }
 
+// todo::: delete after the test below is adapted
 func TestConsumerProviderFlow(stdT *testing.T) {
 	t := testingx.NewT(stdT)
 	t.Run("ConsumerProvider flow", func(t *testing.T) {
