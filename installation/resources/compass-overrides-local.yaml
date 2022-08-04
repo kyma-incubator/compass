@@ -65,8 +65,6 @@ global:
       client:
         skipSSLValidation: true
   tenantFetcher:
-    authentication:
-      allowJWTSigningNone: true
     fieldMapping:
       idField: "guid"
       nameField: "displayName"
