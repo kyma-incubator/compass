@@ -75,7 +75,7 @@ type config struct {
 
 type appTemplateConfig struct {
 	SystemToTemplateMappingsString string `envconfig:"APP_SYSTEM_INFORMATION_SYSTEM_TO_TEMPLATE_MAPPINGS"`
-	TemplateRegion                 string `envconfig:"APP_SYSTEM_INFORMATION_TEMPLATE_REGION"`
+	TemplateRegion                 string `envconfig:"optional,APP_SYSTEM_INFORMATION_TEMPLATE_REGION"`
 	OverrideApplicationInput       string `envconfig:"APP_TEMPLATE_OVERRIDE_APPLICATION_INPUT"`
 	PlaceholderToSystemKeyMappings string `envconfig:"APP_TEMPLATE_PLACEHOLDER_TO_SYSTEM_KEY_MAPPINGS"`
 }
