@@ -71,6 +71,8 @@ spec:
               value: {{ .Values.global.tenantFetcher.tenantProvider.subaccountTenantIdProperty }}
             - name: APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.subdomainProperty }}
+            - name: APP_ALLOW_JWT_SIGNING_NONE
+              value: {{ .Values.global.tenantFetcher.authentication.allowJWTSigningNone | quote }}
             - name: APP_TENANT_PROVIDER
               value: {{ .Values.global.tenantFetcher.tenantProvider.name }}
             - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY

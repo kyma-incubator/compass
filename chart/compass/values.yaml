@@ -526,6 +526,7 @@ global:
     requiredAuthScope: Callback
     fetchTenantAuthScope: fetch_tenant
     authentication:
+      allowJWTSigningNone: false
       jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
     tenantProvider:
       tenantIdProperty: "tenantId"
