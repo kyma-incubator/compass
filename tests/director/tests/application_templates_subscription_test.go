@@ -137,6 +137,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 
 			// Create Bundle
 			bndlInput := fixtures.FixBundleCreateInputWithRelatedObjects(t, "bndl-app-1")
+			stripSensitiveFieldValues(&bndlInput) // because it would be stripped in the bundleOutput when making the request w/t appProviderDirectorCertSecuredClient later and the AssertBundle would fail
 			bndl, err := testctx.Tc.Graphqlizer.BundleCreateInputToGQL(bndlInput)
 			require.NoError(t, err)
 			addBndlRequest := fixtures.FixAddBundleRequest(subscribedApplication.ID, bndl)
@@ -150,7 +151,6 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			require.NoError(t, err)
 			require.NotEmpty(t, bundleOutput.ID)
 
-			stripSensitiveFieldValues(&bndlInput, &bundleOutput) // because it would be stripped in the bundleOutput when making the request w/t appProviderDirectorCertSecuredClient
 			assertions.AssertBundle(t, &bndlInput, &bundleOutput)
 
 			// Ensure fetching application returns also the added bundle
@@ -292,7 +292,7 @@ func buildSubscriptionRequest(t *testing.T, ctx context.Context, subscriptionCon
 	return subscribeReq
 }
 
-func stripSensitiveFieldValues(bundleInput *graphql.BundleCreateInput, bundleOuput *graphql.BundleExt) {
+func stripSensitiveFieldValues(bundleInput *graphql.BundleCreateInput) {
 	for i := range bundleInput.Documents {
 		bundleInput.Documents[i].FetchRequest = nil
 	}
@@ -301,15 +301,5 @@ func stripSensitiveFieldValues(bundleInput *graphql.BundleCreateInput, bundleOup
 	}
 	for i := range bundleInput.EventDefinitions {
 		bundleInput.EventDefinitions[i].Spec.FetchRequest = nil
-	}
-
-	for i := range bundleOuput.Documents.Data {
-		bundleOuput.Documents.Data[i].FetchRequest = nil
-	}
-	for i := range bundleOuput.APIDefinitions.Data {
-		bundleOuput.APIDefinitions.Data[i].Spec.FetchRequest = nil
-	}
-	for i := range bundleOuput.EventDefinitions.Data {
-		bundleOuput.EventDefinitions.Data[i].Spec.FetchRequest = nil
 	}
 }
