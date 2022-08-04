@@ -182,7 +182,7 @@ func (j *job) getFeaturesConfig() features.Config {
 		ProtectedLabelPattern:        j.getEnvValueForKey(".*_defaultEventing|^consumer_subaccount_ids$", emptyValue),
 		ImmutableLabelPattern:        j.getEnvValueForKey("^xsappnameCMPClone$", "APP_SELF_REGISTER_LABEL_KEY_PATTERN"),
 		SubscriptionProviderLabelKey: j.getEnvValueForKey("subscriptionProviderId", "APP_SUBSCRIPTION_PROVIDER_LABEL_KEY"),
-		ConsumerSubaccountLabelKey:   j.getEnvValueForKey("consumer_subaccount_id", "APP_CONSUMER_SUBACCOUNT_LABEL_KEY"),
+		ConsumerSubaccountLabelKey:   j.getEnvValueForKey("global_subaccount_id", "APP_CONSUMER_SUBACCOUNT_LABEL_KEY"),
 	}
 }
 
