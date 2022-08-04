@@ -67,7 +67,10 @@ func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData 
 	if !ok {
 		return ObjectContext{}, errors.New(fmt.Sprintf("region label not found for tenant with ID: %q", tenantMapping.ID))
 	}
-	regionStr := region.(string)
+	regionStr, ok := region.(string)
+	if !ok {
+		return ObjectContext{}, errors.New(fmt.Sprintf("unexpected Labels type: %T, should be string", region))
+	}
 	authDetails.Region = regionStr
 
 	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), c.tenantKeys, userCtxData.scopes, mergeWithOtherScopes, authDetails.Region, userCtxData.clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.ConsumerProviderObjectContextProvider)
@@ -79,7 +82,11 @@ func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData 
 		tenantMapping.Labels["subdomain"] = subdomain
 	}
 
-	subdomainString := subdomain.(string)
+	subdomainString, ok := subdomain.(string)
+	if !ok {
+		return ObjectContext{}, errors.New(fmt.Sprintf("unexpected Labels type: %T, should be string", subdomain))
+	}
+
 	tenantToUpdate := &schema.BusinessTenantMappingInput{
 		Name:           *tenantMapping.Name,
 		ExternalTenant: tenantMapping.ID,
