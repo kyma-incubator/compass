@@ -199,7 +199,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			require.Contains(t, err.Error(), expectedErrMsg)
 		})
 
-		t.Run("Application Provider in one region is denied querying and pushing consumer app metadata (bundle) for application created from subscription in different region", func(t *testing.T) {
+		t.Run("Application Provider in one region is denied querying and pushing consumer app bundle metadata for application created from subscription in different region", func(t *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
