@@ -174,14 +174,17 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			require.NoError(t, err)
 
 			require.Len(t, actualConsumerAppPage.Data, 1)
-			require.Equal(t, appTmpl.ID, *actualConsumerAppPage.Data[0].ApplicationTemplateID)
+			subscribedApp := actualConsumerAppPage.Data[0]
+			require.Equal(t, appTmpl.ID, *subscribedApp.ApplicationTemplateID)
+			require.NotEqual(t, firstApp.ID, subscribedApp.ID)
+			require.NotEqual(t, secondApp.ID, subscribedApp.ID)
 
 			actualAllAppsPage := graphql.ApplicationPage{}
 			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAllAppsPage)
 			require.NoError(t, err)
 
 			require.Len(t, actualAllAppsPage.Data, 3)
-			require.ElementsMatch(t, []string{firstApp.ID, secondApp.ID, actualConsumerAppPage.Data[0].ID}, []string{actualAppPage.Data[0].ID, actualAppPage.Data[1].ID, actualAllAppsPage.Data[2].ID})
+			require.ElementsMatch(t, []string{firstApp.ID, secondApp.ID, subscribedApp.ID}, []string{actualAllAppsPage.Data[0].ID, actualAllAppsPage.Data[1].ID, actualAllAppsPage.Data[2].ID})
 
 			subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
@@ -190,7 +193,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			require.NoError(t, err)
 
 			require.Len(t, actualAppPage.Data, 2)
-			require.ElementsMatch(t, []string{firstApp.ID, secondApp.ID}, []string{actualAppPage.Data[0].ID, actualAppPage.Data[1].ID})
+			require.ElementsMatch(t, []string{firstApp.ID, secondApp.ID}, []string{actualFinalAppPage.Data[0].ID, actualFinalAppPage.Data[1].ID})
 
 		})
 
