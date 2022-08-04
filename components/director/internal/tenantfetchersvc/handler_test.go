@@ -357,7 +357,7 @@ func TestService_Dependencies(t *testing.T) {
 		},
 	}
 
-	validResponse := fmt.Sprintf("[{\"xsappname\":%s}]", xsappname)
+	validResponse := fmt.Sprintf("[{\"xsappname\":\"%s\"}]", xsappname)
 
 	testCases := []struct {
 		Name                  string
@@ -416,6 +416,10 @@ func TestService_Dependencies(t *testing.T) {
 				assert.Contains(t, string(body), testCase.ExpectedErrorOutput)
 			} else {
 				assert.NoError(t, err)
+			}
+
+			if testCase.ExpectedSuccessOutput != "" {
+				assert.Equal(t, testCase.ExpectedSuccessOutput, string(body))
 			}
 
 			assert.Equal(t, testCase.ExpectedStatusCode, resp.StatusCode)
