@@ -168,7 +168,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 
 		})
 
-		t.Run("Application Provider is denied querying and pushing consumer app metadata (bundle) without previously created subscription", func(t *testing.T) {
+		t.Run("Application Provider is denied querying and pushing consumer app bundle metadata without previously created subscription", func(t *testing.T) {
 			// Create consumer token
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
 			headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
@@ -177,7 +177,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			actualAppPage := graphql.ApplicationPage{}
 			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
 			getSrcAppReq.Header = headers
-			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getSrcAppReq, &actualAppPage)
+			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertSecuredClient, getSrcAppReq, &actualAppPage)
 			require.Error(t, err)
 
 			expectedErrMsg := fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the applications table for any application templates in the provider tenant", subscriptionConsumerSubaccountID)
