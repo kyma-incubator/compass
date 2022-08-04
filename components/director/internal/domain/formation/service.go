@@ -3,7 +3,6 @@ package formation
 import (
 	"context"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
@@ -319,12 +318,10 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 
 func (s *service) isValidRuntimeType(ctx context.Context, tnt string, objectID string, formation model.Formation) error {
 	formationEntity, err := s.formationRepository.GetByName(ctx, formation.Name, tnt)
-	spew.Dump(formationEntity)
 	if err != nil {
 		return err
 	}
 	formationTemplate, err := s.formationTemplateRepository.Get(ctx, formationEntity.FormationTemplateID)
-	spew.Dump(formationTemplate)
 	if err != nil {
 		return err
 	}
@@ -335,13 +332,11 @@ func (s *service) isValidRuntimeType(ctx context.Context, tnt string, objectID s
 		ObjectType: model.RuntimeLabelableObject,
 		Version:    0,
 	})
-	spew.Dump(runtimeTypeLabel)
 	if err != nil {
-		spew.Dump(err)
 		return err
 	}
-	runtimeType := runtimeTypeLabel.Value.(string)
-	if runtimeType != formationTemplate.RuntimeType {
+
+	if runtimeType, ok := runtimeTypeLabel.Value.(string); !ok || runtimeType != formationTemplate.RuntimeType {
 		return apperrors.NewInvalidOperationError(fmt.Sprintf("unsupported runtimeType %q for formation template %q, allowing only %q", runtimeType, formationTemplate.Name, formationTemplate.RuntimeType))
 	}
 	return nil
