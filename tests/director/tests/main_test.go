@@ -55,7 +55,6 @@ type DirectorConfig struct {
 	ProviderClientSecret                   string
 	BasicUsername                          string
 	BasicPassword                          string
-	ExternalCertTestCN                     string
 	ExternalCertCommonName                 string `envconfig:"EXTERNAL_CERT_COMMON_NAME"`
 	CertSvcInstanceTestIntSystemSecretName string `envconfig:"CERT_SVC_INSTANCE_TEST_INTEGRATION_SYSTEM_SECRET_NAME"`
 	ExternalCertTestIntSystemOUSubaccount  string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT"`
