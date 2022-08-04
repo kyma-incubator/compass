@@ -3163,7 +3163,7 @@ func TestService_UnsafeExtractModifiableLabels(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
-			svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, ".*_defaultEventing$", immutableLabelPattern, "", "")
+			svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "")
 
 			// WHEN
 			extractedLabels, err := svc.UnsafeExtractModifiableLabels(testCase.InputLabels)
