@@ -342,9 +342,11 @@ func TestService_Dependencies(t *testing.T) {
 		regionPathVar  = "region"
 		missingRegion  = "us"
 		existingRegion = "europe"
-		xsappname = "xsappname"
+		xsappname      = "xsappname"
 	)
 	target := fmt.Sprintf("/v1/regional/:%s/dependencies", regionPathVar)
+
+	subscriberSvc := &automock.TenantSubscriber{}
 
 	validHandlerConfig := tenantfetchersvc.HandlerConfig{
 		RegionPathParam: "region",
@@ -358,23 +360,17 @@ func TestService_Dependencies(t *testing.T) {
 	validResponse := fmt.Sprintf("[{\"xsappname\":%s}]", xsappname)
 
 	testCases := []struct {
-		Name                string
-		Request             *http.Request
-		PathParams          map[string]string
-		TenantSubscriberSvc func() *automock.TenantSubscriber
-		ExpectedErrorOutput string
-		ExpectedStatusCode  int
+		Name                  string
+		Request               *http.Request
+		PathParams            map[string]string
+		ExpectedErrorOutput   string
+		ExpectedStatusCode    int
 		ExpectedSuccessOutput string
-
 	}{
 		{
-			Name:       "Failure when region path param is missing",
-			Request:    httptest.NewRequest(http.MethodGet, target, nil),
-			PathParams: map[string]string{},
-			TenantSubscriberSvc: func() *automock.TenantSubscriber {
-				svc := &automock.TenantSubscriber{}
-				return svc
-			},
+			Name:                "Failure when region path param is missing",
+			Request:             httptest.NewRequest(http.MethodGet, target, nil),
+			PathParams:          map[string]string{},
 			ExpectedStatusCode:  http.StatusBadRequest,
 			ExpectedErrorOutput: "Region path parameter is missing from request",
 		},
@@ -383,10 +379,6 @@ func TestService_Dependencies(t *testing.T) {
 			Request: httptest.NewRequest(http.MethodGet, target, nil),
 			PathParams: map[string]string{
 				regionPathVar: missingRegion,
-			},
-			TenantSubscriberSvc: func() *automock.TenantSubscriber {
-				svc := &automock.TenantSubscriber{}
-				return svc
 			},
 			ExpectedStatusCode:  http.StatusBadRequest,
 			ExpectedErrorOutput: fmt.Sprintf("Invalid region provided: %s", missingRegion),
@@ -397,10 +389,6 @@ func TestService_Dependencies(t *testing.T) {
 			PathParams: map[string]string{
 				regionPathVar: existingRegion,
 			},
-			TenantSubscriberSvc: func() *automock.TenantSubscriber {
-				svc := &automock.TenantSubscriber{}
-				return svc
-			},
 			ExpectedStatusCode:    http.StatusOK,
 			ExpectedSuccessOutput: validResponse,
 		},
@@ -408,7 +396,6 @@ func TestService_Dependencies(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			subscriberSvc := testCase.TenantSubscriberSvc()
 			defer mock.AssertExpectationsForObjects(t, subscriberSvc)
 
 			handler := tenantfetchersvc.NewTenantsHTTPHandler(subscriberSvc, validHandlerConfig)
