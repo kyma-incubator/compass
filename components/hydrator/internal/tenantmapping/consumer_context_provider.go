@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -79,7 +80,7 @@ func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData 
 	subdomain, exists := tenantMapping.Labels["subdomain"]
 	if !exists {
 		log.C(ctx).Warningf("subdomain label not found for tenant with ID: %q", tenantMapping.ID)
-		tenantMapping.Labels["subdomain"] = subdomain
+		tenantMapping.Labels["subdomain"] = userCtxData.subdomain
 	}
 
 	subdomainString, ok := subdomain.(string)
@@ -106,7 +107,8 @@ func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData 
 }
 
 // Match checks if there is "user_context" Header with non-empty value. If so AuthDetails object is build.
-func (c *consumerContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
+func (c *consumerContextProvider) Match(ctx context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
+	spew.Dump(data) // todo::: remove
 	userContextHeader := data.Header.Get(oathkeeper.UserContextKey)
 	if userContextHeader == "" {
 		return false, nil, apperrors.NewKeyDoesNotExistError(oathkeeper.UserContextKey)

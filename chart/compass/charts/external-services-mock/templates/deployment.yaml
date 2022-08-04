@@ -132,6 +132,8 @@ spec:
                 value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
               - name: APP_TENANT_CONFIG_SUBSCRIPTION_PROVIDER_APP_NAME_VALUE
                 value: {{ .Values.global.tests.subscription.subscriptionProviderAppNameValue }}
+              - name: APP_TENANT_CONFIG_TEST_PROVIDER_SUBACCOUNT_ID
+                value: {{ .Values.global.tests.subscription.tenants.providerSubaccountID }}
               - name: APP_TENANT_CONFIG_TEST_TENANT_ON_DEMAND_ID
                 value: {{ .Values.global.tests.tenantFetcher.tenantOnDemandID }}
               ports:
