@@ -527,7 +527,7 @@ func (s *service) UnsafeExtractModifiableLabels(labels map[string]interface{}) (
 	for labelKey, lbl := range labels {
 		modifiable, err := isLabelModifiable(labelKey, s.protectedLabelPattern, s.immutableLabelPattern)
 		if err != nil {
-			return result, err
+			return nil, err
 		}
 		if modifiable {
 			result[labelKey] = lbl
