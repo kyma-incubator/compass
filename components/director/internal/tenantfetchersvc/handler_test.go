@@ -340,8 +340,8 @@ func TestService_SubscriptionFlows(t *testing.T) {
 func TestService_Dependencies(t *testing.T) {
 	const (
 		regionPathVar  = "region"
-		missingRegion  = "us"
-		existingRegion = "europe"
+		missingRegion  = "eu-2"
+		existingRegion = "eu-1"
 		xsappname      = "xsappname"
 	)
 	target := fmt.Sprintf("/v1/regional/:%s/dependencies", regionPathVar)
