@@ -201,16 +201,6 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 		return nil, err
 	}
 
-	labelFilter := labelfilter.MultipleFromGraphQL(filter)
-
-	var cursor string
-	if after != nil {
-		cursor = string(*after)
-	}
-	if first == nil {
-		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
-	}
-
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -220,6 +210,7 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 	ctx = persistence.SaveToContext(ctx, tx)
 
 	if consumerInfo.OnBehalfOf != "" {
+		log.C(ctx).Infof("External tenant with id %s is retrieving application on behalf of tenant with id %s", consumerInfo.ConsumerID, consumerInfo.OnBehalfOf)
 		app, err := r.applicationForTenant(ctx)
 		if err != nil {
 			return nil, err
@@ -239,6 +230,16 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 				HasNextPage: false,
 			},
 		}, nil
+	}
+
+	labelFilter := labelfilter.MultipleFromGraphQL(filter)
+
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+	if first == nil {
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
 	}
 
 	appPage, err := r.appSvc.List(ctx, labelFilter, *first, cursor)

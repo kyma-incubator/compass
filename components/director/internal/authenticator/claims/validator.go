@@ -226,7 +226,7 @@ func (v *validator) validateApplicationProvider(ctx context.Context, claims Clai
 	log.C(ctx).Infof("Found %d applications in consumer tenant using label: %q and external tenant ID: %q", len(applications), v.consumerSubaccountLabelKey, consumerExternalTenantID)
 
 	for _, application := range applications {
-		if *application.ApplicationTemplateID == applicationTemplate.ID {
+		if application.ApplicationTemplateID != nil && *application.ApplicationTemplateID == applicationTemplate.ID {
 			found = true
 			break
 		}

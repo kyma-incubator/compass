@@ -23,8 +23,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
-	t := testingx.NewT(stdT)
+func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
+	t := testingx.NewT(baseT)
 	t.Run("When creating app template with a certificate", func(stdT *testing.T) {
 		t := testingx.NewT(stdT)
 		// GIVEN
@@ -139,13 +139,13 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 
 		t.Run("Application Provider can only see the consumer SaaS application record created from subscription and no other applications that may exist in consumer subaccount", func(t *testing.T) {
 			//GIVEN
-			firstApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "firstApp", tenant.TestTenants.GetDefaultTenantID())
-			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &firstApp)
+			firstApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, baseT.Name()[:26]+"_firstApp", subscriptionConsumerSubaccountID)
+			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &firstApp)
 			require.NoError(t, err)
 			require.NotEmpty(t, firstApp.ID)
 
-			secondApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "secondApp", tenant.TestTenants.GetDefaultTenantID())
-			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &secondApp)
+			secondApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, baseT.Name()[:26]+"_secondApp", subscriptionConsumerSubaccountID)
+			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &secondApp)
 			require.NoError(t, err)
 			require.NotEmpty(t, secondApp.ID)
 
@@ -155,7 +155,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			require.NoError(t, err)
 
 			require.Len(t, actualAppPage.Data, 2)
-			require.EqualValues(t, []string{firstApp.ID, secondApp.ID}, []string{actualAppPage.Data[0].ID, actualAppPage.Data[1].ID})
+			require.ElementsMatch(t, []string{firstApp.ID, secondApp.ID}, []string{actualAppPage.Data[0].ID, actualAppPage.Data[1].ID})
 
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
@@ -181,7 +181,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			require.NoError(t, err)
 
 			require.Len(t, actualAllAppsPage.Data, 3)
-			require.EqualValues(t, []string{firstApp.ID, secondApp.ID, actualConsumerAppPage.Data[0].ID}, []string{actualAppPage.Data[0].ID, actualAppPage.Data[1].ID, actualAllAppsPage.Data[2].ID})
+			require.ElementsMatch(t, []string{firstApp.ID, secondApp.ID, actualConsumerAppPage.Data[0].ID}, []string{actualAppPage.Data[0].ID, actualAppPage.Data[1].ID, actualAllAppsPage.Data[2].ID})
 
 			subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
@@ -190,7 +190,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			require.NoError(t, err)
 
 			require.Len(t, actualAppPage.Data, 2)
-			require.EqualValues(t, []string{firstApp.ID, secondApp.ID}, []string{actualAppPage.Data[0].ID, actualAppPage.Data[1].ID})
+			require.ElementsMatch(t, []string{firstApp.ID, secondApp.ID}, []string{actualAppPage.Data[0].ID, actualAppPage.Data[1].ID})
 
 		})
 
