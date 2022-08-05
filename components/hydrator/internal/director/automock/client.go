@@ -191,13 +191,13 @@ func (_m *Client) UpdateSystemAuth(ctx context.Context, sysAuth *model.SystemAut
 	return r0, r1
 }
 
-// UpdateTenant provides a mock function with given fields: ctx, tenantID, tenant
-func (_m *Client) UpdateTenant(ctx context.Context, tenantID string, tenant *graphql.BusinessTenantMappingInput) error {
-	ret := _m.Called(ctx, tenantID, tenant)
+// WriteTenants provides a mock function with given fields: ctx, tenants
+func (_m *Client) WriteTenants(ctx context.Context, tenants []graphql.BusinessTenantMappingInput) error {
+	ret := _m.Called(ctx, tenants)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *graphql.BusinessTenantMappingInput) error); ok {
-		r0 = rf(ctx, tenantID, tenant)
+	if rf, ok := ret.Get(0).(func(context.Context, []graphql.BusinessTenantMappingInput) error); ok {
+		r0 = rf(ctx, tenants)
 	} else {
 		r0 = ret.Error(0)
 	}

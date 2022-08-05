@@ -297,8 +297,8 @@ func getCertServiceObjectContextProviderConsumer(objectContexts []ObjectContext)
 
 func getOnBehalfConsumer(objectContexts []ObjectContext) string {
 	for _, objCtx := range objectContexts {
-		//if objCtx.ContextProvider != tenantmapping.CertServiceObjectContextProvider {
-		if objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider {
+		if objCtx.ContextProvider != tenantmapping.CertServiceObjectContextProvider {
+			//if objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider { // todo::: remove
 			return objCtx.ConsumerID
 		}
 	}
@@ -307,8 +307,8 @@ func getOnBehalfConsumer(objectContexts []ObjectContext) string {
 
 func getRegionFromConsumerToken(objectContexts []ObjectContext) string {
 	for _, objCtx := range objectContexts {
-		//if objCtx.ContextProvider == tenantmapping.AuthenticatorObjectContextProvider || objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider {
-		if objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider {
+		if objCtx.ContextProvider == tenantmapping.AuthenticatorObjectContextProvider || objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider {
+			//if objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider { // todo::: remove
 			return objCtx.Region
 		}
 	}
@@ -317,8 +317,8 @@ func getRegionFromConsumerToken(objectContexts []ObjectContext) string {
 
 func getClientIDFromConsumerToken(objectContexts []ObjectContext) string {
 	for _, objCtx := range objectContexts {
-		//if objCtx.ContextProvider == tenantmapping.AuthenticatorObjectContextProvider || objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider {
-		if objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider {
+		if objCtx.ContextProvider == tenantmapping.AuthenticatorObjectContextProvider || objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider {
+			//if objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider { // todo::: remove
 			return objCtx.OauthClientID
 		}
 	}
