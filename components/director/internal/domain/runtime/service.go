@@ -60,7 +60,6 @@ type labelUpsertService interface {
 //go:generate mockery --exported --name=scenariosService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type scenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
-	AddDefaultScenarioIfEnabled(ctx context.Context, tenant string, labels *map[string]interface{})
 }
 
 //go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -261,8 +260,6 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 	if err = s.repo.Create(ctx, rtmTenant, rtm); err != nil {
 		return errors.Wrapf(err, "while creating Runtime")
 	}
-
-	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, rtmTenant, &in.Labels)
 
 	if in.Labels == nil || in.Labels[IsNormalizedLabel] == nil {
 		if in.Labels == nil {

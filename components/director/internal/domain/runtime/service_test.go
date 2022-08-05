@@ -34,6 +34,7 @@ var (
 	runtimeTypeLabelKey       = "runtimeType"
 	kymaRuntimeTypeLabelValue = "kyma"
 	testUUID                  = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
+	testScenario              = "test-scenario"
 )
 
 func TestService_CreateWithMandatoryLabels(t *testing.T) {
@@ -47,7 +48,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 
 	desc := "Lorem ipsum"
 	labels := map[string]interface{}{
-		model.ScenariosKey:          []interface{}{"DEFAULT"},
+		model.ScenariosKey:          []interface{}{testScenario},
 		"protected_defaultEventing": "true",
 	}
 
@@ -92,7 +93,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			Name:        "foo.bar-not",
 			Description: &desc,
 			Labels: map[string]interface{}{
-				model.ScenariosKey:                 []interface{}{"DEFAULT"},
+				model.ScenariosKey:                 []interface{}{testScenario},
 				scenarioassignment.SubaccountIDKey: 213,
 			},
 			Webhooks: []*model.WebhookInput{{
@@ -105,10 +106,6 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 		runtime.IsNormalizedLabel:          "true",
 		scenarioassignment.SubaccountIDKey: extSubaccountID,
 		runtimeTypeLabelKey:                kymaRuntimeTypeLabelValue,
-	}
-
-	labelsForDBMockWithoutNormalization := map[string]interface{}{
-		scenarioassignment.SubaccountIDKey: extSubaccountID,
 	}
 
 	labelsForDBMockWithMandatoryLabels := map[string]interface{}{
@@ -213,11 +210,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				repo.On("Create", ctxWithIntSysConsumer, tnt, runtimeModel).Return(nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				svc := &automock.ScenariosService{}
-				svc.On("AddDefaultScenarioIfEnabled", ctxWithIntSysConsumer, tnt, &labels).Return().Once()
-				return svc
-			},
+			ScenariosServiceFn: unusedScenarioService,
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
 				repo.On("UpsertMultipleLabels", ctxWithIntSysConsumer, "tenant", model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithMandatoryLabels).Return(nil).Once()
@@ -236,7 +229,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("AssignFormation", ctxWithIntSysConsumer, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: model.DefaultScenario}).Return(&model.Formation{Name: model.DefaultScenario}, nil)
+				svc.On("AssignFormation", ctxWithIntSysConsumer, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: testScenario}).Return(&model.Formation{Name: testScenario}, nil)
 				return svc
 			},
 			Input: modelInput(),
@@ -256,11 +249,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				repo.On("Create", ctxWithIntSysConsumer, tnt, runtimeModel).Return(nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				svc := &automock.ScenariosService{}
-				svc.On("AddDefaultScenarioIfEnabled", ctxWithIntSysConsumer, tnt, &labels).Return().Once()
-				return svc
-			},
+			ScenariosServiceFn: unusedScenarioService,
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
 				repo.On("UpsertMultipleLabels", ctxWithIntSysConsumer, "tenant", model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithMandatoryLabels).Return(nil).Once()
@@ -275,7 +264,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			WebhookServiceFn: rtmtest.UnusedWebhookService,
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("AssignFormation", ctxWithIntSysConsumer, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: model.DefaultScenario}).Return(&model.Formation{Name: model.DefaultScenario}, nil)
+				svc.On("AssignFormation", ctxWithIntSysConsumer, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: testScenario}).Return(&model.Formation{Name: testScenario}, nil)
 				return svc
 			},
 			Input: modelInputWithoutWebhooks(),
@@ -295,11 +284,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				repo.On("Create", ctxWithSubaccountMatcher, subaccountID, runtimeModel).Return(nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				svc := &automock.ScenariosService{}
-				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccountMatcher, subaccountID, &labelsForDBMockWithoutNormalization).Return().Once()
-				return svc
-			},
+			ScenariosServiceFn: unusedScenarioService,
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
 				repo.On("UpsertMultipleLabels", ctxWithSubaccountMatcher, subaccountID, model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithSubaccount).Return(nil).Once()
@@ -337,11 +322,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				repo.On("Create", ctxWithSubaccountMatcher, subaccountID, runtimeModel).Return(nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				svc := &automock.ScenariosService{}
-				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccountMatcher, subaccountID, &labelsForDBMockWithoutNormalization).Return().Once()
-				return svc
-			},
+			ScenariosServiceFn: unusedScenarioService,
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
 				repo.On("UpsertMultipleLabels", ctxWithSubaccountMatcher, subaccountID, model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithSubaccount).Return(nil).Once()
@@ -381,11 +362,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				repo.On("Create", ctxWithSubaccountMatcher, subaccountID, runtimeModel).Return(nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				svc := &automock.ScenariosService{}
-				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccountMatcher, subaccountID, &labelsForDBMockWithoutNormalization).Return().Once()
-				return svc
-			},
+			ScenariosServiceFn: unusedScenarioService,
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
 				repo.On("UpsertMultipleLabels", ctxWithSubaccountMatcher, subaccountID, model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithSubaccount).Return(nil).Once()
@@ -422,11 +399,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				repo.On("Create", ctxWithIntSysConsumer, tnt, runtimeModel).Return(nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				repo := &automock.ScenariosService{}
-				repo.On("AddDefaultScenarioIfEnabled", mock.Anything, tnt, &nilLabels).Once()
-				return repo
-			},
+			ScenariosServiceFn: unusedScenarioService,
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
 				repo.On("UpsertMultipleLabels", ctxWithIntSysConsumer, "tenant", model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithRuntimeType).Return(nil).Once()
@@ -534,11 +507,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				repo.On("Create", ctxWithSubaccountMatcher, subaccountID, runtimeModel).Return(nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				svc := &automock.ScenariosService{}
-				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccountMatcher, subaccountID, &labelsForDBMockWithoutNormalization).Return().Once()
-				return svc
-			},
+			ScenariosServiceFn: unusedScenarioService,
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
 				repo.On("UpsertMultipleLabels", ctxWithSubaccountMatcher, subaccountID, model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithSubaccount).Return(nil).Once()
@@ -571,11 +540,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				repo.On("Create", ctxWithIntSysConsumer, tnt, runtimeModel).Return(nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				svc := &automock.ScenariosService{}
-				svc.On("AddDefaultScenarioIfEnabled", ctxWithIntSysConsumer, tnt, &labels).Return().Once()
-				return svc
-			},
+			ScenariosServiceFn: unusedScenarioService,
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
 				repo.On("UpsertMultipleLabels", ctxWithIntSysConsumer, "tenant", model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithMandatoryLabels).Return(nil).Once()
@@ -590,7 +555,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("AssignFormation", mock.Anything, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: model.DefaultScenario}).Return(&model.Formation{Name: model.DefaultScenario}, nil)
+				svc.On("AssignFormation", mock.Anything, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: testScenario}).Return(&model.Formation{Name: testScenario}, nil)
 				return svc
 			},
 			Input: modelInput(),
@@ -610,11 +575,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				repo.On("Create", ctxWithSubaccountMatcher, subaccountID, runtimeModel).Return(nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				svc := &automock.ScenariosService{}
-				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccountMatcher, subaccountID, &labelsForDBMockWithoutNormalization).Return().Once()
-				return svc
-			},
+			ScenariosServiceFn: unusedScenarioService,
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
 				repo.On("UpsertMultipleLabels", ctxWithSubaccountMatcher, subaccountID, model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithSubaccount).Return(nil).Once()
@@ -651,11 +612,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				repo.On("Create", ctxWithIntSysConsumer, tnt, runtimeModel).Return(nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				svc := &automock.ScenariosService{}
-				svc.On("AddDefaultScenarioIfEnabled", ctxWithIntSysConsumer, tnt, &labels).Return().Once()
-				return svc
-			},
+			ScenariosServiceFn: unusedScenarioService,
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
 				repo.On("UpsertMultipleLabels", ctxWithIntSysConsumer, "tenant", model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithRuntimeType).Return(testErr).Once()
@@ -666,7 +623,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			WebhookServiceFn: rtmtest.UnusedWebhookService,
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("AssignFormation", mock.Anything, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: model.DefaultScenario}).Return(&model.Formation{Name: model.DefaultScenario}, nil)
+				svc.On("AssignFormation", mock.Anything, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: testScenario}).Return(&model.Formation{Name: testScenario}, nil)
 				return svc
 			},
 			Input: modelInput(),
@@ -683,18 +640,14 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				repo.On("Create", ctx, tnt, runtimeModel).Return(nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				svc := &automock.ScenariosService{}
-				svc.On("AddDefaultScenarioIfEnabled", ctx, tnt, &labels).Return().Once()
-				return svc
-			},
+			ScenariosServiceFn:   unusedScenarioService,
 			LabelUpsertServiceFn: unusedLabelUpsertService,
 			TenantSvcFn:          unusedTenantService,
 			UIDServiceFn:         rtmtest.UnusedUUIDService,
 			WebhookServiceFn:     unusedWebhookService,
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("AssignFormation", mock.Anything, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: model.DefaultScenario}).Return(nil, testErr)
+				svc.On("AssignFormation", mock.Anything, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: testScenario}).Return(nil, testErr)
 				return svc
 			},
 			Input: modelInput(),
@@ -714,11 +667,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				repo.On("Create", ctxWithSubaccountMatcher, subaccountID, runtimeModel).Return(nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				svc := &automock.ScenariosService{}
-				svc.On("AddDefaultScenarioIfEnabled", ctxWithSubaccountMatcher, subaccountID, &labelsForDBMockWithoutNormalization).Return().Once()
-				return svc
-			},
+			ScenariosServiceFn: unusedScenarioService,
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
 				repo.On("UpsertMultipleLabels", ctxWithSubaccountMatcher, subaccountID, model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithSubaccount).Return(nil).Once()
@@ -756,11 +705,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				repo.On("Create", ctxWithIntSysConsumer, tnt, runtimeModel).Return(nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				svc := &automock.ScenariosService{}
-				svc.On("AddDefaultScenarioIfEnabled", ctxWithIntSysConsumer, tnt, &labels).Return().Once()
-				return svc
-			},
+			ScenariosServiceFn: unusedScenarioService,
 			LabelUpsertServiceFn: func() *automock.LabelUpsertService {
 				repo := &automock.LabelUpsertService{}
 				repo.On("UpsertMultipleLabels", ctxWithIntSysConsumer, "tenant", model.RuntimeLabelableObject, runtimeID, labelsForDBMockWithRuntimeType).Return(nil).Once()
@@ -779,7 +724,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("AssignFormation", ctxWithIntSysConsumer, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: model.DefaultScenario}).Return(&model.Formation{Name: model.DefaultScenario}, nil)
+				svc.On("AssignFormation", ctxWithIntSysConsumer, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: testScenario}).Return(&model.Formation{Name: testScenario}, nil)
 				return svc
 			},
 			Input: modelInput(),
@@ -796,18 +741,14 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 				repo.On("Create", ctx, tnt, runtimeModel).Return(nil).Once()
 				return repo
 			},
-			ScenariosServiceFn: func() *automock.ScenariosService {
-				svc := &automock.ScenariosService{}
-				svc.On("AddDefaultScenarioIfEnabled", ctx, tnt, &labels).Return().Once()
-				return svc
-			},
+			ScenariosServiceFn:   unusedScenarioService,
 			LabelUpsertServiceFn: unusedLabelUpsertService,
 			TenantSvcFn:          unusedTenantService,
 			UIDServiceFn:         rtmtest.UnusedUUIDService,
 			WebhookServiceFn:     unusedWebhookService,
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("AssignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: model.DefaultScenario}).Return(&model.Formation{Name: model.DefaultScenario}, nil)
+				svc.On("AssignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: testScenario}).Return(&model.Formation{Name: testScenario}, nil)
 				return svc
 			},
 			Input: modelInput(),
