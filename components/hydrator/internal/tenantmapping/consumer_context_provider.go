@@ -45,10 +45,9 @@ func NewConsumerContextProvider(clientProvider DirectorClient) *consumerContextP
 // In that header we have claims from which we extract the necessary information, there is no JWT token and signature validation.
 func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	userContextHeader := reqData.Header.Get(oathkeeper.UserContextKey)
-
 	userCtxData, err := c.getUserContextData(userContextHeader)
 	if err != nil {
-		return ObjectContext{}, errors.Wrapf(err, "while getting user context data from %s header", oathkeeper.UserContextKey)
+		return ObjectContext{}, errors.Wrapf(err, "while getting user context data from %q header", oathkeeper.UserContextKey)
 	}
 
 	externalTenantID := userCtxData.externalTenantID
@@ -77,42 +76,37 @@ func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData 
 	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), c.tenantKeys, userCtxData.scopes, mergeWithOtherScopes, authDetails.Region, userCtxData.clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.ConsumerProviderObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
-	subdomain, exists := tenantMapping.Labels["subdomain"]
+	_, exists := tenantMapping.Labels["subdomain"]
 	if !exists {
 		log.C(ctx).Warningf("subdomain label not found for tenant with ID: %q", tenantMapping.ID)
-		tenantMapping.Labels["subdomain"] = userCtxData.subdomain
-	}
+		tenantToUpdate := schema.BusinessTenantMappingInput{
+			Name:           *tenantMapping.Name,
+			ExternalTenant: tenantMapping.ID,
+			Type:           tenantMapping.Type,
+			Parent:         &tenantMapping.ParentID,
+			Region:         &regionStr,
+			Subdomain:      &userCtxData.subdomain,
+			Provider:       tenantMapping.Provider,
+		}
 
-	subdomainString, ok := subdomain.(string)
-	if !ok {
-		return ObjectContext{}, errors.New(fmt.Sprintf("unexpected Labels type: %T, should be string", subdomain))
-	}
-
-	tenantToUpdate := &schema.BusinessTenantMappingInput{
-		Name:           *tenantMapping.Name,
-		ExternalTenant: tenantMapping.ID,
-		Type:           tenantMapping.Type,
-		Parent:         &tenantMapping.ParentID,
-		Region:         &regionStr,
-		Subdomain:      &subdomainString,
-		Provider:       tenantMapping.Provider,
-	}
-
-	if err := c.directorClient.UpdateTenant(ctx, tenantMapping.ID, tenantToUpdate); err != nil {
-		log.C(ctx).Errorf("an error occurred while updating tenant with ID: %q: %v", tenantMapping.ID, err)
-		return ObjectContext{}, err
+		if err := c.directorClient.WriteTenants(ctx, []schema.BusinessTenantMappingInput{tenantToUpdate}); err != nil {
+			log.C(ctx).Errorf("an error occurred while write tenant with external ID: %q: %v", tenantToUpdate.ExternalTenant, err)
+			return ObjectContext{}, err
+		}
 	}
 
 	return objCtx, nil
 }
 
 // Match checks if there is "user_context" Header with non-empty value. If so AuthDetails object is build.
-func (c *consumerContextProvider) Match(ctx context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
+func (c *consumerContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
 	spew.Dump(data) // todo::: remove
 	userContextHeader := data.Header.Get(oathkeeper.UserContextKey)
 	if userContextHeader == "" {
 		return false, nil, apperrors.NewKeyDoesNotExistError(oathkeeper.UserContextKey)
 	}
+
+	fmt.Printf("pptt - userContextHeader in Match: %s\n\n", userContextHeader) // todo::: delete
 
 	// todo::: cert check?
 	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
@@ -131,7 +125,8 @@ func (c *consumerContextProvider) Match(ctx context.Context, data oathkeeper.Req
 }
 
 func (c *consumerContextProvider) getUserContextData(userContextHeader string) (*userContextData, error) {
-	clientID := gjson.Get(userContextHeader, "client_id").String() // todo::: extract + other properties as well
+	fmt.Printf("pptt - userContextHeader in getUserContextData: %s\n\n", userContextHeader) // todo::: delete
+	clientID := gjson.Get(userContextHeader, "client_id").String()                          // todo::: extract + other properties as well
 	if clientID == "" {
 		return &userContextData{}, apperrors.NewInvalidDataError("could not find client_id property")
 	}

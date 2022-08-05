@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
@@ -28,7 +30,7 @@ type DirectorClient interface {
 	GetTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetSystemAuthByID(ctx context.Context, authID string) (*model.SystemAuth, error)
 	UpdateSystemAuth(ctx context.Context, sysAuth *model.SystemAuth) (director.UpdateAuthResult, error)
-	UpdateTenant(ctx context.Context, tenantID string, tenant *schema.BusinessTenantMappingInput) error
+	WriteTenants(ctx context.Context, tenants []schema.BusinessTenantMappingInput) error
 }
 
 // ScopesGetter missing godoc
@@ -125,6 +127,9 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 	addScopesToExtra(objCtxs, reqData)
 
 	addConsumersToExtra(objCtxs, reqData)
+
+	log.C(ctx).Infof("spew dump:")
+	spew.Dump(reqData)
 
 	return reqData.Body
 }
@@ -292,7 +297,8 @@ func getCertServiceObjectContextProviderConsumer(objectContexts []ObjectContext)
 
 func getOnBehalfConsumer(objectContexts []ObjectContext) string {
 	for _, objCtx := range objectContexts {
-		if objCtx.ContextProvider != tenantmapping.CertServiceObjectContextProvider {
+		//if objCtx.ContextProvider != tenantmapping.CertServiceObjectContextProvider {
+		if objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider {
 			return objCtx.ConsumerID
 		}
 	}
@@ -301,7 +307,8 @@ func getOnBehalfConsumer(objectContexts []ObjectContext) string {
 
 func getRegionFromConsumerToken(objectContexts []ObjectContext) string {
 	for _, objCtx := range objectContexts {
-		if objCtx.ContextProvider == tenantmapping.AuthenticatorObjectContextProvider || objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider {
+		//if objCtx.ContextProvider == tenantmapping.AuthenticatorObjectContextProvider || objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider {
+		if objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider {
 			return objCtx.Region
 		}
 	}
@@ -310,7 +317,8 @@ func getRegionFromConsumerToken(objectContexts []ObjectContext) string {
 
 func getClientIDFromConsumerToken(objectContexts []ObjectContext) string {
 	for _, objCtx := range objectContexts {
-		if objCtx.ContextProvider == tenantmapping.AuthenticatorObjectContextProvider || objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider {
+		//if objCtx.ContextProvider == tenantmapping.AuthenticatorObjectContextProvider || objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider {
+		if objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider {
 			return objCtx.OauthClientID
 		}
 	}

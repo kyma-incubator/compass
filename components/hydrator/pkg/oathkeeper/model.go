@@ -49,7 +49,7 @@ const (
 	// ExternalTenantKey missing godoc
 	ExternalTenantKey = "tenant"
 	// UserContextKey is a header key containing consumer data
-	UserContextKey = "user_context"
+	UserContextKey = "User_context"
 	// ScopesKey missing godoc
 	ScopesKey = "scope"
 

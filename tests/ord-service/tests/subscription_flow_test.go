@@ -286,8 +286,20 @@ func TestNewCPTest(stdT *testing.T) {
 	subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID
 	subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
+	// We need an externally issued cert with a subject that is not part of the access level mappings
+	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
+		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
+		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
+		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
+		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
+		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
+		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-service-subscription-cn", -1),
+		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
+		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
+	}
+
 	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
-	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, conf.ExternalCertProviderConfig)
+	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig)
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 	t.Run("ConsumerProvider flow", func(stdT *testing.T) {
@@ -561,27 +573,18 @@ func TestNewCPTest(stdT *testing.T) {
 
 		// After successful subscription from above we call the director component with "double authentication(token + user_context header)" in order to test claims validation is successful
 		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
-		fmt.Printf("consumer token --> %s", consumerToken) // todo::: remove
+		fmt.Printf("consumer token --> %s\n", consumerToken) // todo::: remove
 		consumerTokenPayload, err := getTokenPayload(stdT, consumerToken)
 		require.NoError(stdT, err)
 		fmt.Printf("consumer token payload --> %s", consumerTokenPayload) // todo::: remove
 		headers := map[string][]string{subscription.UserContextHeader: {string(consumerTokenPayload)}}
 
-		stdT.Log("Calling director to verify claims validation is successful...")
-		getRtmReq := fixtures.FixGetRuntimeRequest(runtime.ID)
-		getRtmReq.Header = headers
-		rtmExt := graphql.RuntimeExt{}
-
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, getRtmReq, &rtmExt)
-		require.NoError(stdT, err)
-		require.Equal(stdT, runtime.ID, rtmExt.ID)
-		require.Equal(stdT, runtimeInput.Name, rtmExt.Name)
-		stdT.Log("Director claims validation was successful")
-
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
 		certHttpClient := CreateHttpClientWithCert(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
+		time.Sleep(30 * time.Second)
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		stdT.Log("Getting consumer application using both provider and consumer credentials...")
@@ -596,12 +599,6 @@ func TestNewCPTest(stdT *testing.T) {
 		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 		require.Equal(stdT, 0, len(gjson.Get(respBody, "value").Array()))
 		stdT.Log("Successfully validated no application is returned after successful unsubscription request")
-
-		stdT.Log("Validating director returns error during claims validation after unsubscribe request is successfully executed...")
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, getRtmReq, &rtmExt)
-		require.Error(stdT, err)
-		require.Contains(stdT, err.Error(), fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the runtime context table for the runtime in the provider tenant", subscriptionConsumerSubaccountID))
-		stdT.Log("Successfully validated an error is returned during claims validation after unsubscribe request")
 	})
 }
 

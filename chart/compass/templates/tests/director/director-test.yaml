@@ -102,11 +102,7 @@ spec:
             - name: APP_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
             - name: TEST_EXTERNAL_CERT_CN
-              value: {{ .Values.global.tests.director.externalCertIntSystemCN }}
-            - name: TEST_EXTERNAL_CERT_OU
-              value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
-            - name: TEST_EXTERNAL_CERT_OU2
-              value: {{ .Values.global.tests.externalCertConfiguration.ouCertSubaccountID }}
+              value: {{ .Values.global.externalCertConfiguration.commonName }}
             - name: TEST_EXTERNAL_CERT_SUBJECT
               value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.subscription.tenants.providerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
             - name: TEST_EXTERNAL_CERT_SUBJECT_REGION2
