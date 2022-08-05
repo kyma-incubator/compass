@@ -584,8 +584,6 @@ func TestNewCPTest(stdT *testing.T) {
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
 		certHttpClient := CreateHttpClientWithCert(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
-		time.Sleep(30 * time.Second)
-
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		stdT.Log("Getting consumer application using both provider and consumer credentials...")
 		respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)

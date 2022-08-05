@@ -24,7 +24,6 @@ type Config struct {
 	TestConsumerTenantID               string
 	PropagatedProviderSubaccountHeader string
 	SubscriptionProviderAppNameValue   string
-	TestProviderSubaccountID           string
 	TestTenantOnDemandID               string
 }
 

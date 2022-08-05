@@ -42,7 +42,7 @@ func NewConsumerContextProvider(clientProvider DirectorClient) *consumerContextP
 
 // GetObjectContext is the consumerContextProvider implementation of the ObjectContextProvider interface.
 // From the information provided in the "user_context" header, it builds a ObjectContext with it.
-// In that header we have claims from which we extract the necessary information, there is no JWT token and signature validation.
+// In that header we have claims from which we extract the necessary information, there is NO JWT token and signature validation.
 func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	userContextHeader := reqData.Header.Get(oathkeeper.UserContextKey)
 	userCtxData, err := c.getUserContextData(userContextHeader)
