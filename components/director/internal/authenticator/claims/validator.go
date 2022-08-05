@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -214,8 +216,6 @@ func (v *validator) validateApplicationProvider(ctx context.Context, claims Clai
 	consumerExternalTenantID := claims.Tenant[tenantmapping.ExternalTenantKey]
 	ctxWithConsumerTenant := tenant.SaveToContext(ctx, consumerInternalTenantID, consumerExternalTenantID)
 
-	found := false
-
 	log.C(ctx).Infof("Listing applications in the consumer tenant %q for application template with ID: %q and label with key: %q and value: %q", consumerExternalTenantID, applicationTemplate.ID, v.consumerSubaccountLabelKey, consumerExternalTenantID)
 	applications, err := v.applicationSvc.ListAll(ctxWithConsumerTenant)
 	if err != nil {
@@ -225,14 +225,15 @@ func (v *validator) validateApplicationProvider(ctx context.Context, claims Clai
 
 	log.C(ctx).Infof("Found %d applications in consumer tenant using label: %q and external tenant ID: %q", len(applications), v.consumerSubaccountLabelKey, consumerExternalTenantID)
 
+	appFound := false
 	for _, application := range applications {
-		if *application.ApplicationTemplateID == applicationTemplate.ID {
-			found = true
+		if str.PtrStrToStr(application.ApplicationTemplateID) == applicationTemplate.ID {
+			appFound = true
 			break
 		}
 	}
 
-	if !found {
+	if !appFound {
 		log.C(ctx).Errorf("Consumer's external tenant %s was not found as subscription record in the applications table for any application templates in the provider tenant %s", consumerExternalTenantID, providerInternalTenantID)
 		return apperrors.NewUnauthorizedError(fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the applications table for any application templates in the provider tenant %s", consumerExternalTenantID, providerInternalTenantID))
 	}
