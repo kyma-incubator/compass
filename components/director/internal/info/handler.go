@@ -33,7 +33,8 @@ type responseData struct {
 	OrdVersion string `json:"ordAggregatorVersion"`
 }
 
-// NewInfoHandler returns handler which gives information about the CMP client certificate
+// NewInfoHandler returns handler which gives information about the CMP client certificate.
+// The issuer and the subject are dynamically loaded from the certificate itself (reading the cert from the cert cache every time the endpoint is hit) rather than using hardcoded env values.
 func NewInfoHandler(ctx context.Context, c Config, certCache certloader.Cache) func(writer http.ResponseWriter, request *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		responseData, err := prepareResponseData(c, certCache)
