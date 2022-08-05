@@ -117,7 +117,6 @@ type LabelUpsertService interface {
 //go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ScenariosService interface {
 	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
-	AddDefaultScenarioIfEnabled(ctx context.Context, tenant string, labels *map[string]interface{})
 }
 
 // UIDService missing godoc
@@ -931,9 +930,8 @@ func (s *service) ensureApplicationNotPartOfScenarioWithRuntime(ctx context.Cont
 		return err
 	}
 
-	validScenarios := removeDefaultScenario(scenarios)
-	if len(validScenarios) > 0 {
-		runtimes, err := s.getRuntimeNamesForScenarios(ctx, tenant, validScenarios)
+	if len(scenarios) > 0 {
+		runtimes, err := s.getRuntimeNamesForScenarios(ctx, tenant, scenarios)
 		if err != nil {
 			return err
 		}
@@ -943,7 +941,7 @@ func (s *service) ensureApplicationNotPartOfScenarioWithRuntime(ctx context.Cont
 			if err != nil {
 				return errors.Wrapf(err, "while getting application with id %s", appID)
 			}
-			msg := fmt.Sprintf("System %s is still used and cannot be deleted. Unassign the system from the following formations first: %s. Then, unassign the system from the following runtimes, too: %s", application.Name, strings.Join(validScenarios, ", "), strings.Join(runtimes, ", "))
+			msg := fmt.Sprintf("System %s is still used and cannot be deleted. Unassign the system from the following formations first: %s. Then, unassign the system from the following runtimes, too: %s", application.Name, strings.Join(scenarios, ", "), strings.Join(runtimes, ", "))
 			return apperrors.NewInvalidOperationError(msg)
 		}
 
@@ -1002,8 +1000,6 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	if err = repoCreatorFunc(ctx, appTenant, app); err != nil {
 		return "", err
 	}
-
-	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, appTenant, &in.Labels)
 
 	if in.Labels == nil {
 		in.Labels = map[string]interface{}{}
@@ -1184,22 +1180,6 @@ func (s *service) getStoredLabels(ctx context.Context, tenantID, objectID string
 	return storedLabels, nil
 }
 
-func removeDefaultScenario(scenarios []string) []string {
-	defaultScenarioIndex := -1
-	for idx, scenario := range scenarios {
-		if scenario == model.ScenariosDefaultValue[0] {
-			defaultScenarioIndex = idx
-			break
-		}
-	}
-
-	if defaultScenarioIndex >= 0 {
-		return append(scenarios[:defaultScenarioIndex], scenarios[defaultScenarioIndex+1:]...)
-	}
-
-	return scenarios
-}
-
 func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.ApplicationRegisterInput, repoUpserterFunc repoUpserterFunc) error {
 	exists, err := s.ensureIntSysExists(ctx, in.IntegrationSystemID)
 	if err != nil {
@@ -1220,8 +1200,6 @@ func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.
 	}
 
 	app.ID = id
-
-	s.scenariosService.AddDefaultScenarioIfEnabled(ctx, appTenant, &in.Labels)
 
 	if in.Labels == nil {
 		in.Labels = map[string]interface{}{}
