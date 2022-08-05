@@ -81,20 +81,20 @@ spec:
                       ISSUER_LOCALITY=$(openssl x509 -in /tmp/client-certificate.pem -noout -text | grep "Issuer:" | awk '{print $7}' | cut -d '=' -f2 | sed 's/,$//g')
                       
                       ARRAY_OF_LOCALITIES=($(echo "$EXPECTED_ISSUER_LOCALITY" | tr ',' '\n'))
-
+                      
                       for LOCALITY in ${ARRAY_OF_LOCALITIES[@]}
                       do
-                        if [[ "$ISSUER_LOCALITY" != "$LOCALITY" ]]; then
-                          echo -e "${RED}The issuer locality of the client certificate didn't match the expected one. We expect \"$LOCALITY\" but have: \"$ISSUER_LOCALITY\" ${NC}"
-                          echo -e "${YELLOW}[Retry $(($i+1))] Getting new client certificate... ${NC}"
-                          getClientCert # This will override the client certificate file content with the newly issued certificate
-                          sleep 0.2 # Sleep for 200ms before next retry
-                        else
+                        if [[ "$ISSUER_LOCALITY" == "$LOCALITY" ]]; then
                           echo -e "${GREEN}Issuer locality of the client certificate is valid. Proceeding with the next steps... ${NC}"
                           IS_CERT_ISSUER_LOCALITY_VALID=true
                           break 2
                         fi
                       done
+
+                      echo -e "${RED}The issuer locality of the client certificate didn't match any of the expected ones. We expect one of \"$EXPECTED_ISSUER_LOCALITY\" but have: \"$ISSUER_LOCALITY\" ${NC}"
+                      echo -e "${YELLOW}[Retry $(($i+1))] Getting new client certificate... ${NC}"
+                      getClientCert # This will override the client certificate file content with the newly issued certificate
+                      sleep 0.2 # Sleep for 200ms before next retry
                     done
 
                     if [[ $IS_CERT_ISSUER_LOCALITY_VALID == false ]]; then
