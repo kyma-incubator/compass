@@ -118,7 +118,7 @@ global:
       version: "PR-2501"
     director:
       dir:
-      version: "PR-2450"
+      version: "PR-2522"
     hydrator:
       dir:
       version: "PR-2501"
@@ -150,7 +150,7 @@ global:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2528"
+      version: "PR-2522"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -568,7 +568,6 @@ global:
       regionField: "region"
     regionDetails: '[{"central", ""}]'
   externalCertConfiguration:
-    issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     issuerLocality: "local" # In local setup we have manually created connector CA certificate with 'local' Locality property
     subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=%s/L=%s/CN=%s"
     ouCertSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd"
