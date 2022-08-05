@@ -48,15 +48,15 @@ type DirectorConfig struct {
 	SubscriptionLabelKey                   string
 	RuntimeTypeLabelKey                    string
 	KymaRuntimeTypeLabelValue              string
-	ExternalCertCommonName                 string `envconfig:"EXTERNAL_CERT_COMMON_NAME"`
-	CertSvcInstanceTestIntSystemSecretName string `envconfig:"CERT_SVC_INSTANCE_TEST_INTEGRATION_SYSTEM_SECRET_NAME"`
-	ExternalCertTestIntSystemOUSubaccount  string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT"`
-	ExternalCertTestIntSystemCommonName    string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN"`
 	ConsumerTokenURL                       string
 	ProviderClientID                       string
 	ProviderClientSecret                   string
 	BasicUsername                          string
 	BasicPassword                          string
+	ExternalCertCommonName                 string `envconfig:"EXTERNAL_CERT_COMMON_NAME"`
+	CertSvcInstanceTestIntSystemSecretName string `envconfig:"CERT_SVC_INSTANCE_TEST_INTEGRATION_SYSTEM_SECRET_NAME"`
+	ExternalCertTestIntSystemOUSubaccount  string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT"`
+	ExternalCertTestIntSystemCommonName    string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN"`
 }
 
 type BaseDirectorConfig struct {
