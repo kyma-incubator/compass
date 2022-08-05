@@ -3123,6 +3123,58 @@ func TestService_ListByFilters(t *testing.T) {
 	}
 }
 
+func TestService_UnsafeExtractModifiableLabels(t *testing.T) {
+	testCases := []struct {
+		Name           string
+		InputLabels    map[string]interface{}
+		ExpectedLabels map[string]interface{}
+		ExpectedErr    error
+	}{
+		{
+			Name:           "Success without protected and immutable labels",
+			InputLabels:    map[string]interface{}{"test1": "test1", "test2": "test2"},
+			ExpectedLabels: map[string]interface{}{"test1": "test1", "test2": "test2"},
+			ExpectedErr:    nil,
+		},
+		{
+			Name:           "Success with protected labels",
+			InputLabels:    map[string]interface{}{"test_defaultEventing": "protected", "test2": "test2"},
+			ExpectedLabels: map[string]interface{}{"test2": "test2"},
+			ExpectedErr:    nil,
+		},
+		{
+			Name:           "Success with immutable labels",
+			InputLabels:    map[string]interface{}{runtimeTypeLabelKey: "immutable", "test2": "test2"},
+			ExpectedLabels: map[string]interface{}{"test2": "test2"},
+			ExpectedErr:    nil,
+		},
+		{
+			Name:           "Success with protected and immutable labels",
+			InputLabels:    map[string]interface{}{runtimeTypeLabelKey: "test1", "test_defaultEventing": "test2", "test3": "test3"},
+			ExpectedLabels: map[string]interface{}{"test3": "test3"},
+			ExpectedErr:    nil,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			svc := runtime.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "")
+
+			// WHEN
+			extractedLabels, err := svc.UnsafeExtractModifiableLabels(testCase.InputLabels)
+			// THEN
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				require.Equal(t, nil, extractedLabels)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, extractedLabels, testCase.ExpectedLabels)
+			}
+		})
+	}
+}
+
 func contextThatHasTenant(expectedTenant string) interface{} {
 	return mock.MatchedBy(func(actual context.Context) bool {
 		actualTenant, err := tenant.LoadFromContext(actual)
