@@ -362,7 +362,7 @@ func (s *service) sendNotifications(ctx context.Context, notifications []*webhoo
 func (s *service) assign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
 	formationFromDB, err := s.getFormationByName(ctx, formation.Name, tnt)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while getting formation %q", formation.Name)
 	}
 	if formation.Name != model.DefaultScenario && objectType == graphql.FormationObjectTypeRuntime {
 		err := s.isValidRuntimeType(ctx, tnt, objectID, formationFromDB)
