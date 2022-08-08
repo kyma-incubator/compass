@@ -32,8 +32,10 @@ func TestAddRuntimeContext(t *testing.T) {
 
 	in := fixRuntimeInput("addRuntimeContext")
 
-	runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, in, conf.GatewayOauth)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+	require.NoError(t, err)
+	require.NotEmpty(t, runtime.ID)
 
 	rtmCtxInput := fixtures.FixRuntimeContextInput("create", "create")
 	rtmCtxInputGQL, err := testctx.Tc.Graphqlizer.RuntimeContextInputToGQL(rtmCtxInput)
@@ -71,8 +73,10 @@ func TestQueryRuntimeContexts(t *testing.T) {
 
 	in := fixRuntimeInput("addRuntimeContext")
 
-	runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, in, conf.GatewayOauth)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+	require.NoError(t, err)
+	require.NotEmpty(t, runtime.ID)
 
 	rtmCtx1 := fixtures.CreateRuntimeContext(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, "queryRuntimeContexts1", "queryRuntimeContexts1")
 	defer fixtures.DeleteRuntimeContext(t, ctx, certSecuredGraphQLClient, tenantId, rtmCtx1.ID)
@@ -83,7 +87,7 @@ func TestQueryRuntimeContexts(t *testing.T) {
 	rtmCtxsRequest := fixtures.FixGetRuntimeContextsRequest(runtime.ID)
 	runtimeGql := graphql.RuntimeExt{}
 
-	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, rtmCtxsRequest, &runtimeGql)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, rtmCtxsRequest, &runtimeGql)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(runtimeGql.RuntimeContexts.Data))
 	require.ElementsMatch(t, []*graphql.RuntimeContextExt{&rtmCtx1, &rtmCtx2}, runtimeGql.RuntimeContexts.Data)
@@ -98,8 +102,10 @@ func TestUpdateRuntimeContext(t *testing.T) {
 
 	in := fixRuntimeInput("addRuntimeContext")
 
-	runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, in, conf.GatewayOauth)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+	require.NoError(t, err)
+	require.NotEmpty(t, runtime.ID)
 
 	rtmCtx := fixtures.CreateRuntimeContext(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, "runtimeContext", "runtimeContext")
 	defer fixtures.DeleteRuntimeContext(t, ctx, certSecuredGraphQLClient, tenantId, rtmCtx.ID)
@@ -130,8 +136,10 @@ func TestDeleteRuntimeContext(t *testing.T) {
 
 	in := fixRuntimeInput("addRuntimeContext")
 
-	runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, in, conf.GatewayOauth)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+	require.NoError(t, err)
+	require.NotEmpty(t, runtime.ID)
 
 	rtmCtx := fixtures.CreateRuntimeContext(t, ctx, certSecuredGraphQLClient, tenantId, runtime.ID, "deleteRuntimeContext", "deleteRuntimeContext")
 
@@ -140,7 +148,7 @@ func TestDeleteRuntimeContext(t *testing.T) {
 
 	// WHEN
 	t.Log("Delete runtimeContext")
-	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, rtmCtxDeleteReq, &rtmCtxGql)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, rtmCtxDeleteReq, &rtmCtxGql)
 
 	// THEN
 	require.NoError(t, err)
