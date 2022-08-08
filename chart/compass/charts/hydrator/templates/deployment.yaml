@@ -116,8 +116,6 @@ spec:
               value: {{ .Values.global.hydrator.consumerClaimsKeys.userNameKey }}
             - name: APP_CONSUMER_CLAIMS_SUBDOMAIN_KEY
               value: {{ .Values.global.hydrator.consumerClaimsKeys.subdomainKey }}
-            - name: APP_CONSUMER_CLAIMS_SCOPES_KEY
-              value: {{ .Values.global.hydrator.consumerClaimsKeys.scopesKey }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}

@@ -41,7 +41,6 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 		TenantIDKey:  "tenantid",
 		UserNameKey:  "user_name",
 		SubdomainKey: "subdomain",
-		ScopesKey:    "scope",
 	}
 
 	authDetails := oathkeeper.AuthDetails{AuthID: authID, AuthFlow: oathkeeper.ConsumerProviderFlow}
@@ -286,7 +285,6 @@ func TestConsumerContextProvider_Match(t *testing.T) {
 		TenantIDKey:  "tenantid",
 		UserNameKey:  "user_name",
 		SubdomainKey: "subdomain",
-		ScopesKey:    "scope",
 	}
 	provider := tenantmapping.NewConsumerContextProvider(nil, consumerClaimsKeysConfig)
 

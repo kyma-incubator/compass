@@ -346,7 +346,6 @@ global:
       tenantIDKey: "tenantid"
       userNameKey: "user_name"
       subdomainKey: "subdomain"
-      scopesKey: "scope"
     http:
       client:
         skipSSLValidation: false
