@@ -21,9 +21,7 @@ import (
 type userContextData struct {
 	clientID         string
 	externalTenantID string
-	authID           string
 	subdomain        string
-	scopes           string
 }
 
 type consumerContextProvider struct {
@@ -49,7 +47,7 @@ func NewConsumerContextProvider(clientProvider DirectorClient, consumerClaimsKey
 // In that header we have claims from which we extract the necessary information, there is NO JWT token and signature validation.
 func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	userContextHeader := reqData.Header.Get(oathkeeper.UserContextKey)
-	userCtxData, err := c.getUserContextData(ctx, userContextHeader)
+	userCtxData, err := c.getUserContextData(userContextHeader)
 	if err != nil {
 		return ObjectContext{}, errors.Wrapf(err, "while getting user context data from %q header", oathkeeper.UserContextKey)
 	}
@@ -62,7 +60,7 @@ func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData 
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(NewTenantContext(externalTenantID, ""), c.tenantKeys, userCtxData.scopes, mergeWithOtherScopes, "", userCtxData.clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.ConsumerProviderObjectContextProvider), nil
+			return NewObjectContext(NewTenantContext(externalTenantID, ""), c.tenantKeys, "", mergeWithOtherScopes, "", userCtxData.clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.ConsumerProviderObjectContextProvider), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
@@ -77,7 +75,7 @@ func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData 
 	}
 	authDetails.Region = regionStr
 
-	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), c.tenantKeys, userCtxData.scopes, mergeWithOtherScopes, authDetails.Region, userCtxData.clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.ConsumerProviderObjectContextProvider)
+	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), c.tenantKeys, "", mergeWithOtherScopes, authDetails.Region, userCtxData.clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.ConsumerProviderObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
 	_, exists := tenantMapping.Labels["subdomain"]
@@ -95,7 +93,7 @@ func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData 
 
 		if err := c.directorClient.WriteTenants(ctx, []schema.BusinessTenantMappingInput{tenantToUpdate}); err != nil {
 			log.C(ctx).Errorf("an error occurred while write tenant with external ID: %q: %v", tenantToUpdate.ExternalTenant, err)
-			return ObjectContext{}, err
+			return ObjectContext{}, errors.Wrapf(err, "an error occurred while write tenant with external ID: %q", tenantToUpdate.ExternalTenant)
 		}
 	}
 
@@ -128,38 +126,26 @@ func (c *consumerContextProvider) Match(_ context.Context, data oathkeeper.ReqDa
 	return true, &oathkeeper.AuthDetails{AuthID: authID, AuthFlow: oathkeeper.ConsumerProviderFlow}, nil
 }
 
-func (c *consumerContextProvider) getUserContextData(ctx context.Context, userContextHeader string) (*userContextData, error) {
+func (c *consumerContextProvider) getUserContextData(userContextHeader string) (*userContextData, error) {
 	fmt.Printf("pptt - userContextHeader in getUserContextData: %s\n\n", userContextHeader) // todo::: delete
-	clientID := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.ClientIDKey).String()
-	if clientID == "" {
-		return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q could not be empty", c.consumerClaimsKeysConfig.ClientIDKey))
+	clientID := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.ClientIDKey)
+	if !clientID.Exists() {
+		return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q is mandatory", c.consumerClaimsKeysConfig.ClientIDKey))
 	}
 
-	externalTenantID := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.TenantIDKey).String()
-	if externalTenantID == "" {
-		return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q could not be empty", c.consumerClaimsKeysConfig.TenantIDKey))
+	externalTenantID := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.TenantIDKey)
+	if !externalTenantID.Exists() {
+		return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q is mandatory", c.consumerClaimsKeysConfig.TenantIDKey))
 	}
 
-	authID := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.UserNameKey).String()
-	if authID == "" {
-		return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q could not be empty", c.consumerClaimsKeysConfig.UserNameKey))
-	}
-
-	subdomain := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.SubdomainKey).String()
-	if subdomain == "" {
-		return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q could not be empty", c.consumerClaimsKeysConfig.SubdomainKey))
-	}
-
-	scopes := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.ScopesKey).String()
-	if scopes == "" {
-		log.C(ctx).Warningf("property %q is empty", c.consumerClaimsKeysConfig.ScopesKey)
+	subdomain := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.SubdomainKey)
+	if !subdomain.Exists() {
+		return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q is mandatory", c.consumerClaimsKeysConfig.SubdomainKey))
 	}
 
 	return &userContextData{
-		clientID:         clientID,
-		externalTenantID: externalTenantID,
-		authID:           authID,
-		subdomain:        subdomain,
-		scopes:           scopes,
+		clientID:         clientID.String(),
+		externalTenantID: externalTenantID.String(),
+		subdomain:        subdomain.String(),
 	}, nil
 }
