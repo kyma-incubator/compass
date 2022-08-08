@@ -16,6 +16,7 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
       labels:
         app: {{ .Chart.Name }}-ord-service-tests-app
     spec:
@@ -78,6 +79,8 @@ spec:
               value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
             - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_REGION
               value: {{ .Values.global.tests.selfRegistration.region }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_REGION2
+              value: {{ .Values.global.tests.selfRegistration.region2 }}
             - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.label }}
             - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_VALUE_PREFIX
@@ -126,8 +129,16 @@ spec:
                   key: postgresql-sslMode
             - name: APP_DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
+            - name: TEST_EXTERNAL_CERT_CN
+              value: {{ .Values.global.tests.director.externalCertIntSystemCN }}
+            - name: TEST_EXTERNAL_CERT_OU
+              value: {{ .Values.global.externalCertConfiguration.ouCertSubaccountID }}
+            - name: TEST_EXTERNAL_CERT_OU2
+              value: {{ .Values.global.tests.externalCertConfiguration.ouCertSubaccountID }}
             - name: TEST_EXTERNAL_CERT_SUBJECT
               value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.subscription.tenants.providerSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
+            - name: TEST_EXTERNAL_CERT_SUBJECT_REGION2
+              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.tests.subscription.tenants.providerSubaccountIDRegion2 .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName }}
             - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME
               value: {{ .Values.global.tests.subscription.externalClientCertTestSecretName }}
             - name: EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE
@@ -136,6 +147,8 @@ spec:
               value: {{ .Values.global.tests.subscription.externalCertTestJobName }}
             - name: CERT_SVC_INSTANCE_TEST_SECRET_NAME
               value: {{ .Values.global.tests.subscription.certSvcInstanceTestSecretName }}
+            - name: CERT_SVC_INSTANCE_TEST_REGION2_SECRET_NAME
+              value: {{ .Values.global.tests.subscription.certSvcInstanceTestRegion2SecretName }}
             - name: EXTERNAL_CERT_CRONJOB_CONTAINER_NAME
               value: {{ .Values.global.externalCertConfiguration.rotationCronjob.containerName }}
             - name: BASIC_USERNAME

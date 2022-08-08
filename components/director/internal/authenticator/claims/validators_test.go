@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
 
@@ -15,7 +18,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
@@ -43,24 +45,21 @@ const (
 
 func TestValidator_Validate(t *testing.T) {
 	providerLabelKey := "providerName"
-	consumerSubaccountLabelKey := "consumer_subaccount_id"
+	consumerSubaccountLabelKey := "global_subaccount_id"
 	tokenPrefix := "prefix-"
 	testErr := errors.New("test")
 
-	runtimes := []*model.Runtime{
-		{
-			ID:   runtimeID,
-			Name: "rt",
-		},
-		{
-			ID:   runtime2ID,
-			Name: "rt2",
-		},
-	}
+	runtime := &model.Runtime{ID: runtimeID, Name: "rt"}
 
-	expectedFilters := []*labelfilter.LabelFilter{
+	expectedRuntimeFilters := []*labelfilter.LabelFilter{
 		labelfilter.NewForKeyWithQuery(providerLabelKey, fmt.Sprintf("\"%s\"", clientID)),
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
+	}
+
+	expectedAppTemplateFilters := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(providerLabelKey, fmt.Sprintf("\"%s\"", clientID)),
+		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", region)),
+		labelfilter.NewForKeyWithQuery(scenarioassignment.SubaccountIDKey, fmt.Sprintf("\"%s\"", providerExtTenantID)),
 	}
 
 	rtmCtxWithConsumerSubaccountLabel := &model.RuntimeContextPage{
@@ -74,23 +73,33 @@ func TestValidator_Validate(t *testing.T) {
 		},
 	}
 
-	emptyRtmCtxPage := &model.RuntimeContextPage{
-		Data: []*model.RuntimeContext{},
-	}
-
 	rtmCtxFilter := []*labelfilter.LabelFilter{
 		labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", consumerExtTenantID)),
 	}
 
+	applicationTemplate := &model.ApplicationTemplate{
+		ID: "appTemplateID",
+	}
+
+	applications := []*model.Application{
+		{
+			ApplicationTemplateID: &applicationTemplate.ID,
+		},
+	}
+
+	emptyApplications := []*model.Application{}
+
 	testCases := []struct {
-		Name                       string
-		RuntimeServiceFn           func() *automock.RuntimeService
-		RuntimeCtxSvcFn            func() *automock.RuntimeCtxService
-		IntegrationSystemServiceFn func() *automock.IntegrationSystemService
-		Claims                     claims.Claims
-		PersistenceFn              func() *persistenceautomock.PersistenceTx
-		TransactionerFn            func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ExpectedErr                string
+		Name                         string
+		RuntimeServiceFn             func() *automock.RuntimeService
+		ApplicationTemplateServiceFn func() *automock.ApplicationTemplateService
+		ApplicationServiceFn         func() *automock.ApplicationService
+		RuntimeCtxSvcFn              func() *automock.RuntimeCtxService
+		IntegrationSystemServiceFn   func() *automock.IntegrationSystemService
+		Claims                       claims.Claims
+		PersistenceFn                func() *persistenceautomock.PersistenceTx
+		TransactionerFn              func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ExpectedErr                  string
 	}{
 		// common
 		{
@@ -134,8 +143,14 @@ func TestValidator_Validate(t *testing.T) {
 		},
 		// runtime
 		{
-			Name:        "consumer-provider flow: error when token clientID missing",
-			Claims:      getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, ""),
+			Name:   "consumer-provider flow: error when token clientID missing",
+			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, ""),
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := txtest.NoopTransactioner(persistTx)
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Twice()
+				return transact
+			},
 			ExpectedErr: "could not find consumer token client ID",
 		},
 		{
@@ -146,7 +161,7 @@ func TestValidator_Validate(t *testing.T) {
 			},
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
 				transact := txtest.NoopTransactioner(persistTx)
-				transact.On("Begin").Return(persistTx, testErr).Once()
+				transact.On("Begin").Return(persistTx, testErr).Twice()
 				return transact
 			},
 			ExpectedErr: "An error has occurred while opening transaction",
@@ -161,63 +176,96 @@ func TestValidator_Validate(t *testing.T) {
 			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				runtimeSvc := &automock.RuntimeService{}
-				runtimeSvc.On("ListByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(runtimes, nil).Once()
+				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedRuntimeFilters).Return(runtime, nil).Once()
 				return runtimeSvc
 			},
 			RuntimeCtxSvcFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
-				rtmCtxSvc.On("ListByFilter", contextThatHasTenant(consumerTenantID), runtimeID, rtmCtxFilter, 100, "").Return(emptyRtmCtxPage, nil).Once()
-				rtmCtxSvc.On("ListByFilter", contextThatHasTenant(consumerTenantID), runtime2ID, rtmCtxFilter, 100, "").Return(rtmCtxWithConsumerSubaccountLabel, nil).Once()
+				rtmCtxSvc.On("ListByFilter", contextThatHasTenant(consumerTenantID), runtimeID, rtmCtxFilter, 100, "").Return(rtmCtxWithConsumerSubaccountLabel, nil).Once()
 				return rtmCtxSvc
 			},
 		},
 		{
-			Name:   "Consumer-provider flow: Error when no runtimes are found",
+			Name:   "Consumer-provider flow: Error when no runtimes nor applications are found",
 			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				runtimeSvc := &automock.RuntimeService{}
-				runtimeSvc.On("ListByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return([]*model.Runtime{}, nil).Once()
+				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedRuntimeFilters).Return(nil, testErr).Once()
 				return runtimeSvc
 			},
-			ExpectedErr: fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the runtime context table for any runtime in the provider tenant %s", consumerExtTenantID, providerTenantID),
-		},
-		{
-			Name:   "Consumer-provider flow: Error when listing runtimes",
-			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
-			RuntimeServiceFn: func() *automock.RuntimeService {
-				runtimeSvc := &automock.RuntimeService{}
-				runtimeSvc.On("ListByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(nil, testErr).Once()
-				return runtimeSvc
+			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedAppTemplateFilters).Return(applicationTemplate, nil).Once()
+				return appTemplateSvc
 			},
-			ExpectedErr: testErr.Error(),
+			ApplicationServiceFn: func() *automock.ApplicationService {
+				applicationSvc := &automock.ApplicationService{}
+				applicationSvc.On("ListAll", contextThatHasTenant(consumerTenantID)).Return(emptyApplications, nil).Once()
+				return applicationSvc
+			},
+			ExpectedErr: "subscription record not found neither for application",
 		},
 		{
 			Name:   "Consumer-provider flow: Error when listing runtime context with filters",
 			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				runtimeSvc := &automock.RuntimeService{}
-				runtimeSvc.On("ListByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(runtimes, nil).Once()
+				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedRuntimeFilters).Return(runtime, nil).Once()
 				return runtimeSvc
+			},
+			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedAppTemplateFilters).Return(applicationTemplate, nil).Once()
+				return appTemplateSvc
+			},
+			ApplicationServiceFn: func() *automock.ApplicationService {
+				applicationSvc := &automock.ApplicationService{}
+				applicationSvc.On("ListAll", contextThatHasTenant(consumerTenantID)).Return(emptyApplications, nil).Once()
+				return applicationSvc
 			},
 			RuntimeCtxSvcFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
 				rtmCtxSvc.On("ListByFilter", contextThatHasTenant(consumerTenantID), runtimeID, mock.Anything, 100, "").Return(nil, testErr).Once()
 				return rtmCtxSvc
 			},
-			ExpectedErr: testErr.Error(),
+			ExpectedErr: "subscription record not found neither for application",
+		},
+		{
+			Name:   "Consumer-provider flow: Error when listing runtime context with filters",
+			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+			RuntimeServiceFn: func() *automock.RuntimeService {
+				runtimeSvc := &automock.RuntimeService{}
+				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedRuntimeFilters).Return(runtime, nil).Once()
+				return runtimeSvc
+			},
+			RuntimeCtxSvcFn: func() *automock.RuntimeCtxService {
+				rtmCtxSvc := &automock.RuntimeCtxService{}
+				rtmCtxSvc.On("ListByFilter", contextThatHasTenant(consumerTenantID), runtimeID, mock.Anything, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
+				return rtmCtxSvc
+			},
+			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedAppTemplateFilters).Return(applicationTemplate, nil).Once()
+				return appTemplateSvc
+			},
+			ApplicationServiceFn: func() *automock.ApplicationService {
+				applicationSvc := &automock.ApplicationService{}
+				applicationSvc.On("ListAll", contextThatHasTenant(consumerTenantID)).Return(emptyApplications, nil).Once()
+				return applicationSvc
+			},
+			ExpectedErr: "subscription record not found neither for application",
 		},
 		{
 			Name:   "Consumer-provider flow: Error when transaction cannot be committed",
 			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				runtimeSvc := &automock.RuntimeService{}
-				runtimeSvc.On("ListByFilters", contextThatHasTenant(providerTenantID), expectedFilters).Return(runtimes, nil).Once()
+				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedRuntimeFilters).Return(runtime, nil).Once()
 				return runtimeSvc
 			},
 			RuntimeCtxSvcFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
-				rtmCtxSvc.On("ListByFilter", contextThatHasTenant(consumerTenantID), runtimeID, rtmCtxFilter, 100, "").Return(emptyRtmCtxPage, nil).Once()
-				rtmCtxSvc.On("ListByFilter", contextThatHasTenant(consumerTenantID), runtime2ID, rtmCtxFilter, 100, "").Return(rtmCtxWithConsumerSubaccountLabel, nil).Once()
+				rtmCtxSvc.On("ListByFilter", contextThatHasTenant(consumerTenantID), runtimeID, rtmCtxFilter, 100, "").Return(rtmCtxWithConsumerSubaccountLabel, nil).Once()
 				return rtmCtxSvc
 			},
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
@@ -226,9 +274,19 @@ func TestValidator_Validate(t *testing.T) {
 				return persistTx
 			},
 			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				return txtest.TransactionerThatDoesARollback(persistTx)
+				return txtest.TransactionerThatDoesARollbackTwice(persistTx)
 			},
-			ExpectedErr: "test",
+			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedAppTemplateFilters).Return(applicationTemplate, nil).Once()
+				return appTemplateSvc
+			},
+			ApplicationServiceFn: func() *automock.ApplicationService {
+				applicationSvc := &automock.ApplicationService{}
+				applicationSvc.On("ListAll", contextThatHasTenant(consumerTenantID)).Return(emptyApplications, nil).Once()
+				return applicationSvc
+			},
+			ExpectedErr: testErr.Error(),
 		},
 		// integration system
 		{
@@ -264,6 +322,65 @@ func TestValidator_Validate(t *testing.T) {
 			Claims:      getClaimsForIntegrationSystemConsumerProviderFlow(consumerTenantID, consumerExtTenantID, consumerID, providerTenantID, providerExtTenantID, scopes, region, clientID),
 			ExpectedErr: fmt.Sprintf("integration system with ID %s does not exist", consumerID),
 		},
+		// application
+		{
+			Name:   "Consumer-provider flow: Success when no runtime, but there is an application subscribed",
+			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+			RuntimeServiceFn: func() *automock.RuntimeService {
+				runtimeSvc := &automock.RuntimeService{}
+				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedRuntimeFilters).Return(nil, testErr).Once()
+				return runtimeSvc
+			},
+			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedAppTemplateFilters).Return(applicationTemplate, nil).Once()
+				return appTemplateSvc
+			},
+			ApplicationServiceFn: func() *automock.ApplicationService {
+				applicationSvc := &automock.ApplicationService{}
+				applicationSvc.On("ListAll", contextThatHasTenant(consumerTenantID)).Return(applications, nil).Once()
+				return applicationSvc
+			},
+		},
+		{
+			Name:   "Consumer-provider flow: Error while getting application template in provider tenant",
+			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+			RuntimeServiceFn: func() *automock.RuntimeService {
+				runtimeSvc := &automock.RuntimeService{}
+				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedRuntimeFilters).Return(nil, testErr).Once()
+				return runtimeSvc
+			},
+			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedAppTemplateFilters).Return(nil, testErr).Once()
+				return appTemplateSvc
+			},
+			ApplicationServiceFn: func() *automock.ApplicationService {
+				applicationSvc := &automock.ApplicationService{}
+				return applicationSvc
+			},
+			ExpectedErr: testErr.Error(),
+		},
+		{
+			Name:   "Consumer-provider flow: Error occurred while listing consumer applications",
+			Claims: getClaimsForRuntimeConsumerProviderFlow(consumerTenantID, consumerExtTenantID, providerTenantID, providerExtTenantID, scopes, region, clientID),
+			RuntimeServiceFn: func() *automock.RuntimeService {
+				runtimeSvc := &automock.RuntimeService{}
+				runtimeSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedRuntimeFilters).Return(nil, testErr).Once()
+				return runtimeSvc
+			},
+			ApplicationTemplateServiceFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("GetByFilters", contextThatHasTenant(providerTenantID), expectedAppTemplateFilters).Return(applicationTemplate, nil).Once()
+				return appTemplateSvc
+			},
+			ApplicationServiceFn: func() *automock.ApplicationService {
+				applicationSvc := &automock.ApplicationService{}
+				applicationSvc.On("ListAll", contextThatHasTenant(consumerTenantID)).Return(nil, testErr).Once()
+				return applicationSvc
+			},
+			ExpectedErr: testErr.Error(),
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -276,6 +393,14 @@ func TestValidator_Validate(t *testing.T) {
 			if testCase.RuntimeCtxSvcFn != nil {
 				runtimeCtxSvc = testCase.RuntimeCtxSvcFn()
 			}
+			appTemplateSvc := &automock.ApplicationTemplateService{}
+			if testCase.ApplicationTemplateServiceFn != nil {
+				appTemplateSvc = testCase.ApplicationTemplateServiceFn()
+			}
+			applicationSvc := &automock.ApplicationService{}
+			if testCase.ApplicationServiceFn != nil {
+				applicationSvc = testCase.ApplicationServiceFn()
+			}
 			intSysSvc := &automock.IntegrationSystemService{}
 			if testCase.IntegrationSystemServiceFn != nil {
 				intSysSvc = testCase.IntegrationSystemServiceFn()
@@ -284,12 +409,12 @@ func TestValidator_Validate(t *testing.T) {
 			if testCase.PersistenceFn != nil {
 				persistTxMock = testCase.PersistenceFn()
 			}
-			transactionerMock := txtest.TransactionerThatSucceeds(persistTxMock)
+			transactionerMock := txtest.TransactionerThatSucceedsTwice(persistTxMock)
 			if testCase.TransactionerFn != nil {
 				transactionerMock = testCase.TransactionerFn(persistTxMock)
 			}
 
-			validator := claims.NewValidator(transactionerMock, runtimeSvc, runtimeCtxSvc, intSysSvc, providerLabelKey, consumerSubaccountLabelKey, tokenPrefix)
+			validator := claims.NewValidator(transactionerMock, runtimeSvc, runtimeCtxSvc, appTemplateSvc, applicationSvc, intSysSvc, providerLabelKey, consumerSubaccountLabelKey, tokenPrefix)
 			err := validator.Validate(context.TODO(), testCase.Claims)
 
 			if len(testCase.ExpectedErr) > 0 {

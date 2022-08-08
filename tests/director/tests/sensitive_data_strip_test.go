@@ -39,10 +39,8 @@ func TestSensitiveDataStrip(t *testing.T) {
 	t.Log(fmt.Sprintf("Registering runtime %q", runtimeName))
 	runtimeRegInput := fixRuntimeInput(runtimeName)
 
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &runtimeRegInput)
+	runtime := registerKymaRuntime(t, ctx, tenantId, runtimeRegInput)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
-	require.NoError(t, err)
-	require.NotEmpty(t, runtime.ID)
 
 	t.Log(fmt.Sprintf("Requesting OAuth client for runtime %q", runtimeName))
 	rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, context.Background(), certSecuredGraphQLClient, tenantId, runtime.ID)
@@ -309,7 +307,7 @@ func appWithAPIsAndEvents(name string) graphql.ApplicationRegisterInput {
 
 func fixAppTemplateWithWebhookInput(name string) graphql.ApplicationTemplateInput {
 	input := fixtures.FixApplicationTemplateWithWebhook(name)
-	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SubscriptionConfig.SelfRegDistinguishLabelValue}
+	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
 	input.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
 
 	return input

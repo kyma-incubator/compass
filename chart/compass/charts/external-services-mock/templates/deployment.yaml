@@ -38,8 +38,12 @@ spec:
                 value: "{{ .Values.global.externalServicesMock.basicSecuredPort }}"
               - name: APP_ORD_SERVERS_OAUTH_PORT
                 value: "{{ .Values.global.externalServicesMock.oauthSecuredPort }}"
+              - name: APP_ORD_SERVERS_UNSECURED_WITH_ADDITIONAL_CONTENT_PORT
+                value: "{{ .Values.global.externalServicesMock.unsecuredPortWithAdditionalContent }}"
               - name: APP_ORD_SERVERS_CERT_SECURED_BASE_URL
                 value: "https://{{ .Values.global.externalServicesMock.ordCertSecuredHost }}.{{ .Values.global.ingress.domainName }}"
+              - name: APP_ORD_SERVERS_UNSECURED_MULTI_TENANT_PORT
+                value: "{{ .Values.global.externalServicesMock.unsecuredMultiTenantPort }}"
               - name: APP_ORD_SERVERS_CERT_SECURED_GLOBAL_BASE_URL
                 value: "https://{{ .Values.global.externalServicesMock.ordGlobalCertSecuredHost }}.{{ .Values.global.ingress.domainName }}"
               - name: APP_CLIENT_ID
@@ -69,7 +73,7 @@ spec:
               - name: APP_DEFAULT_TENANT
                 value: "{{ (index .Values.global.tenants 9).id }}"
               - name: APP_TRUSTED_TENANT
-                value: "{{ (index .Values.global.tenants 25).id }}"
+                value: "{{ (index .Values.global.tenants 26).id }}"
               - name: APP_CA_CERT
                 valueFrom:
                   secretKeyRef:
@@ -154,6 +158,9 @@ spec:
                 protocol: TCP
               - name: http-ord-uns-gr
                 containerPort: {{ .Values.global.externalServicesMock.ordGlobalRegistryUnsecuredPort }}
+                protocol: TCP
+              - name: http-uns-contnt
+                containerPort: {{ .Values.global.externalServicesMock.unsecuredPortWithAdditionalContent }}
                 protocol: TCP
               resources:
                 {{- toYaml .Values.deployment.resources | nindent 16 }}

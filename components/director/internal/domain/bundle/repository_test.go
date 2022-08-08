@@ -136,6 +136,8 @@ func TestPgRepository_Exists(t *testing.T) {
 		RepoConstructorFunc: bundle.NewRepository,
 		TargetID:            bundleID,
 		TenantID:            tenantID,
+		MethodName:          "Exists",
+		MethodArgs:          []interface{}{tenantID, bundleID},
 	}
 
 	suite.Run(t)

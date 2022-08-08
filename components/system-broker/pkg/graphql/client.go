@@ -42,7 +42,7 @@ type Client struct {
 }
 
 func PrepareGqlClient(cfg *Config, httpCfg *httputil.Config, providers ...httpdirector.AuthorizationProvider) (*director.GraphQLClient, error) {
-	httpTransport := httpdirector.NewCorrelationIDTransport(httpdirector.NewServiceAccountTokenTransport(httpdirector.NewErrorHandlerTransport(httputil.NewHTTPTransport(httpCfg))))
+	httpTransport := httpdirector.NewCorrelationIDTransport(httpdirector.NewServiceAccountTokenTransport(httpdirector.NewErrorHandlerTransport(httpdirector.NewHTTPTransportWrapper(httputil.NewHTTPTransport(httpCfg)))))
 
 	securedTransport := httpdirector.NewSecuredTransport(httpTransport, providers...)
 	securedClient := &http.Client{

@@ -121,7 +121,7 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
 				},
 			},
 			Labels: graphql.Labels{
-				testConfig.AppSelfRegDistinguishLabelKey: []interface{}{testConfig.AppSelfRegDistinguishLabelValue},
+				testConfig.AppSelfRegDistinguishLabelKey: testConfig.AppSelfRegDistinguishLabelValue,
 				tenantfetcher.RegionKey:                  testConfig.AppSelfRegRegion,
 			},
 			AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
@@ -196,7 +196,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 				},
 			},
 			Labels: graphql.Labels{
-				testConfig.AppSelfRegDistinguishLabelKey: []interface{}{testConfig.AppSelfRegDistinguishLabelValue},
+				testConfig.AppSelfRegDistinguishLabelKey: testConfig.AppSelfRegDistinguishLabelValue,
 				tenantfetcher.RegionKey:                  testConfig.AppSelfRegRegion,
 			},
 			AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,

@@ -219,6 +219,53 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 	return labelsMap, nil
 }
 
+// ListForObjectIDs lists all labels for given object IDs
+func (r *repository) ListForObjectIDs(ctx context.Context, tenant string, objectType model.LabelableObject, objectIDs []string) (map[string]map[string]interface{}, error) {
+	if len(objectIDs) == 0 {
+		return nil, nil
+	}
+	var entities Collection
+
+	conditions := []repo.Condition{repo.NewInConditionForStringValues(labelableObjectField(objectType), objectIDs)}
+
+	lister := r.lister
+	if objectType == model.TenantLabelableObject {
+		lister = r.embeddedTenantLister
+		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.ApplicationLabelableObject)))
+		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeContextLabelableObject)))
+		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeLabelableObject)))
+		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.AppTemplateLabelableObject)))
+	}
+
+	if objectType == model.AppTemplateLabelableObject {
+		if err := r.listerGlobal.ListGlobal(ctx, &entities, conditions...); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := lister.List(ctx, objectType.GetResourceType(), tenant, &entities, conditions...); err != nil {
+			return nil, err
+		}
+	}
+
+	labelsMap := make(map[string]map[string]interface{}, len(entities))
+
+	for _, entity := range entities {
+		m, err := r.conv.FromEntity(&entity)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting Label entity to model")
+		}
+
+		labelsForObject, ok := labelsMap[m.ObjectID]
+		if !ok {
+			labelsForObject = make(map[string]interface{})
+		}
+		labelsForObject[m.Key] = m.Value
+		labelsMap[m.ObjectID] = labelsForObject
+	}
+
+	return labelsMap, nil
+}
+
 // ListByKey missing godoc
 func (r *repository) ListByKey(ctx context.Context, tenant, key string) ([]*model.Label, error) {
 	var entities Collection

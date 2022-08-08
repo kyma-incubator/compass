@@ -98,15 +98,15 @@ func (s *service) fetchSpec(ctx context.Context, fr *model.FetchRequest) (*strin
 		}
 
 		doRequest = func() (*http.Response, error) {
-			return executor.Execute(s.client, fr.URL)
+			return executor.Execute(ctx, s.client, fr.URL, "")
 		}
 	} else if fr.Auth != nil {
 		doRequest = func() (*http.Response, error) {
-			return httputil.GetRequestWithCredentials(ctx, s.client, fr.URL, fr.Auth)
+			return httputil.GetRequestWithCredentials(ctx, s.client, fr.URL, "", fr.Auth)
 		}
 	} else {
 		doRequest = func() (*http.Response, error) {
-			return httputil.GetRequestWithoutCredentials(s.client, fr.URL)
+			return httputil.GetRequestWithoutCredentials(s.client, fr.URL, "")
 		}
 	}
 

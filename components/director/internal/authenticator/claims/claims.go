@@ -75,7 +75,7 @@ func (c *Claims) ContextWithClaims(ctx context.Context) context.Context {
 	ctxWithTenants := tenant.SaveToContext(ctx, c.Tenant[tenantmapping.ConsumerTenantKey], c.Tenant[tenantmapping.ExternalTenantKey])
 	scopesArray := strings.Split(c.Scopes, " ")
 	ctxWithScopes := scope.SaveToContext(ctxWithTenants, scopesArray)
-	apiConsumer := consumer.Consumer{ConsumerID: c.ConsumerID, ConsumerType: c.ConsumerType, Flow: c.Flow, OnBehalfOf: c.OnBehalfOf}
+	apiConsumer := consumer.Consumer{ConsumerID: c.ConsumerID, ConsumerType: c.ConsumerType, Flow: c.Flow, OnBehalfOf: c.OnBehalfOf, Region: c.Region, TokenClientID: c.TokenClientID}
 	ctxWithConsumerInfo := consumer.SaveToContext(ctxWithScopes, apiConsumer)
 	return ctxWithConsumerInfo
 }

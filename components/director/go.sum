@@ -694,6 +694,8 @@ github.com/kyma-incubator/compass/components/hydrator v0.0.0-20220420124254-ee69
 github.com/kyma-incubator/compass/components/hydrator v0.0.0-20220420124254-ee69592dca21/go.mod h1:a7/OIDFhslFDVq9ARdyqyLYxhxGK1+SIO8UL6cO/YG8=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220225101454-1e11cf2f8a9b h1:m7KzD3lVjr5Tihn16y/KLupm4BmyfB8RU9JIRdnax8I=
 github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220225101454-1e11cf2f8a9b/go.mod h1:ksyDeeLH7U6bfvwJ1IwEwBAQgRFBcOfKYcIyodnAsdU=
+github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220718091245-0570e3e974e0 h1:uSP3NsUf1wsQ8PrkMFoC33Zn9khCGLbss6Jlz/itbBs=
+github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20220718091245-0570e3e974e0/go.mod h1:hKHV+cI/qMfVx2Neq1vCzAfxuCWtvog2r6dF5xWFpW4=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459-11b81bddcce9 h1:WftrXM5d9PtBBo4J+eyCnwNEoFi8KDtINUD7jSp0jCA=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459-11b81bddcce9/go.mod h1:M30JDO6D3wgLgJ6leIFawaH1tv8k0m+GuroKv+0o38Y=
 github.com/lestrrat-go/backoff/v2 v2.0.8 h1:oNb5E5isby2kiro9AgdHLv5N5tint1AnDVVf2E2un5A=

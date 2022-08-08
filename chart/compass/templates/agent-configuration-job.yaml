@@ -56,19 +56,11 @@ spec:
             - -c
             - |
               MAX_RETRIES=60
-              DIRECTOR_URL=http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}/graphql
+              DIRECTOR_URL=https://{{ .Values.global.director.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}/graphql
               DIRECTOR_HEALTHZ_URL=http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}/healthz
               CONNECTOR_EXTERNAL_URL=https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.connector.prefix }}/graphql
 
-              TOKEN_PAYLOAD_TENANT=""
-              ENCODED_TOKEN_PAYLOAD_TENANT=""
-              INTERNAL_TOKEN_TENANT=""
-
-              TOKEN_PAYLOAD_NO_TENANT='{"scopes":"tenant:read","externalTenant":"","tenant":""}'
-              ENCODED_TOKEN_PAYLOAD_NO_TENANT=$(echo -e ${TOKEN_PAYLOAD_NO_TENANT} | base64 | tr -d \\n)
-              INTERNAL_TOKEN_NO_TENANT="eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.${ENCODED_TOKEN_PAYLOAD_NO_TENANT//=}."
-
-              echo "Token without tenant: ${INTERNAL_TOKEN_NO_TENANT}"
+              TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
 
               function kill_proxy_and_exit() {
                 echo 'killing pilot-agent...'
@@ -134,13 +126,13 @@ spec:
                 do
                   RESPONSE_BODY=$(curl -k "${DIRECTOR_URL}" \
                       -H 'Content-Type: application/json' \
-                      -H "Authorization: Bearer $INTERNAL_TOKEN_NO_TENANT" \
-                      --data-binary '{"query":"query { result:tenants { id internalID name }}"}')
+                      -H "Authorization: Bearer $TOKEN" \
+                      --data-binary '{"query":"query { result: tenants(first: 100) { data { id internalID name }}}"}')
                   echo $RESPONSE_BODY
 
-                  INTERNAL_TENANT_ID=$(echo $RESPONSE_BODY | jq -e '.data.result[] | select(.name == "default") | .internalID')
+                  INTERNAL_TENANT_ID=$(echo $RESPONSE_BODY | jq -e -r '.data.result.data[] | select(.name == "default") | .internalID')
                   if [ "$INTERNAL_TENANT_ID" != "" ]; then
-                    echo "Successfully fetched external tenant ID"
+                    echo "Successfully fetched internal tenant ID: ${INTERNAL_TENANT_ID}"
                     break
                   else
                     ((cnt++))
@@ -154,12 +146,7 @@ spec:
                   fi
                 done
 
-                TOKEN_PAYLOAD_TENANT='{"scopes":"application:write label_definition:write runtime:write runtime:read application:read health_checks:read label_definition:read","externalTenant":"{{ .Values.global.defaultTenant }}","tenant":'$INTERNAL_TENANT_ID'}'
-                ENCODED_TOKEN_PAYLOAD_TENANT=$(echo -e ${TOKEN_PAYLOAD_TENANT} | base64 | tr -d \\n)
-                INTERNAL_TOKEN_TENANT="eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.${ENCODED_TOKEN_PAYLOAD_TENANT//=}."
-
-                echo "Token with tenant: ${INTERNAL_TOKEN_TENANT}"
-                echo "Fetching internal tenant ID - in done."
+                echo "Fetching internal tenant ID - done."
                 set -o pipefail
               }
 
@@ -169,7 +156,8 @@ spec:
 
                 RESPONSE_BODY=$(curl -k "${DIRECTOR_URL}" \
                     -H 'Content-Type: application/json' \
-                    -H "Authorization: Bearer ${INTERNAL_TOKEN_TENANT}" \
+                    -H "Authorization: Bearer ${TOKEN}" \
+                    -H "tenant: ${INTERNAL_TENANT_ID}" \
                     --data-binary '{
                       "query":"mutation {\n  result: registerRuntime(\n    in: { name: \"kymaruntime\", description: \"Default Kyma runtime\" }\n  ) {\n    id\n  }\n}\n"
                     }')
@@ -178,20 +166,21 @@ spec:
                 RUNTIME_ID=$(echo $RESPONSE_BODY | jq -e '.data .result .id')
                 RUNTIME_ID="${RUNTIME_ID:1:${#RUNTIME_ID}-2}"
 
-                TOKEN_RESPONSE=$(curl "${DIRECTOR_URL}" \
+                OTT_RESPONSE=$(curl "${DIRECTOR_URL}" \
                     -H 'Content-Type: application/json' \
-                    -H "Authorization: Bearer ${INTERNAL_TOKEN_TENANT}" \
+                    -H "Authorization: Bearer ${TOKEN}" \
+                    -H "tenant: ${INTERNAL_TENANT_ID}" \
                     --data-binary '{
                       "query":"mutation {\n  result: requestOneTimeTokenForRuntime(\n id: '\\\""${RUNTIME_ID}"\\\"' \n ) {\n   token\n  }\n}\n"
                     }')
-                echo ${TOKEN_RESPONSE}
+                echo ${OTT_RESPONSE}
 
-                TOKEN=$(echo ${TOKEN_RESPONSE} | jq -e '.data.result.token')
-                TOKEN="${TOKEN:1:${#TOKEN}-2}"
+                OTT=$(echo ${OTT_RESPONSE} | jq -e '.data.result.token')
+                OTT="${OTT:1:${#OTT}-2}"
 
                 kubectl create secret -n {{ .Release.Namespace }} generic compass-agent-configuration \
                   --from-literal CONNECTOR_URL=$CONNECTOR_EXTERNAL_URL \
-                  --from-literal TOKEN=$TOKEN \
+                  --from-literal TOKEN=$OTT \
                   --from-literal RUNTIME_ID=$RUNTIME_ID \
                   --from-literal TENANT={{ .Values.global.defaultTenant }}
 

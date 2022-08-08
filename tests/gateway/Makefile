@@ -28,7 +28,7 @@ run:
 	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-gateway-local-0 -c gateway-tests -- ./gateway.test -test.run $(testName) -test.v
 
 sandbox-deploy-test:
-	env GOOS=linux go test -c ./tests -o gateway.test
+	env GOOS=linux GOARCH=amd64 go test -c ./tests -o gateway.test
 	kubectl cp ./gateway.test kyma-system/oct-tp-compass-e2e-tests-compass-e2e-gateway-local-0:/ -c gateway-tests
 	rm ./gateway.test
 
