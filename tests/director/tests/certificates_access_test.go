@@ -57,8 +57,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 			name:           "Integration System cannot manage customer tenant entities",
 			tenant:         tenant.TestTenants.GetIDByName(t, tenant.TestDefaultCustomerTenant),
 			resourceSuffix: "customer-owned",
-			// TODO
-			expectErr: true,
+			expectErr:      true,
 		},
 	}
 	for _, test := range testCases {
@@ -86,8 +85,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 
 			t.Log(fmt.Sprintf("Trying to register runtime in account tenant %s", test.tenant))
 			rtmInput := fixRuntimeInput(fmt.Sprintf("runtime-%s", test.resourceSuffix))
-			// TODO
-			rt := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, test.tenant, rtmInput, conf.GatewayOauth)
+			rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, test.tenant, &rtmInput)
 			defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, test.tenant, &rt)
 			if test.expectErr {
 				require.Error(t, err)
