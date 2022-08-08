@@ -2,7 +2,12 @@ package application
 
 import (
 	"context"
+	"fmt"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
@@ -36,6 +41,7 @@ type ApplicationService interface {
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListByRuntimeID(ctx context.Context, runtimeUUID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error)
+	ListAll(ctx context.Context) ([]*model.Application, error)
 	SetLabel(ctx context.Context, label *model.LabelInput) error
 	GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
 	ListLabels(ctx context.Context, applicationID string) (map[string]*model.Label, error)
@@ -124,12 +130,20 @@ type OneTimeTokenService interface {
 	IsTokenValid(systemAuth *pkgmodel.SystemAuth) (bool, error)
 }
 
+// ApplicationTemplateService missing godoc
+//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationTemplateService interface {
+	GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)
+}
+
 // Resolver missing godoc
 type Resolver struct {
 	transact persistence.Transactioner
 
 	appSvc       ApplicationService
 	appConverter ApplicationConverter
+
+	appTemplateSvc ApplicationTemplateService
 
 	webhookSvc WebhookService
 	oAuth20Svc OAuth20Service
@@ -140,6 +154,9 @@ type Resolver struct {
 	sysAuthConv      SystemAuthConverter
 	eventingSvc      EventingService
 	bndlConv         BundleConverter
+
+	selfRegisterDistinguishLabelKey string
+	tokenPrefix                     string
 }
 
 // NewResolver missing godoc
@@ -153,32 +170,35 @@ func NewResolver(transact persistence.Transactioner,
 	sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService,
 	bndlSvc BundleService,
-	bndlConverter BundleConverter) *Resolver {
+	bndlConverter BundleConverter,
+	appTemplateSvc ApplicationTemplateService,
+	selfRegisterDistinguishLabelKey, tokenPrefix string) *Resolver {
 	return &Resolver{
-		transact:         transact,
-		appSvc:           svc,
-		webhookSvc:       webhookSvc,
-		oAuth20Svc:       oAuth20Svc,
-		sysAuthSvc:       sysAuthSvc,
-		appConverter:     appConverter,
-		webhookConverter: webhookConverter,
-		sysAuthConv:      sysAuthConv,
-		eventingSvc:      eventingSvc,
-		bndlSvc:          bndlSvc,
-		bndlConv:         bndlConverter,
+		transact:                        transact,
+		appSvc:                          svc,
+		webhookSvc:                      webhookSvc,
+		oAuth20Svc:                      oAuth20Svc,
+		sysAuthSvc:                      sysAuthSvc,
+		appConverter:                    appConverter,
+		webhookConverter:                webhookConverter,
+		sysAuthConv:                     sysAuthConv,
+		eventingSvc:                     eventingSvc,
+		bndlSvc:                         bndlSvc,
+		bndlConv:                        bndlConverter,
+		appTemplateSvc:                  appTemplateSvc,
+		selfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
+		tokenPrefix:                     tokenPrefix,
 	}
 }
 
-// Applications missing godoc
+// Applications retrieves all tenant scoped applications.
+// If this method is executed in a double authentication flow (i.e. consumerInfo.OnBehalfOf != nil)
+// then it would return 0 or 1 tenant applications - it would return 1 if there exists a tenant application
+// representing a tenant in an Application Provider and 0 if there is none such application.
 func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
-	labelFilter := labelfilter.MultipleFromGraphQL(filter)
-
-	var cursor string
-	if after != nil {
-		cursor = string(*after)
-	}
-	if first == nil {
-		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	tx, err := r.transact.Begin()
@@ -188,6 +208,39 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	if consumerInfo.OnBehalfOf != "" {
+		log.C(ctx).Infof("External tenant with id %s is retrieving application on behalf of tenant with id %s", consumerInfo.ConsumerID, consumerInfo.OnBehalfOf)
+		tenantApp, err := r.getApplicationProviderTenant(ctx, consumerInfo)
+		if err != nil {
+			return nil, err
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			return nil, err
+		}
+
+		return &graphql.ApplicationPage{
+			Data:       []*graphql.Application{tenantApp},
+			TotalCount: 1,
+			PageInfo: &graphql.PageInfo{
+				StartCursor: "1",
+				EndCursor:   "1",
+				HasNextPage: false,
+			},
+		}, nil
+	}
+
+	labelFilter := labelfilter.MultipleFromGraphQL(filter)
+
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+	if first == nil {
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
+	}
 
 	appPage, err := r.appSvc.List(ctx, labelFilter, *first, cursor)
 	if err != nil {
@@ -740,4 +793,47 @@ func (r *Resolver) Bundle(ctx context.Context, obj *graphql.Application, id stri
 	}
 
 	return gqlBundle, nil
+}
+
+// getApplicationProviderTenant should be used when making requests with double authentication, i.e. consumerInfo.OnBehalfOf != nil;
+// The function leverages the knowledge of the provider tenant (it's in consumerInfo.ConsumerID) and consumer tenant (it's already set in the TenantCtx)
+// in order to derive the application template representing an Application Provider and then finding an application among those of the consumer tenant
+// which is associated with that application template.
+// In this way the getApplicationProviderTenant function finds a specific tenant application of a given Application Provider - there should only be one or none.
+func (r *Resolver) getApplicationProviderTenant(ctx context.Context, consumerInfo consumer.Consumer) (*graphql.Application, error) {
+	tokenClientID := strings.TrimPrefix(consumerInfo.TokenClientID, r.tokenPrefix)
+	filters := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(scenarioassignment.SubaccountIDKey, fmt.Sprintf("\"%s\"", consumerInfo.ConsumerID)),
+		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", consumerInfo.Region)),
+		labelfilter.NewForKeyWithQuery(r.selfRegisterDistinguishLabelKey, fmt.Sprintf("\"%s\"", tokenClientID)),
+	}
+
+	// Derive application provider's app template
+	appTemplate, err := r.appTemplateSvc.GetByFilters(ctx, filters)
+	if err != nil {
+		log.C(ctx).Infof("No app template found with filter %q = %q, %q = %q, %q = %q", scenarioassignment.SubaccountIDKey, consumerInfo.ConsumerID, tenant.RegionLabelKey, consumerInfo.Region, r.selfRegisterDistinguishLabelKey, tokenClientID)
+		return nil, errors.Wrapf(err, "no app template found with filter %q = %q, %q = %q, %q = %q", scenarioassignment.SubaccountIDKey, consumerInfo.ConsumerID, tenant.RegionLabelKey, consumerInfo.Region, r.selfRegisterDistinguishLabelKey, tokenClientID)
+	}
+
+	// Find the consuming tenant's applications
+	tntApplications, err := r.appSvc.ListAll(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing applications for tenant")
+	}
+
+	// Try to find the application matching the derived provider app template
+	var foundApp *model.Application
+	for _, app := range tntApplications {
+		if str.PtrStrToStr(app.ApplicationTemplateID) == appTemplate.ID {
+			foundApp = app
+			break
+		}
+	}
+
+	if foundApp == nil {
+		log.C(ctx).Infof("No application found for template with ID %q", appTemplate.ID)
+		return nil, errors.Errorf("No application found for template with ID %q", appTemplate.ID)
+	}
+
+	return r.appConverter.ToGraphQL(foundApp), nil
 }

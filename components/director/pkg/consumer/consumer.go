@@ -26,10 +26,12 @@ const (
 
 // Consumer missing godoc
 type Consumer struct {
-	ConsumerID   string `json:"ConsumerID"`
-	ConsumerType `json:"ConsumerType"`
-	Flow         oathkeeper.AuthFlow `json:"Flow"`
-	OnBehalfOf   string              `json:"onBehalfOf"`
+	ConsumerID    string `json:"ConsumerID"`
+	ConsumerType  `json:"ConsumerType"`
+	Flow          oathkeeper.AuthFlow `json:"Flow"`
+	OnBehalfOf    string              `json:"onBehalfOf"`
+	Region        string              `json:"region"`
+	TokenClientID string              `json:"tokenClientID"`
 }
 
 // MapSystemAuthToConsumerType missing godoc

@@ -23,8 +23,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
-	t := testingx.NewT(stdT)
+func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
+	t := testingx.NewT(baseT)
 	t.Run("When creating app template with a certificate", func(stdT *testing.T) {
 		t := testingx.NewT(stdT)
 		// GIVEN
@@ -92,6 +92,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 		t.Run("Application is deleted successfully in consumer subaccount as a result of unsubscription", func(t *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+
 			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
@@ -112,6 +113,88 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			require.NoError(t, err)
 
 			require.Len(t, actualAppPage.Data, 0)
+		})
+
+		t.Run("Application Provider successfully queries consumer application after subscription", func(t *testing.T) {
+			//GIVEN
+			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+
+			// WHEN
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
+			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+			// THEN
+			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
+			headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
+
+			actualAppPage := graphql.ApplicationPage{}
+			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
+			getSrcAppReq.Header = headers
+			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertSecuredClient, getSrcAppReq, &actualAppPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualAppPage.Data, 1)
+			require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
+		})
+
+		t.Run("Application Provider can only see the consumer SaaS application record created from subscription and no other applications that may exist in consumer subaccount", func(t *testing.T) {
+			//GIVEN
+			firstApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, baseT.Name()[:26]+"_firstApp", subscriptionConsumerSubaccountID)
+			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &firstApp)
+			require.NoError(t, err)
+			require.NotEmpty(t, firstApp.ID)
+
+			secondApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, baseT.Name()[:26]+"_secondApp", subscriptionConsumerSubaccountID)
+			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &secondApp)
+			require.NoError(t, err)
+			require.NotEmpty(t, secondApp.ID)
+
+			actualAppPage := graphql.ApplicationPage{}
+			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualAppPage.Data, 2)
+			require.ElementsMatch(t, []string{firstApp.ID, secondApp.ID}, []string{actualAppPage.Data[0].ID, actualAppPage.Data[1].ID})
+
+			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+
+			// WHEN
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
+			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+			// THEN
+			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
+			headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
+
+			actualConsumerAppPage := graphql.ApplicationPage{}
+			getSrcAppReqWithHeaders := fixtures.FixGetApplicationsRequestWithPagination()
+			getSrcAppReqWithHeaders.Header = headers
+			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertSecuredClient, getSrcAppReqWithHeaders, &actualConsumerAppPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualConsumerAppPage.Data, 1)
+			subscribedApp := actualConsumerAppPage.Data[0]
+			require.Equal(t, appTmpl.ID, *subscribedApp.ApplicationTemplateID)
+			require.NotEqual(t, firstApp.ID, subscribedApp.ID)
+			require.NotEqual(t, secondApp.ID, subscribedApp.ID)
+
+			actualAllAppsPage := graphql.ApplicationPage{}
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAllAppsPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualAllAppsPage.Data, 3)
+			require.ElementsMatch(t, []string{firstApp.ID, secondApp.ID, subscribedApp.ID}, []string{actualAllAppsPage.Data[0].ID, actualAllAppsPage.Data[1].ID, actualAllAppsPage.Data[2].ID})
+
+			subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+			actualFinalAppPage := graphql.ApplicationPage{}
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualFinalAppPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualAppPage.Data, 2)
+			require.ElementsMatch(t, []string{firstApp.ID, secondApp.ID}, []string{actualFinalAppPage.Data[0].ID, actualFinalAppPage.Data[1].ID})
+
 		})
 
 		t.Run("Application Provider successfully pushes consumer app bundle metadata to consumer application after successful subscription", func(t *testing.T) {

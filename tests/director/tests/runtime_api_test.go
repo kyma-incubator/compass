@@ -837,7 +837,7 @@ func TestRuntimeTypeImmutability(t *testing.T) {
 	t.Logf("Updating runtime with labels %q and %q...", conf.RuntimeTypeLabelKey, tenantfetcher.RegionKey)
 
 	updatedRuntime := graphql.RuntimeExt{}
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateRuntimeReq, &updatedRuntime)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, updateRuntimeReq, &updatedRuntime)
 	require.NoError(t, err)
 	require.Equal(t, "updated-runtime", updatedRuntime.Name)
 	require.Equal(t, "updated-runtime-description", *updatedRuntime.Description)
