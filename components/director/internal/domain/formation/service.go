@@ -316,12 +316,8 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 	}
 }
 
-func (s *service) isValidRuntimeType(ctx context.Context, tnt string, objectID string, formation model.Formation) error {
-	formationEntity, err := s.formationRepository.GetByName(ctx, formation.Name, tnt)
-	if err != nil {
-		return err
-	}
-	formationTemplate, err := s.formationTemplateRepository.Get(ctx, formationEntity.FormationTemplateID)
+func (s *service) isValidRuntimeType(ctx context.Context, tnt string, objectID string, formation *model.Formation) error {
+	formationTemplate, err := s.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
 	if err != nil {
 		return err
 	}
@@ -364,8 +360,12 @@ func (s *service) sendNotifications(ctx context.Context, notifications []*webhoo
 }
 
 func (s *service) assign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
+	formationFromDB, err := s.getFormationByName(ctx, formation.Name, tnt)
+	if err != nil {
+		return nil, err
+	}
 	if formation.Name != "DEFAULT" && objectType == graphql.FormationObjectTypeRuntime {
-		err := s.isValidRuntimeType(ctx, tnt, objectID, formation)
+		err := s.isValidRuntimeType(ctx, tnt, objectID, formationFromDB)
 		if err != nil {
 			return nil, err
 		}
@@ -375,7 +375,7 @@ func (s *service) assign(ctx context.Context, tnt, objectID string, objectType g
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting runtime context")
 		}
-		err = s.isValidRuntimeType(ctx, tnt, runtimeCtx.RuntimeID, formation)
+		err = s.isValidRuntimeType(ctx, tnt, runtimeCtx.RuntimeID, formationFromDB)
 		if err != nil {
 			return nil, err
 		}
@@ -387,12 +387,12 @@ func (s *service) assign(ctx context.Context, tnt, objectID string, objectType g
 			if err = s.labelService.CreateLabel(ctx, tnt, s.uuidService.Generate(), labelInput); err != nil {
 				return nil, err
 			}
-			return s.getFormationByName(ctx, formation.Name, tnt)
+			return formationFromDB, nil
 		}
 		return nil, err
 	}
 
-	return s.getFormationByName(ctx, formation.Name, tnt)
+	return formationFromDB, nil
 }
 
 // UnassignFormation unassigns object base on graphql.FormationObjectType.

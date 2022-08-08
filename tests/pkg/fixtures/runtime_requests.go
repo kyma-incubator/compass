@@ -1,17 +1,12 @@
 package fixtures
 
 import (
-	"context"
 	"fmt"
-	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-	"github.com/kyma-incubator/compass/tests/pkg/token"
 	gcli "github.com/machinebox/graphql"
-	"github.com/stretchr/testify/require"
 )
 
 func FixRuntimeRegisterInput(placeholder string) graphql.RuntimeRegisterInput {
@@ -140,31 +135,4 @@ func FixDeleteSystemAuthForRuntimeRequest(authID string) *gcli.Request {
 					%s
 				}
 			}`, authID, testctx.Tc.GQLFieldsProvider.ForSystemAuth()))
-}
-func RegisterKymaRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID string, runtimeInput graphql.RuntimeRegisterInput, oauthPath string) graphql.RuntimeExt {
-	intSysName := "runtime-integration-system"
-
-	t.Logf("Creating integration system with name: %q", intSysName)
-	intSys, err := RegisterIntegrationSystem(t, ctx, gqlClient, tenantID, intSysName)
-	defer CleanupIntegrationSystem(t, ctx, gqlClient, tenantID, intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
-
-	intSysAuth := RequestClientCredentialsForIntegrationSystem(t, ctx, gqlClient, tenantID, intSys.ID)
-	require.NotEmpty(t, intSysAuth)
-	defer DeleteSystemAuthForIntegrationSystem(t, ctx, gqlClient, intSysAuth.ID)
-
-	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
-	require.True(t, ok)
-
-	t.Log("Issue a Hydra token with Client Credentials")
-	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
-	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, oauthPath)
-
-	t.Logf("Registering runtime with name %q with integration system credentials...", runtimeInput.Name)
-	kymaRuntime, err := RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenantID, &runtimeInput)
-	require.NoError(t, err)
-	require.NotEmpty(t, kymaRuntime.ID)
-
-	return kymaRuntime
 }
