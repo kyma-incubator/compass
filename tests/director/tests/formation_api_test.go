@@ -1171,7 +1171,7 @@ func TestFormationRuntimeTypeWhileAssigning(t *testing.T) {
 	createFormationReq := fixtures.FixCreateFormationWithTemplateRequest(formationInputGQL)
 	actualFormation := graphql.Formation{}
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, createFormationReq, &actualFormation)
-	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, formation, actualFormation.ID, graphql.FormationObjectTypeRuntime, tenantId)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formation.Name)
 	require.NoError(t, err)
 
 	inRuntime := fixtures.FixRuntimeRegisterInput("test-runtime")
