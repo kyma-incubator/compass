@@ -92,7 +92,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 		runtimeInput := graphql.RuntimeRegisterInput{
 			Name: "test",
 		}
-		runtime := fixtures.RegisterKymaRuntime(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, runtimeInput, testConfig.GatewayOauth)
+		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, &runtimeInput)
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &runtime)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)

@@ -141,8 +141,10 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 		}
 
 		t.Log("Register Runtime via Certificate Secured Client")
-		runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, runtimeInput, testConfig.GatewayOauth)
+		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &runtimeInput)
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &runtime)
+		require.NoError(t, err)
+		require.NotEmpty(t, runtime.ID)
 		t.Logf("Registered Runtime with [id=%s]", runtime.ID)
 
 		t.Log("Request Client Credentials for Runtime")
@@ -162,7 +164,7 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 
 		assert.Equal(t, graphql.RuntimeStatusConditionFailed, runtime.Status.Condition)
 
-		err := testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, req, &actualRuntime)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, req, &actualRuntime)
 		require.NoError(t, err)
 
 		t.Log("Ensure the status condition")

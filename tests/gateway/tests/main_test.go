@@ -25,7 +25,6 @@ type config struct {
 	AppSelfRegDistinguishLabelKey   string
 	AppSelfRegDistinguishLabelValue string
 	AppSelfRegRegion                string
-	GatewayOauth                    string
 
 	DirectorURL string `envconfig:"-"`
 }
