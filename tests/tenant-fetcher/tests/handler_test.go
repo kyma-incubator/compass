@@ -864,9 +864,11 @@ func cleanupTenants(t require.TestingT, ctx context.Context, gqlClient *gcli.Cli
 	log.D().Info("Successfully cleanup tenants")
 }
 
-func registerRuntime(t *testing.T, ctx context.Context, runtimeName, subaccountInternalID string) graphql.RuntimeExt {
-	input := graphql.RuntimeRegisterInput{
+func registerRuntime(t require.TestingT, ctx context.Context, runtimeName, subaccountInternalID string) graphql.RuntimeExt {
+	input := &graphql.RuntimeRegisterInput{
 		Name: runtimeName,
 	}
-	return fixtures.RegisterKymaRuntime(t, ctx, directorInternalGQLClient, subaccountInternalID, input, config.GatewayOauth)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorInternalGQLClient, subaccountInternalID, input)
+	assert.NoError(t, err)
+	return runtime
 }
