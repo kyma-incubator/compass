@@ -492,7 +492,7 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), `must be one of the following: "DEFAULT", "Christmas", "New Year"`)
+	assert.Contains(t, err.Error(), `Object not found [object=formations]`)
 }
 
 func TestGetScenariosLabelDefinitionCreatesOneIfNotExists(t *testing.T) {
