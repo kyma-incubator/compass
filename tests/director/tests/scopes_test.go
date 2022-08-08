@@ -24,8 +24,10 @@ func TestScopesAuthorization(t *testing.T) {
 
 	input := fixRuntimeInput("runtime-test")
 
-	runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, input, conf.GatewayOauth)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+	require.NoError(t, err)
+	require.NotEmpty(t, runtime.ID)
 
 	id := uuid.New().String()
 
