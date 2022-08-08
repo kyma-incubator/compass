@@ -1,10 +1,12 @@
-package tenantfetchersvc
+package resync
 
 import (
 	"context"
 	"strconv"
+	"time"
 
 	kube "github.com/kyma-incubator/compass/components/director/pkg/kubernetes"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -55,12 +57,12 @@ func (k *noopKubernetesClient) UpdateTenantFetcherConfigMapData(_ context.Contex
 
 // KubeConfig missing godoc
 type KubeConfig struct {
-	UseKubernetes string `envconfig:"optional,default=true,APP_USE_KUBERNETES"`
+	UseKubernetes string `envconfig:"USE_KUBERNETES"`
 
-	ConfigMapNamespace            string `envconfig:"optional,default=compass-system,APP_CONFIGMAP_NAMESPACE"`
-	ConfigMapName                 string `envconfig:"optional,default=tenant-fetcher-config,APP_LAST_EXECUTION_TIME_CONFIG_MAP_NAME"`
-	ConfigMapTimestampField       string `envconfig:"optional,default=lastConsumedTenantTimestamp,APP_CONFIGMAP_TIMESTAMP_FIELD"`
-	ConfigMapResyncTimestampField string `envconfig:"optional,default=lastFullResyncTimestamp,APP_CONFIGMAP_RESYNC_TIMESTAMP_FIELD"`
+	ConfigMapNamespace            string `envconfig:"optional,default=compass-system,CONFIGMAP_NAMESPACE"`
+	ConfigMapName                 string `envconfig:"optional,default=tenant-fetcher-config,LAST_EXECUTION_TIME_CONFIG_MAP_NAME"`
+	ConfigMapTimestampField       string `envconfig:"optional,default=lastConsumedTenantTimestamp,CONFIGMAP_TIMESTAMP_FIELD"`
+	ConfigMapResyncTimestampField string `envconfig:"optional,default=lastFullResyncTimestamp,CONFIGMAP_RESYNC_TIMESTAMP_FIELD"`
 
 	ClientConfig kube.Config
 }
@@ -114,4 +116,38 @@ func (k *kubernetesClient) UpdateTenantFetcherConfigMapData(ctx context.Context,
 	configMap.Data[k.cfg.ConfigMapResyncTimestampField] = lastResyncTimestamp
 	_, err = k.client.CoreV1().ConfigMaps(k.cfg.ConfigMapNamespace).Update(ctx, configMap, metav1.UpdateOptions{})
 	return err
+}
+
+func resyncTimestamps(ctx context.Context, client KubeClient, fullResyncInterval time.Duration) (*time.Time, string, string, error) {
+	startTime := time.Now()
+
+	lastConsumedTenantTimestamp, lastFullResyncTimestamp, err := client.GetTenantFetcherConfigMapData(ctx)
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	shouldFullResync, err := shouldFullResync(lastFullResyncTimestamp, fullResyncInterval)
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	if shouldFullResync {
+		log.C(ctx).Infof("Last full resync was %s ago. Will perform a full resync.", fullResyncInterval)
+		lastConsumedTenantTimestamp = "1"
+		lastFullResyncTimestamp = convertTimeToUnixMilliSecondString(startTime)
+	}
+	return &startTime, lastConsumedTenantTimestamp, lastFullResyncTimestamp, nil
+}
+
+func shouldFullResync(lastFullResyncTimestamp string, fullResyncInterval time.Duration) (bool, error) {
+	i, err := strconv.ParseInt(lastFullResyncTimestamp, 10, 64)
+	if err != nil {
+		return false, err
+	}
+	ts := time.Unix(i/1000, 0)
+	return time.Now().After(ts.Add(fullResyncInterval)), nil
+}
+
+func convertTimeToUnixMilliSecondString(timestamp time.Time) string {
+	return strconv.FormatInt(timestamp.UnixNano()/int64(time.Millisecond), 10)
 }

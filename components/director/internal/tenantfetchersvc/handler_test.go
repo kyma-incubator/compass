@@ -337,7 +337,7 @@ func TestService_SubscriptionFlows(t *testing.T) {
 	})
 }
 
-func TestService_FetchTenantOnDemand(t *testing.T) {
+func TestService_SynchronizeTenant(t *testing.T) {
 	const (
 		parentIDPathVar = "tenantId"
 		tenantIDPathVar = "parentTenantId"
@@ -369,7 +369,7 @@ func TestService_FetchTenantOnDemand(t *testing.T) {
 			},
 			TenantFetcherSvc: func() *automock.TenantFetcher {
 				svc := &automock.TenantFetcher{}
-				svc.On("FetchTenantOnDemand", mock.Anything, tenantID, parentID).Return(nil)
+				svc.On("SynchronizeTenant", mock.Anything, tenantID, parentID).Return(nil)
 				return svc
 			},
 			ExpectedStatusCode: http.StatusOK,
@@ -405,7 +405,7 @@ func TestService_FetchTenantOnDemand(t *testing.T) {
 			},
 			TenantFetcherSvc: func() *automock.TenantFetcher {
 				svc := &automock.TenantFetcher{}
-				svc.On("FetchTenantOnDemand", mock.Anything, tenantID, parentID).Return(errors.New("error"))
+				svc.On("SynchronizeTenant", mock.Anything, tenantID, parentID).Return(errors.New("error"))
 				return svc
 			},
 			ExpectedStatusCode: http.StatusInternalServerError,

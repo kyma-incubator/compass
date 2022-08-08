@@ -10,7 +10,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/tidwall/gjson"
 )
@@ -24,7 +23,7 @@ const (
 // TenantFetcher is used to fectch tenants for creation;
 //go:generate mockery --name=TenantFetcher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantFetcher interface {
-	FetchTenantOnDemand(ctx context.Context, tenantID, parentTenantID string) error
+	SynchronizeTenant(ctx context.Context, parentTenantID, tenantID string) error
 }
 
 // TenantSubscriber is used to apply subscription changes for tenants;
@@ -44,10 +43,7 @@ type HandlerConfig struct {
 	ParentTenantPathParam         string `envconfig:"APP_PARENT_TENANT_PATH_PARAM,default=parentTenantId"`
 	RegionPathParam               string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
 
-	Features features.Config
-
-	Kubernetes tenantfetcher.KubeConfig
-	Database   persistence.DatabaseConfig
+	Database persistence.DatabaseConfig
 
 	DirectorGraphQLEndpoint     string        `envconfig:"APP_DIRECTOR_GRAPHQL_ENDPOINT"`
 	ClientTimeout               time.Duration `envconfig:"default=60s"`
@@ -114,7 +110,7 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 
 	log.C(ctx).Infof("Fetching create event for tenant with ID %s", tenantID)
 
-	err := h.fetcher.FetchTenantOnDemand(ctx, tenantID, parentTenantID)
+	err := h.fetcher.SynchronizeTenant(ctx, tenantID, parentTenantID)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Error while processing request for creation of tenant %s: %v", tenantID, err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)

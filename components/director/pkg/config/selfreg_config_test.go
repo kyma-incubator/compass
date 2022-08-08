@@ -90,7 +90,7 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 			ExpectedErr:              errors.Errorf("while validating instance for region: %q: Client ID is missing, Token URL is missing, URL is missing", "eu-2"),
 		},
 		{
-			Name: "Returns error when Client Secret is missing in Standard flow",
+			Name: "Returns error when Client SecretFilePath is missing in Standard flow",
 			Config: SelfRegConfig{
 				SelfRegisterSecretPath:   "testdata/TestSelfRegConfig_MapInstanceConfigs_StandardMode_Missing_ClientSecret.golden",
 				OAuthMode:                oauth.Standard,
@@ -102,7 +102,7 @@ func TestSelfRegConfig_MapInstanceConfigs(t *testing.T) {
 				InstanceKeyPath:          "clientKey",
 			},
 			ExpectedRegionToInstance: nil,
-			ExpectedErr:              errors.Errorf("while validating instance for region: %q: Client Secret is missing", "eu-2"),
+			ExpectedErr:              errors.Errorf("while validating instance for region: %q: Client SecretFilePath is missing", "eu-2"),
 		},
 		{
 			Name: "Returns error when Certificate and Key is missing in MTLS flow",

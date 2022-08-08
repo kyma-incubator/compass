@@ -1,4 +1,4 @@
-package tenantfetchersvc
+package resync
 
 import (
 	"bytes"
@@ -154,14 +154,14 @@ func Test_getMovedSubaccounts(t *testing.T) {
 			for i, detailPair := range test.detailsPairs {
 				events = append(events, fixEventWithDetails(fmt.Sprintf("id%d", i), fmt.Sprintf("foo%d", i), "GlobalAccount", parentID, constructJSONObject(detailPair...), fieldMapping))
 			}
-			page := eventsPage{
-				fieldMapping: fieldMapping,
-				movedSubaccountsFieldMapping: MovedSubaccountsFieldMapping{
-					LabelValue:   labelFieldMappingValue,
+			page := EventsPage{
+				FieldMapping: fieldMapping,
+				MovedSubaccountsFieldMapping: MovedSubaccountsFieldMapping{
+					SubaccountID: labelFieldMappingValue,
 					SourceTenant: sourceTenantField,
 					TargetTenant: targetTenantField,
 				},
-				payload: []byte(fixTenantEventsResponse(eventsToJSONArray(events...), len(test.detailsPairs), 1)),
+				Payload: []byte(fixTenantEventsResponse(eventsToJSONArray(events...), len(test.detailsPairs), 1)),
 			}
 
 			runtimes := page.getMovedSubaccounts()
@@ -258,6 +258,32 @@ func Test_getTenantMappings(t *testing.T) {
 			},
 		},
 		{
+			name: "successfully gets businessTenantMappingInputs for eventPage with missing tenant names",
+			fieldMapping: TenantFieldMapping{
+				NameField:          nameField,
+				IDField:            idField,
+				EventsField:        "events",
+				DetailsField:       "details",
+				DiscriminatorField: discriminatorField,
+				DiscriminatorValue: "discriminator-value",
+			},
+			errorFunc: func(t *testing.T, err error) {
+				assert.NoError(t, err)
+			},
+			assertTenantMappingFunc: func(t *testing.T, tenantMappings []model.BusinessTenantMappingInput) {
+				assert.Len(t, tenantMappings, 1)
+				assert.Equal(t, expectedTenantMapping.ExternalTenant, tenantMappings[0].ExternalTenant)
+				assert.Empty(t, tenantMappings[0].Name)
+			},
+			detailsPairs: [][]Pair{
+				{
+					{idField, id},
+					{"wrong", name},
+					{discriminatorField, "discriminator-value"},
+				},
+			},
+		},
+		{
 			name: "empty mappings for get businessTenantMappingInputs when id field is wrong",
 			fieldMapping: TenantFieldMapping{
 				NameField:          nameField,
@@ -279,30 +305,6 @@ func Test_getTenantMappings(t *testing.T) {
 				{
 					{"wrong", id},
 					{nameField, name},
-					{discriminatorField, "discriminator-value"},
-				},
-			},
-		},
-		{
-			name: "empty mappings for get businessTenantMappingInputs when name field is wrong",
-			fieldMapping: TenantFieldMapping{
-				NameField:          nameField,
-				IDField:            idField,
-				EventsField:        "events",
-				DetailsField:       "details",
-				DiscriminatorField: discriminatorField,
-				DiscriminatorValue: "discriminator-value",
-			},
-			errorFunc: func(t *testing.T, err error) {
-				assert.NoError(t, err)
-			},
-			assertTenantMappingFunc: func(t *testing.T, tenantMappings []model.BusinessTenantMappingInput) {
-				assert.Len(t, tenantMappings, 0)
-			},
-			detailsPairs: [][]Pair{
-				{
-					{idField, id},
-					{"wrong", name},
 					{discriminatorField, "discriminator-value"},
 				},
 			},
@@ -339,10 +341,10 @@ func Test_getTenantMappings(t *testing.T) {
 			for i, detailPair := range test.detailsPairs {
 				events = append(events, fixEventWithDetails(fmt.Sprintf("id%d", i), fmt.Sprintf("foo%d", i), "GlobalAccount", fmt.Sprintf("gaID%d", i), constructJSONObject(detailPair...), test.fieldMapping))
 			}
-			page := eventsPage{
-				fieldMapping: test.fieldMapping,
-				providerName: providerName,
-				payload:      []byte(fixTenantEventsResponse(eventsToJSONArray(events...), len(test.detailsPairs), 1)),
+			page := EventsPage{
+				FieldMapping: test.fieldMapping,
+				ProviderName: providerName,
+				Payload:      []byte(fixTenantEventsResponse(eventsToJSONArray(events...), len(test.detailsPairs), 1)),
 			}
 			tenantMappings := page.getTenantMappings(CreatedAccountType)
 			test.assertTenantMappingFunc(t, tenantMappings)

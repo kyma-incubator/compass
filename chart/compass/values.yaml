@@ -534,31 +534,6 @@ global:
       secret: ""
       tokenURL: '{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'
       tokenPath: "/cert/token"
-    secret:
-      name: "compass-tenant-fetcher-secret"
-      clientIdKey: "client-id"
-      oauthMode: "oauth-mtls"
-      clientCertKey: "client-cert"
-      clientKeyKey: "client-key"
-      oauthUrlKey: "url"
-      skipSSLValidation: true
-    endpoints:
-      subaccountCreated: "127.0.0.1/events?type=subaccount-created"
-    fieldMapping:
-      totalPagesField: "totalPages"
-      totalResultsField: "totalResults"
-      tenantEventsField: "events"
-      idField: "id"
-      nameField: "name"
-      customerIdField: "customerId"
-      subdomainField: "subdomain"
-      discriminatorField: ""
-      discriminatorValue: ""
-      detailsField: "details"
-      entityTypeField: "entityType"
-      globalAccountID: "gaID"
-      regionField: "region"
-    regionDetails: '[{"central", ""}]'
   externalCertConfiguration:
     issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
     issuerLocality: "local" # In local setup we have manually created connector CA certificate with 'local' Locality property
@@ -664,12 +639,13 @@ global:
     job1:
       cron:
         enabled: false
-      enabled: false
+      enabled: true
       job:
         interval: "5m"
       configMapNamespace: "compass-system"
       manageSecrets: true
       providerName: "compass"
+      tenantType: "subaccount"
       schedule: "*/5 * * * *"
       tenantInsertChunkSize: "500"
       kubernetes:
@@ -677,52 +653,84 @@ global:
         pollInterval: 2s
         pollTimeout: 1m
         timeout: 2m
-      oauth:
-        client: ""
-        secret: ""
-        tokenURL: ""
-        tokenPath: ""
-      secret:
-        name: "compass-tenant-fetcher-secret-job1"
-        clientIdKey: client-id
-        clientSecretKey: client-secret
-        oauthUrlKey: url
-        oauthMode: "oauth-mtls"
-        clientCertKey: client-cert
-        clientKeyKey: client-key
+      authConfig:
         skipSSLValidation: true
-      endpoints:
-        accountCreated: "127.0.0.1/events?type=account-created"
-        accountDeleted: "127.0.0.1/events?type=account-deleted"
-        accountUpdated: "127.0.0.1/events?type=account-updated"
-        subaccountCreated: "127.0.0.1/events?type=subaccount-created"
-        subaccountDeleted: "127.0.0.1/events?type=subaccount-deleted"
-        subaccountUpdated: "127.0.0.1/events?type=subaccount-updated"
-        subaccountMoved: "127.0.0.1/events?type=subaccount-moved"
-      fieldMapping:
-        totalPagesField: "totalPages"
-        totalResultsField: "totalResults"
-        tenantEventsField: "events"
-        idField: "id"
-        nameField: "name"
-        customerIdField: "customerId"
-        subdomainField: "subdomain"
-        discriminatorField: ""
-        discriminatorValue: ""
-        detailsField: "details"
-        entityTypeField: "entityType"
-        globalAccountID: "gaID"
-        regionField: "region"
-        movedSubaccountTargetField: "targetGlobalAccountGUID"
-        movedSubaccountSourceField: "sourceGlobalAccountGUID"
+        oauthMode: "oauth-mtls"
+        k8sSecretName: "job1-secret"
+        clientIDPath: "clientid"
+        clientSecretPath: "secret"
+        clientCertPath: "cert"
+        clientKeyPath: "key"
+        tokenEndpointPath: "url"
+        tokenURLPath: "/oauth/token"
+        secret:
+          name: "tf-credentials"
+          key: "keyConfig"
+          path: "/tmp"
       queryMapping:
+        regionField: "region"
         pageNumField: "pageNum"
         pageSizeField: "pageSize"
         timestampField: "timestamp"
       query:
         startPage: "0"
         pageSize: "100"
-      shouldSyncSubaccounts: "false"
+      api:
+        authConfigSecretKey: "job1"
+        fieldMapping:
+          totalPagesField: "totalPages"
+          totalResultsField: "totalResults"
+          tenantEventsField: "events"
+          idField: "id"
+          nameField: "name"
+          customerIdField: "customerId"
+          subdomainField: "subdomain"
+          discriminatorField: ""
+          discriminatorValue: ""
+          detailsField: "details"
+          entityTypeField: "entityType"
+          globalAccountID: "gaID"
+          regionField: "region"
+          movedSubaccountTargetField: "targetGlobalAccountGUID"
+          movedSubaccountSourceField: "sourceGlobalAccountGUID"
+        endpoints:
+          accountCreated: "127.0.0.1/events?type=account-created"
+          accountDeleted: "127.0.0.1/events?type=account-deleted"
+          accountUpdated: "127.0.0.1/events?type=account-updated"
+          subaccountCreated: "127.0.0.1/events?type=subaccount-created"
+          subaccountDeleted: "127.0.0.1/events?type=subaccount-deleted"
+          subaccountUpdated: "127.0.0.1/events?type=subaccount-updated"
+          subaccountMoved: "127.0.0.1/events?type=subaccount-moved"
+      regionalConfig:
+        eu-east:
+          api:
+            oauthMode: "oauth-mtls"
+            authConfigSecretKey: "eu-east"
+            skipSSLValidation: true
+            fieldMapping:
+              totalPagesField: "totalPages"
+              totalResultsField: "totalResults"
+              tenantEventsField: "events"
+              idField: "guid"
+              nameField: "displayName"
+              customerIdField: "customerId"
+              subdomainField: "subdomain"
+              discriminatorField: ""
+              discriminatorValue: ""
+              detailsField: "details"
+              entityTypeField: "entityType"
+              globalAccountID: "globalAccountGUID"
+              regionField: "region"
+              movedSubaccountTargetField: "targetGlobalAccountGUID"
+              movedSubaccountSourceField: "sourceGlobalAccountGUID"
+            endpoints:
+              accountCreated: "127.0.0.1/events?type=account-created"
+              accountDeleted: "127.0.0.1/events?type=account-deleted"
+              accountUpdated: "127.0.0.1/events?type=account-updated"
+              subaccountCreated: "127.0.0.1/events?type=subaccount-created"
+              subaccountDeleted: "127.0.0.1/events?type=subaccount-deleted"
+              subaccountUpdated: "127.0.0.1/events?type=subaccount-updated"
+              subaccountMoved: "127.0.0.1/events?type=subaccount-moved"
       dbPool:
         maxOpenConnections: 1
         maxIdleConnections: 1

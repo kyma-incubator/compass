@@ -90,37 +90,43 @@ global:
         enabled: false
       job:
         interval: "10s"
-      accountRegion: "local"
+      tenantType: " account"
       dbPool:
         maxIdleConnections: "1"
         maxOpenConnections: "1"
       enabled: true
-      endpoints:
-        accountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/global-account-create"
-        accountDeleted: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/global-account-delete"
-        accountUpdated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/global-account-update"
-      fieldMapping:
-        customerIdField: "customerId"
-        detailsField: "eventData"
-        discriminatorField: ""
-        discriminatorValue: ""
-        entityTypeField: "type"
-        idField: "guid"
-        nameField: "displayName"
-        tenantEventsField: "events"
-        totalPagesField: "totalPages"
-        totalResultsField: "totalResults"
+      authConfig:
+        skipSSLValidation: true
+        oauthMode: "oauth-mtls"
+        k8sSecretName: "account-fetcher-secret"
+        clientIDPath: "clientid"
+        clientSecretPath: "secret"
+        clientCertPath: "cert"
+        clientKeyPath: "key"
+        tokenEndpointPath: "url"
+        tokenURLPath: "/secured/oauth/token"
+      api:
+        endpoints:
+          accountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/global-account-create"
+          accountDeleted: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/global-account-delete"
+          accountUpdated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/global-account-update"
+        fieldMapping:
+          customerIdField: "customerId"
+          detailsField: "eventData"
+          discriminatorField: ""
+          discriminatorValue: ""
+          entityTypeField: "type"
+          idField: "guid"
+          nameField: "displayName"
+          tenantEventsField: "events"
+          totalPagesField: "totalPages"
+          totalResultsField: "totalResults"
       kubernetes:
         configMapNamespace: "compass-system"
         pollInterval: "2s"
         pollTimeout: "1m"
         timeout: "2m"
       manageSecrets: true
-      oauth:
-        client: "client_id"
-        secret: "client_secret"
-        tokenPath: "/secured/oauth/token"
-        tokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
       providerName: "external-svc-mock"
       query:
         pageSize: "1000"
@@ -130,50 +136,39 @@ global:
         pageSizeField: "resultsPerPage"
         timestampField: "ts"
       schedule: "0 23 * * *"
-      secret:
-        clientIdKey: "client-id"
-        clientSecretKey: "client-secret"
-        name: "compass-account-fetcher-secret"
-        oauthMode: "standard"
-        oauthUrlKey: "url"
-      shouldSyncSubaccounts: false
     subaccount-fetcher:
       cron:
         enabled: false
       job:
         interval: "10s"
-      accountRegion: "local"
+      tenantType: "subaccount"
       dbPool:
         maxIdleConnections: "1"
         maxOpenConnections: "1"
       enabled: true
-      endpoints:
-        subaccountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-create"
-        subaccountDeleted: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-delete"
-        subaccountMoved: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-move"
-        subaccountUpdated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-update"
-      fieldMapping:
-        customerIdField: "customerId"
-        detailsField: "eventData"
-        discriminatorField: ""
-        discriminatorValue: ""
-        entityTypeField: "type"
-        idField: "guid"
-        nameField: "displayName"
-        tenantEventsField: "events"
-        totalPagesField: "totalPages"
-        totalResultsField: "totalResults"
+      api:
+        endpoints:
+          subaccountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-create"
+          subaccountDeleted: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-delete"
+          subaccountMoved: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-move"
+          subaccountUpdated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-update"
+        fieldMapping:
+          customerIdField: "customerId"
+          detailsField: "eventData"
+          discriminatorField: ""
+          discriminatorValue: ""
+          entityTypeField: "type"
+          idField: "guid"
+          nameField: "displayName"
+          tenantEventsField: "events"
+          totalPagesField: "totalPages"
+          totalResultsField: "totalResults"
       kubernetes:
         configMapNamespace: "compass-system"
         pollInterval: "2s"
         pollTimeout: "1m"
         timeout: "2m"
       manageSecrets: true
-      oauth:
-        client: "client_id"
-        secret: "client_secret"
-        tokenPath: "/cert/token"
-        tokenURL: '{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'
       providerName: "subaccount-fetcher"
       query:
         pageSize: "1000"
@@ -183,17 +178,16 @@ global:
         pageSizeField: "resultsPerPage"
         timestampField: "ts"
       schedule: "0 23 * * *"
-      secret:
-        clientCertKey: "client-cert"
-        clientIdKey: "client-id"
-        clientKeyKey: "client-key"
-        clientSecretKey: "client-secret"
-        name: "compass-subaccount-fetcher-secret"
-        oauthMode: "oauth-mtls"
-        oauthUrlKey: "url"
+      authConfig:
         skipSSLValidation: true
-      shouldSyncSubaccounts: true
-      subaccountRegions: "[{\"name\":\"test\",\"prefix\":\"cf-\"}]"
+        oauthMode: "oauth-mtls"
+        k8sSecretName: "subaccount-fetcher-secret"
+        clientIDPath: "clientid"
+        clientSecretPath: "secret"
+        clientCertPath: "cert"
+        clientKeyPath: "key"
+        tokenEndpointPath: "url"
+        tokenURLPath: "/secured/oauth/token"
   tests:
     basicCredentials:
       manage: true

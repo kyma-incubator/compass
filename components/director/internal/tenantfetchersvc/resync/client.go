@@ -1,4 +1,4 @@
-package tenantfetchersvc
+package resync
 
 import (
 	"context"
@@ -12,12 +12,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
-	"golang.org/x/oauth2"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	bndlErrors "github.com/pkg/errors"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -27,16 +27,77 @@ const (
 
 // OAuth2Config missing godoc
 type OAuth2Config struct {
-	ClientID           string `envconfig:"CLIENT_ID" json:"client_id"`
-	ClientSecret       string `envconfig:"CLIENT_SECRET" json:"client_secret"`
-	OAuthTokenEndpoint string `envconfig:"OAUTH_TOKEN_ENDPOINT" json:"oauth_token_endpoint"`
-	TokenPath          string `envconfig:"OAUTH_TOKEN_PATH" json:"token_path"`
-	SkipSSLValidation  bool   `envconfig:"OAUTH_SKIP_SSL_VALIDATION,default=false" json:"skip_ssl_validation"`
-	X509Config         oauth.X509Config
+	X509Config
+	ClientID           string
+	ClientSecret       string
+	OAuthTokenEndpoint string
+	TokenPath          string
+	SkipSSLValidation  bool
 }
 
-// APIConfig missing godoc
-type APIConfig struct {
+type AuthProviderConfig struct {
+	AuthMappingConfig
+
+	SecretFilePath    string `envconfig:"FILE_PATH" required:"true"`
+	TokenPath         string `envconfig:"TOKEN_PATH" required:"true"`
+	SkipSSLValidation bool   `envconfig:"OAUTH_SKIP_SSL_VALIDATION" default:"false"`
+}
+
+type AuthMappingConfig struct {
+	ClientIDPath      string `envconfig:"CLIENT_ID_PATH" required:"true"`
+	ClientSecretPath  string `envconfig:"CLIENT_SECRET_PATH"`
+	TokenEndpointPath string `envconfig:"TOKEN_ENDPOINT_PATH" required:"true"`
+	CertPath          string `envconfig:"CERT_PATH"`
+	KeyPath           string `envconfig:"CERT_KEY_PATH"`
+}
+
+func (c OAuth2Config) Validate(oauthMode oauth.AuthMode) error {
+	missingProperties := make([]string, 0)
+	if len(c.ClientID) == 0 {
+		missingProperties = append(missingProperties, "ClientID")
+	}
+	if len(c.OAuthTokenEndpoint) == 0 {
+		missingProperties = append(missingProperties, "OAuthTokenEndpoint")
+	}
+	if len(c.TokenPath) == 0 {
+		missingProperties = append(missingProperties, "TokenPath")
+	}
+
+	switch oauthMode {
+	case oauth.Standard:
+		if len(c.ClientSecret) == 0 {
+			missingProperties = append(missingProperties, "ClientSecret")
+		}
+	case oauth.Mtls:
+		if len(c.Cert) == 0 {
+			missingProperties = append(missingProperties, "Certificate")
+		}
+		if len(c.Key) == 0 {
+			missingProperties = append(missingProperties, "CertificateKey")
+		}
+	}
+
+	if len(missingProperties) > 0 {
+		return fmt.Errorf("missing API Client Auth config properties: %s", strings.Join(missingProperties, ","))
+	}
+
+	return nil
+}
+
+// X509Config is X509 configuration for getting an OAuth token via mtls
+// same as struct in pkg/oauth but with different envconfig
+type X509Config struct {
+	Cert string `envconfig:"X509_CERT"`
+	Key  string `envconfig:"X509_KEY"`
+}
+
+// ParseCertificate parses the TLS certificate contained in the X509Config
+func (c *X509Config) ParseCertificate() (*tls.Certificate, error) {
+	return cert.ParseCertificate(c.Cert, c.Key)
+}
+
+// APIEndpointsConfig missing godoc
+type APIEndpointsConfig struct {
 	EndpointTenantCreated     string `envconfig:"ENDPOINT_TENANT_CREATED"`
 	EndpointTenantDeleted     string `envconfig:"ENDPOINT_TENANT_DELETED"`
 	EndpointTenantUpdated     string `envconfig:"ENDPOINT_TENANT_UPDATED"`
@@ -46,7 +107,7 @@ type APIConfig struct {
 	EndpointSubaccountMoved   string `envconfig:"ENDPOINT_SUBACCOUNT_MOVED"`
 }
 
-func (c APIConfig) isUnassignedOptionalProperty(eventsType EventsType) bool {
+func (c APIEndpointsConfig) isUnassignedOptionalProperty(eventsType EventsType) bool {
 	if eventsType == MovedSubaccountType && len(c.EndpointSubaccountMoved) == 0 {
 		return true
 	}
@@ -57,8 +118,7 @@ func (c APIConfig) isUnassignedOptionalProperty(eventsType EventsType) bool {
 //go:generate mockery --name=MetricsPusher --output=automock --outpkg=automock --case=underscore --disable-version-string
 type MetricsPusher interface {
 	RecordEventingRequest(method string, statusCode int, desc string)
-	RecordTenantsSyncJobFailure(method string, statusCode int, desc string)
-	Push()
+	ReportFailedSync(ctx context.Context, err error)
 }
 
 // QueryParams describes the key and the corresponding value for query parameters when requesting the service
@@ -66,14 +126,20 @@ type QueryParams map[string]string
 
 // Client implements the communication with the service
 type Client struct {
+	config        ClientConfig
 	httpClient    *http.Client
 	metricsPusher MetricsPusher
+}
 
-	apiConfig APIConfig
+type ClientConfig struct {
+	TenantProvider string
+	APIConfig      APIEndpointsConfig
+	FieldMapping   TenantFieldMapping
+	MovedSAFieldMapping MovedSubaccountsFieldMapping
 }
 
 // NewClient missing godoc
-func NewClient(oAuth2Config OAuth2Config, authMode oauth.AuthMode, apiConfig APIConfig, timeout time.Duration) (*Client, error) {
+func NewClient(oAuth2Config OAuth2Config, authMode oauth.AuthMode, clientConfig ClientConfig, timeout time.Duration) (*Client, error) {
 	ctx := context.Background()
 	cfg := clientcredentials.Config{
 		ClientID:     oAuth2Config.ClientID,
@@ -117,7 +183,7 @@ func NewClient(oAuth2Config OAuth2Config, authMode oauth.AuthMode, apiConfig API
 
 	return &Client{
 		httpClient: httpClient,
-		apiConfig:  apiConfig,
+		config:     clientConfig,
 	}, nil
 }
 
@@ -127,8 +193,8 @@ func (c *Client) SetMetricsPusher(metricsPusher MetricsPusher) {
 }
 
 // FetchTenantEventsPage missing godoc
-func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (TenantEventsResponse, error) {
-	if c.apiConfig.isUnassignedOptionalProperty(eventsType) {
+func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryParams QueryParams) (*EventsPage, error) {
+	if c.config.APIConfig.isUnassignedOptionalProperty(eventsType) {
 		log.D().Warnf("Optional property for event type %s was not set", eventsType)
 		return nil, nil
 	}
@@ -176,25 +242,38 @@ func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryPar
 		return nil, fmt.Errorf("request to %q returned status code %d and body %q", reqURL, res.StatusCode, bytes)
 	}
 
-	return bytes, nil
+	return &EventsPage{
+		FieldMapping:                 c.config.FieldMapping,
+		MovedSubaccountsFieldMapping: c.config.MovedSAFieldMapping,
+		ProviderName:                 c.config.TenantProvider,
+		Payload:                      bytes,
+	}, nil
+}
+
+func (c *Client) SetHTTPClient(client *http.Client) {
+	c.httpClient = client
+}
+
+func (c *Client) GetHTTPClient() *http.Client {
+	return c.httpClient
 }
 
 func (c *Client) getEndpointForEventsType(eventsType EventsType) (string, error) {
 	switch eventsType {
 	case CreatedAccountType:
-		return c.apiConfig.EndpointTenantCreated, nil
+		return c.config.APIConfig.EndpointTenantCreated, nil
 	case DeletedAccountType:
-		return c.apiConfig.EndpointTenantDeleted, nil
+		return c.config.APIConfig.EndpointTenantDeleted, nil
 	case UpdatedAccountType:
-		return c.apiConfig.EndpointTenantUpdated, nil
+		return c.config.APIConfig.EndpointTenantUpdated, nil
 	case CreatedSubaccountType:
-		return c.apiConfig.EndpointSubaccountCreated, nil
+		return c.config.APIConfig.EndpointSubaccountCreated, nil
 	case DeletedSubaccountType:
-		return c.apiConfig.EndpointSubaccountDeleted, nil
+		return c.config.APIConfig.EndpointSubaccountDeleted, nil
 	case UpdatedSubaccountType:
-		return c.apiConfig.EndpointSubaccountUpdated, nil
+		return c.config.APIConfig.EndpointSubaccountUpdated, nil
 	case MovedSubaccountType:
-		return c.apiConfig.EndpointSubaccountMoved, nil
+		return c.config.APIConfig.EndpointSubaccountMoved, nil
 	default:
 		return "", apperrors.NewInternalError("unknown events type")
 	}
