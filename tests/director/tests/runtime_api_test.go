@@ -790,7 +790,9 @@ func TestSelfRegMoreThanOneProviderRuntime(t *testing.T) {
 	secondRuntimeInput := graphql.RuntimeRegisterInput{
 		Name:        "selfRegisterRuntime-2",
 		Description: ptr.String("selfRegisterRuntime-2-description"),
-		Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue, tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
+		Labels: graphql.Labels{
+			conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue,
+		},
 	}
 
 	t.Logf("Self registering second runtime with same distinguish label: %q and region: %q and validate it will fail...", conf.SubscriptionConfig.SelfRegDistinguishLabelValue, conf.SubscriptionConfig.SelfRegRegion)

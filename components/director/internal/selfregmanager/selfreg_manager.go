@@ -119,6 +119,7 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 			return nil, err
 		}
 
+		log.C(ctx).Infof("Successfully derived region for consumer with ID %s during self-registration: %s", consumerInfo.ConsumerID, region)
 		labels[RegionLabel] = region
 
 		request, err := s.createSelfRegPrepRequest(id, consumerInfo.ConsumerID, instanceConfig.URL)
