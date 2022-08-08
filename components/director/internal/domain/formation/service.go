@@ -316,20 +316,20 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 	}
 }
 
-func (s *service) isValidRuntimeType(ctx context.Context, tnt string, objectID string, formation *model.Formation) error {
+func (s *service) isValidRuntimeType(ctx context.Context, tnt string, runtimeID string, formation *model.Formation) error {
 	formationTemplate, err := s.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "while getting formation template with ID %q", formation.FormationTemplateID)
 	}
 	runtimeTypeLabel, err := s.labelService.GetLabel(ctx, tnt, &model.LabelInput{
 		Key:        s.runtimeTypeLabelKey,
 		Value:      nil,
-		ObjectID:   objectID,
+		ObjectID:   runtimeID,
 		ObjectType: model.RuntimeLabelableObject,
 		Version:    0,
 	})
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "while getting label %q for runtime with ID %q", s.runtimeTypeLabelKey, runtimeID)
 	}
 
 	if runtimeType, ok := runtimeTypeLabel.Value.(string); !ok || runtimeType != formationTemplate.RuntimeType {
@@ -364,13 +364,13 @@ func (s *service) assign(ctx context.Context, tnt, objectID string, objectType g
 	if err != nil {
 		return nil, err
 	}
-	if formation.Name != "DEFAULT" && objectType == graphql.FormationObjectTypeRuntime {
+	if formation.Name != model.DefaultScenario && objectType == graphql.FormationObjectTypeRuntime {
 		err := s.isValidRuntimeType(ctx, tnt, objectID, formationFromDB)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if formation.Name != "DEFAULT" && objectType == graphql.FormationObjectTypeRuntimeContext {
+	if formation.Name != model.DefaultScenario && objectType == graphql.FormationObjectTypeRuntimeContext {
 		runtimeCtx, err := s.runtimeContextRepo.GetByID(ctx, tnt, objectID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting runtime context")
