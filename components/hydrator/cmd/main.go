@@ -49,7 +49,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 
-	handlerConfig "github.com/kyma-incubator/compass/components/hydrator/internal/config"
+	cfg "github.com/kyma-incubator/compass/components/hydrator/internal/config"
 
 	"github.com/gorilla/mux"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
@@ -69,7 +69,7 @@ type config struct {
 	ServerTimeout   time.Duration `envconfig:"default=110s"`
 	ShutdownTimeout time.Duration `envconfig:"default=10s"`
 
-	Handler handlerConfig.HandlerConfig
+	Handler cfg.HandlerConfig
 
 	Director director.Config
 
@@ -90,6 +90,8 @@ type config struct {
 	CertificateDataHeader        string `envconfig:"default=Certificate-Data"`
 	RevocationConfigMapName      string `envconfig:"default=compass-system/revocations-config"`
 	SubjectConsumerMappingConfig string `envconfig:"default=[]"`
+
+	ConsumerClaimsKeys cfg.ConsumerClaimsKeysConfig
 
 	Log log.Config
 }
@@ -178,7 +180,7 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 	authnMappingHandlerFunc := authnmappinghandler.NewHandler(oathkeeper.NewReqDataParser(), httpClient, authnmappinghandler.DefaultTokenVerifierProvider, authenticators)
 
 	logger.Infof("Registering Tenant Mapping endpoint on %s...", cfg.Handler.TenantMappingEndpoint)
-	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(authenticators, internalDirectorClientProvider, internalGatewayClientProvider, cfg.StaticGroupsSrc, cfgProvider, metricsCollector)
+	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(authenticators, internalDirectorClientProvider, internalGatewayClientProvider, cfg.StaticGroupsSrc, cfgProvider, cfg.ConsumerClaimsKeys, metricsCollector)
 	exitOnError(err, "Error while configuring tenant mapping handler")
 
 	logger.Infof("Registering Certificate Resolver endpoint on %s...", cfg.Handler.CertResolverEndpoint)
@@ -211,7 +213,7 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 	return provider
 }
 
-func getTenantMappingHandlerFunc(authenticators []authenticator.Config, internalDirectorClientProvider, internalGatewayClientProvider director.ClientProvider, staticGroupsSrc string, cfgProvider *configprovider.Provider, metricsCollector *metrics.Collector) (*tenantmapping.Handler, error) {
+func getTenantMappingHandlerFunc(authenticators []authenticator.Config, internalDirectorClientProvider, internalGatewayClientProvider director.ClientProvider, staticGroupsSrc string, cfgProvider *configprovider.Provider, consumerClaimsKeysConfig cfg.ConsumerClaimsKeysConfig, metricsCollector *metrics.Collector) (*tenantmapping.Handler, error) {
 	staticGroupsRepo, err := tenantmapping.NewStaticGroupRepository(staticGroupsSrc)
 	if err != nil {
 		return nil, errors.Wrap(err, "while creating StaticGroup repository instance")
@@ -223,7 +225,7 @@ func getTenantMappingHandlerFunc(authenticators []authenticator.Config, internal
 		tenantmappingconst.AuthenticatorObjectContextProvider:    tenantmapping.NewAuthenticatorContextProvider(internalDirectorClientProvider.Client(), authenticators),
 		tenantmappingconst.CertServiceObjectContextProvider:      tenantmapping.NewCertServiceContextProvider(internalDirectorClientProvider.Client(), cfgProvider),
 		tenantmappingconst.TenantHeaderObjectContextProvider:     tenantmapping.NewAccessLevelContextProvider(internalDirectorClientProvider.Client()),
-		tenantmappingconst.ConsumerProviderObjectContextProvider: tenantmapping.NewConsumerContextProvider(internalGatewayClientProvider.Client()),
+		tenantmappingconst.ConsumerProviderObjectContextProvider: tenantmapping.NewConsumerContextProvider(internalGatewayClientProvider.Client(), consumerClaimsKeysConfig),
 	}
 	reqDataParser := oathkeeper.NewReqDataParser()
 

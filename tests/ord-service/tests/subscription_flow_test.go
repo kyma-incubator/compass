@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -424,7 +423,7 @@ func TestNewCPTest(stdT *testing.T) {
 		getRtmReq.Header = headers
 		rtmExt := graphql.RuntimeExt{}
 
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, getRtmReq, &rtmExt)
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, getRtmReq, &rtmExt)
 		require.NoError(stdT, err)
 		require.Equal(stdT, runtime.ID, rtmExt.ID)
 		require.Equal(stdT, runtimeInput.Name, rtmExt.Name)
@@ -450,13 +449,13 @@ func TestNewCPTest(stdT *testing.T) {
 		stdT.Log("Successfully validated no application is returned after successful unsubscription request")
 
 		stdT.Log("Validating director returns error during claims validation after unsubscribe request is successfully executed...")
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertSecuredClient, subscriptionProviderSubaccountID, getRtmReq, &rtmExt)
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, getRtmReq, &rtmExt)
 		require.Error(stdT, err)
 		require.Contains(stdT, err.Error(), fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the runtime context table for the runtime in the provider tenant", subscriptionConsumerSubaccountID))
 		stdT.Log("Successfully validated an error is returned during claims validation after unsubscribe request")
 	})
 
-	t.Run("Consumer with user context header", func(t *testing.T) {
+	t.Run("Consumer provider with user context header", func(t *testing.T) {
 		ctx = context.Background()
 
 		runtimeInput := graphql.RuntimeRegisterInput{
@@ -574,10 +573,22 @@ func TestNewCPTest(stdT *testing.T) {
 		// After successful subscription from above we call the director component with "double authentication(token + user_context header)" in order to test claims validation is successful
 		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
 		fmt.Printf("consumer token --> %s\n", consumerToken) // todo::: remove
-		consumerTokenPayload, err := getTokenPayload(stdT, consumerToken)
+		//consumerTokenPayload := getTokenPayload(stdT, consumerToken)        // todo::: remove
+		//fmt.Printf("consumer token payload --> %s\n", consumerTokenPayload) // todo::: remove
+		consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
+		fmt.Printf("consumer claims --> %s\n", consumerClaims) // todo::: remove
+		headers := map[string][]string{subscription.UserContextHeader: {consumerClaims}}
+
+		stdT.Log("Calling director to verify claims validation is successful...")
+		getRtmReq := fixtures.FixGetRuntimeRequest(runtime.ID)
+		getRtmReq.Header = headers
+		rtmExt := graphql.RuntimeExt{}
+
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, getRtmReq, &rtmExt)
 		require.NoError(stdT, err)
-		fmt.Printf("consumer token payload --> %s", consumerTokenPayload) // todo::: remove
-		headers := map[string][]string{subscription.UserContextHeader: {string(consumerTokenPayload)}}
+		require.Equal(stdT, runtime.ID, rtmExt.ID)
+		require.Equal(stdT, runtimeInput.Name, rtmExt.Name)
+		stdT.Log("Director claims validation was successful")
 
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
@@ -597,6 +608,12 @@ func TestNewCPTest(stdT *testing.T) {
 		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 		require.Equal(stdT, 0, len(gjson.Get(respBody, "value").Array()))
 		stdT.Log("Successfully validated no application is returned after successful unsubscription request")
+
+		stdT.Log("Validating director returns error during claims validation after unsubscribe request is successfully executed...")
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, getRtmReq, &rtmExt)
+		require.Error(stdT, err)
+		require.Contains(stdT, err.Error(), fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the runtime context table for the runtime in the provider tenant", subscriptionConsumerSubaccountID))
+		stdT.Log("Successfully validated an error is returned during claims validation after unsubscribe request")
 	})
 }
 
@@ -617,11 +634,63 @@ func executeGQLRequest(t *testing.T, ctx context.Context, gqlRequest *gcli.Reque
 	require.Equal(t, formationName, formation.Name)
 }
 
-func getTokenPayload(t *testing.T, token string) ([]byte, error) {
-	// JWT format: <header>.<payload>.<signature>
-	tokenParts := strings.Split(token, ".")
-	require.Equal(t, 3, len(tokenParts), "invalid token format")
-	payload := tokenParts[1]
-
-	return base64.RawURLEncoding.DecodeString(payload)
-}
+// todo::: delete
+//func flattenTokenClaims(stdT *testing.T, consumerToken string) string {
+//	consumerTokenPayload := getTokenPayload(stdT, consumerToken)
+//
+//	var jsonMap map[string]interface{}
+//	err := json.Unmarshal([]byte(consumerTokenPayload), &jsonMap)
+//	require.NoError(stdT, err)
+//
+//	jm := checkForEmptyScopes(stdT, jsonMap)
+//	fm := flatten(jm)
+//	claims := "{}"
+//	for k, v := range fm {
+//		claims, err = sjson.Set(claims, k, v)
+//		require.NoError(stdT, err)
+//	}
+//
+//	return claims
+//}
+//
+//func getTokenPayload(t *testing.T, token string) string {
+//	// JWT format: <header>.<payload>.<signature>
+//	tokenParts := strings.Split(token, ".")
+//	require.Equal(t, 3, len(tokenParts), "invalid token format")
+//	payload := tokenParts[1]
+//
+//	b, err := base64.RawURLEncoding.DecodeString(payload)
+//	require.NoError(t, err)
+//
+//	return string(b)
+//}
+//
+//func checkForEmptyScopes(stdT *testing.T, m map[string]interface{}) map[string]interface{} {
+//	scope, exists := m["scope"]
+//	require.True(stdT, exists, "scope field should be presented in the map")
+//
+//	scopes, ok := scope.([]interface{})
+//	require.True(stdT, ok, fmt.Sprintf("unexpected scopes type: %T, should be []interface", scope))
+//
+//	if len(scopes) == 0 {
+//		m["scope"] = ""
+//	}
+//
+//	return m
+//}
+//
+//func flatten(m map[string]interface{}) map[string]interface{} {
+//	o := make(map[string]interface{})
+//	for k, v := range m {
+//		switch child := v.(type) {
+//		case map[string]interface{}:
+//			nm := flatten(child)
+//			for nk, nv := range nm {
+//				o[nk] = nv
+//			}
+//		default:
+//			o[k] = v
+//		}
+//	}
+//	return o
+//}

@@ -108,6 +108,16 @@ spec:
               value: {{ .Values.global.hydrator.certificateDataHeader | quote }}
             - name: APP_SUBJECT_CONSUMER_MAPPING_CONFIG
               value: {{ .Values.global.hydrator.subjectConsumerMappingConfig | quote }}
+            - name: APP_CONSUMER_CLAIMS_CLIENT_ID_KEY
+              value: {{ .Values.global.hydrator.consumerClaimsKeys.clientIDKey }}
+            - name: APP_CONSUMER_CLAIMS_TENANT_ID_KEY
+              value: {{ .Values.global.hydrator.consumerClaimsKeys.tenantIDKey }}
+            - name: APP_CONSUMER_CLAIMS_USER_NAME_KEY
+              value: {{ .Values.global.hydrator.consumerClaimsKeys.userNameKey }}
+            - name: APP_CONSUMER_CLAIMS_SUBDOMAIN_KEY
+              value: {{ .Values.global.hydrator.consumerClaimsKeys.subdomainKey }}
+            - name: APP_CONSUMER_CLAIMS_SCOPES_KEY
+              value: {{ .Values.global.hydrator.consumerClaimsKeys.scopesKey }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}

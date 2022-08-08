@@ -341,6 +341,12 @@ global:
     prefix: /hydrators
     subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"},{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}]'
     certificateDataHeader: "Certificate-Data"
+    consumerClaimsKeys:
+      clientIDKey: "client_id"
+      tenantIDKey: "tenantid"
+      userNameKey: "user_name"
+      subdomainKey: "subdomain"
+      scopesKey: "scope"
     http:
       client:
         skipSSLValidation: false

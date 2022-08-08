@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tidwall/sjson"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/tidwall/gjson"
@@ -201,4 +203,64 @@ func GetTokenWithClient(t *testing.T, ctx context.Context, client *http.Client, 
 	require.NotEmpty(t, tkn)
 
 	return tkn.String()
+}
+
+func FlattenTokenClaims(stdT *testing.T, consumerToken string) string {
+	consumerTokenPayload := getTokenPayload(stdT, consumerToken)
+
+	var jsonMap map[string]interface{}
+	err := json.Unmarshal([]byte(consumerTokenPayload), &jsonMap)
+	require.NoError(stdT, err)
+
+	jm := checkForEmptyScopes(stdT, jsonMap)
+	fm := flatten(jm)
+	claims := "{}"
+	for k, v := range fm {
+		claims, err = sjson.Set(claims, k, v)
+		require.NoError(stdT, err)
+	}
+
+	return claims
+}
+
+func getTokenPayload(t *testing.T, token string) string {
+	// JWT format: <header>.<payload>.<signature>
+	tokenParts := strings.Split(token, ".")
+	require.Equal(t, 3, len(tokenParts), "invalid token format")
+	payload := tokenParts[1]
+
+	b, err := base64.RawURLEncoding.DecodeString(payload)
+	require.NoError(t, err)
+
+	return string(b)
+}
+
+func checkForEmptyScopes(stdT *testing.T, m map[string]interface{}) map[string]interface{} {
+	scope, exists := m["scope"]
+	require.True(stdT, exists, "scope field should be presented in the map")
+
+	scopes, ok := scope.([]interface{})
+	require.True(stdT, ok, fmt.Sprintf("unexpected scopes type: %T, should be []interface", scope))
+
+	if len(scopes) == 0 {
+		m["scope"] = ""
+	}
+
+	return m
+}
+
+func flatten(m map[string]interface{}) map[string]interface{} {
+	o := make(map[string]interface{})
+	for k, v := range m {
+		switch child := v.(type) {
+		case map[string]interface{}:
+			nm := flatten(child)
+			for nk, nv := range nm {
+				o[nk] = nv
+			}
+		default:
+			o[k] = v
+		}
+	}
+	return o
 }

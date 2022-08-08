@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	cfg "github.com/kyma-incubator/compass/components/hydrator/internal/config"
+
 	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
@@ -25,18 +27,20 @@ type userContextData struct {
 }
 
 type consumerContextProvider struct {
-	directorClient DirectorClient
-	tenantKeys     KeysExtra
+	directorClient           DirectorClient
+	tenantKeys               KeysExtra
+	consumerClaimsKeysConfig cfg.ConsumerClaimsKeysConfig
 }
 
 // NewConsumerContextProvider implements the ObjectContextProvider interface by looking for "user_context" header from the request.
-func NewConsumerContextProvider(clientProvider DirectorClient) *consumerContextProvider {
+func NewConsumerContextProvider(clientProvider DirectorClient, consumerClaimsKeysConfig cfg.ConsumerClaimsKeysConfig) *consumerContextProvider {
 	return &consumerContextProvider{
 		directorClient: clientProvider,
 		tenantKeys: KeysExtra{
 			TenantKey:         tenantmapping.ConsumerTenantKey,
 			ExternalTenantKey: tenantmapping.ExternalTenantKey,
 		},
+		consumerClaimsKeysConfig: consumerClaimsKeysConfig,
 	}
 }
 
@@ -45,7 +49,7 @@ func NewConsumerContextProvider(clientProvider DirectorClient) *consumerContextP
 // In that header we have claims from which we extract the necessary information, there is NO JWT token and signature validation.
 func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData oathkeeper.ReqData, authDetails oathkeeper.AuthDetails) (ObjectContext, error) {
 	userContextHeader := reqData.Header.Get(oathkeeper.UserContextKey)
-	userCtxData, err := c.getUserContextData(userContextHeader)
+	userCtxData, err := c.getUserContextData(ctx, userContextHeader)
 	if err != nil {
 		return ObjectContext{}, errors.Wrapf(err, "while getting user context data from %q header", oathkeeper.UserContextKey)
 	}
@@ -69,7 +73,7 @@ func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData 
 	}
 	regionStr, ok := region.(string)
 	if !ok {
-		return ObjectContext{}, errors.New(fmt.Sprintf("unexpected Labels type: %T, should be string", region))
+		return ObjectContext{}, errors.New(fmt.Sprintf("unexpected region label type: %T, should be string", region))
 	}
 	authDetails.Region = regionStr
 
@@ -116,39 +120,39 @@ func (c *consumerContextProvider) Match(_ context.Context, data oathkeeper.ReqDa
 		return false, nil, nil
 	}
 
-	authID := gjson.Get(userContextHeader, "user_name").String()
+	authID := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.UserNameKey).String()
 	if authID == "" {
-		return false, nil, apperrors.NewInvalidDataError("could not find user_name property")
+		return false, nil, apperrors.NewInvalidDataError(fmt.Sprintf("could not find %s property", c.consumerClaimsKeysConfig.UserNameKey))
 	}
 
 	return true, &oathkeeper.AuthDetails{AuthID: authID, AuthFlow: oathkeeper.ConsumerProviderFlow}, nil
 }
 
-func (c *consumerContextProvider) getUserContextData(userContextHeader string) (*userContextData, error) {
+func (c *consumerContextProvider) getUserContextData(ctx context.Context, userContextHeader string) (*userContextData, error) {
 	fmt.Printf("pptt - userContextHeader in getUserContextData: %s\n\n", userContextHeader) // todo::: delete
-	clientID := gjson.Get(userContextHeader, "client_id").String()                          // todo::: extract + other properties as well
+	clientID := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.ClientIDKey).String()
 	if clientID == "" {
-		return &userContextData{}, apperrors.NewInvalidDataError("could not find client_id property")
+		return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q could not be empty", c.consumerClaimsKeysConfig.ClientIDKey))
 	}
 
-	externalTenantID := gjson.Get(userContextHeader, "ext_attr.subaccountid").String()
+	externalTenantID := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.TenantIDKey).String()
 	if externalTenantID == "" {
-		return &userContextData{}, apperrors.NewInvalidDataError("could not find ext_attr.subaccountid property")
+		return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q could not be empty", c.consumerClaimsKeysConfig.TenantIDKey))
 	}
 
-	authID := gjson.Get(userContextHeader, "user_name").String()
+	authID := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.UserNameKey).String()
 	if authID == "" {
-		return &userContextData{}, apperrors.NewInvalidDataError("could not find user_name property")
+		return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q could not be empty", c.consumerClaimsKeysConfig.UserNameKey))
 	}
 
-	subdomain := gjson.Get(userContextHeader, "ext_attr.zdn").String()
+	subdomain := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.SubdomainKey).String()
 	if subdomain == "" {
-		return &userContextData{}, apperrors.NewInvalidDataError("could not find ext_attr.zdn property")
+		return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q could not be empty", c.consumerClaimsKeysConfig.SubdomainKey))
 	}
 
-	scopes := gjson.Get(userContextHeader, "scope").String()
+	scopes := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.ScopesKey).String()
 	if scopes == "" {
-		return &userContextData{}, apperrors.NewInvalidDataError("could not find scope property")
+		log.C(ctx).Warningf("property %q is empty", c.consumerClaimsKeysConfig.ScopesKey)
 	}
 
 	return &userContextData{
