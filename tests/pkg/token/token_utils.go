@@ -212,8 +212,6 @@ func FlattenTokenClaims(stdT *testing.T, consumerToken string) string {
 	err := json.Unmarshal([]byte(consumerTokenPayload), &jsonMap)
 	require.NoError(stdT, err)
 
-	// todo::: delete
-	//jm := checkForEmptyScopes(stdT, jsonMap)
 	fm := flatten(jsonMap)
 	claims := "{}"
 	for k, v := range fm {
@@ -234,21 +232,6 @@ func getTokenPayload(t *testing.T, token string) string {
 	require.NoError(t, err)
 
 	return string(b)
-}
-
-// todo::: delete
-func checkForEmptyScopes(stdT *testing.T, m map[string]interface{}) map[string]interface{} {
-	scope, exists := m["scope"]
-	require.True(stdT, exists, "scope field should be presented in the map")
-
-	scopes, ok := scope.([]interface{})
-	require.True(stdT, ok, fmt.Sprintf("unexpected scopes type: %T, should be []interface", scope))
-
-	if len(scopes) == 0 {
-		m["scope"] = ""
-	}
-
-	return m
 }
 
 func flatten(m map[string]interface{}) map[string]interface{} {

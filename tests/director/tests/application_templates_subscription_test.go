@@ -138,9 +138,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 
 			// THEN
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
-			//headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}} // todo::: delete
 			consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
-			fmt.Printf("consumer claims --> %s\n", consumerClaims) // todo::: remove
 			headers := map[string][]string{subscription.UserContextHeader: {consumerClaims}}
 
 			actualAppPage := graphql.ApplicationPage{}
@@ -181,9 +179,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 
 			// THEN
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
-			//headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}} // todo::: delete
 			consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
-			fmt.Printf("consumer claims --> %s\n", consumerClaims) // todo::: remove
 			headers := map[string][]string{subscription.UserContextHeader: {consumerClaims}}
 
 			actualConsumerAppPage := graphql.ApplicationPage{}
@@ -236,9 +232,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 
 			// After successful subscription from above we call the director component with "double authentication(token + certificate)" in order to test claims validation is successful
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
-			//headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}} // todo::: delete
 			consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
-			fmt.Printf("consumer claims --> %s\n", consumerClaims) // todo::: remove
 			headers := map[string][]string{subscription.UserContextHeader: {consumerClaims}}
 
 			// Create Bundle
@@ -277,9 +271,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		t.Run("Application Provider is denied querying and pushing consumer app bundle metadata without previously created subscription", func(t *testing.T) {
 			// Create consumer token
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
-			//headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}} // todo::: delete
 			consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
-			fmt.Printf("consumer claims --> %s\n", consumerClaims) // todo::: remove
 			headers := map[string][]string{subscription.UserContextHeader: {consumerClaims}}
 
 			// List Applications
@@ -331,9 +323,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 
 			// Create consumer token
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
-			//headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}} // todo::: delete
 			consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
-			fmt.Printf("consumer claims --> %s\n", consumerClaims) // todo::: remove
 			headers := map[string][]string{subscription.UserContextHeader: {consumerClaims}}
 
 			// List Applications

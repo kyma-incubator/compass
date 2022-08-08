@@ -6,7 +6,6 @@ import (
 
 	cfg "github.com/kyma-incubator/compass/components/hydrator/internal/config"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -102,15 +101,11 @@ func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData 
 
 // Match checks if there is "user_context" Header with non-empty value. If so AuthDetails object is build.
 func (c *consumerContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
-	spew.Dump(data) // todo::: remove
 	userContextHeader := data.Header.Get(oathkeeper.UserContextKey)
 	if userContextHeader == "" {
 		return false, nil, apperrors.NewKeyDoesNotExistError(oathkeeper.UserContextKey)
 	}
 
-	fmt.Printf("pptt - userContextHeader in Match: %s\n\n", userContextHeader) // todo::: delete
-
-	// todo::: cert check?
 	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
 	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
 
@@ -127,7 +122,6 @@ func (c *consumerContextProvider) Match(_ context.Context, data oathkeeper.ReqDa
 }
 
 func (c *consumerContextProvider) getUserContextData(userContextHeader string) (*userContextData, error) {
-	fmt.Printf("pptt - userContextHeader in getUserContextData: %s\n\n", userContextHeader) // todo::: delete
 	clientID := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.ClientIDKey)
 	if !clientID.Exists() {
 		return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q is mandatory", c.consumerClaimsKeysConfig.ClientIDKey))
