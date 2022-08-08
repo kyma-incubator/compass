@@ -128,7 +128,9 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 		Provider: "provider-tenant",
 	}
 
-	region := testTenantWithoutSubdomain.Labels["region"].(string)
+	region, ok := testTenantWithoutSubdomain.Labels["region"].(string)
+	require.True(t, ok)
+
 	tenantToUpdateWithSubdomainFromHeader := graphql.BusinessTenantMappingInput{
 		Name:           *testTenantWithoutSubdomain.Name,
 		ExternalTenant: testTenantWithoutSubdomain.ID,
