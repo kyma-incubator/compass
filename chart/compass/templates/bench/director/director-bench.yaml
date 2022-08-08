@@ -74,12 +74,6 @@ spec:
                   key: postgresql-sslMode
             - name: APP_DEFAULT_SCENARIO
               value: "DEFAULT"
-            - name: APP_RUNTIME_TYPE_LABEL_KEY
-              value: "runtimeType"
-            - name: APP_RUNTIME_TYPE_LABEL_KEY
-              value: "runtimeType"
-            - name: APP_GATEWAY_OAUTH
-              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
 ---
 apiVersion: v1
 kind: ServiceAccount
