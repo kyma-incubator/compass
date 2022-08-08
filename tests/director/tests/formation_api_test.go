@@ -1157,6 +1157,7 @@ func TestFormationRuntimeTypeWhileAssigning(t *testing.T) {
 	formationTemplateName := "new-formation-template"
 	runtimeType := "some-new-runtime-type"
 	formationName := "test-formation"
+	runtimeName := "test-runtime"
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
@@ -1174,7 +1175,7 @@ func TestFormationRuntimeTypeWhileAssigning(t *testing.T) {
 	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formation.Name)
 	require.NoError(t, err)
 
-	inRuntime := fixtures.FixRuntimeRegisterInput("test-runtime")
+	inRuntime := fixtures.FixRuntimeRegisterInput(runtimeName)
 	actualRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, inRuntime, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &actualRuntime)
 	require.Equal(t, conf.KymaRuntimeTypeLabelValue, actualRuntime.Labels[conf.RuntimeTypeLabelKey])
@@ -1187,6 +1188,7 @@ func TestFormationRuntimeTypeWhileAssigning(t *testing.T) {
 	require.EqualError(t, err, "graphql: The operation is not allowed [reason=unsupported runtimeType \"kyma\" for formation template \"new-formation-template\", allowing only \"some-new-runtime-type\"]")
 
 	runtimeCtx := fixtures.CreateRuntimeContext(t, ctx, certSecuredGraphQLClient, tenantId, actualRuntime.ID, "testRuntimeCtxKey", "testRuntimeCtxValue")
+	defer fixtures.DeleteRuntimeContext(t, ctx, certSecuredGraphQLClient, tenantId, runtimeCtx.ID)
 	createRuntimeContextAssignRequest := fixtures.FixAssignFormationRequest(runtimeCtx.ID, string(graphql.FormationObjectTypeRuntimeContext), formationName)
 	formationResultForContextFormation := graphql.Formation{}
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createRuntimeContextAssignRequest, &formationResultForContextFormation)
