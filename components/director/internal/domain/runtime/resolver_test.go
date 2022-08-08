@@ -137,6 +137,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				svc.On("Get", contextParam, testUUID).Return(modelRuntime, nil).Once()
 				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, selfRegLabels).Return(nil).Once()
+				svc.On("UnsafeExtractModifiableLabels", modelInput.Labels).Return(modelInput.Labels, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -171,6 +172,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				svc.On("Get", contextParam, testUUID).Return(modelRuntime, nil).Once()
 				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, selfRegLabels).Return(nil).Once()
+				svc.On("UnsafeExtractModifiableLabels", modelInput.Labels).Return(modelInput.Labels, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -229,7 +231,9 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
-				return &automock.RuntimeService{}
+				svc := &automock.RuntimeService{}
+				svc.On("UnsafeExtractModifiableLabels", modelInput.Labels).Return(modelInput.Labels, nil).Once()
+				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
@@ -257,7 +261,9 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
-				return &automock.RuntimeService{}
+				svc := &automock.RuntimeService{}
+				svc.On("UnsafeExtractModifiableLabels", modelInput.Labels).Return(modelInput.Labels, nil).Once()
+				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
@@ -289,6 +295,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, selfRegLabels).Return(testErr).Once()
+				svc.On("UnsafeExtractModifiableLabels", modelInput.Labels).Return(modelInput.Labels, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -320,6 +327,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("CreateWithMandatoryLabels", contextParam, selfRegModelInput, testUUID, selfRegLabels).Return(testErr).Once()
 				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
+				svc.On("UnsafeExtractModifiableLabels", selfRegModelInput.Labels).Return(selfRegModelInput.Labels, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -352,6 +360,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				svc.On("Get", contextParam, testUUID).Return(nil, testErr).Once()
 				svc.On("CreateWithMandatoryLabels", contextParam, selfRegModelInput, testUUID, selfRegLabels).Return(nil).Once()
 				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
+				svc.On("UnsafeExtractModifiableLabels", selfRegModelInput.Labels).Return(selfRegModelInput.Labels, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -384,6 +393,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, selfRegLabels).Return(nil).Once()
 				svc.On("Get", contextParam, testUUID).Return(nil, testErr).Once()
+				svc.On("UnsafeExtractModifiableLabels", modelInput.Labels).Return(modelInput.Labels, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -416,6 +426,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				svc.On("CreateWithMandatoryLabels", contextParam, selfRegModelInput, testUUID, selfRegLabels).Return(nil).Once()
 				svc.On("Get", contextParam, testUUID).Return(nil, testErr).Once()
+				svc.On("UnsafeExtractModifiableLabels", selfRegModelInput.Labels).Return(selfRegModelInput.Labels, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -443,7 +454,9 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			},
 			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
-				return &automock.RuntimeService{}
+				svc := &automock.RuntimeService{}
+				svc.On("UnsafeExtractModifiableLabels", modelInput.Labels).Return(modelInput.Labels, nil).Once()
+				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
 				conv := &automock.RuntimeConverter{}
@@ -472,6 +485,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, testErr).Once()
+				svc.On("UnsafeExtractModifiableLabels", modelInput.Labels).Return(modelInput.Labels, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -501,6 +515,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(modelRuntime, nil).Once()
+				svc.On("UnsafeExtractModifiableLabels", modelInput.Labels).Return(modelInput.Labels, nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -520,6 +535,34 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			Input:            gqlInput,
 			ExpectedRuntime:  nil,
 			ExpectedErr:      errors.New(fmt.Sprintf("cannot have more than one runtime with labels %q: %q and %q: %q", RegionKey, testRegion, rtmtest.TestDistinguishLabel, distinguishLabelValue)),
+		},
+		{
+			Name: "Returns error when can't extract modifiable labels",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				return &persistenceautomock.PersistenceTx{}
+			},
+			TransactionerFn: txtest.NoopTransactioner,
+			ServiceFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				svc.On("UnsafeExtractModifiableLabels", modelInput.Labels).Return(nil, testErr).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.RuntimeConverter {
+				conv := &automock.RuntimeConverter{}
+				conv.On("RegisterInputFromGraphQL", gqlInput).Return(modelInput, nil).Once()
+				return conv
+			},
+			UUIDSvcFn: func() *automock.UidService {
+				svc := &automock.UidService{}
+				return svc
+			},
+			TenantFetcherFn: func() *automock.TenantFetcher {
+				return &automock.TenantFetcher{}
+			},
+			SelfRegManagerFn: rtmtest.NoopSelfRegManager,
+			Input:            gqlInput,
+			ExpectedRuntime:  nil,
+			ExpectedErr:      testErr,
 		},
 	}
 

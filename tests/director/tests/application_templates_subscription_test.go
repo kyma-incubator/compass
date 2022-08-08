@@ -25,9 +25,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
-	t := testingx.NewT(stdT)
-	t.Run("When creating app template with a certificate", func(t *testing.T) {
+func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
+	t := testingx.NewT(baseT)
+	t.Run("When creating app template with a certificate", func(stdT *testing.T) {
+		t := testingx.NewT(stdT)
 		// GIVEN
 		ctx := context.Background()
 
@@ -36,8 +37,8 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 		subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
 		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
-		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig)
-		directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, conf.ExternalCertProviderConfig)
+		appProviderDirectorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
 
@@ -45,15 +46,15 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 		appTemplateName := createAppTemplateName("app-template-name-subscription")
 		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
 
-		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), &appTmpl)
-		require.NoError(t, err)
-		require.NotEmpty(t, appTmpl.ID)
+		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
+		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), &appTmpl)
+		require.NoError(stdT, err)
+		require.NotEmpty(stdT, appTmpl.ID)
 		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
 
 		selfRegLabelValue, ok := appTmpl.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
-		require.True(t, ok)
-		require.Contains(t, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTmpl.ID)
+		require.True(stdT, ok)
+		require.Contains(stdT, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTmpl.ID)
 
 		httpClient := &http.Client{
 			Timeout: 10 * time.Second,
@@ -63,15 +64,15 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 		}
 
 		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer([]byte(selfRegLabelValue)))
-		require.NoError(t, err)
+		require.NoError(stdT, err)
 		response, err := httpClient.Do(depConfigureReq)
-		require.NoError(t, err)
+		require.NoError(stdT, err)
 		defer func() {
 			if err := response.Body.Close(); err != nil {
-				t.Logf("Could not close response body %s", err)
+				stdT.Logf("Could not close response body %s", err)
 			}
 		}()
-		require.Equal(t, http.StatusOK, response.StatusCode)
+		require.Equal(stdT, http.StatusOK, response.StatusCode)
 
 		t.Run("Application is created successfully in consumer subaccount as a result of subscription", func(t *testing.T) {
 			//GIVEN
@@ -94,6 +95,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 		t.Run("Application is deleted successfully in consumer subaccount as a result of unsubscription", func(t *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+
 			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
@@ -116,7 +118,89 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			require.Len(t, actualAppPage.Data, 0)
 		})
 
-		t.Run("Application Provider successfully pushes consumer app metadata (bundle) to consumer application after successful subscription", func(t *testing.T) {
+		t.Run("Application Provider successfully queries consumer application after subscription", func(t *testing.T) {
+			//GIVEN
+			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+
+			// WHEN
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
+			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+			// THEN
+			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
+			headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
+
+			actualAppPage := graphql.ApplicationPage{}
+			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
+			getSrcAppReq.Header = headers
+			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertSecuredClient, getSrcAppReq, &actualAppPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualAppPage.Data, 1)
+			require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
+		})
+
+		t.Run("Application Provider can only see the consumer SaaS application record created from subscription and no other applications that may exist in consumer subaccount", func(t *testing.T) {
+			//GIVEN
+			firstApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, baseT.Name()[:26]+"_firstApp", subscriptionConsumerSubaccountID)
+			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &firstApp)
+			require.NoError(t, err)
+			require.NotEmpty(t, firstApp.ID)
+
+			secondApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, baseT.Name()[:26]+"_secondApp", subscriptionConsumerSubaccountID)
+			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &secondApp)
+			require.NoError(t, err)
+			require.NotEmpty(t, secondApp.ID)
+
+			actualAppPage := graphql.ApplicationPage{}
+			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualAppPage.Data, 2)
+			require.ElementsMatch(t, []string{firstApp.ID, secondApp.ID}, []string{actualAppPage.Data[0].ID, actualAppPage.Data[1].ID})
+
+			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
+
+			// WHEN
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
+			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+			// THEN
+			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
+			headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
+
+			actualConsumerAppPage := graphql.ApplicationPage{}
+			getSrcAppReqWithHeaders := fixtures.FixGetApplicationsRequestWithPagination()
+			getSrcAppReqWithHeaders.Header = headers
+			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertSecuredClient, getSrcAppReqWithHeaders, &actualConsumerAppPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualConsumerAppPage.Data, 1)
+			subscribedApp := actualConsumerAppPage.Data[0]
+			require.Equal(t, appTmpl.ID, *subscribedApp.ApplicationTemplateID)
+			require.NotEqual(t, firstApp.ID, subscribedApp.ID)
+			require.NotEqual(t, secondApp.ID, subscribedApp.ID)
+
+			actualAllAppsPage := graphql.ApplicationPage{}
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAllAppsPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualAllAppsPage.Data, 3)
+			require.ElementsMatch(t, []string{firstApp.ID, secondApp.ID, subscribedApp.ID}, []string{actualAllAppsPage.Data[0].ID, actualAllAppsPage.Data[1].ID, actualAllAppsPage.Data[2].ID})
+
+			subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+
+			actualFinalAppPage := graphql.ApplicationPage{}
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualFinalAppPage)
+			require.NoError(t, err)
+
+			require.Len(t, actualAppPage.Data, 2)
+			require.ElementsMatch(t, []string{firstApp.ID, secondApp.ID}, []string{actualFinalAppPage.Data[0].ID, actualFinalAppPage.Data[1].ID})
+
+		})
+
+		t.Run("Application Provider successfully pushes consumer app bundle metadata to consumer application after successful subscription", func(t *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
@@ -147,16 +231,19 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			bundleOutput := graphql.BundleExt{}
 
 			t.Log("Try to create bundle")
-			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addBndlRequest, &bundleOutput)
+			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertSecuredClient, addBndlRequest, &bundleOutput)
 
 			// Verify that Bundle can be created
 			require.NoError(t, err)
 			require.NotEmpty(t, bundleOutput.ID)
+
+			stripSensitiveFieldValues(&bndlInput, &bundleOutput) // because it would be stripped in the bundleOutput when making the request w/t appProviderDirectorCertSecuredClient
 			assertions.AssertBundle(t, &bndlInput, &bundleOutput)
 
 			// Ensure fetching application returns also the added bundle
 			actualAppPageExt := graphql.ApplicationPageExt{}
-			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPageExt)
+			getSrcAppReq.Header = headers
+			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertSecuredClient, getSrcAppReq, &actualAppPageExt)
 			require.NoError(t, err)
 
 			require.Len(t, actualAppPageExt.Data, 1)
@@ -168,7 +255,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 
 		})
 
-		t.Run("Application Provider is denied querying and pushing consumer app metadata (bundle) without previously created subscription", func(t *testing.T) {
+		t.Run("Application Provider is denied querying and pushing consumer app bundle metadata without previously created subscription", func(t *testing.T) {
 			// Create consumer token
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
 			headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
@@ -177,7 +264,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			actualAppPage := graphql.ApplicationPage{}
 			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
 			getSrcAppReq.Header = headers
-			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getSrcAppReq, &actualAppPage)
+			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertSecuredClient, getSrcAppReq, &actualAppPage)
 			require.Error(t, err)
 
 			expectedErrMsg := fmt.Sprintf("Consumer's external tenant %s was not found as subscription record in the applications table for any application templates in the provider tenant", subscriptionConsumerSubaccountID)
@@ -192,14 +279,14 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			output := graphql.BundleExt{}
 
 			t.Log("Try to create bundle")
-			err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addBndlRequest, &output)
+			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertSecuredClient, addBndlRequest, &output)
 
 			// Verify that Bundle cannot be created after unsubscription
 			require.Error(t, err)
 			require.Contains(t, err.Error(), expectedErrMsg)
 		})
 
-		t.Run("Application Provider in one region is denied querying and pushing consumer app metadata (bundle) for application created from subscription in different region", func(t *testing.T) {
+		t.Run("Application Provider in one region is denied querying and pushing consumer app bundle metadata for application created from subscription in different region", func(t *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
@@ -218,7 +305,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			require.Equal(t, appTmpl.ID, *subscribedApplication.ApplicationTemplateID)
 
 			// Create second certificate client representing an Application Provider from a different region
-			directorCertClientForAnotherRegion := createDirectorCertClientForAnotherRegion(t, ctx)
+			appProviderDirectorCertClientForAnotherRegion := createDirectorCertClientForAnotherRegion(t, ctx)
 
 			// Create consumer token
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
@@ -227,7 +314,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			// List Applications
 			actualAppPage = graphql.ApplicationPage{}
 			getSrcAppReq.Header = headers
-			err = testctx.Tc.RunOperation(ctx, directorCertClientForAnotherRegion, getSrcAppReq, &actualAppPage)
+			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertClientForAnotherRegion, getSrcAppReq, &actualAppPage)
 			require.Error(t, err)
 
 			expectedErrMsg := "failed to find application template in tenant"
@@ -242,7 +329,7 @@ func TestSubscriptionApplicationTemplateFlow(stdT *testing.T) {
 			output := graphql.BundleExt{}
 
 			t.Log("Try to create bundle")
-			err = testctx.Tc.RunOperation(ctx, directorCertClientForAnotherRegion, addBndlRequest, &output)
+			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertClientForAnotherRegion, addBndlRequest, &output)
 
 			// Verify that Bundle cannot be created after unsubscription
 			require.Error(t, err)
@@ -290,4 +377,26 @@ func buildSubscriptionRequest(t *testing.T, ctx context.Context, subscriptionCon
 	subscribeReq.Header.Add(conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionProviderSubaccountID)
 
 	return subscribeReq
+}
+
+func stripSensitiveFieldValues(bundleInput *graphql.BundleCreateInput, bundleOuput *graphql.BundleExt) {
+	for i := range bundleInput.Documents {
+		bundleInput.Documents[i].FetchRequest = nil
+	}
+	for i := range bundleInput.APIDefinitions {
+		bundleInput.APIDefinitions[i].Spec.FetchRequest = nil
+	}
+	for i := range bundleInput.EventDefinitions {
+		bundleInput.EventDefinitions[i].Spec.FetchRequest = nil
+	}
+
+	for i := range bundleOuput.Documents.Data {
+		bundleOuput.Documents.Data[i].FetchRequest = nil
+	}
+	for i := range bundleOuput.APIDefinitions.Data {
+		bundleOuput.APIDefinitions.Data[i].Spec.FetchRequest = nil
+	}
+	for i := range bundleOuput.EventDefinitions.Data {
+		bundleOuput.EventDefinitions.Data[i].Spec.FetchRequest = nil
+	}
 }

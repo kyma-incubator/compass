@@ -224,8 +224,6 @@ export APP_HEALTH_CONFIG_INDICATORS="{database,5s,1s,1s,3}"
 export APP_SUGGEST_TOKEN_HTTP_HEADER=suggest_token
 export APP_SCHEMA_MIGRATION_VERSION=$(ls -lr ${ROOT_PATH}/../schema-migrator/migrations/director | head -n 2 | tail -n 1 | tr -s ' ' | cut -d ' ' -f9 | cut -d '_' -f1)
 export APP_ALLOW_JWT_SIGNING_NONE=true
-export APP_INFO_CERT_ISSUER="C=BG, L=Local, O=CMP, OU=Local, CN=CMP"
-export APP_INFO_CERT_SUBJECT="C=BG, O=CMP, OU=Local, L=Local, CN=local-clients"
 export APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY="non-existent-label-key"
 export APP_EXTERNAL_CLIENT_CERT_SECRET=${CLIENT_CERT_SECRET_NAMESPACE}/${CLIENT_CERT_SECRET_NAME}
 export APP_EXTERNAL_CLIENT_CERT_KEY="tls.crt"
