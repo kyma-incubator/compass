@@ -12,7 +12,6 @@ type Config struct {
 	SelfRegisterLabelKey               string `envconfig:"APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_KEY"`
 	SelfRegisterLabelValuePrefix       string `envconfig:"APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_LABEL_VALUE_PREFIX"`
 	PropagatedProviderSubaccountHeader string `envconfig:"APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER"`
-	RuntimeTypeLabelKey                string `envconfig:"APP_RUNTIME_TYPE_LABEL_KEY,default=runtimeType"`
 }
 
 type TenantFetcherConfig struct {
