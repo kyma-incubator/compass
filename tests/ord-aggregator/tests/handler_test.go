@@ -449,7 +449,7 @@ func TestORDAggregator(stdT *testing.T) {
 			// verify apis and events visibility via Director's graphql
 			verifyEntitiesVisibilityViaGraphql(t, oauthGraphQLClientWithInternalVisibility, oauthGraphQLClientWithoutInternalVisibility, mergeMaps(apisMap, eventsMap), mergeMaps(publicApisMap, publicEventsMap), apisAndEventsNumber, app.ID)
 
-			// Verify tombstones
+			// Verify tombstoness
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/tombstones?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfTombstones {
