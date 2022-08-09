@@ -340,11 +340,6 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	if err != nil {
 		return nil, err
 	}
-	applicationName, err := extractApplicationNameFromTemplateInput(appTemplate.ApplicationInputJSON)
-	if err != nil {
-		return nil, err
-	}
-	log.C(ctx).Infof("Registering an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 
 	log.C(ctx).Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %s", in.TemplateName)
 	appCreateInputJSON, err := r.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, convertedIn.Values)
@@ -373,6 +368,10 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	}
 	appCreateInputModel.Labels["managed"] = "false"
 
+	applicationName, err := extractApplicationNameFromTemplateInput(appCreateInputJSON)
+	if err != nil {
+		return nil, err
+	}
 	log.C(ctx).Infof("Creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 	id, err := r.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID)
 	if err != nil {
