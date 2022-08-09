@@ -112,7 +112,7 @@ func TestMain(m *testing.M) {
 
 	config.TenantFetcherFullRegionalURL = tenantfetcher.BuildTenantFetcherRegionalURL(config.RegionalHandlerEndpoint, config.TenantPathParam, config.RegionPathParam, config.TenantFetcherURL, config.RootAPI)
 
-	config.TenantFetcherFullDependenciesURL = config.TenantFetcherURL + config.RootAPI + config.DependenciesEndpoint
+	config.TenantFetcherFullDependenciesURL = tenantfetcher.BuildRegionalDependenciesURL(config.TenantFetcherURL, config.RootAPI, config.DependenciesEndpoint, config.RegionPathParam)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)
