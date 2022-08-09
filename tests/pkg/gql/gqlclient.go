@@ -59,7 +59,7 @@ func NewCertAuthorizedHTTPClient(key crypto.PrivateKey, rawCertChain [][]byte, s
 		Transport: &http.Transport{
 			TLSClientConfig: tlsConfig,
 		},
-		Timeout: time.Second * 30,
+		Timeout: time.Second * 40,
 	}
 
 	return httpClient
