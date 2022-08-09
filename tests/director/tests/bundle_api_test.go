@@ -2,7 +2,11 @@ package tests
 
 import (
 	"context"
+	"fmt"
+	"net/url"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -464,7 +468,62 @@ func TestAddBundle(t *testing.T) {
 	require.NoError(t, err)
 
 	assertions.AssertBundle(t, &bndlInput, &output)
+
+	parsedTargetURL, err := url.Parse(bndlInput.APIDefinitions[0].TargetURL)
+	require.NoError(t, err)
+	expectedTargetUrl := fmt.Sprintf("%s://%s", parsedTargetURL.Scheme, parsedTargetURL.Host)
+
+	appWithBaseURL := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, tenantId, application.ID)
+	assert.NotNil(t, appWithBaseURL.BaseURL)
+	assert.Equal(t, expectedTargetUrl, str.PtrStrToStr(appWithBaseURL.BaseURL))
+
 	saveExample(t, bundleRequest.Query(), "query bundle")
+}
+
+func TestAddBundleForApplicationWithAlreadySetBaseURL(t *testing.T) {
+	ctx := context.Background()
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	baseURL := "https://compass.kyma.local/api"
+	application, err := fixtures.RegisterApplicationWithBaseURL(t, ctx, certSecuredGraphQLClient, baseURL, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
+	require.NoError(t, err)
+	require.NotEmpty(t, application.ID)
+
+	bndlInput := fixtures.FixBundleCreateInputWithRelatedObjects(t, "bndl-app-1")
+	bndl, err := testctx.Tc.Graphqlizer.BundleCreateInputToGQL(bndlInput)
+	require.NoError(t, err)
+
+	addBndlRequest := fixtures.FixAddBundleRequest(application.ID, bndl)
+	output := graphql.BundleExt{}
+
+	// WHEN
+	t.Log("Create bundle")
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addBndlRequest, &output)
+
+	// THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, output.ID)
+	assertions.AssertBundle(t, &bndlInput, &output)
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, output.ID)
+
+	bundleRequest := fixtures.FixBundleRequest(application.ID, output.ID)
+	bndlFromAPI := graphql.ApplicationExt{}
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, bundleRequest, &bndlFromAPI)
+	require.NoError(t, err)
+
+	assertions.AssertBundle(t, &bndlInput, &output)
+
+	parsedTargetURL, err := url.Parse(bndlInput.APIDefinitions[0].TargetURL)
+	require.NoError(t, err)
+	expectedTargetUrl := fmt.Sprintf("%s://%s", parsedTargetURL.Scheme, parsedTargetURL.Host)
+
+	appWithBaseURL := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, tenantId, application.ID)
+	assert.NotNil(t, appWithBaseURL.BaseURL)
+	assert.NotEqual(t, expectedTargetUrl, str.PtrStrToStr(appWithBaseURL.BaseURL))
+	assert.Equal(t, baseURL, str.PtrStrToStr(appWithBaseURL.BaseURL))
 }
 
 func TestQueryBundles(t *testing.T) {

@@ -188,7 +188,7 @@ func TestCreateApplicationTemplate_SameNamesAndRegion(t *testing.T) {
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &appTemplateTwo)
 
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "application template with name \"SAP app-template\" already exists")
+	require.Contains(t, err.Error(), fmt.Sprintf("application template with name \"SAP app-template\" and region %s already exists", appTemplateRegion))
 }
 
 func TestCreateApplicationTemplate_SameNamesAndDifferentRegions(t *testing.T) {
@@ -367,7 +367,8 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 
 func TestUpdateApplicationTemplate_AlreadyExistsInTheSameRegion(t *testing.T) {
 	ctx := context.Background()
-	appTemplateOneInput := fixAppTemplateInputWithDefaultDistinguishLabel("SAP app-template")
+	appTemplateRegion := conf.SubscriptionConfig.SelfRegRegion
+	appTemplateOneInput := fixAppTemplateInputWithRegion("SAP app-template", appTemplateRegion)
 
 	t.Log("Create first application template")
 	appTemplateOne, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOneInput)
@@ -377,7 +378,7 @@ func TestUpdateApplicationTemplate_AlreadyExistsInTheSameRegion(t *testing.T) {
 	require.NotEmpty(t, appTemplateOne.ID)
 	require.NotEmpty(t, appTemplateOne.Name)
 
-	appTemplateTwoInput := fixAppTemplateInputWithDistinguishLabel("SAP app-template-two", "other-label")
+	appTemplateTwoInput := fixAppTemplateInputWithRegionAndDistinguishLabel("SAP app-template-two", appTemplateRegion, "other-label")
 
 	t.Log("Create second application template")
 	appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwoInput)
@@ -404,7 +405,7 @@ func TestUpdateApplicationTemplate_AlreadyExistsInTheSameRegion(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateAppTemplateRequest, &updateOutput)
 
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "application template with name \"SAP app-template\" already exists")
+	require.Contains(t, err.Error(), fmt.Sprintf("application template with name \"SAP app-template\" and region %s already exists", appTemplateRegion))
 }
 
 func TestUpdateApplicationTemplate_NotValid(t *testing.T) {

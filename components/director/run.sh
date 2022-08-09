@@ -101,18 +101,18 @@ function cleanup() {
 
     if [[ ${DEBUG} == true ]]; then
        echo -e "${GREEN}Cleanup Director binary${NC}"
-       rm  $GOPATH/src/github.com/kyma-incubator/compass/components/director/director 
+       rm  $GOPATH/src/github.com/kyma-incubator/compass/components/director/director
     fi
 
     if [[ ${SKIP_DB_CLEANUP} = false ]]; then
         echo -e "${GREEN}Cleanup Postgres container${NC}"
-        docker rm --force ${POSTGRES_CONTAINER} 
+        docker rm --force ${POSTGRES_CONTAINER}
     else
         echo -e "${GREEN}Skipping Postgres container cleanup${NC}"
     fi
 
     echo -e "${GREEN}Destroying k3d cluster...${NC}"
-    k3d cluster delete k3d-cluster 
+    k3d cluster delete k3d-cluster
 }
 
 trap cleanup EXIT
@@ -286,7 +286,7 @@ if [[  ${DEBUG} == true ]]; then
 else
     if [[  ${AUTO_TERMINATE} == true ]]; then
         cd ${ROOT_PATH}
-        go build ${ROOT_PATH}/cmd/${COMPONENT}/main.go 
+        go build ${ROOT_PATH}/cmd/${COMPONENT}/main.go
         MAIN_APP_LOGFILE=${ROOT_PATH}/main.log
 
         ${ROOT_PATH}/main > ${MAIN_APP_LOGFILE} &
@@ -301,7 +301,7 @@ else
             echo "[Director] left ${SECONDS_LEFT} seconds. Wait ..."
             sleep 10
         done
-        
+
         echo "Timeout of ${TERMINAION_TIMEOUT_IN_SECONDS} seconds for starting director reached. Killing the process."
         echo -e "${GREEN}Kill main process..${NC}"
         kill -SIGINT "${MAIN_PROCESS_PID}"
