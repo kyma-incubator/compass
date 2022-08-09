@@ -350,7 +350,7 @@ func TestService_Dependencies(t *testing.T) {
 		RegionPathParam: "region",
 	}
 
-	validResponse := fmt.Sprintf("[]")
+	validResponse := "[]"
 
 	testCases := []struct {
 		Name                  string
