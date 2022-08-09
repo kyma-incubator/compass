@@ -523,6 +523,7 @@ func TestAddBundleForApplicationWithAlreadySetBaseURL(t *testing.T) {
 	appWithBaseURL := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, tenantId, application.ID)
 	assert.NotNil(t, appWithBaseURL.BaseURL)
 	assert.NotEqual(t, expectedTargetUrl, str.PtrStrToStr(appWithBaseURL.BaseURL))
+	assert.Equal(t, baseURL, str.PtrStrToStr(appWithBaseURL.BaseURL))
 }
 
 func TestQueryBundles(t *testing.T) {
