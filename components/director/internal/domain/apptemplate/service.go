@@ -106,12 +106,13 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 	}
 	in.ApplicationInputJSON = appInputJSON
 
-	_, err = s.GetByNameAndRegion(ctx, in.Name, in.Labels[tenant.RegionLabelKey])
+	region := in.Labels[tenant.RegionLabelKey]
+	_, err = s.GetByNameAndRegion(ctx, in.Name, region)
 	if err != nil && !apperrors.IsNotFoundError(err) {
-		return "", errors.Wrapf(err, "while checking if application template with name %q exists", in.Name)
+		return "", errors.Wrapf(err, "while checking if application template with name %q and region %v exists", in.Name, region)
 	}
 	if err == nil {
-		return "", fmt.Errorf("application template with name %q already exists", in.Name)
+		return "", fmt.Errorf("application template with name %q and region %v already exists", in.Name, region)
 	}
 
 	appTemplate := in.ToApplicationTemplate(appTemplateID)
@@ -292,10 +293,10 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 	if oldAppTemplate.Name != in.Name {
 		_, err := s.GetByNameAndRegion(ctx, in.Name, region)
 		if err != nil && !apperrors.IsNotFoundError(err) {
-			return errors.Wrapf(err, "while checking if application template with name %q exists", in.Name)
+			return errors.Wrapf(err, "while checking if application template with name %q and region %v exists", in.Name, region)
 		}
 		if err == nil {
-			return fmt.Errorf("application template with name %q already exists", in.Name)
+			return fmt.Errorf("application template with name %q and region %v already exists", in.Name, region)
 		}
 	}
 

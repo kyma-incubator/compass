@@ -182,7 +182,7 @@ func TestCreateApplicationTemplate_SameNamesAndRegion(t *testing.T) {
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &appTemplateTwo)
 
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "application template with name \"SAP app-template\" already exists")
+	require.Contains(t, err.Error(), "application template with name \"SAP app-template\" and region eu-1 already exists")
 }
 
 func TestCreateApplicationTemplate_SameNamesAndDifferentRegions(t *testing.T) {
@@ -396,7 +396,7 @@ func TestUpdateApplicationTemplate_AlreadyExistsInTheSameRegion(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateAppTemplateRequest, &updateOutput)
 
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "application template with name \"SAP app-template\" already exists")
+	require.Contains(t, err.Error(), "application template with name \"SAP app-template\" and region eu-1 already exists")
 }
 
 func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
