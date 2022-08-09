@@ -5,7 +5,7 @@
 This application provides an API for managing tenant subscriptions.
 
 A subscription binds a provider runtime to a tenant. A given runtime is called a provider runtime when it has a specific label.
-Creating a subscription means that the provider runtime with a matching provider label can access tenant resources on behalf of the subscribed tenant.
+Creating a subscription means that the provider runtime with a matching provider label can access tenant resources on behalf of the subscribed tenant. 
 
 ### Exposed API endpoints
 
@@ -13,7 +13,7 @@ Creating a subscription means that the provider runtime with a matching provider
 |---------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
 | `PUT <APP_ROOT_API>/<APP_REGIONAL_HANDLER_ENDPOINT>`    | You can use this endpoint to subscribe tenants to runtimes with the given labels. If the tenant does not exist it is                                                             created together with its relative tenants. Regional tenants are labeled with their subdomains and regions.                                                                       Subscribed runtimes are labeled with subscriber tenant IDs.                                                         |
 | `DELETE <APP_ROOT_API>/<APP_REGIONAL_HANDLER_ENDPOINT>` | You can use this endpoint to unsubscribe tenants from runtimes with the given labels. Then, the unsubscribing tenant                                                             ID is removed from subscribed runtimes label.                                                                       |
-| `GET <APP_ROOT_API>/<APP_REGIONAL_DEPENDENCIES_ENDPOINT>`        | You can use this endpoint to return all external applications, which must be informed for the tenant creation before                                                             Compass. That is, if Compass communicates with a multi-tenant application, and they share the same tenants, then                                                                 if a new tenant is created in Compass, the multi-tenant application must also create that tenant if it does not                                                                   exist. Currently, an empty json array is returned.                                                                        |
+| `GET <APP_ROOT_API>/<APP_DEPENDENCIES_ENDPOINT>`        | You can use this endpoint to return all external applications, which must be informed for the tenant creation before                                                             Compass. That is, if Compass communicates with a multi-tenant application, and they share the same tenants, then                                                                 if a new tenant is created in Compass, the multi-tenant application must also create that tenant if it does not                                                                   exist. Currently, an empty json is returned.                                                                        |
 
 All endpoints expect the same body:
 
