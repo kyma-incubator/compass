@@ -283,7 +283,7 @@ func TestService_Create(t *testing.T) {
 				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
 				return labelRepo
 			},
-			ExpectedError: errors.New("application template with name \"bar\" already exists"),
+			ExpectedError: errors.New("application template with name \"bar\" and region <nil> already exists"),
 		},
 		{
 			Name: "Error when creating webhooks",
@@ -1301,7 +1301,7 @@ func TestService_Update(t *testing.T) {
 				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
 				return labelRepo
 			},
-			ExpectedError: errors.New("application template with name \"bartest\" already exists"),
+			ExpectedError: errors.New("application template with name \"bartest\" and region <nil> already exists"),
 		},
 		{
 			Name: "Error when updating application template - update failed",
