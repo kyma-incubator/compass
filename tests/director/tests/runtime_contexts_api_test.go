@@ -189,7 +189,7 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 
 		regionLbl, ok := providerRuntime.Labels[tenantfetcher.RegionKey].(string)
 		require.True(t, ok)
-		require.Contains(t, conf.SubscriptionConfig.SelfRegRegion, regionLbl)
+		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, regionLbl)
 
 		httpClient := &http.Client{
 			Timeout: 10 * time.Second,

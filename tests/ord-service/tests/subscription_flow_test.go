@@ -92,7 +92,7 @@ func TestSelfRegisterFlow(t *testing.T) {
 
 	regionLbl, ok := runtime.Labels[tenantfetcher.RegionKey].(string)
 	require.True(t, ok)
-	require.Contains(t, conf.SubscriptionConfig.SelfRegRegion, regionLbl)
+	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, regionLbl)
 
 	// Verify that the label returned cannot be modified
 	setLabelRequest := fixtures.FixSetRuntimeLabelRequest(runtime.ID, conf.SubscriptionConfig.SelfRegisterLabelKey, "value")
@@ -129,12 +129,17 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		runtimeInput := graphql.RuntimeRegisterInput{
 			Name:        "providerRuntime",
 			Description: ptr.String("providerRuntime-description"),
-			Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue},
+			Labels: graphql.Labels{
+				conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue},
 		}
 
 		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &runtimeInput)
 		defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &runtime)
 		require.NotEmpty(t, runtime.ID)
+
+		regionLbl, ok := runtime.Labels[tenantfetcher.RegionKey].(string)
+		require.True(t, ok)
+		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, regionLbl)
 
 		// Register application
 		app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "testingApp", secondaryTenant)

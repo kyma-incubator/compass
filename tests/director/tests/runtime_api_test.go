@@ -784,7 +784,7 @@ func TestSelfRegMoreThanOneProviderRuntime(t *testing.T) {
 
 	regionLbl, ok := runtime.Labels[tenantfetcher.RegionKey].(string)
 	require.True(t, ok)
-	require.Contains(t, conf.SubscriptionConfig.SelfRegRegion, regionLbl)
+	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, regionLbl)
 
 	// Self register second runtime with same distinguish label and region labels
 	secondRuntimeInput := graphql.RuntimeRegisterInput{
