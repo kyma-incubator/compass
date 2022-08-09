@@ -2,6 +2,8 @@ package bundle_test
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 	"testing"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
@@ -270,7 +272,7 @@ func TestResolver_API(t *testing.T) {
 				specSvc := testCase.SpecServiceFn()
 				bndlRefSvc := testCase.BundleReferenceServiceFn()
 
-				resolver := bundle.NewResolver(transact, nil, nil, bndlRefSvc, svc, nil, nil, nil, nil, converter, nil, nil, specSvc)
+				resolver := bundle.NewResolver(transact, nil, nil, bndlRefSvc, svc, nil, nil, nil, nil, converter, nil, nil, specSvc, nil)
 
 				// WHEN
 				result, err := resolver.APIDefinition(context.TODO(), testCase.Bundle, testCase.InputID)
@@ -570,7 +572,7 @@ func TestResolver_APIs(t *testing.T) {
 			firstBundleParams := dataloader.ParamAPIDef{ID: firstBundleID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
 			secondBundleParams := dataloader.ParamAPIDef{ID: secondBundleID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
 			keys := []dataloader.ParamAPIDef{firstBundleParams, secondBundleParams}
-			resolver := bundle.NewResolver(transact, nil, nil, bundleRefService, svc, nil, nil, nil, nil, converter, nil, nil, specService)
+			resolver := bundle.NewResolver(transact, nil, nil, bundleRefService, svc, nil, nil, nil, nil, converter, nil, nil, specService, nil)
 			// WHEN
 			result, err := resolver.APIDefinitionsDataLoader(keys)
 
@@ -593,7 +595,7 @@ func TestResolver_APIs(t *testing.T) {
 	}
 
 	t.Run("Returns error when there are no Bundles", func(t *testing.T) {
-		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := resolver.APIDefinitionsDataLoader([]dataloader.ParamAPIDef{})
 		// THEN
@@ -605,7 +607,7 @@ func TestResolver_APIs(t *testing.T) {
 		params := dataloader.ParamAPIDef{ID: firstBundleID, Ctx: context.TODO(), First: nil, After: &gqlAfter}
 		keys := []dataloader.ParamAPIDef{params}
 
-		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := resolver.APIDefinitionsDataLoader(keys)
 		// THEN
@@ -862,7 +864,7 @@ func TestResolver_Event(t *testing.T) {
 				specSvc := testCase.SpecServiceFn()
 				bndlRefService := testCase.BundleRefServiceFn()
 
-				resolver := bundle.NewResolver(transact, nil, nil, bndlRefService, nil, svc, nil, nil, nil, nil, converter, nil, specSvc)
+				resolver := bundle.NewResolver(transact, nil, nil, bndlRefService, nil, svc, nil, nil, nil, nil, converter, nil, specSvc, nil)
 
 				// WHEN
 				result, err := resolver.EventDefinition(context.TODO(), testCase.Bundle, testCase.InputID)
@@ -1136,7 +1138,7 @@ func TestResolver_Events(t *testing.T) {
 			firstBundleParams := dataloader.ParamEventDef{ID: firstBundleID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
 			secondBundleParams := dataloader.ParamEventDef{ID: secondBundleID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
 			keys := []dataloader.ParamEventDef{firstBundleParams, secondBundleParams}
-			resolver := bundle.NewResolver(transact, nil, nil, bundleRefService, nil, svc, nil, nil, nil, nil, converter, nil, specService)
+			resolver := bundle.NewResolver(transact, nil, nil, bundleRefService, nil, svc, nil, nil, nil, nil, converter, nil, specService, nil)
 			// WHEN
 			result, err := resolver.EventDefinitionsDataLoader(keys)
 
@@ -1159,7 +1161,7 @@ func TestResolver_Events(t *testing.T) {
 	}
 
 	t.Run("Returns error when there are no Bundles", func(t *testing.T) {
-		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := resolver.EventDefinitionsDataLoader([]dataloader.ParamEventDef{})
 		// THEN
@@ -1171,7 +1173,7 @@ func TestResolver_Events(t *testing.T) {
 		params := dataloader.ParamEventDef{ID: firstBundleID, Ctx: context.TODO(), First: nil, After: &gqlAfter}
 		keys := []dataloader.ParamEventDef{params}
 
-		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := resolver.EventDefinitionsDataLoader(keys)
 		// THEN
@@ -1297,7 +1299,7 @@ func TestResolver_Document(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := bundle.NewResolver(transact, nil, nil, nil, nil, nil, svc, nil, nil, nil, nil, converter, nil)
+			resolver := bundle.NewResolver(transact, nil, nil, nil, nil, nil, svc, nil, nil, nil, nil, converter, nil, nil)
 
 			// WHEN
 			result, err := resolver.Document(context.TODO(), testCase.Bundle, testCase.InputID)
@@ -1406,7 +1408,7 @@ func TestResolver_Documents(t *testing.T) {
 			firstBundleParams := dataloader.ParamDocument{ID: firstBundleID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
 			secondBundleParams := dataloader.ParamDocument{ID: secondBundleID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
 			keys := []dataloader.ParamDocument{firstBundleParams, secondBundleParams}
-			resolver := bundle.NewResolver(transact, nil, nil, nil, nil, nil, svc, nil, nil, nil, nil, converter, nil)
+			resolver := bundle.NewResolver(transact, nil, nil, nil, nil, nil, svc, nil, nil, nil, nil, converter, nil, nil)
 
 			// WHEN
 			result, err := resolver.DocumentsDataLoader(keys)
@@ -1423,7 +1425,7 @@ func TestResolver_Documents(t *testing.T) {
 	}
 
 	t.Run("Returns error when there are no Bundles", func(t *testing.T) {
-		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := resolver.DocumentsDataLoader([]dataloader.ParamDocument{})
 		// THEN
@@ -1435,7 +1437,7 @@ func TestResolver_Documents(t *testing.T) {
 		params := dataloader.ParamDocument{ID: firstBundleID, Ctx: context.TODO(), First: nil, After: &gqlAfter}
 		keys := []dataloader.ParamDocument{params}
 
-		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := resolver.DocumentsDataLoader(keys)
 		// THEN
@@ -1449,7 +1451,6 @@ func TestResolver_AddBundle(t *testing.T) {
 	testErr := errors.New("Test error")
 
 	id := "foo"
-	appID := "1"
 	desc := "bar"
 	name := "baz"
 
@@ -1463,7 +1464,8 @@ func TestResolver_AddBundle(t *testing.T) {
 	testCases := []struct {
 		Name            string
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		ServiceFn       func() *automock.BundleService
+		BundleSvcFn     func() *automock.BundleService
+		AppSvcFn        func() *automock.ApplicationService
 		ConverterFn     func() *automock.BundleConverter
 		ExpectedBundle  *graphql.Bundle
 		ExpectedErr     error
@@ -1471,10 +1473,15 @@ func TestResolver_AddBundle(t *testing.T) {
 		{
 			Name:            "Success",
 			TransactionerFn: txGen.ThatSucceeds,
-			ServiceFn: func() *automock.BundleService {
+			BundleSvcFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
 				svc.On("Create", txtest.CtxWithDBMatcher(), appID, modelBundleInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelBundle, nil).Once()
+				return svc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("UpdateBaseURL", txtest.CtxWithDBMatcher(), appID, extractTargetURLFromJSONArray(modelBundleInput.APIDefinitions[0].TargetURLs)).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.BundleConverter {
@@ -1489,9 +1496,12 @@ func TestResolver_AddBundle(t *testing.T) {
 		{
 			Name:            "Returns error when starting transaction",
 			TransactionerFn: txGen.ThatFailsOnBegin,
-			ServiceFn: func() *automock.BundleService {
+			BundleSvcFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
 				return svc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				return &automock.ApplicationService{}
 			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
@@ -1503,10 +1513,13 @@ func TestResolver_AddBundle(t *testing.T) {
 		{
 			Name:            "Returns error when adding Bundle failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			ServiceFn: func() *automock.BundleService {
+			BundleSvcFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
 				svc.On("Create", txtest.CtxWithDBMatcher(), appID, modelBundleInput).Return("", testErr).Once()
 				return svc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				return &automock.ApplicationService{}
 			},
 			ConverterFn: func() *automock.BundleConverter {
 				conv := &automock.BundleConverter{}
@@ -1519,10 +1532,35 @@ func TestResolver_AddBundle(t *testing.T) {
 		{
 			Name:            "Returns error when Bundle retrieval failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			ServiceFn: func() *automock.BundleService {
+			BundleSvcFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
 				svc.On("Create", txtest.CtxWithDBMatcher(), appID, modelBundleInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(nil, testErr).Once()
+				return svc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				return &automock.ApplicationService{}
+			},
+			ConverterFn: func() *automock.BundleConverter {
+				conv := &automock.BundleConverter{}
+				conv.On("CreateInputFromGraphQL", gqlBundleInput).Return(modelBundleInput, nil).Once()
+				return conv
+			},
+			ExpectedBundle: nil,
+			ExpectedErr:    testErr,
+		},
+		{
+			Name:            "Returns error when updating base url failed",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			BundleSvcFn: func() *automock.BundleService {
+				svc := &automock.BundleService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), appID, modelBundleInput).Return(id, nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelBundle, nil).Once()
+				return svc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("UpdateBaseURL", txtest.CtxWithDBMatcher(), appID, extractTargetURLFromJSONArray(modelBundleInput.APIDefinitions[0].TargetURLs)).Return(testErr).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.BundleConverter {
@@ -1536,10 +1574,15 @@ func TestResolver_AddBundle(t *testing.T) {
 		{
 			Name:            "Returns error when commit transaction failed",
 			TransactionerFn: txGen.ThatFailsOnCommit,
-			ServiceFn: func() *automock.BundleService {
+			BundleSvcFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
 				svc.On("Create", txtest.CtxWithDBMatcher(), appID, modelBundleInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelBundle, nil).Once()
+				return svc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("UpdateBaseURL", txtest.CtxWithDBMatcher(), appID, extractTargetURLFromJSONArray(modelBundleInput.APIDefinitions[0].TargetURLs)).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.BundleConverter {
@@ -1554,10 +1597,15 @@ func TestResolver_AddBundle(t *testing.T) {
 		{
 			Name:            "Returns error when converting to GraphQL failed",
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
-			ServiceFn: func() *automock.BundleService {
+			BundleSvcFn: func() *automock.BundleService {
 				svc := &automock.BundleService{}
 				svc.On("Create", txtest.CtxWithDBMatcher(), appID, modelBundleInput).Return(id, nil).Once()
 				svc.On("Get", txtest.CtxWithDBMatcher(), id).Return(modelBundle, nil).Once()
+				return svc
+			},
+			AppSvcFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("UpdateBaseURL", txtest.CtxWithDBMatcher(), appID, extractTargetURLFromJSONArray(modelBundleInput.APIDefinitions[0].TargetURLs)).Return(nil).Once()
 				return svc
 			},
 			ConverterFn: func() *automock.BundleConverter {
@@ -1575,10 +1623,11 @@ func TestResolver_AddBundle(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
 			persist, transact := testCase.TransactionerFn()
-			svc := testCase.ServiceFn()
+			bundleSvc := testCase.BundleSvcFn()
+			appSvc := testCase.AppSvcFn()
 			converter := testCase.ConverterFn()
 
-			resolver := bundle.NewResolver(transact, svc, nil, nil, nil, nil, nil, converter, nil, nil, nil, nil, nil)
+			resolver := bundle.NewResolver(transact, bundleSvc, nil, nil, nil, nil, nil, converter, nil, nil, nil, nil, nil, appSvc)
 
 			// WHEN
 			result, err := resolver.AddBundle(context.TODO(), appID, gqlBundleInput)
@@ -1594,7 +1643,8 @@ func TestResolver_AddBundle(t *testing.T) {
 
 			persist.AssertExpectations(t)
 			transact.AssertExpectations(t)
-			svc.AssertExpectations(t)
+			bundleSvc.AssertExpectations(t)
+			appSvc.AssertExpectations(t)
 			converter.AssertExpectations(t)
 		})
 	}
@@ -1753,7 +1803,7 @@ func TestResolver_UpdateBundle(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := bundle.NewResolver(transact, svc, nil, nil, nil, nil, nil, converter, nil, nil, nil, nil, nil)
+			resolver := bundle.NewResolver(transact, svc, nil, nil, nil, nil, nil, converter, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.UpdateBundle(context.TODO(), id, gqlBundleUpdateInput)
@@ -2009,7 +2059,7 @@ func TestResolver_DeleteBundle(t *testing.T) {
 			eventSvc := testCase.EventDefFn()
 			converter := testCase.ConverterFn()
 
-			resolver := bundle.NewResolver(transact, svc, nil, nil, apiSvc, eventSvc, nil, converter, nil, nil, nil, nil, nil)
+			resolver := bundle.NewResolver(transact, svc, nil, nil, apiSvc, eventSvc, nil, converter, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.DeleteBundle(context.TODO(), id)
@@ -2167,7 +2217,7 @@ func TestResolver_InstanceAuth(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := bundle.NewResolver(transact, nil, svc, nil, nil, nil, nil, nil, converter, nil, nil, nil, nil)
+			resolver := bundle.NewResolver(transact, nil, svc, nil, nil, nil, nil, nil, converter, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.InstanceAuth(context.TODO(), testCase.Bundle, testCase.InputID)
@@ -2184,7 +2234,7 @@ func TestResolver_InstanceAuth(t *testing.T) {
 	}
 
 	t.Run("Returns error when Bundle is nil", func(t *testing.T) {
-		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := resolver.InstanceAuth(context.TODO(), nil, "")
 		// THEN
@@ -2304,7 +2354,7 @@ func TestResolver_InstanceAuths(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := bundle.NewResolver(transact, nil, svc, nil, nil, nil, nil, nil, converter, nil, nil, nil, nil)
+			resolver := bundle.NewResolver(transact, nil, svc, nil, nil, nil, nil, nil, converter, nil, nil, nil, nil, nil)
 			// WHEN
 			result, err := resolver.InstanceAuths(context.TODO(), bndl)
 
@@ -2320,11 +2370,19 @@ func TestResolver_InstanceAuths(t *testing.T) {
 	}
 
 	t.Run("Returns error when Bundle is nil", func(t *testing.T) {
-		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := bundle.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := resolver.InstanceAuths(context.TODO(), nil)
 		// THEN
 		require.Error(t, err)
 		assert.EqualError(t, err, apperrors.NewInternalError("Bundle cannot be empty").Error())
 	})
+}
+
+func extractTargetURLFromJSONArray(jsonTargetURL json.RawMessage) string {
+	strTargetURL := string(jsonTargetURL)
+	strTargetURL = strings.TrimPrefix(strTargetURL, `["`)
+	strTargetURL = strings.TrimSuffix(strTargetURL, `"]`)
+
+	return strTargetURL
 }
