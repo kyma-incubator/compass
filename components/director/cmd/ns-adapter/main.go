@@ -321,7 +321,7 @@ func calculateTemplateMappings(ctx context.Context, cfg adapter.Configuration, t
 	for index, tm := range systemToTemplateMappings {
 		appTemplate, err := appTemplateSvc.GetByNameAndRegion(ctx, tm.Name, nil)
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("failed to retrieve application template with name %q", tm.Name))
+			return errors.Wrap(err, fmt.Sprintf("failed to retrieve application template with name %q and empty region", tm.Name))
 		}
 		systemToTemplateMappings[index].ID = appTemplate.ID
 	}
