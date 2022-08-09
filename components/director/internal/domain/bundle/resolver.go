@@ -112,6 +112,12 @@ type BundleReferenceService interface {
 	ListByBundleIDs(ctx context.Context, objectType model.BundleReferenceObjectType, bundleIDs []string, pageSize int, cursor string) ([]*model.BundleReference, map[string]int, error)
 }
 
+// ApplicationService is responsible for the service-layer Application operations.
+//go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationService interface {
+	UpdateBaseURL(ctx context.Context, appID, targetURL string) error
+}
+
 // Resolver missing godoc
 type Resolver struct {
 	transact persistence.Transactioner
@@ -122,6 +128,7 @@ type Resolver struct {
 	apiSvc                APIService
 	eventSvc              EventService
 	documentSvc           DocumentService
+	appSvc                ApplicationService
 
 	bundleConverter             BundleConverter
 	bundleInstanceAuthConverter BundleInstanceAuthConverter
@@ -146,7 +153,8 @@ func NewResolver(
 	apiConv APIConverter,
 	eventConv EventConverter,
 	documentConv DocumentConverter,
-	specSerice SpecService) *Resolver {
+	specSerice SpecService,
+	appSvc ApplicationService) *Resolver {
 	return &Resolver{
 		transact:                    transact,
 		bundleConverter:             bundleConverter,
@@ -161,6 +169,7 @@ func NewResolver(
 		eventConverter:              eventConv,
 		documentConverter:           documentConv,
 		specService:                 specSerice,
+		appSvc:                      appSvc,
 	}
 }
 
@@ -189,6 +198,12 @@ func (r *Resolver) AddBundle(ctx context.Context, applicationID string, in graph
 	bndl, err := r.bundleSvc.Get(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(in.APIDefinitions) > 0 {
+		if err = r.appSvc.UpdateBaseURL(ctx, bndl.ApplicationID, in.APIDefinitions[0].TargetURL); err != nil {
+			return nil, errors.Wrapf(err, "while trying to update baseURL")
+		}
 	}
 
 	gqlBundle, err := r.bundleConverter.ToGraphQL(bndl)
