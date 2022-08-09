@@ -31,7 +31,7 @@ type testConfig struct {
 	TenantFetcherURL               string
 	RootAPI                        string
 	RegionalHandlerEndpoint        string
-	DependenciesEndpoint           string
+	DependenciesEndpoint           string `envconfig:"APP_REGIONAL_DEPENDENCIES_ENDPOINT"`
 	TenantPathParam                string
 	RegionPathParam                string
 	SubscriptionCallbackScope      string
