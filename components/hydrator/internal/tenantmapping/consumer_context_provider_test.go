@@ -265,7 +265,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 				require.Equal(t, authID, objectCtx.ConsumerID)
 				require.Equal(t, clientID, objectCtx.OauthClientID)
 				require.Equal(t, oathkeeper.ConsumerProviderFlow, objectCtx.AuthFlow)
-				//require.Equal(t, consumerInternalTenantID, objectCtx.TenantContext.TenantID)
+				require.Equal(t, testCase.ExpectedObjectContext.TenantContext.TenantID, objectCtx.TenantContext.TenantID)
 				require.Equal(t, consumerTenantID, objectCtx.TenantContext.ExternalTenantID)
 				require.Equal(t, "", objectCtx.Scopes)
 			} else {
