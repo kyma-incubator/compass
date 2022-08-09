@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"math"
 	"strings"
 	"text/template"
 
 	"github.com/jmoiron/sqlx"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -30,6 +30,8 @@ const (
 	tableName                      string = `public.business_tenant_mappings`
 	labelDefinitionsTableName      string = `public.label_definitions`
 	labelDefinitionsTenantIDColumn string = `tenant_id`
+
+	maxParameterChunkSize int = 50000 // max parameters size in PostgreSQL is 65535
 )
 
 var (
@@ -181,8 +183,25 @@ func (r *pgRepository) ListPageBySearchTerm(ctx context.Context, searchTerm stri
 	}, nil
 }
 
-// ListByExternalTenants retrieves all tenants with matching external ID from the Compass storage.
-func (r *pgRepository) ListByExternalTenants(ctx context.Context, externalTenant []string) ([]*model.BusinessTenantMapping, error) {
+// ListByExternalTenants retrieves all tenants with matching external ID from the Compass storage in chunks.
+func (r *pgRepository) ListByExternalTenants(ctx context.Context, externalTenantIDs []string) ([]*model.BusinessTenantMapping, error) {
+	tenants := make([]*model.BusinessTenantMapping, 0)
+
+	for len(externalTenantIDs) > 0 {
+		chunkSize := int(math.Min(float64(len(externalTenantIDs)), float64(maxParameterChunkSize)))
+		tenantsChunk := externalTenantIDs[:chunkSize]
+		tenantsFromDB, err := r.listByExternalTenantIDs(ctx, tenantsChunk)
+		if err != nil {
+			return nil, err
+		}
+		externalTenantIDs = externalTenantIDs[chunkSize:]
+		tenants = append(tenants, tenantsFromDB...)
+	}
+
+	return tenants, nil
+}
+
+func (r *pgRepository) listByExternalTenantIDs(ctx context.Context, externalTenant []string) ([]*model.BusinessTenantMapping, error) {
 	var entityCollection tenant.EntityCollection
 
 	conditions := repo.Conditions{
@@ -192,12 +211,7 @@ func (r *pgRepository) ListByExternalTenants(ctx context.Context, externalTenant
 		return nil, err
 	}
 
-	items := make([]*model.BusinessTenantMapping, 0, len(entityCollection))
-	for _, entity := range entityCollection {
-		tmModel := r.conv.FromEntity(&entity)
-		items = append(items, tmModel)
-	}
-	return items, nil
+	return r.multipleFromEntities(entityCollection), nil
 }
 
 // Update updates the values of tenant with matching internal, and external IDs.
@@ -354,30 +368,6 @@ func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceTy
 	}
 
 	return dest.TenantID, nil
-}
-
-func (r *pgRepository) GetBySubscribedRuntimes(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	var entityCollection tenant.EntityCollection
-
-	query := `
-	SELECT external_tenant
-	FROM business_tenant_mappings
-	WHERE id IN (
-		SELECT tenant_id from tenant_runtime_contexts
-	)
-	AND parent IS NOT NULL
-	`
-
-	err = persist.SelectContext(ctx, &entityCollection, query)
-	if err != nil {
-		return nil, errors.Wrap(err, "while listing tenants from DB")
-	}
-	return r.multipleFromEntities(entityCollection), nil
 }
 
 func (r *pgRepository) multipleFromEntities(entities tenant.EntityCollection) []*model.BusinessTenantMapping {
