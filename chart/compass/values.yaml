@@ -130,10 +130,10 @@ global:
       version: "PR-2501"
     ord_service:
       dir:
-      version: "PR-71"
+      version: "PR-72"
     schema_migrator:
       dir:
-      version: "PR-2501"
+      version: "PR-2532"
     system_broker:
       dir:
       version: "PR-2501"
@@ -144,7 +144,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2501"
+      version: "PR-2536"
     console:
       dir:
       version: "PR-68"
@@ -213,7 +213,7 @@ global:
       path: "/v1/info"
     subscription:
       subscriptionProviderLabelKey: "subscriptionProviderId"
-      consumerSubaccountLabelKey: "consumer_subaccount_id"
+      consumerSubaccountLabelKey: "global_subaccount_id"
       subscriptionLabelKey: "subscription"
       tokenPrefix: "sb-"
     selfRegister:
@@ -568,8 +568,7 @@ global:
       regionField: "region"
     regionDetails: '[{"central", ""}]'
   externalCertConfiguration:
-    issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
-    issuerLocality: "local" # In local setup we have manually created connector CA certificate with 'local' Locality property
+    issuerLocality: "local,local2" # In local setup we have manually created connector CA certificate with 'local' Locality property
     subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=%s/L=%s/CN=%s"
     ouCertSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd"
     commonName: "compass"

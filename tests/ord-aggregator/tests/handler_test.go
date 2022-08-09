@@ -589,6 +589,7 @@ func TestORDAggregator(stdT *testing.T) {
 
 		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTemplate.Name, appTemplate.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
+		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 		require.NoError(t, err)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
@@ -596,9 +597,19 @@ func TestORDAggregator(stdT *testing.T) {
 			}
 		}()
 		body, err := ioutil.ReadAll(resp.Body)
-		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
+
+		err = resp.Body.Close()
+		require.NoError(t, err)
+
+		subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
+		require.NotEmpty(t, subJobStatusPath)
+		subJobStatusURL := testConfig.SubscriptionConfig.URL + subJobStatusPath
+		require.Eventually(t, func() bool {
+			return subscription.GetSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == subscription.JobSucceededStatus
+		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
+		t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTemplate.Name, appTemplate.ID, subscriptionProviderSubaccountID)
 
 		t.Log("Create integration system")
 		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", "test-int-system")
@@ -609,15 +620,15 @@ func TestORDAggregator(stdT *testing.T) {
 		intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSys.ID)
 		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSystemCredentials.ID)
 
+		oauthCredentialData, ok := intSystemCredentials.Auth.Credential.(*directorSchema.OAuthCredentialData)
+		require.True(t, ok)
+
 		unsecuredHttpClient := http.DefaultClient
 		unsecuredHttpClient.Transport = &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},
 		}
-
-		oauthCredentialData, ok := intSystemCredentials.Auth.Credential.(*directorSchema.OAuthCredentialData)
-		require.True(t, ok)
 
 		cfgWithInternalVisibilityScope := &clientcredentials.Config{
 			ClientID:     oauthCredentialData.ClientID,
@@ -629,14 +640,6 @@ func TestORDAggregator(stdT *testing.T) {
 		ctx = context.WithValue(ctx, oauth2.HTTPClient, unsecuredHttpClient)
 		httpClient = cfgWithInternalVisibilityScope.Client(ctx)
 		httpClient.Timeout = 20 * time.Second
-
-		subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
-		require.NotEmpty(t, subJobStatusPath)
-		subJobStatusURL := testConfig.SubscriptionConfig.URL + subJobStatusPath
-		require.Eventually(t, func() bool {
-			return subscription.GetSubscriptionJobStatus(t, httpClient, subJobStatusURL, subscriptionToken) == subscription.JobSucceededStatus
-		}, subscription.EventuallyTimeout, subscription.EventuallyTick)
-		t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTemplate.Name, appTemplate.ID, subscriptionProviderSubaccountID)
 
 		actualAppPage := directorSchema.ApplicationPage{}
 		getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()

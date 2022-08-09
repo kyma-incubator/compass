@@ -145,10 +145,6 @@ spec:
               value: {{ .Values.global.director.suggestTokenHeaderKey }}
             - name: APP_INFO_API_ENDPOINT
               value: {{ .Values.global.director.info.path }}
-            - name: APP_INFO_CERT_SUBJECT
-              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.externalCertConfiguration.ouCertSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName | trimPrefix "/" | replace "/" ", " | quote }}
-            - name: APP_INFO_CERT_ISSUER
-              value: {{ .Values.global.externalCertConfiguration.issuer }}
             - name: APP_INFO_ROOT_CA
               valueFrom:
                 secretKeyRef:

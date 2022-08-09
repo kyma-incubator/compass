@@ -28,12 +28,12 @@ bench-run:
 	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-ord-service-local-0 -c ord-service-tests -- ./ord-service.bench -test.bench $(testName) -test.v
 
 sandbox-deploy-test:
-	env GOOS=linux go test -c ./tests -o ord-service.test
+	env GOOS=linux GOARCH=amd64 go test -c ./tests -o ord-service.test
 	kubectl cp ./ord-service.test kyma-system/oct-tp-compass-e2e-tests-compass-e2e-ord-service-local-0:/ -c ord-service-tests
 	rm ./ord-service.test
 
 sandbox-deploy-bench-test:
-	env GOOS=linux go test -c ./bench -o ord-service.bench
+	env GOOS=linux GOARCH=amd64 go test -c ./bench -o ord-service.bench
 	kubectl cp ./ord-service.bench kyma-system/oct-tp-compass-e2e-tests-compass-e2e-ord-service-local-0:/ -c ord-service-tests
 	rm ./ord-service.bench
 
