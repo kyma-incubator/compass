@@ -124,7 +124,10 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 
 	addScopesToExtra(objCtxs, reqData)
 
-	addConsumersToExtra(objCtxs, reqData)
+	if err := addConsumersToExtra(objCtxs, reqData); err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while adding consumers to extra: %v", err)
+		return reqData.Body
+	}
 
 	return reqData.Body
 }
@@ -259,7 +262,12 @@ func removeDuplicateValues(scopes []string) []string {
 	return result
 }
 
-func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) {
+func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) error {
+	region := objectContexts[0].Region
+	if region == "" {
+		return errors.Errorf("missing region value in object context for consumer ID: %s", objectContexts[0].ConsumerID)
+	}
+
 	c := consumer.Consumer{}
 	if len(objectContexts) == 1 {
 		c.ConsumerID = objectContexts[0].ConsumerID
@@ -268,14 +276,22 @@ func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqD
 	} else {
 		c = getCertServiceObjectContextProviderConsumer(objectContexts)
 		c.OnBehalfOf = getOnBehalfConsumer(objectContexts)
+
+		for _, objectContext := range objectContexts {
+			if objectContext.Region != region {
+				return errors.Errorf("mismatched region for consumer ID %s: actual %s, expected: %s)", objectContext.ConsumerID, objectContext.Region, region)
+			}
+		}
 	}
 
 	reqData.Body.Extra["consumerID"] = c.ConsumerID
 	reqData.Body.Extra["consumerType"] = c.ConsumerType
 	reqData.Body.Extra["flow"] = c.Flow
 	reqData.Body.Extra["onBehalfOf"] = c.OnBehalfOf
-	reqData.Body.Extra["region"] = getRegionFromConsumerToken(objectContexts)
+	reqData.Body.Extra["region"] = region
 	reqData.Body.Extra["tokenClientID"] = getClientIDFromConsumerToken(objectContexts)
+
+	return nil
 }
 
 func getCertServiceObjectContextProviderConsumer(objectContexts []ObjectContext) consumer.Consumer {
@@ -294,15 +310,6 @@ func getOnBehalfConsumer(objectContexts []ObjectContext) string {
 	for _, objCtx := range objectContexts {
 		if objCtx.ContextProvider != tenantmapping.CertServiceObjectContextProvider {
 			return objCtx.ConsumerID
-		}
-	}
-	return ""
-}
-
-func getRegionFromConsumerToken(objectContexts []ObjectContext) string {
-	for _, objCtx := range objectContexts {
-		if objCtx.ContextProvider == tenantmapping.AuthenticatorObjectContextProvider || objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider {
-			return objCtx.Region
 		}
 	}
 	return ""

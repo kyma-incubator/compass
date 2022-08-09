@@ -53,7 +53,7 @@ func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData 
 
 	externalTenantID := userCtxData.externalTenantID
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
-	tenantMapping, err := c.directorClient.GetTenantByExternalID(ctx, externalTenantID)
+	tenantMapping, region, err := getTenantWithRegion(ctx, c.directorClient, externalTenantID)
 	if err != nil {
 		if directorErrors.IsGQLNotFoundError(err) {
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
@@ -64,15 +64,7 @@ func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData 
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
-	region, ok := tenantMapping.Labels["region"]
-	if !ok {
-		return ObjectContext{}, errors.New(fmt.Sprintf("region label not found for tenant with ID: %q", tenantMapping.ID))
-	}
-	regionStr, ok := region.(string)
-	if !ok {
-		return ObjectContext{}, errors.New(fmt.Sprintf("unexpected region label type: %T, should be string", region))
-	}
-	authDetails.Region = regionStr
+	authDetails.Region = region
 
 	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), c.tenantKeys, "", mergeWithOtherScopes, authDetails.Region, userCtxData.clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.ConsumerProviderObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
@@ -85,7 +77,7 @@ func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData 
 			ExternalTenant: tenantMapping.ID,
 			Type:           tenantMapping.Type,
 			Parent:         &tenantMapping.ParentID,
-			Region:         &regionStr,
+			Region:         &region,
 			Subdomain:      &userCtxData.subdomain,
 			Provider:       tenantMapping.Provider,
 		}
@@ -142,4 +134,22 @@ func (c *consumerContextProvider) getUserContextData(userContextHeader string) (
 		externalTenantID: externalTenantID.String(),
 		subdomain:        subdomain.String(),
 	}, nil
+}
+
+func getTenantWithRegion(ctx context.Context, directorClient DirectorClient, externalTenantID string) (*schema.Tenant, string, error) {
+	tenantMapping, err := directorClient.GetTenantByExternalID(ctx, externalTenantID)
+	if err != nil {
+		return nil, "", err
+	}
+
+	region, ok := tenantMapping.Labels["region"]
+	if !ok {
+		return nil, "", errors.New(fmt.Sprintf("region label not found for tenant with ID: %q", tenantMapping.ID))
+	}
+	regionStr, ok := region.(string)
+	if !ok {
+		return nil, "", errors.New(fmt.Sprintf("unexpected region label type: %T, should be string", region))
+	}
+
+	return tenantMapping, regionStr, nil
 }
