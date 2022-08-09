@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/model"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
@@ -127,9 +125,6 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 	addScopesToExtra(objCtxs, reqData)
 
 	addConsumersToExtra(objCtxs, reqData)
-
-	log.C(ctx).Infof("spew dump:")
-	spew.Dump(reqData)
 
 	return reqData.Body
 }
