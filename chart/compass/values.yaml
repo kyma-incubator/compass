@@ -118,7 +118,7 @@ global:
       version: "PR-2501"
     director:
       dir:
-      version: "PR-2542"
+      version: "PR-2541"
     hydrator:
       dir:
       version: "PR-2501"
@@ -150,7 +150,7 @@ global:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2534"
+      version: "PR-2541"
   isLocalEnv: false
   isForTesting: false
   oauth2:
