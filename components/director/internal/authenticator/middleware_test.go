@@ -1,11 +1,9 @@
 package authenticator_test
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -58,15 +56,6 @@ var httpClientWithoutRedirects = &http.Client{
 	},
 }
 
-type mockRedirectClient struct{}
-
-func (m *mockRedirectClient) Do(*http.Request) (*http.Response, error) {
-	return &http.Response{
-		StatusCode: http.StatusFound,
-		Body:       ioutil.NopCloser(bytes.NewBufferString("")),
-	}, nil
-}
-
 func TestAuthenticator_SynchronizeJWKS(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
@@ -106,7 +95,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("http client configured without redirects", func(t *testing.T) {
 		// WHEN
-		jwks, err := authenticator.FetchJWK(context.TODO(), "https://example.com", jwk.WithHTTPClient(&mockRedirectClient{}))
+		jwks, err := authenticator.FetchJWK(context.TODO(), "https://httpstat.us/302", jwk.WithHTTPClient(httpClientWithoutRedirects))
 
 		// THEN
 		require.Nil(t, jwks)
