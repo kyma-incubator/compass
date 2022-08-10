@@ -9,9 +9,6 @@ import (
 	"path"
 	"strings"
 
-	tnt "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
@@ -41,35 +38,21 @@ type ExternalSvcCallerProvider interface {
 	GetCaller(config.SelfRegConfig, string) (ExternalSvcCaller, error)
 }
 
-// TenantService is responsible to service-related tenant operations
-//go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type TenantService interface {
-	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
-}
-
-// LabelService is responsible to service-related label operations
-//go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type LabelService interface {
-	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
-}
-
 // RegionLabel label for the label repository indicating region
 const RegionLabel = "region"
 
 type selfRegisterManager struct {
 	cfg            config.SelfRegConfig
 	callerProvider ExternalSvcCallerProvider
-	tenantSvc      TenantService
-	labelSvc       LabelService
 }
 
 // NewSelfRegisterManager creates a new SelfRegisterManager which is responsible for doing preparation/clean-up during
 // self-registration of runtimes configured with values from cfg.
-func NewSelfRegisterManager(cfg config.SelfRegConfig, provider ExternalSvcCallerProvider, tenantSvc TenantService, labelSvc LabelService) (*selfRegisterManager, error) {
+func NewSelfRegisterManager(cfg config.SelfRegConfig, provider ExternalSvcCallerProvider) (*selfRegisterManager, error) {
 	if err := cfg.MapInstanceConfigs(); err != nil {
 		return nil, errors.Wrap(err, "while creating self register manager")
 	}
-	return &selfRegisterManager{cfg: cfg, callerProvider: provider, tenantSvc: tenantSvc, labelSvc: labelSvc}, nil
+	return &selfRegisterManager{cfg: cfg, callerProvider: provider}, nil
 }
 
 // IsSelfRegistrationFlow check if self registration flow is triggered
@@ -114,20 +97,23 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 			return nil, errors.Errorf("providing %q label and value is forbidden", RegionLabel)
 		}
 
-		region, instanceConfig, err := s.retrieveRegionInstanceConfig(ctx, consumerInfo)
-		if err != nil {
-			return nil, err
+		if consumerInfo.Region == "" {
+			return nil, errors.Errorf("missing %s value in consumer context", RegionLabel)
 		}
 
-		log.C(ctx).Infof("Successfully derived region for consumer with ID %s during self-registration: %s", consumerInfo.ConsumerID, region)
-		labels[RegionLabel] = region
+		labels[RegionLabel] = consumerInfo.Region
+
+		instanceConfig, exists := s.cfg.RegionToInstanceConfig[consumerInfo.Region]
+		if !exists {
+			return nil, errors.Errorf("missing configuration for region: %s", consumerInfo.Region)
+		}
 
 		request, err := s.createSelfRegPrepRequest(id, consumerInfo.ConsumerID, instanceConfig.URL)
 		if err != nil {
 			return nil, err
 		}
 
-		caller, err := s.callerProvider.GetCaller(s.cfg, region)
+		caller, err := s.callerProvider.GetCaller(s.cfg, consumerInfo.Region)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting caller")
 		}
@@ -248,39 +234,11 @@ func (s *selfRegisterManager) createSelfRegDelRequest(resourceID, targetURL stri
 	return request, nil
 }
 
-func (s *selfRegisterManager) retrieveRegionInstanceConfig(ctx context.Context, consumer consumer.Consumer) (string, config.InstanceConfig, error) {
-	regionValue, err := s.getTenantRegionLabelValue(ctx, consumer.ConsumerID)
-	if err != nil {
-		return "", config.InstanceConfig{}, errors.Errorf("region value could not be derived for consumer with ID %s: %s", consumer.ConsumerID, err.Error())
-	}
-
-	region, ok := regionValue.(string)
-	if !ok {
-		return "", config.InstanceConfig{}, errors.Errorf("region value should be of type %q", "string")
-	}
-
-	instanceConfig, exists := s.cfg.RegionToInstanceConfig[region]
+func (s *selfRegisterManager) retrieveRegionInstanceConfig(consumer consumer.Consumer) (config.InstanceConfig, error) {
+	instanceConfig, exists := s.cfg.RegionToInstanceConfig[consumer.Region]
 	if !exists {
-		return "", config.InstanceConfig{}, errors.Errorf("missing configuration for region: %s", region)
+		return config.InstanceConfig{}, errors.Errorf("missing configuration for region: %s", consumer.Region)
 	}
 
-	return region, instanceConfig, nil
-}
-
-func (s *selfRegisterManager) getTenantRegionLabelValue(ctx context.Context, tenantID string) (interface{}, error) {
-	logger := log.C(ctx)
-
-	tenantModel, err := s.tenantSvc.GetTenantByExternalID(ctx, tenantID)
-	if err != nil {
-		logger.WithError(err).Errorf("An error has occurred while fetching tenant by external ID %q: %v", tenantID, err)
-		return nil, errors.Wrapf(err, "while fetching tenant by external ID %q", tenantID)
-	}
-
-	tenantRegionLabel, err := s.labelSvc.GetByKey(ctx, tenantModel.ID, model.TenantLabelableObject, tenantModel.ID, tnt.RegionLabelKey)
-	if err != nil {
-		logger.WithError(err).Errorf("An error has occurred while fetching %q label for tenant ID %q: %v", tnt.RegionLabelKey, tenantID, err)
-		return nil, errors.Wrapf(err, "while fetching %q label tenant by external ID %q", tnt.RegionLabelKey, tenantID)
-	}
-
-	return tenantRegionLabel.Value, nil
+	return instanceConfig, nil
 }

@@ -8,9 +8,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
-
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager/automock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/config"
@@ -27,42 +24,6 @@ const (
 
 // TestError is a testing error
 var TestError = errors.New("test-error")
-
-// TenantServiceDoesNotFindTenant missing godoc
-func TenantServiceDoesNotFindTenant(externalTenantID string) *automock.TenantService {
-	tenantService := &automock.TenantService{}
-	tenantService.On("GetTenantByExternalID", mock.Anything, externalTenantID).
-		Return(nil, TestError).Once()
-
-	return tenantService
-}
-
-// TenantServiceReturnsTenant missing godoc
-func TenantServiceReturnsTenant(externalTenantID, expectedInternalTenantID string) *automock.TenantService {
-	tenantService := &automock.TenantService{}
-	tenantService.On("GetTenantByExternalID", mock.Anything, externalTenantID).
-		Return(&model.BusinessTenantMapping{ID: expectedInternalTenantID}, nil).Once()
-
-	return tenantService
-}
-
-// LabelServiceDoesNotFindLabel missing godoc
-func LabelServiceDoesNotFindLabel(externalTenantID string) *automock.LabelService {
-	labelService := &automock.LabelService{}
-	labelService.On("GetByKey", mock.Anything, externalTenantID, model.TenantLabelableObject, externalTenantID, selfregmanager.RegionLabel).
-		Return(nil, TestError).Once()
-
-	return labelService
-}
-
-// LabelServiceReturnsRegionLabel missing godoc
-func LabelServiceReturnsRegionLabel(externalTenantID, regionLabel string) *automock.LabelService {
-	labelService := &automock.LabelService{}
-	labelService.On("GetByKey", mock.Anything, externalTenantID, model.TenantLabelableObject, externalTenantID, selfregmanager.RegionLabel).
-		Return(&model.Label{Value: regionLabel}, nil).Once()
-
-	return labelService
-}
 
 // CallerThatDoesNotGetCalled missing godoc
 func CallerThatDoesNotGetCalled(t *testing.T, _ config.SelfRegConfig, _ string) *automock.ExternalSvcCallerProvider {

@@ -221,12 +221,16 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return validateAppTemplateForSelfReg(convertedIn.Name, convertedIn.Placeholders)
 	}
 
+	selfRegLabels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validate)
+	if err != nil {
+		return nil, err
+	}
+
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
 	}
 
-	var selfRegLabels map[string]interface{}
 	defer func() {
 		didRollback := r.transact.RollbackUnlessCommitted(ctx, tx)
 		if didRollback {
@@ -243,11 +247,6 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	}()
 
 	ctx = persistence.SaveToContext(ctx, tx)
-
-	selfRegLabels, err = r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validate)
-	if err != nil {
-		return nil, err
-	}
 
 	if err := r.checkProviderAppTemplateExistence(ctx, selfRegLabels); err != nil {
 		return nil, err

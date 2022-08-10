@@ -8,9 +8,6 @@ import (
 	"testing"
 	"time"
 
-	tnt "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	pkgerr "github.com/pkg/errors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager/automock"
@@ -31,57 +28,72 @@ const (
 	testRegion                      = "test-region"
 	fakeRegion                      = "fake-region"
 	consumerID                      = "test-consumer-id"
-	consumerInternalID              = "test-consumer-internal-id"
 )
 
-var testConfig = config.SelfRegConfig{
-	SelfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
-	SelfRegisterLabelKey:            "test-label-key",
-	SelfRegisterLabelValuePrefix:    "test-prefix",
-	SelfRegisterResponseKey:         selfregmngrtest.ResponseLabelKey,
-	SelfRegisterPath:                "test-path",
-	SelfRegisterNameQueryParam:      "testNameQuery",
-	SelfRegisterTenantQueryParam:    "testTenantQuery",
-	SelfRegisterRequestBodyPattern:  `{"%s":"test"}`,
-	SelfRegisterSecretPath:          "testdata/TestSelfRegisterManager_PrepareRuntimeForSelfRegistration.golden",
-	InstanceClientIDPath:            "clientId",
-	InstanceClientSecretPath:        "clientSecret",
-	InstanceURLPath:                 "url",
-	InstanceTokenURLPath:            "tokenUrl",
-	InstanceCertPath:                "clientCert",
-	InstanceKeyPath:                 "clientKey",
-	RegionToInstanceConfig: map[string]config.InstanceConfig{
-		"test-region": {
-			ClientID:     "client_id",
-			ClientSecret: "client_secret",
-			URL:          "https://test-url-second.com",
-			TokenURL:     "https://test-token-url-second.com",
-			Cert:         "cert",
-			Key:          "key",
+var (
+	testConfig = config.SelfRegConfig{
+		SelfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
+		SelfRegisterLabelKey:            "test-label-key",
+		SelfRegisterLabelValuePrefix:    "test-prefix",
+		SelfRegisterResponseKey:         selfregmngrtest.ResponseLabelKey,
+		SelfRegisterPath:                "test-path",
+		SelfRegisterNameQueryParam:      "testNameQuery",
+		SelfRegisterTenantQueryParam:    "testTenantQuery",
+		SelfRegisterRequestBodyPattern:  `{"%s":"test"}`,
+		SelfRegisterSecretPath:          "testdata/TestSelfRegisterManager_PrepareRuntimeForSelfRegistration.golden",
+		InstanceClientIDPath:            "clientId",
+		InstanceClientSecretPath:        "clientSecret",
+		InstanceURLPath:                 "url",
+		InstanceTokenURLPath:            "tokenUrl",
+		InstanceCertPath:                "clientCert",
+		InstanceKeyPath:                 "clientKey",
+		RegionToInstanceConfig: map[string]config.InstanceConfig{
+			"test-region": {
+				ClientID:     "client_id",
+				ClientSecret: "client_secret",
+				URL:          "https://test-url-second.com",
+				TokenURL:     "https://test-token-url-second.com",
+				Cert:         "cert",
+				Key:          "key",
+			},
+			"fake-region": {
+				ClientID:     "client_id_2",
+				ClientSecret: "client_secret_2",
+				URL:          "https://test-url      -second.com",
+				TokenURL:     "https://test-token-url-second.com",
+				Cert:         "cert2",
+				Key:          "key2",
+			},
 		},
-		"fake-region": {
-			ClientID:     "client_id_2",
-			ClientSecret: "client_secret_2",
-			URL:          "https://test-url      -second.com",
-			TokenURL:     "https://test-token-url-second.com",
-			Cert:         "cert2",
-			Key:          "key2",
-		},
-	},
 
-	ClientTimeout: 5 * time.Second,
-}
+		ClientTimeout: 5 * time.Second,
+	}
 
-func TestSelfRegisterManager_IsSelfRegistrationFlow(t *testing.T) {
-	tokenConsumer := consumer.Consumer{
+	tokenConsumer = consumer.Consumer{
 		ConsumerID: consumerID,
 		Flow:       oathkeeper.OAuth2Flow,
+		Region:     testRegion,
 	}
-	certConsumer := consumer.Consumer{
+
+	certConsumer = consumer.Consumer{
+		ConsumerID: consumerID,
+		Flow:       oathkeeper.CertificateFlow,
+		Region:     testRegion,
+	}
+
+	certConsumerWithoutRegion = consumer.Consumer{
 		ConsumerID: consumerID,
 		Flow:       oathkeeper.CertificateFlow,
 	}
 
+	certConsumerWithFakeRegion = consumer.Consumer{
+		ConsumerID: consumerID,
+		Flow:       oathkeeper.CertificateFlow,
+		Region:     fakeRegion,
+	}
+)
+
+func TestSelfRegisterManager_IsSelfRegistrationFlow(t *testing.T) {
 	ctxWithTokenConsumer := consumer.SaveToContext(context.TODO(), tokenConsumer)
 	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
 
@@ -134,7 +146,7 @@ func TestSelfRegisterManager_IsSelfRegistrationFlow(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, nil, nil, nil)
+			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, nil)
 			require.NoError(t, err)
 
 			output, err := manager.IsSelfRegistrationFlow(testCase.Context, testCase.InputLabels)
@@ -150,24 +162,15 @@ func TestSelfRegisterManager_IsSelfRegistrationFlow(t *testing.T) {
 }
 
 func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
-	tokenConsumer := consumer.Consumer{
-		ConsumerID: consumerID,
-		Flow:       oathkeeper.OAuth2Flow,
-	}
-	certConsumer := consumer.Consumer{
-		ConsumerID: consumerID,
-		Flow:       oathkeeper.CertificateFlow,
-	}
-
 	ctxWithTokenConsumer := consumer.SaveToContext(context.TODO(), tokenConsumer)
 	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
+	ctxWithCertConsumerWithoutRegion := consumer.SaveToContext(context.TODO(), certConsumerWithoutRegion)
+	ctxWithCertConsumerWithFakeRegion := consumer.SaveToContext(context.TODO(), certConsumerWithFakeRegion)
 
 	testCases := []struct {
 		Name           string
 		Config         config.SelfRegConfig
 		CallerProvider func(*testing.T, config.SelfRegConfig, string) *automock.ExternalSvcCallerProvider
-		TenantService  *automock.TenantService
-		LabelService   *automock.LabelService
 		Region         string
 		InputLabels    map[string]interface{}
 		Context        context.Context
@@ -181,8 +184,6 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			Config:         testConfig,
 			InputLabels:    fixLblWithoutRegion(),
 			CallerProvider: selfregmngrtest.CallerThatGetsCalledOnce(http.StatusCreated),
-			TenantService:  selfregmngrtest.TenantServiceReturnsTenant(consumerID, consumerInternalID),
-			LabelService:   selfregmngrtest.LabelServiceReturnsRegionLabel(consumerInternalID, testRegion),
 			Region:         testRegion,
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
@@ -195,8 +196,6 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			Config:         testConfig,
 			InputLabels:    fixLblWithoutRegion(),
 			CallerProvider: selfregmngrtest.CallerThatGetsCalledOnce(http.StatusCreated),
-			TenantService:  selfregmngrtest.TenantServiceReturnsTenant(consumerID, consumerInternalID),
-			LabelService:   selfregmngrtest.LabelServiceReturnsRegionLabel(consumerInternalID, testRegion),
 			Region:         testRegion,
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.ApplicationTemplate,
@@ -253,30 +252,15 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			ExpectedOutput: nil,
 		},
 		{
-			Name:           "Error during region check when tenant is unable to be retrieved",
+			Name:           "Error during region check when tenant region is unable to be retrieved from context",
 			Config:         testConfig,
 			InputLabels:    fixLblWithoutRegion(),
 			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
-			TenantService:  selfregmngrtest.TenantServiceDoesNotFindTenant(consumerID),
 			Region:         testRegion,
-			Context:        ctxWithCertConsumer,
+			Context:        ctxWithCertConsumerWithoutRegion,
 			ResourceType:   resource.Runtime,
 			Validation:     func() error { return nil },
-			ExpectedErr:    pkgerr.Wrapf(selfregmngrtest.TestError, "while fetching tenant by external ID %q", consumerID),
-			ExpectedOutput: nil,
-		},
-		{
-			Name:           "Error during region check when tenant region label is unable to be retrieved",
-			Config:         testConfig,
-			InputLabels:    fixLblWithoutRegion(),
-			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
-			TenantService:  selfregmngrtest.TenantServiceReturnsTenant(consumerID, consumerInternalID),
-			LabelService:   selfregmngrtest.LabelServiceDoesNotFindLabel(consumerInternalID),
-			Region:         testRegion,
-			Context:        ctxWithCertConsumer,
-			ResourceType:   resource.Runtime,
-			Validation:     func() error { return nil },
-			ExpectedErr:    pkgerr.Wrapf(selfregmngrtest.TestError, "while fetching %q label tenant by external ID %q", tnt.RegionLabelKey, consumerID),
+			ExpectedErr:    errors.New(fmt.Sprintf("missing %s value in consumer context", selfregmanager.RegionLabel)),
 			ExpectedOutput: nil,
 		},
 		{
@@ -295,8 +279,6 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			Name:           "Error when caller provider fails",
 			Config:         testConfig,
 			CallerProvider: selfregmngrtest.CallerProviderThatFails,
-			TenantService:  selfregmngrtest.TenantServiceReturnsTenant(consumerID, consumerInternalID),
-			LabelService:   selfregmngrtest.LabelServiceReturnsRegionLabel(consumerInternalID, testRegion),
 			Region:         testRegion,
 			InputLabels:    fixLblWithoutRegion(),
 			Context:        ctxWithCertConsumer,
@@ -321,11 +303,9 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			Name:           "Error when can't create URL for preparation of self-registration",
 			Config:         testConfig,
 			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
-			TenantService:  selfregmngrtest.TenantServiceReturnsTenant(consumerID, consumerInternalID),
-			LabelService:   selfregmngrtest.LabelServiceReturnsRegionLabel(consumerInternalID, fakeRegion),
 			Region:         fakeRegion,
 			InputLabels:    map[string]interface{}{selfRegisterDistinguishLabelKey: "invalid value"},
-			Context:        ctxWithCertConsumer,
+			Context:        ctxWithCertConsumerWithFakeRegion,
 			ResourceType:   resource.Runtime,
 			Validation:     func() error { return nil },
 			ExpectedErr:    errors.New("while creating url for preparation of self-registered resource"),
@@ -337,8 +317,6 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			CallerProvider: selfregmngrtest.CallerThatDoesNotSucceed,
 			Region:         testRegion,
 			InputLabels:    fixLblWithoutRegion(),
-			TenantService:  selfregmngrtest.TenantServiceReturnsTenant(consumerID, consumerInternalID),
-			LabelService:   selfregmngrtest.LabelServiceReturnsRegionLabel(consumerInternalID, testRegion),
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
 			Validation:     func() error { return nil },
@@ -351,8 +329,6 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			CallerProvider: selfregmngrtest.CallerThatReturnsBadStatus,
 			Region:         testRegion,
 			InputLabels:    fixLblWithoutRegion(),
-			TenantService:  selfregmngrtest.TenantServiceReturnsTenant(consumerID, consumerInternalID),
-			LabelService:   selfregmngrtest.LabelServiceReturnsRegionLabel(consumerInternalID, testRegion),
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
 			Validation:     func() error { return nil },
@@ -364,7 +340,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svcCallerProvider := testCase.CallerProvider(t, testCase.Config, testCase.Region)
-			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider, testCase.TenantService, testCase.LabelService)
+			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider)
 			require.NoError(t, err)
 
 			output, err := manager.PrepareForSelfRegistration(testCase.Context, testCase.ResourceType, testCase.InputLabels, testUUID, testCase.Validation)
@@ -480,7 +456,7 @@ func TestSelfRegisterManager_CleanupSelfRegistration(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svcCallerProvider := testCase.CallerProvider(t, testCase.Config, testCase.Region)
-			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider, nil, nil)
+			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider)
 			require.NoError(t, err)
 
 			err = manager.CleanupSelfRegistration(testCase.Context, testCase.SelfRegisteredDistinguishLabelValue, testCase.Region)
@@ -497,7 +473,7 @@ func TestSelfRegisterManager_CleanupSelfRegistration(t *testing.T) {
 func TestNewSelfRegisterManager(t *testing.T) {
 	t.Run("Error when creating self register manager fails", func(t *testing.T) {
 		cfg := config.SelfRegConfig{}
-		manager, err := selfregmanager.NewSelfRegisterManager(cfg, nil, nil, nil)
+		manager, err := selfregmanager.NewSelfRegisterManager(cfg, nil)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "self registration secret path cannot be empty")
 		require.Nil(t, manager)

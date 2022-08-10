@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
-	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/google/uuid"
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	labelPkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -304,32 +304,10 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 	}
 
 	id := r.uidService.Generate()
+
 	validate := func() error { return nil }
 
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-
-	var selfRegLabels map[string]interface{}
-	defer func() {
-		didRollback := r.transact.RollbackUnlessCommitted(ctx, tx)
-		if didRollback {
-			labelVal := str.CastOrEmpty(convertedIn.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
-			if labelVal != "" {
-				label, ok := selfRegLabels[selfregmanager.RegionLabel].(string)
-				if !ok {
-					log.C(ctx).Errorf("An error occurred while casting region label value to string")
-				} else {
-					r.cleanupAndLogOnError(ctx, id, label)
-				}
-			}
-		}
-	}()
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	selfRegLabels, err = r.selfRegManager.PrepareForSelfRegistration(ctx, resource.Runtime, convertedIn.Labels, id, validate)
+	selfRegLabels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.Runtime, convertedIn.Labels, id, validate)
 	if err != nil {
 		return nil, err
 	}
@@ -348,6 +326,28 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", sa)
 		}
 	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		didRollback := r.transact.RollbackUnlessCommitted(ctx, tx)
+		if didRollback {
+			labelVal := str.CastOrEmpty(convertedIn.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
+			if labelVal != "" {
+				label, ok := selfRegLabels[selfregmanager.RegionLabel].(string)
+				if !ok {
+					log.C(ctx).Errorf("An error occurred while casting region label value to string")
+				} else {
+					r.cleanupAndLogOnError(ctx, id, label)
+				}
+			}
+		}
+	}()
+
+	ctx = persistence.SaveToContext(ctx, tx)
 
 	if err = r.checkProviderRuntimeExistence(ctx, selfRegLabels); err != nil {
 		return nil, err

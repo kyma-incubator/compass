@@ -229,7 +229,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
 			},
-			TransactionerFn: txtest.TransactionerThatDoesARollback,
+			TransactionerFn: txtest.NoopTransactioner,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("UnsafeExtractModifiableLabels", modelInput.Labels).Return(modelInput.Labels, nil).Once()
@@ -248,7 +248,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TenantFetcherFn: func() *automock.TenantFetcher {
 				return &automock.TenantFetcher{}
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrorsAndGetSelfRegDistinguishingLabelKey(selfRegLabels),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrors(selfRegLabels),
 			Input:            gqlInputWithInvalidLabel,
 			ExpectedRuntime:  nil,
 			ExpectedErr:      errors.New("while converting global_subaccount_id label: cannot cast label value"),
@@ -259,7 +259,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				return persistTx
 			},
-			TransactionerFn: txtest.TransactionerThatDoesARollback,
+			TransactionerFn: txtest.NoopTransactioner,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("UnsafeExtractModifiableLabels", modelInput.Labels).Return(modelInput.Labels, nil).Once()
@@ -280,7 +280,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				svc.On("FetchOnDemand", extSubaccountID, accountTenantID).Return(testErr).Once()
 				return svc
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrorsAndGetSelfRegDistinguishingLabelKey(selfRegLabels),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrors(selfRegLabels),
 			Input:            gqlInputWithSubaccountLabel,
 			ExpectedRuntime:  nil,
 			ExpectedErr:      testErr,
@@ -452,7 +452,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			PersistenceFn: func() *persistenceautomock.PersistenceTx {
 				return &persistenceautomock.PersistenceTx{}
 			},
-			TransactionerFn: txtest.TransactionerThatDoesARollback,
+			TransactionerFn: txtest.NoopTransactioner,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("UnsafeExtractModifiableLabels", modelInput.Labels).Return(modelInput.Labels, nil).Once()
@@ -471,7 +471,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TenantFetcherFn: func() *automock.TenantFetcher {
 				return &automock.TenantFetcher{}
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsErrorOnPrepAndGetSelfRegDistinguishingLabelKey,
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsErrorOnPrep,
 			Input:            gqlInput,
 			ExpectedRuntime:  nil,
 			ExpectedErr:      errors.New(rtmtest.SelfRegErrorMsg),

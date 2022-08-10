@@ -676,7 +676,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     UnusedWebhookSvc,
 			Input:            gqlAppTemplateInput,
-			SelfRegManagerFn: apptmpltest.NoopSelfRegManager,
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
 			ExpectedError:    testError,
 		},
 		{
@@ -773,7 +773,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 		},
 		{
 			Name: "Returns error when app template self registration fails",
-			TxFn: txGen.ThatDoesntExpectCommit,
+			TxFn: txGen.ThatDoesntStartTransaction,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
@@ -788,7 +788,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			WebhookConvFn:    UnusedWebhookConv,
 			WebhookSvcFn:     UnusedWebhookSvc,
-			SelfRegManagerFn: apptmpltest.SelfRegManagerThatReturnsErrorOnPrepAndGetSelfRegDistinguishingLabelKey,
+			SelfRegManagerFn: apptmpltest.SelfRegManagerThatReturnsErrorOnPrep,
 			Input:            gqlAppTemplateInput,
 			ExpectedError:    errors.New(apptmpltest.SelfRegErrorMsg),
 		},
