@@ -49,7 +49,7 @@ func TestSelfRegisterFlow(t *testing.T) {
 	accountTenantID := conf.AccountTenantID // accountTenantID is parent of the tenant/subaccountID of the configured certificate client's tenant below
 
 	// Register application
-	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "testingApp", accountTenantID)
+	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "testingApp", conf.ApplicationTypeLabelKey, "SAP Cloud for Customer", accountTenantID)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, accountTenantID, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
@@ -133,13 +133,13 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NotEmpty(t, runtime.ID)
 
 		// Register application
-		app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "testingApp", secondaryTenant)
+		app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "testingApp", conf.ApplicationTypeLabelKey, "SAP Cloud for Customer", secondaryTenant)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, secondaryTenant, &app)
 		require.NoError(t, err)
 		require.NotEmpty(t, app.ID)
 
 		// Register consumer application
-		consumerApp, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "consumerApp", secondaryTenant)
+		consumerApp, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "consumerApp", conf.ApplicationTypeLabelKey, "SAP Cloud for Customer", secondaryTenant)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, secondaryTenant, &consumerApp)
 		require.NoError(t, err)
 		require.NotEmpty(t, consumerApp.ID)

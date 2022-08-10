@@ -63,6 +63,9 @@ func TestORDService(t *testing.T) {
 	appInput := fixtures.CreateApp("tenant1")
 	appInput2 := fixtures.CreateApp("tenant2")
 	appInputInScenario := fixtures.CreateApp("tenant3-in-scenario")
+	appInputInScenario.Labels = map[string]interface{}{
+		conf.ApplicationTypeLabelKey: "SAP Cloud for Customer",
+	}
 	appInputNotInScenario := fixtures.CreateApp("tenant3-no-scenario")
 	appInputAPIProtocolFiltering := fixtures.CreateApp("tenant4")
 	appInputAPIProtocolFiltering.Bundles = append(appInputAPIProtocolFiltering.Bundles, fixtures.FixBundleWithOnlyOdataAPIs())
