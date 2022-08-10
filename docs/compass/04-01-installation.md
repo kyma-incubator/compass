@@ -40,7 +40,7 @@ Therefore, `serviceAccountTokenJWKS` and `serviceAccountTokenIssuer` need to be 
        serviceAccountTokenJWKS: "https://container.googleapis.com/v1/projects/${PROJECT_NAME}/locations/${REGION}/clusters/${CLUSTER_NAME}/jwks"
 ```
 
-> **NOTE:** The `serviceAccountTokenIssuer` must exactly match the value in the `iss` claim a service account token mounted to a pod (in `/var/run/secrets/kubernetes.io/serviceaccount/token`). This value can be different from the `iss` claim of the token in the service account secret.
+> **NOTE:** The `serviceAccountTokenIssuer` must match exactly to the value in the `iss` claim of the service account token mounted to a pod (in `/var/run/secrets/kubernetes.io/serviceaccount/token`). This value can differ from the `iss` claim of the token in the service account secret.
 
 #### Perform minimal Kyma installation
 
@@ -48,7 +48,7 @@ Therefore, `serviceAccountTokenJWKS` and `serviceAccountTokenIssuer` need to be 
 
 If custom domains and certificates are needed, see the [Set up your custom domain TLS certificate](https://github.com/kyma-project/kyma/blob/10ae3a8acf7d57a329efa605890d11f9a9b40991/docs/03-tutorials/sec-01-tls-certificates-security.md#L1-L0) document in the Kyma installation guide, as well as the resources in the [Certificate Management](#certificate-management) section in this document.
 
-Save the following .yaml with installation overrides into a file (for example: additionalKymaOverrides.yaml)
+Save the following .yaml code with installation overrides into a file (for example: additionalKymaOverrides.yaml)
 ```yaml
 ory:
   global:
@@ -73,7 +73,7 @@ istio-configuration:
          holdApplicationUntilProxyStarts: true
 global:
    loadBalancerIP: ${GATEWAY_IP_ADDRESS}
-# Uncomment the values below, if you want to proceed with your custom values; the default domain is `local.kyma.dev` and there is a default self-signed certificate and a key for that domain
+# If you want to proceed with your custom values, uncomment the values below; the default domain is `local.kyma.dev` and there is a default self-signed certificate and a key for that domain
    #domainName: ${DOMAIN} 
    #tlsCrt: ${TLS_CERT} 
    #tlsKey: ${TLS_KEY} 
@@ -92,7 +92,7 @@ kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c
 
 > **NOTE:** If you installed Kyma on a cluster with a custom domain and certificates, you must apply the overrides to Compass as well.
 
-Save the following .yaml with installation overrides into a file (for example: additionalCompassOverrides.yaml)
+Save the following .yaml code with installation overrides into a file (for example: additionalCompassOverrides.yaml)
 ```yaml
 hydrator:
    adminGroupNames: ${ADMIN_GROUP_NAMES}
@@ -109,7 +109,7 @@ global:
       auth:
          idpHost: ${IDP_HOST}
          clientID: ${CLIENT_ID}
-# Uncomment the values below, if you want to proceed with your custom values; the default domain is `local.kyma.dev` and there is a default self-signed certificate and a key for that domain
+# If you want to proceed with your custom values, uncomment the values below; the default domain is `local.kyma.dev` and there is a default self-signed certificate and a key for that domain
 #   domainName: ${DOMAIN}
 #   tlsCrt: ${TLS_CERT}
 #   tlsKey: ${TLS_KEY}
@@ -281,7 +281,7 @@ In this mode, the Runtime Agent is already connected to Compass. This mode facil
 - The proper work of JWT token flows and Compass Cockpit require a set up and configured OpenID Connect (OIDC) Authorization Server.
   The OIDC Authorization Server is needed for the support of the respective users, user groups, and scopes. The OIDC server host and client-id are specified as overrides of the Compass Helm chart. Then, a set of administrator scopes are granted to a user, based on the groups in the `id_token`. Those trusted groups can be configured with overrides as well.
 
-> **NOTE:** Compass relies on the `name` claim in the id_token. Therefore, you must configure your IDP to contain that attribute in the resulting token as this is the claim that is used for user identification.
+> **NOTE:** Compass relies on the `name` claim in the `id_token`. Therefore, you must configure your IDP to contain that attribute in the resulting token as this is the claim that is used for user identification.
 
 - For internal communication between components, Compass relies on Kubernetes Service Account tokens and [Service Account Issuer Discovery](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-issuer-discovery) for the validation of the tokens.
 Therefore, `serviceAccountTokenJWKS` and `serviceAccountTokenIssuer` need to be configured as overrides. This configuration could be infrastructure specific.
@@ -293,19 +293,19 @@ Therefore, `serviceAccountTokenJWKS` and `serviceAccountTokenIssuer` need to be 
        serviceAccountTokenJWKS: "https://container.googleapis.com/v1/projects/${PROJECT_NAME}/locations/${REGION}/clusters/${CLUSTER_NAME}/jwks"
 ```
 
-> **NOTE:** The `serviceAccountTokenIssuer` must exactly match the value in the `iss` claim a service account token mounted to a pod (in `/var/run/secrets/kubernetes.io/serviceaccount/token`). This value can be different from the `iss` claim of the token in the service account secret.
+> **NOTE:** The `serviceAccountTokenIssuer` must match exactly to the value in the `iss` claim of the service account token mounted to a pod (in `/var/run/secrets/kubernetes.io/serviceaccount/token`). This value can differ from the `iss` claim of the token in the service account secret.
 
-To install Compass and Runtime components on a single cluster, follow these steps:
+To install the Compass and Runtime components on a single cluster, perform the following steps:
 
 #### Kyma Prerequisite
 
 > **NOTE:** During the installation of Kyma, the installed version must match to the one in the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file in the specific Compass commit.
 
-You need to have a Kyma installation with Runtime Agent enabled. For more information, see [Enable Kyma with Runtime Agent](https://github.com/kyma-project/kyma/blob/2.0.4/docs/04-operation-guides/operations/ra-01-enable-kyma-with-runtime-agent.md). Therefor you need to add the compass-runtime-agent module in the compass-system Namespace to the list of [minimal compass components file](../../installation/resources/kyma/kyma-overrides-minimal.yaml).
+You must have a Kyma installation with an enabled Runtime Agent. For more information, see [Enable Kyma with Runtime Agent](https://github.com/kyma-project/kyma/blob/2.0.4/docs/04-operation-guides/operations/ra-01-enable-kyma-with-runtime-agent.md). Therefore, you must add the compass-runtime-agent module in the compass-system namespace to the list of [minimal compass components file](../../installation/resources/kyma/kyma-overrides-minimal.yaml).
 
 If custom domains and certificates are needed, see the [Set up your custom domain TLS certificate](https://github.com/kyma-project/kyma/blob/10ae3a8acf7d57a329efa605890d11f9a9b40991/docs/03-tutorials/sec-01-tls-certificates-security.md#L1-L0) document in the Kyma installation guide, as well as the resources in the [Certificate Management](#certificate-management) section in this document.
 
-Save the following .yaml with installation overrides into a file (for example: additionalKymaOverrides.yaml)
+Save the following .yaml code with installation overrides to a file (for example: additionalKymaOverrides.yaml)
 ```yaml
 ory:
   global:
@@ -330,7 +330,7 @@ istio-configuration:
          holdApplicationUntilProxyStarts: true
 global:
    loadBalancerIP: ${GATEWAY_IP_ADDRESS}
-# Uncomment the values below, if you want to proceed with your custom values; the default domain is `local.kyma.dev` and there is a default self-signed certificate and a key for that domain
+# If you want to proceed with your custom values, uncomment the values below; the default domain is `local.kyma.dev` and there is a default self-signed certificate and a key for that domain
    #domainName: ${DOMAIN} 
    #tlsCrt: ${TLS_CERT} 
    #tlsKey: ${TLS_KEY} 
@@ -340,7 +340,7 @@ global:
       #tlsKey: ${TLS_KEY}
 ```
 
-And then start the Kyma installation by using the following command:
+And then, start the Kyma installation by using the following command:
 
 ```bash
 kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c <minimal file from ../../installation/resources/kyma/kyma-components-minimal.yaml> -f <overrides file from ../../installation/resources/kyma/kyma-overrides-minimal.yaml> -f <file from above step - e.g. additionalKymaOverrides.yaml> --ci
@@ -348,7 +348,7 @@ kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c
 
 #### Install Compass
 
-Save the following .yaml with installation overrides into a file (for example: additionalCompassOverrides.yaml)
+Save the following .yaml code with installation overrides into a file (for example: additionalCompassOverrides.yaml)
 ```yaml
 hydrator:
    adminGroupNames: ${ADMIN_GROUP_NAMES}
@@ -366,7 +366,7 @@ global:
       auth:
          idpHost: ${IDP_HOST}
          clientID: ${CLIENT_ID}
-# Uncomment the values below, if you want to proceed with your custom values; the default domain is `local.kyma.dev` and there is a default self-signed certificate and a key for that domain
+# If you want to proceed with your custom values, uncomment the values below; the default domain is `local.kyma.dev` and there is a default self-signed certificate and a key for that domain
 #   domainName: ${DOMAIN}
 #   tlsCrt: ${TLS_CERT}
 #   tlsKey: ${TLS_KEY}
