@@ -28,27 +28,31 @@ func TestMapTenants(t *testing.T) {
 			Name:           "default",
 			ExternalTenant: "id-default",
 			Provider:       firstProvider,
+			Region:         "eu-1",
 		},
 		{
 			Name:           "foo",
 			ExternalTenant: "id-foo",
 			Provider:       firstProvider,
+			Region:         "eu-2",
 		},
 		{
 			Name:           "bar",
 			ExternalTenant: "id-bar",
 			Provider:       secondProvider,
+			Region:         "eu-1",
 		},
 		{
 			Name:           "baz",
 			ExternalTenant: "id-baz",
 			Provider:       secondProvider,
+			Region:         "eu-3",
 		},
 	}
 
 	t.Run("should return tenants", func(t *testing.T) {
 		// WHEN
-		actualTenants, err := externaltenant.MapTenants(validTenantSrcPath)
+		actualTenants, err := externaltenant.MapTenants(validTenantSrcPath, "eu-1")
 
 		// THEN
 		require.NoError(t, err)
@@ -57,7 +61,7 @@ func TestMapTenants(t *testing.T) {
 
 	t.Run("should fail while reading tenants directory", func(t *testing.T) {
 		// WHEN
-		_, err := externaltenant.MapTenants(invalidPath)
+		_, err := externaltenant.MapTenants(invalidPath, "")
 
 		// THEN
 		require.Error(t, err)
@@ -66,7 +70,7 @@ func TestMapTenants(t *testing.T) {
 
 	t.Run("should fail while reading file with tenants - unsupported file extension", func(t *testing.T) {
 		// WHEN
-		_, err := externaltenant.MapTenants(directoryWithInvalidFiles)
+		_, err := externaltenant.MapTenants(directoryWithInvalidFiles, "")
 
 		// THEN
 		require.Error(t, err)
@@ -75,7 +79,7 @@ func TestMapTenants(t *testing.T) {
 
 	t.Run("should fail while unmarshalling tenants", func(t *testing.T) {
 		// WHEN
-		_, err := externaltenant.MapTenants(directoryWithInvalidTenantJSON)
+		_, err := externaltenant.MapTenants(directoryWithInvalidTenantJSON, "")
 
 		// THEN
 		require.Error(t, err)

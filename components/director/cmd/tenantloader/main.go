@@ -16,8 +16,9 @@ import (
 )
 
 type jobConfig struct {
-	Database persistence.DatabaseConfig
-	Log      log.Config
+	Database            persistence.DatabaseConfig
+	Log                 log.Config
+	DefaultTenantRegion string
 }
 
 func main() {
@@ -50,7 +51,7 @@ func main() {
 	tenantRepo := tenant.NewRepository(tenantConverter)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, UIDSvc, labelRepo, labelSvc)
 
-	tenants, err := externaltenant.MapTenants(tenantsDirectoryPath)
+	tenants, err := externaltenant.MapTenants(tenantsDirectoryPath, cfg.DefaultTenantRegion)
 	exitOnError(err, "error while mapping tenants from file")
 
 	tx, err := transact.Begin()
