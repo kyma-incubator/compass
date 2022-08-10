@@ -260,7 +260,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			Context:        ctxWithCertConsumerWithoutRegion,
 			ResourceType:   resource.Runtime,
 			Validation:     func() error { return nil },
-			ExpectedErr:    errors.New(fmt.Sprintf("missing %s value in consumer context", selfregmanager.RegionLabel)),
+			ExpectedErr:    fmt.Errorf("missing %s value in consumer context", selfregmanager.RegionLabel),
 			ExpectedOutput: nil,
 		},
 		{

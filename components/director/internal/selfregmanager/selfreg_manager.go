@@ -233,12 +233,3 @@ func (s *selfRegisterManager) createSelfRegDelRequest(resourceID, targetURL stri
 
 	return request, nil
 }
-
-func (s *selfRegisterManager) retrieveRegionInstanceConfig(consumer consumer.Consumer) (config.InstanceConfig, error) {
-	instanceConfig, exists := s.cfg.RegionToInstanceConfig[consumer.Region]
-	if !exists {
-		return config.InstanceConfig{}, errors.Errorf("missing configuration for region: %s", consumer.Region)
-	}
-
-	return instanceConfig, nil
-}
