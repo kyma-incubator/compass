@@ -54,6 +54,8 @@ spec:
             value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
           - name: APP_EXTERNAL_CLIENT_KEY_KEY
             value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+          - name: APP_APPLICATION_TYPE_LABEL_KEY
+            value: {{ .Values.global.director.applicationTypeLabelKey }}
       restartPolicy: Never
 ---
 apiVersion: v1

@@ -25,7 +25,7 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 	// Register first Application
 	firstApp, err := fixtures.RegisterApplicationFromInput(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, graphql.ApplicationRegisterInput{
 		Name:   "test-first-app",
-		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}},
+		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}, cfg.ApplicationTypeLabelKey: "SAP Cloud for Customer"},
 	})
 	defer func() {
 		fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, firstApp.ID, true)
@@ -62,7 +62,7 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 	// Register second Application
 	secondApp, err := fixtures.RegisterApplicationFromInput(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, graphql.ApplicationRegisterInput{
 		Name:   "test-second-app",
-		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}},
+		Labels: map[string]interface{}{ScenariosLabel: []string{TestScenario}, cfg.ApplicationTypeLabelKey: "SAP Cloud for Customer"},
 	})
 	defer func() {
 		fixtures.UnassignApplicationFromScenarios(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, secondApp.ID, true)

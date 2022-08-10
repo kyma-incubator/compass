@@ -14,6 +14,7 @@ type ConnectorTestConfig struct {
 	CertificateDataHeader        string `envconfig:"default=Certificate-Data"`
 	RevocationConfigMapName      string `envconfig:"default=revocations-config"`
 	RevocationConfigMapNamespace string `envconfig:"default=compass-system"`
+	ApplicationTypeLabelKey      string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
 
 	CertLoaderConfig certloader.Config
 }
