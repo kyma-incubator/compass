@@ -83,7 +83,7 @@ func TestRequestBundleInstanceAuthCreationAsRuntimeConsumer(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
-	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	application, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app-test-bundle", conf.ApplicationTypeLabelKey, "SAP Cloud for Customer", tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
@@ -188,7 +188,7 @@ func TestRuntimeIdInBundleInstanceAuthIsSetToNullWhenDeletingRuntime(t *testing.
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
-	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	application, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app-test-bundle", conf.ApplicationTypeLabelKey, "SAP Cloud for Customer", tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
@@ -383,7 +383,7 @@ func TestRequestBundleInstanceAuthDeletionAsRuntimeConsumer(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
-	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle", tenantId)
+	application, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app-test-bundle", conf.ApplicationTypeLabelKey, "SAP Cloud for Customer", tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)

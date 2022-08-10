@@ -113,7 +113,7 @@ func TestApplicationFormationFlow(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application")
-	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app", tenantId)
+	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app", conf.ApplicationTypeLabelKey, "SAP Cloud for Customer", tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
