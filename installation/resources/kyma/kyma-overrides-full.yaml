@@ -25,7 +25,7 @@ cluster-essentials:
         requests:
           cpu: 25m
           memory: 36Mi
-istio-configuration:
+istio:
   components:
     egressGateways:
       enabled: false

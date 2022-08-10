@@ -29,7 +29,7 @@ helm-broker:
     resources:
       limits:
         memory: 256Mi
-istio-configuration:
+istio:
   components:
     egressGateways:
       enabled: false

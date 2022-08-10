@@ -31,7 +31,7 @@ If custom domains and certificates are needed, see the [Set up your custom domai
 
 Save the following .yaml with installation overrides into a file (for example: additionalKymaOverrides.yaml)
 ```yaml
-istio-configuration:
+istio:
    components:
       ingressGateways:
          config:
