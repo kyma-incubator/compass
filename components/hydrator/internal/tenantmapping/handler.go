@@ -109,24 +109,24 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 	objCtxs, err := h.getObjectContexts(ctx, reqData)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while getting object context: %v", err)
-		return reqData.Body
+		return oathkeeper.ReqBody{}
 	}
 
 	if len(objCtxs) == 0 {
 		log.C(ctx).Error("An error occurred while determining the auth details for the request: no object contexts were found")
-		return reqData.Body
+		return oathkeeper.ReqBody{}
 	}
 
 	if err := addTenantsToExtra(objCtxs, reqData); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while adding tenants to extra: %v", err)
-		return reqData.Body
+		return oathkeeper.ReqBody{}
 	}
 
 	addScopesToExtra(objCtxs, reqData)
 
 	if err := addConsumersToExtra(objCtxs, reqData); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while adding consumers to extra: %v", err)
-		return reqData.Body
+		return oathkeeper.ReqBody{}
 	}
 
 	return reqData.Body
