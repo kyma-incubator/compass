@@ -109,7 +109,7 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2501"
+      version: "PR-2546"
     connectivity_adapter:
       dir:
       version: "PR-2501"
