@@ -27,13 +27,15 @@ import (
 )
 
 func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
-	testError := errors.New("test error")
-	notFoundErr := apperrors.NewNotFoundErrorWithType(resource.Tenant)
-	tenantKeyNotFoundErr := apperrors.NewKeyDoesNotExistError(string(resource.Tenant))
-
 	emptyCtx := context.TODO()
 	consumerTenantID := "3944c2f9-f614-4680-b4a9-0f07315bc982"
 	providerTenantID := uuid.New().String()
+
+	testError := errors.New("test error")
+	notFoundErr := apperrors.NewNotFoundErrorWithType(resource.Tenant)
+	tenantKeyNotFoundErr := apperrors.NewKeyDoesNotExistError(string(resource.Tenant))
+	tenantRegionNotFoundErr := fmt.Errorf("region label not found for tenant with ID: %q", consumerTenantID)
+
 	authDetails := oathkeeper.AuthDetails{AuthID: providerTenantID, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: oathkeeper.ExternalIssuer}
 
 	reqData := oathkeeper.ReqData{
@@ -47,13 +49,24 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 	}
 
 	internalSubaccount := "internalSubaccountID"
+	labels := map[string]interface{}{
+		"region": "eu-1",
+	}
 
 	testSubaccount := &graphql.Tenant{
 		InternalID: internalSubaccount,
 		Type:       "subaccount",
+		Labels:     labels,
 	}
 
 	testAccount := &graphql.Tenant{
+		ID:         internalSubaccount,
+		InternalID: "externalAccount",
+		Type:       "account",
+		Labels:     labels,
+	}
+
+	testAccountWithoutRegion := &graphql.Tenant{
 		ID:         internalSubaccount,
 		InternalID: "externalAccount",
 		Type:       "account",
@@ -114,6 +127,17 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 			ReqDataInput:     oathkeeper.ReqData{},
 			AuthDetailsInput: authDetails,
 			ExpectedErr:      tenantKeyNotFoundErr,
+		},
+		{
+			Name: "Error when can't extract tenant region",
+			DirectorClient: func() *automock.DirectorClient {
+				client := &automock.DirectorClient{}
+				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(testAccountWithoutRegion, nil).Once()
+				return client
+			},
+			ReqDataInput:     reqData,
+			AuthDetailsInput: authDetails,
+			ExpectedErr:      tenantRegionNotFoundErr,
 		},
 		{
 			Name: "Error when consumer don't have access",
