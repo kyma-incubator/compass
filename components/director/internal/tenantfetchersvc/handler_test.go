@@ -337,6 +337,80 @@ func TestService_SubscriptionFlows(t *testing.T) {
 	})
 }
 
+func TestService_Dependencies(t *testing.T) {
+	const (
+		regionPathVar  = "region"
+		existingRegion = "eu-1"
+	)
+	target := fmt.Sprintf("/v1/regional/:%s/dependencies", regionPathVar)
+
+	subscriberSvc := &automock.TenantSubscriber{}
+
+	validHandlerConfig := tenantfetchersvc.HandlerConfig{
+		RegionPathParam: "region",
+	}
+
+	validResponse := "[]"
+
+	testCases := []struct {
+		Name                  string
+		Request               *http.Request
+		PathParams            map[string]string
+		ExpectedErrorOutput   string
+		ExpectedStatusCode    int
+		ExpectedSuccessOutput string
+	}{
+		{
+			Name:                "Failure when region path param is missing",
+			Request:             httptest.NewRequest(http.MethodGet, target, nil),
+			PathParams:          map[string]string{},
+			ExpectedStatusCode:  http.StatusBadRequest,
+			ExpectedErrorOutput: "Region path parameter is missing from request",
+		},
+		{
+			Name:    "Success when existing region is provided",
+			Request: httptest.NewRequest(http.MethodGet, target, nil),
+			PathParams: map[string]string{
+				regionPathVar: existingRegion,
+			},
+			ExpectedStatusCode:    http.StatusOK,
+			ExpectedSuccessOutput: validResponse,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			defer mock.AssertExpectationsForObjects(t, subscriberSvc)
+
+			handler := tenantfetchersvc.NewTenantsHTTPHandler(subscriberSvc, validHandlerConfig)
+			req := testCase.Request
+			req = mux.SetURLVars(req, testCase.PathParams)
+
+			w := httptest.NewRecorder()
+
+			// WHEN
+			handler.Dependencies(w, req)
+
+			// THEN
+			resp := w.Result()
+			body, err := ioutil.ReadAll(resp.Body)
+			assert.NoError(t, err)
+
+			if len(testCase.ExpectedErrorOutput) > 0 {
+				assert.Contains(t, string(body), testCase.ExpectedErrorOutput)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			if testCase.ExpectedSuccessOutput != "" {
+				assert.Equal(t, testCase.ExpectedSuccessOutput, string(body))
+			}
+
+			assert.Equal(t, testCase.ExpectedStatusCode, resp.StatusCode)
+		})
+	}
+}
+
 func TestService_FetchTenantOnDemand(t *testing.T) {
 	const (
 		parentIDPathVar = "tenantId"
