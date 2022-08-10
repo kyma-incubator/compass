@@ -127,8 +127,6 @@ spec:
                 secretKeyRef:
                   name: compass-postgresql
                   key: postgresql-sslMode
-            - name: APP_DEFAULT_SCENARIO_ENABLED
-              value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: TEST_EXTERNAL_CERT_CN
               value: {{ .Values.global.tests.director.externalCertIntSystemCN }}
             - name: TEST_EXTERNAL_CERT_OU

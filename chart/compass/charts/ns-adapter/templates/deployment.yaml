@@ -104,8 +104,6 @@ spec:
               value: {{.Values.global.log.format | quote }}
             - name: APP_CONFIGURATION_FILE
               value: /config/config.yaml
-            - name: APP_DEFAULT_SCENARIO_ENABLED
-              value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: APP_SCHEMA_MIGRATION_VERSION
               valueFrom:
                 configMapKeyRef:

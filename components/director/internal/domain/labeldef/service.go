@@ -8,8 +8,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/jsonschema"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
 )
 
@@ -54,7 +52,6 @@ type UIDService interface {
 }
 
 type service struct {
-	defaultScenarioEnabled   bool
 	repo                     Repository
 	labelRepo                LabelRepository
 	scenarioAssignmentLister ScenarioAssignmentLister
@@ -63,9 +60,8 @@ type service struct {
 }
 
 // NewService creates new label definition service
-func NewService(repo Repository, labelRepo LabelRepository, scenarioAssignmentLister ScenarioAssignmentLister, tenantRepo TenantRepository, uidService UIDService, defaultScenarioEnabled bool) *service {
+func NewService(repo Repository, labelRepo LabelRepository, scenarioAssignmentLister ScenarioAssignmentLister, tenantRepo TenantRepository, uidService UIDService) *service {
 	return &service{
-		defaultScenarioEnabled:   defaultScenarioEnabled,
 		repo:                     repo,
 		labelRepo:                labelRepo,
 		scenarioAssignmentLister: scenarioAssignmentLister,
@@ -76,8 +72,6 @@ func NewService(repo Repository, labelRepo LabelRepository, scenarioAssignmentLi
 
 // CreateWithFormations creates label definition with the provided formations
 func (s *service) CreateWithFormations(ctx context.Context, tnt string, formations []string) error {
-	formations = s.addDefaultScenarioIfEnabled(formations)
-
 	schema, err := NewSchemaForFormations(formations)
 	if err != nil {
 		return errors.Wrapf(err, "while creaing new schema for key %s", model.ScenariosKey)
@@ -94,23 +88,6 @@ func (s *service) CreateWithFormations(ctx context.Context, tnt string, formatio
 
 // Get returns the tenant scoped label definition with the provided key
 func (s *service) Get(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
-	// TODO: Once proper tenant initialization, with creating scenarios LD, is introduced this hack should be removed
-	if key == model.ScenariosKey {
-		err := s.EnsureScenariosLabelDefinitionExists(ctx, tenant)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	def, err := s.repo.GetByKey(ctx, tenant, key)
-	if err != nil {
-		return nil, errors.Wrap(err, "while fetching Label Definition")
-	}
-	return def, nil
-}
-
-// GetWithoutCreating returns the tenant scoped label definition with the provided key without creating default Scenarios Definition
-func (s *service) GetWithoutCreating(ctx context.Context, tenant string, key string) (*model.LabelDefinition, error) {
 	def, err := s.repo.GetByKey(ctx, tenant, key)
 	if err != nil {
 		return nil, errors.Wrap(err, "while fetching Label Definition")
@@ -127,28 +104,6 @@ func (s *service) List(ctx context.Context, tenant string) ([]model.LabelDefinit
 	return defs, nil
 }
 
-// EnsureScenariosLabelDefinitionExists creates scenario label definition if missing
-func (s *service) EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error {
-	ldExists, err := s.repo.Exists(ctx, tenant, model.ScenariosKey)
-	if err != nil {
-		return errors.Wrapf(err, "while checking if Label Definition with key %s exists", model.ScenariosKey)
-	}
-	if !ldExists {
-		schema, err := NewSchemaForFormations([]string{"DEFAULT"})
-		if err != nil {
-			return errors.Wrapf(err, "while creaing new schema for key %s", model.ScenariosKey)
-		}
-		return s.repo.Create(ctx, model.LabelDefinition{
-			ID:      s.uidService.Generate(),
-			Tenant:  tenant,
-			Key:     model.ScenariosKey,
-			Schema:  &schema,
-			Version: 0,
-		})
-	}
-	return nil
-}
-
 // GetAvailableScenarios returns available scenarios based on scenario label definition
 func (s *service) GetAvailableScenarios(ctx context.Context, tenantID string) ([]string, error) {
 	def, err := s.repo.GetByKey(ctx, tenantID, model.ScenariosKey)
@@ -160,46 +115,6 @@ func (s *service) GetAvailableScenarios(ctx context.Context, tenantID string) ([
 	}
 
 	return ParseFormationsFromSchema(def.Schema)
-}
-
-// AddDefaultScenarioIfEnabled adds DEFAULT scenario if defaultScenarioEnabled
-func (s *service) AddDefaultScenarioIfEnabled(ctx context.Context, tnt string, labels *map[string]interface{}) {
-	if labels == nil || !s.defaultScenarioEnabled {
-		return
-	}
-
-	// do not add scenario to subaccounts
-	btm, err := s.tenantRepo.Get(ctx, tnt)
-	if err != nil {
-		log.C(ctx).Errorf("Could not get tenant from db: %v", err)
-		return
-	}
-	if btm.Type == tenant.Subaccount {
-		log.C(ctx).Infof("Will not add DEFAULT scenario for tenant: %s with type %s", btm.ID, btm.Type)
-		return
-	}
-
-	if _, ok := (*labels)[model.ScenariosKey]; !ok {
-		if *labels == nil {
-			*labels = map[string]interface{}{}
-		}
-		(*labels)[model.ScenariosKey] = model.ScenariosDefaultValue
-		log.C(ctx).Debug("Successfully added Default scenario")
-	}
-}
-
-func (s *service) addDefaultScenarioIfEnabled(formations []string) []string {
-	if !s.defaultScenarioEnabled {
-		return formations
-	}
-
-	for _, f := range formations {
-		if f == "DEFAULT" {
-			return formations
-		}
-	}
-
-	return append(formations, "DEFAULT")
 }
 
 // ValidateExistingLabelsAgainstSchema validates the existing labels based on the provided schema
@@ -255,7 +170,7 @@ func (s *service) ValidateAutomaticScenarioAssignmentAgainstSchema(ctx context.C
 
 // NewSchemaForFormations returns new scenario schema with the provided formations
 func NewSchemaForFormations(formations []string) (interface{}, error) {
-	newSchema := model.NewScenariosSchema()
+	newSchema := model.NewScenariosSchema([]string{})
 	items, ok := newSchema["items"]
 	if !ok {
 		return nil, fmt.Errorf("mandatory property items is missing")

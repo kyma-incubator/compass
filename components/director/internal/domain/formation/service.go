@@ -90,7 +90,6 @@ type labelDefService interface {
 	CreateWithFormations(ctx context.Context, tnt string, formations []string) error
 	ValidateExistingLabelsAgainstSchema(ctx context.Context, schema interface{}, tenant, key string) error
 	ValidateAutomaticScenarioAssignmentAgainstSchema(ctx context.Context, schema interface{}, tenantID, key string) error
-	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenantID string) error
 	GetAvailableScenarios(ctx context.Context, tenantID string) ([]string, error)
 }
 
@@ -1168,10 +1167,6 @@ func (s *service) validateThatScenarioExists(ctx context.Context, in model.Autom
 }
 
 func (s *service) getAvailableScenarios(ctx context.Context, tenantID string) ([]string, error) {
-	if err := s.labelDefService.EnsureScenariosLabelDefinitionExists(ctx, tenantID); err != nil {
-		return nil, errors.Wrap(err, "while ensuring that `scenarios` label definition exist")
-	}
-
 	out, err := s.labelDefService.GetAvailableScenarios(ctx, tenantID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting available scenarios")

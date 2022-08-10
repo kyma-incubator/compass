@@ -57,11 +57,6 @@ type labelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
-//go:generate mockery --exported --name=scenariosService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type scenariosService interface {
-	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
-}
-
 //go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type tenantService interface {
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
@@ -80,7 +75,6 @@ type service struct {
 
 	labelUpsertService    labelUpsertService
 	uidService            uidService
-	scenariosService      scenariosService
 	formationService      formationService
 	tenantSvc             tenantService
 	webhookService        WebhookService
@@ -95,7 +89,6 @@ type service struct {
 // NewService missing godoc
 func NewService(repo runtimeRepository,
 	labelRepo labelRepository,
-	scenariosService scenariosService,
 	labelUpsertService labelUpsertService,
 	uidService uidService,
 	formationService formationService,
@@ -106,7 +99,6 @@ func NewService(repo runtimeRepository,
 	return &service{
 		repo:                      repo,
 		labelRepo:                 labelRepo,
-		scenariosService:          scenariosService,
 		labelUpsertService:        labelUpsertService,
 		uidService:                uidService,
 		formationService:          formationService,

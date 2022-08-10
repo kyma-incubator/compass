@@ -280,7 +280,7 @@ func main() {
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
-	claimsValidator := claims.NewValidator(transact, runtimeSvc(cfg, httpClient, mtlsHTTPClient), runtimeCtxSvc(cfg, httpClient, mtlsHTTPClient), appTemplateSvc(), applicationSvc(cfg, httpClient, mtlsHTTPClient, certCache), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey, cfg.Features.TokenPrefix)
+	claimsValidator := claims.NewValidator(transact, runtimeSvc(cfg, httpClient, mtlsHTTPClient), runtimeCtxSvc(httpClient, mtlsHTTPClient), appTemplateSvc(), applicationSvc(cfg, httpClient, mtlsHTTPClient, certCache), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.ConsumerSubaccountLabelKey, cfg.Features.TokenPrefix)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
 	authMiddleware := mp_authenticator.New(httpClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claimsValidator)
@@ -640,17 +640,17 @@ func runtimeSvc(cfg config, securedHTTPClient, mtlsHTTPClient *http.Client) clai
 
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
-	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc)
 	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
 	formationSvc := formation.NewService(labelDefinitionRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefinitionSvc, asaRepo, asaSvc, tenantSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, appRepo, appTemplateRepo, webhookConverter)
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, runtimeRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 
-	return runtime.NewService(runtimeRepo, labelRepo, labelDefinitionSvc, labelSvc, uidSvc, formationSvc, tenantSvc, webhookService(), runtimeContextSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern, cfg.Features.RuntimeTypeLabelKey, cfg.Features.KymaRuntimeTypeLabelValue)
+	return runtime.NewService(runtimeRepo, labelRepo, labelSvc, uidSvc, formationSvc, tenantSvc, webhookService(), runtimeContextSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern, cfg.Features.RuntimeTypeLabelKey, cfg.Features.KymaRuntimeTypeLabelValue)
 }
 
-func runtimeCtxSvc(cfg config, securedHTTPClient, mtlsHTTPClient *http.Client) claims.RuntimeCtxService {
+func runtimeCtxSvc(securedHTTPClient, mtlsHTTPClient *http.Client) claims.RuntimeCtxService {
 	runtimeContextConverter := runtimectx.NewConverter()
 	labelConverter := label.NewConverter()
 	labelDefinitionConverter := labeldef.NewConverter()
@@ -685,7 +685,7 @@ func runtimeCtxSvc(cfg config, securedHTTPClient, mtlsHTTPClient *http.Client) c
 
 	uidSvc := uid.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
-	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc)
 	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
@@ -743,7 +743,7 @@ func applicationSvc(cfg config, securedHTTPClient, mtlsHTTPClient *http.Client, 
 	tenantConverter := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConverter)
 
-	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
+	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
 
 	frConverter := fetchrequest.NewConverter(authConverter)
 	docConverter := document.NewConverter(frConverter)
@@ -791,7 +791,7 @@ func applicationSvc(cfg config, securedHTTPClient, mtlsHTTPClient *http.Client, 
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
 	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, applicationRepo, appTemplateRepo, webhookConverter)
 
-	return application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegConfig.SelfRegisterDistinguishLabelKey)
+	return application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegConfig.SelfRegisterDistinguishLabelKey)
 }
 
 func intSystemSvc() claims.IntegrationSystemService {

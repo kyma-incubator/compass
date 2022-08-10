@@ -113,12 +113,6 @@ type LabelUpsertService interface {
 	UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error
 }
 
-// ScenariosService missing godoc
-//go:generate mockery --name=ScenariosService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type ScenariosService interface {
-	EnsureScenariosLabelDefinitionExists(ctx context.Context, tenant string) error
-}
-
 // UIDService missing godoc
 //go:generate mockery --name=UIDService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UIDService interface {
@@ -142,7 +136,6 @@ type service struct {
 	intSystemRepo IntegrationSystemRepository
 
 	labelUpsertService LabelUpsertService
-	scenariosService   ScenariosService
 	uidService         UIDService
 	bndlService        BundleService
 	timestampGen       timestamp.Generator
@@ -152,7 +145,7 @@ type service struct {
 }
 
 // NewService missing godoc
-func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, scenariosService ScenariosService, bndlService BundleService, uidService UIDService, formationService FormationService, selfRegisterDistinguishLabelKey string) *service {
+func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelUpsertService LabelUpsertService, bndlService BundleService, uidService UIDService, formationService FormationService, selfRegisterDistinguishLabelKey string) *service {
 	return &service{
 		appNameNormalizer:               appNameNormalizer,
 		appHideCfgProvider:              appHideCfgProvider,
@@ -162,7 +155,6 @@ func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider Ap
 		labelRepo:                       labelRepo,
 		intSystemRepo:                   intSystemRepo,
 		labelUpsertService:              labelUpsertService,
-		scenariosService:                scenariosService,
 		bndlService:                     bndlService,
 		uidService:                      uidService,
 		timestampGen:                    timestamp.DefaultGenerator,
