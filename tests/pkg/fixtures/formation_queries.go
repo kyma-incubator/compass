@@ -93,3 +93,32 @@ func CleanupFormationWithTenantObjectType(t require.TestingT, ctx context.Contex
 	assertions.AssertNoErrorForOtherThanNotFound(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, parent, unassignRequest, &formation))
 	return &formation
 }
+
+func CleanupFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, objectID string, objectType graphql.FormationObjectType, parent string) *graphql.Formation {
+	unassignRequest := FixUnassignFormationRequest(objectID, string(objectType), in.Name)
+
+	formation := graphql.Formation{}
+
+	assertions.AssertNoErrorForOtherThanNotFound(t, testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, parent, unassignRequest, &formation))
+	return &formation
+}
+
+func AssignFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, tenantID string, objectType graphql.FormationObjectType) *graphql.Formation {
+	createRequest := FixAssignFormationRequest(tenantID, string(objectType), in.Name)
+
+	formation := graphql.Formation{}
+
+	require.NoError(t, testctx.Tc.RunOperation(ctx, gqlClient, createRequest, &formation))
+	require.NotEmpty(t, formation.Name)
+	return &formation
+}
+
+func UnassignFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, tenantID string, objectType graphql.FormationObjectType) *graphql.Formation {
+	unassignRequest := FixUnassignFormationRequest(tenantID, string(objectType), in.Name)
+
+	formation := graphql.Formation{}
+
+	require.NoError(t, testctx.Tc.RunOperation(ctx, gqlClient, unassignRequest, &formation))
+	require.NotEmpty(t, formation.Name)
+	return &formation
+}

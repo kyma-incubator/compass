@@ -125,6 +125,8 @@ spec:
               value: {{ .Values.global.director.runtimeTypeLabelKey }}
             - name: APP_KYMA_RUNTIME_TYPE_LABEL_VALUE
               value: {{ .Values.global.director.kymaRuntimeTypeLabelValue }}
+            - name: APP_APPLICATION_TYPE_LABEL_KEY
+              value: {{ .Values.global.director.applicationTypeLabelKey }}
             - name: APP_SUBSCRIPTION_CONFIG_URL
               value: {{ .Values.global.tests.subscription.subscriptionURL }}
             - name: APP_SUBSCRIPTION_CONFIG_TOKEN_URL
