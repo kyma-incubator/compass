@@ -119,7 +119,6 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 
 	objCtxNames := make([]string, 0)
 	for i := range objCtxs {
-		log.C(ctx).Infof("Matched object context: %s", objCtxs[i].ContextProvider)
 		objCtxNames = append(objCtxNames, objCtxs[i].ContextProvider)
 	}
 	log.C(ctx).Infof("Matched object contexts: [%s]", strings.Join(objCtxNames, ","))
