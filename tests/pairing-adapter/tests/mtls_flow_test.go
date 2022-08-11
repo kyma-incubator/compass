@@ -246,7 +246,7 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 	appTemplateInput.Labels[conf.SelfRegLabelKey] = appTemplateOutput.Labels[conf.SelfRegLabelKey]
 	appTemplateInput.Labels[tenantfetcher.RegionKey] = appTemplateOutput.Labels[tenantfetcher.RegionKey]
 	appTemplateInput.Labels["global_subaccount_id"] = tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
-	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": fmt.Sprintf("%s (%s)", templateName, conf.SelfRegRegion)}
+	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": templateName}
 	assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
 
 	t.Logf("Successfully registered application template with name %q", templateName)
