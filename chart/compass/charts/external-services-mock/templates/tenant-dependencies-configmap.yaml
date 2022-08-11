@@ -1,16 +1,17 @@
 {{- if eq .Values.global.externalServicesMock.tenantDependenciesConfig.manage true }}
 apiVersion: v1
-kind: ConfigMap
+kind: Secret
+type: Opaque
 metadata:
-  name: {{ .Values.global.tenantFetcher.dependenciesConfig.configMapName }}
+  name: {{ .Values.global.tenantFetcher.dependenciesConfig.secretName }}
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
-data:
-  dependencies.json: |
+stringData:
+  keyConfig: |
     {
-      "eu-1": ["xsappname1"],
-      "eu-2": ["xsappname2"]
+    "eu-1": "{\n \"credentials\": {\n \"xsappname\": \"xsappname1\"\n}\n}",
+    "eu-2": "{\n \"credentials\": {\n \"xsappname\": \"xsappname1\"\n}\n}"
     }
 {{end}}

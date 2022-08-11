@@ -41,8 +41,8 @@ spec:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
       volumes:
       - name: dependencies-config
-        configMap:
-          name: {{ .Values.global.tenantFetcher.dependenciesConfig.configMapName }}
+        secret:
+          secretName: {{ .Values.global.tenantFetcher.dependenciesConfig.secretName }}
       containers:
         - name: {{ .Chart.Name }}
           image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}

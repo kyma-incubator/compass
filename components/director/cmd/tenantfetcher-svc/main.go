@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"github.com/tidwall/gjson"
 	"net/http"
 	"os"
 	"strings"
@@ -424,7 +425,8 @@ func dependenciesConfigToMap(cfg tenantfetcher.HandlerConfig) (map[string][]tena
 
 	for region, dependencies := range config {
 		for _, dependency := range dependencies.Array() {
-			dependenciesConfig[region] = append(dependenciesConfig[region], tenantfetcher.Dependency{Xsappname: dependency.String()})
+			xsappName := gjson.Get(dependency.String(), "credentials.xsappname")
+			dependenciesConfig[region] = append(dependenciesConfig[region], tenantfetcher.Dependency{Xsappname: xsappName.String()})
 		}
 	}
 
