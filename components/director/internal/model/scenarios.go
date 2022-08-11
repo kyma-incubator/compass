@@ -3,8 +3,6 @@ package model
 const (
 	// ScenariosKey is scenarios label key
 	ScenariosKey = "scenarios"
-	// DefaultScenario is default value for scenarios label
-	DefaultScenario = "DEFAULT"
 )
 
 var (
@@ -45,7 +43,7 @@ var (
 							"maxLength": 128,
 						},
 						"contains": map[string]interface{}{
-							"const": "DEFAULT",
+							"const": "test-scenario",
 						},
 					},
 				},

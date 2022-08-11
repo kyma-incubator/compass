@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	validScenario, _      = json.Marshal(model.ScenariosSchema)
+	validScenario, _      = json.Marshal(model.NewScenariosSchema([]string{"test-scenario"}))
 	validSchema           = graphql.JSONSchema(validScenario)
 	invalidScenarioSchema = graphql.JSONSchema(`{"type": "string"}`)
 	invalidSchema         = graphql.JSONSchema(`{invalid`)
@@ -235,7 +235,7 @@ func jsonSchemaPtr(schema string) *graphql.JSONSchema {
 }
 
 func fixScenariosSchema(t *testing.T) *graphql.JSONSchema {
-	marshalled, err := json.Marshal(model.ScenariosSchema)
+	marshalled, err := json.Marshal(model.NewScenariosSchema([]string{"test-scenario"}))
 	require.NoError(t, err)
 	return jsonSchemaPtr(string(marshalled))
 }
