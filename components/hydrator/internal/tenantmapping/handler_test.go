@@ -44,8 +44,6 @@ func TestHandler(t *testing.T) {
 	systemAuthID := uuid.New()
 	objID := uuid.New()
 
-	emptyResponsePayload := `{"subject":"","extra":null,"header":null}`
-
 	jwtAuthDetails := oathkeeper.AuthDetails{AuthID: username, Region: region, AuthFlow: oathkeeper.JWTAuthFlow}
 	oAuthAuthDetails := oathkeeper.AuthDetails{AuthID: systemAuthID.String(), Region: region, AuthFlow: oathkeeper.OAuth2Flow}
 	certAuthDetails := oathkeeper.AuthDetails{AuthID: systemAuthID.String(), Region: region, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: oathkeeper.ConnectorIssuer}
@@ -1328,6 +1326,8 @@ func TestHandler(t *testing.T) {
 			},
 		}
 
+		expectedRespPayload := `{"subject":"","extra":{"name":"` + username + `"},"header":null}`
+
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
@@ -1354,12 +1354,12 @@ func TestHandler(t *testing.T) {
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 
-		require.Equal(t, emptyResponsePayload, strings.TrimSpace(string(body)))
+		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, userMockContextProvider)
 	})
 
-	t.Run("empty response payload when matched object context provider doesn't have region value'", func(t *testing.T) {
+	t.Run("empty payload without region when matched object context provider doesn't have region value'", func(t *testing.T) {
 		scopes := "application:read"
 
 		keys := tenantmapping.KeysExtra{
@@ -1387,6 +1387,8 @@ func TestHandler(t *testing.T) {
 			},
 		}
 
+		expectedRespPayload := `{"subject":"","extra":{"consumerID":"` + username + `","consumerType":"Static User","flow":"` + string(oathkeeper.JWTAuthFlow) + `","name":"` + username + `","onBehalfOf":"","region":"","scope":"` + scopes + `","tenant":"{\\\"consumerTenant\\\":\\\"` + tenantID.String() + `\\\",\\\"externalTenant\\\":\\\"` + externalTenantID + `\\\"}","tokenClientID":""},"header":null}`
+
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
@@ -1412,7 +1414,7 @@ func TestHandler(t *testing.T) {
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 
-		require.Equal(t, emptyResponsePayload, strings.TrimSpace(string(body)))
+		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, userMockContextProvider)
 	})
@@ -1501,6 +1503,8 @@ func TestHandler(t *testing.T) {
 
 		jwtAuthDetailsWithAuthenticator := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow, Authenticator: &authn[0], ScopePrefix: ""}
 
+		expectedRespPayload := `{"subject":"","extra":{},"header":{"Client-Certificate-Issuer":["` + oathkeeper.ExternalIssuer + `"],"Client-Id-From-Certificate":["` + externalTenantID + `"]}}`
+
 		req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
@@ -1527,7 +1531,7 @@ func TestHandler(t *testing.T) {
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 
-		require.Equal(t, emptyResponsePayload, strings.TrimSpace(string(body)))
+		require.Equal(t, expectedRespPayload, strings.TrimSpace(string(body)))
 
 		mock.AssertExpectationsForObjects(t, reqDataParserMock, certServiceMockContextProvider)
 	})

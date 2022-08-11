@@ -109,24 +109,25 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 	objCtxs, err := h.getObjectContexts(ctx, reqData)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while getting object context: %v", err)
-		return oathkeeper.ReqBody{}
+		return reqData.Body
 	}
 
 	if len(objCtxs) == 0 {
 		log.C(ctx).Error("An error occurred while determining the auth details for the request: no object contexts were found")
-		return oathkeeper.ReqBody{}
+		return reqData.Body
 	}
 
 	if err := addTenantsToExtra(objCtxs, reqData); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while adding tenants to extra: %v", err)
-		return oathkeeper.ReqBody{}
+		return reqData.Body
 	}
 
 	addScopesToExtra(objCtxs, reqData)
 
 	if err := addConsumersToExtra(objCtxs, reqData); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while adding consumers to extra: %v", err)
-		return oathkeeper.ReqBody{}
+		reqData.Body.Extra = make(map[string]interface{}) // ensure that no tenant context is propagated from addTenantsToExtra
+		return reqData.Body
 	}
 
 	return reqData.Body
@@ -264,9 +265,6 @@ func removeDuplicateValues(scopes []string) []string {
 
 func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) error {
 	region := objectContexts[0].Region
-	if region == "" {
-		return errors.Errorf("missing region value in object context for consumer ID: %s", objectContexts[0].ConsumerID)
-	}
 
 	c := consumer.Consumer{}
 	if len(objectContexts) == 1 {
