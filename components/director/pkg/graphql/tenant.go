@@ -9,4 +9,5 @@ type Tenant struct {
 	ParentID    string  `json:"parentID"`
 	Initialized *bool   `json:"initialized"`
 	Labels      Labels  `json:"labels"`
+	Provider    string  `json:"provider"`
 }
