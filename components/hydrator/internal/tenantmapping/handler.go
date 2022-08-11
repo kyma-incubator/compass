@@ -117,6 +117,13 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 		return reqData.Body
 	}
 
+	objCtxNames := make([]string, 0)
+	for i := range objCtxs {
+		log.C(ctx).Infof("Matched object context: %s", objCtxs[i].ContextProvider)
+		objCtxNames = append(objCtxNames, objCtxs[i].ContextProvider)
+	}
+	log.C(ctx).Infof("Matched object contexts: [%s]", strings.Join(objCtxNames, ","))
+
 	if err := addTenantsToExtra(objCtxs, reqData); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while adding tenants to extra: %v", err)
 		return reqData.Body
@@ -264,7 +271,7 @@ func removeDuplicateValues(scopes []string) []string {
 }
 
 func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) error {
-	region := objectContexts[0].Region
+	region := deriveRegionFromObjectContexts(objectContexts)
 
 	c := consumer.Consumer{}
 	if len(objectContexts) == 1 {
@@ -275,9 +282,9 @@ func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqD
 		c = getCertServiceObjectContextProviderConsumer(objectContexts)
 		c.OnBehalfOf = getOnBehalfConsumer(objectContexts)
 
-		for _, objectContext := range objectContexts {
-			if objectContext.Region != region {
-				return errors.Errorf("mismatched region for consumer ID %s: actual %s, expected: %s)", objectContext.ConsumerID, objectContext.Region, region)
+		for _, objCtx := range objectContexts {
+			if objCtx.TenantID != "" && objCtx.Region != region {
+				return errors.Errorf("mismatched region for consumer ID %s: actual %s, expected: %s)", objCtx.ConsumerID, objCtx.Region, region)
 			}
 		}
 	}
@@ -290,6 +297,18 @@ func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqD
 	reqData.Body.Extra["tokenClientID"] = getClientIDFromConsumerToken(objectContexts)
 
 	return nil
+}
+
+// deriveRegionFromObjectContexts makes sure to find the region from an existing tenant which is matched by some previous obj ctx.
+// This is ensured by checking the objCtx.TenantID field, because it will be populated by the corresponding obj ctx provider once it is matched.
+// This is necessary due to the fact that some obj ctx providers might result with a non-existing tenant for which TenantID will be empty (conversely the region for them would also be empty).
+func deriveRegionFromObjectContexts(objectContext []ObjectContext) string {
+	for _, objCtx := range objectContext {
+		if objCtx.TenantID != "" {
+			return objCtx.Region
+		}
+	}
+	return ""
 }
 
 func getCertServiceObjectContextProviderConsumer(objectContexts []ObjectContext) consumer.Consumer {
