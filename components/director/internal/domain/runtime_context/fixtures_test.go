@@ -8,6 +8,7 @@ import (
 const (
 	id                     = "id"
 	runtimeID              = "runtimeID"
+	runtimeID2             = "runtimeID2"
 	emptyPageRuntimeID     = "emtyPageRuntimeID"
 	onePageRuntimeID       = "onePageRuntimeID"
 	multiplePagesRuntimeID = "multiplePagesRuntimeID"

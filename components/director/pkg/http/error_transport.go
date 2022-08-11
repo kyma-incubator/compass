@@ -51,6 +51,18 @@ func (c *ErrorHandlerTransport) RoundTrip(request *http.Request) (*http.Response
 	return response, nil
 }
 
+// Clone clones the underlying transport.
+func (c *ErrorHandlerTransport) Clone() HTTPRoundTripper {
+	return &ErrorHandlerTransport{
+		roundTripper: c.roundTripper.Clone(),
+	}
+}
+
+// GetTransport returns the underlying transport.
+func (c *ErrorHandlerTransport) GetTransport() *http.Transport {
+	return c.roundTripper.GetTransport()
+}
+
 func handleResponseError(ctx context.Context, response *http.Response) error {
 	defer func() {
 		if err := response.Body.Close(); err != nil {

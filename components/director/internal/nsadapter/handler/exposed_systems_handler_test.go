@@ -69,7 +69,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		TemplateID: "",
 	}
 	label := &model.LabelInput{
-		Key:        "applicationType",
+		Key:        "systemType",
 		Value:      system.SystemType,
 		ObjectID:   application.ID,
 		ObjectType: model.ApplicationLabelableObject,
@@ -670,7 +670,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		Verify(t, resp, http.StatusOK, httputils.ContentTypeApplicationJSON, string(expectedBody))
 	})
 
-	t.Run("failed to set label applicationType", func(t *testing.T) {
+	t.Run("failed to set label systemType", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
 
@@ -1317,7 +1317,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		Verify(t, resp, http.StatusNoContent, httputils.ContentTypeApplicationJSON, "{}")
 	})
 
-	t.Run("failed to set label applicationType", func(t *testing.T) {
+	t.Run("failed to set label systemType", func(t *testing.T) {
 		tx := &txautomock.PersistenceTx{}
 		tx.Mock.On("Commit").Return(nil)
 

@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/retry"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 
@@ -171,7 +173,7 @@ func TestService_HandleSpec(t *testing.T) {
 			Name: "Success with access strategy",
 			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
 				executor := &accessstrategyautomock.Executor{}
-				executor.On("Execute", mock.Anything, modelInputAccessStrategy.URL).Return(&http.Response{
+				executor.On("Execute", mock.Anything, mock.Anything, modelInputAccessStrategy.URL, "").Return(&http.Response{
 					StatusCode: http.StatusOK,
 					Body:       ioutil.NopCloser(bytes.NewBufferString(mockSpec)),
 				}, nil).Once()
@@ -204,7 +206,7 @@ func TestService_HandleSpec(t *testing.T) {
 			Name: "Fails when access strategy execution fail",
 			ExecutorProviderFunc: func() accessstrategy.ExecutorProvider {
 				executor := &accessstrategyautomock.Executor{}
-				executor.On("Execute", mock.Anything, modelInputAccessStrategy.URL).Return(nil, testErr).Once()
+				executor.On("Execute", mock.Anything, mock.Anything, modelInputAccessStrategy.URL, "").Return(nil, testErr).Once()
 
 				executorProvider := &accessstrategyautomock.ExecutorProvider{}
 				executorProvider.On("Provide", accessstrategy.Type(testAccessStrategy)).Return(executor, nil).Once()
@@ -390,4 +392,89 @@ func TestService_HandleSpec_FailedToUpdateStatusAfterFetching(t *testing.T) {
 
 	assert.Equal(t, expectedStatus, modelInput.Status)
 	assert.Nil(t, result)
+}
+
+func TestService_HandleSpec_SucceedsAfterRetryMechanismIsLeveraged(t *testing.T) {
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, tenantID)
+
+	timestamp := time.Now()
+	frRepo := &automock.FetchRequestRepository{}
+	frRepo.On("Update", ctx, tenantID, mock.Anything).Return(nil).Once()
+
+	certCache := certloader.NewCertificateCache()
+	retryConfig := &retry.Config{
+		Attempts: 3,
+		Delay:    100 * time.Millisecond,
+	}
+
+	mockSpec := "spec"
+
+	invocations := 0
+	svc := fetchrequest.NewServiceWithRetry(frRepo, NewTestClient(func(req *http.Request) *http.Response {
+		defer func() {
+			invocations++
+		}()
+
+		if invocations != int(retryConfig.Attempts)-1 {
+			return &http.Response{StatusCode: http.StatusInternalServerError}
+		}
+
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(bytes.NewBufferString(mockSpec)),
+		}
+	}), accessstrategy.NewDefaultExecutorProvider(certCache), retry.NewHTTPExecutor(retryConfig))
+	svc.SetTimestampGen(func() time.Time { return timestamp })
+
+	modelInput := &model.FetchRequest{
+		ID:   "test",
+		Mode: model.FetchModeSingle,
+	}
+
+	result := svc.HandleSpec(ctx, modelInput)
+	expectedStatus := fetchrequest.FixStatus(model.FetchRequestStatusConditionSucceeded, nil, timestamp)
+
+	assert.Equal(t, expectedStatus, modelInput.Status)
+	assert.Equal(t, mockSpec, *result)
+	assert.Equal(t, int(retryConfig.Attempts), invocations)
+}
+
+func TestService_HandleSpec_FailsAfterRetryMechanismIsExhausted(t *testing.T) {
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, tenantID)
+
+	timestamp := time.Now()
+	frRepo := &automock.FetchRequestRepository{}
+	frRepo.On("Update", ctx, tenantID, mock.Anything).Return(nil).Once()
+
+	certCache := certloader.NewCertificateCache()
+	retryConfig := &retry.Config{
+		Attempts: 3,
+		Delay:    100 * time.Millisecond,
+	}
+
+	invocations := 0
+	svc := fetchrequest.NewServiceWithRetry(frRepo, NewTestClient(func(req *http.Request) *http.Response {
+		defer func() {
+			invocations++
+		}()
+
+		return &http.Response{StatusCode: http.StatusInternalServerError}
+	}), accessstrategy.NewDefaultExecutorProvider(certCache), retry.NewHTTPExecutor(retryConfig))
+	svc.SetTimestampGen(func() time.Time { return timestamp })
+
+	modelInput := &model.FetchRequest{
+		ID:   "test",
+		Mode: model.FetchModeSingle,
+	}
+
+	result := svc.HandleSpec(ctx, modelInput)
+	respStatusCodeErr := fmt.Sprintf("unexpected status code: %d", http.StatusInternalServerError)
+	expectedErr := fmt.Sprintf("All attempts fail:\n#1: %s\n#2: %s\n#3: %s", respStatusCodeErr, respStatusCodeErr, respStatusCodeErr)
+	expectedStatus := fetchrequest.FixStatus(model.FetchRequestStatusConditionFailed, str.Ptr(fmt.Sprintf("While fetching Spec: %s", expectedErr)), timestamp)
+
+	assert.Equal(t, expectedStatus, modelInput.Status)
+	assert.Nil(t, result)
+	assert.Equal(t, int(retryConfig.Attempts), invocations)
 }

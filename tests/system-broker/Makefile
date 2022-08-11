@@ -22,7 +22,7 @@ run:
 	@kubectl exec -n kyma-system oct-tp-compass-e2e-tests-compass-e2e-system-broker-local-0 -c system-broker-tests -- ./system-broker.test -test.run $(testName) -test.v
 
 sandbox-deploy-test:
-	env GOOS=linux go test -c ./tests -o system-broker.test
+	env GOOS=linux GOARCH=amd64 go test -c ./tests -o system-broker.test
 	kubectl cp ./system-broker.test kyma-system/oct-tp-compass-e2e-tests-compass-e2e-system-broker-local-0:/ -c system-broker-tests
 	rm ./system-broker.test
 

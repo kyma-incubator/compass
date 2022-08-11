@@ -117,7 +117,7 @@ func TestGettingTokenWithMTLSThroughFQN(t *testing.T) {
 	require.NoError(t, err)
 
 	client := http.Client{
-		Transport: director_http.NewServiceAccountTokenTransport(http.DefaultTransport),
+		Transport: director_http.NewServiceAccountTokenTransport(director_http.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
 	}
 
 	resp, err := client.Do(req)
@@ -246,6 +246,7 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 
 	appTemplateInput.Labels[conf.SelfRegLabelKey] = appTemplateOutput.Labels[conf.SelfRegLabelKey]
 	appTemplateInput.Labels["global_subaccount_id"] = tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
+	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": fmt.Sprintf("%s (%s)", templateName, conf.SelfRegRegion)}
 	assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
 
 	t.Logf("Successfully registered application template with name %q", templateName)

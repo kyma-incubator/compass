@@ -327,7 +327,7 @@ func TestRegionalOnboardingHandler(t *testing.T) {
 }
 
 func TestGetDependenciesHandler(t *testing.T) {
-	t.Run("Returns empty body", func(t *testing.T) {
+	t.Run("Returns empty array", func(t *testing.T) {
 		// GIVEN
 		request, err := http.NewRequest(http.MethodGet, config.TenantFetcherFullDependenciesURL, nil)
 		require.NoError(t, err)
@@ -342,7 +342,7 @@ func TestGetDependenciesHandler(t *testing.T) {
 
 		responseBody, err := ioutil.ReadAll(response.Body)
 		require.NoError(t, err)
-		responseBodyJson := make(map[string]interface{}, 0)
+		responseBodyJson := make([]interface{}, 0)
 
 		// THEN
 		err = json.Unmarshal(responseBody, &responseBodyJson)
@@ -650,7 +650,7 @@ func TestMoveSubaccountsFailIfSubaccountHasFormationInTheSourceGA(t *testing.T) 
 
 	formationInput := graphql.FormationInput{Name: scenarioName}
 	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountExternalTenants[0], defaultTenantID)
-	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput, subaccountExternalTenants[0], defaultTenantID)
+	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formationInput.Name, subaccountExternalTenants[0], defaultTenantID)
 
 	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, directoryParentGUID, defaultTenantID, defaultTenantID, gaExternalTenantIDs[0], subaccountRegion)
 	setMockTenantEvents(t, genMockPage(strings.Join([]string{event1}, ","), 1), subaccountMoveSubPath)

@@ -31,6 +31,7 @@ build-local:
 
 deploy-on-k3d: build-for-k3d
 	kubectl config use-context k3d-kyma
+	kubectl patch -n $(NAMESPACE) deployment/compass-external-services-mock -p '{"spec":{"template":{"spec":{"containers":[{"name":"external-services-mock","imagePullPolicy":"Always"}]}}}}'
 	kubectl set image -n $(NAMESPACE) deployment/compass-external-services-mock external-services-mock=k3d-kyma-registry:5001/compass-external-services-mock:latest
 	kubectl rollout restart -n $(NAMESPACE) deployment/compass-external-services-mock
 	kubectl rollout restart -n $(NAMESPACE) deployment/compass-gateway

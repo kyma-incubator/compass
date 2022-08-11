@@ -43,7 +43,7 @@ const (
 	runtimeM2MTableName        = "tenant_runtimes"
 
 	subscriptionProviderIDLabelKey = "subscriptionProviderId"
-	consumerSubaccountLabelKey     = "consumer_subaccount_id"
+	consumerSubaccountLabelKey     = "global_subaccount_id"
 	subscriptionLabelKey           = "subscription"
 	subscriptionAppNameLabelKey    = "runtimeType"
 )
@@ -58,12 +58,7 @@ var (
 		labelfilter.NewForKeyWithQuery(tenant.RegionLabelKey, fmt.Sprintf("\"%s\"", tenantRegion)),
 	}
 
-	providerRuntimes = []*model.Runtime{
-		{
-			ID:   providerRuntimeID,
-			Name: "provider-runtime-1",
-		},
-	}
+	providerRuntime = &model.Runtime{ID: providerRuntimeID, Name: "provider-runtime-1"}
 
 	providerAppNameLabelInput = &model.LabelInput{
 		Key:        subscriptionAppNameLabelKey,
@@ -111,12 +106,13 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
 				rtmCtxSvc.On("Create", consumerCtx, runtimeCtxInput).Return(runtimeCtxID, nil).Once()
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
 				return rtmCtxSvc
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -138,10 +134,66 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 				return uidSvc
 			},
 			TenantAccessMock: func(dbMock testdb.DBMock) {
-				dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO %s ( %s, %s, %s ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)", runtimeM2MTableName, repo.M2MTenantIDColumn, repo.M2MResourceIDColumn, repo.M2MOwnerColumn))).
+				dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO %s ( %s, %s, %s ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents) ON CONFLICT ( tenant_id, id ) DO NOTHING", runtimeM2MTableName, repo.M2MTenantIDColumn, repo.M2MResourceIDColumn, repo.M2MOwnerColumn))).
 					WithArgs(subaccountTenantInternalID, providerRuntimeID, false).WillReturnResult(sqlmock.NewResult(1, 1))
 			},
 			IsSuccessful: true,
+		},
+		{
+			Name:   "Succeeds when consumer is already subscribed",
+			Region: tenantRegion,
+			RuntimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
+				return provisioner
+			},
+			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
+				rtmCtxSvc := &automock.RuntimeCtxService{}
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{
+					Data: []*model.RuntimeContext{{
+						ID:        "id",
+						RuntimeID: providerRuntimeID,
+						Key:       consumerSubaccountLabelKey,
+						Value:     consumerTenantID,
+					}},
+					PageInfo:   nil,
+					TotalCount: 1,
+				}, nil).Once()
+				return rtmCtxSvc
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", ctx, providerSubaccountID).Return(providerInternalID, nil).Once()
+				tenantSvc.On("GetInternalTenant", providerCtx, subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Once()
+				return tenantSvc
+			},
+			LabelServiceFn: unusedLabelSvc,
+			UIDServiceFn:   unusedUUIDSvc,
+			IsSuccessful:   true,
+		},
+		{
+			Name:   "Returns error when consumer listing runtime contexts by filter fails",
+			Region: tenantRegion,
+			RuntimeServiceFn: func() *automock.RuntimeService {
+				provisioner := &automock.RuntimeService{}
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
+				return provisioner
+			},
+			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
+				rtmCtxSvc := &automock.RuntimeCtxService{}
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(nil, testError).Once()
+				return rtmCtxSvc
+			},
+			TenantSvcFn: func() *automock.TenantService {
+				tenantSvc := &automock.TenantService{}
+				tenantSvc.On("GetInternalTenant", ctx, providerSubaccountID).Return(providerInternalID, nil).Once()
+				tenantSvc.On("GetInternalTenant", providerCtx, subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Once()
+				return tenantSvc
+			},
+			LabelServiceFn:      unusedLabelSvc,
+			UIDServiceFn:        unusedUUIDSvc,
+			ExpectedErrorOutput: testError.Error(),
+			IsSuccessful:        false,
 		},
 		{
 			Name:                "Returns an error when getting internal provider tenant",
@@ -163,7 +215,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(nil, notFoundErr).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(nil, notFoundErr).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: unusedRuntimeContextSvc,
@@ -177,11 +229,11 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			IsSuccessful:   false,
 		},
 		{
-			Name:   "Returns an error when could not list runtimes",
+			Name:   "Returns an error when could not get runtime",
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(nil, testError).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(nil, testError).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: unusedRuntimeContextSvc,
@@ -200,13 +252,18 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
-			RuntimeCtxServiceFn: unusedRuntimeContextSvc,
+			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
+				svc := &automock.RuntimeCtxService{}
+				svc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
+				return svc
+			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetInternalTenant", ctx, providerSubaccountID).Return(providerInternalID, nil).Once()
+				tenantSvc.On("GetInternalTenant", providerCtx, subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Once()
 				tenantSvc.On("GetLowestOwnerForResource", providerCtx, resource.Runtime, providerRuntimeID).Return("", testError).Once()
 				return tenantSvc
 			},
@@ -220,13 +277,18 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
-			RuntimeCtxServiceFn: unusedRuntimeContextSvc,
+			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
+				svc := &automock.RuntimeCtxService{}
+				svc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
+				return svc
+			},
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetInternalTenant", ctx, providerSubaccountID).Return(providerInternalID, nil).Once()
+				tenantSvc.On("GetInternalTenant", providerCtx, subaccountTenantExtID).Return(subaccountTenantInternalID, nil).Once()
 				tenantSvc.On("GetLowestOwnerForResource", providerCtx, resource.Runtime, providerRuntimeID).Return(providerSubaccountID, nil).Once()
 				return tenantSvc
 			},
@@ -245,23 +307,18 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: unusedRuntimeContextSvc,
 			TenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetInternalTenant", ctx, providerSubaccountID).Return(providerInternalID, nil).Once()
-				tenantSvc.On("GetLowestOwnerForResource", providerCtx, resource.Runtime, providerRuntimeID).Return(providerSubaccountID, nil).Once()
 				tenantSvc.On("GetInternalTenant", providerCtx, subaccountTenantExtID).Return("", testError).Once()
 				return tenantSvc
 			},
 
-			LabelServiceFn: func() *automock.LabelService {
-				labelSvc := &automock.LabelService{}
-				labelSvc.On("UpsertLabel", providerCtx, providerSubaccountID, providerAppNameLabelInput).Return(nil).Once()
-				return labelSvc
-			},
+			LabelServiceFn:      unusedLabelSvc,
 			UIDServiceFn:        unusedUUIDSvc,
 			ExpectedErrorOutput: testError.Error(),
 			IsSuccessful:        false,
@@ -271,12 +328,13 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
 				rtmCtxSvc.On("Create", consumerCtx, runtimeCtxInput).Return("", testError).Once()
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
 				return rtmCtxSvc
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -291,6 +349,10 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 				labelSvc.On("UpsertLabel", providerCtx, providerSubaccountID, providerAppNameLabelInput).Return(nil).Once()
 				return labelSvc
 			},
+			TenantAccessMock: func(dbMock testdb.DBMock) {
+				dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO %s ( %s, %s, %s ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents) ON CONFLICT ( tenant_id, id ) DO NOTHING", runtimeM2MTableName, repo.M2MTenantIDColumn, repo.M2MResourceIDColumn, repo.M2MOwnerColumn))).
+					WithArgs(subaccountTenantInternalID, providerRuntimeID, false).WillReturnResult(sqlmock.NewResult(1, 1))
+			},
 			UIDServiceFn:        unusedUUIDSvc,
 			ExpectedErrorOutput: testError.Error(),
 			IsSuccessful:        false,
@@ -300,12 +362,12 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
-				rtmCtxSvc.On("Create", consumerCtx, runtimeCtxInput).Return(runtimeCtxID, nil).Once()
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
 				return rtmCtxSvc
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -322,7 +384,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			},
 			UIDServiceFn: unusedUUIDSvc,
 			TenantAccessMock: func(dbMock testdb.DBMock) {
-				dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO %s ( %s, %s, %s ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)", runtimeM2MTableName, repo.M2MTenantIDColumn, repo.M2MResourceIDColumn, repo.M2MOwnerColumn))).
+				dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO %s ( %s, %s, %s ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents) ON CONFLICT ( tenant_id, id ) DO NOTHING", runtimeM2MTableName, repo.M2MTenantIDColumn, repo.M2MResourceIDColumn, repo.M2MOwnerColumn))).
 					WithArgs(subaccountTenantInternalID, providerRuntimeID, false).WillReturnError(testError)
 			},
 			ExpectedErrorOutput: "Unexpected error while executing SQL query",
@@ -333,12 +395,13 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
 				rtmCtxSvc := &automock.RuntimeCtxService{}
 				rtmCtxSvc.On("Create", consumerCtx, runtimeCtxInput).Return(runtimeCtxID, nil).Once()
+				rtmCtxSvc.On("ListByFilter", consumerCtx, providerRuntimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantExtID))}, 100, "").Return(&model.RuntimeContextPage{}, nil).Once()
 				return rtmCtxSvc
 			},
 			TenantSvcFn: func() *automock.TenantService {
@@ -360,7 +423,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 				return uidSvc
 			},
 			TenantAccessMock: func(dbMock testdb.DBMock) {
-				dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO %s ( %s, %s, %s ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)", runtimeM2MTableName, repo.M2MTenantIDColumn, repo.M2MResourceIDColumn, repo.M2MOwnerColumn))).
+				dbMock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO %s ( %s, %s, %s ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents) ON CONFLICT ( tenant_id, id ) DO NOTHING", runtimeM2MTableName, repo.M2MTenantIDColumn, repo.M2MResourceIDColumn, repo.M2MOwnerColumn))).
 					WithArgs(subaccountTenantInternalID, providerRuntimeID, false).WillReturnResult(sqlmock.NewResult(1, 1))
 			},
 			ExpectedErrorOutput: testError.Error(),
@@ -441,7 +504,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
@@ -480,7 +543,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(nil, notFoundErr).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(nil, notFoundErr).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: unusedRuntimeContextSvc,
@@ -494,11 +557,11 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			IsSuccessful:   false,
 		},
 		{
-			Name:   "Returns an error when could not list runtimes",
+			Name:   "Returns an error when could not get runtime",
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(nil, testError).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(nil, testError).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: unusedRuntimeContextSvc,
@@ -517,7 +580,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
@@ -541,7 +604,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: unusedRuntimeContextSvc,
@@ -561,7 +624,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			Region: tenantRegion,
 			RuntimeServiceFn: func() *automock.RuntimeService {
 				provisioner := &automock.RuntimeService{}
-				provisioner.On("ListByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntimes, nil).Once()
+				provisioner.On("GetByFilters", providerCtx, regionalAndSubscriptionFilters).Return(providerRuntime, nil).Once()
 				return provisioner
 			},
 			RuntimeCtxServiceFn: func() *automock.RuntimeCtxService {
@@ -965,7 +1028,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 
 			for count := 0; count < testCase.Repeats; count++ {
 				// WHEN
-				isSubscribeSuccessful, err := service.SubscribeTenantToApplication(context.TODO(), subscriptionProviderID, subaccountTenantExtID, testCase.Region, subscriptionAppName)
+				isSubscribeSuccessful, err := service.SubscribeTenantToApplication(context.TODO(), subscriptionProviderID, subaccountTenantExtID, consumerTenantID, testCase.Region, subscriptionAppName)
 
 				// THEN
 				if len(testCase.ExpectedErrorOutput) > 0 {

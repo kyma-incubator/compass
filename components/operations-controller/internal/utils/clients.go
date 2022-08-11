@@ -2,11 +2,11 @@ package utils
 
 import (
 	"crypto/tls"
-	http2 "net/http"
+	"net/http"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
-	http3 "github.com/kyma-incubator/compass/components/director/pkg/http"
-	"github.com/kyma-incubator/compass/components/system-broker/pkg/http"
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+	httpbroker "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
 )
 
 //CertificateCache is an interface which provides a certificate which is
@@ -16,36 +16,37 @@ type CertificateCache interface {
 	Get() *tls.Certificate
 }
 
-func PrepareMTLSClient(cfg *http.Config, cache CertificateCache) *http2.Client {
-	basicTransport := http.NewHTTPTransport(cfg)
+// PrepareMTLSClient creates a MTLS secured http client with given certificate cache
+func PrepareMTLSClient(cfg *httpbroker.Config, cache CertificateCache) *http.Client {
+	basicTransport := httpbroker.NewHTTPTransport(cfg)
 	basicTransport.TLSClientConfig.GetClientCertificate = func(_ *tls.CertificateRequestInfo) (*tls.Certificate, error) {
 		return cache.Get(), nil
 	}
-	httpTransport := http3.NewCorrelationIDTransport(basicTransport)
+	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(basicTransport))
 
-	return &http2.Client{
+	return &http.Client{
 		Transport: httpTransport,
 		Timeout:   cfg.Timeout,
 	}
 }
 
-func PrepareHttpClient(cfg *http.Config) (*http2.Client, error) {
-	httpTransport := http3.NewCorrelationIDTransport(http.NewHTTPTransport(cfg))
+// PrepareHttpClient creates a http client with given http config
+func PrepareHttpClient(cfg *httpbroker.Config) *http.Client {
+	httpTransport := httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(httpbroker.NewHTTPTransport(cfg)))
 
-	unsecuredClient := &http2.Client{
+	unsecuredClient := &http.Client{
 		Transport: httpTransport,
 		Timeout:   cfg.Timeout,
 	}
 
 	basicProvider := auth.NewBasicAuthorizationProvider()
 	tokenProvider := auth.NewTokenAuthorizationProvider(unsecuredClient)
-	saTokenProvider := auth.NewServiceAccountTokenAuthorizationProvider()
 
-	securedTransport := http3.NewSecuredTransport(httpTransport, basicProvider, tokenProvider, saTokenProvider)
-	securedClient := &http2.Client{
+	securedTransport := httputil.NewSecuredTransport(httpTransport, basicProvider, tokenProvider)
+	securedClient := &http.Client{
 		Transport: securedTransport,
 		Timeout:   cfg.Timeout,
 	}
 
-	return securedClient, nil
+	return securedClient
 }

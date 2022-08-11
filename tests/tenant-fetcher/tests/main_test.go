@@ -31,7 +31,7 @@ type testConfig struct {
 	TenantFetcherURL               string
 	RootAPI                        string
 	RegionalHandlerEndpoint        string
-	DependenciesEndpoint           string
+	DependenciesEndpoint           string `envconfig:"APP_REGIONAL_DEPENDENCIES_ENDPOINT"`
 	TenantPathParam                string
 	RegionPathParam                string
 	SubscriptionCallbackScope      string
@@ -100,7 +100,7 @@ func TestMain(m *testing.M) {
 			InsecureSkipVerify: true,
 		},
 	}
-	saTransport := httputil.NewServiceAccountTokenTransportWithHeader(tr, "Authorization")
+	saTransport := httputil.NewServiceAccountTokenTransportWithHeader(httputil.NewHTTPTransportWrapper(tr), "Authorization")
 	client := &http.Client{
 		Transport: saTransport,
 		Timeout:   time.Second * 30,
@@ -112,7 +112,7 @@ func TestMain(m *testing.M) {
 
 	config.TenantFetcherFullRegionalURL = tenantfetcher.BuildTenantFetcherRegionalURL(config.RegionalHandlerEndpoint, config.TenantPathParam, config.RegionPathParam, config.TenantFetcherURL, config.RootAPI)
 
-	config.TenantFetcherFullDependenciesURL = config.TenantFetcherURL + config.RootAPI + config.DependenciesEndpoint
+	config.TenantFetcherFullDependenciesURL = tenantfetcher.BuildRegionalDependenciesURL(config.TenantFetcherURL, config.RootAPI, config.DependenciesEndpoint, config.RegionPathParam)
 
 	exitVal := m.Run()
 	os.Exit(exitVal)

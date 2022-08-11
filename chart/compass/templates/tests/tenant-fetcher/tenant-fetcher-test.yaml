@@ -16,6 +16,7 @@ spec:
     metadata:
       annotations:
         sidecar.istio.io/inject: "true"
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
       labels:
         app: {{ .Chart.Name }}-tenant-fetcher-tests-app
     spec:
@@ -66,7 +67,7 @@ spec:
               value: "{{ .Values.global.tenantFetcher.prefix }}"
             - name: APP_REGIONAL_HANDLER_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.server.regionalHandlerEndpoint }}"
-            - name: APP_DEPENDENCIES_ENDPOINT
+            - name: APP_REGIONAL_DEPENDENCIES_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.server.dependenciesEndpoint }}"
             - name: APP_TENANT_PATH_PARAM
               value: "{{ .Values.global.tenantFetcher.server.tenantPathParam }}"

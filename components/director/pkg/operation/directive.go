@@ -241,7 +241,7 @@ func (d *directive) prepareRequestObject(ctx context.Context, err error, res int
 		headers[key] = value[0]
 	}
 
-	requestObject := &webhook.RequestObject{
+	requestObject := &webhook.ApplicationLifecycleWebhookRequestObject{
 		Application: resource,
 		TenantID:    tenantID,
 		Headers:     headers,

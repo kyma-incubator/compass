@@ -20,7 +20,28 @@ func (c *converter) FromGraphQL(i graphql.FormationInput) model.Formation {
 
 // ToGraphQL converts model.Formation to graphql.Formation
 func (c *converter) ToGraphQL(i *model.Formation) *graphql.Formation {
-	return &graphql.Formation{Name: i.Name}
+	return &graphql.Formation{
+		ID:                  i.ID,
+		Name:                i.Name,
+		FormationTemplateID: i.FormationTemplateID,
+	}
+}
+
+// MultipleToGraphQL converts multiple internal models to GraphQL models
+func (c *converter) MultipleToGraphQL(in []*model.Formation) []*graphql.Formation {
+	if in == nil {
+		return nil
+	}
+	formations := make([]*graphql.Formation, 0, len(in))
+	for _, f := range in {
+		if f == nil {
+			continue
+		}
+
+		formations = append(formations, c.ToGraphQL(f))
+	}
+
+	return formations
 }
 
 func (c *converter) ToEntity(in *model.Formation) *Entity {

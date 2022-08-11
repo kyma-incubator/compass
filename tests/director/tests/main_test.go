@@ -25,8 +25,6 @@ type DirectorConfig struct {
 	HealthUrl                      string `envconfig:"default=https://director.kyma.local/healthz"`
 	WebhookUrl                     string `envconfig:"default=https://kyma-project.io"`
 	InfoUrl                        string `envconfig:"APP_INFO_API_ENDPOINT,default=https://director.kyma.local/v1/info"`
-	CertIssuer                     string `envconfig:"APP_INFO_CERT_ISSUER"`
-	CertSubject                    string `envconfig:"APP_INFO_CERT_SUBJECT"`
 	DefaultScenarioEnabled         bool   `envconfig:"default=true"`
 	DefaultNormalizationPrefix     string `envconfig:"default=mp-"`
 	GatewayOauth                   string
@@ -35,17 +33,30 @@ type DirectorConfig struct {
 	ConsumerID                     string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
 	CertLoaderConfig               certloader.Config
 	certprovider.ExternalCertProviderConfig
-	SubscriptionConfig               subscription.Config
-	TestProviderSubaccountID         string
-	TestConsumerSubaccountID         string
-	TestConsumerTenantID             string
-	ExternalServicesMockBaseURL      string
-	TokenPath                        string
-	SubscriptionProviderAppNameValue string
-	ConsumerSubaccountLabelKey       string
-	SubscriptionLabelKey             string
-	RuntimeTypeLabelKey              string
-	KymaRuntimeTypeLabelValue        string
+	SubscriptionConfig                     subscription.Config
+	TestProviderAccountID                  string
+	TestProviderSubaccountID               string
+	TestConsumerAccountID                  string
+	TestConsumerSubaccountID               string
+	TestConsumerTenantID                   string
+	TestProviderSubaccountIDRegion2        string
+	ExternalServicesMockBaseURL            string
+	ExternalServicesMockMtlsSecuredURL     string
+	TokenPath                              string
+	SubscriptionProviderAppNameValue       string
+	ConsumerSubaccountLabelKey             string
+	SubscriptionLabelKey                   string
+	RuntimeTypeLabelKey                    string
+	KymaRuntimeTypeLabelValue              string
+	ConsumerTokenURL                       string
+	ProviderClientID                       string
+	ProviderClientSecret                   string
+	BasicUsername                          string
+	BasicPassword                          string
+	ExternalCertCommonName                 string `envconfig:"EXTERNAL_CERT_COMMON_NAME"`
+	CertSvcInstanceTestIntSystemSecretName string `envconfig:"CERT_SVC_INSTANCE_TEST_INTEGRATION_SYSTEM_SECRET_NAME"`
+	ExternalCertTestIntSystemOUSubaccount  string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_OU_SUBACCOUNT"`
+	ExternalCertTestIntSystemCommonName    string `envconfig:"APP_EXTERNAL_CERT_TEST_INTEGRATION_SYSTEM_CN"`
 }
 
 type BaseDirectorConfig struct {
@@ -55,6 +66,7 @@ type BaseDirectorConfig struct {
 var (
 	conf                     = &DirectorConfig{}
 	certSecuredGraphQLClient *graphql.Client
+	cc                       certloader.Cache
 )
 
 func TestMain(m *testing.M) {
@@ -65,7 +77,8 @@ func TestMain(m *testing.M) {
 
 	ctx := context.Background()
 
-	cc, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
+	var err error
+	cc, err = certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}

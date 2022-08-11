@@ -365,6 +365,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 			tenantStorageSvc := testCase.TenantStorageSvcFn()
 			apiClient := testCase.APIClientFn()
 			gqlClient := testCase.GqlClientFn()
+			regionDetails := map[string]tenantfetchersvc.RegionDetails{region: {Name: region}}
 			svc := tenantfetchersvc.NewSubaccountOnDemandService(tenantfetchersvc.QueryConfig{
 				PageNumField:    "pageNum",
 				PageSizeField:   "pageSize",
@@ -385,7 +386,7 @@ func TestService_SyncSubaccountOnDemandTenants(t *testing.T) {
 				EntityTypeField:        "type",
 				GlobalAccountGUIDField: "globalAccountGUID",
 				RegionField:            "region",
-			}, apiClient, transact, tenantStorageSvc, gqlClient, provider, tenantConverter)
+			}, apiClient, transact, tenantStorageSvc, gqlClient, provider, tenantConverter, regionDetails)
 
 			// WHEN
 			err := svc.SyncTenant(context.TODO(), subaccountID, globalAccountGUID)
@@ -2549,6 +2550,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			labelSvc := testCase.LabelRepoFn()
 			kubeClient := testCase.KubeClientFn()
 			gqlClient := testCase.GqlClientFn()
+			regionDetails := make(map[string]string)
+			regionDetails[testRegion] = ""
 			svc := tenantfetchersvc.NewSubaccountService(tenantfetchersvc.QueryConfig{
 				PageNumField:   "pageNum",
 				PageSizeField:  "pageSize",
@@ -2574,7 +2577,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 				LabelValue:   "id",
 				SourceTenant: "source_tenant",
 				TargetTenant: "target_tenant",
-			}, provider, []string{testRegion}, apiClient, tenantStorageSvc, runtimeStorageSvc, labelSvc, time.Hour, gqlClient, tenantInsertChunkSize, tenantConverter)
+			}, provider, regionDetails, apiClient, tenantStorageSvc, runtimeStorageSvc, labelSvc, time.Hour, gqlClient, tenantInsertChunkSize, tenantConverter)
 			svc.SetRetryAttempts(1)
 
 			// WHEN
@@ -2615,6 +2618,8 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 		gqlClient.On("WriteTenants", mock.Anything, matchArrayWithoutOrderArgument(tenantConverter.MultipleInputToGraphQLInput(tenantsToCreate))).Return(nil)
 
 		defer mock.AssertExpectationsForObjects(t, persist, transact, apiClient, tenantStorageSvc, kubeClient)
+		regionDetails := make(map[string]string)
+		regionDetails[testRegion] = ""
 		svc := tenantfetchersvc.NewSubaccountService(tenantfetchersvc.QueryConfig{
 			PageNumField:   "pageNum",
 			PageSizeField:  "pageSize",
@@ -2640,7 +2645,7 @@ func TestService_SyncSubaccountTenants(t *testing.T) {
 			LabelValue:   "id",
 			SourceTenant: "source_tenant",
 			TargetTenant: "target_tenant",
-		}, provider, []string{testRegion}, apiClient, tenantStorageSvc, nil, nil, time.Hour, gqlClient, tenantInsertChunkSize, tenantConverter)
+		}, provider, regionDetails, apiClient, tenantStorageSvc, nil, nil, time.Hour, gqlClient, tenantInsertChunkSize, tenantConverter)
 
 		// WHEN
 		err := svc.SyncTenants()

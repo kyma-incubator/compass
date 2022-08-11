@@ -6,6 +6,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
+
+	httputil "github.com/kyma-incubator/compass/components/director/pkg/auth"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/retry"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
@@ -63,6 +70,8 @@ type config struct {
 	ClientTimeout     time.Duration `envconfig:"default=60s"`
 	SkipSSLValidation bool          `envconfig:"default=false"`
 
+	RetryConfig retry.Config
+
 	CertLoaderConfig certloader.Config
 
 	GlobalRegistryConfig ord.GlobalRegistryConfig
@@ -90,6 +99,9 @@ func main() {
 		exitOnError(err, "Error while closing the connection to the database")
 	}()
 
+	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
+	exitOnError(err, "Failed to initialize certificate loader")
+
 	httpClient := &http.Client{
 		Timeout: cfg.ClientTimeout,
 		Transport: &http.Transport{
@@ -99,19 +111,29 @@ func main() {
 		},
 	}
 
-	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
-	exitOnError(err, "Failed to initialize certificate loader")
+	securedHTTPClient := httputil.PrepareHTTPClientWithSSLValidation(cfg.ClientTimeout, cfg.SkipSSLValidation)
+	mtlsClient := httputil.PrepareMTLSClient(cfg.ClientTimeout, certCache)
 
-	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache)
+	accessStrategyExecutorProvider := accessstrategy.NewExecutorProviderWithTenant(certCache, ctxTenantProvider)
+	retryHTTPExecutor := retry.NewHTTPExecutor(&cfg.RetryConfig)
 
-	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg, transact, httpClient, accessStrategyExecutorProvider)
+	ordAggregator := createORDAggregatorSvc(cfgProvider, cfg, transact, httpClient, securedHTTPClient, mtlsClient, accessStrategyExecutorProvider, retryHTTPExecutor)
 	err = ordAggregator.SyncORDDocuments(ctx)
 	exitOnError(err, "Error while synchronizing Open Resource Discovery Documents")
 
 	log.C(ctx).Info("Successfully synchronized Open Resource Discovery Documents")
 }
 
-func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config, transact persistence.Transactioner, httpClient *http.Client, accessStrategyExecutorProvider *accessstrategy.Provider) *ord.Service {
+func ctxTenantProvider(ctx context.Context) (string, error) {
+	tenantPair, err := tenant.LoadTenantPairFromContext(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return tenantPair.ExternalID, nil
+}
+
+func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config, transact persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient *http.Client, accessStrategyExecutorProvider *accessstrategy.Provider, retryHTTPExecutor *retry.HTTPExecutor) *ord.Service {
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -125,6 +147,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	intSysConverter := integrationsystem.NewConverter()
 	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
+	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
 	pkgConverter := ordpackage.NewConverter()
 	productConverter := product.NewConverter()
 	vendorConverter := ordvendor.NewConverter()
@@ -137,6 +160,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 	labelRepo := label.NewRepository(labelConverter)
 	labelDefRepo := labeldef.NewRepository(labelDefConverter)
 	webhookRepo := webhook.NewRepository(webhookConverter)
@@ -162,7 +186,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	tenantRepo := tenant.NewRepository(tenant.NewConverter())
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, config.Features.DefaultScenarioEnabled)
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessStrategyExecutorProvider)
+	fetchRequestSvc := fetchrequest.NewServiceWithRetry(fetchRequestRepo, httpClient, accessStrategyExecutorProvider, retryHTTPExecutor)
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
@@ -172,7 +196,8 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo)
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, webhookRepo, webhookClient, applicationRepo, appTemplateRepo, webhookConverter)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, scenariosSvc, bundleSvc, uidSvc, formationSvc, config.SelfRegisterDistinguishLabelKey)
 	packageSvc := ordpackage.NewService(pkgRepo, uidSvc)
 	productSvc := product.NewService(productRepo, uidSvc)

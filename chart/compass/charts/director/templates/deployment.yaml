@@ -117,6 +117,10 @@ spec:
               value: {{ .Values.deployment.args.token.applicationExpiration | quote }}
             - name: APP_ONE_TIME_TOKEN_CSR_EXPIRATION
               value: {{ .Values.deployment.args.token.csrExpiration | quote }}
+            - name: APP_HTTP_RETRY_ATTEMPTS
+              value: "{{ .Values.global.ordAggregator.http.retry.attempts }}"
+            - name: APP_HTTP_RETRY_DELAY
+              value: "{{ .Values.global.ordAggregator.http.retry.delay }}"
             - name: APP_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: APP_LOG_FORMAT
@@ -141,10 +145,6 @@ spec:
               value: {{ .Values.global.director.suggestTokenHeaderKey }}
             - name: APP_INFO_API_ENDPOINT
               value: {{ .Values.global.director.info.path }}
-            - name: APP_INFO_CERT_SUBJECT
-              value: {{ printf .Values.global.externalCertConfiguration.subjectPattern .Values.global.externalCertConfiguration.ouCertSubaccountID .Values.global.externalCertConfiguration.locality .Values.global.externalCertConfiguration.commonName | trimPrefix "/" | replace "/" ", " | quote }}
-            - name: APP_INFO_CERT_ISSUER
-              value: {{ .Values.global.externalCertConfiguration.issuer }}
             - name: APP_INFO_ROOT_CA
               valueFrom:
                 secretKeyRef:

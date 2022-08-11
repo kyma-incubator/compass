@@ -104,12 +104,13 @@ fi
 
 set -e
 
-if [[ -f seeds/dump.sql ]] && [[ "${DIRECTION}" == "up" ]]; then
-    echo "Will reuse existing dump in seeds/dump.sql"
-    PGPASSWORD="${DB_PASSWORD}" psql --username="${DB_USER}" --host="${DB_HOST}" --port="${DB_PORT}" --dbname="${DB_NAME}" --single-transaction -f seeds/dump.sql --set ON_ERROR_STOP=on --set "${SSL_OPTION}"
+DUMP_FILE=$(find seeds -type f -name "dump-*.sql")
+if [[ $DUMP_FILE ]] && [[ "${DIRECTION}" == "up" ]]; then
+    echo "Will reuse existing dump - $DUMP_FILE"
+    PGPASSWORD="${DB_PASSWORD}" psql --username="${DB_USER}" --host="${DB_HOST}" --port="${DB_PORT}" --dbname="${DB_NAME}" --single-transaction -f "$DUMP_FILE" --set ON_ERROR_STOP=on --set "${SSL_OPTION}"
 
     REMOTE_MIGRATION_VERSION=$(PGPASSWORD="${DB_PASSWORD}" psql -qtAX -U "${DB_USER}" -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" -c "SELECT version FROM schema_migrations")
-    LOCAL_MIGRATION_VERSION=$(echo $(ls migrations/director | tail -n 1) | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\+//')
+    LOCAL_MIGRATION_VERSION=$(echo $(ls migrations/director | tail -n 1) | grep -o -E '^[0-9]+' | head -1 | sed -e 's/^0\+//')
 
     if [[ ${REMOTE_MIGRATION_VERSION} = ${LOCAL_MIGRATION_VERSION} ]]; then
         echo -e "${GREEN}Both remote and local migrations are at the same version.${NC}"

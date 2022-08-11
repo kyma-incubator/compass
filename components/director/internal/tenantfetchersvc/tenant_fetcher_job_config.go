@@ -2,6 +2,7 @@ package tenantfetchersvc
 
 import (
 	"context"
+	"encoding/json"
 	"regexp"
 	"strconv"
 	"strings"
@@ -70,7 +71,7 @@ func (j *job) ReadJobConfig() JobConfig {
 func (j *job) readEventsConfig() EventsConfig {
 	return EventsConfig{
 		AccountsRegion:    j.getEnvValueForKey("central", "APP_"+j.name+"_ACCOUNT_REGION"),
-		SubaccountRegions: strings.Split(j.getEnvValueForKey("central", "APP_"+j.name+"_SUBACCOUNT_REGIONS"), ","),
+		SubaccountRegions: j.getRegions(j.getEnvValueForKey("{central, \"\"}", "APP_"+j.name+"_SUBACCOUNT_REGIONS")),
 
 		AuthMode:    oauth.AuthMode(j.getEnvValueForKey("standard", "APP_"+j.name+"_OAUTH_AUTH_MODE")),
 		OAuthConfig: j.getOAuth2Config(),
@@ -181,7 +182,7 @@ func (j *job) getFeaturesConfig() features.Config {
 		ProtectedLabelPattern:        j.getEnvValueForKey(".*_defaultEventing|^consumer_subaccount_ids$", emptyValue),
 		ImmutableLabelPattern:        j.getEnvValueForKey("^xsappnameCMPClone$", "APP_SELF_REGISTER_LABEL_KEY_PATTERN"),
 		SubscriptionProviderLabelKey: j.getEnvValueForKey("subscriptionProviderId", "APP_SUBSCRIPTION_PROVIDER_LABEL_KEY"),
-		ConsumerSubaccountLabelKey:   j.getEnvValueForKey("consumer_subaccount_id", "APP_CONSUMER_SUBACCOUNT_LABEL_KEY"),
+		ConsumerSubaccountLabelKey:   j.getEnvValueForKey("global_subaccount_id", "APP_CONSUMER_SUBACCOUNT_LABEL_KEY"),
 	}
 }
 
@@ -285,4 +286,19 @@ func GetJobNames(envVars map[string]string) []string {
 	}
 
 	return jobNames
+}
+
+// returns map of region name as key and its prefix as value
+func (j *job) getRegions(regionNames string) map[string]string {
+	regionsWithPrefixes := make(map[string]string)
+	var arr []RegionDetails
+
+	err := json.Unmarshal([]byte(regionNames), &arr)
+	if err != nil {
+		log.D().Errorf("Error while parsing %s as region names for tenant fetcher job %q", regionNames, j.name)
+	}
+	for _, region := range arr {
+		regionsWithPrefixes[region.Name] = region.Prefix
+	}
+	return regionsWithPrefixes
 }

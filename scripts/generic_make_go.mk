@@ -101,7 +101,7 @@ release: verify build-image
 build-image: pull-licenses
 	docker run --rm --privileged linuxkit/binfmt:v0.8 # https://stackoverflow.com/questions/70066249/docker-random-alpine-packages-fail-to-install
 	docker buildx create --name multi-arch-builder --use
-	docker buildx build --platform linux/amd64,linux/arm64 -t $(IMG_NAME):$(TAG) --push .
+	( sleep 15m && docker buildx rm multi-arch-builder ) & docker buildx build --platform linux/amd64,linux/arm64 -t $(IMG_NAME):$(TAG) --push . 
 docker-create-opts:
 	@echo $(DOCKER_CREATE_OPTS)
 
@@ -199,5 +199,6 @@ exec:
 # Sets locally built image for a given component in k3d cluster
 deploy-on-k3d: build-for-k3d
 	kubectl config use-context k3d-kyma
+	kubectl patch -n $(NAMESPACE) deployment/$(DEPLOYMENT_NAME) -p '{"spec":{"template":{"spec":{"containers":[{"name":"'$(COMPONENT_NAME)'","imagePullPolicy":"Always"}]}}}}'
 	kubectl set image -n $(NAMESPACE) deployment/$(DEPLOYMENT_NAME) $(COMPONENT_NAME)=k3d-kyma-registry:5001/$(DEPLOYMENT_NAME):$(TAG)
 	kubectl rollout restart -n $(NAMESPACE) deployment/$(DEPLOYMENT_NAME)

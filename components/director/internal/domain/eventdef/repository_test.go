@@ -357,6 +357,8 @@ func TestPgRepository_Exists(t *testing.T) {
 		RepoConstructorFunc: event.NewRepository,
 		TargetID:            eventID,
 		TenantID:            tenantID,
+		MethodName:          "Exists",
+		MethodArgs:          []interface{}{tenantID, eventID},
 	}
 
 	suite.Run(t)

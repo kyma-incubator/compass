@@ -40,7 +40,7 @@ type TenantSubscriber interface {
 type HandlerConfig struct {
 	TenantOnDemandHandlerEndpoint string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{parentTenantId}/{tenantId}"`
 	RegionalHandlerEndpoint       string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
-	DependenciesEndpoint          string `envconfig:"APP_DEPENDENCIES_ENDPOINT,default=/v1/dependencies"`
+	DependenciesEndpoint          string `envconfig:"APP_REGIONAL_DEPENDENCIES_ENDPOINT,default=/v1/regional/{region}/dependencies"`
 	TenantPathParam               string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
 	ParentTenantPathParam         string `envconfig:"APP_PARENT_TENANT_PATH_PARAM,default=parentTenantId"`
 	RegionPathParam               string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
@@ -77,8 +77,8 @@ type TenantProviderConfig struct {
 
 // EventsConfig contains configuration for Events API requests
 type EventsConfig struct {
-	AccountsRegion    string   `envconfig:"default=central"`
-	SubaccountRegions []string `envconfig:"default=central"`
+	AccountsRegion    string            `envconfig:"default=central"`
+	SubaccountRegions map[string]string `envconfig:"optional"`
 
 	AuthMode    oauth.AuthMode `envconfig:"APP_OAUTH_AUTH_MODE,default=standard"`
 	OAuthConfig OAuth2Config
@@ -163,9 +163,20 @@ func (h *handler) UnSubscribeTenant(writer http.ResponseWriter, request *http.Re
 
 // Dependencies handler returns all external services where once created in Compass, the tenant should be created as well.
 func (h *handler) Dependencies(writer http.ResponseWriter, request *http.Request) {
+	ctx := request.Context()
+
+	vars := mux.Vars(request)
+	_, ok := vars[h.config.RegionPathParam]
+	if !ok {
+		log.C(ctx).Error("Region path parameter is missing from request")
+		http.Error(writer, "Region path parameter is missing from request", http.StatusBadRequest)
+		return
+	}
+
 	writer.Header().Set("Content-Type", "application/json")
-	if _, err := writer.Write([]byte("{}")); err != nil {
-		log.C(request.Context()).WithError(err).Errorf("Failed to write response body for dependencies request")
+	if _, err := writer.Write([]byte("[]")); err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to write response body for dependencies request")
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 }

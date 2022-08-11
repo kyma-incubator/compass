@@ -62,8 +62,7 @@ func TestPrepareHttpClient(t *testing.T) {
 	ts.Start()
 	defer ts.Close()
 
-	client, err := utils.PrepareHttpClient(cfg)
-	require.NoError(t, err)
+	client := utils.PrepareHttpClient(cfg)
 
 	req, err := http.NewRequest(http.MethodGet, ts.URL, nil)
 	require.NoError(t, err)

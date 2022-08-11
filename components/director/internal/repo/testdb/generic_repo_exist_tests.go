@@ -23,6 +23,8 @@ type RepoExistTestSuite struct {
 	TenantID              string
 	RefEntity             interface{}
 	IsGlobal              bool
+	MethodName            string
+	MethodArgs            []interface{}
 }
 
 // Run runs the generic repo exists test suite
@@ -45,7 +47,7 @@ func (suite *RepoExistTestSuite) Run(t *testing.T) bool {
 			convMock := suite.ConverterMockProvider()
 			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 			// WHEN
-			found, err := callExists(pgRepository, ctx, suite.TenantID, suite.TargetID, suite.RefEntity, suite.IsGlobal)
+			found, err := callExists(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
 			// THEN
 			require.NoError(t, err)
 			require.True(t, found)
@@ -63,7 +65,7 @@ func (suite *RepoExistTestSuite) Run(t *testing.T) bool {
 			convMock := suite.ConverterMockProvider()
 			pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 			// WHEN
-			found, err := callExists(pgRepository, ctx, suite.TenantID, suite.TargetID, suite.RefEntity, suite.IsGlobal)
+			found, err := callExists(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
 			// THEN
 			require.NoError(t, err)
 			require.False(t, found)
@@ -82,7 +84,7 @@ func (suite *RepoExistTestSuite) Run(t *testing.T) bool {
 				convMock := suite.ConverterMockProvider()
 				pgRepository := createRepo(suite.RepoConstructorFunc, convMock)
 				// WHEN
-				found, err := callExists(pgRepository, ctx, suite.TenantID, suite.TargetID, suite.RefEntity, suite.IsGlobal)
+				found, err := callExists(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
 				// THEN
 				require.Error(t, err)
 				require.Equal(t, apperrors.InternalError, apperrors.ErrorCode(err))
@@ -97,15 +99,14 @@ func (suite *RepoExistTestSuite) Run(t *testing.T) bool {
 	})
 }
 
-func callExists(repo interface{}, ctx context.Context, tenant string, id string, refEntity interface{}, isGlobal bool) (bool, error) {
-	args := []reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(tenant), reflect.ValueOf(id)}
-	if isGlobal {
-		args = []reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(id)}
+func callExists(repo interface{}, ctx context.Context, methodName string, args []interface{}) (bool, error) {
+	argsVals := make([]reflect.Value, 1, len(args))
+	argsVals[0] = reflect.ValueOf(ctx)
+	for _, arg := range args {
+		argsVals = append(argsVals, reflect.ValueOf(arg))
 	}
-	if refEntity != nil {
-		args = append(args, reflect.ValueOf(refEntity))
-	}
-	results := reflect.ValueOf(repo).MethodByName("Exists").Call(args)
+
+	results := reflect.ValueOf(repo).MethodByName(methodName).Call(argsVals)
 	if len(results) != 2 {
 		panic("Exists should return two arguments")
 	}

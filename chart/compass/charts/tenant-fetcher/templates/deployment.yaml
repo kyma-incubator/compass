@@ -17,6 +17,7 @@ spec:
   template:
     metadata:
       annotations:
+        restartOnNewInstallationMarker: {{ randAlphaNum 5 | quote }} # Restarts the deployment on a new Helm installation. (https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments)
         cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         {{ if .Values.deployment.resourcesIstioProxy.requests.cpu }}
         sidecar.istio.io/proxyCPU: {{ .Values.deployment.resourcesIstioProxy.requests.cpu }}
@@ -88,7 +89,7 @@ spec:
               value: "{{ .Values.global.tenantFetcher.server.fetchTenantEndpoint }}"
             - name: APP_REGIONAL_HANDLER_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.server.regionalHandlerEndpoint }}"
-            - name: APP_DEPENDENCIES_ENDPOINT
+            - name: APP_REGIONAL_DEPENDENCIES_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.server.dependenciesEndpoint }}"
             - name: APP_TENANT_PATH_PARAM
               value: "{{ .Values.global.tenantFetcher.server.tenantPathParam }}"
@@ -194,6 +195,8 @@ spec:
               value: {{ .Values.global.tenantFetcher.fieldMapping.entityTypeField }}
             - name: APP_GLOBAL_ACCOUNT_KEY
               value: {{ default "gaID" .Values.global.tenantFetcher.fieldMapping.globalAccountID }}
+            - name: APP_REGION_DETAILS
+              value: {{ .Values.global.tenantFetcher.regionDetails | quote }}
             {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
             - name: APP_METRICS_PUSH_ENDPOINT
               value: {{ $.Values.global.metrics.pushEndpoint }}

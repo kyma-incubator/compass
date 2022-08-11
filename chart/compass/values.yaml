@@ -64,6 +64,10 @@ global:
       id: f8075207-1478-4a80-bd26-24a4785a2bfd
       type: subaccount
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
+    - name: TestProviderSubaccountRegion2
+      id: 731b7bc4-5472-41d2-a447-e4c0f45de739
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
     - name: TestCertificateSubaccount
       id: 123e4567-e89b-12d3-a456-426614174001
       type: subaccount
@@ -96,39 +100,43 @@ global:
       id: 8d42d818-d4c4-4036-b82f-b199db7ffeb5
       type: subaccount
       parent: 5984a414-1eed-4972-af2c-b2b6a415c7d7
+    - name: TestExternalCertificateSubaccount
+      id: bad76f69-e5c2-4d55-bca5-240944824b83
+      type: subaccount
+      parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
   images:
     containerRegistry:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2383"
+      version: "PR-2501"
     connectivity_adapter:
       dir:
-      version: "PR-2383"
+      version: "PR-2501"
     pairing_adapter:
       dir:
-      version: "PR-2383"
+      version: "PR-2501"
     director:
       dir:
-      version: "PR-2451"
+      version: "PR-2543"
     hydrator:
       dir:
-      version: "PR-2408"
+      version: "PR-2521"
     gateway:
       dir:
-      version: "PR-2383"
+      version: "PR-2501"
     operations_controller:
       dir:
-      version: "PR-2383"
+      version: "PR-2501"
     ord_service:
       dir:
-      version: "PR-70"
+      version: "PR-72"
     schema_migrator:
       dir:
-      version: "PR-2436"
+      version: "PR-2532"
     system_broker:
       dir:
-      version: "PR-2383"
+      version: "PR-2501"
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -136,13 +144,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2391"
+      version: "PR-2521"
     console:
       dir:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2451"
+      version: "PR-2547"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -163,7 +171,7 @@ global:
       gatewayHost: "compass-gateway-xsuaa"
     prefix: /nsadapter
     path: /nsadapter/api/v1/notifications
-    systemToTemplateMappings: '[{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["abapSys"]},{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["nonSAPsys"]},{  "Name": "S4HANA",  "SourceKey": ["type"],  "SourceValue": ["hana"]}]'
+    systemToTemplateMappings: '[{  "Name": "SAP S/4HANA On-Premise",  "SourceKey": ["type"],  "SourceValue": ["abapSys"]},{  "Name": "SAP S/4HANA On-Premise",  "SourceKey": ["type"],  "SourceValue": ["nonSAPsys"]},{  "Name": "SAP S/4HANA On-Premise",  "SourceKey": ["type"],  "SourceValue": ["hana"]}]'
     secret:
       name: nsadapter-secret
       subaccountKey: subaccount
@@ -205,7 +213,7 @@ global:
       path: "/v1/info"
     subscription:
       subscriptionProviderLabelKey: "subscriptionProviderId"
-      consumerSubaccountLabelKey: "consumer_subaccount_id"
+      consumerSubaccountLabelKey: "global_subaccount_id"
       subscriptionLabelKey: "subscription"
       tokenPrefix: "sb-"
     selfRegister:
@@ -333,6 +341,11 @@ global:
     prefix: /hydrators
     subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"},{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}]'
     certificateDataHeader: "Certificate-Data"
+    consumerClaimsKeys:
+      clientIDKey: "client_id"
+      tenantIDKey: "tenantid"
+      userNameKey: "user_name"
+      subdomainKey: "subdomain"
     http:
       client:
         skipSSLValidation: false
@@ -471,7 +484,7 @@ global:
             createRule: false
             gatewayHost: "compass-gateway-sap-mtls"
             trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http", "region": "eu-1"}]'
-            attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" }, "clientid": { "key": "client_id" } }'
+            attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "user_name" }, "clientid": { "key": "client_id" } }'
             path: /<.*>
             checkSuffix: false
       tenantMappingService:
@@ -525,7 +538,7 @@ global:
     server:
       fetchTenantEndpoint: "/v1/fetch/{parentTenantId}/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
-      dependenciesEndpoint: "/v1/dependencies"
+      dependenciesEndpoint: "/v1/regional/{region}/dependencies"
       tenantPathParam: "tenantId"
       regionPathParam: "region"
     containerName: "tenant-fetcher"
@@ -558,9 +571,9 @@ global:
       entityTypeField: "entityType"
       globalAccountID: "gaID"
       regionField: "region"
+    regionDetails: '[{"central", ""}]'
   externalCertConfiguration:
-    issuer: "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, CN=compass-ca"
-    issuerLocality: "local" # In local setup we have manually created connector CA certificate with 'local' Locality property
+    issuerLocality: "local,local2" # In local setup we have manually created connector CA certificate with 'local' Locality property
     subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=%s/L=%s/CN=%s"
     ouCertSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd"
     commonName: "compass"
@@ -603,6 +616,9 @@ global:
     http:
       client:
         skipSSLValidation: false
+      retry:
+        attempts: 3
+        delay: 100ms
     dbPool:
       maxOpenConnections: 2
       maxIdleConnections: 2
@@ -633,6 +649,7 @@ global:
     systemsAPIFilterCriteria: ""
     # systemToTemplateMappings - how to map system properties to an existing application template
     systemToTemplateMappings: '{}'
+    templateRegion: "eu-1"
     templatePlaceholderToSystemKeyMappings: '[{"placeholder_name": "name","system_key": "displayName"},{"placeholder_name": "display-name","system_key": "displayName"},{"placeholder_name": "systemNumber","system_key": "systemNumber"},{"placeholder_name": "productId","system_key": "productId"},{"placeholder_name": "ppmsProductVersionId","system_key": "ppmsProductVersionId"},{"placeholder_name": "description","system_key": "productDescription", "optional": true},{"placeholder_name": "baseUrl","system_key": "additionalUrls.mainUrl", "optional":true},{"placeholder_name": "providerName","system_key": "infrastructureProvider", "optional": true}]'
     templateOverrideApplicationInput: '{"name": "{{name}}","description": "{{description}}","providerName": "{{providerName}}","statusCondition": "INITIAL","systemNumber": "{{systemNumber}}","labels": {"managed": "true","productId": "{{productId}}","ppmsProductVersionId": "{{ppmsProductVersionId}}"},"baseUrl": "{{baseUrl}}"}'
     http:
@@ -734,6 +751,8 @@ global:
     oauthSecuredPort: 8085
     ordGlobalRegistryCertPort: 8086
     ordGlobalRegistryUnsecuredPort: 8087
+    unsecuredPortWithAdditionalContent: 8088
+    unsecuredMultiTenantPort: 8089
     certSecuredHost: compass-external-services-mock-sap-mtls
     ordCertSecuredHost: compass-external-services-mock-sap-mtls-ord
     ordGlobalCertSecuredHost: compass-external-services-mock-sap-mtls-global-ord-registry
@@ -764,14 +783,15 @@ global:
     http:
       client:
         skipSSLValidation: false
+    externalCertConfiguration:
+      ouCertSubaccountID: "bad76f69-e5c2-4d55-bca5-240944824b83"
     director:
       skipPattern: ""
-      externalClientCertTestSecretName: "external-client-certificate-integration-system-test-secret"
-      externalClientCertTestSecretNamespace: "compass-system"
       externalCertIntSystemCN: "integration-system-test"
-      externalCertTestJobName: "external-client-certificate-integration-system-test-job"
     tenantFetcher:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
+    ordAggregator:
+      skipPattern: ""
     ordService:
       accountTenantID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
       skipPattern: ""
@@ -779,12 +799,15 @@ global:
       skipPattern: ""
     selfRegistration:
       region: "eu-1"
+      region2: "eu-2"
     subscription:
       tenants:
-        consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
+        providerAccountID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants
         providerSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd" # TestProviderSubaccount from our testing tenants
+        consumerAccountID: "5984a414-1eed-4972-af2c-b2b6a415c7d7" # ApplicationsForRuntimeTenantName from our testing tenants
         consumerSubaccountID: "1f538f34-30bf-4d3d-aeaa-02e69eef84ae" # randomly chosen
         consumerTenantID: "ba49f1aa-ddc1-43ff-943c-fe949857a34a" # randomly chosen
+        providerSubaccountIDRegion2: "731b7bc4-5472-41d2-a447-e4c0f45de739" # TestProviderSubaccountRegion2 from our testing tenants
       oauthSecret:
         manage: false
         name: compass-subscription-secret
@@ -796,6 +819,7 @@ global:
       externalClientCertTestSecretNamespace: "compass-system"
       externalCertTestJobName: "external-certificate-rotation-test-job"
       certSvcInstanceTestSecretName: "cert-svc-secret"
+      certSvcInstanceTestRegion2SecretName: "cert-svc-secret-eu2"
       consumerTokenURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
       subscriptionURL: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080"
       subscriptionProviderIdValue: "id-value!t12345"
@@ -825,7 +849,7 @@ global:
       name: "compass-director-migrations"
       namespace: "compass-system"
       migrationsPath: "/compass-migrations"
-      isLocalEnv: true
+      storageClass: local-path
   http:
     client:
       skipSSLValidation: false
@@ -894,6 +918,7 @@ global:
         - "integration_system.auths:read"
         - "application_template.webhooks:read"
         - "formation:write"
+        - "formation:read"
         - "internal_visibility:read"
         - "application.auths:read"
         - "webhook:write"
@@ -925,6 +950,7 @@ global:
         - "fetch-request.auth:read"
         - "webhooks.auth:read"
         - "formation:write"
+        - "formation:read"
         - "internal_visibility:read"
         - "runtime.webhooks:read"
         - "webhook:write"
