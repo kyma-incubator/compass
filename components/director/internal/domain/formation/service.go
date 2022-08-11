@@ -1261,7 +1261,7 @@ func (s *service) isValidApplicationType(ctx context.Context, tnt string, applic
 	}
 
 	if applicationType, ok := applicationTypeLabel.Value.(string); !ok {
-		return apperrors.NewInvalidOperationError(fmt.Sprintf("missing applicationType for formation template %q, allowing only %q", formationTemplate.Name, formationTemplate.ApplicationTypes))
+		return apperrors.NewInvalidOperationError(fmt.Sprintf("missing %s label for formation template %q, allowing only %q", s.applicationTypeLabelKey, formationTemplate.Name, formationTemplate.ApplicationTypes))
 	} else {
 		isAllowed := false
 		for _, allowedType := range formationTemplate.ApplicationTypes {

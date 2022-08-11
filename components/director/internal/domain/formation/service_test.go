@@ -1324,6 +1324,65 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
+			Name: "error for application type missing",
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				emptyApplicationType := &model.Label{
+					ID:         "123",
+					Key:        applicationType,
+					Tenant:     str.Ptr(Tnt),
+					ObjectID:   objectID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}
+				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(emptyApplicationType, nil)
+				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedSecondFormation, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: "missing applicationType",
+		},
+		{
+			Name: "error for application when updating label fails",
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				emptyApplicationType := &model.Label{
+					ID:         "123",
+					Key:        applicationType,
+					Value:      "invalidApplicationType",
+					Tenant:     str.Ptr(Tnt),
+					ObjectID:   objectID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}
+				labelService.On("GetLabel", ctx, Tnt, &applicationTypeLblInput).Return(emptyApplicationType, nil)
+				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, Tnt).Return(expectedSecondFormation, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+				return repo
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			InputFormation:     inputFormation,
+			ExpectedErrMessage: "unsupported applicationType",
+		},
+		{
 			Name: "error for application when getting application type label fails",
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
