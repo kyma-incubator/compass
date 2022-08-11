@@ -805,7 +805,7 @@ func applicationLabels(name, appTemplateName string, fromTemplate bool) director
 
 	if fromTemplate {
 		labels[nameLabelKey] = name
-		labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, cfg.SystemFetcherTemplateRegion)
+		labels["applicationType"] = appTemplateName
 	}
 
 	return labels

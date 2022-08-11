@@ -62,7 +62,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
 		appTemplateInput.Labels["global_subaccount_id"] = conf.ConsumerID
-		appTemplateInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, conf.SubscriptionConfig.SelfRegRegion)
+		appTemplateInput.ApplicationInput.Labels["applicationType"] = appTemplateName
 
 		require.NoError(t, err)
 		require.NotEmpty(t, appTemplateOutput)
@@ -113,7 +113,7 @@ func TestCreateApplicationTemplate_ValidApplicationTypeLabel(t *testing.T) {
 	ctx := context.Background()
 	appTemplateName := "SAP app-template"
 	appTemplateInput := fixAppTemplateInputWithRegion(appTemplateName, conf.SubscriptionConfig.SelfRegRegion)
-	appTemplateInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, conf.SubscriptionConfig.SelfRegRegion)
+	appTemplateInput.ApplicationInput.Labels["applicationType"] = appTemplateName
 
 	// WHEN
 	t.Log("Create application template")
@@ -147,7 +147,7 @@ func TestCreateApplicationTemplate_InvalidApplicationTypeLabel(t *testing.T) {
 
 	// THEN
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"applicationType\" label value does not follow \"<app_template_name> (<region>)\" schema")
+	require.Contains(t, err.Error(), "\"applicationType\" label value does not match the application template name")
 }
 
 func TestCreateApplicationTemplate_SameNamesAndRegion(t *testing.T) {
@@ -170,7 +170,7 @@ func TestCreateApplicationTemplate_SameNamesAndRegion(t *testing.T) {
 
 	appTemplateOneInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOneOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
 	appTemplateOneInput.Labels["global_subaccount_id"] = conf.ConsumerID
-	appTemplateOneInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, appTemplateRegion)
+	appTemplateOneInput.ApplicationInput.Labels["applicationType"] = appTemplateName
 
 	require.NotEmpty(t, appTemplateOneOutput)
 	assertions.AssertApplicationTemplate(t, appTemplateOneInput, appTemplateOneOutput)
@@ -206,7 +206,7 @@ func TestCreateApplicationTemplate_SameNamesAndDifferentRegions(t *testing.T) {
 
 	appTemplateOneInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOneOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
 	appTemplateOneInput.Labels["global_subaccount_id"] = conf.ConsumerID
-	appTemplateOneInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, appTemplateOneRegion)
+	appTemplateOneInput.ApplicationInput.Labels["applicationType"] = appTemplateName
 
 	require.NotEmpty(t, appTemplateOneOutput)
 	assertions.AssertApplicationTemplate(t, appTemplateOneInput, appTemplateOneOutput)
@@ -228,7 +228,7 @@ func TestCreateApplicationTemplate_SameNamesAndDifferentRegions(t *testing.T) {
 
 	appTemplateTwoInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateTwoOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
 	appTemplateTwoInput.Labels["global_subaccount_id"] = conf.TestProviderSubaccountIDRegion2
-	appTemplateTwoInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, appTemplateTwoRegion)
+	appTemplateTwoInput.ApplicationInput.Labels["applicationType"] = appTemplateName
 
 	require.NotEmpty(t, appTemplateTwoOutput)
 	assertions.AssertApplicationTemplate(t, appTemplateTwoInput, appTemplateTwoOutput)
@@ -345,7 +345,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	// WHEN
 	t.Log("Update application template")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateAppTemplateRequest, &updateOutput)
-	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": fmt.Sprintf("%s (%s)", newName, conf.SubscriptionConfig.SelfRegRegion)}
+	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": newName}
 
 	require.NoError(t, err)
 	require.NotEmpty(t, updateOutput.ID)
