@@ -1112,7 +1112,7 @@ func TestFormationApplicationTypeWhileAssigning(t *testing.T) {
 	createRequest := fixtures.FixAssignFormationRequest(actualApplication.ID, string(graphql.FormationObjectTypeApplication), formationName)
 	formationResultFormation := graphql.Formation{}
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createRequest, &formationResultFormation)
-	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApplication.ID, graphql.FormationObjectTypeRuntime, tenantId)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApplication.ID, graphql.FormationObjectTypeApplication, tenantId)
 	require.Empty(t, formationResultFormation)
 	require.EqualError(t, err, "graphql: The operation is not allowed [reason=unsupported applicationType \"Not in the template\" for formation template \"Side-by-side extensibility with Kyma\", allowing only [\"SAP Cloud for Customer\" \"SAP Commerce Cloud\" \"SAP Field Service Management\" \"SAP Marketing Cloud\"]]")
 }
