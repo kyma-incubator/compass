@@ -194,15 +194,15 @@ func TestServiceCreateFormation(t *testing.T) {
 		TenantID:            Tnt,
 	}
 
-	defaultSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT"})
+	testSchema, err := labeldef.NewSchemaForFormations([]string{testScenario})
 	assert.NoError(t, err)
-	defaultSchemaLblDef := fixDefaultScenariosLabelDefinition(Tnt, defaultSchema)
+	testSchemaLblDef := fixScenariosLabelDefinition(Tnt, testSchema)
 
-	newSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT", testFormationName})
+	newSchema, err := labeldef.NewSchemaForFormations([]string{testScenario, testFormationName})
 	assert.NoError(t, err)
-	newSchemaLblDef := fixDefaultScenariosLabelDefinition(Tnt, newSchema)
+	newSchemaLblDef := fixScenariosLabelDefinition(Tnt, newSchema)
 
-	emptySchemaLblDef := fixDefaultScenariosLabelDefinition(Tnt, defaultSchema)
+	emptySchemaLblDef := fixScenariosLabelDefinition(Tnt, testSchemaLblDef)
 	emptySchemaLblDef.Schema = nil
 
 	templateName := "Side-by-side extensibility with Kyma"
@@ -258,7 +258,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
 				labelDefRepo := &automock.LabelDefRepository{}
-				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&defaultSchemaLblDef, nil)
+				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&testSchemaLblDef, nil)
 				labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(nil)
 				return labelDefRepo
 			},
@@ -340,12 +340,12 @@ func TestServiceCreateFormation(t *testing.T) {
 			Name: "error when validating existing labels against the schema",
 			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
 				labelDefRepo := &automock.LabelDefRepository{}
-				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&defaultSchemaLblDef, nil)
+				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&testSchemaLblDef, nil)
 				return labelDefRepo
 			},
 			LabelDefServiceFn: func() *automock.LabelDefService {
 				labelDefService := &automock.LabelDefService{}
-				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, Tnt, defaultSchemaLblDef.Key).Return(testErr)
+				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, Tnt, testSchemaLblDef.Key).Return(testErr)
 				return labelDefService
 			},
 			ExpectedErrMessage: testErr.Error(),
@@ -354,13 +354,13 @@ func TestServiceCreateFormation(t *testing.T) {
 			Name: "error when validating automatic scenario assignment against the schema",
 			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
 				labelDefRepo := &automock.LabelDefRepository{}
-				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&defaultSchemaLblDef, nil)
+				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&testSchemaLblDef, nil)
 				return labelDefRepo
 			},
 			LabelDefServiceFn: func() *automock.LabelDefService {
 				labelDefService := &automock.LabelDefService{}
-				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, Tnt, defaultSchemaLblDef.Key).Return(nil)
-				labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, Tnt, defaultSchemaLblDef.Key).Return(testErr)
+				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, Tnt, testSchemaLblDef.Key).Return(nil)
+				labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, Tnt, testSchemaLblDef.Key).Return(testErr)
 				return labelDefService
 			},
 			ExpectedErrMessage: testErr.Error(),
@@ -369,14 +369,14 @@ func TestServiceCreateFormation(t *testing.T) {
 			Name: "error when update with version fails",
 			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
 				labelDefRepo := &automock.LabelDefRepository{}
-				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&defaultSchemaLblDef, nil)
+				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&testSchemaLblDef, nil)
 				labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(testErr)
 				return labelDefRepo
 			},
 			LabelDefServiceFn: func() *automock.LabelDefService {
 				labelDefService := &automock.LabelDefService{}
-				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, Tnt, defaultSchemaLblDef.Key).Return(nil)
-				labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, Tnt, defaultSchemaLblDef.Key).Return(nil)
+				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, Tnt, testSchemaLblDef.Key).Return(nil)
+				labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, Tnt, testSchemaLblDef.Key).Return(nil)
 				return labelDefService
 			},
 			ExpectedErrMessage: testErr.Error(),
@@ -385,7 +385,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			Name: "error when getting formation template by name fails",
 			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
 				labelDefRepo := &automock.LabelDefRepository{}
-				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&defaultSchemaLblDef, nil)
+				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&testSchemaLblDef, nil)
 				labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(nil)
 				return labelDefRepo
 			},
@@ -412,7 +412,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
 				labelDefRepo := &automock.LabelDefRepository{}
-				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&defaultSchemaLblDef, nil)
+				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&testSchemaLblDef, nil)
 				labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(nil)
 				return labelDefRepo
 			},
@@ -492,19 +492,15 @@ func TestServiceDeleteFormation(t *testing.T) {
 		TenantID:            Tnt,
 	}
 
-	defaultSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT", testFormationName})
+	testSchema, err := labeldef.NewSchemaForFormations([]string{testScenario, testFormationName})
 	assert.NoError(t, err)
-	defaultSchemaLblDef := fixDefaultScenariosLabelDefinition(Tnt, defaultSchema)
+	testSchemaLblDef := fixScenariosLabelDefinition(Tnt, testSchema)
 
-	newSchema, err := labeldef.NewSchemaForFormations([]string{"DEFAULT"})
+	newSchema, err := labeldef.NewSchemaForFormations([]string{testScenario})
 	assert.NoError(t, err)
-	newSchemaLblDef := fixDefaultScenariosLabelDefinition(Tnt, newSchema)
+	newSchemaLblDef := fixScenariosLabelDefinition(Tnt, newSchema)
 
-	emptySchema, err := labeldef.NewSchemaForFormations([]string{})
-	assert.NoError(t, err)
-	emptySchemaLblDef := fixDefaultScenariosLabelDefinition(Tnt, emptySchema)
-
-	nilSchemaLblDef := fixDefaultScenariosLabelDefinition(Tnt, defaultSchema)
+	nilSchemaLblDef := fixScenariosLabelDefinition(Tnt, testSchema)
 	nilSchemaLblDef.Schema = nil
 
 	testCases := []struct {
@@ -520,7 +516,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			Name: "success",
 			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
 				labelDefRepo := &automock.LabelDefRepository{}
-				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&defaultSchemaLblDef, nil)
+				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&testSchemaLblDef, nil)
 				labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(nil)
 				return labelDefRepo
 			},
@@ -538,29 +534,6 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			InputFormation:     in,
 			ExpectedFormation:  expected,
-			ExpectedErrMessage: "",
-		},
-		{
-			Name: "success when default scenario",
-			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
-				labelDefRepo := &automock.LabelDefRepository{}
-				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&newSchemaLblDef, nil)
-				labelDefRepo.On("UpdateWithVersion", ctx, emptySchemaLblDef).Return(nil)
-				return labelDefRepo
-			},
-			LabelDefServiceFn: func() *automock.LabelDefService {
-				labelDefService := &automock.LabelDefService{}
-				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, emptySchema, Tnt, model.ScenariosKey).Return(nil)
-				labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, emptySchema, Tnt, model.ScenariosKey).Return(nil)
-				return labelDefService
-			},
-			FormationRepoFn: func() *automock.FormationRepository {
-				repo := &automock.FormationRepository{}
-				repo.On("DeleteByName", ctx, Tnt, model.DefaultScenario).Return(nil).Once()
-				return repo
-			},
-			InputFormation:     model.Formation{Name: model.DefaultScenario},
-			ExpectedFormation:  &defaultFormation,
 			ExpectedErrMessage: "",
 		},
 		{
@@ -589,7 +562,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			Name: "error when validating existing labels against the schema",
 			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
 				labelDefRepo := &automock.LabelDefRepository{}
-				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&defaultSchemaLblDef, nil)
+				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&testSchemaLblDef, nil)
 				return labelDefRepo
 			},
 			LabelDefServiceFn: func() *automock.LabelDefService {
@@ -604,7 +577,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			Name: "error when validating automatic scenario assignment against the schema",
 			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
 				labelDefRepo := &automock.LabelDefRepository{}
-				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&defaultSchemaLblDef, nil)
+				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&testSchemaLblDef, nil)
 				return labelDefRepo
 			},
 			LabelDefServiceFn: func() *automock.LabelDefService {
@@ -637,7 +610,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			Name: "Returns error when can't get formation by name",
 			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
 				labelDefRepo := &automock.LabelDefRepository{}
-				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&defaultSchemaLblDef, nil)
+				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&testSchemaLblDef, nil)
 				labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(nil)
 				return labelDefRepo
 			},
@@ -661,7 +634,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			Name: "error when deleting formation template by name fails",
 			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
 				labelDefRepo := &automock.LabelDefRepository{}
-				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&defaultSchemaLblDef, nil)
+				labelDefRepo.On("GetByKey", ctx, Tnt, model.ScenariosKey).Return(&testSchemaLblDef, nil)
 				labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(nil)
 				return labelDefRepo
 			},
@@ -762,14 +735,6 @@ func TestServiceAssignFormation(t *testing.T) {
 	applicationLblInput := model.LabelInput{
 		Key:        model.ScenariosKey,
 		Value:      []string{testFormationName},
-		ObjectID:   objectID,
-		ObjectType: model.ApplicationLabelableObject,
-		Version:    0,
-	}
-
-	applicationLblInputInDefaultScenario := model.LabelInput{
-		Key:        model.ScenariosKey,
-		Value:      []string{model.DefaultScenario},
 		ObjectID:   objectID,
 		ObjectType: model.ApplicationLabelableObject,
 		Version:    0,
@@ -955,39 +920,6 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
-			Name: "success for application with default formation",
-			UIDServiceFn: func() *automock.UuidService {
-				uidService := &automock.UuidService{}
-				uidService.On("Generate").Return(fixUUID())
-				return uidService
-			},
-			LabelServiceFn: func() *automock.LabelService {
-				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, &applicationLblInputInDefaultScenario).Return(nil, apperrors.NewNotFoundError(resource.Label, ""))
-				labelService.On("CreateLabel", ctx, Tnt, fixUUID(), &applicationLblInputInDefaultScenario).Return(nil)
-				return labelService
-			},
-			ApplicationRepoFN: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(&model.Application{}, nil)
-				return repo
-			},
-			LabelRepoFN: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListForObject", ctx, Tnt, model.ApplicationLabelableObject, objectID).Return(nil, nil)
-				return repo
-			},
-			WebhookRepoFN: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
-				return repo
-			},
-			ObjectType:         graphql.FormationObjectTypeApplication,
-			InputFormation:     defaultFormation,
-			ExpectedFormation:  &defaultFormation,
-			ExpectedErrMessage: "",
-		},
-		{
 			Name: "success for runtime if label does not exist",
 			UIDServiceFn: func() *automock.UuidService {
 				uidService := &automock.UuidService{}
@@ -1113,7 +1045,6 @@ func TestServiceAssignFormation(t *testing.T) {
 			LabelDefServiceFn: func() *automock.LabelDefService {
 				labelDefSvc := &automock.LabelDefService{}
 
-				labelDefSvc.On("EnsureScenariosLabelDefinitionExists", ctx, Tnt).Return(nil)
 				labelDefSvc.On("GetAvailableScenarios", ctx, Tnt).Return([]string{testFormationName}, nil)
 
 				return labelDefSvc
@@ -1340,7 +1271,6 @@ func TestServiceAssignFormation(t *testing.T) {
 			LabelDefServiceFn: func() *automock.LabelDefService {
 				labelDefSvc := &automock.LabelDefService{}
 
-				labelDefSvc.On("EnsureScenariosLabelDefinitionExists", ctx, Tnt).Return(nil)
 				labelDefSvc.On("GetAvailableScenarios", ctx, Tnt).Return([]string{testFormationName}, nil)
 
 				return labelDefSvc
@@ -3484,24 +3414,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 		Version:    0,
 	}
 
-	applicationLblInputWithDefaultScenario := &model.LabelInput{
-		Key:        model.ScenariosKey,
-		Value:      []string{model.DefaultScenario},
-		ObjectID:   objectID,
-		ObjectType: model.ApplicationLabelableObject,
-		Version:    0,
-	}
-
-	applicationLblWithDefaultScenario := &model.Label{
-		ID:         "123",
-		Tenant:     str.Ptr(Tnt),
-		Key:        model.ScenariosKey,
-		Value:      []interface{}{testFormationName, model.DefaultScenario},
-		ObjectID:   objectID,
-		ObjectType: model.ApplicationLabelableObject,
-		Version:    0,
-	}
-
 	runtimeLblSingleFormation := &model.Label{
 		ID:         "123",
 		Tenant:     str.Ptr(Tnt),
@@ -3686,40 +3598,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			InputFormation:     in,
 			ExpectedFormation:  expected,
-			ExpectedErrMessage: "",
-		},
-		{
-			Name: "success for application when the formation is default",
-			LabelServiceFn: func() *automock.LabelService {
-				labelService := &automock.LabelService{}
-				labelService.On("GetLabel", ctx, Tnt, applicationLblInputWithDefaultScenario).Return(applicationLblWithDefaultScenario, nil)
-				labelService.On("UpdateLabel", ctx, Tnt, applicationLbl.ID, &model.LabelInput{
-					Key:        model.ScenariosKey,
-					Value:      []string{testFormationName},
-					ObjectID:   objectID,
-					ObjectType: model.ApplicationLabelableObject,
-					Version:    0,
-				}).Return(nil)
-				return labelService
-			},
-			ApplicationRepoFN: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(&model.Application{}, nil)
-				return repo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListForObject", ctx, Tnt, model.ApplicationLabelableObject, objectID).Return(nil, nil)
-				return repo
-			},
-			WebhookRepoFN: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectTypeAndWebhookType", ctx, Tnt, model.WebhookTypeConfigurationChanged, model.RuntimeWebhookReference).Return(nil, nil)
-				return repo
-			},
-			ObjectType:         graphql.FormationObjectTypeApplication,
-			InputFormation:     defaultFormation,
-			ExpectedFormation:  &defaultFormation,
 			ExpectedErrMessage: "",
 		},
 		{
@@ -6968,29 +6846,9 @@ func TestService_CreateAutomaticScenarioAssignment(t *testing.T) {
 			ExpectedErrMessage:            "while persisting Assignment: some error",
 		},
 		{
-			Name: "returns error on ensuring that scenarios label definition exist",
-			LabelDefServiceFn: func() *automock.LabelDefService {
-				labelDefSvc := &automock.LabelDefService{}
-				labelDefSvc.On("EnsureScenariosLabelDefinitionExists", mock.Anything, mock.Anything).Return(fixError()).Once()
-				return labelDefSvc
-			},
-			AsaRepoFn:                     unusedASARepo,
-			RuntimeRepoFN:                 unusedRuntimeRepo,
-			RuntimeContextRepoFn:          unusedRuntimeContextRepo,
-			LabelServiceFn:                unusedLabelService,
-			FormationRepositoryFn:         unusedFormationRepo,
-			FormationTemplateRepositoryFn: unusedFormationTemplateRepo,
-			WebhookRepoFN:                 unusedWebhookRepository,
-			LabelRepoFN:                   unusedLabelRepo,
-			InputASA:                      fixModel(ScenarioName),
-			ExpectedASA:                   model.AutomaticScenarioAssignment{},
-			ExpectedErrMessage:            "while ensuring that `scenarios` label definition exist: some error",
-		},
-		{
 			Name: "returns error on getting available scenarios from label definition",
 			LabelDefServiceFn: func() *automock.LabelDefService {
 				labelDefSvc := &automock.LabelDefService{}
-				labelDefSvc.On("EnsureScenariosLabelDefinitionExists", mock.Anything, mock.Anything).Return(nil).Once()
 				labelDefSvc.On("GetAvailableScenarios", mock.Anything, tenantID.String()).Return(nil, fixError()).Once()
 				return labelDefSvc
 			},
