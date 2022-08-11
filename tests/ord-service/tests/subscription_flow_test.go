@@ -300,12 +300,18 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		runtimeInput := graphql.RuntimeRegisterInput{
 			Name:        "providerRuntime-with-user-context-header",
 			Description: ptr.String("providerRuntime-with-user-context-header-description"),
-			Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue, tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
+			Labels: graphql.Labels{
+				conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue,
+			},
 		}
 
 		runtime := fixtures.RegisterRuntimeFromInputWithoutTenant(stdT, ctx, directorCertSecuredClient, &runtimeInput)
 		defer fixtures.CleanupRuntimeWithoutTenant(stdT, ctx, directorCertSecuredClient, &runtime)
 		require.NotEmpty(stdT, runtime.ID)
+
+		regionLbl, ok := runtime.Labels[tenantfetcher.RegionKey].(string)
+		require.True(t, ok)
+		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, regionLbl)
 
 		// Register application
 		app, err := fixtures.RegisterApplication(stdT, ctx, certSecuredGraphQLClient, "testingApp", secondaryTenant)

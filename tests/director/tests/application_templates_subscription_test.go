@@ -335,7 +335,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertClientForAnotherRegion, getSrcAppReq, &actualAppPage)
 			require.Error(t, err)
 
-			expectedErrMsg := "failed to find application template in tenant"
+			expectedErrMsg := "insufficient scopes provided" // at least for now this is the error message that gets propagated back when regions mismatch
 			require.Contains(t, err.Error(), expectedErrMsg)
 
 			// Create Bundle
