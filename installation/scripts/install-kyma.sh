@@ -63,10 +63,13 @@ yq -i ".istio.helmValues.pilot.jwksResolverExtraRootCA = \"$CERT\"" "${MINIMAL_O
 yq -i ".ory.oathkeeper.oathkeeper.config.authenticators.jwt.config.jwks_urls |= . + [\"$JWKS_URL\"]" "${MINIMAL_OVERRIDES_TEMP}"
 
 if [[ $(uname -m) == 'arm64' ]]; then
-  yq -i ".istio.global.containerRegistry.path = \"europe-west1-docker.pkg.dev\"" "${MINIMAL_OVERRIDES_TEMP}"
-  yq -i ".istio.global.images.istio.directory = \"sap-cp-cmp-dev\"" "${MINIMAL_OVERRIDES_TEMP}"
-  yq -i ".istio.global.images.istio.name = \"ucl-dev\"" "${MINIMAL_OVERRIDES_TEMP}"
-  yq -i ".istio.global.images.istio.version = \"1.11.4-distroless\"" "${MINIMAL_OVERRIDES_TEMP}"
+  yq -i ".istio.global.images.istio_proxyv2.containerRegistryPath = \"europe-west1-docker.pkg.dev\"" "${MINIMAL_OVERRIDES_TEMP}"
+  yq -i ".istio.global.images.istio_proxyv2.directory = \"sap-cp-cmp-dev/ucl-dev\"" "${MINIMAL_OVERRIDES_TEMP}"
+  yq -i ".istio.global.images.istio_proxyv2.version = \"1.12.3-distroless\"" "${MINIMAL_OVERRIDES_TEMP}"
+
+  yq -i ".istio.global.images.istio_pilot.containerRegistryPath = \"europe-west1-docker.pkg.dev\"" "${MINIMAL_OVERRIDES_TEMP}"
+  yq -i ".istio.global.images.istio_pilot.directory = \"sap-cp-cmp-dev/ucl-dev\"" "${MINIMAL_OVERRIDES_TEMP}"
+  yq -i ".istio.global.images.istio_pilot.version = \"1.12.3-distroless\"" "${MINIMAL_OVERRIDES_TEMP}"
 fi
 
 KYMA_COMPONENTS_FULL="${ROOT_PATH}"/installation/resources/kyma/kyma-components-full.yaml
@@ -79,10 +82,13 @@ yq -i ".istio.helmValues.pilot.jwksResolverExtraRootCA = \"$CERT\"" "${FULL_OVER
 yq -i ".ory.oathkeeper.oathkeeper.config.authenticators.jwt.config.jwks_urls |= . + [\"$JWKS_URL\"]" "${FULL_OVERRIDES_TEMP}"
 
 if [[ $(uname -m) == 'arm64' ]]; then
-  yq -i ".istio.global.containerRegistry.path = \"europe-west1-docker.pkg.dev\"" "${FULL_OVERRIDES_TEMP}"
-  yq -i ".istio.global.images.istio.directory = \"sap-cp-cmp-dev\"" "${FULL_OVERRIDES_TEMP}"
-  yq -i ".istio.global.images.istio.name = \"ucl-dev\"" "${FULL_OVERRIDES_TEMP}"
-  yq -i ".istio.global.images.istio.version = \"1.11.4-distroless\"" "${FULL_OVERRIDES_TEMP}"
+  yq -i ".istio.global.images.istio_proxyv2.containerRegistryPath = \"europe-west1-docker.pkg.dev\"" "${FULL_OVERRIDES_TEMP}"
+  yq -i ".istio.global.images.istio_proxyv2.directory = \"sap-cp-cmp-dev/ucl-dev\"" "${FULL_OVERRIDES_TEMP}"
+  yq -i ".istio.global.images.istio_proxyv2.version = \"1.12.3-distroless\"" "${FULL_OVERRIDES_TEMP}"
+
+  yq -i ".istio.global.images.istio_pilot.containerRegistryPath = \"europe-west1-docker.pkg.dev\"" "${FULL_OVERRIDES_TEMP}"
+  yq -i ".istio.global.images.istio_pilot.directory = \"sap-cp-cmp-dev/ucl-dev\"" "${FULL_OVERRIDES_TEMP}"
+  yq -i ".istio.global.images.istio_pilot.version = \"1.12.3-distroless\"" "${FULL_OVERRIDES_TEMP}"
 fi
 
 trap "rm -f ${MINIMAL_OVERRIDES_TEMP} ${FULL_OVERRIDES_TEMP}" EXIT INT TERM
