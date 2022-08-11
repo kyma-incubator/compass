@@ -1093,6 +1093,30 @@ func TestFormationNotifications(stdT *testing.T) {
 	})
 }
 
+func TestFormationApplicationTypeWhileAssigning(t *testing.T) {
+	ctx := context.TODO()
+
+	formationName := "test-formation"
+	applicationName := "test-application"
+	invalidApplicationType := "Not in the template"
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	formation := fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, formationName)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formation.Name)
+
+	actualApplication, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, applicationName, conf.ApplicationTypeLabelKey, invalidApplicationType, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &actualApplication)
+	require.Equal(t, invalidApplicationType, actualApplication.Labels[conf.ApplicationTypeLabelKey])
+
+	createRequest := fixtures.FixAssignFormationRequest(actualApplication.ID, string(graphql.FormationObjectTypeApplication), formationName)
+	formationResultFormation := graphql.Formation{}
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createRequest, &formationResultFormation)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApplication.ID, graphql.FormationObjectTypeRuntime, tenantId)
+	require.Empty(t, formationResultFormation)
+	require.EqualError(t, err, "graphql: The operation is not allowed [reason=unsupported applicationType \"Not in the template\" for formation template \"Side-by-side extensibility with Kyma\", allowing only [\"SAP Cloud for Customer\" \"SAP Commerce Cloud\" \"SAP Field Service Management\" \"SAP Marketing Cloud\"]]")
+}
+
 func assertNotificationsCountForTenant(t *testing.T, body []byte, tenant string, count int) {
 	notificationsForConsumerTenant := gjson.GetBytes(body, tenant)
 	require.True(t, notificationsForConsumerTenant.Exists())
