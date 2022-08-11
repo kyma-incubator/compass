@@ -1,6 +1,6 @@
 APP_NAME = compass-connectivity-adapter
 APP_PATH = components/connectivity-adapter
-COMPONENT_BUILD_TIMEOUT = 10m
+COMPONENT_BUILD_TIMEOUT = 15m
 ENTRYPOINT = cmd/main.go
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
