@@ -56,6 +56,13 @@ ifneq (,$(shell go version 2>/dev/null))
 DOCKER_CREATE_OPTS := -v $(shell go env GOCACHE):$(IMG_GOCACHE):delegated -v $(shell go env GOPATH)/pkg/dep:$(IMG_GOPATH)/pkg/dep:delegated $(DOCKER_CREATE_OPTS)
 endif
 
+# BUILD_TIMEOUT is a timeout for build job, to fail fast in case of build stuck
+ifneq ($(strip $(COMPONENT_BUILD_TIMEOUT)),)
+BUILD_TIMEOUT := $(COMPONENT_BUILD_TIMEOUT)
+else
+BUILD_TIMEOUT = 6m
+endif
+
 .DEFAULT_GOAL := verify
 
 # Check if running with TTY
@@ -101,7 +108,7 @@ release: verify build-image
 build-image: pull-licenses
 	docker run --rm --privileged linuxkit/binfmt:v0.8 # https://stackoverflow.com/questions/70066249/docker-random-alpine-packages-fail-to-install
 	docker buildx create --name multi-arch-builder --use
-	( sleep 12m && docker buildx rm multi-arch-builder ) & docker buildx build --platform linux/amd64,linux/arm64 -t $(IMG_NAME):$(TAG) --push . 
+	( sleep $(BUILD_TIMEOUT) && docker buildx rm multi-arch-builder ) & docker buildx build --platform linux/amd64,linux/arm64 -t $(IMG_NAME):$(TAG) --push . 
 docker-create-opts:
 	@echo $(DOCKER_CREATE_OPTS)
 
