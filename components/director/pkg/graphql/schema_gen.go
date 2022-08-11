@@ -581,6 +581,7 @@ type ComplexityRoot struct {
 		Labels      func(childComplexity int, key *string) int
 		Name        func(childComplexity int) int
 		ParentID    func(childComplexity int) int
+		Provider    func(childComplexity int) int
 		Type        func(childComplexity int) int
 	}
 
@@ -3901,6 +3902,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tenant.ParentID(childComplexity), true
 
+	case "Tenant.provider":
+		if e.complexity.Tenant.Provider == nil {
+			break
+		}
+
+		return e.complexity.Tenant.Provider(childComplexity), true
+
 	case "Tenant.type":
 		if e.complexity.Tenant.Type == nil {
 			break
@@ -5360,6 +5368,7 @@ type Tenant {
 	parentID: ID
 	initialized: Boolean
 	labels(key: String): Labels
+	provider: String!
 }
 
 type TenantPage implements Pageable {
@@ -24102,6 +24111,40 @@ func (ec *executionContext) _Tenant_labels(ctx context.Context, field graphql.Co
 	return ec.marshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Tenant_provider(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Tenant",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Provider, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _TenantPage_data(ctx context.Context, field graphql.CollectedField, obj *TenantPage) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -30860,6 +30903,11 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 				res = ec._Tenant_labels(ctx, field, obj)
 				return res
 			})
+		case "provider":
+			out.Values[i] = ec._Tenant_provider(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

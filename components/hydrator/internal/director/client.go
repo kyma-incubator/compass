@@ -2,7 +2,10 @@ package director
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 
 	authConv "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/model"
@@ -23,12 +26,14 @@ type Client interface {
 	UpdateSystemAuth(ctx context.Context, sysAuth *model.SystemAuth) (UpdateAuthResult, error)
 	InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) error
 	GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (*schema.Runtime, error)
+	WriteTenants(ctx context.Context, tenants []schema.BusinessTenantMappingInput) error
 }
 
 type Config struct {
-	URL               string        `envconfig:"default=http://127.0.0.1:3000/graphql"`
-	ClientTimeout     time.Duration `envconfig:"default=115s"`
-	SkipSSLValidation bool          `envconfig:"default=false"`
+	InternalURL        string        `envconfig:"default=http://127.0.0.1:3000/graphql"`
+	InternalGatewayURL string        `envconfig:"default=http://127.0.0.1:3000/graphql"`
+	ClientTimeout      time.Duration `envconfig:"default=115s"`
+	SkipSSLValidation  bool          `envconfig:"default=false"`
 }
 
 type client struct {
@@ -62,6 +67,7 @@ type RuntimeResponse struct {
 type UpdateAuthResult struct {
 	ID string `json:"id"`
 }
+
 type UpdateSystemAuthResponse struct {
 	Result UpdateAuthResult `json:"result"`
 }
@@ -177,6 +183,21 @@ func (c *client) GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (*s
 	}
 
 	return response.Result, nil
+}
+
+func (c *client) WriteTenants(ctx context.Context, tenants []schema.BusinessTenantMappingInput) error {
+	gqlizer := graphqlizer.Graphqlizer{}
+	in, err := gqlizer.WriteTenantsInputToGQL(tenants)
+	if err != nil {
+		return errors.Wrap(err, "while creating tenants input")
+	}
+
+	tenantsQuery := fmt.Sprintf("mutation { writeTenants(in:[%s])}", in)
+	if err := c.execute(ctx, c.gqlClient, tenantsQuery, nil); err != nil {
+		return errors.Wrap(err, "while executing GQL query")
+	}
+
+	return nil
 }
 
 func (c *client) execute(ctx context.Context, client *graphql.Client, query string, res interface{}) error {
