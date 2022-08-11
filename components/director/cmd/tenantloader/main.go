@@ -18,7 +18,7 @@ import (
 type jobConfig struct {
 	Database            persistence.DatabaseConfig
 	Log                 log.Config
-	DefaultTenantRegion string
+	DefaultTenantRegion string `envconfig:"APP_DEFAULT_TENANT_REGION,default=eu-1"`
 }
 
 func main() {
