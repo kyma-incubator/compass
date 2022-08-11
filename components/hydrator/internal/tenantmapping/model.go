@@ -52,7 +52,7 @@ type KeysExtra struct {
 }
 
 // NewObjectContext missing godoc
-func NewObjectContext(tenantCtx TenantContext, keysExtra KeysExtra, scopes string, scopesMergeStrategy scopesMergeStrategy, region string, clientID string, consumerID string, authFlow oathkeeper.AuthFlow, consumerType consumer.ConsumerType, contextProvider string) ObjectContext {
+func NewObjectContext(tenantCtx TenantContext, keysExtra KeysExtra, scopes string, scopesMergeStrategy scopesMergeStrategy, region, clientID, consumerID string, authFlow oathkeeper.AuthFlow, consumerType consumer.ConsumerType, contextProvider string) ObjectContext {
 	return ObjectContext{
 		TenantContext:       tenantCtx,
 		KeysExtra:           keysExtra,
