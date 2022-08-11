@@ -39,10 +39,14 @@ spec:
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
+      volumes:
+      - name: credentials-secret
+        secret:
+          secretName: {{ .Values.global.tenantFetcher.k8sSecret.name }}
       containers:
         - name: {{ .Chart.Name }}
-          image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
-          imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
+          image: k3d-kyma-registry:5001/compass-director:latest
+          imagePullPolicy: Always
           command:
             - "/bin/sh"
           args:
@@ -175,7 +179,7 @@ spec:
             - name: APP_{{ $tenantFetcherJobName }}_SECRET_TOKEN_PATH
               value: {{ $config.authConfig.tokenURLPath }}
             - name: APP_{{ $tenantFetcherJobName }}_SECRET_OAUTH_SKIP_SSL_VALIDATION
-              value: {{ $config.authConfig.skipSSLValidation }}
+              value: {{ $config.authConfig.skipSSLValidation | quote }}
             - name: APP_{{ $tenantFetcherJobName }}_API_AUTH_MODE
               value: {{ $config.authConfig.oauthMode }}
             # API Config
@@ -229,6 +233,8 @@ spec:
             # Regional APIs config
             {{- range $region, $regionCfg := $config.regionalConfig }}
             {{- $regionNameEnv := $region | upper }}
+            - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_AUTH_CONFIG_SECRET_KEY
+              value: {{ $regionCfg.api.authConfigSecretKey }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_REGION_NAME
               value: {{ $region }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_AUTH_MODE
@@ -333,6 +339,10 @@ spec:
             initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
             timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}
+          volumeMounts:
+            - name: credentials-secret
+              mountPath: {{ .Values.global.tenantFetcher.k8sSecret.path }}
+              readOnly: true
         {{- if eq .Values.global.database.embedded.enabled false }}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine

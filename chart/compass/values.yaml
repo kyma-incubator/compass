@@ -512,7 +512,12 @@ global:
       scopes: "openid profile email"
       path: "/oauth2/certs"
   tenantFetcher:
-    manageSecrets: true
+    k8sSecret:
+      manageSecrets: true
+      name: "tenant-fetcher-secret"
+      namespace: "compass-system"
+      key: "keyConfig"
+      path: "/tmp"
     host: compass-tenant-fetcher.compass-system.svc.cluster.local
     prefix: /tenants
     port: 3000
@@ -664,17 +669,12 @@ global:
       authConfig:
         skipSSLValidation: true
         oauthMode: "oauth-mtls"
-        k8sSecretName: "job1-secret"
         clientIDPath: "clientid"
         clientSecretPath: "secret"
         clientCertPath: "cert"
         clientKeyPath: "key"
         tokenEndpointPath: "url"
-        tokenURLPath: "/oauth/token"
-        secret:
-          name: "tf-credentials"
-          key: "keyConfig"
-          path: "/tmp"
+        tokenURLPath: "/cert/token"
       queryMapping:
         regionField: "region"
         pageNumField: "pageNum"
@@ -684,7 +684,7 @@ global:
         startPage: "0"
         pageSize: "100"
       api:
-        authConfigSecretKey: "job1"
+        authConfigSecretKey: "central"
         fieldMapping:
           totalPagesField: "totalPages"
           totalResultsField: "totalResults"
@@ -713,8 +713,7 @@ global:
         eu-east:
           api:
             oauthMode: "oauth-mtls"
-            authConfigSecretKey: "eu-east"
-            skipSSLValidation: true
+            authConfigSecretKey: "central"
             fieldMapping:
               totalPagesField: "totalPages"
               totalResultsField: "totalResults"

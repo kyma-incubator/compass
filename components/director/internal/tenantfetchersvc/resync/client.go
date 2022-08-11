@@ -38,7 +38,7 @@ type OAuth2Config struct {
 type AuthProviderConfig struct {
 	AuthMappingConfig
 
-	SecretFilePath    string `envconfig:"FILE_PATH" required:"true"`
+	SecretFilePath    string `envconfig:"FILE_PATH" default:"/tmp/keyConfig"`
 	TokenPath         string `envconfig:"TOKEN_PATH" required:"true"`
 	SkipSSLValidation bool   `envconfig:"OAUTH_SKIP_SSL_VALIDATION" default:"false"`
 }
@@ -108,10 +108,7 @@ type APIEndpointsConfig struct {
 }
 
 func (c APIEndpointsConfig) isUnassignedOptionalProperty(eventsType EventsType) bool {
-	if eventsType == MovedSubaccountType && len(c.EndpointSubaccountMoved) == 0 {
-		return true
-	}
-	return false
+	return eventsType == MovedSubaccountType && len(c.EndpointSubaccountMoved) == 0
 }
 
 // MetricsPusher missing godoc
@@ -132,9 +129,9 @@ type Client struct {
 }
 
 type ClientConfig struct {
-	TenantProvider string
-	APIConfig      APIEndpointsConfig
-	FieldMapping   TenantFieldMapping
+	TenantProvider      string
+	APIConfig           APIEndpointsConfig
+	FieldMapping        TenantFieldMapping
 	MovedSAFieldMapping MovedSubaccountsFieldMapping
 }
 
@@ -164,7 +161,7 @@ func NewClient(oAuth2Config OAuth2Config, authMode oauth.AuthMode, clientConfig 
 		transport := &http.Transport{
 			TLSClientConfig: &tls.Config{
 				Certificates:       []tls.Certificate{*cert},
-				InsecureSkipVerify: oAuth2Config.SkipSSLValidation,
+				InsecureSkipVerify: true,
 			},
 		}
 

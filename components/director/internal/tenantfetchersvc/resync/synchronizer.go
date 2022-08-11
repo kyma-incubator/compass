@@ -103,8 +103,8 @@ func (ts *TenantsSynchronizer) ResyncInterval() time.Duration {
 }
 
 func (ts *TenantsSynchronizer) Synchronize(ctx context.Context) error {
-	err := ts.synchronizeTenants(ctx)
-	if err != nil {
+	var err error
+	if err = ts.synchronizeTenants(ctx); err != nil {
 		ts.metricsReporter.ReportFailedSync(ctx, err)
 	}
 	return err
@@ -116,13 +116,8 @@ func (ts *TenantsSynchronizer) synchronizeTenants(ctx context.Context) error {
 		return err
 	}
 
-	for _, supportedRegion := range ts.supportedRegions {
-		var region string
-		if supportedRegion == centralRegion {
-			region = ""
-		}
-
-		log.C(ctx).Printf("Processing new events for region: %s...", supportedRegion)
+	for _, region := range ts.supportedRegions {
+		log.C(ctx).Printf("Processing new events for region: %s...", region)
 		tenantsToCreate, err := ts.creator.TenantsToCreate(ctx, region, lastConsumedTenantTimestamp)
 		if err != nil {
 			return err
@@ -176,7 +171,7 @@ func (ts *TenantsSynchronizer) synchronizeTenants(ctx context.Context) error {
 			}
 		}
 
-		log.C(ctx).Printf("Processed all new events for region: %s", supportedRegion)
+		log.C(ctx).Printf("Processed all new events for region: %s", region)
 	}
 
 	return ts.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixMilliSecondString(*startTime), lastResyncTimestamp)

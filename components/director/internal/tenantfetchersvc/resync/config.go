@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/pkg/errors"
@@ -47,8 +48,8 @@ type EventsConfig struct {
 	RegionalAuthConfigSecret AuthProviderConfig            `envconfig:"SECRET"`
 	RegionalAPIConfigs       map[string]*RegionalAPIConfig `ignored:"true"`
 	APIConfig                EventsAPIConfig               `envconfig:"API"`
-	TenantOperationChunkSize int                                 `envconfig:"TENANT_INSERT_CHUNK_SIZE" default:"500"`
-	RetryAttempts            uint                                `envconfig:"RETRY_ATTEMPTS" default:"7"`
+	TenantOperationChunkSize int                           `envconfig:"TENANT_INSERT_CHUNK_SIZE" default:"500"`
+	RetryAttempts            uint                          `envconfig:"RETRY_ATTEMPTS" default:"7"`
 }
 
 func (ec EventsConfig) Validate(tenantType tenant.Type) error {
@@ -70,7 +71,7 @@ type EventsAPIConfig struct {
 	TenantFieldMapping
 	MovedSubaccountsFieldMapping
 
-	AuthConfigSecretKey string         `envconfig:"AUTH_CONFIG_SECRET_KEY"`
+	AuthConfigSecretKey string         `envconfig:"AUTH_CONFIG_SECRET_KEY" required:"true"`
 	AuthMode            oauth.AuthMode `envconfig:"AUTH_MODE" required:"true"`
 	ClientTimeout       time.Duration  `envconfig:"TIMEOUT" default:"1m"`
 	OAuthConfig         OAuth2Config   `ignored:"true"`
@@ -131,10 +132,15 @@ func NewTenantFetcherJobEnvironment(ctx context.Context, name string, environmen
 }
 
 func (jc *JobConfig) Validate() error {
-	switch {
-	case len(jc.JobName) == 0:
-		return errors.New("")
+	if err := jc.APIConfig.Validate(jc.TenantType); err != nil {
+		return err
 	}
+	for region, config := range jc.RegionalAPIConfigs {
+		if err := config.Validate(jc.TenantType); err != nil {
+			return errors.Wrapf(err, "while validating API config for region %s", region)
+		}
+	}
+
 	return nil
 }
 
@@ -162,16 +168,18 @@ func (j *job) ReadJobConfig() (*JobConfig, error) {
 
 	clientCfg, ok := authConfigs[jc.APIConfig.AuthConfigSecretKey]
 	if !ok {
-		return nil, errors.New("auth config not found for Events API")
+		return nil, fmt.Errorf("auth config not found for Events API: secret file does not contain key %s", jc.APIConfig.AuthConfigSecretKey)
 	}
 
 	jc.APIConfig.OAuthConfig = clientCfg
 
-	for key, authCfg := range authConfigs {
+	for region, regionalCfg := range regionalCfg {
 		// assuming that config keys will match the regions of additional API clients
-		if cfg, ok := regionalCfg[key]; ok {
-			cfg.OAuthConfig = authCfg
+		authCfg, ok := authConfigs[regionalCfg.AuthConfigSecretKey]
+		if !ok {
+			return nil, fmt.Errorf("auth config not found for Events API for region %s: secret file does not contain key %s", region, regionalCfg.AuthConfigSecretKey)
 		}
+		regionalCfg.OAuthConfig = authCfg
 	}
 
 	jc.RegionalAPIConfigs = regionalCfg
@@ -205,7 +213,7 @@ func (j *job) mapClientsAuthConfigs(jc JobConfig) (map[string]OAuth2Config, erro
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting job secret")
 	}
-
+	log.D().Infof("SECRET IS: %v", secretData)
 	if ok := gjson.Valid(secretData); !ok {
 		return nil, errors.New("failed to validate instance configs")
 	}
@@ -224,6 +232,7 @@ func (j *job) mapClientsAuthConfigs(jc JobConfig) (map[string]OAuth2Config, erro
 				Cert: gjson.Get(config.String(), authConfig.CertPath).String(),
 				Key:  gjson.Get(config.String(), authConfig.KeyPath).String(),
 			},
+			SkipSSLValidation: true, //TODO
 		}
 
 		clientsAuthConfig[secretKey] = i

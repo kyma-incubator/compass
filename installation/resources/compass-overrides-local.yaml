@@ -63,17 +63,10 @@ global:
       client:
         skipSSLValidation: true
   tenantFetcher:
-    fieldMapping:
-      idField: "guid"
-      nameField: "displayName"
-      customerIdField: "customerId"
-      discriminatorField: ""
-      discriminatorValue: ""
-      totalPagesField: "totalPages"
-      totalResultsField: "totalResults"
-      tenantEventsField: "events"
-      detailsField: "eventData"
-      entityTypeField: "type"
+    k8sSecret:
+      name: "tenant-fetcher-secret"
+      key: "keyConfig"
+      path: "/tmp"
     endpoints:
       subaccountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-create"
   systemFetcher:
@@ -90,7 +83,7 @@ global:
         enabled: false
       job:
         interval: "10s"
-      tenantType: " account"
+      tenantType: "account"
       dbPool:
         maxIdleConnections: "1"
         maxOpenConnections: "1"
@@ -98,14 +91,14 @@ global:
       authConfig:
         skipSSLValidation: true
         oauthMode: "oauth-mtls"
-        k8sSecretName: "account-fetcher-secret"
         clientIDPath: "clientid"
         clientSecretPath: "secret"
         clientCertPath: "cert"
         clientKeyPath: "key"
         tokenEndpointPath: "url"
-        tokenURLPath: "/secured/oauth/token"
+        tokenURLPath: "/cert/token"
       api:
+        authConfigSecretKey: "central"
         endpoints:
           accountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/global-account-create"
           accountDeleted: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/global-account-delete"
@@ -147,6 +140,7 @@ global:
         maxOpenConnections: "1"
       enabled: true
       api:
+        authConfigSecretKey: "central"
         endpoints:
           subaccountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-create"
           subaccountDeleted: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-delete"
@@ -181,13 +175,12 @@ global:
       authConfig:
         skipSSLValidation: true
         oauthMode: "oauth-mtls"
-        k8sSecretName: "subaccount-fetcher-secret"
         clientIDPath: "clientid"
         clientSecretPath: "secret"
         clientCertPath: "cert"
         clientKeyPath: "key"
         tokenEndpointPath: "url"
-        tokenURLPath: "/secured/oauth/token"
+        tokenURLPath: "/cert/token"
   tests:
     basicCredentials:
       manage: true

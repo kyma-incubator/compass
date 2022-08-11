@@ -59,12 +59,18 @@ func (k *noopKubernetesClient) UpdateTenantFetcherConfigMapData(_ context.Contex
 type KubeConfig struct {
 	UseKubernetes string `envconfig:"USE_KUBERNETES"`
 
-	ConfigMapNamespace            string `envconfig:"optional,default=compass-system,CONFIGMAP_NAMESPACE"`
-	ConfigMapName                 string `envconfig:"optional,default=tenant-fetcher-config,LAST_EXECUTION_TIME_CONFIG_MAP_NAME"`
-	ConfigMapTimestampField       string `envconfig:"optional,default=lastConsumedTenantTimestamp,CONFIGMAP_TIMESTAMP_FIELD"`
-	ConfigMapResyncTimestampField string `envconfig:"optional,default=lastFullResyncTimestamp,CONFIGMAP_RESYNC_TIMESTAMP_FIELD"`
+	ConfigMapNamespace            string `envconfig:"CONFIGMAP_NAMESPACE" default:"compass-system"`
+	ConfigMapName                 string `envconfig:"LAST_EXECUTION_TIME_CONFIG_MAP_NAME" default:"tenant-fetcher-config"`
+	ConfigMapTimestampField       string `envconfig:"CONFIGMAP_TIMESTAMP_FIELD" default:"lastConsumedTenantTimestamp"`
+	ConfigMapResyncTimestampField string `envconfig:"CONFIGMAP_RESYNC_TIMESTAMP_FIELD" default:"lastFullResyncTimestamp"`
 
-	ClientConfig kube.Config
+	ClientConfig Config
+}
+
+type Config struct {
+	PollInterval time.Duration `envconfig:"APP_KUBERNETES_POLL_INTERVAL" default:"2s"`
+	PollTimeout  time.Duration `envconfig:"APP_KUBERNETES_POLL_TIMEOUT" default:"1m"`
+	Timeout      time.Duration `envconfig:"APP_KUBERNETES_TIMEOUT" default:"2m"`
 }
 
 type kubernetesClient struct {
