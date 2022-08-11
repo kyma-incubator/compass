@@ -345,7 +345,7 @@ func (s *service) assign(ctx context.Context, tnt, objectID string, objectType g
 	// TODO Remove default scenario check after removing default scenario
 	if formation.Name != model.DefaultScenario && objectType == graphql.FormationObjectTypeApplication {
 		if err = s.isValidApplicationType(ctx, tnt, objectID, formationFromDB); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while validating application type for application %q", objectID)
 		}
 	}
 
@@ -1251,18 +1251,16 @@ func (s *service) isValidApplicationType(ctx context.Context, tnt string, applic
 	if err != nil {
 		return errors.Wrapf(err, "while getting formation template with ID %q", formation.FormationTemplateID)
 	}
-	runtimeTypeLabel, err := s.labelService.GetLabel(ctx, tnt, &model.LabelInput{
+	applicationTypeLabel, err := s.labelService.GetLabel(ctx, tnt, &model.LabelInput{
 		Key:        s.applicationTypeLabelKey,
-		Value:      nil,
 		ObjectID:   applicationID,
 		ObjectType: model.ApplicationLabelableObject,
-		Version:    0,
 	})
 	if err != nil {
 		return errors.Wrapf(err, "while getting label %q for application with ID %q", s.applicationTypeLabelKey, applicationID)
 	}
 
-	if applicationType, ok := runtimeTypeLabel.Value.(string); !ok {
+	if applicationType, ok := applicationTypeLabel.Value.(string); !ok {
 		return apperrors.NewInvalidOperationError(fmt.Sprintf("missing applicationType for formation template %q, allowing only %q", formationTemplate.Name, formationTemplate.ApplicationTypes))
 	} else {
 		isAllowed := false
