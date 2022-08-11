@@ -554,7 +554,7 @@ func TestORDAggregator(stdT *testing.T) {
 		require.Contains(t, selfRegLabelValue, testConfig.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTemplate.ID)
 
 		httpClient := &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: time.Minute,
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: testConfig.SkipSSLValidation},
 			},
