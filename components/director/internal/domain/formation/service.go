@@ -323,10 +323,8 @@ func (s *service) isValidRuntimeType(ctx context.Context, tnt string, runtimeID 
 	}
 	runtimeTypeLabel, err := s.labelService.GetLabel(ctx, tnt, &model.LabelInput{
 		Key:        s.runtimeTypeLabelKey,
-		Value:      nil,
 		ObjectID:   runtimeID,
 		ObjectType: model.RuntimeLabelableObject,
-		Version:    0,
 	})
 	if err != nil {
 		return errors.Wrapf(err, "while getting label %q for runtime with ID %q", s.runtimeTypeLabelKey, runtimeID)
@@ -365,9 +363,8 @@ func (s *service) assign(ctx context.Context, tnt, objectID string, objectType g
 		return nil, errors.Wrapf(err, "while getting formation %q", formation.Name)
 	}
 	if formation.Name != model.DefaultScenario && objectType == graphql.FormationObjectTypeRuntime {
-		err := s.isValidRuntimeType(ctx, tnt, objectID, formationFromDB)
-		if err != nil {
-			return nil, err
+		if err = s.isValidRuntimeType(ctx, tnt, objectID, formationFromDB); err != nil {
+			return nil, errors.Wrapf(err, "while validating runtime type")
 		}
 	}
 	if formation.Name != model.DefaultScenario && objectType == graphql.FormationObjectTypeRuntimeContext {
@@ -375,9 +372,8 @@ func (s *service) assign(ctx context.Context, tnt, objectID string, objectType g
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting runtime context")
 		}
-		err = s.isValidRuntimeType(ctx, tnt, runtimeCtx.RuntimeID, formationFromDB)
-		if err != nil {
-			return nil, err
+		if err = s.isValidRuntimeType(ctx, tnt, runtimeCtx.RuntimeID, formationFromDB); err != nil {
+			return nil, errors.Wrapf(err, "while validating runtime type of runtime")
 		}
 	}
 
