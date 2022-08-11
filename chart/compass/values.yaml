@@ -544,7 +544,7 @@ global:
       tenantPathParam: "tenantId"
       regionPathParam: "region"
     dependenciesConfig:
-      configMapName: "destination-region-instances"
+      secretName: "destination-region-instances"
       file: "keyConfig"
       path: "/cfg/dependencies"
     containerName: "tenant-fetcher"
