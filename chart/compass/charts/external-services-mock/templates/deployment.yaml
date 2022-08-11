@@ -134,6 +134,10 @@ spec:
                 value: {{ .Values.global.tests.subscription.subscriptionProviderAppNameValue }}
               - name: APP_TENANT_CONFIG_TEST_TENANT_ON_DEMAND_ID
                 value: {{ .Values.global.tests.tenantFetcher.tenantOnDemandID }}
+              - name: APP_TENANT_CONFIG_CONSUMER_CLAIMS_TENANT_ID_KEY
+                value: {{ .Values.global.hydrator.consumerClaimsKeys.tenantIDKey }}
+              - name: APP_TENANT_CONFIG_CONSUMER_CLAIMS_SUBDOMAIN_KEY
+                value: {{ .Values.global.hydrator.consumerClaimsKeys.subdomainKey }}
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}
