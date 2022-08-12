@@ -280,9 +280,11 @@ func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqD
 		c = getCertServiceObjectContextProviderConsumer(objectContexts)
 		c.OnBehalfOf = getOnBehalfConsumer(objectContexts)
 
-		for _, objCtx := range objectContexts {
-			if objCtx.TenantID != "" && objCtx.Region != region {
-				return errors.Errorf("mismatched region for consumer ID %s: actual %s, expected: %s)", objCtx.ConsumerID, objCtx.Region, region)
+		if c.OnBehalfOf != "" { // i.e. make sure that regions match only during consumer-provider flow
+			for _, objCtx := range objectContexts {
+				if objCtx.TenantID != "" && objCtx.Region != region {
+					return errors.Errorf("mismatched region for consumer ID %s: actual %s, expected: %s)", objCtx.ConsumerID, objCtx.Region, region)
+				}
 			}
 		}
 	}
