@@ -1,6 +1,7 @@
 global:
   disableLegacyConnectivity: true
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
+  defaultTenantRegion: "eu-1"
   tenants: # tenant order matters, so new tenants should be added to the end of the list
     - name: default
       id: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
@@ -67,6 +68,7 @@ global:
     - name: TestProviderSubaccountRegion2
       id: 731b7bc4-5472-41d2-a447-e4c0f45de739
       type: subaccount
+      region: "eu-2"
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
     - name: TestCertificateSubaccount
       id: 123e4567-e89b-12d3-a456-426614174001
@@ -121,7 +123,7 @@ global:
       version: "PR-2527"
     hydrator:
       dir:
-      version: "PR-2521"
+      version: "PR-2484"
     gateway:
       dir:
       version: "PR-2501"

@@ -15,7 +15,6 @@ import (
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/kyma-incubator/compass/tests/pkg/token"
@@ -916,7 +915,6 @@ func createAppTemplateName(name string) string {
 func fixAppTemplateInput(name, webhookURL string) directorSchema.ApplicationTemplateInput {
 	input := fixtures.FixApplicationTemplateWithORDWebhook(name, webhookURL)
 	input.Labels[testConfig.SubscriptionConfig.SelfRegDistinguishLabelKey] = testConfig.SubscriptionConfig.SelfRegDistinguishLabelValue
-	input.Labels[tenantfetcher.RegionKey] = testConfig.SubscriptionConfig.SelfRegRegion
 
 	return input
 }

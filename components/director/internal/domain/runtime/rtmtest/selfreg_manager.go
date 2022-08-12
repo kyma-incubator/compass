@@ -51,6 +51,15 @@ func SelfRegManagerThatReturnsErrorOnPrep() *automock.SelfRegisterManager {
 	return srm
 }
 
+// SelfRegManagerThatReturnsErrorOnPrepAndGetSelfRegDistinguishingLabelKey missing godoc
+func SelfRegManagerThatReturnsErrorOnPrepAndGetSelfRegDistinguishingLabelKey() *automock.SelfRegisterManager {
+	srm := &automock.SelfRegisterManager{}
+	labels := make(map[string]interface{})
+	srm.On("PrepareForSelfRegistration", mock.Anything, resource.Runtime, mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(labels, errors.New(SelfRegErrorMsg)).Once()
+	srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel, nil).Once()
+	return srm
+}
+
 // SelfRegManagerThatDoesCleanupWithNoErrors missing godoc
 func SelfRegManagerThatDoesCleanupWithNoErrors() *automock.SelfRegisterManager {
 	srm := &automock.SelfRegisterManager{}

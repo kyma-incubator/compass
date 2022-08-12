@@ -224,7 +224,6 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 		},
 		Labels: directorSchema.Labels{
 			conf.SelfRegDistinguishLabelKey: []interface{}{conf.SelfRegDistinguishLabelValue},
-			tenantfetcher.RegionKey:         conf.SelfRegRegion,
 		},
 		AccessLevel: directorSchema.ApplicationTemplateAccessLevelGlobal,
 	}
@@ -245,6 +244,7 @@ func createAppTemplate(t *testing.T, ctx context.Context, defaultTestTenant, new
 	require.NotEmpty(t, appTemplateOutput)
 
 	appTemplateInput.Labels[conf.SelfRegLabelKey] = appTemplateOutput.Labels[conf.SelfRegLabelKey]
+	appTemplateInput.Labels[tenantfetcher.RegionKey] = appTemplateOutput.Labels[tenantfetcher.RegionKey]
 	appTemplateInput.Labels["global_subaccount_id"] = tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": templateName}
 	assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)

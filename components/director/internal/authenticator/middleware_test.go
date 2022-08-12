@@ -95,7 +95,7 @@ func TestAuthenticator_Handler(t *testing.T) {
 
 	t.Run("http client configured without redirects", func(t *testing.T) {
 		// WHEN
-		jwks, err := authenticator.FetchJWK(context.TODO(), "https://redirect.com/test", jwk.WithHTTPClient(httpClientWithoutRedirects))
+		jwks, err := authenticator.FetchJWK(context.TODO(), "https://httpstat.us/302", jwk.WithHTTPClient(httpClientWithoutRedirects))
 
 		// THEN
 		require.Nil(t, jwks)

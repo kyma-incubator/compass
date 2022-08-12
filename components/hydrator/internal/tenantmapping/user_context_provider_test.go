@@ -2,8 +2,12 @@ package tenantmapping_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/textproto"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 
@@ -29,6 +33,9 @@ func TestUserContextProvider(t *testing.T) {
 	expectedExternalTenantID := uuid.New()
 	expectedScopes := []string{"application:read", "application:write"}
 	userObjCtxType := "Static User"
+	labels := map[string]interface{}{
+		"region": "eu-1",
+	}
 
 	jwtAuthDetails := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow}
 
@@ -55,6 +62,7 @@ func TestUserContextProvider(t *testing.T) {
 		testTenant := &graphql.Tenant{
 			ID:         expectedExternalTenantID.String(),
 			InternalID: expectedTenantID.String(),
+			Labels:     labels,
 		}
 
 		directorClientMock := getDirectorClientMock()
@@ -92,6 +100,7 @@ func TestUserContextProvider(t *testing.T) {
 		testTenant := &graphql.Tenant{
 			ID:         expectedExternalTenantID.String(),
 			InternalID: expectedTenantID.String(),
+			Labels:     labels,
 		}
 
 		directorClientMock := getDirectorClientMock()
@@ -127,6 +136,7 @@ func TestUserContextProvider(t *testing.T) {
 		testTenant := &graphql.Tenant{
 			ID:         expectedExternalTenantID.String(),
 			InternalID: expectedTenantID.String(),
+			Labels:     labels,
 		}
 
 		directorClientMock := getDirectorClientMock()
@@ -177,6 +187,7 @@ func TestUserContextProvider(t *testing.T) {
 		testTenant := &graphql.Tenant{
 			ID:         expectedExternalTenantID.String(),
 			InternalID: expectedTenantID.String(),
+			Labels:     labels,
 		}
 
 		directorClientMock := getDirectorClientMock()
@@ -220,6 +231,68 @@ func TestUserContextProvider(t *testing.T) {
 
 		mock.AssertExpectationsForObjects(t, staticGroupRepoMock)
 	})
+
+	t.Run("returns empty tenant when tenant cannot be found", func(t *testing.T) {
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID.String(),
+					oathkeeper.GroupsKey:         []interface{}{groupName},
+				},
+			},
+		}
+
+		staticGroupRepoMock := getStaticGroupRepoMock()
+		staticGroupRepoMock.On("Get", mock.Anything, []string{groupName}).Return(staticGroups, nil).Once()
+
+		directorClientMock := getDirectorClientMock()
+		directorClientMock.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(nil, apperrors.NewNotFoundError(resource.Tenant, expectedExternalTenantID.String())).Once()
+
+		provider := tenantmapping.NewUserContextProvider(directorClientMock, staticGroupRepoMock)
+
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+
+		require.NoError(t, err)
+		require.Equal(t, expectedExternalTenantID.String(), objCtx.ExternalTenantID)
+		require.Equal(t, "", objCtx.TenantID)
+		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
+		require.Equal(t, username, objCtx.ConsumerID)
+		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
+
+		mock.AssertExpectationsForObjects(t, staticGroupRepoMock, directorClientMock)
+	})
+
+	t.Run("returns error when tenant region cannot be found", func(t *testing.T) {
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID.String(),
+					oathkeeper.GroupsKey:         []interface{}{groupName},
+				},
+			},
+		}
+
+		testTenantWithoutRegion := &graphql.Tenant{
+			ID:         expectedExternalTenantID.String(),
+			InternalID: expectedTenantID.String(),
+		}
+
+		staticGroupRepoMock := getStaticGroupRepoMock()
+		staticGroupRepoMock.On("Get", mock.Anything, []string{groupName}).Return(staticGroups, nil).Once()
+
+		directorClientMock := getDirectorClientMock()
+		directorClientMock.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(testTenantWithoutRegion, nil).Once()
+
+		provider := tenantmapping.NewUserContextProvider(directorClientMock, staticGroupRepoMock)
+
+		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+
+		require.Error(t, err)
+		require.Contains(t, err.Error(), fmt.Sprintf("region label not found for tenant with ID: %q", expectedExternalTenantID))
+
+		mock.AssertExpectationsForObjects(t, staticGroupRepoMock, directorClientMock)
+	})
+
 }
 
 func TestUserContextProviderMatch(t *testing.T) {

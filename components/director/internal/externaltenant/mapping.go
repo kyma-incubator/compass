@@ -14,7 +14,7 @@ import (
 )
 
 // MapTenants missing godoc
-func MapTenants(tenantsDirectoryPath string) ([]model.BusinessTenantMappingInput, error) {
+func MapTenants(tenantsDirectoryPath, defaultTenantRegion string) ([]model.BusinessTenantMappingInput, error) {
 	files, err := ioutil.ReadDir(tenantsDirectoryPath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while reading directory with tenant files [%s]", tenantsDirectoryPath)
@@ -38,6 +38,9 @@ func MapTenants(tenantsDirectoryPath string) ([]model.BusinessTenantMappingInput
 
 		for i := range tenantsFromFile {
 			tenantsFromFile[i].Provider = f.Name()
+			if tenantsFromFile[i].Region == "" {
+				tenantsFromFile[i].Region = defaultTenantRegion
+			}
 		}
 
 		outputTenants = append(outputTenants, tenantsFromFile...)

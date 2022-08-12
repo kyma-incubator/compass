@@ -68,7 +68,6 @@ func TestResolver_CreateRuntime(t *testing.T) {
 	gqlInput := graphql.RuntimeRegisterInput{
 		Name:        "Foo",
 		Description: str.Ptr(desc),
-		Labels:      graphql.Labels{RegionKey: "region"},
 		Webhooks: []*graphql.WebhookInput{{
 			Type: "test webhook",
 		}},
@@ -76,7 +75,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 	gqlInputWithSubaccountLabel := graphql.RuntimeRegisterInput{
 		Name:        "Foo",
 		Description: str.Ptr(desc),
-		Labels:      graphql.Labels{RegionKey: "region", scenarioassignment.SubaccountIDKey: extSubaccountID},
+		Labels:      graphql.Labels{scenarioassignment.SubaccountIDKey: extSubaccountID},
 		Webhooks: []*graphql.WebhookInput{{
 			Type: "test webhook",
 		}},
@@ -84,7 +83,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 	gqlInputWithInvalidLabel := graphql.RuntimeRegisterInput{
 		Name:        "Foo",
 		Description: str.Ptr(desc),
-		Labels:      graphql.Labels{RegionKey: "region", scenarioassignment.SubaccountIDKey: []string{"firstValue", "secondValue"}},
+		Labels:      graphql.Labels{scenarioassignment.SubaccountIDKey: []string{"firstValue", "secondValue"}},
 		Webhooks: []*graphql.WebhookInput{{
 			Type: "test webhook",
 		}},
@@ -99,12 +98,12 @@ func TestResolver_CreateRuntime(t *testing.T) {
 	selfRegModelInput := model.RuntimeRegisterInput{
 		Name:        "Foo",
 		Description: str.Ptr(desc),
-		Labels:      graphql.Labels{rtmtest.TestDistinguishLabel: "selfRegVal", RegionKey: "region"},
+		Labels:      graphql.Labels{rtmtest.TestDistinguishLabel: "selfRegVal"},
 		Webhooks: []*model.WebhookInput{{
 			Type: "test webhook",
 		}},
 	}
-	labels := map[string]interface{}{"xsappnameCMPClone": "clone", RegionKey: testRegion, rtmtest.TestDistinguishLabel: distinguishLabelValue}
+	selfRegLabels := map[string]interface{}{"xsappnameCMPClone": "clone", RegionKey: testRegion, rtmtest.TestDistinguishLabel: distinguishLabelValue}
 
 	subscriptionFilters := []*labelfilter.LabelFilter{
 		labelfilter.NewForKeyWithQuery(rtmtest.TestDistinguishLabel, fmt.Sprintf("\"%s\"", distinguishLabelValue)),
@@ -137,7 +136,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, testUUID).Return(modelRuntime, nil).Once()
 				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
-				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, labels).Return(nil).Once()
+				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, selfRegLabels).Return(nil).Once()
 				svc.On("UnsafeExtractModifiableLabels", modelInput.Labels).Return(modelInput.Labels, nil).Once()
 				return svc
 			},
@@ -155,7 +154,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TenantFetcherFn: func() *automock.TenantFetcher {
 				return &automock.TenantFetcher{}
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrorsAndGetSelfRegDistinguishingLabelKey(labels),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrorsAndGetSelfRegDistinguishingLabelKey(selfRegLabels),
 			Input:            gqlInput,
 			ExpectedRuntime:  gqlRuntime,
 			ExpectedErr:      nil,
@@ -172,7 +171,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, testUUID).Return(modelRuntime, nil).Once()
 				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
-				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, labels).Return(nil).Once()
+				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, selfRegLabels).Return(nil).Once()
 				svc.On("UnsafeExtractModifiableLabels", modelInput.Labels).Return(modelInput.Labels, nil).Once()
 				return svc
 			},
@@ -192,7 +191,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				svc.On("FetchOnDemand", extSubaccountID, accountTenantID).Return(nil).Once()
 				return svc
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrorsAndGetSelfRegDistinguishingLabelKey(labels),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrorsAndGetSelfRegDistinguishingLabelKey(selfRegLabels),
 			Input:            gqlInputWithSubaccountLabel,
 			ExpectedRuntime:  gqlRuntime,
 			ExpectedErr:      nil,
@@ -249,7 +248,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TenantFetcherFn: func() *automock.TenantFetcher {
 				return &automock.TenantFetcher{}
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrors(selfRegLabels),
 			Input:            gqlInputWithInvalidLabel,
 			ExpectedRuntime:  nil,
 			ExpectedErr:      errors.New("while converting global_subaccount_id label: cannot cast label value"),
@@ -281,7 +280,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 				svc.On("FetchOnDemand", extSubaccountID, accountTenantID).Return(testErr).Once()
 				return svc
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrors(labels),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesPrepWithNoErrors(selfRegLabels),
 			Input:            gqlInputWithSubaccountLabel,
 			ExpectedRuntime:  nil,
 			ExpectedErr:      testErr,
@@ -295,7 +294,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
-				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, labels).Return(testErr).Once()
+				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, selfRegLabels).Return(testErr).Once()
 				svc.On("UnsafeExtractModifiableLabels", modelInput.Labels).Return(modelInput.Labels, nil).Once()
 				return svc
 			},
@@ -312,7 +311,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TenantFetcherFn: func() *automock.TenantFetcher {
 				return &automock.TenantFetcher{}
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanupFunc(labels),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanupFunc(selfRegLabels),
 			Input:            gqlInput,
 			ExpectedRuntime:  nil,
 			ExpectedErr:      testErr,
@@ -326,7 +325,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TransactionerFn: txtest.TransactionerThatDoesARollback,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
-				svc.On("CreateWithMandatoryLabels", contextParam, selfRegModelInput, testUUID, labels).Return(testErr).Once()
+				svc.On("CreateWithMandatoryLabels", contextParam, selfRegModelInput, testUUID, selfRegLabels).Return(testErr).Once()
 				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				svc.On("UnsafeExtractModifiableLabels", selfRegModelInput.Labels).Return(selfRegModelInput.Labels, nil).Once()
 				return svc
@@ -344,7 +343,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TenantFetcherFn: func() *automock.TenantFetcher {
 				return &automock.TenantFetcher{}
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(labels),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(selfRegLabels),
 			Input:            gqlInput,
 			ExpectedRuntime:  nil,
 			ExpectedErr:      testErr,
@@ -359,7 +358,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, testUUID).Return(nil, testErr).Once()
-				svc.On("CreateWithMandatoryLabels", contextParam, selfRegModelInput, testUUID, labels).Return(nil).Once()
+				svc.On("CreateWithMandatoryLabels", contextParam, selfRegModelInput, testUUID, selfRegLabels).Return(nil).Once()
 				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
 				svc.On("UnsafeExtractModifiableLabels", selfRegModelInput.Labels).Return(selfRegModelInput.Labels, nil).Once()
 				return svc
@@ -377,7 +376,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TenantFetcherFn: func() *automock.TenantFetcher {
 				return &automock.TenantFetcher{}
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatFailsOnCleanup(labels),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatFailsOnCleanup(selfRegLabels),
 			Input:            gqlInput,
 			ExpectedRuntime:  nil,
 			ExpectedErr:      testErr,
@@ -392,7 +391,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
-				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, labels).Return(nil).Once()
+				svc.On("CreateWithMandatoryLabels", contextParam, modelInput, testUUID, selfRegLabels).Return(nil).Once()
 				svc.On("Get", contextParam, testUUID).Return(nil, testErr).Once()
 				svc.On("UnsafeExtractModifiableLabels", modelInput.Labels).Return(modelInput.Labels, nil).Once()
 				return svc
@@ -410,7 +409,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TenantFetcherFn: func() *automock.TenantFetcher {
 				return &automock.TenantFetcher{}
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanupFunc(labels),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanupFunc(selfRegLabels),
 			Input:            gqlInput,
 			ExpectedRuntime:  nil,
 			ExpectedErr:      testErr,
@@ -425,7 +424,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("GetByFilters", contextParam, subscriptionFilters).Return(nil, apperrors.NewNotFoundErrorWithType(resource.Runtime)).Once()
-				svc.On("CreateWithMandatoryLabels", contextParam, selfRegModelInput, testUUID, labels).Return(nil).Once()
+				svc.On("CreateWithMandatoryLabels", contextParam, selfRegModelInput, testUUID, selfRegLabels).Return(nil).Once()
 				svc.On("Get", contextParam, testUUID).Return(nil, testErr).Once()
 				svc.On("UnsafeExtractModifiableLabels", selfRegModelInput.Labels).Return(selfRegModelInput.Labels, nil).Once()
 				return svc
@@ -443,7 +442,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TenantFetcherFn: func() *automock.TenantFetcher {
 				return &automock.TenantFetcher{}
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(labels),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsNoErrors(selfRegLabels),
 			Input:            gqlInput,
 			ExpectedRuntime:  nil,
 			ExpectedErr:      testErr,
@@ -502,7 +501,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TenantFetcherFn: func() *automock.TenantFetcher {
 				return &automock.TenantFetcher{}
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanupFunc(labels),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanupFunc(selfRegLabels),
 			Input:            gqlInput,
 			ExpectedRuntime:  nil,
 			ExpectedErr:      testErr,
@@ -532,7 +531,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 			TenantFetcherFn: func() *automock.TenantFetcher {
 				return &automock.TenantFetcher{}
 			},
-			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanupFunc(labels),
+			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanupFunc(selfRegLabels),
 			Input:            gqlInput,
 			ExpectedRuntime:  nil,
 			ExpectedErr:      errors.New(fmt.Sprintf("cannot have more than one runtime with labels %q: %q and %q: %q", RegionKey, testRegion, rtmtest.TestDistinguishLabel, distinguishLabelValue)),

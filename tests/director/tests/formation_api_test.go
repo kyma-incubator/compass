@@ -16,7 +16,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/tidwall/gjson"
@@ -627,7 +626,9 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			providerRuntimeInput := graphql.RuntimeRegisterInput{
 				Name:        "providerRuntime",
 				Description: ptr.String("providerRuntime-description"),
-				Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue, tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
+				Labels: graphql.Labels{
+					conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue,
+				},
 			}
 
 			providerRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntimeInput)
@@ -704,7 +705,9 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			providerRuntimeInput := graphql.RuntimeRegisterInput{
 				Name:        "providerRuntime",
 				Description: ptr.String("providerRuntime-description"),
-				Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue, tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
+				Labels: graphql.Labels{
+					conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue,
+				},
 			}
 
 			providerRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntimeInput)
@@ -801,7 +804,9 @@ func TestFormationNotifications(stdT *testing.T) {
 		providerRuntimeInput := graphql.RuntimeRegisterInput{
 			Name:        "providerRuntime",
 			Description: ptr.String("providerRuntime-description"),
-			Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue, tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
+			Labels: graphql.Labels{
+				conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue,
+			},
 			Webhooks: []*graphql.WebhookInput{
 				{
 					Type: graphql.WebhookTypeConfigurationChanged,
