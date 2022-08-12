@@ -66,6 +66,7 @@ const (
 	FormationID                = "cf7e396b-ee70-4a47-9aff-9fa9bfa466c1"
 	testFormationName          = "test-formation"
 	secondTestFormationName    = "second-formation"
+	testFormationTemplateName  = "test-formation-template"
 	ApplicationID              = "04f3568d-3e0c-4f6b-b646-e6979e9d060c"
 	Application2ID             = "6f5389cf-4f9e-46b3-9870-624d792d94ad"
 	ApplicationTemplateID      = "58963c6f-24f6-4128-a05c-51d5356e7e09"

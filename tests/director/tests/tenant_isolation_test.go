@@ -91,10 +91,8 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 	// Register runtime in customer's tenant
 	input := fixRuntimeInput("customerRuntime")
 
-	customerRuntime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, customerTenant, &input)
+	customerRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, customerTenant, input, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, customerTenant, &customerRuntime)
-	require.NoError(t, err)
-	require.NotEmpty(t, customerRuntime.ID)
 
 	// Assert customer's runtime is visible in the customer's tenant
 	customerRuntimes := fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, customerTenant)
@@ -107,10 +105,8 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 
 	// Register runtime in account's tenant
 	accountRuntimeInput := fixRuntimeInput("accountRuntime")
-	accountRuntime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, accountTenant, &accountRuntimeInput)
+	accountRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, accountTenant, accountRuntimeInput, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, accountTenant, &accountRuntime)
-	require.NoError(t, err)
-	require.NotEmpty(t, accountRuntime.ID)
 
 	// Assert account's runtime is visible in the account's tenant
 	accountRuntimes = fixtures.ListRuntimes(t, ctx, certSecuredGraphQLClient, accountTenant)
@@ -123,7 +119,7 @@ func TestHierarchicalTenantIsolationRuntimeAndRuntimeContext(t *testing.T) {
 
 	// Assert customer can update his own runtime
 	customerRuntimeUpdateInput := fixRuntimeUpdateInput("customerRuntimeUpdated")
-	customerRuntime, err = fixtures.UpdateRuntimeWithinTenant(t, ctx, certSecuredGraphQLClient, customerTenant, customerRuntime.ID, customerRuntimeUpdateInput)
+	customerRuntime, err := fixtures.UpdateRuntimeWithinTenant(t, ctx, certSecuredGraphQLClient, customerTenant, customerRuntime.ID, customerRuntimeUpdateInput)
 	require.NoError(t, err)
 
 	// Assert customer can update his child account's runtime

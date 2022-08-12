@@ -53,6 +53,15 @@ func FixDeleteFormationRequest(formationName string) *gcli.Request {
 				}`, formationName, testctx.Tc.GQLFieldsProvider.ForFormation()))
 }
 
+func FixDeleteFormationWithTemplateRequest(formationInput string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation{
+				  result: deleteFormation(formation: %s){
+					%s
+				  }
+				}`, formationInput, testctx.Tc.GQLFieldsProvider.ForFormation()))
+}
+
 func FixAssignFormationRequest(objID, objType, formationName string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{
