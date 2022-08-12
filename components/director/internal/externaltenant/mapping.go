@@ -3,9 +3,10 @@ package externaltenant
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"io/ioutil"
 	"path/filepath"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -39,7 +40,7 @@ func MapTenants(tenantsDirectoryPath, defaultTenantRegion string) ([]model.Busin
 
 		for i := range tenantsFromFile {
 			tenantsFromFile[i].Provider = f.Name()
-			if tenantsFromFile[i].Region == "" && tenantsFromFile[i].Type == tenant.Subaccount {
+			if tenantsFromFile[i].Region == "" && tenantsFromFile[i].Type == string(tenant.Subaccount) {
 				tenantsFromFile[i].Region = defaultTenantRegion
 			}
 		}
