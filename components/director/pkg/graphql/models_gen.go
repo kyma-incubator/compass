@@ -336,10 +336,26 @@ type CSRFTokenCredentialRequestAuthInput struct {
 	AdditionalQueryParamsSerialized *QueryParamsSerialized `json:"additionalQueryParamsSerialized"`
 }
 
-// **Validation:** basic or oauth field required
+type CertificateOAuthCredentialData struct {
+	ClientID    string `json:"clientId"`
+	Certificate string `json:"certificate"`
+	URL         string `json:"url"`
+}
+
+func (CertificateOAuthCredentialData) IsCredentialData() {}
+
+type CertificateOAuthCredentialDataInput struct {
+	ClientID    string `json:"clientId"`
+	Certificate string `json:"certificate"`
+	// **Validation:** valid URL
+	URL string `json:"url"`
+}
+
+// **Validation:** basic or oauth or certificateOAuth field required
 type CredentialDataInput struct {
-	Basic *BasicCredentialDataInput `json:"basic"`
-	Oauth *OAuthCredentialDataInput `json:"oauth"`
+	Basic            *BasicCredentialDataInput            `json:"basic"`
+	Oauth            *OAuthCredentialDataInput            `json:"oauth"`
+	CertificateOAuth *CertificateOAuthCredentialDataInput `json:"certificateOAuth"`
 }
 
 type CredentialRequestAuth struct {

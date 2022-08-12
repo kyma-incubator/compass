@@ -118,10 +118,10 @@ global:
       version: "PR-2501"
     director:
       dir:
-      version: "PR-2522"
+      version: "PR-2507"
     hydrator:
       dir:
-      version: "PR-2501"
+      version: "PR-2521"
     gateway:
       dir:
       version: "PR-2501"
@@ -144,13 +144,13 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2536"
+      version: "PR-2521"
     console:
       dir:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2522"
+      version: "PR-2507"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -342,6 +342,11 @@ global:
     prefix: /hydrators
     subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"},{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}]'
     certificateDataHeader: "Certificate-Data"
+    consumerClaimsKeys:
+      clientIDKey: "client_id"
+      tenantIDKey: "tenantid"
+      userNameKey: "user_name"
+      subdomainKey: "subdomain"
     http:
       client:
         skipSSLValidation: false
@@ -480,7 +485,7 @@ global:
             createRule: false
             gatewayHost: "compass-gateway-sap-mtls"
             trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http", "region": "eu-1"}]'
-            attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" }, "clientid": { "key": "client_id" } }'
+            attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "user_name" }, "clientid": { "key": "client_id" } }'
             path: /<.*>
             checkSuffix: false
       tenantMappingService:
@@ -534,7 +539,7 @@ global:
     server:
       fetchTenantEndpoint: "/v1/fetch/{parentTenantId}/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
-      dependenciesEndpoint: "/v1/dependencies"
+      dependenciesEndpoint: "/v1/regional/{region}/dependencies"
       tenantPathParam: "tenantId"
       regionPathParam: "region"
     containerName: "tenant-fetcher"

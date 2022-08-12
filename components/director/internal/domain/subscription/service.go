@@ -142,6 +142,29 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 		return false, errors.Wrap(err, fmt.Sprintf("Failed to get runtime for labels %q: %q and %q: %q", tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, providerID))
 	}
 
+	consumerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, subaccountTenantID)
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while getting tenant by external ID: %q during subscription: %v", subaccountTenantID, err)
+		return false, errors.Wrapf(err, "while getting tenant with external ID: %q", subaccountTenantID)
+	}
+
+	runtimeID := runtime.ID
+	log.C(ctx).Infof("Listing runtime context(s) in the consumer tenant %q for label with key: %q and value: %q", subaccountTenantID, s.consumerSubaccountLabelKey, subaccountTenantID)
+	rtmCtxPage, err := s.runtimeCtxSvc.ListByFilter(tenant.SaveToContext(ctx, consumerInternalTenant, subaccountTenantID), runtimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(s.consumerSubaccountLabelKey, fmt.Sprintf("\"%s\"", subaccountTenantID))}, 100, "")
+	if err != nil {
+		log.C(ctx).Errorf("An error occurred while listing runtime contexts with key: %q and value: %q for runtime with ID: %q: %v", s.consumerSubaccountLabelKey, subaccountTenantID, runtimeID, err)
+		return false, err
+	}
+	log.C(ctx).Infof("Found %d runtime context(s) with key: %q and value: %q for runtime with ID: %q", len(rtmCtxPage.Data), s.consumerSubaccountLabelKey, subaccountTenantID, runtimeID)
+
+	for _, rtmCtx := range rtmCtxPage.Data {
+		if rtmCtx.Value == consumerTenantID {
+			// Already subscribed
+			log.C(ctx).Infof("Consumer %q is already subscribed", consumerTenantID)
+			return true, nil
+		}
+	}
+
 	tnt, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Runtime, runtime.ID)
 	if err != nil {
 		log.C(ctx).Errorf("An error occurred while getting lowest owner for resource type: %q with ID: %q: %v", resource.Runtime, runtime.ID, err)
@@ -157,12 +180,6 @@ func (s *service) SubscribeTenantToRuntime(ctx context.Context, providerID, suba
 	}); err != nil {
 		log.C(ctx).Errorf("An error occurred while upserting label with key: %q and value: %q for object type: %q and ID: %q: %v", s.runtimeTypeLabelKey, subscriptionAppName, model.RuntimeLabelableObject, runtime.ID, err)
 		return false, err
-	}
-
-	consumerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, subaccountTenantID)
-	if err != nil {
-		log.C(ctx).Errorf("An error occurred while getting tenant by external ID: %q during subscription: %v", subaccountTenantID, err)
-		return false, errors.Wrapf(err, "while getting tenant with external ID: %q", subaccountTenantID)
 	}
 
 	ctx = tenant.SaveToContext(ctx, consumerInternalTenant, subaccountTenantID)

@@ -28,6 +28,7 @@ type DirectorClient interface {
 	GetTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetSystemAuthByID(ctx context.Context, authID string) (*model.SystemAuth, error)
 	UpdateSystemAuth(ctx context.Context, sysAuth *model.SystemAuth) (director.UpdateAuthResult, error)
+	WriteTenants(ctx context.Context, tenants []schema.BusinessTenantMappingInput) error
 }
 
 // ScopesGetter missing godoc
@@ -300,7 +301,7 @@ func getOnBehalfConsumer(objectContexts []ObjectContext) string {
 
 func getRegionFromConsumerToken(objectContexts []ObjectContext) string {
 	for _, objCtx := range objectContexts {
-		if objCtx.ContextProvider == tenantmapping.AuthenticatorObjectContextProvider {
+		if objCtx.ContextProvider == tenantmapping.AuthenticatorObjectContextProvider || objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider {
 			return objCtx.Region
 		}
 	}
@@ -309,7 +310,7 @@ func getRegionFromConsumerToken(objectContexts []ObjectContext) string {
 
 func getClientIDFromConsumerToken(objectContexts []ObjectContext) string {
 	for _, objCtx := range objectContexts {
-		if objCtx.ContextProvider == tenantmapping.AuthenticatorObjectContextProvider {
+		if objCtx.ContextProvider == tenantmapping.AuthenticatorObjectContextProvider || objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider {
 			return objCtx.OauthClientID
 		}
 	}

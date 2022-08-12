@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -34,8 +35,20 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID
 		subscriptionConsumerTenantID := conf.TestConsumerTenantID
 
+		// We need an externally issued cert with a subject that is not part of the access level mappings
+		externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
+			ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
+			ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
+			CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
+			ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
+			ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
+			TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-cn", -1),
+			ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
+			ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
+		}
+
 		// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
-		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, conf.ExternalCertProviderConfig)
+		providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig)
 		appProviderDirectorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 		apiPath := fmt.Sprintf("/saas-manager/v1/application/tenants/%s/subscriptions", subscriptionConsumerTenantID)
@@ -76,8 +89,8 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
 			// WHEN
-			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
 
 			// THEN
 			actualAppPage := graphql.ApplicationPage{}
@@ -93,8 +106,8 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
-			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
 
 			actualAppPage := graphql.ApplicationPage{}
 			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
@@ -120,12 +133,13 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
 			// WHEN
-			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
 
 			// THEN
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
-			headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
+			consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
+			headers := map[string][]string{subscription.UserContextHeader: {consumerClaims}}
 
 			actualAppPage := graphql.ApplicationPage{}
 			getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
@@ -160,12 +174,13 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
 			// WHEN
-			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
 
 			// THEN
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
-			headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
+			consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
+			headers := map[string][]string{subscription.UserContextHeader: {consumerClaims}}
 
 			actualConsumerAppPage := graphql.ApplicationPage{}
 			getSrcAppReqWithHeaders := fixtures.FixGetApplicationsRequestWithPagination()
@@ -202,8 +217,8 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
 			// Subscribe
-			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
 
 			// Ensure subscription is OK
 			actualAppPage := graphql.ApplicationPage{}
@@ -217,7 +232,8 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 
 			// After successful subscription from above we call the director component with "double authentication(token + certificate)" in order to test claims validation is successful
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
-			headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
+			consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
+			headers := map[string][]string{subscription.UserContextHeader: {consumerClaims}}
 
 			// Create Bundle
 			bndlInput := fixtures.FixBundleCreateInputWithRelatedObjects(t, "bndl-app-1")
@@ -255,7 +271,8 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		t.Run("Application Provider is denied querying and pushing consumer app bundle metadata without previously created subscription", func(t *testing.T) {
 			// Create consumer token
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
-			headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
+			consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
+			headers := map[string][]string{subscription.UserContextHeader: {consumerClaims}}
 
 			// List Applications
 			actualAppPage := graphql.ApplicationPage{}
@@ -288,8 +305,8 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, "tenantFetcherClaims")
 
 			// Subscribe
-			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
 			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
+			createSubscription(t, ctx, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID)
 
 			// Ensure subscription is OK
 			actualAppPage := graphql.ApplicationPage{}
@@ -306,7 +323,8 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 
 			// Create consumer token
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, "subscriptionClaims")
-			headers := map[string][]string{subscription.AuthorizationHeader: {fmt.Sprintf("Bearer %s", consumerToken)}}
+			consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
+			headers := map[string][]string{subscription.UserContextHeader: {consumerClaims}}
 
 			// List Applications
 			actualAppPage = graphql.ApplicationPage{}

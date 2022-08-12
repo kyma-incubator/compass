@@ -62,7 +62,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
 		appTemplateInput.Labels["global_subaccount_id"] = conf.ConsumerID
-		appTemplateInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, conf.SubscriptionConfig.SelfRegRegion)
+		appTemplateInput.ApplicationInput.Labels["applicationType"] = appTemplateName
 
 		require.NoError(t, err)
 		require.NotEmpty(t, appTemplateOutput)
@@ -113,7 +113,7 @@ func TestCreateApplicationTemplate_ValidApplicationTypeLabel(t *testing.T) {
 	ctx := context.Background()
 	appTemplateName := "SAP app-template"
 	appTemplateInput := fixAppTemplateInputWithRegion(appTemplateName, conf.SubscriptionConfig.SelfRegRegion)
-	appTemplateInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, conf.SubscriptionConfig.SelfRegRegion)
+	appTemplateInput.ApplicationInput.Labels["applicationType"] = appTemplateName
 
 	// WHEN
 	t.Log("Create application template")
@@ -147,7 +147,7 @@ func TestCreateApplicationTemplate_InvalidApplicationTypeLabel(t *testing.T) {
 
 	// THEN
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "\"applicationType\" label value does not follow \"<app_template_name> (<region>)\" schema")
+	require.Contains(t, err.Error(), "\"applicationType\" label value does not match the application template name")
 }
 
 func TestCreateApplicationTemplate_SameNamesAndRegion(t *testing.T) {
@@ -170,7 +170,7 @@ func TestCreateApplicationTemplate_SameNamesAndRegion(t *testing.T) {
 
 	appTemplateOneInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOneOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
 	appTemplateOneInput.Labels["global_subaccount_id"] = conf.ConsumerID
-	appTemplateOneInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, appTemplateRegion)
+	appTemplateOneInput.ApplicationInput.Labels["applicationType"] = appTemplateName
 
 	require.NotEmpty(t, appTemplateOneOutput)
 	assertions.AssertApplicationTemplate(t, appTemplateOneInput, appTemplateOneOutput)
@@ -182,7 +182,7 @@ func TestCreateApplicationTemplate_SameNamesAndRegion(t *testing.T) {
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &appTemplateTwo)
 
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "application template with name \"SAP app-template\" already exists")
+	require.Contains(t, err.Error(), fmt.Sprintf("application template with name \"SAP app-template\" and region %s already exists", appTemplateRegion))
 }
 
 func TestCreateApplicationTemplate_SameNamesAndDifferentRegions(t *testing.T) {
@@ -206,7 +206,7 @@ func TestCreateApplicationTemplate_SameNamesAndDifferentRegions(t *testing.T) {
 
 	appTemplateOneInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOneOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
 	appTemplateOneInput.Labels["global_subaccount_id"] = conf.ConsumerID
-	appTemplateOneInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, appTemplateOneRegion)
+	appTemplateOneInput.ApplicationInput.Labels["applicationType"] = appTemplateName
 
 	require.NotEmpty(t, appTemplateOneOutput)
 	assertions.AssertApplicationTemplate(t, appTemplateOneInput, appTemplateOneOutput)
@@ -228,7 +228,7 @@ func TestCreateApplicationTemplate_SameNamesAndDifferentRegions(t *testing.T) {
 
 	appTemplateTwoInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateTwoOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
 	appTemplateTwoInput.Labels["global_subaccount_id"] = conf.TestProviderSubaccountIDRegion2
-	appTemplateTwoInput.ApplicationInput.Labels["applicationType"] = fmt.Sprintf("%s (%s)", appTemplateName, appTemplateTwoRegion)
+	appTemplateTwoInput.ApplicationInput.Labels["applicationType"] = appTemplateName
 
 	require.NotEmpty(t, appTemplateTwoOutput)
 	assertions.AssertApplicationTemplate(t, appTemplateTwoInput, appTemplateTwoOutput)
@@ -345,7 +345,7 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	// WHEN
 	t.Log("Update application template")
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateAppTemplateRequest, &updateOutput)
-	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": fmt.Sprintf("%s (%s)", newName, conf.SubscriptionConfig.SelfRegRegion)}
+	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": newName}
 
 	require.NoError(t, err)
 	require.NotEmpty(t, updateOutput.ID)
@@ -359,7 +359,8 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 
 func TestUpdateApplicationTemplate_AlreadyExistsInTheSameRegion(t *testing.T) {
 	ctx := context.Background()
-	appTemplateOneInput := fixAppTemplateInputWithRegion("SAP app-template", conf.SubscriptionConfig.SelfRegRegion)
+	appTemplateRegion := conf.SubscriptionConfig.SelfRegRegion
+	appTemplateOneInput := fixAppTemplateInputWithRegion("SAP app-template", appTemplateRegion)
 
 	t.Log("Create first application template")
 	appTemplateOne, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateOneInput)
@@ -369,7 +370,7 @@ func TestUpdateApplicationTemplate_AlreadyExistsInTheSameRegion(t *testing.T) {
 	require.NotEmpty(t, appTemplateOne.ID)
 	require.NotEmpty(t, appTemplateOne.Name)
 
-	appTemplateTwoInput := fixAppTemplateInputWithRegionAndDistinguishLabel("SAP app-template-two", conf.SubscriptionConfig.SelfRegRegion, "other-label")
+	appTemplateTwoInput := fixAppTemplateInputWithRegionAndDistinguishLabel("SAP app-template-two", appTemplateRegion, "other-label")
 
 	t.Log("Create second application template")
 	appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateTwoInput)
@@ -396,7 +397,7 @@ func TestUpdateApplicationTemplate_AlreadyExistsInTheSameRegion(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateAppTemplateRequest, &updateOutput)
 
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "application template with name \"SAP app-template\" already exists")
+	require.Contains(t, err.Error(), fmt.Sprintf("application template with name \"SAP app-template\" and region %s already exists", appTemplateRegion))
 }
 
 func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
