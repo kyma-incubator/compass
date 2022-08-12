@@ -2,11 +2,13 @@ package graphql
 
 import (
 	"encoding/json"
+	"reflect"
 )
 
 type credential struct {
 	*BasicCredentialData
 	*OAuthCredentialData
+	*CertificateOAuthCredentialData
 }
 
 // OneTimeTokenDTO this a model for transportation of one-time tokens, because the json marshaller cannot unmarshal to either of the types OTTForApp or OTTForRuntime
@@ -39,7 +41,13 @@ func (a *Auth) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	a.Credential = retrieveCredential(aux.Credential)
+	cred, err := retrieveCredential(data)
+	if err != nil {
+		return err
+	}
+
+	a.Credential = cred
+
 	if aux.OneTimeToken != nil {
 		a.OneTimeToken = retrieveOneTimeToken(aux.OneTimeToken)
 	}
@@ -62,16 +70,74 @@ func (csrf *CSRFTokenCredentialRequestAuth) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	csrf.Credential = retrieveCredential(aux.Credential)
+	cred, err := retrieveCredential(data)
+	if err != nil {
+		return err
+	}
+
+	csrf.Credential = cred
 
 	return nil
 }
 
-func retrieveCredential(unmarshaledCredential credential) CredentialData {
-	if unmarshaledCredential.BasicCredentialData != nil {
-		return unmarshaledCredential.BasicCredentialData
+// retrieveCredential checks if any of the structs BasicCredentialData, OAuthCredentialData or CertificateOAuthCredentialData
+// has all the data after unmarshalling. The resulting CredentialData is the one struct that has all it's fields full of data
+// This is done because CredentialData is an interface and the structs that implement it have conflicting json tag names, so
+// they could not be marshalled properly
+func retrieveCredential(data []byte) (CredentialData, error) {
+	var basicCredential struct {
+		BasicCredentialData `json:"credential"`
 	}
-	return unmarshaledCredential.OAuthCredentialData
+	if err := json.Unmarshal(data, &basicCredential); err != nil {
+		return nil, err
+	}
+
+	if isBasic := isCredentialStructFullWithData(basicCredential.BasicCredentialData); isBasic {
+		return &basicCredential.BasicCredentialData, nil
+	}
+
+	var oauthCredential struct {
+		OAuthCredentialData `json:"credential"`
+	}
+	if err := json.Unmarshal(data, &oauthCredential); err != nil {
+		return nil, err
+	}
+
+	if isOAuth := isCredentialStructFullWithData(oauthCredential.OAuthCredentialData); isOAuth {
+		return &oauthCredential.OAuthCredentialData, nil
+	}
+
+	var certOAuthCredential struct {
+		CertificateOAuthCredentialData `json:"credential"`
+	}
+	if err := json.Unmarshal(data, &certOAuthCredential); err != nil {
+		return nil, err
+	}
+
+	if isCertificateOAuth := isCredentialStructFullWithData(certOAuthCredential.CertificateOAuthCredentialData); isCertificateOAuth {
+		return &certOAuthCredential.CertificateOAuthCredentialData, nil
+	}
+
+	return nil, nil
+}
+
+// isCredentialStructFullWithData checks if any of the fields in the struct is same as an empty struct property or is nil and
+// if this tests positive then it is considered that the struct is not in a valid form will properties full of data
+func isCredentialStructFullWithData(obj interface{}) bool {
+	if obj == nil {
+		return false
+	}
+
+	v := reflect.ValueOf(obj)
+	for i := 0; i < v.NumField(); i++ {
+		empty := reflect.New(v.Field(i).Type()).Elem().Interface()
+		value := v.Field(i).Interface()
+		if reflect.DeepEqual(value, empty) || v.Field(i).Interface() == nil {
+			return false
+		}
+	}
+
+	return true
 }
 
 func retrieveOneTimeToken(ottDTO *oneTimeTokenDTO) OneTimeToken {

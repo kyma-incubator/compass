@@ -96,11 +96,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 
 	log.C(ctx).Debugf("ID %s generated for Application Template with name %s", appTemplateID, in.Name)
 
-	applicationType, err := s.constructApplicationTypeLabelValue(in.Name, in.Labels)
-	if err != nil {
-		return "", err
-	}
-	appInputJSON, err := enrichWithApplicationTypeLabel(in.ApplicationInputJSON, applicationType)
+	appInputJSON, err := enrichWithApplicationTypeLabel(in.ApplicationInputJSON, in.Name)
 	if err != nil {
 		return "", err
 	}
@@ -279,12 +275,7 @@ func (s *service) Update(ctx context.Context, id string, in model.ApplicationTem
 		return err
 	}
 
-	applicationType, err := s.createApplicationTypeFromRegion(in.Name, region)
-	if err != nil {
-		return err
-	}
-
-	appInputJSON, err := enrichWithApplicationTypeLabel(in.ApplicationInputJSON, applicationType)
+	appInputJSON, err := enrichWithApplicationTypeLabel(in.ApplicationInputJSON, in.Name)
 	if err != nil {
 		return err
 	}
@@ -341,27 +332,6 @@ func (s *service) retrieveLabel(ctx context.Context, id string, labelKey string)
 	return label.Value, nil
 }
 
-func (s *service) constructApplicationTypeLabelValue(name string, labels map[string]interface{}) (string, error) {
-	regionValue, exists := labels[tenant.RegionLabelKey]
-	if !exists {
-		return name, nil
-	}
-
-	return s.createApplicationTypeFromRegion(name, regionValue)
-}
-
-func (s *service) createApplicationTypeFromRegion(name string, region interface{}) (string, error) {
-	if region == nil {
-		return name, nil
-	}
-
-	regionValue, ok := region.(string)
-	if !ok {
-		return "", fmt.Errorf("%q label value must be string", tenant.RegionLabelKey)
-	}
-	return fmt.Sprintf("%s (%s)", name, regionValue), nil
-}
-
 func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string) (string, error) {
 	var appInput map[string]interface{}
 
@@ -382,7 +352,7 @@ func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string
 				return "", fmt.Errorf("%q label value must be string", applicationTypeLabelKey)
 			}
 			if appTypeValue != applicationType {
-				return "", fmt.Errorf("%q label value does not follow %q schema", applicationTypeLabelKey, "<app_template_name> (<region>)")
+				return "", fmt.Errorf("%q label value does not match the application template name", applicationTypeLabelKey)
 			}
 			return applicationInputJSON, nil
 		}

@@ -343,6 +343,68 @@ func TestRequestBundleInstanceAuthCreationWithDefaultAuth(t *testing.T) {
 	assertions.AssertAuth(t, authInput, bndlFromAPI.Bundle.InstanceAuth.Auth)
 }
 
+func TestRequestBundleInstanceAuthCreationWithDefaultAuthForCertificateOAuth(t *testing.T) {
+	ctx := context.Background()
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle-cert-oauth", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
+	require.NoError(t, err)
+	require.NotEmpty(t, application.ID)
+
+	authInput := fixtures.FixCertificateOauthAuth(t)
+
+	bndlInput := fixtures.FixBundleCreateInputWithDefaultAuth("bndl-app-1-cert-oauth", authInput)
+	bndl, err := testctx.Tc.Graphqlizer.BundleCreateInputToGQL(bndlInput)
+	require.NoError(t, err)
+
+	addBndlRequest := fixtures.FixAddBundleRequest(application.ID, bndl)
+	bndlAddOutput := graphql.Bundle{}
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, addBndlRequest, &bndlAddOutput)
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndlAddOutput.ID)
+	require.NoError(t, err)
+
+	bndlInstanceAuthRequestInput := fixtures.FixBundleInstanceAuthRequestInput(nil, nil)
+	bndlInstanceAuthRequestInputStr, err := testctx.Tc.Graphqlizer.BundleInstanceAuthRequestInputToGQL(bndlInstanceAuthRequestInput)
+	require.NoError(t, err)
+
+	bndlInstanceAuthCreationRequestReq := fixtures.FixRequestBundleInstanceAuthCreationRequest(bndlAddOutput.ID, bndlInstanceAuthRequestInputStr)
+	authOutput := graphql.BundleInstanceAuth{}
+
+	// WHEN
+	t.Log("Request bundle instance auth creation")
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, bndlInstanceAuthCreationRequestReq, &authOutput)
+
+	// THEN
+	require.NoError(t, err)
+
+	// Fetch Application with bundles
+	bundlesForApplicationReq := fixtures.FixGetBundlesRequest(application.ID)
+	bndlFromAPI := graphql.ApplicationExt{}
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, bundlesForApplicationReq, &bndlFromAPI)
+	require.NoError(t, err)
+
+	// Assert the bundle instance auths exists
+	require.Equal(t, 1, len(bndlFromAPI.Bundles.Data))
+	require.Equal(t, 1, len(bndlFromAPI.Bundles.Data[0].InstanceAuths))
+
+	// Fetch Application with bundle
+	instanceAuthID := bndlFromAPI.Bundles.Data[0].InstanceAuths[0].ID
+	bundlesForApplicationWithInstanceAuthReq := fixtures.FixGetBundleWithInstanceAuthRequest(application.ID, bndlAddOutput.ID, instanceAuthID)
+
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, bundlesForApplicationWithInstanceAuthReq, &bndlFromAPI)
+	require.NoError(t, err)
+
+	// Assert the bundle instance auth exist
+	require.Equal(t, instanceAuthID, bndlFromAPI.Bundle.InstanceAuth.ID)
+
+	require.Equal(t, graphql.BundleInstanceAuthStatusConditionSucceeded, bndlFromAPI.Bundle.InstanceAuth.Status.Condition)
+	assertions.AssertAuth(t, authInput, bndlFromAPI.Bundle.InstanceAuth.Auth)
+}
+
 func TestRequestBundleInstanceAuthDeletion(t *testing.T) {
 	ctx := context.Background()
 
@@ -481,6 +543,39 @@ func TestSetBundleInstanceAuth(t *testing.T) {
 	assertions.AssertAuth(t, authInput, output.Auth)
 
 	saveExample(t, setBundleInstanceAuthReq.Query(), "set bundle instance auth")
+}
+
+func TestSetBundleInstanceAuthWithCertificateOAuthCredentials(t *testing.T) {
+	ctx := context.Background()
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	application, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app-test-bundle-cert-oauth", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &application)
+	require.NoError(t, err)
+	require.NotEmpty(t, application.ID)
+
+	bndl := fixtures.CreateBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, "bndl-app-1-cert-oauth")
+	defer fixtures.DeleteBundle(t, ctx, certSecuredGraphQLClient, tenantId, bndl.ID)
+
+	bndlInstanceAuth := fixtures.CreateBundleInstanceAuth(t, ctx, certSecuredGraphQLClient, bndl.ID)
+
+	authInput := fixtures.FixCertificateOauthAuth(t)
+	bndlInstanceAuthSetInput := fixtures.FixBundleInstanceAuthSetInputSucceeded(authInput)
+	bndlInstanceAuthSetInputStr, err := testctx.Tc.Graphqlizer.BundleInstanceAuthSetInputToGQL(bndlInstanceAuthSetInput)
+	require.NoError(t, err)
+
+	setBundleInstanceAuthReq := fixtures.FixSetBundleInstanceAuthRequest(bndlInstanceAuth.ID, bndlInstanceAuthSetInputStr)
+	output := graphql.BundleInstanceAuth{}
+
+	// WHEN
+	t.Log("Set bundle instance auth")
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, setBundleInstanceAuthReq, &output)
+
+	// THEN
+	require.NoError(t, err)
+	require.Equal(t, graphql.BundleInstanceAuthStatusConditionSucceeded, output.Status.Condition)
+	assertions.AssertAuth(t, authInput, output.Auth)
 }
 
 func TestDeleteBundleInstanceAuth(t *testing.T) {

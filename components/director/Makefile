@@ -1,5 +1,6 @@
 APP_NAME = compass-director
 APP_PATH = components/director
+COMPONENT_BUILD_TIMEOUT = 12m
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
 NAMESPACE="compass-system"
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts

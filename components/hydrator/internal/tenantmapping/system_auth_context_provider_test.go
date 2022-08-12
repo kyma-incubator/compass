@@ -8,6 +8,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/auth"
@@ -62,6 +65,57 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, directorClientMock, scopesGetterMock)
 	})
 
+	t.Run("returns tenant and scopes when region is found in the Application or Runtime SystemAuth case for Certificate flow", func(t *testing.T) {
+		authID := uuid.New()
+		refObjID := uuid.New()
+		expectedTenantID := uuid.New()
+		expectedExternalTenantID := uuid.New().String()
+		expectedScopes := []string{"application:read"}
+
+		sysAuth := &model.SystemAuth{
+			ID:       authID.String(),
+			TenantID: str.Ptr(expectedTenantID.String()),
+			AppID:    str.Ptr(refObjID.String()),
+		}
+
+		testTenant := &graphql.Tenant{
+			ID:         expectedExternalTenantID,
+			InternalID: expectedTenantID.String(),
+			Labels: map[string]interface{}{
+				"region": "eu-1",
+			},
+		}
+
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID,
+				},
+			},
+		}
+
+		directorClientMock := getDirectorClientMock()
+		directorClientMock.On("GetSystemAuthByID", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
+		directorClientMock.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID).Return(testTenant, nil).Once()
+
+		scopesGetterMock := getScopesGetterMock()
+		scopesGetterMock.On("GetRequiredScopes", "scopesPerConsumerType.application").Return(expectedScopes, nil).Once()
+
+		provider := tenantmapping.NewSystemAuthContextProvider(directorClientMock, scopesGetterMock)
+		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.CertificateFlow}
+
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
+
+		require.NoError(t, err)
+		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, expectedExternalTenantID, objCtx.ExternalTenantID)
+		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
+		require.Equal(t, refObjID.String(), objCtx.ConsumerID)
+		require.Equal(t, "Application", string(objCtx.ConsumerType))
+
+		mock.AssertExpectationsForObjects(t, directorClientMock, scopesGetterMock)
+	})
+
 	t.Run("returns tenant and scopes from the ReqData in the Integration System SystemAuth case", func(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
@@ -78,6 +132,9 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		testTenant := &graphql.Tenant{
 			ID:         expectedExternalTenantID,
 			InternalID: expectedTenantID.String(),
+			Labels: map[string]interface{}{
+				"region": "eu-1",
+			},
 		}
 
 		reqData := oathkeeper.ReqData{
@@ -281,6 +338,176 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, directorClientMock)
 	})
 
+	t.Run("returns empty tenant when unable to get tenant in the Integration System SystemAuth case", func(t *testing.T) {
+		authID := uuid.New()
+		refObjID := uuid.New()
+		expectedTenantID := uuid.New()
+		expectedExternalTenantID := uuid.New().String()
+		expectedScopes := "application:read"
+
+		sysAuth := &model.SystemAuth{
+			ID:                  authID.String(),
+			TenantID:            str.Ptr(expectedTenantID.String()),
+			IntegrationSystemID: str.Ptr(refObjID.String()),
+		}
+
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID,
+					oathkeeper.ScopesKey:         expectedScopes,
+				},
+			},
+		}
+
+		directorClientMock := getDirectorClientMock()
+		directorClientMock.On("GetSystemAuthByID", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
+		directorClientMock.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID).Return(nil, apperrors.NewNotFoundError(resource.Tenant, expectedExternalTenantID)).Once()
+
+		provider := tenantmapping.NewSystemAuthContextProvider(directorClientMock, nil)
+		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
+
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
+
+		require.NoError(t, err)
+		require.Equal(t, "", objCtx.TenantID)
+		require.Equal(t, expectedExternalTenantID, objCtx.ExternalTenantID)
+		require.Equal(t, expectedScopes, objCtx.Scopes)
+		require.Equal(t, refObjID.String(), objCtx.ConsumerID)
+		require.Equal(t, "Integration System", string(objCtx.ConsumerType))
+
+		mock.AssertExpectationsForObjects(t, directorClientMock, directorClientMock)
+	})
+
+	t.Run("returns error when unable to get tenant region in the Integration System SystemAuth case", func(t *testing.T) {
+		authID := uuid.New()
+		refObjID := uuid.New()
+		expectedTenantID := uuid.New()
+		expectedExternalTenantID := uuid.New().String()
+		expectedScopes := "application:read"
+
+		sysAuth := &model.SystemAuth{
+			ID:                  authID.String(),
+			TenantID:            str.Ptr(expectedTenantID.String()),
+			IntegrationSystemID: str.Ptr(refObjID.String()),
+		}
+
+		testTenant := &graphql.Tenant{
+			ID:         expectedExternalTenantID,
+			InternalID: expectedTenantID.String(),
+		}
+
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID,
+					oathkeeper.ScopesKey:         expectedScopes,
+				},
+			},
+		}
+
+		directorClientMock := getDirectorClientMock()
+		directorClientMock.On("GetSystemAuthByID", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
+		directorClientMock.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID).Return(testTenant, nil).Once()
+
+		provider := tenantmapping.NewSystemAuthContextProvider(directorClientMock, nil)
+		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.OAuth2Flow}
+
+		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
+
+		require.Error(t, err)
+		require.Contains(t, err.Error(), fmt.Sprintf("region label not found for tenant with ID: %q", expectedExternalTenantID))
+
+		mock.AssertExpectationsForObjects(t, directorClientMock, directorClientMock)
+	})
+
+	t.Run("returns empty tenant when unable to get tenant in the Application or Runtime SystemAuth case for Certificate flow", func(t *testing.T) {
+		authID := uuid.New()
+		refObjID := uuid.New()
+		expectedTenantID := uuid.New()
+		expectedExternalTenantID := uuid.New().String()
+		expectedScopes := []string{"application:read"}
+
+		sysAuth := &model.SystemAuth{
+			ID:       authID.String(),
+			TenantID: str.Ptr(expectedTenantID.String()),
+			AppID:    str.Ptr(refObjID.String()),
+		}
+
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID,
+				},
+			},
+		}
+
+		directorClientMock := getDirectorClientMock()
+		directorClientMock.On("GetSystemAuthByID", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
+		directorClientMock.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID).Return(nil, apperrors.NewNotFoundError(resource.Tenant, expectedExternalTenantID)).Once()
+
+		scopesGetterMock := getScopesGetterMock()
+		scopesGetterMock.On("GetRequiredScopes", "scopesPerConsumerType.application").Return(expectedScopes, nil).Once()
+
+		provider := tenantmapping.NewSystemAuthContextProvider(directorClientMock, scopesGetterMock)
+		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.CertificateFlow}
+
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
+
+		require.NoError(t, err)
+		require.Equal(t, "", objCtx.TenantID)
+		require.Equal(t, expectedExternalTenantID, objCtx.ExternalTenantID)
+		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
+		require.Equal(t, refObjID.String(), objCtx.ConsumerID)
+		require.Equal(t, "Application", string(objCtx.ConsumerType))
+
+		mock.AssertExpectationsForObjects(t, directorClientMock, scopesGetterMock)
+	})
+
+	t.Run("returns error when unable to get tenant region in the Application or Runtime SystemAuth case for Certificate flow", func(t *testing.T) {
+		authID := uuid.New()
+		refObjID := uuid.New()
+		expectedTenantID := uuid.New()
+		expectedExternalTenantID := uuid.New().String()
+		expectedScopes := []string{"application:read"}
+
+		sysAuth := &model.SystemAuth{
+			ID:       authID.String(),
+			TenantID: str.Ptr(expectedTenantID.String()),
+			AppID:    str.Ptr(refObjID.String()),
+		}
+
+		testTenant := &graphql.Tenant{
+			ID:         expectedExternalTenantID,
+			InternalID: expectedTenantID.String(),
+		}
+
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID,
+				},
+			},
+		}
+
+		directorClientMock := getDirectorClientMock()
+		directorClientMock.On("GetSystemAuthByID", mock.Anything, authID.String()).Return(sysAuth, nil).Once()
+		directorClientMock.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID).Return(testTenant, nil).Once()
+
+		scopesGetterMock := getScopesGetterMock()
+		scopesGetterMock.On("GetRequiredScopes", "scopesPerConsumerType.application").Return(expectedScopes, nil).Once()
+
+		provider := tenantmapping.NewSystemAuthContextProvider(directorClientMock, scopesGetterMock)
+		authDetails := oathkeeper.AuthDetails{AuthID: authID.String(), AuthFlow: oathkeeper.CertificateFlow}
+
+		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
+
+		require.Error(t, err)
+		require.Contains(t, err.Error(), fmt.Sprintf("region label not found for tenant with ID: %q", expectedExternalTenantID))
+
+		mock.AssertExpectationsForObjects(t, directorClientMock, scopesGetterMock)
+	})
+
 	t.Run("returns error when unable to parse tenant specified in the ReqData in the Application or Runtime SystemAuth case", func(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
@@ -329,6 +556,9 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		testTenant := &graphql.Tenant{
 			ID:         externalTenantID,
 			InternalID: tenant2ID.String(),
+			Labels: map[string]interface{}{
+				"region": "eu-1",
+			},
 		}
 
 		reqData := oathkeeper.ReqData{

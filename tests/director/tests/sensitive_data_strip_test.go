@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
@@ -308,7 +306,6 @@ func appWithAPIsAndEvents(name string) graphql.ApplicationRegisterInput {
 func fixAppTemplateWithWebhookInput(name string) graphql.ApplicationTemplateInput {
 	input := fixtures.FixApplicationTemplateWithWebhook(name)
 	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
-	input.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
 
 	return input
 }
