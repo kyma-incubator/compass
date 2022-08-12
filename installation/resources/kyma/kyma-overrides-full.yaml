@@ -102,7 +102,6 @@ istio:
       enabled: true
   helmValues:
     global:
-      jwtPolicy: first-party-jwt
       proxy:
         holdApplicationUntilProxyStarts: true
         resources:
