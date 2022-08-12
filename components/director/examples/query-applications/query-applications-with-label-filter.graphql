@@ -41,6 +41,11 @@ query {
               username
               password
             }
+            ... on CertificateOAuthCredentialData {
+              clientId
+              certificate
+              url
+            }
             ... on OAuthCredentialData {
               clientId
               clientSecret
@@ -70,6 +75,11 @@ query {
                   clientSecret
                   url
                 }
+                ... on CertificateOAuthCredentialData {
+                  clientId
+                  certificate
+                  url
+                }
               }
               additionalHeaders
               additionalQueryParams
@@ -93,6 +103,11 @@ query {
                 ... on BasicCredentialData {
                   username
                   password
+                }
+                ... on CertificateOAuthCredentialData {
+                  clientId
+                  certificate
+                  url
                 }
                 ... on OAuthCredentialData {
                   clientId
@@ -123,6 +138,11 @@ query {
                       clientSecret
                       url
                     }
+                    ... on CertificateOAuthCredentialData {
+                      clientId
+                      certificate
+                      url
+                    }
                   }
                   additionalHeaders
                   additionalQueryParams
@@ -143,6 +163,11 @@ query {
               ... on BasicCredentialData {
                 username
                 password
+              }
+              ... on CertificateOAuthCredentialData {
+                clientId
+                certificate
+                url
               }
               ... on OAuthCredentialData {
                 clientId
@@ -173,6 +198,11 @@ query {
                     clientSecret
                     url
                   }
+                  ... on CertificateOAuthCredentialData {
+                    clientId
+                    certificate
+                    url
+                  }
                 }
                 additionalHeaders
                 additionalQueryParams
@@ -196,6 +226,11 @@ query {
                       ... on BasicCredentialData {
                         username
                         password
+                      }
+                      ... on CertificateOAuthCredentialData {
+                        clientId
+                        certificate
+                        url
                       }
                       ... on OAuthCredentialData {
                         clientId
@@ -224,6 +259,11 @@ query {
                           ... on OAuthCredentialData {
                             clientId
                             clientSecret
+                            url
+                          }
+                          ... on CertificateOAuthCredentialData {
+                            clientId
+                            certificate
                             url
                           }
                         }
@@ -276,6 +316,11 @@ query {
                         username
                         password
                       }
+                      ... on CertificateOAuthCredentialData {
+                        clientId
+                        certificate
+                        url
+                      }
                       ... on OAuthCredentialData {
                         clientId
                         clientSecret
@@ -303,6 +348,11 @@ query {
                           ... on OAuthCredentialData {
                             clientId
                             clientSecret
+                            url
+                          }
+                          ... on CertificateOAuthCredentialData {
+                            clientId
+                            certificate
                             url
                           }
                         }
@@ -351,6 +401,11 @@ query {
                       username
                       password
                     }
+                    ... on CertificateOAuthCredentialData {
+                      clientId
+                      certificate
+                      url
+                    }
                     ... on OAuthCredentialData {
                       clientId
                       clientSecret
@@ -378,6 +433,11 @@ query {
                         ... on OAuthCredentialData {
                           clientId
                           clientSecret
+                          url
+                        }
+                        ... on CertificateOAuthCredentialData {
+                          clientId
+                          certificate
                           url
                         }
                       }
@@ -418,6 +478,11 @@ query {
               username
               password
             }
+            ... on CertificateOAuthCredentialData {
+              clientId
+              certificate
+              url
+            }
             ... on OAuthCredentialData {
               clientId
               clientSecret
@@ -445,6 +510,11 @@ query {
                 ... on OAuthCredentialData {
                   clientId
                   clientSecret
+                  url
+                }
+                ... on CertificateOAuthCredentialData {
+                  clientId
+                  certificate
                   url
                 }
               }
