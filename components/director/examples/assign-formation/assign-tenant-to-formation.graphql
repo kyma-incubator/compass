@@ -5,6 +5,8 @@ mutation {
     objectType: TENANT
     formation: { name: "FIRST" }
   ) {
+    id
     name
+    formationTemplateId
   }
 }

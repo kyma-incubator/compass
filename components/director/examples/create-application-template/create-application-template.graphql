@@ -2,21 +2,22 @@
 mutation {
   result: createApplicationTemplate(
     in: {
-      name: "app-template-name"
+      name: "SAP app-template-name"
       description: "app-template-desc"
       applicationInput: {
-        name: "app"
+        name: "{{name}}"
         providerName: "compass-tests"
-        description: "test {{new-placeholder}}"
+        description: "test {{display-name}}"
         labels: { a: ["b", "c"], d: ["e", "f"] }
         webhooks: [{ type: CONFIGURATION_CHANGED, url: "http://url.com" }]
         healthCheckURL: "http://url.valid"
       }
       placeholders: [
-        { name: "new-placeholder", description: "new-placeholder-desc" }
+        { name: "name", description: "app" }
+        { name: "display-name", description: "new-placeholder-display-name" }
       ]
       accessLevel: GLOBAL
-      labels: { test: ["test"] }
+      labels: { subscriptionProviderId: "id-value!t12345", test: ["test"] }
     }
   ) {
     id
@@ -49,6 +50,11 @@ mutation {
             username
             password
           }
+          ... on CertificateOAuthCredentialData {
+            clientId
+            certificate
+            url
+          }
           ... on OAuthCredentialData {
             clientId
             clientSecret
@@ -76,6 +82,11 @@ mutation {
               ... on OAuthCredentialData {
                 clientId
                 clientSecret
+                url
+              }
+              ... on CertificateOAuthCredentialData {
+                clientId
+                certificate
                 url
               }
             }

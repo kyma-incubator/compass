@@ -5,6 +5,8 @@ mutation {
     objectType: RUNTIME
     formation: { name: "ADDITIONAL" }
   ) {
+    id
     name
+    formationTemplateId
   }
 }
