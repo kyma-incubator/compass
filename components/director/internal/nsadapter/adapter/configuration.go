@@ -31,4 +31,5 @@ type Configuration struct {
 	ReadyConfig healthz.ReadyConfig
 
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
+	RuntimeTypeLabelKey             string `envconfig:"APP_RUNTIME_TYPE_LABEL_KEY,default=runtimeType"`
 }
