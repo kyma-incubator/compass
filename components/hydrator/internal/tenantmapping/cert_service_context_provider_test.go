@@ -31,7 +31,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 
 	testError := errors.New("test error")
 	notFoundErr := apperrors.NewNotFoundErrorWithType(resource.Tenant)
-	tenantRegionNotFoundErr := fmt.Errorf("region label not found for tenant with ID: %q", tenantID)
+	subaccountRegionNotFoundErr := fmt.Errorf("region label not found for subaccount with ID: %q", tenantID)
 
 	authDetails := oathkeeper.AuthDetails{AuthID: tenantID, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: oathkeeper.ExternalIssuer}
 
@@ -161,7 +161,7 @@ func TestCertServiceContextProvider(t *testing.T) {
 			ReqDataInput:     reqDataWithInternalConsumerID,
 			AuthDetailsInput: authDetails,
 			ExpectedScopes:   scopesString,
-			ExpectedErr:      tenantRegionNotFoundErr,
+			ExpectedErr:      subaccountRegionNotFoundErr,
 		},
 		{
 			Name:           "Error when can't get required scopes",

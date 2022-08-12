@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -379,7 +381,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, directorClientMock, directorClientMock)
 	})
 
-	t.Run("returns error when unable to get tenant region in the Integration System SystemAuth case", func(t *testing.T) {
+	t.Run("returns error when tenant is subaccount and unable to get subaccount region in the Integration System SystemAuth case", func(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 		expectedTenantID := uuid.New()
@@ -395,6 +397,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		testTenant := &graphql.Tenant{
 			ID:         expectedExternalTenantID,
 			InternalID: expectedTenantID.String(),
+			Type:       string(tenant.Subaccount),
 		}
 
 		reqData := oathkeeper.ReqData{
@@ -416,7 +419,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.Error(t, err)
-		require.Contains(t, err.Error(), fmt.Sprintf("region label not found for tenant with ID: %q", expectedExternalTenantID))
+		require.Contains(t, err.Error(), fmt.Sprintf("region label not found for subaccount with ID: %q", expectedExternalTenantID))
 
 		mock.AssertExpectationsForObjects(t, directorClientMock, directorClientMock)
 	})
@@ -464,7 +467,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, directorClientMock, scopesGetterMock)
 	})
 
-	t.Run("returns error when unable to get tenant region in the Application or Runtime SystemAuth case for Certificate flow", func(t *testing.T) {
+	t.Run("returns error when tenant is subaccount and unable to get subaccount region in the Application or Runtime SystemAuth case for Certificate flow", func(t *testing.T) {
 		authID := uuid.New()
 		refObjID := uuid.New()
 		expectedTenantID := uuid.New()
@@ -480,6 +483,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		testTenant := &graphql.Tenant{
 			ID:         expectedExternalTenantID,
 			InternalID: expectedTenantID.String(),
+			Type:       string(tenant.Subaccount),
 		}
 
 		reqData := oathkeeper.ReqData{
@@ -503,7 +507,7 @@ func TestSystemAuthContextProvider(t *testing.T) {
 		_, err := provider.GetObjectContext(context.TODO(), reqData, authDetails)
 
 		require.Error(t, err)
-		require.Contains(t, err.Error(), fmt.Sprintf("region label not found for tenant with ID: %q", expectedExternalTenantID))
+		require.Contains(t, err.Error(), fmt.Sprintf("region label not found for subaccount with ID: %q", expectedExternalTenantID))
 
 		mock.AssertExpectationsForObjects(t, directorClientMock, scopesGetterMock)
 	})

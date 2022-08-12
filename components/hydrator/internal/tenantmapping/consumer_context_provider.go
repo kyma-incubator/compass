@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	cfg "github.com/kyma-incubator/compass/components/hydrator/internal/config"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -123,9 +125,13 @@ func getTenantWithRegion(ctx context.Context, directorClient DirectorClient, ext
 		return nil, "", err
 	}
 
+	if tenantMapping.Type != string(tenant.Subaccount) {
+		return tenantMapping, "", nil
+	}
+
 	region, ok := tenantMapping.Labels["region"]
 	if !ok {
-		return nil, "", fmt.Errorf("region label not found for tenant with ID: %q", externalTenantID)
+		return nil, "", fmt.Errorf("region label not found for subaccount with ID: %q", externalTenantID)
 	}
 	regionStr, ok := region.(string)
 	if !ok {
