@@ -309,6 +309,7 @@ func (c *converter) credentialInputFromGraphQL(in *graphql.CredentialDataInput) 
 
 	var basic *model.BasicCredentialDataInput
 	var oauth *model.OAuthCredentialDataInput
+	var certOAuth *model.CertificateOAuthCredentialDataInput
 
 	if in.Basic != nil {
 		basic = &model.BasicCredentialDataInput{
@@ -321,11 +322,18 @@ func (c *converter) credentialInputFromGraphQL(in *graphql.CredentialDataInput) 
 			ClientID:     in.Oauth.ClientID,
 			ClientSecret: in.Oauth.ClientSecret,
 		}
+	} else if in.CertificateOAuth != nil {
+		certOAuth = &model.CertificateOAuthCredentialDataInput{
+			ClientID:    in.CertificateOAuth.ClientID,
+			Certificate: in.CertificateOAuth.Certificate,
+			URL:         in.CertificateOAuth.URL,
+		}
 	}
 
 	return &model.CredentialDataInput{
-		Basic: basic,
-		Oauth: oauth,
+		Basic:            basic,
+		Oauth:            oauth,
+		CertificateOAuth: certOAuth,
 	}
 }
 
@@ -336,6 +344,7 @@ func (c *converter) credentialModelFromGraphQL(in *graphql.CredentialDataInput) 
 
 	var basic *model.BasicCredentialData
 	var oauth *model.OAuthCredentialData
+	var certOAuth *model.CertificateOAuthCredentialData
 
 	if in.Basic != nil {
 		basic = &model.BasicCredentialData{
@@ -348,11 +357,18 @@ func (c *converter) credentialModelFromGraphQL(in *graphql.CredentialDataInput) 
 			ClientID:     in.Oauth.ClientID,
 			ClientSecret: in.Oauth.ClientSecret,
 		}
+	} else if in.CertificateOAuth != nil {
+		certOAuth = &model.CertificateOAuthCredentialData{
+			ClientID:    in.CertificateOAuth.ClientID,
+			Certificate: in.CertificateOAuth.Certificate,
+			URL:         in.CertificateOAuth.URL,
+		}
 	}
 
 	return model.CredentialData{
-		Basic: basic,
-		Oauth: oauth,
+		Basic:            basic,
+		Oauth:            oauth,
+		CertificateOAuth: certOAuth,
 	}
 }
 
@@ -368,6 +384,12 @@ func (c *converter) credentialToGraphQL(in model.CredentialData) graphql.Credent
 			URL:          in.Oauth.URL,
 			ClientID:     in.Oauth.ClientID,
 			ClientSecret: in.Oauth.ClientSecret,
+		}
+	} else if in.CertificateOAuth != nil {
+		credential = graphql.CertificateOAuthCredentialData{
+			ClientID:    in.CertificateOAuth.ClientID,
+			Certificate: in.CertificateOAuth.Certificate,
+			URL:         in.CertificateOAuth.URL,
 		}
 	}
 
