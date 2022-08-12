@@ -1,5 +1,6 @@
 APP_NAME = compass-gateway
 APP_PATH = components/gateway
+COMPONENT_BUILD_TIMEOUT = 10m
 ENTRYPOINT = cmd/main.go
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts

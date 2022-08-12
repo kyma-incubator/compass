@@ -20,9 +20,19 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		Error    error
 	}{
 		{
-			Name:     "All properties given",
-			Input:    fixDetailedAuth(),
-			Expected: fixDetailedGQLAuth(),
+			Name:     "All properties given for basic auth",
+			Input:    fixDetailedAuthBasicCredentials(),
+			Expected: fixDetailedBasicCredentialsGQLAuth(),
+		},
+		{
+			Name:     "All properties given for certificate oauth auth",
+			Input:    fixDetailedAuthCertificateOAuthCredentials(),
+			Expected: fixDetailedCertificateOAuthCredentialsGQLAuth(),
+		},
+		{
+			Name:     "All properties given for oauth auth",
+			Input:    fixDetailedOAuthCredentials(),
+			Expected: fixDetailedOAuthCredentialsGQLAuth(),
 		},
 		{
 			Name:  "Empty",
@@ -59,14 +69,19 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 		Expected *model.AuthInput
 	}{
 		{
-			Name:     "All properties given",
-			Input:    fixDetailedGQLAuthInput(),
-			Expected: fixDetailedAuthInput(),
+			Name:     "All properties given for basic oauth",
+			Input:    fixDetailedBasicCredentialGQLAuthInput(),
+			Expected: fixDetailedBasicCredentialAuthInput(),
+		},
+		{
+			Name:     "All properties given for certificate oauth auth",
+			Input:    fixDetailedCertificateOAuthGQLAuthInput(),
+			Expected: fixDetailedCertificateOAuthAuthInput(),
 		},
 		{
 			Name:     "All properties given - deprecated",
 			Input:    fixDetailedGQLAuthInputDeprecated(),
-			Expected: fixDetailedAuthInput(),
+			Expected: fixDetailedBasicCredentialAuthInput(),
 		},
 		{
 			Name:     "Empty",
@@ -90,10 +105,10 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 
 func TestConverter_ModelFromGraphQLInput(t *testing.T) {
 	// GIVEN
-	gqlAuthInputWithInvalidHeaders := fixDetailedGQLAuthInput()
+	gqlAuthInputWithInvalidHeaders := fixDetailedBasicCredentialGQLAuthInput()
 	gqlAuthInputWithInvalidHeaders.AdditionalHeadersSerialized = &invalidAuthHeadersSerialized
 
-	gqlAuthInputWithInvalidQueryParams := fixDetailedGQLAuthInput()
+	gqlAuthInputWithInvalidQueryParams := fixDetailedBasicCredentialGQLAuthInput()
 	gqlAuthInputWithInvalidQueryParams.AdditionalQueryParamsSerialized = &invalidAuthParamsSerialized
 
 	testCases := []struct {
@@ -103,9 +118,14 @@ func TestConverter_ModelFromGraphQLInput(t *testing.T) {
 		ExpectedErrorMsg string
 	}{
 		{
-			Name:     "All properties given",
-			Input:    *fixDetailedGQLAuthInput(),
-			Expected: fixDetailedAuth(),
+			Name:     "All properties given for basic auth",
+			Input:    *fixDetailedBasicCredentialGQLAuthInput(),
+			Expected: fixDetailedAuthBasicCredentials(),
+		},
+		{
+			Name:     "All properties given for certificate oauth auth",
+			Input:    *fixDetailedCertificateOAuthGQLAuthInput(),
+			Expected: fixDetailedAuthCertificateOAuthCredentials(),
 		},
 		{
 			Name:     "Empty",

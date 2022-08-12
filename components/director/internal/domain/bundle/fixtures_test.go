@@ -385,7 +385,7 @@ func fixEntityBundle(id, name, desc string) *bundle.Entity {
 		Valid:  true,
 	}
 	authSQL := sql.NullString{
-		String: `{"Credential":{"Basic":{"Username":"foo","Password":"bar"},"Oauth":null},"AccessStrategy":null,"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]},"RequestAuth":{"Csrf":{"TokenEndpointURL":"foo.url","Credential":{"Basic":{"Username":"boo","Password":"far"},"Oauth":null},"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]}}},"OneTimeToken":null,"CertCommonName":""}`,
+		String: `{"Credential":{"Basic":{"Username":"foo","Password":"bar"},"Oauth":null,"CertificateOAuth":null},"AccessStrategy":null,"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]},"RequestAuth":{"Csrf":{"TokenEndpointURL":"foo.url","Credential":{"Basic":{"Username":"boo","Password":"far"},"Oauth":null,"CertificateOAuth":null},"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]}}},"OneTimeToken":null,"CertCommonName":""}`,
 		Valid:  true,
 	}
 
@@ -430,7 +430,7 @@ func fixBundleCreateArgs(defAuth, schema string, bndl *model.Bundle) []driver.Va
 }
 
 func fixDefaultAuth() string {
-	return `{"Credential":{"Basic":{"Username":"foo","Password":"bar"},"Oauth":null},"AccessStrategy":null,"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]},"RequestAuth":{"Csrf":{"TokenEndpointURL":"foo.url","Credential":{"Basic":{"Username":"boo","Password":"far"},"Oauth":null},"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]}}},"OneTimeToken":null,"CertCommonName":""}`
+	return `{"Credential":{"Basic":{"Username":"foo","Password":"bar"},"Oauth":null,"CertificateOAuth":null},"AccessStrategy":null,"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]},"RequestAuth":{"Csrf":{"TokenEndpointURL":"foo.url","Credential":{"Basic":{"Username":"boo","Password":"far"},"Oauth":null,"CertificateOAuth":null},"AdditionalHeaders":{"test":["foo","bar"]},"AdditionalQueryParams":{"test":["foo","bar"]}}},"OneTimeToken":null,"CertCommonName":""}`
 }
 
 func inputSchemaString() string {
