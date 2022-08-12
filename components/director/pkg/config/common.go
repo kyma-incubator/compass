@@ -7,6 +7,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// ReadConfigFile missing godoc
 func ReadConfigFile(path string) (string, error) {
 	if path == "" {
 		return "", errors.New("config path cannot be empty")
@@ -19,7 +20,8 @@ func ReadConfigFile(path string) (string, error) {
 	return string(config), nil
 }
 
-func ParseConfigToJsonMap(configData string) (map[string]gjson.Result, error) {
+// ParseConfigToJSONMap missing godoc
+func ParseConfigToJSONMap(configData string) (map[string]gjson.Result, error) {
 	if ok := gjson.Valid(configData); !ok {
 		return nil, errors.New("failed to validate config data")
 	}

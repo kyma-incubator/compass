@@ -19,11 +19,12 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"github.com/tidwall/gjson"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/tidwall/gjson"
 
 	"github.com/gorilla/mux"
 
@@ -418,7 +419,7 @@ func dependenciesConfigToMap(cfg tenantfetcher.HandlerConfig) (map[string][]tena
 	}
 
 	dependenciesConfig := make(map[string][]tenantfetcher.Dependency)
-	config, err := configprovider.ParseConfigToJsonMap(secretData)
+	config, err := configprovider.ParseConfigToJSONMap(secretData)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while parsing tenant service dependencies config file")
 	}
