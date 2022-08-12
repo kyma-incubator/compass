@@ -117,6 +117,12 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 		return reqData.Body
 	}
 
+	objCtxNames := make([]string, 0)
+	for i := range objCtxs {
+		objCtxNames = append(objCtxNames, objCtxs[i].ContextProvider)
+	}
+	log.C(ctx).Infof("Matched object contexts: [%s]", strings.Join(objCtxNames, ","))
+
 	if err := addTenantsToExtra(objCtxs, reqData); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while adding tenants to extra: %v", err)
 		return reqData.Body
@@ -124,7 +130,11 @@ func (h Handler) processRequest(ctx context.Context, reqData oathkeeper.ReqData)
 
 	addScopesToExtra(objCtxs, reqData)
 
-	addConsumersToExtra(objCtxs, reqData)
+	if err := addConsumersToExtra(objCtxs, reqData); err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while adding consumers to extra: %v", err)
+		reqData.Body.Extra = make(map[string]interface{}) // ensure that no tenant context is propagated from addTenantsToExtra
+		return reqData.Body
+	}
 
 	return reqData.Body
 }
@@ -259,7 +269,9 @@ func removeDuplicateValues(scopes []string) []string {
 	return result
 }
 
-func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) {
+func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqData) error {
+	region := deriveRegionFromObjectContexts(objectContexts)
+
 	c := consumer.Consumer{}
 	if len(objectContexts) == 1 {
 		c.ConsumerID = objectContexts[0].ConsumerID
@@ -268,14 +280,34 @@ func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqD
 	} else {
 		c = getCertServiceObjectContextProviderConsumer(objectContexts)
 		c.OnBehalfOf = getOnBehalfConsumer(objectContexts)
+
+		for _, objCtx := range objectContexts {
+			if objCtx.TenantID != "" && objCtx.Region != region {
+				return errors.Errorf("mismatched region for consumer ID %s: actual %s, expected: %s)", objCtx.ConsumerID, objCtx.Region, region)
+			}
+		}
 	}
 
 	reqData.Body.Extra["consumerID"] = c.ConsumerID
 	reqData.Body.Extra["consumerType"] = c.ConsumerType
 	reqData.Body.Extra["flow"] = c.Flow
 	reqData.Body.Extra["onBehalfOf"] = c.OnBehalfOf
-	reqData.Body.Extra["region"] = getRegionFromConsumerToken(objectContexts)
+	reqData.Body.Extra["region"] = region
 	reqData.Body.Extra["tokenClientID"] = getClientIDFromConsumerToken(objectContexts)
+
+	return nil
+}
+
+// deriveRegionFromObjectContexts makes sure to find the region from an existing tenant which is matched by some previous obj ctx.
+// This is ensured by checking the objCtx.TenantID field, because it will be populated by the corresponding obj ctx provider once it is matched.
+// This is necessary due to the fact that some obj ctx providers might result with a non-existing tenant for which TenantID will be empty (conversely the region for them would also be empty).
+func deriveRegionFromObjectContexts(objectContext []ObjectContext) string {
+	for _, objCtx := range objectContext {
+		if objCtx.TenantID != "" {
+			return objCtx.Region
+		}
+	}
+	return ""
 }
 
 func getCertServiceObjectContextProviderConsumer(objectContexts []ObjectContext) consumer.Consumer {
@@ -294,15 +326,6 @@ func getOnBehalfConsumer(objectContexts []ObjectContext) string {
 	for _, objCtx := range objectContexts {
 		if objCtx.ContextProvider != tenantmapping.CertServiceObjectContextProvider {
 			return objCtx.ConsumerID
-		}
-	}
-	return ""
-}
-
-func getRegionFromConsumerToken(objectContexts []ObjectContext) string {
-	for _, objCtx := range objectContexts {
-		if objCtx.ContextProvider == tenantmapping.AuthenticatorObjectContextProvider || objCtx.ContextProvider == tenantmapping.ConsumerProviderObjectContextProvider {
-			return objCtx.Region
 		}
 	}
 	return ""

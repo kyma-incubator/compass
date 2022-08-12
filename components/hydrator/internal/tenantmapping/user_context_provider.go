@@ -63,7 +63,7 @@ func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oath
 	}
 
 	log.C(ctx).Infof("Getting the tenant with external ID: %s", externalTenantID)
-	tenantMapping, err := m.directorClient.GetTenantByExternalID(ctx, externalTenantID)
+	tenantMapping, region, err := getTenantWithRegion(ctx, m.directorClient, externalTenantID)
 	if err != nil {
 		if directorErrors.IsGQLNotFoundError(err) {
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
@@ -73,6 +73,8 @@ func (m *userContextProvider) GetObjectContext(ctx context.Context, reqData oath
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
+
+	authDetails.Region = region
 
 	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.UserObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)

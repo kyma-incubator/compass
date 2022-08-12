@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
@@ -55,12 +57,13 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 
 		// Create Application Template
 		appTemplateName := createAppTemplateName("app-template-name-subscription")
-		appTemplateInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
+		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), &appTmpl)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, appTmpl.ID)
+		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
 
 		selfRegLabelValue, ok := appTmpl.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
 		require.True(stdT, ok)
@@ -332,7 +335,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertClientForAnotherRegion, getSrcAppReq, &actualAppPage)
 			require.Error(t, err)
 
-			expectedErrMsg := "failed to find application template in tenant"
+			expectedErrMsg := "insufficient scopes provided" // at least for now this is the error message that gets propagated back when regions mismatch
 			require.Contains(t, err.Error(), expectedErrMsg)
 
 			// Create Bundle

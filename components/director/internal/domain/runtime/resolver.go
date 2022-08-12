@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
-	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	"github.com/google/uuid"
+	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	labelPkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
@@ -306,7 +306,8 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 	id := r.uidService.Generate()
 
 	validate := func() error { return nil }
-	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.Runtime, convertedIn.Labels, id, validate)
+
+	selfRegLabels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.Runtime, convertedIn.Labels, id, validate)
 	if err != nil {
 		return nil, err
 	}
@@ -336,7 +337,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 		if didRollback {
 			labelVal := str.CastOrEmpty(convertedIn.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
 			if labelVal != "" {
-				label, ok := in.Labels[selfregmanager.RegionLabel].(string)
+				label, ok := selfRegLabels[selfregmanager.RegionLabel].(string)
 				if !ok {
 					log.C(ctx).Errorf("An error occurred while casting region label value to string")
 				} else {
@@ -348,11 +349,11 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err = r.checkProviderRuntimeExistence(ctx, labels); err != nil {
+	if err = r.checkProviderRuntimeExistence(ctx, selfRegLabels); err != nil {
 		return nil, err
 	}
 
-	if err = r.runtimeService.CreateWithMandatoryLabels(ctx, convertedIn, id, labels); err != nil {
+	if err = r.runtimeService.CreateWithMandatoryLabels(ctx, convertedIn, id, selfRegLabels); err != nil {
 		return nil, err
 	}
 

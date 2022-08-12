@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -98,7 +100,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 
 			name := fmt.Sprintf("app-template-%s", test.resourceSuffix)
 			appTemplateName := createAppTemplateName(name)
-			appTmplInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(appTemplateName)
+			appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
 			at, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, test.tenant, appTmplInput)
 			defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, test.tenant, &at)
 			if test.expectErr {
@@ -106,6 +108,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				require.NotEmpty(t, at.ID)
+				require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, at.Labels[tenantfetcher.RegionKey])
 			}
 		})
 	}

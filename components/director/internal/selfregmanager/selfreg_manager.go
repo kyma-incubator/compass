@@ -67,10 +67,6 @@ func (s *selfRegisterManager) IsSelfRegistrationFlow(ctx context.Context, labels
 			return false, errors.Errorf("missing %q label", s.cfg.SelfRegisterDistinguishLabelKey)
 		}
 
-		if _, _, err := s.retrieveRegionInstanceConfig(labels); err != nil {
-			return false, err
-		}
-
 		return true, nil
 	}
 	return false, nil
@@ -81,7 +77,7 @@ func (s *selfRegisterManager) IsSelfRegistrationFlow(ctx context.Context, labels
 func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string, validate func() error) (map[string]interface{}, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
-		return labels, errors.Wrapf(err, "while loading consumer")
+		return nil, errors.Wrapf(err, "while loading consumer")
 	}
 
 	if consumerInfo.Flow.IsCertFlow() {
@@ -90,41 +86,51 @@ func (s *selfRegisterManager) PrepareForSelfRegistration(ctx context.Context, re
 			if resourceType == resource.Runtime {
 				return labels, nil
 			}
-			return labels, errors.Errorf("missing %q label", s.cfg.SelfRegisterDistinguishLabelKey)
+			return nil, errors.Errorf("missing %q label", s.cfg.SelfRegisterDistinguishLabelKey)
 		}
 
 		if err := validate(); err != nil {
-			return labels, err
+			return nil, err
 		}
 
-		region, instanceConfig, err := s.retrieveRegionInstanceConfig(labels)
-		if err != nil {
-			return labels, err
+		if labels[RegionLabel] != nil {
+			return nil, errors.Errorf("providing %q label and value is forbidden", RegionLabel)
+		}
+
+		if consumerInfo.Region == "" {
+			return nil, errors.Errorf("missing %s value in consumer context", RegionLabel)
+		}
+
+		labels[RegionLabel] = consumerInfo.Region
+
+		instanceConfig, exists := s.cfg.RegionToInstanceConfig[consumerInfo.Region]
+		if !exists {
+			return nil, errors.Errorf("missing configuration for region: %s", consumerInfo.Region)
 		}
 
 		request, err := s.createSelfRegPrepRequest(id, consumerInfo.ConsumerID, instanceConfig.URL)
 		if err != nil {
-			return labels, err
+			return nil, err
 		}
 
-		caller, err := s.callerProvider.GetCaller(s.cfg, region)
+		caller, err := s.callerProvider.GetCaller(s.cfg, consumerInfo.Region)
 		if err != nil {
-			return labels, errors.Wrapf(err, "while getting caller")
+			return nil, errors.Wrapf(err, "while getting caller")
 		}
 
 		response, err := caller.Call(request)
 		if err != nil {
-			return labels, errors.Wrapf(err, "while executing preparation of self registered resource")
+			return nil, errors.Wrapf(err, "while executing preparation of self registered resource")
 		}
 		defer httputils.Close(ctx, response.Body)
 
 		respBytes, err := io.ReadAll(response.Body)
 		if err != nil {
-			return labels, errors.Wrapf(err, "while reading response body")
+			return nil, errors.Wrapf(err, "while reading response body")
 		}
 
 		if response.StatusCode != http.StatusCreated {
-			return labels, apperrors.NewCustomErrorWithCode(response.StatusCode, fmt.Sprintf("received unexpected status %d while preparing self-registered resource: %s", response.StatusCode, string(respBytes)))
+			return nil, apperrors.NewCustomErrorWithCode(response.StatusCode, fmt.Sprintf("received unexpected status %d while preparing self-registered resource: %s", response.StatusCode, string(respBytes)))
 		}
 
 		selfRegLabelVal := gjson.GetBytes(respBytes, s.cfg.SelfRegisterResponseKey)
@@ -226,23 +232,4 @@ func (s *selfRegisterManager) createSelfRegDelRequest(resourceID, targetURL stri
 	request.Header.Set("Content-Type", "application/json")
 
 	return request, nil
-}
-
-func (s *selfRegisterManager) retrieveRegionInstanceConfig(labels map[string]interface{}) (string, config.InstanceConfig, error) {
-	regionValue, exists := labels[RegionLabel]
-	if !exists {
-		return "", config.InstanceConfig{}, errors.Errorf("missing %q label", RegionLabel)
-	}
-
-	region, ok := regionValue.(string)
-	if !ok {
-		return "", config.InstanceConfig{}, errors.Errorf("region value should be of type %q", "string")
-	}
-
-	instanceConfig, exists := s.cfg.RegionToInstanceConfig[region]
-	if !exists {
-		return "", config.InstanceConfig{}, errors.Errorf("missing configuration for region: %s", region)
-	}
-
-	return region, instanceConfig, nil
 }
