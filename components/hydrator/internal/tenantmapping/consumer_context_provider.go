@@ -69,25 +69,6 @@ func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData 
 	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), c.tenantKeys, "", mergeWithOtherScopes, authDetails.Region, userCtxData.clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.ConsumerProviderObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
 
-	_, exists := tenantMapping.Labels["subdomain"]
-	if !exists {
-		log.C(ctx).Warningf("subdomain label not found for tenant with ID: %q", tenantMapping.ID)
-		tenantToUpdate := schema.BusinessTenantMappingInput{
-			Name:           *tenantMapping.Name,
-			ExternalTenant: tenantMapping.ID,
-			Type:           tenantMapping.Type,
-			Parent:         &tenantMapping.ParentID,
-			Region:         &region,
-			Subdomain:      &userCtxData.subdomain,
-			Provider:       tenantMapping.Provider,
-		}
-
-		if err := c.directorClient.WriteTenants(ctx, []schema.BusinessTenantMappingInput{tenantToUpdate}); err != nil {
-			log.C(ctx).Errorf("an error occurred while write tenant with external ID: %q: %v", tenantToUpdate.ExternalTenant, err)
-			return ObjectContext{}, errors.Wrapf(err, "an error occurred while write tenant with external ID: %q", tenantToUpdate.ExternalTenant)
-		}
-	}
-
 	return objCtx, nil
 }
 

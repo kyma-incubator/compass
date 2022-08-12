@@ -123,7 +123,7 @@ global:
       version: "PR-2484"
     hydrator:
       dir:
-      version: "PR-2484"
+      version: "PR-2551"
     gateway:
       dir:
       version: "PR-2501"
