@@ -304,7 +304,7 @@ func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqD
 // This is necessary due to the fact that some obj ctx providers might result with a non-existing tenant for which TenantID will be empty (conversely the region for them would also be empty).
 func deriveRegionFromObjectContexts(objectContext []ObjectContext) string {
 	for _, objCtx := range objectContext {
-		if objCtx.TenantID != "" {
+		if objCtx.Region != "" {
 			return objCtx.Region
 		}
 	}

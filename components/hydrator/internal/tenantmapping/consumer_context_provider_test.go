@@ -182,7 +182,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 			},
 			ReqDataInput:          reqDataFunc(userCtxHeaderWithAllProperties),
 			ExpectedObjectContext: tenantmapping.ObjectContext{},
-			ExpectedErrMsg:        fmt.Sprintf("region label not found for tenant with ID: %q", consumerTenantID),
+			ExpectedErrMsg:        fmt.Sprintf("region label not found for subaccount with ID: %q", consumerTenantID),
 		},
 		{
 			Name: "Returns error when region label type is not the expected one",

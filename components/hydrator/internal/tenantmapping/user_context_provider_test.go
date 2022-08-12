@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/textproto"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -33,9 +35,6 @@ func TestUserContextProvider(t *testing.T) {
 	expectedExternalTenantID := uuid.New()
 	expectedScopes := []string{"application:read", "application:write"}
 	userObjCtxType := "Static User"
-	labels := map[string]interface{}{
-		"region": "eu-1",
-	}
 
 	jwtAuthDetails := oathkeeper.AuthDetails{AuthID: username, AuthFlow: oathkeeper.JWTAuthFlow}
 
@@ -62,7 +61,6 @@ func TestUserContextProvider(t *testing.T) {
 		testTenant := &graphql.Tenant{
 			ID:         expectedExternalTenantID.String(),
 			InternalID: expectedTenantID.String(),
-			Labels:     labels,
 		}
 
 		directorClientMock := getDirectorClientMock()
@@ -78,6 +76,7 @@ func TestUserContextProvider(t *testing.T) {
 		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
 		require.Equal(t, username, objCtx.ConsumerID)
 		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
+		require.Equal(t, "", objCtx.Region)
 
 		mock.AssertExpectationsForObjects(t, staticGroupRepoMock, directorClientMock)
 	})
@@ -100,7 +99,6 @@ func TestUserContextProvider(t *testing.T) {
 		testTenant := &graphql.Tenant{
 			ID:         expectedExternalTenantID.String(),
 			InternalID: expectedTenantID.String(),
-			Labels:     labels,
 		}
 
 		directorClientMock := getDirectorClientMock()
@@ -116,6 +114,7 @@ func TestUserContextProvider(t *testing.T) {
 		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
 		require.Equal(t, username, objCtx.ConsumerID)
 		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
+		require.Equal(t, "", objCtx.Region)
 
 		mock.AssertExpectationsForObjects(t, staticGroupRepoMock, directorClientMock)
 	})
@@ -136,7 +135,6 @@ func TestUserContextProvider(t *testing.T) {
 		testTenant := &graphql.Tenant{
 			ID:         expectedExternalTenantID.String(),
 			InternalID: expectedTenantID.String(),
-			Labels:     labels,
 		}
 
 		directorClientMock := getDirectorClientMock()
@@ -152,6 +150,7 @@ func TestUserContextProvider(t *testing.T) {
 		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
 		require.Equal(t, username, objCtx.ConsumerID)
 		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
+		require.Equal(t, "", objCtx.Region)
 
 		mock.AssertExpectationsForObjects(t, staticGroupRepoMock, directorClientMock)
 	})
@@ -187,7 +186,6 @@ func TestUserContextProvider(t *testing.T) {
 		testTenant := &graphql.Tenant{
 			ID:         expectedExternalTenantID.String(),
 			InternalID: expectedTenantID.String(),
-			Labels:     labels,
 		}
 
 		directorClientMock := getDirectorClientMock()
@@ -203,6 +201,7 @@ func TestUserContextProvider(t *testing.T) {
 		require.Equal(t, strings.Join(allExpectedGroupScopes, " "), objCtx.Scopes)
 		require.Equal(t, username, objCtx.ConsumerID)
 		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
+		require.Equal(t, "", objCtx.Region)
 
 		mock.AssertExpectationsForObjects(t, staticGroupRepoMock, directorClientMock)
 	})
@@ -258,11 +257,53 @@ func TestUserContextProvider(t *testing.T) {
 		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
 		require.Equal(t, username, objCtx.ConsumerID)
 		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
+		require.Equal(t, "", objCtx.Region)
 
 		mock.AssertExpectationsForObjects(t, staticGroupRepoMock, directorClientMock)
 	})
 
-	t.Run("returns error when tenant region cannot be found", func(t *testing.T) {
+	t.Run("returns object context with region when subaccount tenant region is present", func(t *testing.T) {
+		reqData := oathkeeper.ReqData{
+			Body: oathkeeper.ReqBody{
+				Extra: map[string]interface{}{
+					oathkeeper.ExternalTenantKey: expectedExternalTenantID.String(),
+					oathkeeper.GroupsKey:         []interface{}{groupName},
+				},
+			},
+		}
+
+		region := "eu-1"
+		testTenantWithoutRegion := &graphql.Tenant{
+			ID:         expectedExternalTenantID.String(),
+			InternalID: expectedTenantID.String(),
+			Type:       string(tenant.Subaccount),
+			Labels: map[string]interface{}{
+				"region": region,
+			},
+		}
+
+		staticGroupRepoMock := getStaticGroupRepoMock()
+		staticGroupRepoMock.On("Get", mock.Anything, []string{groupName}).Return(staticGroups, nil).Once()
+
+		directorClientMock := getDirectorClientMock()
+		directorClientMock.On("GetTenantByExternalID", mock.Anything, expectedExternalTenantID.String()).Return(testTenantWithoutRegion, nil).Once()
+
+		provider := tenantmapping.NewUserContextProvider(directorClientMock, staticGroupRepoMock)
+
+		objCtx, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
+
+		require.NoError(t, err)
+		require.Equal(t, expectedExternalTenantID.String(), objCtx.ExternalTenantID)
+		require.Equal(t, expectedTenantID.String(), objCtx.TenantID)
+		require.Equal(t, strings.Join(expectedScopes, " "), objCtx.Scopes)
+		require.Equal(t, username, objCtx.ConsumerID)
+		require.Equal(t, userObjCtxType, string(objCtx.ConsumerType))
+		require.Equal(t, region, objCtx.Region)
+
+		mock.AssertExpectationsForObjects(t, staticGroupRepoMock, directorClientMock)
+	})
+
+	t.Run("returns error when tenant is subaccount and region cannot be found", func(t *testing.T) {
 		reqData := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
@@ -275,6 +316,7 @@ func TestUserContextProvider(t *testing.T) {
 		testTenantWithoutRegion := &graphql.Tenant{
 			ID:         expectedExternalTenantID.String(),
 			InternalID: expectedTenantID.String(),
+			Type:       string(tenant.Subaccount),
 		}
 
 		staticGroupRepoMock := getStaticGroupRepoMock()
@@ -288,7 +330,7 @@ func TestUserContextProvider(t *testing.T) {
 		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
 		require.Error(t, err)
-		require.Contains(t, err.Error(), fmt.Sprintf("region label not found for tenant with ID: %q", expectedExternalTenantID))
+		require.Contains(t, err.Error(), fmt.Sprintf("region label not found for subaccount with ID: %q", expectedExternalTenantID))
 
 		mock.AssertExpectationsForObjects(t, staticGroupRepoMock, directorClientMock)
 	})
