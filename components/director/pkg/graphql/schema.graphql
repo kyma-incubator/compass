@@ -218,7 +218,7 @@ interface SystemAuth {
 	referenceObjectId: ID
 }
 
-union CredentialData = BasicCredentialData | OAuthCredentialData
+union CredentialData = BasicCredentialData | OAuthCredentialData | CertificateOAuthCredentialData
 
 input APIDefinitionInput {
 	"""
@@ -487,12 +487,22 @@ input CSRFTokenCredentialRequestAuthInput {
 	additionalQueryParamsSerialized: QueryParamsSerialized
 }
 
+input CertificateOAuthCredentialDataInput {
+	clientId: ID!
+	certificate: String!
+	"""
+	**Validation:** valid URL
+	"""
+	url: String!
+}
+
 """
-**Validation:** basic or oauth field required
+**Validation:** basic or oauth or certificateOAuth field required
 """
 input CredentialDataInput {
 	basic: BasicCredentialDataInput
 	oauth: OAuthCredentialDataInput
+	certificateOAuth: CertificateOAuthCredentialDataInput
 }
 
 input CredentialRequestAuthInput {
@@ -945,6 +955,12 @@ type CSRFTokenCredentialRequestAuth {
 	additionalHeadersSerialized: HttpHeadersSerialized
 	additionalQueryParams: QueryParams
 	additionalQueryParamsSerialized: QueryParamsSerialized
+}
+
+type CertificateOAuthCredentialData {
+	clientId: ID!
+	certificate: String!
+	url: String!
 }
 
 type CredentialRequestAuth {

@@ -26,8 +26,9 @@ type CSRFTokenCredentialRequestAuth struct {
 
 // CredentialData missing godoc
 type CredentialData struct {
-	Basic *BasicCredentialData
-	Oauth *OAuthCredentialData
+	Basic            *BasicCredentialData
+	Oauth            *OAuthCredentialData
+	CertificateOAuth *CertificateOAuthCredentialData
 }
 
 // BasicCredentialData missing godoc
@@ -41,6 +42,13 @@ type OAuthCredentialData struct {
 	ClientID     string
 	ClientSecret string
 	URL          string
+}
+
+// CertificateOAuthCredentialData represents a structure for mTLS OAuth credentials
+type CertificateOAuthCredentialData struct {
+	ClientID    string
+	Certificate string
+	URL         string
 }
 
 // AuthInput missing godoc
@@ -81,8 +89,9 @@ func (i *AuthInput) ToAuth() *Auth {
 
 // CredentialDataInput missing godoc
 type CredentialDataInput struct {
-	Basic *BasicCredentialDataInput
-	Oauth *OAuthCredentialDataInput
+	Basic            *BasicCredentialDataInput
+	Oauth            *OAuthCredentialDataInput
+	CertificateOAuth *CertificateOAuthCredentialDataInput
 }
 
 // ToCredentialData missing godoc
@@ -93,6 +102,7 @@ func (i *CredentialDataInput) ToCredentialData() *CredentialData {
 
 	var basic *BasicCredentialData
 	var oauth *OAuthCredentialData
+	var certOAuth *CertificateOAuthCredentialData
 
 	if i.Basic != nil {
 		basic = i.Basic.ToBasicCredentialData()
@@ -102,9 +112,14 @@ func (i *CredentialDataInput) ToCredentialData() *CredentialData {
 		oauth = i.Oauth.ToOAuthCredentialData()
 	}
 
+	if i.CertificateOAuth != nil {
+		certOAuth = i.CertificateOAuth.ToCertificateOAuthCredentialData()
+	}
+
 	return &CredentialData{
-		Basic: basic,
-		Oauth: oauth,
+		Basic:            basic,
+		Oauth:            oauth,
+		CertificateOAuth: certOAuth,
 	}
 }
 
@@ -143,6 +158,26 @@ func (i *OAuthCredentialDataInput) ToOAuthCredentialData() *OAuthCredentialData 
 		ClientID:     i.ClientID,
 		ClientSecret: i.ClientSecret,
 		URL:          i.URL,
+	}
+}
+
+// CertificateOAuthCredentialDataInput represents an input structure for mTLS OAuth credentials
+type CertificateOAuthCredentialDataInput struct {
+	ClientID    string
+	Certificate string
+	URL         string
+}
+
+// ToCertificateOAuthCredentialData converts a CertificateOAuthCredentialDataInput into CertificateOAuthCredentialData
+func (i *CertificateOAuthCredentialDataInput) ToCertificateOAuthCredentialData() *CertificateOAuthCredentialData {
+	if i == nil {
+		return nil
+	}
+
+	return &CertificateOAuthCredentialData{
+		ClientID:    i.ClientID,
+		Certificate: i.Certificate,
+		URL:         i.URL,
 	}
 }
 
