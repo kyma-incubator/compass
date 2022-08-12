@@ -63,6 +63,8 @@ spec:
                         value: "{{.Values.global.tenantConfig.dbPool.maxIdleConnections}}"
                       - name: APP_LOG_FORMAT
                         value: {{ .Values.global.log.format | quote }}
+                      - name: APP_DEFAULT_TENANT_REGION
+                        value: {{ .Values.global.defaultTenantRegion }}
                   volumeMounts:
                     - name: default-tenant-config
                       mountPath: /data/default-tenants.json

@@ -27,8 +27,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
-
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -685,7 +683,6 @@ func TestORDService(t *testing.T) {
 		expectedProductType := fmt.Sprintf("SAP %s", "productType")
 		appTmplInput := fixtures.FixApplicationTemplate(expectedProductType)
 		appTmplInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SubscriptionConfig.SelfRegDistinguishLabelValue}
-		appTmplInput.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTmplInput)
 		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, &appTmpl)

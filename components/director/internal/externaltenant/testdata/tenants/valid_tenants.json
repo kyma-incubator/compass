@@ -5,6 +5,7 @@
   },
   {
     "id":"id-foo",
-    "name":"foo"
+    "name":"foo",
+    "region": "eu-2"
   }
 ]

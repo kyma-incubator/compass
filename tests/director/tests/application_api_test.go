@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
+
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -1743,7 +1745,7 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	newFormation := "formation-merge-applications-e2e"
 	formationTemplateName := "merge-applications-template"
 
-	appTmplInput := fixAppTemplateInputWithDefaultRegionAndDistinguishLabel(expectedProductType)
+	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(expectedProductType)
 	appTmplInput.ApplicationInput.Name = "{{name}}"
 	appTmplInput.ApplicationInput.BaseURL = baseURL
 	appTmplInput.ApplicationInput.ProviderName = nil
@@ -1764,6 +1766,7 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTmpl)
 	require.NoError(t, err)
+	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
 
 	appFromTmplSrc := graphql.ApplicationFromTemplateInput{
 		TemplateName: expectedProductType, Values: []*graphql.TemplateValueInput{

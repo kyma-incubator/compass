@@ -38,6 +38,15 @@ func SelfRegManagerThatReturnsErrorOnPrep() *automock.SelfRegisterManager {
 	return srm
 }
 
+// SelfRegManagerThatReturnsErrorOnPrepAndGetSelfRegDistinguishingLabelKey mock for PrepareForSelfRegistration executed once with error, GetSelfRegDistinguishingLabelKey once
+func SelfRegManagerThatReturnsErrorOnPrepAndGetSelfRegDistinguishingLabelKey() *automock.SelfRegisterManager {
+	srm := &automock.SelfRegisterManager{}
+	labels := make(map[string]interface{})
+	srm.On("PrepareForSelfRegistration", mock.Anything, resource.ApplicationTemplate, mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(labels, errors.New(SelfRegErrorMsg)).Once()
+	srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
+	return srm
+}
+
 // SelfRegManagerThatDoesCleanupWithNoErrors mock for GetSelfRegDistinguishingLabelKey executed once, CleanupSelfRegistration once
 func SelfRegManagerThatDoesCleanupWithNoErrors() *automock.SelfRegisterManager {
 	srm := &automock.SelfRegisterManager{}

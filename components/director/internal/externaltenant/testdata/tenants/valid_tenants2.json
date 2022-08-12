@@ -5,6 +5,7 @@
   },
   {
     "id":"id-baz",
-    "name":"baz"
+    "name":"baz",
+    "region": "eu-3"
   }
 ]
