@@ -52,6 +52,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	fmt.Println("Test")
 	term := make(chan os.Signal)
 	signal.HandleInterrupts(ctx, cancel, term)
 

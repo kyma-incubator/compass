@@ -126,7 +126,7 @@ global:
       version: "PR-2555"
     gateway:
       dir:
-      version: "PR-2501"
+      version: "PR-2557"
     operations_controller:
       dir:
       version: "PR-2501"
