@@ -721,7 +721,7 @@ func TestAddWebhookToApplicationTemplate(t *testing.T) {
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 	t.Log("Create application template")
-	appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(name)
+	appTmplInput := fixtures.FixApplicationTemplate(name)
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, &appTemplate)
 	require.NoError(t, err)

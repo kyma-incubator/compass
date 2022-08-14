@@ -5,6 +5,8 @@ mutation {
     objectType: APPLICATION
     formation: { name: "ADDITIONAL" }
   ) {
+    id
     name
+    formationTemplateId
   }
 }

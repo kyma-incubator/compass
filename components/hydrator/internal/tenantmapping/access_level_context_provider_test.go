@@ -34,7 +34,7 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 	testError := errors.New("test error")
 	notFoundErr := apperrors.NewNotFoundErrorWithType(resource.Tenant)
 	tenantKeyNotFoundErr := apperrors.NewKeyDoesNotExistError(string(resource.Tenant))
-	tenantRegionNotFoundErr := fmt.Errorf("region label not found for tenant with ID: %q", consumerTenantID)
+	subaccountRegionNotFoundErr := fmt.Errorf("region label not found for subaccount with ID: %q", consumerTenantID)
 
 	authDetails := oathkeeper.AuthDetails{AuthID: providerTenantID, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: oathkeeper.ExternalIssuer}
 
@@ -49,8 +49,9 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 	}
 
 	internalSubaccount := "internalSubaccountID"
+	region := "eu-1"
 	labels := map[string]interface{}{
-		"region": "eu-1",
+		"region": region,
 	}
 
 	testSubaccount := &graphql.Tenant{
@@ -66,10 +67,10 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 		Labels:     labels,
 	}
 
-	testAccountWithoutRegion := &graphql.Tenant{
+	testSubaccountWithoutRegion := &graphql.Tenant{
 		ID:         internalSubaccount,
 		InternalID: "externalAccount",
-		Type:       "account",
+		Type:       "subaccount",
 	}
 
 	testCases := []struct {
@@ -129,15 +130,15 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 			ExpectedErr:      tenantKeyNotFoundErr,
 		},
 		{
-			Name: "Error when can't extract tenant region",
+			Name: "Error when tenant is subaccount and can't extract tenant region",
 			DirectorClient: func() *automock.DirectorClient {
 				client := &automock.DirectorClient{}
-				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(testAccountWithoutRegion, nil).Once()
+				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(testSubaccountWithoutRegion, nil).Once()
 				return client
 			},
 			ReqDataInput:     reqData,
 			AuthDetailsInput: authDetails,
-			ExpectedErr:      tenantRegionNotFoundErr,
+			ExpectedErr:      subaccountRegionNotFoundErr,
 		},
 		{
 			Name: "Error when consumer don't have access",
@@ -167,6 +168,9 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 				require.Equal(t, testCase.ExpectedInternalID, objectCtx.TenantContext.TenantID)
 				require.Equal(t, consumerTenantID, objectCtx.TenantContext.ExternalTenantID)
 				require.Equal(t, "", objectCtx.Scopes)
+				if objectCtx.TenantID != "" {
+					require.Equal(t, region, objectCtx.Region)
+				}
 			} else {
 				require.Error(t, err)
 				require.Contains(t, strings.ToLower(err.Error()), strings.ToLower(testCase.ExpectedErr.Error()))

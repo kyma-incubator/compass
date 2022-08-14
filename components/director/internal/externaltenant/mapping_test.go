@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -29,24 +31,24 @@ func TestMapTenants(t *testing.T) {
 			ExternalTenant: "id-default",
 			Provider:       firstProvider,
 			Region:         "eu-1",
+			Type:           string(tenant.Subaccount),
 		},
 		{
 			Name:           "foo",
 			ExternalTenant: "id-foo",
 			Provider:       firstProvider,
 			Region:         "eu-2",
+			Type:           string(tenant.Subaccount),
 		},
 		{
 			Name:           "bar",
 			ExternalTenant: "id-bar",
 			Provider:       secondProvider,
-			Region:         "eu-1",
 		},
 		{
 			Name:           "baz",
 			ExternalTenant: "id-baz",
 			Provider:       secondProvider,
-			Region:         "eu-3",
 		},
 	}
 
