@@ -1107,6 +1107,8 @@ func TestFormationApplicationTypeWhileAssigning(t *testing.T) {
 	formation := fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, formationName)
 	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formation.Name)
 
+	formationTemplate := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, formation.FormationTemplateID)
+
 	actualApplication, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, applicationName, conf.ApplicationTypeLabelKey, invalidApplicationType, tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &actualApplication)
 	require.Equal(t, invalidApplicationType, actualApplication.Labels[conf.ApplicationTypeLabelKey])
@@ -1116,7 +1118,7 @@ func TestFormationApplicationTypeWhileAssigning(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createRequest, &formationResultFormation)
 	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApplication.ID, graphql.FormationObjectTypeApplication, tenantId)
 	require.Empty(t, formationResultFormation)
-	require.EqualError(t, err, fmt.Sprintf("graphql: The operation is not allowed [reason=unsupported applicationType %q for formation template \"Side-by-side extensibility with Kyma\", allowing only [\"SAP Cloud for Customer\" \"SAP Commerce Cloud\" \"SAP Field Service Management\" \"SAP Marketing Cloud\"]]", invalidApplicationType))
+	require.EqualError(t, err, fmt.Sprintf("graphql: The operation is not allowed [reason=unsupported applicationType %q for formation template %q, allowing only %q]", invalidApplicationType, formationTemplate.Name, formationTemplate.ApplicationTypes))
 }
 
 func assertNotificationsCountForTenant(t *testing.T, body []byte, tenant string, count int) {
