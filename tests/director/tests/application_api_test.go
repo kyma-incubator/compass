@@ -1765,7 +1765,7 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	fixtures.SetApplicationLabelWithTenant(t, ctx, certSecuredGraphQLClient, tenantId, outputSrcApp.ID, managedLabel, managedLabelValue)
 	fixtures.SetApplicationLabelWithTenant(t, ctx, certSecuredGraphQLClient, tenantId, outputSrcApp.ID, sccLabel, sccLabelValue)
 
-	formationTemplate := fixtures.FixFormationTypeWithTypes(formationTemplateName, conf.KymaRuntimeTypeLabelValue, []string{expectedProductType, expectedProductType + " (eu-1)"})
+	formationTemplate := fixtures.FixFormationTypeWithTypes(formationTemplateName, conf.KymaRuntimeTypeLabelValue, []string{expectedProductType})
 	actualFormationTemplate := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplate)
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, actualFormationTemplate.ID)
 
