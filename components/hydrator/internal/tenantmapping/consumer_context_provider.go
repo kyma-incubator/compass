@@ -3,6 +3,7 @@ package tenantmapping
 import (
 	"context"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
@@ -113,7 +114,10 @@ func (c *consumerContextProvider) getUserContextData(userContextHeader string) (
 }
 
 func getTenantWithRegion(ctx context.Context, directorClient DirectorClient, externalTenantID string) (*schema.Tenant, string, error) {
+	spew.Dump("Before: ")
 	tenantMapping, err := directorClient.GetTenantByExternalID(ctx, externalTenantID)
+	spew.Dump("Tenant mapping: ")
+	spew.Dump(tenantMapping)
 	if err != nil {
 		return nil, "", err
 	}
