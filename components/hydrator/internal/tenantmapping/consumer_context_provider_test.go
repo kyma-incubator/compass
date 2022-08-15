@@ -117,30 +117,6 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 		Provider: "provider-tenant",
 	}
 
-	testTenantWithoutSubdomain := &graphql.Tenant{
-		ID:         consumerTenantID,
-		InternalID: consumerInternalTenantID,
-		Name:       &tenantName,
-		Type:       "subaccount",
-		Labels: map[string]interface{}{
-			"region": testRegion,
-		},
-		Provider: "provider-tenant",
-	}
-
-	region, ok := testTenantWithoutSubdomain.Labels["region"].(string)
-	require.True(t, ok)
-
-	tenantToUpdateWithSubdomainFromHeader := graphql.BusinessTenantMappingInput{
-		Name:           *testTenantWithoutSubdomain.Name,
-		ExternalTenant: testTenantWithoutSubdomain.ID,
-		Parent:         &testTenantWithoutSubdomain.ParentID,
-		Subdomain:      &testSubdomain,
-		Region:         &region,
-		Type:           testTenantWithoutSubdomain.Type,
-		Provider:       testTenantWithoutSubdomain.Provider,
-	}
-
 	testCases := []struct {
 		Name                  string
 		DirectorClient        func() *automock.DirectorClient
@@ -153,17 +129,6 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 			DirectorClient: func() *automock.DirectorClient {
 				client := &automock.DirectorClient{}
 				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(testTenant, nil).Once()
-				return client
-			},
-			ReqDataInput:          reqDataFunc(userCtxHeaderWithAllProperties),
-			ExpectedObjectContext: expectedObjectContextFunc(clientID, consumerInternalTenantID, testRegion),
-		},
-		{
-			Name: "Success when tenant subdomain label is missing and tenant update is successful",
-			DirectorClient: func() *automock.DirectorClient {
-				client := &automock.DirectorClient{}
-				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(testTenantWithoutSubdomain, nil).Once()
-				client.On("WriteTenants", mock.Anything, []graphql.BusinessTenantMappingInput{tenantToUpdateWithSubdomainFromHeader}).Return(nil).Once()
 				return client
 			},
 			ReqDataInput:          reqDataFunc(userCtxHeaderWithAllProperties),
@@ -217,7 +182,7 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 			},
 			ReqDataInput:          reqDataFunc(userCtxHeaderWithAllProperties),
 			ExpectedObjectContext: tenantmapping.ObjectContext{},
-			ExpectedErrMsg:        fmt.Sprintf("region label not found for tenant with ID: %q", consumerTenantID),
+			ExpectedErrMsg:        fmt.Sprintf("region label not found for subaccount with ID: %q", consumerTenantID),
 		},
 		{
 			Name: "Returns error when region label type is not the expected one",
@@ -229,18 +194,6 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 			ReqDataInput:          reqDataFunc(userCtxHeaderWithAllProperties),
 			ExpectedObjectContext: tenantmapping.ObjectContext{},
 			ExpectedErrMsg:        fmt.Sprintf("unexpected region label type: %T, should be string", []string{}),
-		},
-		{
-			Name: "Returns error while updating tenant when subdomain label is missing",
-			DirectorClient: func() *automock.DirectorClient {
-				client := &automock.DirectorClient{}
-				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(testTenantWithoutSubdomain, nil).Once()
-				client.On("WriteTenants", mock.Anything, []graphql.BusinessTenantMappingInput{tenantToUpdateWithSubdomainFromHeader}).Return(testError).Once()
-				return client
-			},
-			ReqDataInput:          reqDataFunc(userCtxHeaderWithAllProperties),
-			ExpectedObjectContext: tenantmapping.ObjectContext{},
-			ExpectedErrMsg:        fmt.Sprintf("an error occurred while write tenant with external ID: %q:", consumerTenantID),
 		},
 	}
 

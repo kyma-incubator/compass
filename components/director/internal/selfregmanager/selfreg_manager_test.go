@@ -30,54 +30,70 @@ const (
 	consumerID                      = "test-consumer-id"
 )
 
-var testConfig = config.SelfRegConfig{
-	SelfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
-	SelfRegisterLabelKey:            "test-label-key",
-	SelfRegisterLabelValuePrefix:    "test-prefix",
-	SelfRegisterResponseKey:         selfregmngrtest.ResponseLabelKey,
-	SelfRegisterPath:                "test-path",
-	SelfRegisterNameQueryParam:      "testNameQuery",
-	SelfRegisterTenantQueryParam:    "testTenantQuery",
-	SelfRegisterRequestBodyPattern:  `{"%s":"test"}`,
-	SelfRegisterSecretPath:          "testdata/TestSelfRegisterManager_PrepareRuntimeForSelfRegistration.golden",
-	InstanceClientIDPath:            "clientId",
-	InstanceClientSecretPath:        "clientSecret",
-	InstanceURLPath:                 "url",
-	InstanceTokenURLPath:            "tokenUrl",
-	InstanceCertPath:                "clientCert",
-	InstanceKeyPath:                 "clientKey",
-	RegionToInstanceConfig: map[string]config.InstanceConfig{
-		"test-region": {
-			ClientID:     "client_id",
-			ClientSecret: "client_secret",
-			URL:          "https://test-url-second.com",
-			TokenURL:     "https://test-token-url-second.com",
-			Cert:         "cert",
-			Key:          "key",
+var (
+	testConfig = config.SelfRegConfig{
+		SelfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
+		SelfRegisterLabelKey:            "test-label-key",
+		SelfRegisterLabelValuePrefix:    "test-prefix",
+		SelfRegisterResponseKey:         selfregmngrtest.ResponseLabelKey,
+		SelfRegisterPath:                "test-path",
+		SelfRegisterNameQueryParam:      "testNameQuery",
+		SelfRegisterTenantQueryParam:    "testTenantQuery",
+		SelfRegisterRequestBodyPattern:  `{"%s":"test"}`,
+		SelfRegisterSecretPath:          "testdata/TestSelfRegisterManager_PrepareRuntimeForSelfRegistration.golden",
+		InstanceClientIDPath:            "clientId",
+		InstanceClientSecretPath:        "clientSecret",
+		InstanceURLPath:                 "url",
+		InstanceTokenURLPath:            "tokenUrl",
+		InstanceCertPath:                "clientCert",
+		InstanceKeyPath:                 "clientKey",
+		RegionToInstanceConfig: map[string]config.InstanceConfig{
+			"test-region": {
+				ClientID:     "client_id",
+				ClientSecret: "client_secret",
+				URL:          "https://test-url-second.com",
+				TokenURL:     "https://test-token-url-second.com",
+				Cert:         "cert",
+				Key:          "key",
+			},
+			"fake-region": {
+				ClientID:     "client_id_2",
+				ClientSecret: "client_secret_2",
+				URL:          "https://test-url      -second.com",
+				TokenURL:     "https://test-token-url-second.com",
+				Cert:         "cert2",
+				Key:          "key2",
+			},
 		},
-		"fake-region": {
-			ClientID:     "client_id_2",
-			ClientSecret: "client_secret_2",
-			URL:          "https://test-url      -second.com",
-			TokenURL:     "https://test-token-url-second.com",
-			Cert:         "cert2",
-			Key:          "key2",
-		},
-	},
 
-	ClientTimeout: 5 * time.Second,
-}
+		ClientTimeout: 5 * time.Second,
+	}
 
-func TestSelfRegisterManager_IsSelfRegistrationFlow(t *testing.T) {
-	tokenConsumer := consumer.Consumer{
+	tokenConsumer = consumer.Consumer{
 		ConsumerID: consumerID,
 		Flow:       oathkeeper.OAuth2Flow,
+		Region:     testRegion,
 	}
-	certConsumer := consumer.Consumer{
+
+	certConsumer = consumer.Consumer{
+		ConsumerID: consumerID,
+		Flow:       oathkeeper.CertificateFlow,
+		Region:     testRegion,
+	}
+
+	certConsumerWithoutRegion = consumer.Consumer{
 		ConsumerID: consumerID,
 		Flow:       oathkeeper.CertificateFlow,
 	}
 
+	certConsumerWithFakeRegion = consumer.Consumer{
+		ConsumerID: consumerID,
+		Flow:       oathkeeper.CertificateFlow,
+		Region:     fakeRegion,
+	}
+)
+
+func TestSelfRegisterManager_IsSelfRegistrationFlow(t *testing.T) {
 	ctxWithTokenConsumer := consumer.SaveToContext(context.TODO(), tokenConsumer)
 	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
 
@@ -118,33 +134,6 @@ func TestSelfRegisterManager_IsSelfRegistrationFlow(t *testing.T) {
 			ExpectedOutput: false,
 		},
 		{
-			Name:           "Error when region label is missing",
-			Config:         testConfig,
-			Region:         testRegion,
-			InputLabels:    fixLblWithoutRegion(),
-			Context:        ctxWithCertConsumer,
-			ExpectedErr:    fmt.Errorf("missing %q label", selfregmanager.RegionLabel),
-			ExpectedOutput: false,
-		},
-		{
-			Name:           "Error when region label is not string",
-			Config:         testConfig,
-			Region:         testRegion,
-			InputLabels:    map[string]interface{}{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: struct{}{}},
-			Context:        ctxWithCertConsumer,
-			ExpectedErr:    fmt.Errorf("region value should be of type %q", "string"),
-			ExpectedOutput: false,
-		},
-		{
-			Name:           "Error when region doesn't exist",
-			Config:         testConfig,
-			Region:         testRegion,
-			InputLabels:    map[string]interface{}{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: "not-valid"},
-			Context:        ctxWithCertConsumer,
-			ExpectedErr:    errors.New("missing configuration for region"),
-			ExpectedOutput: false,
-		},
-		{
 			Name:           "Error when context does not contain consumer",
 			Config:         testConfig,
 			Region:         testRegion,
@@ -173,17 +162,10 @@ func TestSelfRegisterManager_IsSelfRegistrationFlow(t *testing.T) {
 }
 
 func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
-	tokenConsumer := consumer.Consumer{
-		ConsumerID: consumerID,
-		Flow:       oathkeeper.OAuth2Flow,
-	}
-	certConsumer := consumer.Consumer{
-		ConsumerID: consumerID,
-		Flow:       oathkeeper.CertificateFlow,
-	}
-
 	ctxWithTokenConsumer := consumer.SaveToContext(context.TODO(), tokenConsumer)
 	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
+	ctxWithCertConsumerWithoutRegion := consumer.SaveToContext(context.TODO(), certConsumerWithoutRegion)
+	ctxWithCertConsumerWithFakeRegion := consumer.SaveToContext(context.TODO(), certConsumerWithFakeRegion)
 
 	testCases := []struct {
 		Name           string
@@ -200,7 +182,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 		{
 			Name:           "Success",
 			Config:         testConfig,
-			InputLabels:    fixLblInput(),
+			InputLabels:    fixLblWithoutRegion(),
 			CallerProvider: selfregmngrtest.CallerThatGetsCalledOnce(http.StatusCreated),
 			Region:         testRegion,
 			Context:        ctxWithCertConsumer,
@@ -212,7 +194,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 		{
 			Name:           "Success with subaccount label for application templates",
 			Config:         testConfig,
-			InputLabels:    fixLblInput(),
+			InputLabels:    fixLblWithoutRegion(),
 			CallerProvider: selfregmngrtest.CallerThatGetsCalledOnce(http.StatusCreated),
 			Region:         testRegion,
 			Context:        ctxWithCertConsumer,
@@ -255,7 +237,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			ResourceType:   resource.ApplicationTemplate,
 			Validation:     func() error { return errors.New("validation failed") },
 			ExpectedErr:    errors.New("validation failed"),
-			ExpectedOutput: fixLblInput(),
+			ExpectedOutput: nil,
 		},
 		{
 			Name:           "Error for missing distinguished label and resource is App Template",
@@ -267,55 +249,43 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			ResourceType:   resource.ApplicationTemplate,
 			Validation:     func() error { return nil },
 			ExpectedErr:    fmt.Errorf("missing %q label", selfRegisterDistinguishLabelKey),
-			ExpectedOutput: map[string]interface{}{},
+			ExpectedOutput: nil,
 		},
 		{
-			Name:           "Error when region label is missing",
+			Name:           "Error during region check when tenant region is unable to be retrieved from context",
 			Config:         testConfig,
-			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
-			Region:         testRegion,
 			InputLabels:    fixLblWithoutRegion(),
-			Context:        ctxWithCertConsumer,
-			ResourceType:   resource.Runtime,
-			Validation:     func() error { return nil },
-			ExpectedErr:    fmt.Errorf("missing %q label", selfregmanager.RegionLabel),
-			ExpectedOutput: fixLblWithDistinguish(),
-		},
-		{
-			Name:           "Error when region label is not string",
-			Config:         testConfig,
 			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:         testRegion,
-			InputLabels:    map[string]interface{}{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: struct{}{}},
-			Context:        ctxWithCertConsumer,
+			Context:        ctxWithCertConsumerWithoutRegion,
 			ResourceType:   resource.Runtime,
 			Validation:     func() error { return nil },
-			ExpectedErr:    fmt.Errorf("region value should be of type %q", "string"),
-			ExpectedOutput: fixLblWithDistinguishAndStructRegion(),
+			ExpectedErr:    fmt.Errorf("missing %s value in consumer context", selfregmanager.RegionLabel),
+			ExpectedOutput: nil,
 		},
 		{
-			Name:           "Error when region doesn't exist",
+			Name:           "Error when region label is provided",
 			Config:         testConfig,
+			InputLabels:    fixLblInput(),
 			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:         testRegion,
-			InputLabels:    map[string]interface{}{selfRegisterDistinguishLabelKey: distinguishLblVal, selfregmanager.RegionLabel: "not-valid"},
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
 			Validation:     func() error { return nil },
-			ExpectedErr:    errors.New("missing configuration for region"),
-			ExpectedOutput: fixLblWithDistinguishAndInvalidRegion(),
+			ExpectedErr:    fmt.Errorf("providing %q label and value is forbidden", selfregmanager.RegionLabel),
+			ExpectedOutput: nil,
 		},
 		{
 			Name:           "Error when caller provider fails",
 			Config:         testConfig,
 			CallerProvider: selfregmngrtest.CallerProviderThatFails,
 			Region:         testRegion,
-			InputLabels:    fixLblInput(),
+			InputLabels:    fixLblWithoutRegion(),
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
 			Validation:     func() error { return nil },
 			ExpectedErr:    errors.New("while getting caller"),
-			ExpectedOutput: fixLblInputBeforePrep(),
+			ExpectedOutput: nil,
 		},
 		{
 			Name:           "Error when context does not contain consumer",
@@ -327,43 +297,43 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 			ResourceType:   resource.Runtime,
 			Validation:     func() error { return nil },
 			ExpectedErr:    consumer.NoConsumerError,
-			ExpectedOutput: map[string]interface{}{},
+			ExpectedOutput: nil,
 		},
 		{
 			Name:           "Error when can't create URL for preparation of self-registration",
 			Config:         testConfig,
 			CallerProvider: selfregmngrtest.CallerThatDoesNotGetCalled,
 			Region:         fakeRegion,
-			InputLabels:    map[string]interface{}{selfRegisterDistinguishLabelKey: "invalid value", selfregmanager.RegionLabel: fakeRegion},
-			Context:        ctxWithCertConsumer,
+			InputLabels:    map[string]interface{}{selfRegisterDistinguishLabelKey: "invalid value"},
+			Context:        ctxWithCertConsumerWithFakeRegion,
 			ResourceType:   resource.Runtime,
 			Validation:     func() error { return nil },
 			ExpectedErr:    errors.New("while creating url for preparation of self-registered resource"),
-			ExpectedOutput: fixLblWithDistinguishAndFakeRegion(),
+			ExpectedOutput: nil,
 		},
 		{
 			Name:           "Error when Call doesn't succeed",
 			Config:         testConfig,
 			CallerProvider: selfregmngrtest.CallerThatDoesNotSucceed,
 			Region:         testRegion,
-			InputLabels:    fixLblInput(),
+			InputLabels:    fixLblWithoutRegion(),
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
 			Validation:     func() error { return nil },
 			ExpectedErr:    selfregmngrtest.TestError,
-			ExpectedOutput: fixLblInputBeforePrep(),
+			ExpectedOutput: nil,
 		},
 		{
 			Name:           "Error when status code is unexpected",
 			Config:         testConfig,
 			CallerProvider: selfregmngrtest.CallerThatReturnsBadStatus,
 			Region:         testRegion,
-			InputLabels:    fixLblInput(),
+			InputLabels:    fixLblWithoutRegion(),
 			Context:        ctxWithCertConsumer,
 			ResourceType:   resource.Runtime,
 			Validation:     func() error { return nil },
 			ExpectedErr:    errors.New("received unexpected status"),
-			ExpectedOutput: fixLblInputBeforePrep(),
+			ExpectedOutput: nil,
 		},
 	}
 
@@ -518,40 +488,12 @@ func fixLblInputAfterPrep() map[string]interface{} {
 	}
 }
 
-func fixLblInputBeforePrep() map[string]interface{} {
-	return map[string]interface{}{
-		selfregmanager.RegionLabel:      testRegion,
-		selfRegisterDistinguishLabelKey: distinguishLblVal,
-	}
-}
-
 func fixLblInputAfterPrepWithSubaccount() map[string]interface{} {
 	return map[string]interface{}{
 		testConfig.SelfRegisterLabelKey:    selfregmngrtest.ResponseLabelValue,
 		scenarioassignment.SubaccountIDKey: consumerID,
 		selfregmanager.RegionLabel:         testRegion,
 		selfRegisterDistinguishLabelKey:    distinguishLblVal,
-	}
-}
-
-func fixLblWithDistinguishAndFakeRegion() map[string]interface{} {
-	return map[string]interface{}{
-		selfRegisterDistinguishLabelKey: "invalid value",
-		selfregmanager.RegionLabel:      fakeRegion,
-	}
-}
-
-func fixLblWithDistinguishAndStructRegion() map[string]interface{} {
-	return map[string]interface{}{
-		selfRegisterDistinguishLabelKey: distinguishLblVal,
-		selfregmanager.RegionLabel:      struct{}{},
-	}
-}
-
-func fixLblWithDistinguishAndInvalidRegion() map[string]interface{} {
-	return map[string]interface{}{
-		selfRegisterDistinguishLabelKey: distinguishLblVal,
-		selfregmanager.RegionLabel:      "not-valid",
 	}
 }
 

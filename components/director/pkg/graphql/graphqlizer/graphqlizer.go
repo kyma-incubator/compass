@@ -196,6 +196,13 @@ func (g *Graphqlizer) CredentialDataInputToGQL(in *graphql.CredentialDataInput) 
 				url: "{{ .Oauth.URL }}",
 			},
 			{{- end }}
+			{{- if .CertificateOAuth }}
+			certificateOAuth: {
+				clientId: "{{ .CertificateOAuth.ClientID }}",
+				certificate: "{{ .CertificateOAuth.Certificate }}",
+				url: "{{ .CertificateOAuth.URL }}",
+			},
+			{{- end }}
 	}`)
 }
 

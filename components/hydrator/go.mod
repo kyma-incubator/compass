@@ -26,6 +26,7 @@ require (
 )
 
 require (
+	github.com/kyma-incubator/compass/tests v0.0.0-20220601144746-743a35267d22
 	github.com/prometheus/client_golang v1.11.0
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
 )
@@ -54,11 +55,13 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
+	github.com/jmoiron/sqlx v1.3.4 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.0 // indirect
 	github.com/lestrrat-go/httpcc v1.0.0 // indirect
 	github.com/lestrrat-go/option v1.0.0 // indirect
+	github.com/lib/pq v1.10.4 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/mitchellh/copystructure v1.1.2 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect

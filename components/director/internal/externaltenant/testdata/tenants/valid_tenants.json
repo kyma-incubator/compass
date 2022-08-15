@@ -1,10 +1,13 @@
 [
   {
     "id":"id-default",
-    "name":"default"
+    "name":"default",
+    "type": "subaccount"
   },
   {
     "id":"id-foo",
-    "name":"foo"
+    "name":"foo",
+    "region": "eu-2",
+    "type": "subaccount"
   }
 ]
