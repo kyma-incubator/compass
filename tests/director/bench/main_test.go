@@ -2,6 +2,8 @@ package bench
 
 import (
 	"context"
+	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"os"
 	"testing"
 
@@ -39,7 +41,8 @@ func TestMain(m *testing.M) {
 	defer tenant.TestTenants.Cleanup()
 
 	cfg.ReadConfig(&conf)
-
+	fmt.Println("Config: ")
+	spew.Dump(conf)
 	ctx := context.Background()
 	cc, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	if err != nil {
