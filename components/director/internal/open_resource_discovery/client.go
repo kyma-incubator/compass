@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
@@ -21,6 +22,17 @@ import (
 	"github.com/pkg/errors"
 )
 
+
+type ClientConfig struct {
+	MaxParallelDocuments int
+}
+
+func NewClientConfig(MaxParallelDocuments int) ClientConfig {
+	return ClientConfig{
+		MaxParallelDocuments: MaxParallelDocuments,
+	}
+}
+
 // Client represents ORD documents client
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
@@ -28,13 +40,15 @@ type Client interface {
 }
 
 type client struct {
+	config ClientConfig
 	*http.Client
 	accessStrategyExecutorProvider accessstrategy.ExecutorProvider
 }
 
 // NewClient creates new ORD Client via a provided http.Client
-func NewClient(httpClient *http.Client, accessStrategyExecutorProvider accessstrategy.ExecutorProvider) *client {
+func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecutorProvider accessstrategy.ExecutorProvider) *client {
 	return &client{
+		config: config,
 		Client:                         httpClient,
 		accessStrategyExecutorProvider: accessStrategyExecutorProvider,
 	}
@@ -69,25 +83,68 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 	}
 
 	docs := make([]*Document, 0)
+	mutex := sync.RWMutex{}
+	wg := sync.WaitGroup{}
+	queue := make (chan DocumentDetails)
+
+	//for _, docDetails := range config.OpenResourceDiscoveryV1.Documents {
+	//	wg.Add(1)
+	//	go func(docDetails DocumentDetails) {
+	//		defer wg.Done()
+	//		documentURL, err := buildDocumentURL(docDetails.URL, baseURL)
+	//		if err != nil {
+	//			log.C(ctx).Warn(errors.Wrap(err, "error building document URL").Error())
+	//		}
+	//		strategy, ok := docDetails.AccessStrategies.GetSupported()
+	//		if !ok {
+	//			log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", documentURL)
+	//		}
+	//		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, tenantValue)
+	//		if err != nil {
+	//			log.C(ctx).Warn(errors.Wrapf(err, "error fetching ORD document from: %s", documentURL).Error())
+	//		}
+	//
+	//		mutex.Lock()
+	//		defer mutex.Unlock()
+	//		docs = append(docs, doc)
+	//	}(docDetails)
+	//}
+
+	for i := 0; i < c.config.MaxParallelDocuments; i++ {
+		wg.Add(1)
+		go c.fetchDocumentsContent(ctx, queue, &wg, &mutex, docs, baseURL, tenantValue)
+	}
+
 	for _, docDetails := range config.OpenResourceDiscoveryV1.Documents {
+		queue <- docDetails
+	}
+
+	close(queue)
+	wg.Wait()
+
+	return docs, baseURL, nil
+}
+
+func (c* client) fetchDocumentsContent(ctx context.Context, queue chan DocumentDetails, wg *sync.WaitGroup, mutex *sync.RWMutex, docs []* Document, baseURL, tenantValue string) {
+	defer wg.Done()
+	for docDetails := range queue {
 		documentURL, err := buildDocumentURL(docDetails.URL, baseURL)
 		if err != nil {
-			return nil, "", errors.Wrap(err, "error building document URL")
+			log.C(ctx).Warn(errors.Wrap(err, "error building document URL").Error())
 		}
 		strategy, ok := docDetails.AccessStrategies.GetSupported()
 		if !ok {
 			log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", documentURL)
-			continue
 		}
 		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, tenantValue)
 		if err != nil {
-			return nil, "", errors.Wrapf(err, "error fetching ORD document from: %s", documentURL)
+			log.C(ctx).Warn(errors.Wrapf(err, "error fetching ORD document from: %s", documentURL).Error())
 		}
 
+		mutex.Lock()
 		docs = append(docs, doc)
+		mutex.Unlock()
 	}
-
-	return docs, baseURL, nil
 }
 
 func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type, tenantValue string) (*Document, error) {
