@@ -157,6 +157,8 @@ func parseTemplate(tmpl *string, data interface{}, dest interface{}) error {
 		return err
 	}
 
+	fmt.Printf("ALEX data 1: %+v", data)
+
 	res := new(bytes.Buffer)
 	if err = t.Execute(res, data); err != nil {
 		return err
@@ -165,6 +167,8 @@ func parseTemplate(tmpl *string, data interface{}, dest interface{}) error {
 	if err = json.Unmarshal(res.Bytes(), dest); err != nil {
 		return err
 	}
+
+	fmt.Printf("ALEX dest 1: %+v", dest)
 
 	if validatable, ok := dest.(inputvalidation.Validatable); ok {
 		return validatable.Validate()
