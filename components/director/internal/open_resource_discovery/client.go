@@ -22,7 +22,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-
 type ClientConfig struct {
 	MaxParallelDocuments int
 }
@@ -48,7 +47,7 @@ type client struct {
 // NewClient creates new ORD Client via a provided http.Client
 func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecutorProvider accessstrategy.ExecutorProvider) *client {
 	return &client{
-		config: config,
+		config:                         config,
 		Client:                         httpClient,
 		accessStrategyExecutorProvider: accessStrategyExecutorProvider,
 	}
@@ -85,7 +84,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 	docs := make([]*Document, 0)
 	mutex := sync.RWMutex{}
 	wg := sync.WaitGroup{}
-	queue := make (chan DocumentDetails)
+	queue := make(chan DocumentDetails)
 
 	//for _, docDetails := range config.OpenResourceDiscoveryV1.Documents {
 	//	wg.Add(1)
@@ -125,7 +124,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 	return docs, baseURL, nil
 }
 
-func (c* client) fetchDocumentsContent(ctx context.Context, queue chan DocumentDetails, wg *sync.WaitGroup, mutex *sync.RWMutex, docs []* Document, baseURL, tenantValue string) {
+func (c *client) fetchDocumentsContent(ctx context.Context, queue chan DocumentDetails, wg *sync.WaitGroup, mutex *sync.RWMutex, docs []*Document, baseURL, tenantValue string) {
 	defer wg.Done()
 	for docDetails := range queue {
 		documentURL, err := buildDocumentURL(docDetails.URL, baseURL)

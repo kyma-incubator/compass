@@ -77,7 +77,7 @@ type config struct {
 	GlobalRegistryConfig ord.GlobalRegistryConfig
 
 	MaxParallelApplicationProcessors int `envconfig:"APP_MAX_PARALLEL_APPLICATION_PROCESSORS,default=1"`
-	MaxParallelDocuments int `envconfig:"APP_MAX_PARALLEL_DOCUMENTS"`
+	MaxParallelDocuments             int `envconfig:"APP_MAX_PARALLEL_DOCUMENTS"`
 
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 }
