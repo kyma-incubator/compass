@@ -111,7 +111,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 
 	for i := 0; i < c.config.MaxParallelDocuments; i++ {
 		wg.Add(1)
-		go c.fetchDocumentsContent(ctx, queue, &wg, &mutex, docs, baseURL, tenantValue)
+		go c.fetchDocumentsContent(ctx, queue, &wg, &mutex, &docs, baseURL, tenantValue)
 	}
 
 	for _, docDetails := range config.OpenResourceDiscoveryV1.Documents {
@@ -124,7 +124,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 	return docs, baseURL, nil
 }
 
-func (c *client) fetchDocumentsContent(ctx context.Context, queue chan DocumentDetails, wg *sync.WaitGroup, mutex *sync.RWMutex, docs []*Document, baseURL, tenantValue string) {
+func (c *client) fetchDocumentsContent(ctx context.Context, queue chan DocumentDetails, wg *sync.WaitGroup, mutex *sync.RWMutex, docs *[]*Document, baseURL, tenantValue string) {
 	defer wg.Done()
 	for docDetails := range queue {
 		documentURL, err := buildDocumentURL(docDetails.URL, baseURL)
@@ -141,7 +141,7 @@ func (c *client) fetchDocumentsContent(ctx context.Context, queue chan DocumentD
 		}
 
 		mutex.Lock()
-		docs = append(docs, doc)
+		*docs = append(*docs, doc)
 		mutex.Unlock()
 	}
 }
