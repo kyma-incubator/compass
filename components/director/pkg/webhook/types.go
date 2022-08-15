@@ -157,7 +157,7 @@ func parseTemplate(tmpl *string, data interface{}, dest interface{}) error {
 		return err
 	}
 
-	fmt.Printf("ALEX data 1: %+v", data)
+	PrettyPrint1(data)
 
 	res := new(bytes.Buffer)
 	if err = t.Execute(res, data); err != nil {
@@ -168,13 +168,35 @@ func parseTemplate(tmpl *string, data interface{}, dest interface{}) error {
 		return err
 	}
 
-	fmt.Printf("ALEX dest 1: %+v", dest)
+	PrettyPrint2(dest)
 
 	if validatable, ok := dest.(inputvalidation.Validatable); ok {
 		return validatable.Validate()
 	}
 
 	return nil
+}
+
+func PrettyPrint1(data interface{}) {
+	var p []byte
+	//    var err := error
+	p, err := json.MarshalIndent(data, "", "\t")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Printf("ALEX data: %s \n", p)
+}
+
+func PrettyPrint2(data interface{}) {
+	var p []byte
+	//    var err := error
+	p, err := json.MarshalIndent(data, "", "\t")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Printf("ALEX dest: %s \n", p)
 }
 
 func isAllowedHTTPMethod(method string) bool {

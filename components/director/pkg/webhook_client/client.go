@@ -84,7 +84,7 @@ func (c *client) Do(ctx context.Context, request *Request) (*webhook.Response, e
 		}
 	}
 
-	fmt.Printf("ALEX 1. %+v \n", webhook.HeaderTemplate)
+	fmt.Printf("ALEX 1. %+v \n", *webhook.HeaderTemplate)
 
 	headers := http.Header{}
 	if webhook.HeaderTemplate != nil {
