@@ -3,9 +3,10 @@ package bench
 import (
 	"context"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"os"
 	"testing"
+
+	"github.com/davecgh/go-spew/spew"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
