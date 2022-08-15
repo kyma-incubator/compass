@@ -9,6 +9,7 @@ type ConnectorTestConfig struct {
 	DirectorExternalCertSecuredURL string
 	SkipSSLValidation              bool `envconfig:"default=false"`
 	DirectorMtlsURL                string
+	GatewayOauth                   string
 	HydratorURL                    string `envconfig:"default=http://compass-hydrator:3000"`
 
 	CertificateDataHeader        string `envconfig:"default=Certificate-Data"`

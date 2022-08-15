@@ -94,13 +94,13 @@ func TestAutomaticScenarioAssignmentForRuntime(t *testing.T) {
 	fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{prodScenario, manualScenario, devScenario, defaultScenario})
 	defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{"DEFAULT"})
 
-	rtm0 := registerKymaRuntime(t, ctx, subaccount, fixRuntimeInput("runtime0"))
+	rtm0 := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccount, fixRuntimeInput("runtime0"), conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccount, &rtm0)
 
-	rtm1 := registerKymaRuntime(t, ctx, subaccount, fixRuntimeInput("runtime1"))
+	rtm1 := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccount, fixRuntimeInput("runtime1"), conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccount, &rtm1)
 
-	rtm2 := registerKymaRuntime(t, ctx, tenantID, fixRuntimeInput("runtime2"))
+	rtm2 := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, fixRuntimeInput("runtime2"), conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &rtm2)
 
 	t.Run("Check automatic scenario assigment", func(t *testing.T) {
@@ -180,7 +180,7 @@ func TestAutomaticScenarioAssignmentsWholeScenario(t *testing.T) {
 	fixtures.AssignFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation, subaccountID, tenantID)
 	defer fixtures.CleanupFormationWithTenantObjectType(t, ctx, certSecuredGraphQLClient, formation.Name, subaccountID, tenantID)
 
-	rtm := registerKymaRuntime(t, ctx, subaccountID, fixRuntimeInput("test-name"))
+	rtm := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, fixRuntimeInput("test-name"), conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, &rtm)
 
 	t.Run("Scenario is set when label matches selector", func(t *testing.T) {

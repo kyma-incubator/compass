@@ -47,7 +47,7 @@ func TestAppsForRuntimeWithCertificates(t *testing.T) {
 	// Register Runtime
 	input := fixtures.FixRuntimeRegisterInput("test-runtime")
 	input.Labels[ScenariosLabel] = []string{TestScenario}
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, &input)
+	runtime := fixtures.RegisterKymaRuntime(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, input, cfg.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, directorAppsForRuntimeClient.CertSecuredGraphqlClient, appsForRuntimeTenantID, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)

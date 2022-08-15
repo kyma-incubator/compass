@@ -28,7 +28,6 @@ type DirectorClient interface {
 	GetTenantByExternalID(ctx context.Context, tenantID string) (*schema.Tenant, error)
 	GetSystemAuthByID(ctx context.Context, authID string) (*model.SystemAuth, error)
 	UpdateSystemAuth(ctx context.Context, sysAuth *model.SystemAuth) (director.UpdateAuthResult, error)
-	WriteTenants(ctx context.Context, tenants []schema.BusinessTenantMappingInput) error
 }
 
 // ScopesGetter missing godoc
@@ -281,9 +280,11 @@ func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqD
 		c = getCertServiceObjectContextProviderConsumer(objectContexts)
 		c.OnBehalfOf = getOnBehalfConsumer(objectContexts)
 
-		for _, objCtx := range objectContexts {
-			if objCtx.TenantID != "" && objCtx.Region != region {
-				return errors.Errorf("mismatched region for consumer ID %s: actual %s, expected: %s)", objCtx.ConsumerID, objCtx.Region, region)
+		if c.OnBehalfOf != "" { // i.e. make sure that regions match only during consumer-provider flow
+			for _, objCtx := range objectContexts {
+				if objCtx.TenantID != "" && objCtx.Region != region {
+					return errors.Errorf("mismatched region for consumer ID %s: actual %s, expected: %s)", objCtx.ConsumerID, objCtx.Region, region)
+				}
 			}
 		}
 	}
@@ -303,7 +304,7 @@ func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqD
 // This is necessary due to the fact that some obj ctx providers might result with a non-existing tenant for which TenantID will be empty (conversely the region for them would also be empty).
 func deriveRegionFromObjectContexts(objectContext []ObjectContext) string {
 	for _, objCtx := range objectContext {
-		if objCtx.TenantID != "" {
+		if objCtx.Region != "" {
 			return objCtx.Region
 		}
 	}

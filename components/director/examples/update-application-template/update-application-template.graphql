@@ -3,12 +3,14 @@ mutation {
   result: updateApplicationTemplate(
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
     in: {
-      name: "new-app-template"
+      name: "SAP new-app-template"
       description: "new description"
       applicationInput: {
         name: "new-app-create-input"
+        description: "{{name}} {{display-name}}"
         healthCheckURL: "http://url.valid"
       }
+      placeholders: [{ name: "name" }, { name: "display-name" }]
       accessLevel: GLOBAL
     }
   ) {
@@ -42,6 +44,11 @@ mutation {
             username
             password
           }
+          ... on CertificateOAuthCredentialData {
+            clientId
+            certificate
+            url
+          }
           ... on OAuthCredentialData {
             clientId
             clientSecret
@@ -69,6 +76,11 @@ mutation {
               ... on OAuthCredentialData {
                 clientId
                 clientSecret
+                url
+              }
+              ... on CertificateOAuthCredentialData {
+                clientId
+                certificate
                 url
               }
             }

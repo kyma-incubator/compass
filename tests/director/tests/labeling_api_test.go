@@ -333,17 +333,13 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	labelKeyBar := "bar"
 
 	inputFirst := fixRuntimeInput("first")
-	firstRuntime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &inputFirst)
+	firstRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, inputFirst, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &firstRuntime)
-	require.NoError(t, err)
-	require.NotEmpty(t, firstRuntime.ID)
 
 	//Create second runtime
 	inputSecond := fixRuntimeInput("second")
-	secondRuntime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &inputSecond)
+	secondRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, inputSecond, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &secondRuntime)
-	require.NoError(t, err)
-	require.NotEmpty(t, secondRuntime.ID)
 
 	//Set label "foo" on both runtimes
 	labelValueFoo := "val"

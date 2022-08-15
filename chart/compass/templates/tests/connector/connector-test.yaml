@@ -56,6 +56,8 @@ spec:
             value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
           - name: APP_APPLICATION_TYPE_LABEL_KEY
             value: {{ .Values.global.director.applicationTypeLabelKey }}
+          - name: APP_GATEWAY_OAUTH
+            value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
       restartPolicy: Never
 ---
 apiVersion: v1
