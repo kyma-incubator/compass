@@ -318,7 +318,7 @@ ory:
             config:
               jwks_urls:
                 -  ${IDP_JWKS_URL}
-istio-configuration:
+istio:
    components:
       ingressGateways:
          config:
