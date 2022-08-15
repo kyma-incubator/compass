@@ -329,7 +329,9 @@ func TestGetDependenciesHandler(t *testing.T) {
 	t.Run("Should succeed when a valid region is provided", func(t *testing.T) {
 		// GIVEN
 		// It currently just calls https://compass-gateway.local.kyma.dev/tenants/v1/regional/{region}/dependencies
-		request, err := http.NewRequest(http.MethodGet, config.TenantFetcherFullDependenciesURL, nil)
+		regionalEndpoint := strings.Replace(config.DependenciesEndpoint, "{region}", config.SelfRegRegion, 1)
+		validRegionUrl := config.TenantFetcherURL + config.RootAPI + regionalEndpoint
+		request, err := http.NewRequest(http.MethodGet, validRegionUrl, nil)
 		require.NoError(t, err)
 
 		tkn := token.GetClientCredentialsToken(t, context.Background(), config.ExternalServicesMockURL+"/secured/oauth/token", config.ClientID,
@@ -342,14 +344,6 @@ func TestGetDependenciesHandler(t *testing.T) {
 
 		// THEN
 		require.Equal(t, http.StatusOK, response.StatusCode)
-		defer func() {
-			if err := response.Body.Close(); err != nil {
-				t.Logf("Could not close response body %s", err)
-			}
-		}()
-		body, err := ioutil.ReadAll(response.Body)
-		require.NoError(t, err)
-		require.Equal(t, "[{\"xsappname\":\"xsappname1\"}]", string(body))
 	})
 
 	t.Run("Should fail when invalid region is provided", func(t *testing.T) {

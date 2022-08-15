@@ -426,7 +426,7 @@ func dependenciesConfigToMap(cfg tenantfetcher.HandlerConfig) (map[string][]tena
 
 	for region, dependencies := range config {
 		for _, dependency := range dependencies.Array() {
-			xsappName := gjson.Get(dependency.String(), "credentials.xsappname")
+			xsappName := gjson.Get(dependency.String(), cfg.XsAppNamePathParam)
 			dependenciesConfig[region] = append(dependenciesConfig[region], tenantfetcher.Dependency{Xsappname: xsappName.String()})
 		}
 	}

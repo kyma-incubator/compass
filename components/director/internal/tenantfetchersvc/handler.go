@@ -45,6 +45,7 @@ type HandlerConfig struct {
 	TenantPathParam               string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
 	ParentTenantPathParam         string `envconfig:"APP_PARENT_TENANT_PATH_PARAM,default=parentTenantId"`
 	RegionPathParam               string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
+	XsAppNamePathParam            string `envconfig:"APP_TENANT_FETCHER_XSAPPNAME_PATH,default=xsappname"`
 
 	Features features.Config
 

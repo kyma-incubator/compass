@@ -32,6 +32,7 @@ type testConfig struct {
 	RootAPI                        string
 	RegionalHandlerEndpoint        string
 	DependenciesEndpoint           string `envconfig:"APP_REGIONAL_DEPENDENCIES_ENDPOINT"`
+	SelfRegistrationRegion         string `envconfig:"APP_SELF_REG_REGION"`
 	TenantPathParam                string
 	RegionPathParam                string
 	SubscriptionCallbackScope      string
