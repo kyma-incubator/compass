@@ -278,7 +278,7 @@ func TestORDService(t *testing.T) {
 	// assign application to scenario
 	appLabelRequest := fixtures.FixSetApplicationLabelRequest(appInScenario.ID, scenariosLabel, []string{scenarioName})
 	require.NoError(t, testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantFilteringTenant, appLabelRequest, nil))
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, appInScenario.ID, conf.DefaultScenarioEnabled)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, appInScenario.ID)
 
 	for _, testData := range []struct {
 		msg       string

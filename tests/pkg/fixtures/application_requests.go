@@ -15,6 +15,7 @@ import (
 const (
 	webhookURL          = "https://kyma-project.io"
 	integrationSystemID = "69230297-3c81-4711-aac2-3afa8cb42e2d"
+	testScenario        = "test-scenario"
 )
 
 type ORDConfigSecurity struct {
@@ -139,7 +140,7 @@ func FixApplicationRegisterInputWithBundles(t require.TestingT) graphql.Applicat
 			&bndl1, &bndl2,
 		},
 		Labels: graphql.Labels{
-			"scenarios": []interface{}{"DEFAULT"},
+			"scenarios": []interface{}{testScenario},
 		},
 	}
 }
@@ -345,7 +346,7 @@ func FixRegisterApplicationWithPackagesRequest(name string) *gcli.Request {
 				in: {
 				  name: "%s"
 				  providerName: "compass"
-				  labels: { scenarios: ["DEFAULT"] }
+				  labels: { scenarios: ["test-scenario"] }
 				  packages: [
 					{
 					  name: "foo"

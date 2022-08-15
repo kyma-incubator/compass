@@ -127,7 +127,7 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	t.Log("Create application")
 	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app", tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantId, app.ID, conf.DefaultScenarioEnabled)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantId, app.ID)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 
@@ -198,7 +198,7 @@ func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
 	t.Log("Create application")
 	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app", tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantId, app.ID, conf.DefaultScenarioEnabled)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantId, app.ID)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
 
@@ -484,7 +484,7 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &application)
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID, conf.DefaultScenarioEnabled)
+	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantID, application.ID)
 
 	//WHEN
 	appLabelRequest := fixtures.FixSetApplicationLabelRequest(application.ID, ScenariosLabel, []string{"Christmas"})
