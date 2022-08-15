@@ -3,6 +3,7 @@ package tenantmapping
 import (
 	"context"
 	"fmt"
+
 	"github.com/davecgh/go-spew/spew"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
