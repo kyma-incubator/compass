@@ -312,7 +312,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				}
 			},
 			ExpectedResult:  ord.Documents{},
-			ExpectedErr: errors.New("unsupported access strategy"),
+			ExpectedErr:     errors.New("unsupported access strategy"),
 			ExpectedBaseURL: baseURL,
 		},
 		{

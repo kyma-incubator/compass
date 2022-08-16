@@ -162,10 +162,10 @@ func closeBody(ctx context.Context, body io.ReadCloser) {
 	}
 }
 
-func addDocument (docs *[]*Document, doc *Document, mutex *sync.RWMutex) {
-		mutex.Lock()
-		defer mutex.Unlock()
-		*docs = append(*docs, doc)
+func addDocument(docs *[]*Document, doc *Document, mutex *sync.RWMutex) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	*docs = append(*docs, doc)
 }
 
 func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhook *model.Webhook, tenantValue string) (*WellKnownConfig, error) {
