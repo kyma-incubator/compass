@@ -5,7 +5,12 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"io/ioutil"
 	"net/http"
+	"path/filepath"
+	"strings"
 	"time"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
@@ -52,6 +57,8 @@ import (
 	"github.com/vrischmann/envconfig"
 )
 
+const templatesDirectoryPath = "/data/"
+
 type config struct {
 	APIConfig      systemfetcher.APIConfig
 	OAuth2Config   oauth.Config
@@ -75,7 +82,6 @@ type config struct {
 
 type appTemplateConfig struct {
 	SystemToTemplateMappingsString string `envconfig:"APP_SYSTEM_INFORMATION_SYSTEM_TO_TEMPLATE_MAPPINGS"`
-	TemplateRegion                 string `envconfig:"optional,APP_SYSTEM_INFORMATION_TEMPLATE_REGION"`
 	OverrideApplicationInput       string `envconfig:"APP_TEMPLATE_OVERRIDE_APPLICATION_INPUT"`
 	PlaceholderToSystemKeyMappings string `envconfig:"APP_TEMPLATE_PLACEHOLDER_TO_SYSTEM_KEY_MAPPINGS"`
 }
@@ -105,10 +111,6 @@ func main() {
 		}
 	}()
 
-	if err := calculateTemplateMappings(ctx, cfg, transact); err != nil {
-		log.D().Fatal(err)
-	}
-
 	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize certificate loader"))
@@ -118,7 +120,7 @@ func main() {
 	securedHTTPClient := pkgAuth.PrepareHTTPClient(cfg.ClientTimeout)
 	mtlsClient := pkgAuth.PrepareMTLSClient(cfg.ClientTimeout, certCache)
 
-	sf, err := createSystemFetcher(cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, certCache)
+	sf, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, certCache)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize System Fetcher"))
 	}
@@ -128,63 +130,7 @@ func main() {
 	}
 }
 
-func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner) error {
-	var systemToTemplateMappings []systemfetcher.TemplateMapping
-	if err := json.Unmarshal([]byte(cfg.TemplateConfig.SystemToTemplateMappingsString), &systemToTemplateMappings); err != nil {
-		return errors.Wrap(err, "failed to read system template mappings")
-	}
-
-	authConverter := auth.NewConverter()
-	versionConverter := version.NewConverter()
-	frConverter := fetchrequest.NewConverter(authConverter)
-	webhookConverter := webhook.NewConverter(authConverter)
-	specConverter := spec.NewConverter(frConverter)
-	apiConverter := api.NewConverter(versionConverter, specConverter)
-	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
-	docConverter := document.NewConverter(frConverter)
-	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
-	appConverter := application.NewConverter(webhookConverter, bundleConverter)
-	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
-	appTemplateRepo := apptemplate.NewRepository(appTemplateConv)
-	webhookRepo := webhook.NewRepository(webhookConverter)
-	labelDefConverter := labeldef.NewConverter()
-	labelConverter := label.NewConverter()
-	labelRepo := label.NewRepository(labelConverter)
-	labelDefRepo := labeldef.NewRepository(labelDefConverter)
-
-	uidSvc := uid.NewService()
-	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
-
-	tx, err := transact.Begin()
-	if err != nil {
-		return errors.Wrap(err, "failed to begin transaction")
-	}
-	defer transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	var region interface{}
-	region = cfg.TemplateConfig.TemplateRegion
-	if region == "" {
-		region = nil
-	}
-	for index, tm := range systemToTemplateMappings {
-		appTemplate, err := appTemplateSvc.GetByNameAndRegion(ctx, tm.Name, region)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("failed to retrieve application template with name %q and region %v", tm.Name, region))
-		}
-		systemToTemplateMappings[index].ID = appTemplate.ID
-	}
-	err = tx.Commit()
-	if err != nil {
-		return errors.Wrap(err, "failed to commit transaction")
-	}
-
-	systemfetcher.Mappings = systemToTemplateMappings
-	return nil
-}
-
-func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient *http.Client, certCache certloader.Cache) (*systemfetcher.SystemFetcher, error) {
+func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient *http.Client, certCache certloader.Cache) (*systemfetcher.SystemFetcher, error) {
 	uidSvc := uid.NewService()
 
 	tenantConv := tenant.NewConverter()
@@ -274,6 +220,19 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 		Authenticator: pkgAuth.NewServiceAccountTokenAuthorizationProvider(),
 	}
 
+	appTemplateInputs, err := loadAppTemplates(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed while loading application templates")
+	}
+
+	if err = upsertAppTemplates(ctx, tx, appTemplateSvc, appTemplateInputs); err != nil {
+		return nil, errors.Wrap(err, "failed while upserting application templates")
+	}
+
+	if err = calculateTemplateMappings(ctx, cfg, tx, appTemplateSvc); err != nil {
+		return nil, errors.Wrap(err, "failed while calculating application templates mappings")
+	}
+
 	var placeholdersMapping []systemfetcher.PlaceholderMapping
 	if err := json.Unmarshal([]byte(cfg.TemplateConfig.PlaceholderToSystemKeyMappings), &placeholdersMapping); err != nil {
 		return nil, errors.Wrapf(err, "while unmarshaling placeholders mapping")
@@ -303,4 +262,126 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 	}).Run(ctx)
 
 	return provider
+}
+
+func loadAppTemplates(ctx context.Context) ([]model.ApplicationTemplateInput, error) {
+	files, err := ioutil.ReadDir(templatesDirectoryPath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while reading directory with application templates files [%s]", templatesDirectoryPath)
+	}
+
+	var appTemplateInputs []model.ApplicationTemplateInput
+	for _, f := range files {
+		log.C(ctx).Infof("Loading application templates from file: %s", f.Name())
+
+		if filepath.Ext(f.Name()) != ".json" {
+			return nil, apperrors.NewInternalError(fmt.Sprintf("unsupported file format %q, supported format: json", filepath.Ext(f.Name())))
+		}
+
+		bytes, err := ioutil.ReadFile(templatesDirectoryPath + f.Name())
+		if err != nil {
+			return nil, errors.Wrapf(err, "while reading application templates file %q", templatesDirectoryPath+f.Name())
+		}
+
+		var templatesFromFile []model.ApplicationTemplateInput
+		if err := json.Unmarshal(bytes, &templatesFromFile); err != nil {
+			return nil, errors.Wrapf(err, "while unmarshalling application templates from file %q", templatesDirectoryPath+f.Name())
+		}
+		log.C(ctx).Infof("Successfully loaded application templates from file: %s", f.Name())
+		appTemplateInputs = append(appTemplateInputs, templatesFromFile...)
+	}
+
+	return appTemplateInputs, nil
+}
+
+func upsertAppTemplates(ctx context.Context, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService, appTemplateInputs []model.ApplicationTemplateInput) error {
+	tx, err := transact.Begin()
+	if err != nil {
+		return errors.Wrap(err, "Error while beginning transaction")
+	}
+	defer transact.RollbackUnlessCommitted(ctx, tx)
+	ctxWithTx := persistence.SaveToContext(ctx, tx)
+
+	for _, appTmplInput := range appTemplateInputs {
+		var region interface{}
+		region, err = retrieveRegion(appTmplInput.Labels)
+		if err != nil {
+			return err
+		}
+		if region == "" {
+			region = nil
+		}
+
+		log.C(ctx).Infof(fmt.Sprintf("Retrieving application template with name %q and region %s", appTmplInput.Name, region))
+		_, err = appTemplateSvc.GetByNameAndRegion(ctxWithTx, appTmplInput.Name, region)
+		if err != nil {
+			if !strings.Contains(err.Error(), "Object not found") {
+				return errors.Wrap(err, fmt.Sprintf("error while getting application template with name %q and region %s", appTmplInput.Name, region))
+			}
+
+			log.C(ctx).Infof(fmt.Sprintf("Cannot find application template with name %q and region %s. Creation triggered...", appTmplInput.Name, region))
+			templateID, err := appTemplateSvc.Create(ctxWithTx, appTmplInput)
+			if err != nil {
+				return errors.Wrap(err, fmt.Sprintf("error while creating application template with name %q and region %s", appTmplInput.Name, region))
+			}
+			log.C(ctx).Infof(fmt.Sprintf("Successfully registered application template with id: %q", templateID))
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return errors.Wrap(err, "while committing transaction")
+	}
+
+	return nil
+}
+
+func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService) error {
+	var systemToTemplateMappings []systemfetcher.TemplateMapping
+	if err := json.Unmarshal([]byte(cfg.TemplateConfig.SystemToTemplateMappingsString), &systemToTemplateMappings); err != nil {
+		return errors.Wrap(err, "failed to read system template mappings")
+	}
+
+	tx, err := transact.Begin()
+	if err != nil {
+		return errors.Wrap(err, "failed to begin transaction")
+	}
+	defer transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	for index, tm := range systemToTemplateMappings {
+		var region interface{}
+		region = tm.Region
+		if region == "" {
+			region = nil
+		}
+		appTemplate, err := appTemplateSvc.GetByNameAndRegion(ctx, tm.Name, region)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("failed to retrieve application template with name %q and region %v", tm.Name, region))
+		}
+		systemToTemplateMappings[index].ID = appTemplate.ID
+	}
+	err = tx.Commit()
+	if err != nil {
+		return errors.Wrap(err, "failed to commit transaction")
+	}
+
+	systemfetcher.Mappings = systemToTemplateMappings
+	return nil
+}
+
+func retrieveRegion(labels map[string]interface{}) (string, error) {
+	if labels == nil {
+		return "", nil
+	}
+
+	region, exists := labels[tenant.RegionLabelKey]
+	if !exists {
+		return "", nil
+	}
+
+	regionValue, ok := region.(string)
+	if !ok {
+		return "", fmt.Errorf("%q label value must be string", tenant.RegionLabelKey)
+	}
+	return regionValue, nil
 }

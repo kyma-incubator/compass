@@ -1,0 +1,36 @@
+{{if .Values.global.systemFetcher.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: compass-system-fetcher-templates-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+data:
+  templates.json: |-
+    [
+      {
+        "name":"SAP Field Service Management",
+        "description":"SAP Field Service Management",
+        "accessLevel":"GLOBAL",
+        "applicationInputJSON":"{\"name2\":\"{{ "{{" }}name{{ "}}" }}\",\"labels\":{\"legacy\":\"true\",\"displayName\":\"{{ "{{" }}display-name{{ "}}" }}\",\"applicationType\":\"SAP Field Service Management\"},\"description\":\"{{ "{{" }}display-name{{ "}}" }}\",\"providerName\":\"SAP\"}",
+        "labels":{
+          "subscriptionProviderId":"id-value!t12345",
+          "test":[
+              "test"
+          ]
+        },
+        "placeholders":[
+          {
+            "Name":"name",
+            "Description":"Application’s technical name"
+          },
+          {
+            "Name":"display-name",
+            "Description":"Application’s display name"
+          }
+        ]
+      }
+    ]
+{{ end }}
