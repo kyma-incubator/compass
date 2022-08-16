@@ -1,4 +1,4 @@
-APP_NAME = pairing-adapter
+APP_NAME = compass-pairing-adapter
 APP_PATH = components/pairing-adapter
 COMPONENT_BUILD_TIMEOUT = 10m
 ENTRYPOINT = cmd/main.go
