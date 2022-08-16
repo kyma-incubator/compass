@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -137,7 +138,7 @@ func (s *service) CreateInBundle(ctx context.Context, appID, bundleID string, in
 	return s.Create(ctx, appID, &bundleID, nil, in, []*model.SpecInput{spec}, nil, 0, "")
 }
 
-// Create Create creates APIDefinition/s. This function is used both in the ORD scenario and is re-used in CreateInBundle but with "null" ORD specific arguments.
+// Create creates APIDefinition/s. This function is used both in the ORD scenario and is re-used in CreateInBundle but with "null" ORD specific arguments.
 func (s *service) Create(ctx context.Context, appID string, bundleID, packageID *string, in model.APIDefinitionInput, specs []*model.SpecInput, defaultTargetURLPerBundle map[string]string, apiHash uint64, defaultBundleID string) (string, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -147,6 +148,17 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 	id := s.uidService.Generate()
 	api := in.ToAPIDefinition(id, appID, packageID, apiHash)
 
+	if len(specs) > 0 && specs[0].APIType != nil {
+		switch *specs[0].APIType {
+		case model.APISpecTypeOdata:
+			protocol := ord.APIProtocolODataV2
+			api.APIProtocol = &protocol
+		case model.APISpecTypeOpenAPI:
+			protocol := ord.APIProtocolRest
+			api.APIProtocol = &protocol
+		}
+	}
+
 	if err = s.repo.Create(ctx, tnt, api); err != nil {
 		return "", errors.Wrap(err, "while creating api")
 	}
@@ -155,8 +167,8 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 		if spec == nil {
 			continue
 		}
-		_, err = s.specService.CreateByReferenceObjectID(ctx, *spec, model.APISpecReference, api.ID)
-		if err != nil {
+
+		if _, err = s.specService.CreateByReferenceObjectID(ctx, *spec, model.APISpecReference, api.ID); err != nil {
 			return "", err
 		}
 	}
@@ -166,8 +178,7 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 		bundleRefInput := &model.BundleReferenceInput{
 			APIDefaultTargetURL: str.Ptr(ExtractTargetURLFromJSONArray(in.TargetURLs)),
 		}
-		err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, bundleID)
-		if err != nil {
+		if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, bundleID); err != nil {
 			return "", err
 		}
 	} else {
@@ -179,8 +190,7 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 				isDefaultBundle := true
 				bundleRefInput.IsDefaultBundle = &isDefaultBundle
 			}
-			err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, &crrBndlID)
-			if err != nil {
+			if err = s.bundleReferenceService.CreateByReferenceObjectID(ctx, *bundleRefInput, model.BundleAPIReference, &api.ID, &crrBndlID); err != nil {
 				return "", err
 			}
 		}
