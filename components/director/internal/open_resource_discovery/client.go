@@ -21,14 +21,14 @@ import (
 
 	"github.com/pkg/errors"
 )
-
+// ClientConfig contains configuration for the ORD aggregator client
 type ClientConfig struct {
-	MaxParallelDocuments int
+	maxParallelDocuments int
 }
-
-func NewClientConfig(MaxParallelDocuments int) ClientConfig {
+// NewClientConfig creates new ClientConfig from the supplied parameters
+func NewClientConfig(maxParallelDocuments int) ClientConfig {
 	return ClientConfig{
-		MaxParallelDocuments: MaxParallelDocuments,
+		maxParallelDocuments: maxParallelDocuments,
 	}
 }
 
@@ -87,7 +87,7 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 	queue := make(chan DocumentDetails)
 	var fetchDocError error = nil
 
-	for i := 0; i < c.config.MaxParallelDocuments; i++ {
+	for i := 0; i < c.config.maxParallelDocuments; i++ {
 		wg.Add(1)
 		go c.fetchDocumentsContent(ctx, &fetchDocError, queue, &wg, &mutex, &docs, baseURL, tenantValue)
 	}
