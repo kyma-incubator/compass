@@ -1489,8 +1489,9 @@ func TestMergeApplications(t *testing.T) {
 	displayNamePlaceholder := "display-name"
 	managedLabelValue := "true"
 	sccLabelValue := "cloud connector"
-	expectedProductType := createAppTemplateName("Cloud for Customer")
+	expectedProductType := createAppTemplateName("MergeTemplate")
 	newFormation := "formation-merge-applications-e2e"
+	formationTemplateName := "merge-applications-template"
 
 	appTmplInput := fixtures.FixApplicationTemplate(expectedProductType)
 	appTmplInput.ApplicationInput.Name = "{{name}}"
@@ -1591,9 +1592,18 @@ func TestMergeApplications(t *testing.T) {
 	fixtures.SetApplicationLabelWithTenant(t, ctx, oauthGraphQLClient, tenantId, outputSrcApp.ID, managedLabel, managedLabelValue)
 	fixtures.SetApplicationLabelWithTenant(t, ctx, oauthGraphQLClient, tenantId, outputSrcApp.ID, sccLabel, sccLabelValue)
 
+	t.Logf("Should create formation template: %s", formationTemplateName)
+	formationTemplate := fixtures.FixFormationTypeWithTypes(formationTemplateName, conf.KymaRuntimeTypeLabelValue, []string{expectedProductType})
+	actualFormationTemplate := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplate)
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, actualFormationTemplate.ID)
+
 	t.Logf("Should create formation: %s", newFormation)
 	var formation graphql.Formation
-	createReq := fixtures.FixCreateFormationRequest(newFormation)
+	formationInput := fixtures.FixFormationInput(newFormation, str.Ptr(formationTemplateName))
+	formationInputGQL, err := testctx.Tc.Graphqlizer.FormationInputToGQL(formationInput)
+	require.NoError(t, err)
+
+	createReq := fixtures.FixCreateFormationWithTemplateRequest(formationInputGQL)
 	err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, createReq, &formation)
 	require.NoError(t, err)
 	require.Equal(t, newFormation, formation.Name)
