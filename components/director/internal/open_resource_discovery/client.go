@@ -21,10 +21,12 @@ import (
 
 	"github.com/pkg/errors"
 )
+
 // ClientConfig contains configuration for the ORD aggregator client
 type ClientConfig struct {
 	maxParallelDocuments int
 }
+
 // NewClientConfig creates new ClientConfig from the supplied parameters
 func NewClientConfig(maxParallelDocuments int) ClientConfig {
 	return ClientConfig{
