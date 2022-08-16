@@ -85,33 +85,11 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 	mutex := sync.RWMutex{}
 	wg := sync.WaitGroup{}
 	queue := make(chan DocumentDetails)
-
-	//for _, docDetails := range config.OpenResourceDiscoveryV1.Documents {
-	//	wg.Add(1)
-	//	go func(docDetails DocumentDetails) {
-	//		defer wg.Done()
-	//		documentURL, err := buildDocumentURL(docDetails.URL, baseURL)
-	//		if err != nil {
-	//			log.C(ctx).Warn(errors.Wrap(err, "error building document URL").Error())
-	//		}
-	//		strategy, ok := docDetails.AccessStrategies.GetSupported()
-	//		if !ok {
-	//			log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", documentURL)
-	//		}
-	//		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, tenantValue)
-	//		if err != nil {
-	//			log.C(ctx).Warn(errors.Wrapf(err, "error fetching ORD document from: %s", documentURL).Error())
-	//		}
-	//
-	//		mutex.Lock()
-	//		defer mutex.Unlock()
-	//		docs = append(docs, doc)
-	//	}(docDetails)
-	//}
+	var fetchDocError error = nil
 
 	for i := 0; i < c.config.MaxParallelDocuments; i++ {
 		wg.Add(1)
-		go c.fetchDocumentsContent(ctx, queue, &wg, &mutex, &docs, baseURL, tenantValue)
+		go c.fetchDocumentsContent(ctx, &fetchDocError, queue, &wg, &mutex, &docs, baseURL, tenantValue)
 	}
 
 	for _, docDetails := range config.OpenResourceDiscoveryV1.Documents {
@@ -121,15 +99,16 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 	close(queue)
 	wg.Wait()
 
-	return docs, baseURL, nil
+	return docs, baseURL, fetchDocError
 }
 
-func (c *client) fetchDocumentsContent(ctx context.Context, queue chan DocumentDetails, wg *sync.WaitGroup, mutex *sync.RWMutex, docs *[]*Document, baseURL, tenantValue string) {
+func (c *client) fetchDocumentsContent(ctx context.Context, fetchDocError *error, queue chan DocumentDetails, wg *sync.WaitGroup, mutex *sync.RWMutex, docs *[]*Document, baseURL, tenantValue string) {
 	defer wg.Done()
 	for docDetails := range queue {
 		documentURL, err := buildDocumentURL(docDetails.URL, baseURL)
 		if err != nil {
 			log.C(ctx).Warn(errors.Wrap(err, "error building document URL").Error())
+			*fetchDocError = err
 		}
 		strategy, ok := docDetails.AccessStrategies.GetSupported()
 		if !ok {
@@ -138,11 +117,12 @@ func (c *client) fetchDocumentsContent(ctx context.Context, queue chan DocumentD
 		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, tenantValue)
 		if err != nil {
 			log.C(ctx).Warn(errors.Wrapf(err, "error fetching ORD document from: %s", documentURL).Error())
+			*fetchDocError = err
 		}
 
-		mutex.Lock()
-		*docs = append(*docs, doc)
-		mutex.Unlock()
+		if doc != nil {
+			addDocument(docs, doc, mutex)
+		}
 	}
 }
 
@@ -180,6 +160,12 @@ func closeBody(ctx context.Context, body io.ReadCloser) {
 	if err := body.Close(); err != nil {
 		log.C(ctx).WithError(err).Warnf("Got error on closing response body")
 	}
+}
+
+func addDocument (docs *[]*Document, doc *Document, mutex *sync.RWMutex) {
+		mutex.Lock()
+		defer mutex.Unlock()
+		*docs = append(*docs, doc)
 }
 
 func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhook *model.Webhook, tenantValue string) (*WellKnownConfig, error) {
