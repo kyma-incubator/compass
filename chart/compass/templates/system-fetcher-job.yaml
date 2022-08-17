@@ -29,8 +29,11 @@ spec:
                 - name: director-config
                   mountPath: /config
                 - name: system-fetcher-config
-                  mountPath: /data/app-templates.json
+                  mountPath: /data/templates/app-templates.json
                   subPath: templates.json
+                - name: system-fetcher-config
+                  mountPath: /data/int-systems/integration-systems.json
+                  subPath: integration-systems.json
               env:
                 - name: APP_DIRECTOR_GRAPHQL_URL
                   value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"

@@ -57,13 +57,23 @@ func (d *DataLoader) LoadData(ctx context.Context) error {
 		return errors.Wrap(err, "failed while loading application templates")
 	}
 
-	if err = d.upsertIntegrationSystems(ctx, integrationSystems); err != nil {
+	tx, err := d.transaction.Begin()
+	if err != nil {
+		return errors.Wrap(err, "Error while beginning transaction")
+	}
+	defer d.transaction.RollbackUnlessCommitted(ctx, tx)
+	ctxWithTx := persistence.SaveToContext(ctx, tx)
+
+	if err = d.upsertIntegrationSystems(ctxWithTx, integrationSystems); err != nil {
 		return errors.Wrap(err, "failed while upserting integration systems")
 	}
 
-	//TODO creation of integration system and app templats should be in one transaction
-	if err = d.upsertAppTemplates(ctx, appTemplateInputs); err != nil {
+	if err = d.upsertAppTemplates(ctxWithTx, appTemplateInputs); err != nil {
 		return errors.Wrap(err, "failed while upserting application templates")
+	}
+
+	if err := tx.Commit(); err != nil {
+		return errors.Wrap(err, "while committing transaction")
 	}
 
 	return nil
@@ -130,22 +140,15 @@ func (d *DataLoader) loadAppTemplates(ctx context.Context) ([]model.ApplicationT
 }
 
 func (d *DataLoader) upsertIntegrationSystems(ctx context.Context, intSystems []model.IntegrationSystem) error {
-	tx, err := d.transaction.Begin()
-	if err != nil {
-		return errors.Wrap(err, "Error while beginning transaction")
-	}
-	defer d.transaction.RollbackUnlessCommitted(ctx, tx)
-	ctxWithTx := persistence.SaveToContext(ctx, tx)
-
 	for _, intSystem := range intSystems {
-		log.C(ctx).Infof(fmt.Sprintf("Checking if integration system with id %q exists", intSystem.ID))
-		exist, err := d.intSysRepo.Exists(ctxWithTx, intSystem.ID)
+		log.C(ctx).Infof(fmt.Sprintf("Checking if integration system with id %q already exists", intSystem.ID))
+		exist, err := d.intSysRepo.Exists(ctx, intSystem.ID)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("error while checking if integration system with id %q exists", intSystem.ID))
 		}
 		if !exist {
 			log.C(ctx).Infof(fmt.Sprintf("Cannot find integration system with id %q. Creation triggered...", intSystem.ID))
-			if err = d.intSysRepo.Create(ctxWithTx, intSystem); err != nil {
+			if err = d.intSysRepo.Create(ctx, intSystem); err != nil {
 				return errors.Wrap(err, fmt.Sprintf("error while creating integration system with id %q", intSystem.ID))
 			}
 			log.C(ctx).Infof(fmt.Sprintf("Successfully registered integration system with id %q", intSystem.ID))
@@ -154,24 +157,13 @@ func (d *DataLoader) upsertIntegrationSystems(ctx context.Context, intSystems []
 		}
 	}
 
-	if err := tx.Commit(); err != nil {
-		return errors.Wrap(err, "while committing transaction")
-	}
-
 	return nil
 }
 
 func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs []model.ApplicationTemplateInput) error {
-	tx, err := d.transaction.Begin()
-	if err != nil {
-		return errors.Wrap(err, "Error while beginning transaction")
-	}
-	defer d.transaction.RollbackUnlessCommitted(ctx, tx)
-	ctxWithTx := persistence.SaveToContext(ctx, tx)
-
 	for _, appTmplInput := range appTemplateInputs {
 		var region interface{}
-		region, err = retrieveRegion(appTmplInput.Labels)
+		region, err := retrieveRegion(appTmplInput.Labels)
 		if err != nil {
 			return err
 		}
@@ -180,23 +172,19 @@ func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs [
 		}
 
 		log.C(ctx).Infof(fmt.Sprintf("Retrieving application template with name %q and region %s", appTmplInput.Name, region))
-		_, err = d.appTmplSvc.GetByNameAndRegion(ctxWithTx, appTmplInput.Name, region)
+		_, err = d.appTmplSvc.GetByNameAndRegion(ctx, appTmplInput.Name, region)
 		if err != nil {
 			if !strings.Contains(err.Error(), "Object not found") {
 				return errors.Wrap(err, fmt.Sprintf("error while getting application template with name %q and region %s", appTmplInput.Name, region))
 			}
 
 			log.C(ctx).Infof(fmt.Sprintf("Cannot find application template with name %q and region %s. Creation triggered...", appTmplInput.Name, region))
-			templateID, err := d.appTmplSvc.Create(ctxWithTx, appTmplInput)
+			templateID, err := d.appTmplSvc.Create(ctx, appTmplInput)
 			if err != nil {
 				return errors.Wrap(err, fmt.Sprintf("error while creating application template with name %q and region %s", appTmplInput.Name, region))
 			}
 			log.C(ctx).Infof(fmt.Sprintf("Successfully registered application template with id: %q", templateID))
 		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		return errors.Wrap(err, "while committing transaction")
 	}
 
 	return nil

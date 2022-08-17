@@ -8,6 +8,19 @@ metadata:
     app: {{ .Chart.Name }}
     release: {{ .Release.Name }}
 data:
+  integration-systems.json: |-
+    [
+      {
+        "id":"f18d7d75-e856-470e-a27f-e90ad14cca0b",
+        "name":"sap-s4hana-cloud",
+        "description":"Integration system for SAP S4Hana Cloud applications"
+      },
+      {
+        "id":"836d8463-f001-418b-a2da-257ce55d8a0f",
+        "name":"sap-successfactors",
+        "description":"Integration system for SAP SuccessFactors"
+      }
+    ]
   templates.json: |-
     [
       {
