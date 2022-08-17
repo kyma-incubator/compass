@@ -85,21 +85,21 @@ func (c *client) Do(ctx context.Context, request *Request) (*webhook.Response, e
 	}
 
 	if webhook.HeaderTemplate != nil {
-		fmt.Printf("ALEX 1. %+v \n", *webhook.HeaderTemplate)
+		log.D().Printf("ALEX 1. %+v \n", *webhook.HeaderTemplate)
 	}
 
 	headers := http.Header{}
 	if webhook.HeaderTemplate != nil {
 		headers, err = request.Object.ParseHeadersTemplate(webhook.HeaderTemplate)
 
-		fmt.Printf("ALEX 2. %+v \n", headers)
+		log.D().Printf("ALEX 2. %+v \n", headers)
 
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to parse webhook headers")
 		}
 	}
 
-	fmt.Printf("ALEX 3. %+v \n", headers)
+	log.D().Printf("ALEX 3. %+v \n", headers)
 
 	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, webhook.CorrelationIDKey, &request.CorrelationID)
 

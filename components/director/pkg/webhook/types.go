@@ -24,6 +24,8 @@ import (
 	"net/url"
 	"text/template"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
 	"github.com/pkg/errors"
@@ -157,7 +159,7 @@ func parseTemplate(tmpl *string, data interface{}, dest interface{}) error {
 		return err
 	}
 
-	PrettyPrint1(data)
+	prettyPrint1(data)
 
 	res := new(bytes.Buffer)
 	if err = t.Execute(res, data); err != nil {
@@ -168,7 +170,7 @@ func parseTemplate(tmpl *string, data interface{}, dest interface{}) error {
 		return err
 	}
 
-	PrettyPrint2(dest)
+	prettyPrint2(dest)
 
 	if validatable, ok := dest.(inputvalidation.Validatable); ok {
 		return validatable.Validate()
@@ -177,26 +179,26 @@ func parseTemplate(tmpl *string, data interface{}, dest interface{}) error {
 	return nil
 }
 
-func PrettyPrint1(data interface{}) {
+func prettyPrint1(data interface{}) {
 	var p []byte
 	//    var err := error
 	p, err := json.MarshalIndent(data, "", "\t")
 	if err != nil {
-		fmt.Println(err)
+		log.D().Println(err)
 		return
 	}
-	fmt.Printf("ALEX data: %s \n", p)
+	log.D().Printf("ALEX data: %s \n", p)
 }
 
-func PrettyPrint2(data interface{}) {
+func prettyPrint2(data interface{}) {
 	var p []byte
 	//    var err := error
 	p, err := json.MarshalIndent(data, "", "\t")
 	if err != nil {
-		fmt.Println(err)
+		log.D().Println(err)
 		return
 	}
-	fmt.Printf("ALEX dest: %s \n", p)
+	log.D().Printf("ALEX dest: %s \n", p)
 }
 
 func isAllowedHTTPMethod(method string) bool {
