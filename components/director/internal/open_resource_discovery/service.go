@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -754,7 +755,9 @@ func (s *Service) processWebhooksAndDocuments(ctx context.Context, tx persistenc
 	for _, wh := range webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
 			ctx = addFieldToLogger(ctx, "app_id", app.ID)
+			start := time.Now()
 			documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, wh)
+			log.C(ctx).Infof("Execution time: %s", time.Since(start))
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("error fetching ORD document for webhook with id %q: %v", wh.ID, err)
 			}
