@@ -5,12 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"io/ioutil"
 	"net/http"
-	"path/filepath"
-	"strings"
 	"time"
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
@@ -56,8 +51,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/vrischmann/envconfig"
 )
-
-const templatesDirectoryPath = "/data/"
 
 type config struct {
 	APIConfig      systemfetcher.APIConfig
@@ -220,16 +213,12 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 		Authenticator: pkgAuth.NewServiceAccountTokenAuthorizationProvider(),
 	}
 
-	appTemplateInputs, err := loadAppTemplates(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed while loading application templates")
+	dataLoader := systemfetcher.NewDataLoader(tx, appTemplateSvc, intSysRepo)
+	if err := dataLoader.LoadData(ctx); err != nil {
+		return nil, err
 	}
 
-	if err = upsertAppTemplates(ctx, tx, appTemplateSvc, appTemplateInputs); err != nil {
-		return nil, errors.Wrap(err, "failed while upserting application templates")
-	}
-
-	if err = calculateTemplateMappings(ctx, cfg, tx, appTemplateSvc); err != nil {
+	if err := calculateTemplateMappings(ctx, cfg, tx, appTemplateSvc); err != nil {
 		return nil, errors.Wrap(err, "failed while calculating application templates mappings")
 	}
 
@@ -264,77 +253,6 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 	return provider
 }
 
-func loadAppTemplates(ctx context.Context) ([]model.ApplicationTemplateInput, error) {
-	files, err := ioutil.ReadDir(templatesDirectoryPath)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while reading directory with application templates files [%s]", templatesDirectoryPath)
-	}
-
-	var appTemplateInputs []model.ApplicationTemplateInput
-	for _, f := range files {
-		log.C(ctx).Infof("Loading application templates from file: %s", f.Name())
-
-		if filepath.Ext(f.Name()) != ".json" {
-			return nil, apperrors.NewInternalError(fmt.Sprintf("unsupported file format %q, supported format: json", filepath.Ext(f.Name())))
-		}
-
-		bytes, err := ioutil.ReadFile(templatesDirectoryPath + f.Name())
-		if err != nil {
-			return nil, errors.Wrapf(err, "while reading application templates file %q", templatesDirectoryPath+f.Name())
-		}
-
-		var templatesFromFile []model.ApplicationTemplateInput
-		if err := json.Unmarshal(bytes, &templatesFromFile); err != nil {
-			return nil, errors.Wrapf(err, "while unmarshalling application templates from file %s", templatesDirectoryPath+f.Name())
-		}
-		log.C(ctx).Infof("Successfully loaded application templates from file: %s", f.Name())
-		appTemplateInputs = append(appTemplateInputs, templatesFromFile...)
-	}
-
-	return appTemplateInputs, nil
-}
-
-func upsertAppTemplates(ctx context.Context, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService, appTemplateInputs []model.ApplicationTemplateInput) error {
-	tx, err := transact.Begin()
-	if err != nil {
-		return errors.Wrap(err, "Error while beginning transaction")
-	}
-	defer transact.RollbackUnlessCommitted(ctx, tx)
-	ctxWithTx := persistence.SaveToContext(ctx, tx)
-
-	for _, appTmplInput := range appTemplateInputs {
-		var region interface{}
-		region, err = retrieveRegion(appTmplInput.Labels)
-		if err != nil {
-			return err
-		}
-		if region == "" {
-			region = nil
-		}
-
-		log.C(ctx).Infof(fmt.Sprintf("Retrieving application template with name %q and region %s", appTmplInput.Name, region))
-		_, err = appTemplateSvc.GetByNameAndRegion(ctxWithTx, appTmplInput.Name, region)
-		if err != nil {
-			if !strings.Contains(err.Error(), "Object not found") {
-				return errors.Wrap(err, fmt.Sprintf("error while getting application template with name %q and region %s", appTmplInput.Name, region))
-			}
-
-			log.C(ctx).Infof(fmt.Sprintf("Cannot find application template with name %q and region %s. Creation triggered...", appTmplInput.Name, region))
-			templateID, err := appTemplateSvc.Create(ctxWithTx, appTmplInput)
-			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("error while creating application template with name %q and region %s", appTmplInput.Name, region))
-			}
-			log.C(ctx).Infof(fmt.Sprintf("Successfully registered application template with id: %q", templateID))
-		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		return errors.Wrap(err, "while committing transaction")
-	}
-
-	return nil
-}
-
 func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService) error {
 	var systemToTemplateMappings []systemfetcher.TemplateMapping
 	if err := json.Unmarshal([]byte(cfg.TemplateConfig.SystemToTemplateMappingsString), &systemToTemplateMappings); err != nil {
@@ -367,21 +285,4 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 
 	systemfetcher.Mappings = systemToTemplateMappings
 	return nil
-}
-
-func retrieveRegion(labels map[string]interface{}) (string, error) {
-	if labels == nil {
-		return "", nil
-	}
-
-	region, exists := labels[tenant.RegionLabelKey]
-	if !exists {
-		return "", nil
-	}
-
-	regionValue, ok := region.(string)
-	if !ok {
-		return "", fmt.Errorf("%q label value must be string", tenant.RegionLabelKey)
-	}
-	return regionValue, nil
 }
