@@ -285,7 +285,7 @@ func loadAppTemplates(ctx context.Context) ([]model.ApplicationTemplateInput, er
 
 		var templatesFromFile []model.ApplicationTemplateInput
 		if err := json.Unmarshal(bytes, &templatesFromFile); err != nil {
-			return nil, errors.Wrapf(err, "while unmarshalling application templates from file %q", templatesDirectoryPath+f.Name())
+			return nil, errors.Wrapf(err, "while unmarshalling application templates from file %s", templatesDirectoryPath+f.Name())
 		}
 		log.C(ctx).Infof("Successfully loaded application templates from file: %s", f.Name())
 		appTemplateInputs = append(appTemplateInputs, templatesFromFile...)
