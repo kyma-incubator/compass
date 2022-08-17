@@ -148,7 +148,7 @@ func (s *service) Create(ctx context.Context, appID string, bundleID, packageID 
 	id := s.uidService.Generate()
 	api := in.ToAPIDefinition(id, appID, packageID, apiHash)
 
-	if len(specs) > 0 && specs[0].APIType != nil {
+	if len(specs) > 0 && specs[0] != nil && specs[0].APIType != nil {
 		switch *specs[0].APIType {
 		case model.APISpecTypeOdata:
 			protocol := ord.APIProtocolODataV2
