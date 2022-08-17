@@ -8,6 +8,8 @@ source $SCRIPTS_DIR/utils.sh
 
 TIMEOUT=30m0s
 
+DB_CHARTS="${CURRENT_DIR}/../../chart/postgresql"
+
 COMPASS_CHARTS="${CURRENT_DIR}/../../chart/compass"
 
 function cleanup_trap() {
@@ -49,6 +51,10 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
+echo "Install DB"
+helm upgrade --install --wait --debug --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace compass-system postgresql "${DB_CHARTS}"
+
+echo "Install Compass"
 CRDS_FOLDER="${CURRENT_DIR}/../resources/crds"
 kubectl apply -f "${CRDS_FOLDER}"
 helm upgrade --install --wait --debug --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace compass-system compass "${COMPASS_CHARTS}"
