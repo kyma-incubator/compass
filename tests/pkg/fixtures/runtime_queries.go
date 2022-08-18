@@ -2,6 +2,10 @@ package fixtures
 
 import (
 	"context"
+	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 
@@ -140,4 +144,32 @@ func RequestOneTimeTokenForRuntime(t require.TestingT, ctx context.Context, gqlC
 	require.NotEmpty(t, token.Raw)
 	require.NotEmpty(t, token.RawEncoded)
 	return token
+}
+
+func RegisterKymaRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID string, runtimeInput graphql.RuntimeRegisterInput, oauthPath string) graphql.RuntimeExt {
+	intSysName := "runtime-integration-system"
+
+	t.Logf("Creating integration system with name: %q", intSysName)
+	intSys, err := RegisterIntegrationSystem(t, ctx, gqlClient, tenantID, intSysName)
+	defer CleanupIntegrationSystem(t, ctx, gqlClient, tenantID, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := RequestClientCredentialsForIntegrationSystem(t, ctx, gqlClient, tenantID, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer DeleteSystemAuthForIntegrationSystem(t, ctx, gqlClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, oauthPath)
+
+	t.Logf("Registering runtime with name %q with integration system credentials...", runtimeInput.Name)
+	kymaRuntime, err := RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenantID, &runtimeInput)
+	require.NoError(t, err)
+	require.NotEmpty(t, kymaRuntime.ID)
+
+	return kymaRuntime
 }

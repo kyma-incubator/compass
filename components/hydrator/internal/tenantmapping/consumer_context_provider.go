@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	cfg "github.com/kyma-incubator/compass/components/hydrator/internal/config"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -20,7 +22,6 @@ import (
 type userContextData struct {
 	clientID         string
 	externalTenantID string
-	subdomain        string
 }
 
 type consumerContextProvider struct {
@@ -105,15 +106,9 @@ func (c *consumerContextProvider) getUserContextData(userContextHeader string) (
 		return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q is mandatory", c.consumerClaimsKeysConfig.TenantIDKey))
 	}
 
-	subdomain := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.SubdomainKey)
-	if !subdomain.Exists() {
-		return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q is mandatory", c.consumerClaimsKeysConfig.SubdomainKey))
-	}
-
 	return &userContextData{
 		clientID:         clientID.String(),
 		externalTenantID: externalTenantID.String(),
-		subdomain:        subdomain.String(),
 	}, nil
 }
 
@@ -123,9 +118,13 @@ func getTenantWithRegion(ctx context.Context, directorClient DirectorClient, ext
 		return nil, "", err
 	}
 
+	if tenantMapping.Type != string(tenant.Subaccount) {
+		return tenantMapping, "", nil
+	}
+
 	region, ok := tenantMapping.Labels["region"]
 	if !ok {
-		return nil, "", fmt.Errorf("region label not found for tenant with ID: %q", externalTenantID)
+		return nil, "", fmt.Errorf("region label not found for subaccount with ID: %q", externalTenantID)
 	}
 	regionStr, ok := region.(string)
 	if !ok {

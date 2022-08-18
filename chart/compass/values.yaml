@@ -123,7 +123,7 @@ global:
       version: "PR-2570"
     hydrator:
       dir:
-      version: "PR-2551"
+      version: "PR-2562"
     gateway:
       dir:
       version: "PR-2501"
@@ -132,10 +132,10 @@ global:
       version: "PR-2501"
     ord_service:
       dir:
-      version: "PR-72"
+      version: "PR-74"
     schema_migrator:
       dir:
-      version: "PR-2532"
+      version: "PR-2565"
     system_broker:
       dir:
       version: "PR-2501"
@@ -146,7 +146,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2521"
+      version: "PR-2554"
     console:
       dir:
       version: "PR-68"
