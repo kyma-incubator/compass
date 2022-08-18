@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/pkg/errors"
-	"io/ioutil"
+	"io/fs"
 	"path/filepath"
 	"strings"
 )
@@ -26,7 +26,7 @@ type appTmplService interface {
 	Create(ctx context.Context, in model.ApplicationTemplateInput) (string, error)
 }
 
-//go:generate mockery --name=intSysRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --name=intSysRepo --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
 type intSysRepo interface {
 	Create(ctx context.Context, item model.IntegrationSystem) error
 	Exists(ctx context.Context, id string) (bool, error)
@@ -46,13 +46,13 @@ func NewDataLoader(tx persistence.Transactioner, appTmplSvc appTmplService, intS
 	}
 }
 
-func (d *DataLoader) LoadData(ctx context.Context) error {
-	integrationSystems, err := d.loadIntegrationSystems(ctx)
+func (d *DataLoader) LoadData(ctx context.Context, readDir func(dirname string) ([]fs.FileInfo, error), readFile func(filename string) ([]byte, error)) error {
+	integrationSystems, err := d.loadIntegrationSystems(ctx, readDir, readFile)
 	if err != nil {
 		return errors.Wrap(err, "failed while loading integration systems")
 	}
 
-	appTemplateInputs, err := d.loadAppTemplates(ctx)
+	appTemplateInputs, err := d.loadAppTemplates(ctx, readDir, readFile)
 	if err != nil {
 		return errors.Wrap(err, "failed while loading application templates")
 	}
@@ -79,8 +79,8 @@ func (d *DataLoader) LoadData(ctx context.Context) error {
 	return nil
 }
 
-func (d *DataLoader) loadIntegrationSystems(ctx context.Context) ([]model.IntegrationSystem, error) {
-	files, err := ioutil.ReadDir(integrationSystemsDirectoryPath)
+func (d *DataLoader) loadIntegrationSystems(ctx context.Context, readDir func(dirname string) ([]fs.FileInfo, error), readFile func(filename string) ([]byte, error)) ([]model.IntegrationSystem, error) {
+	files, err := readDir(integrationSystemsDirectoryPath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while reading directory with integration systems files [%s]", integrationSystemsDirectoryPath)
 	}
@@ -93,7 +93,7 @@ func (d *DataLoader) loadIntegrationSystems(ctx context.Context) ([]model.Integr
 			return nil, apperrors.NewInternalError(fmt.Sprintf("unsupported file format %q, supported format: json", filepath.Ext(f.Name())))
 		}
 
-		bytes, err := ioutil.ReadFile(integrationSystemsDirectoryPath + f.Name())
+		bytes, err := readFile(integrationSystemsDirectoryPath + f.Name())
 		if err != nil {
 			return nil, errors.Wrapf(err, "while reading integration systems file %q", integrationSystemsDirectoryPath+f.Name())
 		}
@@ -109,8 +109,8 @@ func (d *DataLoader) loadIntegrationSystems(ctx context.Context) ([]model.Integr
 	return integrationSystems, nil
 }
 
-func (d *DataLoader) loadAppTemplates(ctx context.Context) ([]model.ApplicationTemplateInput, error) {
-	files, err := ioutil.ReadDir(applicationTemplatesDirectoryPath)
+func (d *DataLoader) loadAppTemplates(ctx context.Context, readDir func(dirname string) ([]fs.FileInfo, error), readFile func(filename string) ([]byte, error)) ([]model.ApplicationTemplateInput, error) {
+	files, err := readDir(applicationTemplatesDirectoryPath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while reading directory with application templates files [%s]", applicationTemplatesDirectoryPath)
 	}
@@ -123,7 +123,7 @@ func (d *DataLoader) loadAppTemplates(ctx context.Context) ([]model.ApplicationT
 			return nil, apperrors.NewInternalError(fmt.Sprintf("unsupported file format %q, supported format: json", filepath.Ext(f.Name())))
 		}
 
-		bytes, err := ioutil.ReadFile(applicationTemplatesDirectoryPath + f.Name())
+		bytes, err := readFile(applicationTemplatesDirectoryPath + f.Name())
 		if err != nil {
 			return nil, errors.Wrapf(err, "while reading application templates file %q", applicationTemplatesDirectoryPath+f.Name())
 		}

@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -214,7 +215,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	}
 
 	dataLoader := systemfetcher.NewDataLoader(tx, appTemplateSvc, intSysRepo)
-	if err := dataLoader.LoadData(ctx); err != nil {
+	if err := dataLoader.LoadData(ctx, ioutil.ReadDir, ioutil.ReadFile); err != nil {
 		return nil, err
 	}
 
