@@ -120,7 +120,7 @@ global:
       version: "PR-2501"
     director:
       dir:
-      version: "PR-2555"
+      version: "PR-2565"
     hydrator:
       dir:
       version: "PR-2462"
@@ -132,10 +132,10 @@ global:
       version: "PR-2501"
     ord_service:
       dir:
-      version: "PR-72"
+      version: "PR-74"
     schema_migrator:
       dir:
-      version: "PR-2532"
+      version: "PR-2565"
     system_broker:
       dir:
       version: "PR-2501"
