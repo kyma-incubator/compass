@@ -31,24 +31,21 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 	clientID := "id-value!t12345"
 	authID := "test-user-name@sap.com"
 	testRegion := "eu-1"
-	testSubdomain := "consumerSubdomain"
 
 	testError := errors.New("test error")
 	notFoudErr := apperrors.NewNotFoundError(resource.Tenant, consumerTenantID)
 
 	consumerClaimsKeysConfig := config.ConsumerClaimsKeysConfig{
-		ClientIDKey:  "client_id",
-		TenantIDKey:  "tenantid",
-		UserNameKey:  "user_name",
-		SubdomainKey: "subdomain",
+		ClientIDKey: "client_id",
+		TenantIDKey: "tenantid",
+		UserNameKey: "user_name",
 	}
 
 	authDetails := oathkeeper.AuthDetails{AuthID: authID, AuthFlow: oathkeeper.ConsumerProviderFlow}
 
-	userCtxHeaderWithAllProperties := fmt.Sprintf(`{"client_id":"%s","exp":1659618593,"tenantid":"%s","subdomain":"%s","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"%s","user_name":"%s","x-zid":""}`, clientID, consumerTenantID, testSubdomain, consumerTenantID, authID)
-	userCtxHeaderWithoutClientID := fmt.Sprintf(`{"exp":1659618593,"tenantid":"%s","subdomain":"%s","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"%s","user_name":"%s","x-zid":""}`, consumerTenantID, testSubdomain, consumerTenantID, authID)
-	userCtxHeaderWithoutTenantID := fmt.Sprintf(`{"client_id":"%s","exp":1659618593,"subdomain":"%s","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"%s","user_name":"%s","x-zid":""}`, clientID, testSubdomain, consumerTenantID, authID)
-	userCtxHeaderWithoutSubdomain := fmt.Sprintf(`{"client_id":"%s","exp":1659618593,"tenantid":"%s","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"%s","user_name":"%s","x-zid":""}`, clientID, consumerTenantID, consumerTenantID, authID)
+	userCtxHeaderWithAllProperties := fmt.Sprintf(`{"client_id":"%s","exp":1659618593,"tenantid":"%s","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"%s","user_name":"%s","x-zid":""}`, clientID, consumerTenantID, consumerTenantID, authID)
+	userCtxHeaderWithoutClientID := fmt.Sprintf(`{"exp":1659618593,"tenantid":"%s","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"%s","user_name":"%s","x-zid":""}`, consumerTenantID, consumerTenantID, authID)
+	userCtxHeaderWithoutTenantID := fmt.Sprintf(`{"client_id":"%s","exp":1659618593,"identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"%s","user_name":"%s","x-zid":""}`, clientID, consumerTenantID, authID)
 
 	reqDataFunc := func(userContextHeader string) oathkeeper.ReqData {
 		return oathkeeper.ReqData{
@@ -147,12 +144,6 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 			ExpectedErrMsg:        "while getting user context data from \"user_context\" header: invalid data [reason=property \"tenantid\" is mandatory",
 		},
 		{
-			Name:                  "Returns error when subdomain property is missing from user_context header",
-			ReqDataInput:          reqDataFunc(userCtxHeaderWithoutSubdomain),
-			ExpectedObjectContext: tenantmapping.ObjectContext{},
-			ExpectedErrMsg:        "while getting user context data from \"user_context\" header: invalid data [reason=property \"subdomain\" is mandatory",
-		},
-		{
 			Name: "Returns error while getting tenant by external ID",
 			DirectorClient: func() *automock.DirectorClient {
 				client := &automock.DirectorClient{}
@@ -236,15 +227,14 @@ func TestConsumerContextProvider_Match(t *testing.T) {
 	certClientID := "d008c9db-2469-4d0b-af2f-880a6d0ba096"
 
 	consumerClaimsKeysConfig := config.ConsumerClaimsKeysConfig{
-		ClientIDKey:  "client_id",
-		TenantIDKey:  "tenantid",
-		UserNameKey:  "user_name",
-		SubdomainKey: "subdomain",
+		ClientIDKey: "client_id",
+		TenantIDKey: "tenantid",
+		UserNameKey: "user_name",
 	}
 	provider := tenantmapping.NewConsumerContextProvider(nil, consumerClaimsKeysConfig)
 
-	userCtxHeader := `{"client_id":"id-value!t12345","exp":1659618593,"tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","subdomain":"consumerSubdomain","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"1f538f34-30bf-4d3d-aeaa-02e69eef84ae","user_name":"test-user-name@sap.com","x-zid":""}`
-	userCtxHeaderWithoutUserNameProperty := `{"client_id":"id-value!t12345","exp":1659618593,"tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","subdomain":"consumerSubdomain","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"1f538f34-30bf-4d3d-aeaa-02e69eef84ae","x-zid":""}`
+	userCtxHeader := `{"client_id":"id-value!t12345","exp":1659618593,"tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"1f538f34-30bf-4d3d-aeaa-02e69eef84ae","user_name":"test-user-name@sap.com","x-zid":""}`
+	userCtxHeaderWithoutUserNameProperty := `{"client_id":"id-value!t12345","exp":1659618593,"tenantid":"f8075207-1478-4a80-bd26-24a4785a2bfd","identity":"subscription-flow-identity","iss":"http://compass-external-services-mock.compass-system.svc.cluster.local:8080","subsc-key-test":"subscription-flow","tenant":"1f538f34-30bf-4d3d-aeaa-02e69eef84ae","x-zid":""}`
 
 	testCases := []struct {
 		Name                string
