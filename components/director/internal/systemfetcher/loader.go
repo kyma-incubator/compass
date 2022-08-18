@@ -33,12 +33,14 @@ type intSysRepo interface {
 	Exists(ctx context.Context, id string) (bool, error)
 }
 
+// DataLoader loads and creates all the necessary data needed by system-fetcher
 type DataLoader struct {
 	transaction persistence.Transactioner
 	appTmplSvc  appTmplService
 	intSysRepo  intSysRepo
 }
 
+// NewDataLoader creates new DataLoader
 func NewDataLoader(tx persistence.Transactioner, appTmplSvc appTmplService, intSysRepo intSysRepo) *DataLoader {
 	return &DataLoader{
 		transaction: tx,
@@ -47,6 +49,7 @@ func NewDataLoader(tx persistence.Transactioner, appTmplSvc appTmplService, intS
 	}
 }
 
+// LoadData loads and creates all the necessary data needed by system-fetcher
 func (d *DataLoader) LoadData(ctx context.Context, readDir func(dirname string) ([]fs.FileInfo, error), readFile func(filename string) ([]byte, error)) error {
 	integrationSystems, err := d.loadIntegrationSystems(ctx, readDir, readFile)
 	if err != nil {

@@ -23,15 +23,15 @@ const (
 
 func TestLoadData(t *testing.T) {
 	testErr := errors.New("testErr")
-	integrationSystemId := "sys-id"
-	integrationSystemsJson := "[{" +
-		"\"id\":\"" + integrationSystemId + "\"," +
+	integrationSystemID := "sys-id"
+	integrationSystemsJSON := "[{" +
+		"\"id\":\"" + integrationSystemID + "\"," +
 		"\"name\":\"sys-name\"," +
 		"\"description\":\"sys-desc\"" +
 		"}]"
 
 	applicationTemplateName := "app-tmpl-name"
-	applicationTemplatesJson := "[{" +
+	applicationTemplatesJSON := "[{" +
 		"\"name\":\"" + applicationTemplateName + "\"," +
 		"\"description\":\"app-tmpl-desc\"}]"
 
@@ -154,12 +154,12 @@ func TestLoadData(t *testing.T) {
 			appTmplSvc: mockAppTmplService,
 			intSysRepo: func() *automock.IntSysRepo {
 				intSysRepo := &automock.IntSysRepo{}
-				intSysRepo.On("Exists", txtest.CtxWithDBMatcher(), integrationSystemId).Return(false, testErr).Once()
+				intSysRepo.On("Exists", txtest.CtxWithDBMatcher(), integrationSystemID).Return(false, testErr).Once()
 				return intSysRepo
 			},
 			readDirFunc: mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
-				return []byte(integrationSystemsJson), nil
+				return []byte(integrationSystemsJSON), nil
 			},
 			expectedErr: testErr,
 		},
@@ -171,13 +171,13 @@ func TestLoadData(t *testing.T) {
 			appTmplSvc: mockAppTmplService,
 			intSysRepo: func() *automock.IntSysRepo {
 				intSysRepo := &automock.IntSysRepo{}
-				intSysRepo.On("Exists", txtest.CtxWithDBMatcher(), integrationSystemId).Return(false, nil).Once()
+				intSysRepo.On("Exists", txtest.CtxWithDBMatcher(), integrationSystemID).Return(false, nil).Once()
 				intSysRepo.On("Create", txtest.CtxWithDBMatcher(), mock.AnythingOfType("model.IntegrationSystem")).Return(testErr).Once()
 				return intSysRepo
 			},
 			readDirFunc: mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
-				return []byte(integrationSystemsJson), nil
+				return []byte(integrationSystemsJSON), nil
 			},
 			expectedErr: testErr,
 		},
@@ -193,15 +193,15 @@ func TestLoadData(t *testing.T) {
 			},
 			intSysRepo: func() *automock.IntSysRepo {
 				intSysRepo := &automock.IntSysRepo{}
-				intSysRepo.On("Exists", txtest.CtxWithDBMatcher(), integrationSystemId).Return(true, nil).Once()
+				intSysRepo.On("Exists", txtest.CtxWithDBMatcher(), integrationSystemID).Return(true, nil).Once()
 				return intSysRepo
 			},
 			readDirFunc: mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				if path == integrationSystemsDirectoryPath+tempFileName {
-					return []byte(integrationSystemsJson), nil
+					return []byte(integrationSystemsJSON), nil
 				}
-				return []byte(applicationTemplatesJson), nil
+				return []byte(applicationTemplatesJSON), nil
 			},
 			expectedErr: testErr,
 		},
@@ -218,15 +218,15 @@ func TestLoadData(t *testing.T) {
 			},
 			intSysRepo: func() *automock.IntSysRepo {
 				intSysRepo := &automock.IntSysRepo{}
-				intSysRepo.On("Exists", txtest.CtxWithDBMatcher(), integrationSystemId).Return(true, nil).Once()
+				intSysRepo.On("Exists", txtest.CtxWithDBMatcher(), integrationSystemID).Return(true, nil).Once()
 				return intSysRepo
 			},
 			readDirFunc: mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				if path == integrationSystemsDirectoryPath+tempFileName {
-					return []byte(integrationSystemsJson), nil
+					return []byte(integrationSystemsJSON), nil
 				}
-				return []byte(applicationTemplatesJson), nil
+				return []byte(applicationTemplatesJSON), nil
 			},
 			expectedErr: testErr,
 		},
@@ -243,15 +243,15 @@ func TestLoadData(t *testing.T) {
 			},
 			intSysRepo: func() *automock.IntSysRepo {
 				intSysRepo := &automock.IntSysRepo{}
-				intSysRepo.On("Exists", txtest.CtxWithDBMatcher(), integrationSystemId).Return(true, nil).Once()
+				intSysRepo.On("Exists", txtest.CtxWithDBMatcher(), integrationSystemID).Return(true, nil).Once()
 				return intSysRepo
 			},
 			readDirFunc: mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				if path == integrationSystemsDirectoryPath+tempFileName {
-					return []byte(integrationSystemsJson), nil
+					return []byte(integrationSystemsJSON), nil
 				}
-				return []byte(applicationTemplatesJson), nil
+				return []byte(applicationTemplatesJSON), nil
 			},
 			expectedErr: testErr,
 		},
@@ -278,15 +278,15 @@ func TestLoadData(t *testing.T) {
 			},
 			intSysRepo: func() *automock.IntSysRepo {
 				intSysRepo := &automock.IntSysRepo{}
-				intSysRepo.On("Exists", txtest.CtxWithDBMatcher(), integrationSystemId).Return(true, nil).Once()
+				intSysRepo.On("Exists", txtest.CtxWithDBMatcher(), integrationSystemID).Return(true, nil).Once()
 				return intSysRepo
 			},
 			readDirFunc: mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				if path == integrationSystemsDirectoryPath+tempFileName {
-					return []byte(integrationSystemsJson), nil
+					return []byte(integrationSystemsJSON), nil
 				}
-				return []byte(applicationTemplatesJson), nil
+				return []byte(applicationTemplatesJSON), nil
 			},
 		},
 	}
