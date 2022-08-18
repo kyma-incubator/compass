@@ -4,20 +4,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher/automock"
 	pAutomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"io/fs"
-	"testing"
-	"time"
 )
 
 const (
-	integrationSystemsDirectoryPath   = "/data/int-systems/"
-	tempFileName                      = "tmp.json"
+	integrationSystemsDirectoryPath = "/data/int-systems/"
+	tempFileName                    = "tmp.json"
 )
 
 func TestLoadData(t *testing.T) {
