@@ -11,12 +11,12 @@ data:
   integration-systems.json: |-
     [
       {
-        "id":"f18d7d75-e856-470e-a27f-e90ad14cca0b",
+        "id":"{{ (index .Values.global.systemFetcher.intSystems 0).id }}",
         "name":"sap-s4hana-cloud",
         "description":"Integration system for SAP S4Hana Cloud applications"
       },
       {
-        "id":"836d8463-f001-418b-a2da-257ce55d8a0f",
+        "id":"{{ (index .Values.global.systemFetcher.intSystems 1).id }}",
         "name":"sap-successfactors",
         "description":"Integration system for SAP SuccessFactors"
       }
@@ -83,7 +83,7 @@ data:
       {
         "name":"SAP SuccessFactors",
         "description":"SAP SuccessFactors",
-        "applicationInputJSON":"{\"name\": \"{{ "{{" }}name{{ "}}" }}\", \"labels\": {\"displayName\": \"{{ "{{" }}display-name{{ "}}" }}\", \"applicationType\": \"SAP SuccessFactors\"}, \"description\": \"{{ "{{" }}display-name{{ "}}" }}\", \"providerName\": \"SAP\", \"integrationSystemID\": \"836d8463-f001-418b-a2da-257ce55d8a0f\"}",
+        "applicationInputJSON":"{\"name\": \"{{ "{{" }}name{{ "}}" }}\", \"labels\": {\"displayName\": \"{{ "{{" }}display-name{{ "}}" }}\", \"applicationType\": \"SAP SuccessFactors\"}, \"description\": \"{{ "{{" }}display-name{{ "}}" }}\", \"providerName\": \"SAP\", \"integrationSystemID\": \"{{ (index .Values.global.systemFetcher.intSystems 1).id }}\"}",
         "placeholders":[
           {
             "Name":"name",
@@ -118,7 +118,7 @@ data:
       {
         "name":"SAP S/4HANA Cloud",
         "description":"SAP S/4HANA Cloud",
-        "applicationInputJSON":"{\"name\": \"{{ "{{" }}name{{ "}}" }}\", \"labels\": {\"region\": \"default\", \"displayName\": \"{{ "{{" }}display-name{{ "}}" }}\", \"applicationType\": \"SAP S/4HANA Cloud\"}, \"description\": \"{{ "{{" }}display-name{{ "}}" }}\", \"providerName\": \"SAP\",  \"integrationSystemID\": \"f18d7d75-e856-470e-a27f-e90ad14cca0b\"}",
+        "applicationInputJSON":"{\"name\": \"{{ "{{" }}name{{ "}}" }}\", \"labels\": {\"region\": \"default\", \"displayName\": \"{{ "{{" }}display-name{{ "}}" }}\", \"applicationType\": \"SAP S/4HANA Cloud\"}, \"description\": \"{{ "{{" }}display-name{{ "}}" }}\", \"providerName\": \"SAP\",  \"integrationSystemID\": \"{{ (index .Values.global.systemFetcher.intSystems 0).id }}\"}",
         "placeholders":[
           {
             "Name":"name",
@@ -154,7 +154,7 @@ data:
       {
         "name":"SAP Marketing Cloud",
         "description":"SAP Marketing Cloud",
-        "applicationInputJSON":"{\"name\": \"{{ "{{" }}name{{ "}}" }}\", \"labels\": {\"displayName\": \"{{ "{{" }}display-name{{ "}}" }}\", \"applicationType\": \"SAP Marketing Cloud\"},  \"description\": \"{{ "{{" }}display-name{{ "}}" }}\", \"providerName\": \"SAP\", \"integrationSystemID\": \"f18d7d75-e856-470e-a27f-e90ad14cca0b\"}",
+        "applicationInputJSON":"{\"name\": \"{{ "{{" }}name{{ "}}" }}\", \"labels\": {\"displayName\": \"{{ "{{" }}display-name{{ "}}" }}\", \"applicationType\": \"SAP Marketing Cloud\"},  \"description\": \"{{ "{{" }}display-name{{ "}}" }}\", \"providerName\": \"SAP\", \"integrationSystemID\": \"{{ (index .Values.global.systemFetcher.intSystems 0).id }}\"}",
         "placeholders":[
           {
             "Name":"name",
