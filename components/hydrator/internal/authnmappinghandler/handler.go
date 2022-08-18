@@ -204,37 +204,66 @@ func (h *Handler) verifyToken(ctx context.Context, reqData oathkeeper.ReqData, a
 		verifier, found := h.verifiers[issuerURL]
 		h.verifiersMutex.RUnlock()
 
-		if !found {
-			log.C(ctx).Infof("Verifier for issuer %q not found. Attempting to construct new verifier from well-known endpoint", issuerURL)
-			resp, err := h.getOpenIDConfig(ctx, issuerURL)
-			if err != nil {
-				aggregatedErr = errors.Wrapf(aggregatedErr, "error while getting OpenIDCOnfig for issuer %q: %s", issuerURL, err)
-				continue
-			}
-
-			if resp.StatusCode != http.StatusOK {
-				aggregatedErr = errors.Wrapf(aggregatedErr, "error for issuer %q: %s", issuerURL, handleResponseError(ctx, resp))
-				continue
-			}
-
-			var m OpenIDMetadata
-			if err := json.NewDecoder(resp.Body).Decode(&m); err != nil {
-				aggregatedErr = errors.Wrapf(aggregatedErr, "while decoding body of response for issuer %q: %s", issuerURL, err)
-				continue
-			}
-
-			defer httputils.Close(ctx, resp.Body)
-
-			verifier = h.tokenVerifierProvider(ctx, m)
-
-			h.verifiersMutex.Lock()
-			h.verifiers[issuerURL] = verifier
-			h.verifiersMutex.Unlock()
-
-			log.C(ctx).Infof("Successfully constructed verifier for issuer %q", issuerURL)
-		} else {
+		if found {
 			log.C(ctx).Infof("Verifier for issuer %q exists", issuerURL)
+			claims, err = verifier.Verify(ctx, token)
+			if err != nil {
+				aggregatedErr = errors.Wrapf(aggregatedErr, "unable to verify token with issuer %q: %s", issuerURL, err)
+				continue
+			}
+			index = i
+			break
 		}
+	}
+
+	for i, issuer := range config.TrustedIssuers {
+		if index != -1 {
+			// The token is already verified successfully
+			break
+		}
+
+		protocol := "https"
+		if len(issuer.Protocol) > 0 {
+			protocol = issuer.Protocol
+		}
+		issuerURL := fmt.Sprintf("%s://%s.%s%s", protocol, issuerSubdomain, issuer.DomainURL, "/oauth/token")
+
+		h.verifiersMutex.RLock()
+		verifier, found := h.verifiers[issuerURL]
+		h.verifiersMutex.RUnlock()
+
+		if found {
+			// Cached verifiers were already tried in the loop above
+			continue
+		}
+
+		log.C(ctx).Infof("Verifier for issuer %q not found. Attempting to construct new verifier from well-known endpoint", issuerURL)
+		resp, err := h.getOpenIDConfig(ctx, issuerURL)
+		if err != nil {
+			aggregatedErr = errors.Wrapf(aggregatedErr, "error while getting OpenIDCOnfig for issuer %q: %s", issuerURL, err)
+			continue
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			aggregatedErr = errors.Wrapf(aggregatedErr, "error for issuer %q: %s", issuerURL, handleResponseError(ctx, resp))
+			continue
+		}
+
+		var m OpenIDMetadata
+		if err := json.NewDecoder(resp.Body).Decode(&m); err != nil {
+			aggregatedErr = errors.Wrapf(aggregatedErr, "while decoding body of response for issuer %q: %s", issuerURL, err)
+			continue
+		}
+
+		defer httputils.Close(ctx, resp.Body)
+
+		verifier = h.tokenVerifierProvider(ctx, m)
+
+		h.verifiersMutex.Lock()
+		h.verifiers[issuerURL] = verifier
+		h.verifiersMutex.Unlock()
+
+		log.C(ctx).Infof("Successfully constructed verifier for issuer %q", issuerURL)
 
 		claims, err = verifier.Verify(ctx, token)
 		if err != nil {

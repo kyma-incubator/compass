@@ -120,10 +120,10 @@ global:
       version: "PR-2501"
     director:
       dir:
-      version: "PR-2555"
+      version: "PR-2565"
     hydrator:
       dir:
-      version: "PR-2558"
+      version: "PR-2562"
     gateway:
       dir:
       version: "PR-2501"
@@ -132,10 +132,10 @@ global:
       version: "PR-2501"
     ord_service:
       dir:
-      version: "PR-72"
+      version: "PR-74"
     schema_migrator:
       dir:
-      version: "PR-2532"
+      version: "PR-2565"
     system_broker:
       dir:
       version: "PR-2501"
@@ -152,7 +152,7 @@ global:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2556"
+      version: "PR-2564"
   isLocalEnv: false
   isForTesting: false
   oauth2:
