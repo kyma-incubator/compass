@@ -22,7 +22,6 @@ import (
 type userContextData struct {
 	clientID         string
 	externalTenantID string
-	subdomain        string
 }
 
 type consumerContextProvider struct {
@@ -107,15 +106,9 @@ func (c *consumerContextProvider) getUserContextData(userContextHeader string) (
 		return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q is mandatory", c.consumerClaimsKeysConfig.TenantIDKey))
 	}
 
-	subdomain := gjson.Get(userContextHeader, c.consumerClaimsKeysConfig.SubdomainKey)
-	if !subdomain.Exists() {
-		return &userContextData{}, apperrors.NewInvalidDataError(fmt.Sprintf("property %q is mandatory", c.consumerClaimsKeysConfig.SubdomainKey))
-	}
-
 	return &userContextData{
 		clientID:         clientID.String(),
 		externalTenantID: externalTenantID.String(),
-		subdomain:        subdomain.String(),
 	}, nil
 }
 
