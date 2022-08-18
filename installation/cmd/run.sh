@@ -99,7 +99,8 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 function revert_migrator_file() {
-    echo "$MIGRATOR_FILE" > "$ROOT_PATH"/chart/compass/templates/migrator-job.yaml
+    rm "$ROOT_PATH"/chart/postgresql/templates/migrator-job.yaml
+    rm "$ROOT_PATH"/chart/postgresql/templates/migrator-pvc.yaml
     echo "$UPDATE_EXPECTED_SCHEMA_VERSION_FILE" > "$ROOT_PATH"/chart/compass/templates/update-expected-schema-version-job.yaml
 }
 
@@ -178,13 +179,15 @@ fi
 
 if [[ ${DUMP_DB} ]]; then
     echo -e "${GREEN}DB dump will be used to prepopulate installation${NC}"
+    cp ${ROOT_PATH}/chart/compass/templates/migrator-job.yaml ${ROOT_PATH}/chart/postgresql/templates/migrator-job.yaml
+    cp ${ROOT_PATH}/chart/compass/templates/migrator-pvc.yaml ${ROOT_PATH}/chart/postgresql/templates/migrator-pvc.yaml
 
     if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines, reference issue: https://stackoverflow.com/questions/4247068/sed-command-with-i-option-failing-on-mac-but-works-on-linux
-        sed -i '' 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/migrator-job.yaml
-        sed -i '' 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/update-expected-schema-version-job.yaml
+        sed -i '' 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/postgresql/templates/migrator-job.yaml
+        # sed -i '' 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/update-expected-schema-version-job.yaml
     else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
-        sed -i 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/migrator-job.yaml
-        sed -i 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/update-expected-schema-version-job.yaml
+        sed -i 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/postgresql/templates/migrator-job.yaml
+        # sed -i 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/compass/templates/update-expected-schema-version-job.yaml
     fi
 
     REMOTE_VERSIONS=($(gsutil ls -R gs://sap-cp-cmp-dev-db-dump/ | grep -o -E '[0-9]+' | sed -e 's/^0\+//' | sort -r))
