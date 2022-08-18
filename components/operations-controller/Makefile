@@ -1,6 +1,5 @@
 APP_NAME = compass-operations-controller
 APP_PATH = components/operations-controller
-COMPONENT_BUILD_TIMEOUT = 10m
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
 VERIFY_IGNORE := /vendor\|/automock\|/api/v1alpha1/zz_generated.deepcopy.go
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
