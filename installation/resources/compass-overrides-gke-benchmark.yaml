@@ -27,6 +27,8 @@ global:
       manage: true
     regionInstancesCredentials:
       manage: true
+    tenantDependenciesConfig:
+      manage: true
   http:
     client:
       skipSSLValidation: true
