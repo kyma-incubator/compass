@@ -2,11 +2,8 @@ package bench
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"testing"
-
-	"github.com/davecgh/go-spew/spew"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -42,8 +39,6 @@ func TestMain(m *testing.M) {
 	defer tenant.TestTenants.Cleanup()
 
 	cfg.ReadConfig(&conf)
-	fmt.Println("Config: ")
-	spew.Dump(conf)
 	ctx := context.Background()
 	cc, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	if err != nil {

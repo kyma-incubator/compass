@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
@@ -22,8 +20,6 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 	for i := 0; i < appsCount; i++ {
 		appInput := fixtures.CreateApp(fmt.Sprintf("director-%d", i))
 		appResp, err := fixtures.RegisterApplicationFromInput(b, ctx, certSecuredGraphQLClient, tenantID, appInput)
-		fmt.Println("APP: ")
-		spew.Dump(appResp)
 		defer fixtures.CleanupApplication(b, ctx, certSecuredGraphQLClient, tenantID, &appResp)
 		require.NoError(b, err)
 		require.NotEmpty(b, appResp.ID)
@@ -37,8 +33,6 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 
 	rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(b, ctx, certSecuredGraphQLClient, tenantID, &runtime)
 	defer fixtures.CleanupRuntime(b, ctx, certSecuredGraphQLClient, tenantID, &rt)
-	fmt.Println("Runtime: ")
-	spew.Dump(rt)
 	require.NoError(b, err)
 	require.NotEmpty(b, rt.ID)
 

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
-
 	directorErrors "github.com/kyma-incubator/compass/components/hydrator/internal/director"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
@@ -69,12 +67,7 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
-	spew.Dump("auth details: ")
-	spew.Dump(authDetails)
 	authDetails.Region = region
-	spew.Dump("got tennant mapping")
-	spew.Dump(tenantMapping)
-	spew.Dump(region)
 	objCtx := NewObjectContext(NewTenantContext(externalTenantID, tenantMapping.InternalID), p.tenantKeys, scopes, mergeWithOtherScopes,
 		authDetails.Region, "", getConsumerID(reqData, authDetails), authDetails.AuthFlow, consumer.ConsumerType(consumerType), tenantmapping.CertServiceObjectContextProvider)
 	log.C(ctx).Infof("Successfully got object context: %+v", objCtx)
