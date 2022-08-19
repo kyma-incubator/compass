@@ -218,12 +218,6 @@ func fixApplicationModelWithoutTemplate(applicationID string) *model.Application
 	return appModel
 }
 
-func fixApplicationWithType(applicationType string) *model.Application {
-	app := fixApplicationModelWithoutTemplate(ApplicationID)
-
-	return app
-}
-
 func fixApplicationModel(applicationID string) *model.Application {
 	return &model.Application{
 		ProviderName:          str.Ptr("application-provider"),

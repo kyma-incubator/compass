@@ -46,7 +46,7 @@ func TestRegisterApplicationWithAllSimpleFieldsProvided(t *testing.T) {
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: graphql.Labels{
 			"group":     []interface{}{"production", "experimental"},
-			"scenarios": []interface{}{"DEFAULT"},
+			"scenarios": []interface{}{conf.DefaultScenario},
 		},
 	}
 
@@ -102,7 +102,7 @@ func TestRegisterApplicationWithExternalCertificate(t *testing.T) {
 // 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 // 		Labels: graphql.Labels{
 // 			"group":     []interface{}{"production", "experimental"},
-// 			"scenarios": []interface{}{"DEFAULT"},
+// 			"scenarios": []interface{}{conf.DefaultScenario},
 // 		},
 // 	}
 
@@ -171,7 +171,7 @@ func TestRegisterApplicationNormalizationValidation(t *testing.T) {
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: graphql.Labels{
 			"group":     []interface{}{"production", "experimental"},
-			"scenarios": []interface{}{"DEFAULT"},
+			"scenarios": []interface{}{conf.DefaultScenario},
 		},
 	}
 	appSecondInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(inSecond)
@@ -206,7 +206,7 @@ func TestRegisterApplicationNormalizationValidation(t *testing.T) {
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: graphql.Labels{
 			"group":     []interface{}{"production", "experimental"},
-			"scenarios": []interface{}{"DEFAULT"},
+			"scenarios": []interface{}{conf.DefaultScenario},
 		},
 	}
 	appFourthInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(inFourth)
@@ -244,7 +244,7 @@ func TestRegisterApplicationWithStatusCondition(t *testing.T) {
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: graphql.Labels{
 			"group":     []interface{}{"production", "experimental"},
-			"scenarios": []interface{}{"DEFAULT"},
+			"scenarios": []interface{}{conf.DefaultScenario},
 		},
 		StatusCondition: &statusCond,
 	}
@@ -284,7 +284,7 @@ func TestRegisterApplicationWithWebhooks(t *testing.T) {
 			},
 		},
 		Labels: graphql.Labels{
-			"scenarios": []interface{}{"DEFAULT"},
+			"scenarios": []interface{}{conf.DefaultScenario},
 		},
 	}
 
@@ -368,7 +368,7 @@ func TestRegisterApplicationWithPackagesBackwardsCompatibility(t *testing.T) {
 
 		tenantID := tenant.TestTenants.GetDefaultTenantID()
 		runtimeInput := fixRuntimeInput("test-runtime")
-		runtimeInput.Labels[ScenariosLabel] = []string{"DEFAULT"}
+		runtimeInput.Labels[ScenariosLabel] = []string{conf.DefaultScenario}
 		runtime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantID, runtimeInput, conf.GatewayOauth)
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &runtime)
 		require.NoError(t, err)
@@ -594,11 +594,10 @@ func TestDeleteApplication(t *testing.T) {
 		ctx := context.Background()
 		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInScenario")
 
-		defaultValue := "DEFAULT"
-		scenarios := []string{defaultValue, "test-scenario"}
+		scenarios := []string{conf.DefaultScenario, "test-scenario"}
 
 		fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios)
-		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{defaultValue})
+		defer fixtures.UpdateScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, []string{conf.DefaultScenario})
 
 		applicationInput := fixtures.FixSampleApplicationRegisterInput("first")
 		applicationInput.Labels = graphql.Labels{ScenariosLabel: scenarios, conf.ApplicationTypeLabelKey: createAppTemplateName("Cloud for Customer")}
@@ -630,7 +629,7 @@ func TestDeleteApplication(t *testing.T) {
 		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInScenario")
 
 		runtimeInput := fixRuntimeInput("one-runtime")
-		defaultValue := "DEFAULT"
+		defaultValue := conf.DefaultScenario
 		scenarios := []string{defaultValue, "test-scenario"}
 
 		fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios)
@@ -696,7 +695,7 @@ func TestUnpairApplication(t *testing.T) {
 		ctx := context.Background()
 		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInScenario")
 
-		defaultValue := "DEFAULT"
+		defaultValue := conf.DefaultScenario
 		scenarios := []string{defaultValue, "test-scenario"}
 
 		fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios)
@@ -734,7 +733,7 @@ func TestUnpairApplication(t *testing.T) {
 		tenantID := tenant.TestTenants.GetIDByName(t, "TestDeleteApplicationIfInScenario")
 
 		runtimeInput := fixRuntimeInput("one-runtime")
-		defaultValue := "DEFAULT"
+		defaultValue := conf.DefaultScenario
 		scenarios := []string{defaultValue, "test-scenario"}
 
 		fixtures.UpsertScenariosLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, scenarios)

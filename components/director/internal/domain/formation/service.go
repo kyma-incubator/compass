@@ -364,25 +364,8 @@ func (s *service) assign(ctx context.Context, tnt, objectID string, objectType g
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting formation %q", formation.Name)
 	}
-	// TODO Remove default scenario check after removing default scenario
-	if formation.Name != model.DefaultScenario && objectType == graphql.FormationObjectTypeApplication {
-		if err = s.isValidApplicationType(ctx, tnt, objectID, formationFromDB); err != nil {
-			return nil, errors.Wrapf(err, "while validating application type for application %q", objectID)
-		}
-	}
-	if formation.Name != model.DefaultScenario && objectType == graphql.FormationObjectTypeRuntime {
-		if err = s.isValidRuntimeType(ctx, tnt, objectID, formationFromDB); err != nil {
-			return nil, errors.Wrapf(err, "while validating runtime type")
-		}
-	}
-	if formation.Name != model.DefaultScenario && objectType == graphql.FormationObjectTypeRuntimeContext {
-		runtimeCtx, err := s.runtimeContextRepo.GetByID(ctx, tnt, objectID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while getting runtime context")
-		}
-		if err = s.isValidRuntimeType(ctx, tnt, runtimeCtx.RuntimeID, formationFromDB); err != nil {
-			return nil, errors.Wrapf(err, "while validating runtime type of runtime")
-		}
+	if err = s.checkFormationTemplateTypes(ctx, tnt, objectID, objectType, formationFromDB); err != nil {
+		return nil, err
 	}
 
 	if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), addFormation); err != nil {
@@ -397,6 +380,31 @@ func (s *service) assign(ctx context.Context, tnt, objectID string, objectType g
 	}
 
 	return formationFromDB, nil
+}
+
+func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) error {
+	// TODO Remove default scenario check after removing default scenario
+	if formation.Name != model.DefaultScenario {
+		switch objectType {
+		case graphql.FormationObjectTypeApplication:
+			if err := s.isValidApplicationType(ctx, tnt, objectID, formation); err != nil {
+				return errors.Wrapf(err, "while validating application type for application %q", objectID)
+			}
+		case graphql.FormationObjectTypeRuntime:
+			if err := s.isValidRuntimeType(ctx, tnt, objectID, formation); err != nil {
+				return errors.Wrapf(err, "while validating runtime type")
+			}
+		case graphql.FormationObjectTypeRuntimeContext:
+			runtimeCtx, err := s.runtimeContextRepo.GetByID(ctx, tnt, objectID)
+			if err != nil {
+				return errors.Wrapf(err, "while getting runtime context")
+			}
+			if err = s.isValidRuntimeType(ctx, tnt, runtimeCtx.RuntimeID, formation); err != nil {
+				return errors.Wrapf(err, "while validating runtime type of runtime")
+			}
+		}
+	}
+	return nil
 }
 
 // UnassignFormation unassigns object base on graphql.FormationObjectType.

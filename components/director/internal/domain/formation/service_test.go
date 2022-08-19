@@ -915,7 +915,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			ApplicationRepoFN: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationWithType(applicationType), nil)
+				repo.On("GetByID", ctx, Tnt, objectID).Return(fixApplicationModelWithoutTemplate(ApplicationID), nil)
 				return repo
 			},
 			LabelRepoFN: func() *automock.LabelRepository {
