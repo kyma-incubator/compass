@@ -152,7 +152,7 @@ global:
       version: "PR-68"
     e2e_tests:
       dir:
-      version: "PR-2564"
+      version: "PR-2550"
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -523,6 +523,9 @@ global:
     host: compass-tenant-fetcher.compass-system.svc.cluster.local
     prefix: /tenants
     port: 3000
+    xsappNamePath: "xsappname"
+    omitDependenciesParamName: ""
+    omitDependenciesParamValue: ""
     requiredAuthScope: Callback
     fetchTenantAuthScope: fetch_tenant
     authentication:
@@ -543,12 +546,19 @@ global:
       dependenciesEndpoint: "/v1/regional/{region}/dependencies"
       tenantPathParam: "tenantId"
       regionPathParam: "region"
+    dependenciesConfig:
+      secretName: "destination-region-instances"
+      file: "keyConfig"
+      path: "/cfg/dependencies"
     containerName: "tenant-fetcher"
     oauth:
       client: "client_id"
       secret: ""
       tokenURL: '{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'
       tokenPath: "/cert/token"
+    local:
+      templateMappings:
+        xsappMapping: '{{ printf "\"%s\":\"xsappname1\"" .Values.global.tenantFetcher.xsappNamePath }}'
     secret:
       name: "compass-tenant-fetcher-secret"
       clientIdKey: "client-id"
@@ -793,6 +803,8 @@ global:
       externalCertIntSystemCN: "integration-system-test"
     tenantFetcher:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
+      region: "eu-1"
+      region2: "eu-2"
     ordAggregator:
       skipPattern: ""
     ordService:

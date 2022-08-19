@@ -1,6 +1,5 @@
 APP_NAME = compass-tests
 APP_PATH = tests
-COMPONENT_BUILD_TIMEOUT = 15m
 LOCAL_PREFIX = k3d-kyma-registry:5001
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
 SCRIPTS_DIR = $(realpath $(shell pwd)/..)/scripts
