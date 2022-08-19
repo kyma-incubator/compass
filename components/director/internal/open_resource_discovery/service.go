@@ -154,7 +154,6 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 	} else if fetchErr != nil {
 		return errors.Wrapf(fetchErr, "failed to fetch the next application page")
 	}
-
 	return nil
 }
 
