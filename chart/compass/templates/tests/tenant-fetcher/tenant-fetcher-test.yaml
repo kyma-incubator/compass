@@ -31,6 +31,10 @@ spec:
             limits:
               memory: "1Gi"
           env:
+            - name: APP_TENANT_FETCHER_OMIT_PARAM_NAME
+              value: {{ .Values.global.tenantFetcher.omitDependenciesParamName | quote }}
+            - name: APP_TENANT_FETCHER_OMIT_PARAM_VALUE
+              value: {{ .Values.global.tenantFetcher.omitDependenciesParamValue | quote }}
             - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
             - name: APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY
