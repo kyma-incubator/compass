@@ -347,6 +347,9 @@ func TestORDAggregator(stdT *testing.T) {
 			// Verify packages
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
+			fmt.Printf("expectedNumberOfPackages %v \n", expectedNumberOfPackages)
+			fmt.Printf("respBody %v\n", len(gjson.Get(respBody, "value").Array()))
+
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfPackages {
 				t.Log("Missing Packages...will try again")
 				return false
@@ -553,7 +556,7 @@ func TestORDAggregator(stdT *testing.T) {
 		require.Contains(t, selfRegLabelValue, testConfig.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTemplate.ID)
 
 		httpClient := &http.Client{
-			Timeout: time.Minute,
+			Timeout: 2 * time.Minute,
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: testConfig.SkipSSLValidation},
 			},
