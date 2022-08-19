@@ -626,7 +626,7 @@ global:
       maxIdleConnections: 2
     globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8087/.well-known/open-resource-discovery
     maxParallelApplicationProcessors: 4
-    maxParallelDocuments: 5
+    maxParallelDocuments: 10
   systemFetcher:
     enabled: false
     name: "system-fetcher"
