@@ -347,9 +347,6 @@ func TestORDAggregator(stdT *testing.T) {
 			// Verify packages
 			respBody = makeRequestWithHeaders(t, httpClient, testConfig.ORDServiceURL+"/packages?$format=json", map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
 
-			fmt.Printf("expectedNumberOfPackages %v \n", expectedNumberOfPackages)
-			fmt.Printf("respBody %v\n", len(gjson.Get(respBody, "value").Array()))
-
 			if len(gjson.Get(respBody, "value").Array()) < expectedNumberOfPackages {
 				t.Log("Missing Packages...will try again")
 				return false
