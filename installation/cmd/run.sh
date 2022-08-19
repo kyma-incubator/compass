@@ -251,12 +251,7 @@ fi
 if [[ ! ${SKIP_KYMA_START} ]]; then
   LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh --kyma-installation ${KYMA_INSTALLATION}
   kubectl set image -n kyma-system cronjob/oathkeeper-jwks-rotator keys-generator=oryd/oathkeeper:v0.38.23
-  kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "*/1 * * * *"}}'
-  until [[ $(kubectl get cronjob -n kyma-system oathkeeper-jwks-rotator --output=jsonpath={.status.lastScheduleTime}) ]]; do
-      echo "Waiting for cronjob oathkeeper-jwks-rotator to be scheduled"
-      sleep 3
-  done
-  kubectl patch cronjob -n kyma-system oathkeeper-jwks-rotator -p '{"spec":{"schedule": "0 0 1 * *"}}'
+  kubectl create job --from=cronjob/oathkeeper-jwks-rotator oathkeeper-jwks-rotator-fix-jwks-secret
 fi
 
 mount_k3d_ca_to_oathkeeper
