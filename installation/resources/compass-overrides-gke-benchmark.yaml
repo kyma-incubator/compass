@@ -49,6 +49,8 @@ global:
       client:
         skipSSLValidation: true
   tenantFetcher:
+    omitDependenciesParamName: "omit"
+    omitDependenciesParamValue: "true"
     endpoints:
       subaccountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-create"
   systemFetcher:
