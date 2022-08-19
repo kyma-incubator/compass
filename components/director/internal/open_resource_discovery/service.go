@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -20,8 +19,6 @@ import (
 )
 
 const applicationTypeLabel = "applicationType"
-
-var appTimes = make(map[string]time.Duration)
 
 // ServiceConfig contains configuration for the ORD aggregator service
 type ServiceConfig struct {
@@ -157,13 +154,6 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 	} else if fetchErr != nil {
 		return errors.Wrapf(fetchErr, "failed to fetch the next application page")
 	}
-	var fullTime time.Duration
-	for k, v := range appTimes {
-		log.C(ctx).Infof("app id: %s - time: %v", k, v)
-		fullTime += v
-	}
-	log.C(ctx).Infof("Number of apps: %d", len(appTimes))
-	log.C(ctx).Infof("Full Time: %v", fullTime)
 
 	return nil
 }
@@ -758,18 +748,14 @@ func (s *Service) fetchResources(ctx context.Context, appID string) (map[string]
 }
 
 func (s *Service) processWebhooksAndDocuments(ctx context.Context, tx persistence.PersistenceTx, webhooks []*model.Webhook, app *model.Application, globalResourcesOrdIDs map[string]bool) (bool, error) {
-//	var documents Documents
-	//var baseURL string
-//	var err error
+	var documents Documents
+	var baseURL string
+	var err error
 
 	for _, wh := range webhooks {
 		if wh.Type == model.WebhookTypeOpenResourceDiscovery && wh.URL != nil {
 			ctx = addFieldToLogger(ctx, "app_id", app.ID)
-			start := time.Now()
-			_, _, err := s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, wh)
-			log.C(ctx).Infof("Execution time: %s", time.Since(start))
-			timee := time.Since(start)
-			appTimes[app.ID] = timee
+			documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, wh)
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("error fetching ORD document for webhook with id %q: %v", wh.ID, err)
 			}
@@ -777,15 +763,15 @@ func (s *Service) processWebhooksAndDocuments(ctx context.Context, tx persistenc
 		}
 	}
 
-	//if len(documents) > 0 {
-	//	log.C(ctx).Info("Processing ORD documents")
-	//	if err = s.processDocuments(ctx, app.ID, baseURL, documents, globalResourcesOrdIDs); err != nil {
-	//		log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
-	//	} else {
-	//		log.C(ctx).Info("Successfully processed ORD documents")
-	//		return true, tx.Commit()
-	//	}
-	//}
+	if len(documents) > 0 {
+		log.C(ctx).Info("Processing ORD documents")
+		if err = s.processDocuments(ctx, app.ID, baseURL, documents, globalResourcesOrdIDs); err != nil {
+			log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
+		} else {
+			log.C(ctx).Info("Successfully processed ORD documents")
+			return true, tx.Commit()
+		}
+	}
 	return false, nil
 }
 
