@@ -40,6 +40,7 @@ func TestMain(m *testing.M) {
 
 	cfg.ReadConfig(&conf)
 	ctx := context.Background()
+
 	cc, err := certloader.StartCertLoader(ctx, conf.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))

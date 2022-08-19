@@ -23,7 +23,6 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 		defer fixtures.CleanupApplication(b, ctx, certSecuredGraphQLClient, tenantID, &appResp)
 		require.NoError(b, err)
 		require.NotEmpty(b, appResp.ID)
-
 	}
 
 	//create runtime without normalization
