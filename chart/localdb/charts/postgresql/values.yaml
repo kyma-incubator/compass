@@ -8,13 +8,6 @@ global:
 #   imagePullSecrets:
 #     - myRegistryKeySecretName
 
-  migratorJob:
-    nodeSelectorEnabled: false
-    pvc:
-      name: "compass-director-migrations"
-      namespace: "compass-system"
-      migrationsPath: "/compass-migrations"
-      storageClass: local-path
 
 ## Bitnami PostgreSQL image version
 ## ref: https://hub.docker.com/r/bitnami/postgresql/tags/

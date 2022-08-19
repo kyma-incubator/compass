@@ -8,8 +8,6 @@ source $SCRIPTS_DIR/utils.sh
 
 TIMEOUT=30m0s
 
-DB_CHARTS="${CURRENT_DIR}/../../chart/postgresql"
-
 COMPASS_CHARTS="${CURRENT_DIR}/../../chart/compass"
 
 function cleanup_trap() {
@@ -50,30 +48,6 @@ do
     esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
-
-echo "Install DB"
-helm upgrade --install --wait --debug --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace compass-system postgresql "${DB_CHARTS}"
-
-echo "Look for DB migrations in progress ..."
-MIGRATION_JOB_JSON=$(kubectl get job compass-migration -n compass-system --ignore-not-found -o json)
-
-if [ ! -z "$MIGRATION_JOB_JSON" ]; then
-    echo "Migration job found. Wait to complete (up to 30 minutes) ..."
-    kubectl wait --for=condition=complete job/compass-migration -n compass-system --timeout="${TIMEOUT}"
-    MIGRATION_JOB_COMPLETION_STATUS=$(kubectl get job compass-migration -n compass-system -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')
-    
-    if [ "$MIGRATION_JOB_COMPLETION_STATUS" == "True" ]; then
-        echo "Migration job was executed successfully. Cleanup cluster."
-        kubectl delete job compass-migration -n compass-system
-        kubectl delete serviceaccount postgresql-migrator-job -n compass-system
-        kubectl delete persistentvolumeclaim compass-director-migrations -n compass-system
-    else
-        echo "Migration job was failed. Exitting."
-        MIGRATION_JOB_JSON=$(kubectl get job compass-migration -n compass-system --ignore-not-found -o json)
-        echo "Migration job: $MIGRATION_JOB_JSON"
-        exit 1
-    fi
-fi
 
 echo "Install Compass"
 CRDS_FOLDER="${CURRENT_DIR}/../resources/crds"

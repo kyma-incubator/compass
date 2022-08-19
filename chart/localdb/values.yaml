@@ -1,0 +1,12 @@
+global:
+  database:
+    sqlProxyServiceAccount: "proxy-user@gcp-cmp.iam.gserviceaccount.com"
+    manageSecrets: true
+    embedded:
+      enabled: true
+      director:
+        name: "postgres"
+      directorDBName: "postgres"
+    managedGCP:
+      serviceAccountKey: ""
+      instanceConnectionName: ""
