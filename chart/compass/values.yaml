@@ -524,6 +524,8 @@ global:
     prefix: /tenants
     port: 3000
     xsappNamePath: "xsappname"
+    omitDependenciesParamName: ""
+    omitDependenciesParamValue: ""
     requiredAuthScope: Callback
     fetchTenantAuthScope: fetch_tenant
     authentication:

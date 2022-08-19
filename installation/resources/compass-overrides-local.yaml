@@ -65,6 +65,8 @@ global:
       client:
         skipSSLValidation: true
   tenantFetcher:
+    omitDependenciesParamName: "omit"
+    omitDependenciesParamValue: "true"
     fieldMapping:
       idField: "guid"
       nameField: "displayName"
