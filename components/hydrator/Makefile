@@ -1,6 +1,5 @@
 APP_NAME = compass-hydrator
 APP_PATH = components/hydrator
-COMPONENT_BUILD_TIMEOUT = 15m
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
 ENTRYPOINT = cmd/main.go
 SCRIPTS_DIR = $(realpath $(shell pwd)/../..)/scripts
