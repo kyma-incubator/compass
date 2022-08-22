@@ -30,7 +30,7 @@ spec:
                   mountPath: /config
                 - name: system-fetcher-config
                   mountPath: /data/templates/app-templates.json
-                  subPath: templates.json
+                  subPath: app-templates.json
                 - name: system-fetcher-config
                   mountPath: /data/int-systems/integration-systems.json
                   subPath: integration-systems.json
@@ -155,7 +155,7 @@ spec:
                 name: compass-director-config
             - name: system-fetcher-config
               configMap:
-                name: compass-system-fetcher-templates-config
+                name: {{ .Chart.Name }}-system-fetcher-templates-config
 {{- if and (eq .Values.global.systemFetcher.enabled true) (eq .Values.global.systemFetcher.manageSecrets true) }}
 ---
 apiVersion: v1

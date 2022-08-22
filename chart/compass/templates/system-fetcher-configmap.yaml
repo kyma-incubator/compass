@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: compass-system-fetcher-templates-config
+  name: {{ .Chart.Name }}-system-fetcher-templates-config
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ .Chart.Name }}
@@ -21,7 +21,7 @@ data:
         "description":"Integration system for SAP SuccessFactors"
       }
     ]
-  templates.json: |-
+  app-templates.json: |-
     [
       {
         "name":"SAP Cloud for Customer",
