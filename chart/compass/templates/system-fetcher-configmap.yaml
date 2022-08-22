@@ -9,18 +9,7 @@ metadata:
     release: {{ .Release.Name }}
 data:
   integration-systems.json: |-
-    [
-      {
-        "id":"{{ (index .Values.global.systemFetcher.intSystems 0).id }}",
-        "name":"sap-s4hana-cloud",
-        "description":"Integration system for SAP S4Hana Cloud applications"
-      },
-      {
-        "id":"{{ (index .Values.global.systemFetcher.intSystems 1).id }}",
-        "name":"sap-successfactors",
-        "description":"Integration system for SAP SuccessFactors"
-      }
-    ]
+{{ .Values.global.systemFetcher.intSystems | toJson | indent 4 }}
   app-templates.json: |-
     [
       {
