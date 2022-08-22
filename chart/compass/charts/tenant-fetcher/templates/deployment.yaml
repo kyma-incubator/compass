@@ -39,6 +39,10 @@ spec:
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
+      volumes:
+      - name: dependencies-config
+        secret:
+          secretName: {{ .Values.global.tenantFetcher.dependenciesConfig.secretName }}
       containers:
         - name: {{ .Chart.Name }}
           image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
@@ -91,6 +95,8 @@ spec:
               value: "{{ .Values.global.tenantFetcher.server.regionalHandlerEndpoint }}"
             - name: APP_REGIONAL_DEPENDENCIES_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.server.dependenciesEndpoint }}"
+            - name: APP_TENANT_REGION_DEPENDENCIES_CONFIG_PATH
+              value: "{{ .Values.global.tenantFetcher.dependenciesConfig.path }}/{{ .Values.global.tenantFetcher.dependenciesConfig.file }}"
             - name: APP_TENANT_PATH_PARAM
               value: "{{ .Values.global.tenantFetcher.server.tenantPathParam }}"
             - name: APP_REGION_PATH_PARAM
@@ -197,6 +203,12 @@ spec:
               value: {{ default "gaID" .Values.global.tenantFetcher.fieldMapping.globalAccountID }}
             - name: APP_REGION_DETAILS
               value: {{ .Values.global.tenantFetcher.regionDetails | quote }}
+            - name: APP_TENANT_FETCHER_XSAPPNAME_PATH
+              value: {{ .Values.global.tenantFetcher.xsappNamePath | quote }}
+            - name: APP_TENANT_FETCHER_OMIT_PARAM_NAME
+              value: {{ .Values.global.tenantFetcher.omitDependenciesParamName | quote }}
+            - name: APP_TENANT_FETCHER_OMIT_PARAM_VALUE
+              value: {{ .Values.global.tenantFetcher.omitDependenciesParamValue | quote }}
             {{ if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
             - name: APP_METRICS_PUSH_ENDPOINT
               value: {{ $.Values.global.metrics.pushEndpoint }}
@@ -343,6 +355,10 @@ spec:
               value: {{ default "127.0.0.1/events?type=subaccount-moved" $config.endpoints.subaccountMoved }}
             {{- end }}
             {{- end }}
+          volumeMounts:
+          - name: dependencies-config
+            mountPath: "{{ .Values.global.tenantFetcher.dependenciesConfig.path }}"
+            readOnly: true
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
