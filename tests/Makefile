@@ -1,4 +1,3 @@
-APP_NAME = compass-tests
 APP_NAME = compass-e2e-tests
 APP_PATH = tests
 LOCAL_PREFIX = k3d-kyma-registry:5001

@@ -112,33 +112,43 @@ global:
     connector:
       dir:
       version: "PR-2501"
+      name: compass-connector
     connectivity_adapter:
       dir:
       version: "PR-2501"
+      name: compass-connectivity-adapter
     pairing_adapter:
       dir:
       version: "PR-2572"
+      name: compass-pairing-adapter
     director:
       dir:
       version: "PR-2565"
+      name: compass-director
     hydrator:
       dir:
       version: "PR-2562"
+      name: compass-hydrator
     gateway:
       dir:
       version: "PR-2501"
+      name: compass-gateway
     operations_controller:
       dir:
       version: "PR-2501"
+      name: compass-operations-controller
     ord_service:
       dir:
       version: "PR-74"
+      name: compass-ord-service
     schema_migrator:
       dir:
       version: "PR-2565"
+      name: compass-schema-migrator
     system_broker:
       dir:
       version: "PR-2501"
+      name: compass-system-broker
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -147,12 +157,15 @@ global:
     external_services_mock:
       dir:
       version: "PR-2554"
+      name: compass-external-services-mock
     console:
       dir:
       version: "PR-68"
+      name: compass-console
     e2e_tests:
       dir:
       version: "PR-2572"
+      name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
   oauth2:
