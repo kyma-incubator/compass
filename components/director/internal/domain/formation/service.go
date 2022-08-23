@@ -1303,7 +1303,7 @@ func (s *service) isValidApplicationType(ctx context.Context, tnt string, applic
 		return errors.Wrapf(err, "while getting label %q for application with ID %q", s.applicationTypeLabelKey, applicationID)
 	}
 
-	applicationType, ok := applicationTypeLabel.Value.(string);
+	applicationType, ok := applicationTypeLabel.Value.(string)
 	if !ok {
 		return apperrors.NewInvalidOperationError(fmt.Sprintf("missing %s label for formation template %q, allowing only %q", s.applicationTypeLabelKey, formationTemplate.Name, formationTemplate.ApplicationTypes))
 	}
