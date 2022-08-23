@@ -115,9 +115,9 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 			placeholderMappings: placeholdersMappings,
 			setupAppTemplateSvc: func(testSystem systemfetcher.System, _ error) *automock.ApplicationTemplateService {
 				resultTemplate := *appTemplateWithOverrides
-				resultTemplate.ApplicationInputJSON = `{"labels":{"legacy":"true","tenant":"123"},"name":"{{name}}"}`
+				resultTemplate.ApplicationInputJSON = `{"integrationSystemID":"a8396508-66be-4dc7-b463-577809289941","labels":{"legacy":"true","tenant":"123"},"name":"{{name}}"}`
 				appTemplateFromDB := *appTemplate
-				appTemplateFromDB.ApplicationInputJSON = `{ "name": "test1","labels":{"tenant":"123"}}`
+				appTemplateFromDB.ApplicationInputJSON = `{ "name": "test1","labels":{"tenant":"123"},"integrationSystemID":"a8396508-66be-4dc7-b463-577809289941"}`
 
 				svc := &automock.ApplicationTemplateService{}
 				svc.On("Get", context.TODO(), testSystem.TemplateID).Return(&appTemplateFromDB, nil).Once()
@@ -152,16 +152,32 @@ func TestApplicationRegisterInputFromTemplate(t *testing.T) {
 			},
 		},
 		{
-			name:                "Fails when app input from template and overrides have a field with incorrect type",
+			name:                "Fails when app input from template cannot be unmarshalled into a map",
 			system:              testSystem,
-			expectedErr:         errors.New("app template labels are with type string instead of map[string]interface{}"),
+			expectedErr:         errors.New("while unmarshaling original application input"),
 			appInputOverride:    `{"description":"{{description}}","labels":"hello"}`,
 			placeholderMappings: placeholdersMappings,
 			setupAppTemplateSvc: func(testSystem systemfetcher.System, _ error) *automock.ApplicationTemplateService {
-				resultTemplate := *appTemplateWithOverrides
-				resultTemplate.ApplicationInputJSON = `{"description":"{{description}}","labels":"hello2","name":"test1"}`
 				appTemplateFromDB := *appTemplate
-				appTemplateFromDB.ApplicationInputJSON = `{ "name": "test1","labels":"hello"}`
+				appTemplateFromDB.ApplicationInputJSON = ``
+
+				svc := &automock.ApplicationTemplateService{}
+				svc.On("Get", context.TODO(), testSystem.TemplateID).Return(&appTemplateFromDB, nil).Once()
+				return svc
+			},
+			setupAppConverter: func(testSystem systemfetcher.System, _ error) *automock.ApplicationConverter {
+				return &automock.ApplicationConverter{}
+			},
+		},
+		{
+			name:                "Fails when app input from override cannot be unmarshalled into a map",
+			system:              testSystem,
+			expectedErr:         errors.New("while unmarshaling override application input"),
+			appInputOverride:    ``,
+			placeholderMappings: placeholdersMappings,
+			setupAppTemplateSvc: func(testSystem systemfetcher.System, _ error) *automock.ApplicationTemplateService {
+				appTemplateFromDB := *appTemplate
+				appTemplateFromDB.ApplicationInputJSON = `{"name": "{{display-name}}"}`
 
 				svc := &automock.ApplicationTemplateService{}
 				svc.On("Get", context.TODO(), testSystem.TemplateID).Return(&appTemplateFromDB, nil).Once()
