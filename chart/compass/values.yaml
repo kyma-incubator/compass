@@ -163,7 +163,7 @@ global:
       version: "PR-71"
       name: compass-console
     e2e_tests:
-      dir:nt
+      dir:
       version: "PR-2574"
       name: compass-e2e-tests
   isLocalEnv: false
