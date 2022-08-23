@@ -27,9 +27,14 @@ global:
       manage: true
     regionInstancesCredentials:
       manage: true
+    tenantDependenciesConfig:
+      manage: true
   http:
     client:
       skipSSLValidation: true
+  migratorJob:
+    pvc:
+      storageClass: standard
   kubernetes:
     serviceAccountTokenIssuer: "https://container.googleapis.com/v1/projects/$CLOUDSDK_CORE_PROJECT/locations/$CLOUDSDK_COMPUTE_ZONE/clusters/$COMMON_NAME"
     serviceAccountTokenJWKS: "https://container.googleapis.com/v1/projects/$CLOUDSDK_CORE_PROJECT/locations/$CLOUDSDK_COMPUTE_ZONE/clusters/$COMMON_NAME/jwks"
@@ -47,6 +52,8 @@ global:
       client:
         skipSSLValidation: true
   tenantFetcher:
+    omitDependenciesParamName: "omit"
+    omitDependenciesParamValue: "true"
     endpoints:
       subaccountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-create"
   systemFetcher:

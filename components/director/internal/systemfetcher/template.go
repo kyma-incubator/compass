@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/imdario/mergo"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
@@ -121,15 +123,8 @@ func (r *renderer) mergedApplicationInput(originalAppInputJSON, overrideAppInput
 		return "", errors.Wrapf(err, "while unmarshaling override application input")
 	}
 
-	if originalLabels, ok := originalAppInput["labels"]; ok {
-		if overrideLabels, ok := overrideAppInput["labels"]; ok {
-			var err error
-			overrideLabels, err = enrichLabels(originalLabels, overrideLabels)
-			if err != nil {
-				return "", err
-			}
-			overrideAppInput["labels"] = overrideLabels
-		}
+	if err := mergo.Merge(&overrideAppInput, originalAppInput); err != nil {
+		return "", errors.Wrapf(err, "while merging original app input: %v into destination app input: %v", originalAppInput, overrideAppInputJSON)
 	}
 
 	merged, err := json.Marshal(overrideAppInput)
@@ -137,20 +132,4 @@ func (r *renderer) mergedApplicationInput(originalAppInputJSON, overrideAppInput
 		return "", errors.Wrapf(err, "while marshalling merged app input")
 	}
 	return string(merged), nil
-}
-
-func enrichLabels(originalLabels, overrideLabels interface{}) (map[string]interface{}, error) {
-	templateLabelsMap, ok := originalLabels.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("app template labels are with type %T instead of map[string]interface{}", originalLabels)
-	}
-	overrideLabelsMap, ok := overrideLabels.(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("overrides labels are with type %T instead of map[string]interface{}", overrideLabels)
-	}
-
-	for labelKey, labelValue := range overrideLabelsMap {
-		templateLabelsMap[labelKey] = labelValue
-	}
-	return templateLabelsMap, nil
 }
