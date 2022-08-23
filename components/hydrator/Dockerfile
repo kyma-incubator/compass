@@ -1,4 +1,4 @@
-FROM golang:1.18.2-alpine3.16 as builder
+FROM golang:1.18.5-alpine3.16 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/hydrator
 WORKDIR ${BASE_APP_DIR}
@@ -11,7 +11,7 @@ COPY . ${BASE_APP_DIR}
 RUN go build -v -o hydrator ./cmd/main.go
 RUN mkdir /app && mv ./hydrator /app/hydrator
 
-FROM alpine:3.16.0
+FROM alpine:3.16.2
 LABEL source = git@github.com:kyma-incubator/compass.git
 WORKDIR /app
 
