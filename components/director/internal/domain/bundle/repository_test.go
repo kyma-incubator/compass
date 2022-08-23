@@ -348,3 +348,80 @@ func TestPgRepository_ListByApplicationIDNoPaging(t *testing.T) {
 
 	suite.Run(t)
 }
+
+func TestPgRepository_ListByDestination(t *testing.T) {
+	bndlEntity := fixEntityBundle(bundleID, "foo", "bar")
+	modelBundle := fixBundleModel("foo", "bar")
+
+	destinationWithSystemName := model.DestinationInput{
+		URL:               "http://localhost",
+		XSystemTenantName: "system_name",
+		XCorrelationID:    "correlation_id",
+	}
+
+	suiteBySystemName := testdb.RepoListTestSuite{
+		Name: "List Bundles By Destination with system name",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query: regexp.QuoteMeta(bundle.QueryByNameAndURL),
+				Args: []driver.Value{tenantID, destinationWithSystemName.XSystemTenantName,
+					destinationWithSystemName.URL, destinationWithSystemName.XCorrelationID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns()).
+						AddRow(fixBundleRow(bundleID, "placeholder")...),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   bundle.NewRepository,
+		ExpectedModelEntities: []interface{}{modelBundle},
+		ExpectedDBEntities:    []interface{}{bndlEntity},
+		MethodArgs:            []interface{}{tenantID, destinationWithSystemName},
+		MethodName:            "ListByDestination",
+	}
+
+	suiteBySystemName.Run(t)
+
+	destinationWithSystemID := model.DestinationInput{
+		XSystemType:     "system_type",
+		XSystemTenantID: "system_id",
+		XCorrelationID:  "correlation_id",
+	}
+
+	suiteBySystemID := testdb.RepoListTestSuite{
+		Name: "List Bundles By Destination with system ID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query: regexp.QuoteMeta(bundle.QueryBySystemIDAndSystemType),
+				Args: []driver.Value{tenantID, destinationWithSystemID.XSystemType,
+					destinationWithSystemID.XSystemTenantID, destinationWithSystemID.XCorrelationID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns()).
+						AddRow(fixBundleRow(bundleID, "placeholder")...),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   bundle.NewRepository,
+		ExpectedModelEntities: []interface{}{modelBundle},
+		ExpectedDBEntities:    []interface{}{bndlEntity},
+		MethodArgs:            []interface{}{tenantID, destinationWithSystemID},
+		MethodName:            "ListByDestination",
+	}
+
+	suiteBySystemID.Run(t)
+}

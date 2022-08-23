@@ -277,8 +277,8 @@ EOF
 # This file contains regional dependencies configuration for tenants service
 cat <<EOF > /tmp/dependencies.json
     {
-        "eu-1": "{\n \"credentials\": {\n \"xsappname\": \"xsappname1\"\n}\n}",
-        "eu-2": "{\n \"credentials\": {\n \"xsappname\": \"xsappname1\"\n}\n}"
+        "eu-1": "{\n \"xsappname\": \"xsappname1\", \"clientid\": \"clientid-1\", \"certificate\": \"client-cert-1\", \"key\": \"client-cert-key-1\", \"url\": \"http://token-url\", \"uri\": \"http://destination-service\"\n}",
+        "eu-2": "{\n \"xsappname\": \"xsappname2\", \"clientid\": \"clientid-2\", \"certificate\": \"client-cert-2\", \"key\": \"client-cert-key-2\", \"url\": \"http://token-url\", \"uri\": \"http://destination-service\"\n}"
     }
 EOF
 
