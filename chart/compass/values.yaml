@@ -149,7 +149,7 @@ global:
       version: "PR-2575"
     console:
       dir:
-      version: "PR-70"
+      version: "PR-71"
     e2e_tests:
       dir:
       version: "PR-2575"
