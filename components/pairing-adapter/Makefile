@@ -1,4 +1,4 @@
-APP_NAME = pairing-adapter
+APP_NAME = compass-pairing-adapter
 APP_PATH = components/pairing-adapter
 ENTRYPOINT = cmd/main.go
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
