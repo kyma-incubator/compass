@@ -3,8 +3,6 @@ prerequisites:
   - name: "cluster-essentials"
   - name: "istio"
     namespace: "istio-system"
-  - name: "certificates"
-    namespace: "istio-system"
 components:
   - name: "istio-resources"
   - name: "logging"
