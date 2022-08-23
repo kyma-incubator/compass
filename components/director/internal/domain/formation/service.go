@@ -1303,19 +1303,19 @@ func (s *service) isValidApplicationType(ctx context.Context, tnt string, applic
 		return errors.Wrapf(err, "while getting label %q for application with ID %q", s.applicationTypeLabelKey, applicationID)
 	}
 
-	if applicationType, ok := applicationTypeLabel.Value.(string); !ok {
+	applicationType, ok := applicationTypeLabel.Value.(string);
+	if !ok {
 		return apperrors.NewInvalidOperationError(fmt.Sprintf("missing %s label for formation template %q, allowing only %q", s.applicationTypeLabelKey, formationTemplate.Name, formationTemplate.ApplicationTypes))
-	} else {
-		isAllowed := false
-		for _, allowedType := range formationTemplate.ApplicationTypes {
-			if allowedType == applicationType {
-				isAllowed = true
-				break
-			}
+	}
+	isAllowed := false
+	for _, allowedType := range formationTemplate.ApplicationTypes {
+		if allowedType == applicationType {
+			isAllowed = true
+			break
 		}
-		if !isAllowed {
-			return apperrors.NewInvalidOperationError(fmt.Sprintf("unsupported applicationType %q for formation template %q, allowing only %q", applicationType, formationTemplate.Name, formationTemplate.ApplicationTypes))
-		}
+	}
+	if !isAllowed {
+		return apperrors.NewInvalidOperationError(fmt.Sprintf("unsupported applicationType %q for formation template %q, allowing only %q", applicationType, formationTemplate.Name, formationTemplate.ApplicationTypes))
 	}
 	return nil
 }
