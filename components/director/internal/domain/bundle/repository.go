@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -16,7 +17,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-const bundleTable string = `public.bundles`
+const (
+	bundleTable string = `public.bundles`
+)
 
 var (
 	bundleColumns    = []string{"id", "app_id", "name", "description", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "documentation_labels"}
@@ -32,27 +35,29 @@ type EntityConverter interface {
 }
 
 type pgRepository struct {
-	existQuerier repo.ExistQuerier
-	singleGetter repo.SingleGetter
-	deleter      repo.Deleter
-	lister       repo.Lister
-	unionLister  repo.UnionLister
-	creator      repo.Creator
-	updater      repo.Updater
-	conv         EntityConverter
+	existQuerier       repo.ExistQuerier
+	singleGetter       repo.SingleGetter
+	singleGlobalGetter repo.SingleGetterGlobal
+	deleter            repo.Deleter
+	lister             repo.Lister
+	unionLister        repo.UnionLister
+	creator            repo.Creator
+	updater            repo.Updater
+	conv               EntityConverter
 }
 
 // NewRepository missing godoc
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
-		existQuerier: repo.NewExistQuerier(bundleTable),
-		singleGetter: repo.NewSingleGetter(bundleTable, bundleColumns),
-		deleter:      repo.NewDeleter(bundleTable),
-		lister:       repo.NewLister(bundleTable, bundleColumns),
-		unionLister:  repo.NewUnionLister(bundleTable, bundleColumns),
-		creator:      repo.NewCreator(bundleTable, bundleColumns),
-		updater:      repo.NewUpdater(bundleTable, updatableColumns, []string{"id"}),
-		conv:         conv,
+		existQuerier:       repo.NewExistQuerier(bundleTable),
+		singleGetter:       repo.NewSingleGetter(bundleTable, bundleColumns),
+		singleGlobalGetter: repo.NewSingleGetterGlobal(resource.Bundle, bundleTable, bundleColumns),
+		deleter:            repo.NewDeleter(bundleTable),
+		lister:             repo.NewLister(bundleTable, bundleColumns),
+		unionLister:        repo.NewUnionLister(bundleTable, bundleColumns),
+		creator:            repo.NewCreator(bundleTable, bundleColumns),
+		updater:            repo.NewUpdater(bundleTable, updatableColumns, []string{"id"}),
+		conv:               conv,
 	}
 }
 
@@ -198,6 +203,72 @@ func (r *pgRepository) ListByApplicationIDNoPaging(ctx context.Context, tenantID
 		bundleModel, err := r.conv.FromEntity(&bundle)
 		if err != nil {
 			return nil, err
+		}
+		bundles = append(bundles, bundleModel)
+	}
+	return bundles, nil
+}
+
+const (
+	// QueryByNameAndURL query for getting bundles with specific correlationID and are provided
+	// by system with specific Name and URL
+	QueryByNameAndURL = `SELECT id
+	FROM bundles
+	WHERE app_id IN (
+		SELECT id
+		FROM public.applications
+		WHERE id IN (
+			SELECT id
+			FROM tenant_applications
+			WHERE tenant_id=(SELECT parent FROM business_tenant_mappings WHERE id = $1 )
+		)
+		AND name = $2 AND base_url = $3
+	)
+	AND correlation_ids::jsonb ? $4`
+
+	// QueryBySystemIDAndSystemType query for getting bundles with specific correlationID and are provided
+	// by system with specific ID and type
+	QueryBySystemIDAndSystemType = `SELECT id
+	FROM bundles
+	WHERE app_id IN (
+		SELECT DISTINCT pa.id as id
+		FROM public.applications pa JOIN labels l ON pa.id=l.app_id
+		WHERE pa.id IN (
+			SELECT id
+			FROM tenant_applications
+			WHERE tenant_id=(SELECT parent FROM business_tenant_mappings WHERE id = $1 )
+		)
+		AND l.key='applicationType'
+		AND l.value::jsonb ? $2
+		AND pa.local_tenant_id = $3
+	)
+	AND correlation_ids::jsonb ? $4`
+)
+
+func (r *pgRepository) ListByDestination(ctx context.Context, tenantID string, dest model.DestinationInput) ([]*model.Bundle, error) {
+	bundleCollection := BundleCollection{}
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if dest.XSystemTenantID == "" {
+		err = persist.SelectContext(ctx, &bundleCollection, QueryByNameAndURL,
+			tenantID, dest.XSystemTenantName, dest.URL, dest.XCorrelationID)
+	} else {
+		err = persist.SelectContext(ctx, &bundleCollection, QueryBySystemIDAndSystemType,
+			tenantID, dest.XSystemType, dest.XSystemTenantID, dest.XCorrelationID)
+	}
+	if err != nil {
+		return nil, persistence.MapSQLError(
+			ctx, err, resource.Bundle, resource.List, "failed to fetch bundles for destination")
+	}
+
+	bundles := make([]*model.Bundle, 0, bundleCollection.Len())
+	for _, bundle := range bundleCollection {
+		bundleModel, err := r.conv.FromEntity(&bundle)
+		if err != nil {
+			return nil, errors.Wrap(err, "while creating Bundle model from entity")
 		}
 		bundles = append(bundles, bundleModel)
 	}

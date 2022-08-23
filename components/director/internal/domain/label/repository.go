@@ -2,7 +2,9 @@ package label
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -14,8 +16,10 @@ import (
 )
 
 const (
-	tableName    string = "public.labels"
-	tenantColumn string = "tenant_id"
+	tableName                   string = "public.labels"
+	tenantColumn                string = "tenant_id"
+	runtimeContextTable         string = "public.tenant_runtime_contexts"
+	businessTenantMappingsTable string = `public.business_tenant_mappings`
 )
 
 var (
@@ -40,6 +44,9 @@ type repository struct {
 	getter        repo.SingleGetter
 	getterGlobal  repo.SingleGetterGlobal
 
+	runtimeContextQueryBuilder         repo.QueryBuilderGlobal
+	businessTenantMappingsQueryBuilder repo.QueryBuilderGlobal
+
 	embeddedTenantLister  repo.Lister
 	embeddedTenantDeleter repo.Deleter
 	embeddedTenantGetter  repo.SingleGetter
@@ -63,6 +70,9 @@ func NewRepository(conv Converter) *repository {
 		deleterGlobal: repo.NewDeleterGlobal(resource.Label, tableName),
 		getter:        repo.NewSingleGetter(tableName, tableColumns),
 		getterGlobal:  repo.NewSingleGetterGlobal(resource.Label, tableName, tableColumns),
+
+		runtimeContextQueryBuilder:         repo.NewQueryBuilderGlobal(resource.RuntimeContext, runtimeContextTable, []string{"tenant_id"}),
+		businessTenantMappingsQueryBuilder: repo.NewQueryBuilderGlobal(resource.Tenant, businessTenantMappingsTable, []string{"id"}),
 
 		embeddedTenantLister:  repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		embeddedTenantDeleter: repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
@@ -371,6 +381,40 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 		labelModels = append(labelModels, *labelModel)
 	}
 	return labelModels, nil
+}
+
+func (r *repository) GetSubdomainLabelForSubscribedRuntime(ctx context.Context, subaccountID string) (*model.Label, error) {
+	var entity Entity
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	query := fmt.Sprintf(`
+	SELECT l.tenant_id, l.value
+	FROM labels l
+	WHERE l.key='subdomain'
+	AND l.tenant_id=(
+		SELECT id
+		FROM business_tenant_mappings
+		WHERE parent IS NOT NULL
+		AND external_tenant='%s')
+	AND l.tenant_id IN (
+		SELECT tenant_id
+		FROM tenant_runtime_contexts)`, subaccountID)
+
+	err = persist.GetContext(ctx, &entity, query)
+	if err != nil {
+		return nil, persistence.MapSQLError(ctx, err, resource.Label, resource.Get, "while getting label from db")
+	}
+
+	labelModel, err := r.conv.FromEntity(&entity)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting Label entity to model")
+	}
+
+	return labelModel, nil
 }
 
 func (r *repository) multipleFromEntity(entities []Entity) ([]*model.Label, error) {
