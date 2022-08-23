@@ -102,7 +102,7 @@ global:
       pvc:
          storageClass: ${ANY_SUPPORTED_STORAGE_CLASS}
    kubernetes:
-      serviceAccountTokenIssuer: ${TOKEN_ISSUER} # Default is kubernetes/serviceaccount 
+      serviceAccountTokenIssuer: ${TOKEN_ISSUER} # Default is https://kubernetes.default.svc.cluster.local
       serviceAccountTokenJWKS: ${JWKS_ENDPOINT} # Default is https://kubernetes.default.svc.cluster.local/openid/v1/jwks
    loadBalancerIP: ${LOAD_BALANCER_SERVICE_EXTERNAL_IP}
    cockpit:
@@ -359,7 +359,7 @@ global:
       pvc:
          storageClass: ${ANY_SUPPORTED_STORAGE_CLASS}
    kubernetes:
-     serviceAccountTokenIssuer: ${TOKEN_ISSUER} # Default is kubernetes/serviceaccount 
+     serviceAccountTokenIssuer: ${TOKEN_ISSUER} # Default is https://kubernetes.default.svc.cluster.local
      serviceAccountTokenJWKS: ${JWKS_ENDPOINT} # Default is https://kubernetes.default.svc.cluster.local/openid/v1/jwks
    loadBalancerIP: ${LOAD_BALANCER_SERVICE_EXTERNAL_IP}
    cockpit:
