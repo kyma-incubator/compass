@@ -22,7 +22,7 @@ spec:
     spec:
       serviceAccountName: {{ $.Chart.Name }}-e2e-ord-aggregator
       containers:
-        - name: {{ .Values.global.ordAggregator.containerName }}
+        - name: {{ .Values.global.ordAggregator.containerName }}-tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
