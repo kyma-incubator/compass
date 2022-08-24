@@ -290,18 +290,7 @@ func enrichWithIntegrationSystemIDLabel(applicationInputJSON, intSystemID string
 		return "", errors.Wrapf(err, "while unmarshaling application input json")
 	}
 
-	labels, ok := appInput[labelsJSONKey]
-	if ok && labels != nil {
-		labelsMap, ok := labels.(map[string]interface{})
-		if !ok {
-			return "", fmt.Errorf("app input json labels are type %T instead of map[string]interface{}. %v", labelsMap, labels)
-		}
-
-		labelsMap[integrationSystemIDLabelKey] = intSystemID
-		appInput[labelsJSONKey] = labelsMap
-	} else {
-		appInput[labelsJSONKey] = map[string]interface{}{integrationSystemIDLabelKey: intSystemID}
-	}
+	appInput[integrationSystemIDLabelKey] = intSystemID
 
 	inputJSON, err := json.Marshal(appInput)
 	if err != nil {

@@ -294,41 +294,6 @@ func TestLoadData(t *testing.T) {
 			expectedErr: testErr,
 		},
 		{
-			name: "enrich with integration system id label failed - incorrect app input json labels type",
-			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
-				return txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
-			},
-			appTmplSvc: mockAppTmplService,
-			intSysSvc: func() *automock.IntSysSvc {
-				intSysPage := model.IntegrationSystemPage{
-					Data: []*model.IntegrationSystem{
-						{
-							ID:          "id",
-							Name:        "int-sys-name",
-							Description: str.Ptr("int-sys-desc"),
-						},
-					},
-					PageInfo:   pageInfo,
-					TotalCount: 0,
-				}
-				intSysSvc := &automock.IntSysSvc{}
-				intSysSvc.On("List", txtest.CtxWithDBMatcher(), 200, "").Return(intSysPage, nil).Once()
-				return intSysSvc
-			},
-			readDirFunc: mockReadDir,
-			readFileFunc: func(path string) ([]byte, error) {
-				applicationTemplatesWithIncorrectLabelsTypeAndIntSysJSON := "[{" +
-					"\"name\":\"" + applicationTemplateName + "\"," +
-					"\"applicationInputJSON\":\"{\\\"name\\\": \\\"name\\\", \\\"labels\\\": \\\"\\\"}\"," +
-					"\"intSystem\":{" +
-					"\"name\":\"int-sys-name\"," +
-					"\"description\":\"int-sys-desc\"}," +
-					"\"description\":\"app-tmpl-desc\"}]"
-				return []byte(applicationTemplatesWithIncorrectLabelsTypeAndIntSysJSON), nil
-			},
-			expectedErr: errors.New("app input json labels are type map[string]interface {} instead of map[string]interface{}"),
-		},
-		{
 			name: "upsert application template failed - update returns error",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				return txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
