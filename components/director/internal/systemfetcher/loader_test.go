@@ -4,6 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher/automock"
@@ -13,9 +17,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"io/fs"
-	"testing"
-	"time"
 )
 
 const tempFileName = "tmp.json"
