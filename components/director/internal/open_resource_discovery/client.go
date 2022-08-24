@@ -118,7 +118,6 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 
 			addDocument(&docs, doc, &docMutex)
 		}(docDetails)
-
 	}
 
 	wg.Wait()
