@@ -2,8 +2,6 @@ package label
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -383,7 +381,7 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 	return labelModels, nil
 }
 
-func (r *repository) GetSubdomainLabelForSubscribedRuntime(ctx context.Context, subaccountID string) (*model.Label, error) {
+func (r *repository) GetSubdomainLabelForSubscribedRuntime(ctx context.Context, externalTenant string) (*model.Label, error) {
 	var entity Entity
 
 	persist, err := persistence.FromCtx(ctx)
@@ -391,7 +389,7 @@ func (r *repository) GetSubdomainLabelForSubscribedRuntime(ctx context.Context, 
 		return nil, err
 	}
 
-	query := fmt.Sprintf(`
+	query := `
 	SELECT l.tenant_id, l.value
 	FROM labels l
 	WHERE l.key='subdomain'
@@ -399,12 +397,12 @@ func (r *repository) GetSubdomainLabelForSubscribedRuntime(ctx context.Context, 
 		SELECT id
 		FROM business_tenant_mappings
 		WHERE parent IS NOT NULL
-		AND external_tenant='%s')
+		AND external_tenant=$1)
 	AND l.tenant_id IN (
 		SELECT tenant_id
-		FROM tenant_runtime_contexts)`, subaccountID)
+		FROM tenant_runtime_contexts)`
 
-	err = persist.GetContext(ctx, &entity, query)
+	err = persist.GetContext(ctx, &entity, query, externalTenant)
 	if err != nil {
 		return nil, persistence.MapSQLError(ctx, err, resource.Label, resource.Get, "while getting label from db")
 	}
