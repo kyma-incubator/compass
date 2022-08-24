@@ -1014,14 +1014,11 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	}
 	in.Labels[nameKey] = normalizedName
 
+	var scenariosToAssign []string
 	if scenarioLabel, ok := in.Labels[model.ScenariosKey]; ok {
-		scenarios, err := label.ValueToStringsSlice(scenarioLabel)
+		scenariosToAssign, err = label.ValueToStringsSlice(scenarioLabel)
 		if err != nil {
 			return "", errors.Wrapf(err, "while parsing formations from scenario label")
-		}
-
-		if err = s.assignFormations(ctx, appTenant, id, scenarios, allowAllCriteria); err != nil {
-			return "", errors.Wrapf(err, "while assigning formations")
 		}
 
 		// In order for the scenario label not to be attempted to be created during upsert later
@@ -1031,6 +1028,10 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
 	if err != nil {
 		return id, errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
+	}
+
+	if err = s.assignFormations(ctx, appTenant, id, scenariosToAssign, allowAllCriteria); err != nil {
+		return "", errors.Wrapf(err, "while assigning formations")
 	}
 
 	err = s.createRelatedResources(ctx, in, appTenant, app.ID)

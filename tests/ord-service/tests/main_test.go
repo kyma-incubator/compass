@@ -65,6 +65,7 @@ type config struct {
 	TestProviderSubaccountID         string
 	TestConsumerSubaccountID         string
 	TestConsumerTenantID             string
+	ApplicationTypeLabelKey          string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
 }
 
 var conf config
