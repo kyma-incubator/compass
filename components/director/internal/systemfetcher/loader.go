@@ -244,7 +244,7 @@ func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs [
 			if err := d.appTmplSvc.Update(ctx, appTemplate.ID, appTemplateUpdateInput); err != nil {
 				return errors.Wrapf(err, "while updating application template with id %q", appTemplate.ID)
 			}
-			log.C(ctx).Infof("Successfuly updated application template with id %q", appTemplate.ID)
+			log.C(ctx).Infof("Successfully updated application template with id %q", appTemplate.ID)
 		}
 	}
 
