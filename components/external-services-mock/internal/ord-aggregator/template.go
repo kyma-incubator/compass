@@ -329,7 +329,7 @@ const ordDocument = `{
                "type":"openapi-v3",
                "customType":"",
                "mediaType":"application/json",
-               "url":"/external-api/spec/flapping",
+               "url":"/external-api/spec/flapping?format=json",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -342,7 +342,7 @@ const ordDocument = `{
                "type":"openapi-v3",
                "customType":"",
                "mediaType":"text/yaml",
-               "url":"https://test.com/odata/1.0/catalog",
+               "url":"/external-api/spec?format=json",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -355,7 +355,7 @@ const ordDocument = `{
                "type":"edmx",
                "customType":"",
                "mediaType":"application/xml",
-               "url":"https://TEST:443//odata/$metadata",
+               "url":"/external-api/spec?format=yaml",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -471,7 +471,7 @@ const ordDocument = `{
                "type":"edmx",
                "customType":"",
                "mediaType":"application/xml",
-               "url":"https://TEST:443//odata/$metadata",
+               "url":"/external-api/spec?format=yaml",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -484,7 +484,7 @@ const ordDocument = `{
                "type":"openapi-v3",
                "customType":"",
                "mediaType":"application/json",
-               "url":"/odata/1.0/catalog.svc/$value?type=json",
+               "url":"/external-api/spec?format=yaml",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -541,7 +541,7 @@ const ordDocument = `{
                "type":"edmx",
                "customType":"",
                "mediaType":"application/xml",
-               "url":"/api/openApi.yaml",
+               "url":"/external-api/spec?format=xml",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -554,7 +554,7 @@ const ordDocument = `{
                "type":"openapi-v3",
                "customType":"",
                "mediaType":"text/yaml",
-               "url":"https://test.com/odata/1.0/catalog",
+               "url":"/external-api/spec?format=json",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -602,7 +602,7 @@ const ordDocument = `{
                "type":"edmx",
                "customType":"",
                "mediaType":"application/xml",
-               "url":"/api/openApi.yaml",
+               "url":"/external-api/spec?format=xml",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -615,7 +615,7 @@ const ordDocument = `{
                "type":"openapi-v3",
                "customType":"",
                "mediaType":"text/yaml",
-               "url":"https://test.com/odata/1.0/catalog",
+               "url":"/external-api/spec?format=json",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -702,7 +702,7 @@ const ordDocument = `{
                "type":"asyncapi-v2",
                "customType":"",
                "mediaType":"application/json",
-               "url":"http://localhost:8080/asyncApi2.json",
+               "url":"/external-api/spec?format=xml",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -799,7 +799,7 @@ const ordDocument = `{
                "type":"asyncapi-v2",
                "customType":"",
                "mediaType":"application/json",
-               "url":"/api/eventCatalog.json",
+               "url":"/external-api/spec?format=json",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -843,7 +843,7 @@ const ordDocument = `{
                "type":"asyncapi-v2",
                "customType":"",
                "mediaType":"application/json",
-               "url":"http://localhost:8080/asyncApi3.json",
+               "url":"/external-api/spec?format=json",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
@@ -878,7 +878,7 @@ const ordDocument = `{
                "type":"asyncapi-v2",
                "customType":"",
                "mediaType":"application/json",
-               "url":"http://localhost:8080/asyncApi4.json",
+               "url":"/external-api/spec?format=json",
                "accessStrategies":[
                   {
                      "type":"{{ .specsAccessStrategy }}",
