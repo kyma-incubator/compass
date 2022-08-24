@@ -25,7 +25,6 @@ const (
 	integrationSystemNameJSONKey        = "name"
 	integrationSystemDescriptionJSONKey = "description"
 	managedAppProvisioningLabelKey      = "managed_app_provisioning"
-	labelsJSONKey                       = "labels"
 	integrationSystemIDLabelKey         = "integrationSystemID"
 )
 
