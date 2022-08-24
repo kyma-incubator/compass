@@ -168,6 +168,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
+	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	assignmentConv := scenarioassignment.NewConverter()
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
@@ -214,7 +215,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 		Authenticator: pkgAuth.NewServiceAccountTokenAuthorizationProvider(),
 	}
 
-	dataLoader := systemfetcher.NewDataLoader(tx, appTemplateSvc, intSysRepo)
+	dataLoader := systemfetcher.NewDataLoader(tx, appTemplateSvc, intSysSvc)
 	if err := dataLoader.LoadData(ctx, ioutil.ReadDir, ioutil.ReadFile); err != nil {
 		return nil, err
 	}

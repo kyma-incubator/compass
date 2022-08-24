@@ -661,6 +661,62 @@ global:
     systemsAPIFilterCriteria: ""
     # systemToTemplateMappings - how to map system properties to an existing application template
     systemToTemplateMappings: '{}'
+    appTemplates:
+      - name: SAP Cloud for Customer
+        applicationInputJSON: '{"name": "{{name}}", "labels": {"legacy": "true", "displayName": "{{display-name}}", "applicationType": "SAP Cloud for Customer"}, "description": "{{display-name}}", "providerName": "SAP"}'
+      - name: SAP Field Service Management
+        applicationInputJSON: '{"name": "{{name}}", "labels": {"legacy": "true", "displayName": "{{display-name}}", "applicationType": "SAP Field Service Management"}, "description": "{{display-name}}", "providerName": "SAP"}'
+      - name: SAP Commerce Cloud
+        applicationInputJSON: '{"name": "{{name}}", "labels": {"legacy": "true", "displayName": "{{display-name}}", "applicationType": "SAP Commerce Cloud"}, "description": "{{display-name}}", "providerName": "SAP"}'
+      - name: SAP SuccessFactors
+        applicationInputJSON: '{"name": "{{name}}", "labels": {"displayName": "{{display-name}}", "applicationType": "SAP SuccessFactors"}, "description": "{{display-name}}", "providerName": "SAP"}'
+        intSystem:
+          name: sap-successfactors
+          description: Integration system for SAP SuccessFactors
+        webhooks:
+          - type: UNREGISTER_APPLICATION
+            auth:
+              AccessStrategy: sap:cmp-mtls:v1
+              CertCommonName: ''
+            mode: ASYNC
+            correlationIDKey: X-Correlation-ID
+            urlTemplate: '{"path": "https://cert.extensions.ondemand.com/hcm-cloud/system-management/v1/systems/{{.Application.ID}}", "method": "DELETE"}'
+            headerTemplate: '{"scp-client-user": ["{{.Headers.Client_user}}"]}'
+            outputTemplate: '{"error": "{{.Body.error}}", "location": "{{.Headers.Location}}", "gone_status_code": 404, "success_status_code": 202}'
+            statusTemplate: '{"error": "{{.Body.error}}", "status": "{{.Body.status}}", "success_status_code": 200, "failed_status_identifier": "FAILED", "success_status_identifier": "SUCCEEDED", "in_progress_status_identifier": "IN_PROGRESS"}'
+      - name: SAP S/4HANA Cloud
+        applicationInputJSON: '{"name": "{{name}}", "labels": {"region": "default", "displayName": "{{display-name}}", "applicationType": "SAP S/4HANA Cloud"}, "description": "{{display-name}}", "providerName": "SAP"}'
+        intSystem:
+          name: sap-s4hana-cloud
+          description: Integration system for SAP S4Hana Cloud applications
+        webhooks:
+          - type: UNREGISTER_APPLICATION
+            auth:
+              AccessStrategy: sap:cmp-mtls:v1
+              CertCommonName: ''
+            mode: ASYNC
+            correlationIDKey: X-Correlation-ID
+            urlTemplate: '{"path": "https://cert.extensions.ondemand.com/s4hanacloud/system-management/v1/systems/{{.Application.ID}}", "method": "DELETE"}'
+            headerTemplate: '{"scp-client-user": ["{{.Headers.Client_user}}"]}'
+            outputTemplate: '{"error": "{{.Body.error}}", "location": "{{.Headers.Location}}", "gone_status_code": 404, "success_status_code": 202}'
+            statusTemplate: '{"error": "{{.Body.error}}", "status": "{{.Body.status}}", "success_status_code": 200, "failed_status_identifier": "FAILED", "success_status_identifier": "SUCCEEDED", "in_progress_status_identifier": "IN_PROGRESS"}'
+        applicationNamespace: sap.s4
+      - name: SAP Marketing Cloud
+        applicationInputJSON: '{"name": "{{name}}", "labels": {"displayName": "{{display-name}}", "applicationType": "SAP Marketing Cloud"},  "description": "{{display-name}}", "providerName": "SAP"}'
+        intSystem:
+          name: sap-s4hana-cloud
+          description: Integration system for SAP S4Hana Cloud applications
+        webhooks:
+          - type: UNREGISTER_APPLICATION
+            auth:
+              AccessStrategy: sap:cmp-mtls:v1
+              CertCommonName: ''
+            mode: ASYNC
+            correlationIDKey: X-Correlation-ID
+            urlTemplate: '{"path": "https://cert.extensions.ondemand.com/s4hanacloud/system-management/v1/systems/{{.Application.ID}}", "method": "DELETE"}'
+            headerTemplate: '{"scp-client-user": ["{{.Headers.Client_user}}"]}'
+            outputTemplate: '{"error": "{{.Body.error}}", "location": "{{.Headers.Location}}", "gone_status_code": 404, "success_status_code": 202}'
+            statusTemplate: '{"error": "{{.Body.error}}", "status": "{{.Body.status}}", "success_status_code": 200, "failed_status_identifier": "FAILED", "success_status_identifier": "SUCCEEDED", "in_progress_status_identifier": "IN_PROGRESS"}'
     intSystems:
       - id: f18d7d75-e856-470e-a27f-e90ad14cca0b
         name: sap-s4hana-cloud

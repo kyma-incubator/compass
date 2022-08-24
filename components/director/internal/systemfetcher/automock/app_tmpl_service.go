@@ -60,6 +60,20 @@ func (_m *AppTmplService) GetByNameAndRegion(ctx context.Context, name string, r
 	return r0, r1
 }
 
+// Update provides a mock function with given fields: ctx, id, in
+func (_m *AppTmplService) Update(ctx context.Context, id string, in model.ApplicationTemplateUpdateInput) error {
+	ret := _m.Called(ctx, id, in)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.ApplicationTemplateUpdateInput) error); ok {
+		r0 = rf(ctx, id, in)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // NewAppTmplService creates a new instance of AppTmplService. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
 func NewAppTmplService(t testing.TB) *AppTmplService {
 	mock := &AppTmplService{}
