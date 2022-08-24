@@ -5,7 +5,7 @@ WORKDIR ${BASE_APP_DIR}
 
 #
 # Download dependencies
-#
+# remove
 
 COPY go.mod go.sum ${BASE_APP_DIR}/
 RUN go mod download -x
