@@ -40,6 +40,39 @@ BEGIN
 END
 $$;
 
+-- revert 'api_protocol' and 'visibility' enums and change the columns from text to enum
+
+-- APIs
+DROP VIEW api_definitions_tenants;
+
+CREATE TYPE api_protocol AS ENUM ('odata-v2', 'odata-v4','soap-inbound','soap-outbound','rest');
+ALTER TABLE api_definitions DROP CONSTRAINT api_protocol_check;
+
+ALTER TABLE api_definitions
+ALTER COLUMN api_protocol TYPE api_protocol USING api_protocol::api_protocol;
+
+CREATE TYPE visibility AS ENUM ('public', 'internal', 'private');
+ALTER TABLE api_definitions DROP CONSTRAINT api_visibility_check;
+
+ALTER TABLE api_definitions
+ALTER COLUMN visibility TYPE visibility USING visibility::visibility;
+
+CREATE OR REPLACE VIEW api_definitions_tenants AS
+SELECT ad.*, ta.tenant_id, ta.owner FROM api_definitions AS ad
+                                             INNER JOIN tenant_applications ta ON ta.id = ad.app_id;
+
+--Events
+DROP VIEW event_api_definitions_tenants;
+
+ALTER TABLE event_api_definitions DROP CONSTRAINT event_visibility_check;
+
+ALTER TABLE event_api_definitions
+ALTER COLUMN visibility TYPE visibility USING visibility::visibility;
+
+CREATE OR REPLACE VIEW event_api_definitions_tenants AS
+SELECT e.*, ta.tenant_id, ta.owner FROM event_api_definitions AS e
+                                            INNER JOIN tenant_applications ta ON ta.id = e.app_id;
+
 -- adapt views that relied on 'apps_subaccounts' view to use the old 'apps_subaccounts_func' func
 
 CREATE OR REPLACE VIEW tenants_apis

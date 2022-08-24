@@ -32,6 +32,45 @@ FROM labels l
      -- 1) Get all scenario labels for applications
 WHERE l.app_id IS NOT NULL AND l.key = 'scenarios';
 
+-- for APIs and Events change the columns 'api_protocol' and 'visibility' from enum to text so that we do not cast them to text in the respective ord views
+-- drop additional views that rely on the enums; then change the column's type from enum to text and add check constraint
+
+-- APIs
+DROP VIEW api_definitions_tenants;
+
+ALTER TABLE api_definitions
+ALTER COLUMN api_protocol TYPE text USING api_protocol::text;
+
+ALTER TABLE api_definitions
+ADD CONSTRAINT api_protocol_check CHECK (api_protocol IN ('odata-v2', 'odata-v4', 'soap-inbound', 'soap-outbound', 'rest'));
+
+ALTER TABLE api_definitions
+ALTER COLUMN visibility TYPE text USING visibility::text;
+
+ALTER TABLE api_definitions
+ADD CONSTRAINT api_visibility_check CHECK (visibility in ('public', 'internal', 'private'));
+
+CREATE OR REPLACE VIEW api_definitions_tenants AS
+SELECT ad.*, ta.tenant_id, ta.owner FROM api_definitions AS ad
+                                             INNER JOIN tenant_applications ta ON ta.id = ad.app_id;
+
+DROP TYPE api_protocol;
+
+-- Events
+DROP VIEW event_api_definitions_tenants;
+
+ALTER TABLE event_api_definitions
+ALTER COLUMN visibility TYPE text USING visibility::text;
+
+ALTER TABLE event_api_definitions
+ADD CONSTRAINT event_visibility_check CHECK (visibility in ('public', 'internal', 'private'));
+
+CREATE OR REPLACE VIEW event_api_definitions_tenants AS
+SELECT e.*, ta.tenant_id, ta.owner FROM event_api_definitions AS e
+                                            INNER JOIN tenant_applications ta ON ta.id = e.app_id;
+
+DROP TYPE visibility;
+
 -- adapt views that relied on 'apps_subaccounts_func' to use the new 'apps_subaccounts' view
 
 CREATE OR REPLACE VIEW tenants_apis
@@ -57,7 +96,7 @@ SELECT DISTINCT t_apps.tenant_id,
                 apis.ord_id,
                 apis.short_description,
                 apis.system_instance_aware,
-                apis.api_protocol::text,
+                apis.api_protocol,
                 apis.tags,
                 apis.countries,
                 apis.links,
@@ -67,7 +106,7 @@ SELECT DISTINCT t_apps.tenant_id,
                 apis.changelog_entries,
                 apis.labels,
                 apis.package_id,
-                apis.visibility::text as visibility,
+                apis.visibility,
                 apis.disabled,
                 apis.part_of_products,
                 apis.line_of_business,
@@ -197,7 +236,7 @@ SELECT DISTINCT t_apps.tenant_id,
                 events.sunset_date,
                 events.labels,
                 events.package_id,
-                events.visibility::text as visibility,
+                events.visibility,
                 events.disabled,
                 events.part_of_products,
                 events.line_of_business,
