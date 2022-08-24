@@ -208,7 +208,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 
 	clientConfig := ord.NewClientConfig(config.MaxParallelDocumentsPerApplication)
-	
+
 	ordClientWithTenantExecutor := ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithTenant)
 	ordClientWithoutTenantExecutor := ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithoutTenant)
 
