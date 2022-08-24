@@ -112,33 +112,43 @@ global:
     connector:
       dir:
       version: "PR-2575"
+      name: compass-connector
     connectivity_adapter:
       dir:
       version: "PR-2575"
+      name: compass-connectivity-adapter
     pairing_adapter:
       dir:
-      version: "PR-2575"
+      version: "PR-2572"
+      name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2578"
+      version: "PR-2560"
+      name: compass-director
     hydrator:
       dir:
       version: "PR-2575"
+      name: compass-hydrator
     gateway:
       dir:
       version: "PR-2575"
+      name: compass-gateway
     operations_controller:
       dir:
       version: "PR-2575"
+      name: compass-operations-controller
     ord_service:
       dir:
       version: "PR-75"
+      name: compass-ord-service
     schema_migrator:
       dir:
       version: "PR-2575"
+      name: compass-schema-migrator
     system_broker:
       dir:
       version: "PR-2575"
+      name: compass-system-broker
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -146,13 +156,16 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2575"
+      version: "PR-2574"
+      name: compass-external-services-mock
     console:
       dir:
       version: "PR-71"
+      name: compass-console
     e2e_tests:
       dir:
       version: "PR-2577"
+      name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -249,6 +262,7 @@ global:
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
     runtimeTypeLabelKey: "runtimeType"
+    applicationTypeLabelKey: "applicationType"
     kymaRuntimeTypeLabelValue: "kyma"
     fetchTenantEndpoint: '{{ printf "https://%s.%s%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host .Values.global.ingress.domainName .Values.global.tenantFetcher.prefix }}'
   auditlog:
@@ -636,6 +650,7 @@ global:
       maxIdleConnections: 2
     globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8087/.well-known/open-resource-discovery
     maxParallelApplicationProcessors: 4
+    maxParallelDocumentsPerApplication: 10
     containerName: "ord-aggregator"
   systemFetcher:
     enabled: false

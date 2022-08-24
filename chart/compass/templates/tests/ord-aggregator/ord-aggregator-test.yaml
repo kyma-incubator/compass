@@ -23,7 +23,7 @@ spec:
       serviceAccountName: {{ $.Chart.Name }}-e2e-ord-aggregator
       containers:
         - name: {{ .Values.global.ordAggregator.containerName }}
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
           args: ["-c", "./ord-aggregator.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
