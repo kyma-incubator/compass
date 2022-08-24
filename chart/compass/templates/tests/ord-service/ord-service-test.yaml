@@ -23,7 +23,7 @@ spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-ord-service
       containers:
         - name: ord-service-tests
-          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
           args: ["-c", "./ord-service.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
@@ -177,6 +177,8 @@ spec:
               value: {{ .Values.global.tests.subscription.tenants.consumerTenantID }}
             - name: SKIP_TESTS_REGEX
               value: {{ .Values.global.tests.ordService.skipPattern }}
+            - name: APP_APPLICATION_TYPE_LABEL_KEY
+              value: {{ .Values.global.director.applicationTypeLabelKey }}
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine
