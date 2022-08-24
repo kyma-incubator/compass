@@ -312,6 +312,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				}
 			},
 			ExpectedResult:  ord.Documents{},
+			ExpectedErr:     errors.New("unsupported access strategy"),
 			ExpectedBaseURL: baseURL,
 		},
 		{
@@ -370,7 +371,8 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				executorProviderMock = test.ExecutorProviderFunc()
 			}
 
-			client := ord.NewClient(testHTTPClient, executorProviderMock)
+			clientCfg := ord.NewClientConfig(5)
+			client := ord.NewClient(clientCfg, testHTTPClient, executorProviderMock)
 
 			testApp := fixApplicationPage().Data[0]
 			testWebhook := fixWebhooks()[0]

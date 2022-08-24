@@ -123,7 +123,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2559"
+      version: "PR-2560"
       name: compass-director
     hydrator:
       dir:
@@ -650,6 +650,7 @@ global:
       maxIdleConnections: 2
     globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8087/.well-known/open-resource-discovery
     maxParallelApplicationProcessors: 4
+    maxParallelDocumentsPerApplication: 10
   systemFetcher:
     enabled: false
     name: "system-fetcher"
