@@ -76,8 +76,8 @@ type config struct {
 
 	GlobalRegistryConfig ord.GlobalRegistryConfig
 
-	MaxParallelApplicationProcessors int `envconfig:"APP_MAX_PARALLEL_APPLICATION_PROCESSORS,default=1"`
-	MaxParallelDocuments             int `envconfig:"APP_MAX_PARALLEL_DOCUMENTS"`
+	MaxParallelApplicationProcessors   int `envconfig:"APP_MAX_PARALLEL_APPLICATION_PROCESSORS,default=1"`
+	MaxParallelDocumentsPerApplication int `envconfig:"APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION"`
 
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 }
@@ -206,7 +206,7 @@ func createORDAggregatorSvc(cfgProvider *configprovider.Provider, config config,
 	tombstoneSvc := tombstone.NewService(tombstoneRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc)
 
-	clientConfig := ord.NewClientConfig(config.MaxParallelDocuments)
+	clientConfig := ord.NewClientConfig(config.MaxParallelDocumentsPerApplication)
 	ordClient := ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProvider)
 
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, config.GlobalRegistryConfig, vendorSvc, productSvc, ordClient)

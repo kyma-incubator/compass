@@ -93,8 +93,8 @@ spec:
                   value: "{{ .Values.global.ordAggregator.globalRegistryUrl }}"
                 - name: APP_MAX_PARALLEL_APPLICATION_PROCESSORS
                   value: "{{ .Values.global.ordAggregator.maxParallelApplicationProcessors }}"
-                - name: APP_MAX_PARALLEL_DOCUMENTS
-                  value: "{{ .Values.global.ordAggregator.maxParallelDocuments }}"
+                - name: APP_MAX_PARALLEL_DOCUMENTS_PER_APPLICATION
+                  value: "{{ .Values.global.ordAggregator.maxParallelDocumentsPerApplication }}"
                 - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
                   value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
               command:
