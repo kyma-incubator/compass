@@ -15,3 +15,22 @@ func FixFormationTemplateWithType(formationName string, runtimeType string) grap
 		RuntimeArtifactKind:    graphql.ArtifactTypeSubscription,
 	}
 }
+
+func FixFormationTemplateWithApplicationTypes(formationName string, applicationTypes []string) graphql.FormationTemplateInput {
+	in := FixFormationTemplate(formationName)
+	in.ApplicationTypes = applicationTypes
+	return in
+}
+
+func FixFormationTemplateWithRuntimeType(formationName string, runtimeType string) graphql.FormationTemplateInput {
+	in := FixFormationTemplate(formationName)
+	in.RuntimeType = runtimeType
+	return in
+}
+
+func FixFormationTypeWithTypes(formationName string, runtimeType string, applicationTypes []string) graphql.FormationTemplateInput {
+	in := FixFormationTemplate(formationName)
+	in.RuntimeType = runtimeType
+	in.ApplicationTypes = applicationTypes
+	return in
+}

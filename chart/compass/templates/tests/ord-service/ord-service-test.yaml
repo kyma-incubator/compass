@@ -177,6 +177,8 @@ spec:
               value: {{ .Values.global.tests.subscription.tenants.consumerTenantID }}
             - name: SKIP_TESTS_REGEX
               value: {{ .Values.global.tests.ordService.skipPattern }}
+            - name: APP_APPLICATION_TYPE_LABEL_KEY
+              value: {{ .Values.global.director.applicationTypeLabelKey }}
         {{if eq .Values.global.database.embedded.enabled false}}
         - name: cloudsql-proxy
           image: gcr.io/cloudsql-docker/gce-proxy:1.23.0-alpine

@@ -9,5 +9,6 @@ type Config struct {
 	ConsumerSubaccountLabelKey   string `envconfig:"APP_CONSUMER_SUBACCOUNT_LABEL_KEY,default=global_subaccount_id"`
 	TokenPrefix                  string `envconfig:"APP_TOKEN_PREFIX,default=sb-"`
 	RuntimeTypeLabelKey          string `envconfig:"APP_RUNTIME_TYPE_LABEL_KEY,default=runtimeType"`
+	ApplicationTypeLabelKey      string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
 	KymaRuntimeTypeLabelValue    string `envconfig:"APP_KYMA_RUNTIME_TYPE_LABEL_VALUE,default=kyma"`
 }
