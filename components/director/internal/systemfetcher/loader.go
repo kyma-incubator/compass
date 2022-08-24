@@ -119,7 +119,7 @@ func (d *DataLoader) loadAppTemplates(ctx context.Context, readDir func(dirname 
 }
 
 func (d *DataLoader) createAppTemplatesDependentEntities(ctx context.Context, appTmplInputs []map[string]interface{}) ([]model.ApplicationTemplateInput, error) {
-	var appTemplateInputs []model.ApplicationTemplateInput
+	appTemplateInputs := make([]model.ApplicationTemplateInput, 0, len(appTmplInputs))
 	for _, appTmplInput := range appTmplInputs {
 		var input model.ApplicationTemplateInput
 		appTmplInputJSON, err := json.Marshal(appTmplInput)
@@ -252,7 +252,7 @@ func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs [
 }
 
 func enrichApplicationTemplateInput(appTemplateInputs []model.ApplicationTemplateInput) []model.ApplicationTemplateInput {
-	var enriched []model.ApplicationTemplateInput
+	enriched := make([]model.ApplicationTemplateInput, 0, len(appTemplateInputs))
 	for _, appTemplateInput := range appTemplateInputs {
 		if appTemplateInput.Description == nil {
 			appTemplateInput.Description = str.Ptr(appTemplateInput.Name)
