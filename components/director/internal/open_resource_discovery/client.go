@@ -132,7 +132,6 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 }
 
 func convertErrorsToStrings(errors []error) (result []string) {
-
 	for _, err := range errors {
 		result = append(result, err.Error())
 	}
