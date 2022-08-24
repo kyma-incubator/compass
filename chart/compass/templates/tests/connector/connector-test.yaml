@@ -23,7 +23,7 @@ spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-connector
       containers:
       - name: connector-tests
-        image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-tests:{{ .Values.global.images.e2e_tests.version }}
+        image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
         imagePullPolicy: IfNotPresent
         command: ["/bin/sh"]
         args: ["-c", "./connector.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
@@ -54,6 +54,10 @@ spec:
             value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
           - name: APP_EXTERNAL_CLIENT_KEY_KEY
             value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+          - name: APP_APPLICATION_TYPE_LABEL_KEY
+            value: {{ .Values.global.director.applicationTypeLabelKey }}
+          - name: APP_GATEWAY_OAUTH
+            value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
       restartPolicy: Never
 ---
 apiVersion: v1

@@ -158,10 +158,12 @@ type service struct {
 	applicationRepository         applicationRepository
 	applicationTemplateRepository applicationTemplateRepository
 	webhookConverter              webhookConverter
+	runtimeTypeLabelKey           string
+	applicationTypeLabelKey       string
 }
 
 // NewService creates formation service
-func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, webhookRepository webhookRepository, webhookClient webhookClient, applicationRepository applicationRepository, applicationTemplateRepository applicationTemplateRepository, webhookConverter webhookConverter) *service {
+func NewService(labelDefRepository labelDefRepository, labelRepository labelRepository, formationRepository FormationRepository, formationTemplateRepository FormationTemplateRepository, labelService labelService, uuidService uuidService, labelDefService labelDefService, asaRepo automaticFormationAssignmentRepository, asaService automaticFormationAssignmentService, tenantSvc tenantService, runtimeRepo runtimeRepository, runtimeContextRepo runtimeContextRepository, webhookRepository webhookRepository, webhookClient webhookClient, applicationRepository applicationRepository, applicationTemplateRepository applicationTemplateRepository, webhookConverter webhookConverter, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
 		labelDefRepository:            labelDefRepository,
 		labelRepository:               labelRepository,
@@ -180,6 +182,8 @@ func NewService(labelDefRepository labelDefRepository, labelRepository labelRepo
 		applicationRepository:         applicationRepository,
 		applicationTemplateRepository: applicationTemplateRepository,
 		webhookConverter:              webhookConverter,
+		runtimeTypeLabelKey:           runtimeTypeLabelKey,
+		applicationTypeLabelKey:       applicationTypeLabelKey,
 	}
 }
 
@@ -314,6 +318,26 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 	}
 }
 
+func (s *service) isValidRuntimeType(ctx context.Context, tnt string, runtimeID string, formation *model.Formation) error {
+	formationTemplate, err := s.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting formation template with ID %q", formation.FormationTemplateID)
+	}
+	runtimeTypeLabel, err := s.labelService.GetLabel(ctx, tnt, &model.LabelInput{
+		Key:        s.runtimeTypeLabelKey,
+		ObjectID:   runtimeID,
+		ObjectType: model.RuntimeLabelableObject,
+	})
+	if err != nil {
+		return errors.Wrapf(err, "while getting label %q for runtime with ID %q", s.runtimeTypeLabelKey, runtimeID)
+	}
+
+	if runtimeType, ok := runtimeTypeLabel.Value.(string); !ok || runtimeType != formationTemplate.RuntimeType {
+		return apperrors.NewInvalidOperationError(fmt.Sprintf("unsupported runtimeType %q for formation template %q, allowing only %q", runtimeType, formationTemplate.Name, formationTemplate.RuntimeType))
+	}
+	return nil
+}
+
 func (s *service) createWebhookRequest(ctx context.Context, webhook *model.Webhook, input *webhookdir.FormationConfigurationChangeInput) (*webhookclient.Request, error) {
 	gqlWebhook, err := s.webhookConverter.ToGraphQL(webhook)
 	if err != nil {
@@ -336,19 +360,51 @@ func (s *service) sendNotifications(ctx context.Context, notifications []*webhoo
 }
 
 func (s *service) assign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
+	formationFromDB, err := s.getFormationByName(ctx, formation.Name, tnt)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting formation %q", formation.Name)
+	}
+	if err = s.checkFormationTemplateTypes(ctx, tnt, objectID, objectType, formationFromDB); err != nil {
+		return nil, err
+	}
+
 	if err := s.modifyAssignedFormations(ctx, tnt, objectID, formation, objectTypeToLabelableObject(objectType), addFormation); err != nil {
 		if apperrors.IsNotFoundError(err) {
 			labelInput := newLabelInput(formation.Name, objectID, objectTypeToLabelableObject(objectType))
 			if err = s.labelService.CreateLabel(ctx, tnt, s.uuidService.Generate(), labelInput); err != nil {
 				return nil, err
 			}
-
-			return s.getFormationByName(ctx, formation.Name, tnt)
+			return formationFromDB, nil
 		}
 		return nil, err
 	}
 
-	return s.getFormationByName(ctx, formation.Name, tnt)
+	return formationFromDB, nil
+}
+
+func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) error {
+	// TODO Remove default scenario check after removing default scenario
+	if formation.Name != model.DefaultScenario {
+		switch objectType {
+		case graphql.FormationObjectTypeApplication:
+			if err := s.isValidApplicationType(ctx, tnt, objectID, formation); err != nil {
+				return errors.Wrapf(err, "while validating application type for application %q", objectID)
+			}
+		case graphql.FormationObjectTypeRuntime:
+			if err := s.isValidRuntimeType(ctx, tnt, objectID, formation); err != nil {
+				return errors.Wrapf(err, "while validating runtime type")
+			}
+		case graphql.FormationObjectTypeRuntimeContext:
+			runtimeCtx, err := s.runtimeContextRepo.GetByID(ctx, tnt, objectID)
+			if err != nil {
+				return errors.Wrapf(err, "while getting runtime context")
+			}
+			if err = s.isValidRuntimeType(ctx, tnt, runtimeCtx.RuntimeID, formation); err != nil {
+				return errors.Wrapf(err, "while validating runtime type of runtime")
+			}
+		}
+	}
+	return nil
 }
 
 // UnassignFormation unassigns object base on graphql.FormationObjectType.
@@ -1054,8 +1110,8 @@ func (s *service) modifyFormations(ctx context.Context, tnt, formationName strin
 
 func (s *service) modifyAssignedFormations(ctx context.Context, tnt, objectID string, formation model.Formation, objectType model.LabelableObject, modificationFunc modificationFunc) error {
 	log.C(ctx).Infof("Modifying formation with name: %q for object with type: %q and ID: %q", formation.Name, objectType, objectID)
-	labelInput := newLabelInput(formation.Name, objectID, objectType)
 
+	labelInput := newLabelInput(formation.Name, objectID, objectType)
 	existingLabel, err := s.labelService.GetLabel(ctx, tnt, labelInput)
 	if err != nil {
 		return err
@@ -1231,4 +1287,35 @@ func (s *service) getFormationTemplateRuntimeType(ctx context.Context, scenarioN
 	}
 
 	return formationTemplate.RuntimeType, nil
+}
+
+func (s *service) isValidApplicationType(ctx context.Context, tnt string, applicationID string, formation *model.Formation) error {
+	formationTemplate, err := s.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
+	if err != nil {
+		return errors.Wrapf(err, "while getting formation template with ID %q", formation.FormationTemplateID)
+	}
+	applicationTypeLabel, err := s.labelService.GetLabel(ctx, tnt, &model.LabelInput{
+		Key:        s.applicationTypeLabelKey,
+		ObjectID:   applicationID,
+		ObjectType: model.ApplicationLabelableObject,
+	})
+	if err != nil {
+		return errors.Wrapf(err, "while getting label %q for application with ID %q", s.applicationTypeLabelKey, applicationID)
+	}
+
+	applicationType, ok := applicationTypeLabel.Value.(string)
+	if !ok {
+		return apperrors.NewInvalidOperationError(fmt.Sprintf("missing %s label for formation template %q, allowing only %q", s.applicationTypeLabelKey, formationTemplate.Name, formationTemplate.ApplicationTypes))
+	}
+	isAllowed := false
+	for _, allowedType := range formationTemplate.ApplicationTypes {
+		if allowedType == applicationType {
+			isAllowed = true
+			break
+		}
+	}
+	if !isAllowed {
+		return apperrors.NewInvalidOperationError(fmt.Sprintf("unsupported applicationType %q for formation template %q, allowing only %q", applicationType, formationTemplate.Name, formationTemplate.ApplicationTypes))
+	}
+	return nil
 }

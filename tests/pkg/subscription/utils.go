@@ -16,9 +16,10 @@ import (
 const (
 	AuthorizationHeader = "Authorization"
 	ContentTypeHeader   = "Content-Type"
+	UserContextHeader   = "user_context"
 	LocationHeader      = "Location"
 	JobSucceededStatus  = "SUCCEEDED"
-	EventuallyTimeout   = 15 * time.Second
+	EventuallyTimeout   = 60 * time.Second
 	EventuallyTick      = 2 * time.Second
 
 	ContentTypeApplicationJson = "application/json"

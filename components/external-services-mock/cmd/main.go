@@ -94,7 +94,7 @@ type BasicCredentialsConfig struct {
 	Password string `envconfig:"BASIC_PASSWORD"`
 }
 
-func claimsFunc(uniqueAttrKey, uniqueAttrValue, clientID, tenantID, identity, iss string, scopes []string, extAttributes map[string]interface{}) oauth.ClaimsGetterFunc {
+func claimsFunc(uniqueAttrKey, uniqueAttrValue, clientID, tenantID, identity, userNameClaim, iss string, scopes []string, extAttributes map[string]interface{}) oauth.ClaimsGetterFunc {
 	return func() map[string]interface{} {
 		return map[string]interface{}{
 			uniqueAttrKey: uniqueAttrValue,
@@ -103,6 +103,7 @@ func claimsFunc(uniqueAttrKey, uniqueAttrValue, clientID, tenantID, identity, is
 			"client_id":   clientID,
 			"tenant":      tenantID,
 			"identity":    identity,
+			"user_name":   userNameClaim,
 			"iss":         iss,
 			"exp":         time.Now().Unix() + int64(time.Minute.Seconds()*10),
 		}
@@ -118,9 +119,9 @@ func main() {
 
 	extSvcMockURL := fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.Port)
 	staticClaimsMapping := map[string]oauth.ClaimsGetterFunc{
-		"tenantFetcherClaims": claimsFunc("test", "tenant-fetcher", "client_id", "tenantID", "tenant-fetcher-test-identity", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
-		"subscriptionClaims":  claimsFunc("subsc-key-test", "subscription-flow", cfg.TenantConfig.SubscriptionProviderID, cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", extSvcMockURL, []string{}, map[string]interface{}{}),
-		"nsAdapterClaims":     claimsFunc("ns-adapter-test", "ns-adapter-flow", "test_prefix", cfg.DefaultTenant, "nsadapter-flow-identity", extSvcMockURL, []string{}, map[string]interface{}{"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321"}),
+		"tenantFetcherClaims": claimsFunc("test", "tenant-fetcher", "client_id", "tenantID", "tenant-fetcher-test-identity", "", extSvcMockURL, []string{"prefix.Callback"}, map[string]interface{}{}),
+		"subscriptionClaims":  claimsFunc("subsc-key-test", "subscription-flow", cfg.TenantConfig.SubscriptionProviderID, cfg.TenantConfig.TestConsumerSubaccountID, "subscription-flow-identity", "test-user-name@sap.com", extSvcMockURL, []string{}, map[string]interface{}{cfg.TenantConfig.ConsumerClaimsTenantIDKey: cfg.TenantConfig.TestConsumerSubaccountID, cfg.TenantConfig.ConsumerClaimsSubdomainKey: "consumerSubdomain"}),
+		"nsAdapterClaims":     claimsFunc("ns-adapter-test", "ns-adapter-flow", "test_prefix", cfg.DefaultTenant, "nsadapter-flow-identity", "", extSvcMockURL, []string{}, map[string]interface{}{"subaccountid": "08b6da37-e911-48fb-a0cb-fa635a6c4321"}),
 	}
 
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -132,7 +133,7 @@ func main() {
 	wg.Add(2)
 
 	httpClient := &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: 2 * time.Minute,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},

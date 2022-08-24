@@ -2,15 +2,15 @@ package tenantfetchersvc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/tidwall/gjson"
 )
 
@@ -36,12 +36,15 @@ type TenantSubscriber interface {
 // HandlerConfig is the configuration required by the tenant handler.
 // It includes configurable parameters for incoming requests, including different tenant IDs json properties, and path parameters.
 type HandlerConfig struct {
-	TenantOnDemandHandlerEndpoint string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{parentTenantId}/{tenantId}"`
-	RegionalHandlerEndpoint       string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
-	DependenciesEndpoint          string `envconfig:"APP_DEPENDENCIES_ENDPOINT,default=/v1/dependencies"`
-	TenantPathParam               string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
-	ParentTenantPathParam         string `envconfig:"APP_PARENT_TENANT_PATH_PARAM,default=parentTenantId"`
-	RegionPathParam               string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
+	TenantOnDemandHandlerEndpoint      string `envconfig:"APP_TENANT_ON_DEMAND_HANDLER_ENDPOINT,default=/v1/fetch/{parentTenantId}/{tenantId}"`
+	RegionalHandlerEndpoint            string `envconfig:"APP_REGIONAL_HANDLER_ENDPOINT,default=/v1/regional/{region}/callback/{tenantId}"`
+	DependenciesEndpoint               string `envconfig:"APP_REGIONAL_DEPENDENCIES_ENDPOINT,default=/v1/regional/{region}/dependencies"`
+	TenantPathParam                    string `envconfig:"APP_TENANT_PATH_PARAM,default=tenantId"`
+	ParentTenantPathParam              string `envconfig:"APP_PARENT_TENANT_PATH_PARAM,default=parentTenantId"`
+	RegionPathParam                    string `envconfig:"APP_REGION_PATH_PARAM,default=region"`
+	XsAppNamePathParam                 string `envconfig:"APP_TENANT_FETCHER_XSAPPNAME_PATH,default=xsappname"`
+	OmitDependenciesCallbackParam      string `envconfig:"APP_TENANT_FETCHER_OMIT_PARAM_NAME"`
+	OmitDependenciesCallbackParamValue string `envconfig:"APP_TENANT_FETCHER_OMIT_PARAM_VALUE"`
 
 	Database persistence.DatabaseConfig
 
@@ -51,7 +54,9 @@ type HandlerConfig struct {
 
 	TenantProviderConfig
 
-	MetricsPushEndpoint string `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
+	MetricsPushEndpoint          string                  `envconfig:"optional,APP_METRICS_PUSH_ENDPOINT"`
+	TenantDependenciesConfigPath string                  `envconfig:"APP_TENANT_REGION_DEPENDENCIES_CONFIG_PATH"`
+	RegionToDependenciesConfig   map[string][]Dependency `envconfig:"-"`
 }
 
 // TenantProviderConfig includes the configuration for tenant providers - the tenant ID json property names, the subdomain property name, and the tenant provider name.
@@ -65,6 +70,11 @@ type TenantProviderConfig struct {
 	ProviderSubaccountIDProperty        string `envconfig:"APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY,default=providerSubaccountIdProperty"`
 	ConsumerTenantIDProperty            string `envconfig:"APP_TENANT_PROVIDER_CONSUMER_TENANT_ID_PROPERTY,default=consumerTenantIdProperty"`
 	SubscriptionProviderAppNameProperty string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY,default=subscriptionProviderAppNameProperty"`
+}
+
+// Dependency contains the xsappname to be used in the dependencies callback
+type Dependency struct {
+	Xsappname string `json:"xsappname"`
 }
 
 type handler struct {
@@ -139,9 +149,45 @@ func (h *handler) UnSubscribeTenant(writer http.ResponseWriter, request *http.Re
 
 // Dependencies handler returns all external services where once created in Compass, the tenant should be created as well.
 func (h *handler) Dependencies(writer http.ResponseWriter, request *http.Request) {
+	ctx := request.Context()
+
+	vars := mux.Vars(request)
+	region, ok := vars[h.config.RegionPathParam]
+	if !ok {
+		log.C(ctx).Error("Region path parameter is missing from request")
+		http.Error(writer, "Region path parameter is missing from request", http.StatusBadRequest)
+		return
+	}
+
+	var bytes []byte
+	var err error
+
+	if len(h.config.OmitDependenciesCallbackParam) > 0 && len(h.config.OmitDependenciesCallbackParamValue) > 0 {
+		queryType, ok := request.URL.Query()[h.config.OmitDependenciesCallbackParam]
+		if ok && queryType[0] == h.config.OmitDependenciesCallbackParamValue {
+			bytes = []byte("[]")
+		}
+	}
+	if bytes == nil {
+		dependencies, ok := h.config.RegionToDependenciesConfig[region]
+		if !ok {
+			log.C(ctx).Errorf("Invalid region provided: %s", region)
+			http.Error(writer, fmt.Sprintf("Invalid region provided: %s", region), http.StatusBadRequest)
+			return
+		}
+
+		bytes, err = json.Marshal(dependencies)
+		if err != nil {
+			log.C(ctx).WithError(err).Error("Failed to marshal response body for dependencies request")
+			http.Error(writer, InternalServerError, http.StatusInternalServerError)
+			return
+		}
+	}
+
 	writer.Header().Set("Content-Type", "application/json")
-	if _, err := writer.Write([]byte("{}")); err != nil {
-		log.C(request.Context()).WithError(err).Errorf("Failed to write response body for dependencies request")
+	if _, err = writer.Write(bytes); err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to write response body for dependencies request")
+		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 }

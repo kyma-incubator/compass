@@ -43,6 +43,9 @@ spec:
       - name: credentials-secret
         secret:
           secretName: {{ .Values.global.tenantFetcher.k8sSecret.name }}
+      - name: dependencies-config
+        secret:
+          secretName: {{ .Values.global.tenantFetcher.dependenciesConfig.secretName }}
       containers:
         - name: {{ .Chart.Name }}
           image: k3d-kyma-registry:5001/compass-director:latest
@@ -93,8 +96,10 @@ spec:
               value: "{{ .Values.global.tenantFetcher.server.fetchTenantEndpoint }}"
             - name: APP_REGIONAL_HANDLER_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.server.regionalHandlerEndpoint }}"
-            - name: APP_DEPENDENCIES_ENDPOINT
+            - name: APP_REGIONAL_DEPENDENCIES_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.server.dependenciesEndpoint }}"
+            - name: APP_TENANT_REGION_DEPENDENCIES_CONFIG_PATH
+              value: "{{ .Values.global.tenantFetcher.dependenciesConfig.path }}/{{ .Values.global.tenantFetcher.dependenciesConfig.file }}"
             - name: APP_TENANT_PATH_PARAM
               value: "{{ .Values.global.tenantFetcher.server.tenantPathParam }}"
             - name: APP_REGION_PATH_PARAM
@@ -145,6 +150,12 @@ spec:
               value: {{ .Values.database.dbPool.maxOpenConnections | quote }}
             - name: APP_DB_MAX_IDLE_CONNECTIONS
               value: {{ .Values.database.dbPool.maxIdleConnections | quote }}
+            - name: APP_TENANT_FETCHER_XSAPPNAME_PATH
+              value: {{ .Values.global.tenantFetcher.xsappNamePath | quote }}
+            - name: APP_TENANT_FETCHER_OMIT_PARAM_NAME
+              value: {{ .Values.global.tenantFetcher.omitDependenciesParamName | quote }}
+            - name: APP_TENANT_FETCHER_OMIT_PARAM_VALUE
+              value: {{ .Values.global.tenantFetcher.omitDependenciesParamValue | quote }}
             {{- if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
             - name: APP_METRICS_PUSH_ENDPOINT
               value: {{ $.Values.global.metrics.pushEndpoint }}
@@ -325,6 +336,10 @@ spec:
             # API Regional config
             {{- end }}
             {{- end }}
+          volumeMounts:
+          - name: dependencies-config
+            mountPath: "{{ .Values.global.tenantFetcher.dependenciesConfig.path }}"
+            readOnly: true
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}

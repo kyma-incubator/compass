@@ -1,6 +1,7 @@
 global:
   disableLegacyConnectivity: true
   defaultTenant: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
+  defaultTenantRegion: "eu-1"
   tenants: # tenant order matters, so new tenants should be added to the end of the list
     - name: default
       id: 3e64ebae-38b5-46a0-b1ed-9ccee153a0ae
@@ -67,6 +68,7 @@ global:
     - name: TestProviderSubaccountRegion2
       id: 731b7bc4-5472-41d2-a447-e4c0f45de739
       type: subaccount
+      region: "eu-2"
       parent: 5577cf46-4f78-45fa-b55f-a42a3bdba868
     - name: TestCertificateSubaccount
       id: 123e4567-e89b-12d3-a456-426614174001
@@ -109,34 +111,44 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2501"
+      version: "PR-2575"
+      name: compass-connector
     connectivity_adapter:
       dir:
-      version: "PR-2501"
+      version: "PR-2575"
+      name: compass-connectivity-adapter
     pairing_adapter:
       dir:
-      version: "PR-2501"
+      version: "PR-2572"
+      name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2522"
+      version: "PR-2560"
+      name: compass-director
     hydrator:
       dir:
-      version: "PR-2501"
+      version: "PR-2575"
+      name: compass-hydrator
     gateway:
       dir:
-      version: "PR-2501"
+      version: "PR-2575"
+      name: compass-gateway
     operations_controller:
       dir:
-      version: "PR-2501"
+      version: "PR-2575"
+      name: compass-operations-controller
     ord_service:
       dir:
-      version: "PR-72"
+      version: "PR-75"
+      name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2532"
+      version: "PR-2575"
+      name: compass-schema-migrator
     system_broker:
       dir:
-      version: "PR-2501"
+      version: "PR-2575"
+      name: compass-system-broker
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -144,13 +156,16 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2501"
+      version: "PR-2574"
+      name: compass-external-services-mock
     console:
       dir:
-      version: "PR-68"
+      version: "PR-71"
+      name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2522"
+      version: "PR-2559"
+      name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -247,6 +262,7 @@ global:
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
     runtimeTypeLabelKey: "runtimeType"
+    applicationTypeLabelKey: "applicationType"
     kymaRuntimeTypeLabelValue: "kyma"
     fetchTenantEndpoint: '{{ printf "https://%s.%s%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host .Values.global.ingress.domainName .Values.global.tenantFetcher.prefix }}'
   auditlog:
@@ -341,6 +357,11 @@ global:
     prefix: /hydrators
     subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"},{"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}]'
     certificateDataHeader: "Certificate-Data"
+    consumerClaimsKeys:
+      clientIDKey: "client_id"
+      tenantIDKey: "tenantid"
+      userNameKey: "user_name"
+      subdomainKey: "subdomain"
     http:
       client:
         skipSSLValidation: false
@@ -479,7 +500,7 @@ global:
             createRule: false
             gatewayHost: "compass-gateway-sap-mtls"
             trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefix": "prefix.", "protocol": "http", "region": "eu-1"}]'
-            attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "identity" }, "clientid": { "key": "client_id" } }'
+            attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenant": { "key": "tenant" }, "identity": { "key": "user_name" }, "clientid": { "key": "client_id" } }'
             path: /<.*>
             checkSuffix: false
       tenantMappingService:
@@ -521,6 +542,9 @@ global:
     host: compass-tenant-fetcher.compass-system.svc.cluster.local
     prefix: /tenants
     port: 3000
+    xsappNamePath: "xsappname"
+    omitDependenciesParamName: ""
+    omitDependenciesParamValue: ""
     requiredAuthScope: Callback
     fetchTenantAuthScope: fetch_tenant
     authentication:
@@ -538,15 +562,17 @@ global:
     server:
       fetchTenantEndpoint: "/v1/fetch/{parentTenantId}/{tenantId}"
       regionalHandlerEndpoint: "/v1/regional/{region}/callback/{tenantId}"
-      dependenciesEndpoint: "/v1/dependencies"
+      dependenciesEndpoint: "/v1/regional/{region}/dependencies"
       tenantPathParam: "tenantId"
       regionPathParam: "region"
+    dependenciesConfig:
+      secretName: "destination-region-instances"
+      file: "keyConfig"
+      path: "/cfg/dependencies"
+    local:
+      templateMappings:
+        xsappMapping: '{{ printf "\"%s\":\"xsappname1\"" .Values.global.tenantFetcher.xsappNamePath }}'
     containerName: "tenant-fetcher"
-    oauth:
-      client: "client_id"
-      secret: ""
-      tokenURL: '{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'
-      tokenPath: "/cert/token"
   externalCertConfiguration:
     issuerLocality: "local,local2" # In local setup we have manually created connector CA certificate with 'local' Locality property
     subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=%s/L=%s/CN=%s"
@@ -599,6 +625,7 @@ global:
       maxIdleConnections: 2
     globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8087/.well-known/open-resource-discovery
     maxParallelApplicationProcessors: 4
+    maxParallelDocumentsPerApplication: 10
   systemFetcher:
     enabled: false
     name: "system-fetcher"
@@ -792,6 +819,8 @@ global:
       externalCertIntSystemCN: "integration-system-test"
     tenantFetcher:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
+      region: "eu-1"
+      region2: "eu-2"
     ordAggregator:
       skipPattern: ""
     ordService:

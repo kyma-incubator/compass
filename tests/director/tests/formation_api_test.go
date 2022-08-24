@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
+
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/tidwall/gjson"
@@ -113,7 +113,7 @@ func TestApplicationFormationFlow(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	t.Log("Create application")
-	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app", tenantId)
+	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app", conf.ApplicationTypeLabelKey, "SAP Cloud for Customer", tenantId)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
 	require.NoError(t, err)
 	require.NotEmpty(t, app.ID)
@@ -251,7 +251,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	rtmInput.Description = &rtmDesc
 	rtmInput.Labels[selectorKey] = subaccountID
 
-	rtm := registerKymaRuntime(t, ctx, subaccountID, rtmInput)
+	rtm := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, rtmInput, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, &rtm)
 
 	t.Logf("Should create formation: %s", unusedFormationName)
@@ -385,7 +385,7 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	}
 
 	t.Log("Create runtime")
-	rtm := registerKymaRuntime(t, ctx, subaccountID, rtmInput)
+	rtm := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, rtmInput, conf.GatewayOauth)
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccountID, &rtm)
 
 	t.Log("Create runtimeContext")
@@ -619,14 +619,16 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 
 			// Register kyma runtime
 			kymaRtmInput := fixtures.FixRuntimeRegisterInput("kyma-runtime")
-			kymaRuntime := registerKymaRuntime(t, ctx, subscriptionConsumerSubaccountID, kymaRtmInput)
+			kymaRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, kymaRtmInput, conf.GatewayOauth)
 			defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &kymaRuntime)
 
 			// Register provider runtime
 			providerRuntimeInput := graphql.RuntimeRegisterInput{
 				Name:        "providerRuntime",
 				Description: ptr.String("providerRuntime-description"),
-				Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue, tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
+				Labels: graphql.Labels{
+					conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue,
+				},
 			}
 
 			providerRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntimeInput)
@@ -669,6 +671,7 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 
 			t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 			resp, err := httpClient.Do(subscribeReq)
+			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 			require.NoError(t, err)
 			defer func() {
 				if err := resp.Body.Close(); err != nil {
@@ -678,8 +681,6 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			body, err := ioutil.ReadAll(resp.Body)
 			require.NoError(t, err)
 			require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
-
-			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
 			subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
 			require.NotEmpty(t, subJobStatusPath)
@@ -696,16 +697,17 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 		t.Run("Create Automatic Scenario Assignment AFTER runtime creation", func(t *testing.T) {
 			ctx = context.Background()
 
-			// Register kyma runtime
 			kymaRtmInput := fixtures.FixRuntimeRegisterInput("kyma-runtime")
-			kymaRuntime := registerKymaRuntime(t, ctx, subscriptionConsumerSubaccountID, kymaRtmInput)
+			kymaRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, kymaRtmInput, conf.GatewayOauth)
 			defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, &kymaRuntime)
 
 			// Register provider runtime
 			providerRuntimeInput := graphql.RuntimeRegisterInput{
 				Name:        "providerRuntime",
 				Description: ptr.String("providerRuntime-description"),
-				Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue, tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
+				Labels: graphql.Labels{
+					conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue,
+				},
 			}
 
 			providerRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntimeInput)
@@ -748,6 +750,7 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 
 			t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 			resp, err := httpClient.Do(subscribeReq)
+			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 			require.NoError(t, err)
 			defer func() {
 				if err := resp.Body.Close(); err != nil {
@@ -757,8 +760,6 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			body, err := ioutil.ReadAll(resp.Body)
 			require.NoError(t, err)
 			require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
-
-			defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
 			subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
 			require.NotEmpty(t, subJobStatusPath)
@@ -803,7 +804,9 @@ func TestFormationNotifications(stdT *testing.T) {
 		providerRuntimeInput := graphql.RuntimeRegisterInput{
 			Name:        "providerRuntime",
 			Description: ptr.String("providerRuntime-description"),
-			Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue, tenantfetcher.RegionKey: conf.SubscriptionConfig.SelfRegRegion},
+			Labels: graphql.Labels{
+				conf.SubscriptionConfig.SelfRegDistinguishLabelKey: conf.SubscriptionConfig.SelfRegDistinguishLabelValue,
+			},
 			Webhooks: []*graphql.WebhookInput{
 				{
 					Type: graphql.WebhookTypeConfigurationChanged,
@@ -858,6 +861,7 @@ func TestFormationNotifications(stdT *testing.T) {
 
 		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, providerRuntime.Name, providerRuntime.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
+		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 		require.NoError(t, err)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
@@ -867,8 +871,6 @@ func TestFormationNotifications(stdT *testing.T) {
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
-
-		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
 		subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
 		require.NotEmpty(t, subJobStatusPath)
@@ -1093,6 +1095,33 @@ func TestFormationNotifications(stdT *testing.T) {
 	})
 }
 
+func TestFormationApplicationTypeWhileAssigning(t *testing.T) {
+	ctx := context.TODO()
+
+	formationName := "test-formation"
+	applicationName := "test-application"
+	invalidApplicationType := "Not in the template"
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	formation := fixtures.CreateFormation(t, ctx, certSecuredGraphQLClient, formationName)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formation.Name)
+
+	formationTemplate := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, formation.FormationTemplateID)
+
+	actualApplication, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, applicationName, conf.ApplicationTypeLabelKey, invalidApplicationType, tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &actualApplication)
+	require.NoError(t, err)
+	require.Equal(t, invalidApplicationType, actualApplication.Labels[conf.ApplicationTypeLabelKey])
+
+	createRequest := fixtures.FixAssignFormationRequest(actualApplication.ID, string(graphql.FormationObjectTypeApplication), formationName)
+	formationResultFormation := graphql.Formation{}
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createRequest, &formationResultFormation)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, actualApplication.ID, graphql.FormationObjectTypeApplication, tenantId)
+	require.Empty(t, formationResultFormation)
+	require.EqualError(t, err, fmt.Sprintf("graphql: The operation is not allowed [reason=unsupported applicationType %q for formation template %q, allowing only %q]", invalidApplicationType, formationTemplate.Name, formationTemplate.ApplicationTypes))
+}
+
 func assertNotificationsCountForTenant(t *testing.T, body []byte, tenant string, count int) {
 	notificationsForConsumerTenant := gjson.GetBytes(body, tenant)
 	require.True(t, notificationsForConsumerTenant.Exists())
@@ -1149,6 +1178,52 @@ func validateRuntimesScenariosLabels(t *testing.T, ctx context.Context, subscrip
 
 	t.Log("Assert runtime context of the provider runtime HAS only provider scenarios label")
 	checkRuntimeContextFormationLabelsForRuntime(t, ctx, subscriptionConsumerAccountID, providerRuntimeID, "scenarios", []string{providerFormationName})
+}
+
+func TestFormationRuntimeTypeWhileAssigning(t *testing.T) {
+	ctx := context.TODO()
+
+	formationTemplateName := "new-formation-template"
+	runtimeType := "some-new-runtime-type"
+	formationName := "test-formation"
+	runtimeName := "test-runtime"
+
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	formationTemplate := fixtures.FixFormationTemplateWithType(formationTemplateName, runtimeType)
+	actualFormationTemplate := fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplate)
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, actualFormationTemplate.ID)
+
+	formation := fixtures.FixFormationInput(formationName, str.Ptr(formationTemplateName))
+	formationInputGQL, err := testctx.Tc.Graphqlizer.FormationInputToGQL(formation)
+	require.NoError(t, err)
+
+	createFormationReq := fixtures.FixCreateFormationWithTemplateRequest(formationInputGQL)
+	actualFormation := graphql.Formation{}
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, createFormationReq, &actualFormation)
+	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, formation.Name)
+	require.NoError(t, err)
+
+	inRuntime := fixtures.FixRuntimeRegisterInput(runtimeName)
+	actualRuntime := fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, tenantId, inRuntime, conf.GatewayOauth)
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &actualRuntime)
+	require.Equal(t, conf.KymaRuntimeTypeLabelValue, actualRuntime.Labels[conf.RuntimeTypeLabelKey])
+
+	createRequest := fixtures.FixAssignFormationRequest(actualRuntime.ID, string(graphql.FormationObjectTypeRuntime), formationName)
+	formationResultFormation := graphql.Formation{}
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createRequest, &formationResultFormation)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, formation, actualRuntime.ID, graphql.FormationObjectTypeRuntime, tenantId)
+	require.Empty(t, formationResultFormation)
+	require.EqualError(t, err, "graphql: The operation is not allowed [reason=unsupported runtimeType \"kyma\" for formation template \"new-formation-template\", allowing only \"some-new-runtime-type\"]")
+
+	runtimeCtx := fixtures.CreateRuntimeContext(t, ctx, certSecuredGraphQLClient, tenantId, actualRuntime.ID, "testRuntimeCtxKey", "testRuntimeCtxValue")
+	defer fixtures.DeleteRuntimeContext(t, ctx, certSecuredGraphQLClient, tenantId, runtimeCtx.ID)
+	createRuntimeContextAssignRequest := fixtures.FixAssignFormationRequest(runtimeCtx.ID, string(graphql.FormationObjectTypeRuntimeContext), formationName)
+	formationResultForContextFormation := graphql.Formation{}
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, createRuntimeContextAssignRequest, &formationResultForContextFormation)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, formation, runtimeCtx.ID, graphql.FormationObjectTypeRuntimeContext, tenantId)
+	require.Empty(t, formationResultForContextFormation)
+	require.EqualError(t, err, "graphql: The operation is not allowed [reason=unsupported runtimeType \"kyma\" for formation template \"new-formation-template\", allowing only \"some-new-runtime-type\"]")
 }
 
 func assignTenantToFormation(t *testing.T, ctx context.Context, objectID, tenantID, formationName string) {

@@ -29,6 +29,8 @@ global:
   externalServicesMock:
     auditlog:
       applyMockConfiguration: true
+    tenantDependenciesConfig:
+      manage: true
     enabled: true
     oauthSecret:
       manage: true
@@ -63,6 +65,8 @@ global:
       client:
         skipSSLValidation: true
   tenantFetcher:
+    omitDependenciesParamName: "omit"
+    omitDependenciesParamValue: "true"
     k8sSecret:
       name: "tenant-fetcher-secret"
       key: "keyConfig"

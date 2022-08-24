@@ -29,14 +29,12 @@ import (
 	"github.com/gorilla/mux"
 	auth "github.com/kyma-incubator/compass/components/director/internal/authenticator"
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	"github.com/kyma-incubator/compass/components/director/internal/metrics"
-	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc/resync"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	tenant2 "github.com/kyma-incubator/compass/components/director/pkg/tenant"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	tenantfetcher "github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc"
+	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc/resync"
+	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
 	graphqlclient "github.com/kyma-incubator/compass/components/director/pkg/graphql_client"
@@ -45,8 +43,11 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	tenant2 "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	gcli "github.com/machinebox/graphql"
 	"github.com/pkg/errors"
+	"github.com/tidwall/gjson"
 	"github.com/vrischmann/envconfig"
 )
 
@@ -215,6 +216,11 @@ func registerTenantsHandler(ctx context.Context, router *mux.Router, cfg tenantf
 
 	provisioner := tenantfetcher.NewTenantProvisioner(directorClient, tenantConverter, cfg.TenantProvider)
 	subscriber := tenantfetcher.NewSubscriber(directorClient, provisioner)
+
+	dependencies, err := dependenciesConfigToMap(cfg)
+	exitOnError(err, "failed to read service dependencies")
+	cfg.RegionToDependenciesConfig = dependencies
+
 	tenantHandler := tenantfetcher.NewTenantsHTTPHandler(subscriber, cfg)
 
 	log.C(ctx).Infof("Registering Regional Tenant Onboarding endpoint on %s...", cfg.RegionalHandlerEndpoint)
@@ -327,4 +333,26 @@ func newInternalGraphQLClient(url string, timeout time.Duration, skipSSLValidati
 	}
 
 	return gqlClient
+}
+
+func dependenciesConfigToMap(cfg tenantfetcher.HandlerConfig) (map[string][]tenantfetcher.Dependency, error) {
+	secretData, err := configprovider.ReadConfigFile(cfg.TenantDependenciesConfigPath)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while reading tenant service dependencies config file")
+	}
+
+	dependenciesConfig := make(map[string][]tenantfetcher.Dependency)
+	config, err := configprovider.ParseConfigToJSONMap(secretData)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while parsing tenant service dependencies config file")
+	}
+
+	for region, dependencies := range config {
+		for _, dependency := range dependencies.Array() {
+			xsappName := gjson.Get(dependency.String(), cfg.XsAppNamePathParam)
+			dependenciesConfig[region] = append(dependenciesConfig[region], tenantfetcher.Dependency{Xsappname: xsappName.String()})
+		}
+	}
+
+	return dependenciesConfig, nil
 }

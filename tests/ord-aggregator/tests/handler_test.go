@@ -15,7 +15,6 @@ import (
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/kyma-incubator/compass/tests/pkg/token"
@@ -554,7 +553,7 @@ func TestORDAggregator(stdT *testing.T) {
 		require.Contains(t, selfRegLabelValue, testConfig.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTemplate.ID)
 
 		httpClient := &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: 2 * time.Minute,
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: testConfig.SkipSSLValidation},
 			},
@@ -589,16 +588,19 @@ func TestORDAggregator(stdT *testing.T) {
 
 		t.Logf("Creating a subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTemplate.Name, appTemplate.ID, subscriptionProviderSubaccountID)
 		resp, err := httpClient.Do(subscribeReq)
+		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 		require.NoError(t, err)
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				t.Logf("Could not close response body %s", err)
 			}
 		}()
-		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTemplate.ID, appTemplate.Name, httpClient, testConfig.SubscriptionConfig.URL, apiPath, subscriptionToken, testConfig.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 		body, err := ioutil.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusAccepted, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d. Reason: %v", resp.StatusCode, http.StatusAccepted, string(body)))
+
+		err = resp.Body.Close()
+		require.NoError(t, err)
 
 		subJobStatusPath := resp.Header.Get(subscription.LocationHeader)
 		require.NotEmpty(t, subJobStatusPath)
@@ -913,7 +915,6 @@ func createAppTemplateName(name string) string {
 func fixAppTemplateInput(name, webhookURL string) directorSchema.ApplicationTemplateInput {
 	input := fixtures.FixApplicationTemplateWithORDWebhook(name, webhookURL)
 	input.Labels[testConfig.SubscriptionConfig.SelfRegDistinguishLabelKey] = testConfig.SubscriptionConfig.SelfRegDistinguishLabelValue
-	input.Labels[tenantfetcher.RegionKey] = testConfig.SubscriptionConfig.SelfRegRegion
 
 	return input
 }

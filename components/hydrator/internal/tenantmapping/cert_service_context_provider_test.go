@@ -3,6 +3,7 @@ package tenantmapping_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/textproto"
 	"strings"
@@ -25,11 +26,13 @@ import (
 )
 
 func TestCertServiceContextProvider(t *testing.T) {
-	testError := errors.New("test error")
-	notFoundErr := apperrors.NewNotFoundErrorWithType(resource.Tenant)
-
 	emptyCtx := context.TODO()
 	tenantID := uuid.New().String()
+
+	testError := errors.New("test error")
+	notFoundErr := apperrors.NewNotFoundErrorWithType(resource.Tenant)
+	subaccountRegionNotFoundErr := fmt.Errorf("region label not found for subaccount with ID: %q", tenantID)
+
 	authDetails := oathkeeper.AuthDetails{AuthID: tenantID, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: oathkeeper.ExternalIssuer}
 
 	scopes := []string{"runtime:read", "runtime:write", "tenant:read"}
@@ -51,7 +54,13 @@ func TestCertServiceContextProvider(t *testing.T) {
 		InternalID: internalSubaccount,
 		Name:       str.Ptr("testSubaccount"),
 		Type:       "subaccount",
+		Labels: map[string]interface{}{
+			"region": "eu-1",
+		},
 	}
+
+	testSubaccountWithoutRegion := *testSubaccount
+	testSubaccountWithoutRegion.Labels = nil
 
 	testCases := []struct {
 		Name               string
@@ -136,6 +145,23 @@ func TestCertServiceContextProvider(t *testing.T) {
 			ExpectedInternalID: internalSubaccount,
 			ExpectedConsumerID: internalConsumerID,
 			ExpectedErr:        nil,
+		},
+		{
+			Name: "Error when can't extract tenant region",
+			DirectorClient: func() *automock.DirectorClient {
+				client := &automock.DirectorClient{}
+				client.On("GetTenantByExternalID", mock.Anything, tenantID).Return(&testSubaccountWithoutRegion, nil).Once()
+				return client
+			},
+			ScopesGetterFn: func() *automock.ScopesGetter {
+				scopesGetter := &automock.ScopesGetter{}
+				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.external_certificate").Return(scopes, nil)
+				return scopesGetter
+			},
+			ReqDataInput:     reqDataWithInternalConsumerID,
+			AuthDetailsInput: authDetails,
+			ExpectedScopes:   scopesString,
+			ExpectedErr:      subaccountRegionNotFoundErr,
 		},
 		{
 			Name:           "Error when can't get required scopes",

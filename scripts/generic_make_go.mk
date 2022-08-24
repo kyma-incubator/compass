@@ -101,7 +101,8 @@ release: verify build-image
 build-image: pull-licenses
 	docker run --rm --privileged linuxkit/binfmt:v0.8 # https://stackoverflow.com/questions/70066249/docker-random-alpine-packages-fail-to-install
 	docker buildx create --name multi-arch-builder --use
-	( sleep 15m && docker buildx rm multi-arch-builder ) & docker buildx build --platform linux/amd64,linux/arm64 -t $(IMG_NAME):$(TAG) --push . 
+	docker buildx build --platform linux/amd64,linux/arm64 -t $(IMG_NAME):$(TAG) --push .
+	docker buildx rm multi-arch-builder
 docker-create-opts:
 	@echo $(DOCKER_CREATE_OPTS)
 

@@ -220,7 +220,8 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	validate := func() error {
 		return validateAppTemplateForSelfReg(convertedIn.Name, convertedIn.Placeholders)
 	}
-	labels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validate)
+
+	selfRegLabels, err := r.selfRegManager.PrepareForSelfRegistration(ctx, resource.ApplicationTemplate, convertedIn.Labels, selfRegID, validate)
 	if err != nil {
 		return nil, err
 	}
@@ -230,14 +231,12 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, err
 	}
 
-	ctx = persistence.SaveToContext(ctx, tx)
-
 	defer func() {
 		didRollback := r.transact.RollbackUnlessCommitted(ctx, tx)
 		if didRollback {
 			labelVal := str.CastOrEmpty(convertedIn.Labels[r.selfRegManager.GetSelfRegDistinguishingLabelKey()])
 			if labelVal != "" {
-				label, ok := in.Labels[selfregmanager.RegionLabel].(string)
+				label, ok := selfRegLabels[selfregmanager.RegionLabel].(string)
 				if !ok {
 					log.C(ctx).Errorf("An error occurred while casting region label value to string")
 				} else {
@@ -247,12 +246,14 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		}
 	}()
 
-	if err := r.checkProviderAppTemplateExistence(ctx, labels); err != nil {
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err := r.checkProviderAppTemplateExistence(ctx, selfRegLabels); err != nil {
 		return nil, err
 	}
 
 	log.C(ctx).Infof("Creating an Application Template with name %s", convertedIn.Name)
-	id, err := r.appTemplateSvc.CreateWithLabels(ctx, convertedIn, labels)
+	id, err := r.appTemplateSvc.CreateWithLabels(ctx, convertedIn, selfRegLabels)
 	if err != nil {
 		return nil, err
 	}
@@ -338,11 +339,6 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	if err != nil {
 		return nil, err
 	}
-	applicationName, err := extractApplicationNameFromTemplateInput(appTemplate.ApplicationInputJSON)
-	if err != nil {
-		return nil, err
-	}
-	log.C(ctx).Infof("Registering an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 
 	log.C(ctx).Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %s", in.TemplateName)
 	appCreateInputJSON, err := r.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, convertedIn.Values)
@@ -371,6 +367,10 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	}
 	appCreateInputModel.Labels["managed"] = "false"
 
+	applicationName, err := extractApplicationNameFromTemplateInput(appCreateInputJSON)
+	if err != nil {
+		return nil, err
+	}
 	log.C(ctx).Infof("Creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 	id, err := r.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID)
 	if err != nil {

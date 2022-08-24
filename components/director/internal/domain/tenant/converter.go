@@ -60,6 +60,7 @@ func (c *converter) ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant {
 		Type:        tenant.TypeToStr(in.Type),
 		ParentID:    in.Parent,
 		Initialized: in.Initialized,
+		Provider:    in.Provider,
 	}
 }
 
