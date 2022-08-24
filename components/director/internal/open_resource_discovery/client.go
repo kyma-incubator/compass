@@ -91,7 +91,6 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 	errMutex := sync.Mutex{}
 
 	for _, docDetails := range config.OpenResourceDiscoveryV1.Documents {
-		//queue <- docDetails
 		wg.Add(1)
 		workers <- struct{}{}
 		go func(docDetails DocumentDetails) {
