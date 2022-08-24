@@ -730,13 +730,6 @@ global:
             headerTemplate: '{"scp-client-user": ["{{.Headers.Client_user}}"]}'
             outputTemplate: '{"error": "{{.Body.error}}", "location": "{{.Headers.Location}}", "gone_status_code": 404, "success_status_code": 202}'
             statusTemplate: '{"error": "{{.Body.error}}", "status": "{{.Body.status}}", "success_status_code": 200, "failed_status_identifier": "FAILED", "success_status_identifier": "SUCCEEDED", "in_progress_status_identifier": "IN_PROGRESS"}'
-    intSystems:
-      - id: f18d7d75-e856-470e-a27f-e90ad14cca0b
-        name: sap-s4hana-cloud
-        description: Integration system for SAP S4Hana Cloud applications
-      - id: 836d8463-f001-418b-a2da-257ce55d8a0f
-        name: sap-successfactors
-        description: Integration system for SAP SuccessFactors
     templatePlaceholderToSystemKeyMappings: '[{"placeholder_name": "name","system_key": "displayName"},{"placeholder_name": "display-name","system_key": "displayName"},{"placeholder_name": "systemNumber","system_key": "systemNumber"},{"placeholder_name": "productId","system_key": "productId"},{"placeholder_name": "ppmsProductVersionId","system_key": "ppmsProductVersionId"},{"placeholder_name": "description","system_key": "productDescription", "optional": true},{"placeholder_name": "baseUrl","system_key": "additionalUrls.mainUrl", "optional":true},{"placeholder_name": "providerName","system_key": "infrastructureProvider", "optional": true}]'
     templateOverrideApplicationInput: '{"name": "{{name}}","description": "{{description}}","providerName": "{{providerName}}","statusCondition": "INITIAL","systemNumber": "{{systemNumber}}","labels": {"managed": "true","productId": "{{productId}}","ppmsProductVersionId": "{{ppmsProductVersionId}}"},"baseUrl": "{{baseUrl}}"}'
     http:
