@@ -209,6 +209,8 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 		destinationHandler.GetSubaccountDestinationsPage).Methods(http.MethodGet)
 	destinationsRouter.HandleFunc("/subaccountDestinations",
 		destinationHandler.PostDestination).Methods(http.MethodPost)
+	destinationsRouter.HandleFunc("/subaccountDestinations",
+		destinationHandler.DeleteDestination).Methods(http.MethodDelete)
 	destinationsRouter.HandleFunc("/destinations/{name}",
 		destinationHandler.GetSensitiveData).Methods(http.MethodGet)
 

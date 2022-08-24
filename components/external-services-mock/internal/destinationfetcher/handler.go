@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -16,6 +17,7 @@ const (
 	pageCountQueryParameter = "$pageCount"
 	pageQueryParameter      = "$page"
 	pageSizeQueryParameter  = "$pageSize"
+	deleteQueryParameter    = "$filter"
 )
 
 type Destination struct {
@@ -23,7 +25,18 @@ type Destination struct {
 	Type string
 }
 
-type Response struct {
+type DeleteStatus struct {
+	Name   string `json:"name"`
+	Status string `json:"status"`
+	Reason string `json:"reason,omitempty"`
+}
+
+type DeleteResponse struct {
+	Count   int
+	Summary []DeleteStatus
+}
+
+type PostResponse struct {
 	Name   string `json:"name"`
 	Status int    `json:"status"`
 	Cause  string `json:"cause,omitempty"`
@@ -35,7 +48,7 @@ type Handler struct {
 }
 
 func NewHandler() *Handler {
-	return &Handler{}
+	return &Handler{destinationsSensitive: make(map[string][]byte)}
 }
 
 func (h *Handler) GetSensitiveData(writer http.ResponseWriter, req *http.Request) {
@@ -124,6 +137,82 @@ func (h *Handler) GetSubaccountDestinationsPage(writer http.ResponseWriter, req 
 	}
 }
 
+func (h *Handler) deleteDestination(name string) {
+	for k, v := range h.destinations {
+		if v.Name == name {
+			h.destinations[k] = h.destinations[len(h.destinations)-1]
+			h.destinations = h.destinations[:len(h.destinations)-1]
+			return
+		}
+	}
+
+	return
+}
+
+func (h *Handler) DeleteDestination(writer http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+	filter := req.URL.Query().Get(deleteQueryParameter)
+
+	if len(filter) == 0 {
+		http.Error(writer, "Failed to read $filter query parameter", http.StatusBadRequest)
+		return
+	}
+
+	if !strings.HasPrefix(filter, "Name in") {
+		http.Error(writer, "Invalid $filter format. Only name is supported", http.StatusBadRequest)
+		return
+	}
+
+	filter = strings.ReplaceAll(filter, " ", "")
+	firstBrackerIndex := strings.IndexByte(filter, '(') + 1
+	secondBracketIndex := strings.IndexByte(filter, ')')
+
+	destinationNames := strings.Split(filter[firstBrackerIndex:secondBracketIndex], ",")
+
+	deleteResponse := DeleteResponse{Count: 0}
+
+	for _, destinationName := range destinationNames {
+		if len(destinationName) < 3 {
+			continue
+		}
+
+		destinationName = destinationName[1 : len(destinationName)-1]
+
+		if _, ok := h.destinationsSensitive[destinationName]; !ok {
+			deleteResponse.Summary = append(deleteResponse.Summary, DeleteStatus{
+				Name:   destinationName,
+				Status: "NOT_FOUND",
+				Reason: "Could not find destination",
+			})
+
+			continue
+		}
+
+		delete(h.destinationsSensitive, destinationName)
+		deleteResponse.Count = deleteResponse.Count + 1
+
+		deleteResponse.Summary = append(deleteResponse.Summary, DeleteStatus{
+			Name:   destinationName,
+			Status: "DELETED",
+		})
+
+		h.deleteDestination(destinationName)
+	}
+
+	responseJSON, err := json.Marshal(deleteResponse)
+	if err != nil {
+		log.C(ctx).WithError(err).Error("Failed to marshal response body")
+		http.Error(writer, "Failed to marshal response", http.StatusInternalServerError)
+		return
+	}
+
+	if _, err := writer.Write(responseJSON); err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to write data")
+		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+}
+
 func validDestinationType(destinationType string) bool {
 	return destinationType == "HTTP" || destinationType == "RFC" || destinationType == "MAIL" || destinationType == "LDAP"
 }
@@ -149,22 +238,18 @@ func (h *Handler) PostDestination(writer http.ResponseWriter, req *http.Request)
 		}
 	}
 
-	var responses []Response
-	if len(h.destinationsSensitive) == 0 {
-		h.destinationsSensitive = make(map[string][]byte)
-	}
-
+	var responses []PostResponse
 	for _, destination := range destinations {
 		if _, ok := h.destinationsSensitive[destination.Name]; ok {
-			responses = append(responses, Response{destination.Name, http.StatusConflict, "Destination name already taken"})
+			responses = append(responses, PostResponse{destination.Name, http.StatusConflict, "Destination name already taken"})
 		} else if !validDestinationType(destination.Type) {
-			responses = append(responses, Response{destination.Name, http.StatusBadRequest, "Invalid destination type"})
+			responses = append(responses, PostResponse{destination.Name, http.StatusBadRequest, "Invalid destination type"})
 		} else {
 			h.destinations = append(h.destinations, destination)
 			h.destinationsSensitive[destination.Name] = []byte(fmt.Sprintf(sensitiveDataTemplate, uuid.NewString(),
 				destination.Name, destination.Type, destination.Name))
 
-			responses = append(responses, Response{destination.Name, http.StatusCreated, ""})
+			responses = append(responses, PostResponse{destination.Name, http.StatusCreated, ""})
 		}
 	}
 
@@ -174,5 +259,10 @@ func (h *Handler) PostDestination(writer http.ResponseWriter, req *http.Request)
 		http.Error(writer, "Failed to marshal response", http.StatusInternalServerError)
 		return
 	}
-	writer.Write(responseJSON)
+
+	if _, err := writer.Write(responseJSON); err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to write data")
+		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 }
