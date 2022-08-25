@@ -1,0 +1,13 @@
+{{if .Values.global.systemFetcher.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Chart.Name }}-system-fetcher-templates-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+data:
+  app-templates.json: |-
+{{ .Values.global.systemFetcher.appTemplates | toJson | indent 4 }}
+{{ end }}
