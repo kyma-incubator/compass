@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -75,7 +76,6 @@ type config struct {
 
 type appTemplateConfig struct {
 	SystemToTemplateMappingsString string `envconfig:"APP_SYSTEM_INFORMATION_SYSTEM_TO_TEMPLATE_MAPPINGS"`
-	TemplateRegion                 string `envconfig:"optional,APP_SYSTEM_INFORMATION_TEMPLATE_REGION"`
 	OverrideApplicationInput       string `envconfig:"APP_TEMPLATE_OVERRIDE_APPLICATION_INPUT"`
 	PlaceholderToSystemKeyMappings string `envconfig:"APP_TEMPLATE_PLACEHOLDER_TO_SYSTEM_KEY_MAPPINGS"`
 }
@@ -105,10 +105,6 @@ func main() {
 		}
 	}()
 
-	if err := calculateTemplateMappings(ctx, cfg, transact); err != nil {
-		log.D().Fatal(err)
-	}
-
 	certCache, err := certloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize certificate loader"))
@@ -118,7 +114,7 @@ func main() {
 	securedHTTPClient := pkgAuth.PrepareHTTPClient(cfg.ClientTimeout)
 	mtlsClient := pkgAuth.PrepareMTLSClient(cfg.ClientTimeout, certCache)
 
-	sf, err := createSystemFetcher(cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, certCache)
+	sf, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, certCache)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize System Fetcher"))
 	}
@@ -128,63 +124,7 @@ func main() {
 	}
 }
 
-func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner) error {
-	var systemToTemplateMappings []systemfetcher.TemplateMapping
-	if err := json.Unmarshal([]byte(cfg.TemplateConfig.SystemToTemplateMappingsString), &systemToTemplateMappings); err != nil {
-		return errors.Wrap(err, "failed to read system template mappings")
-	}
-
-	authConverter := auth.NewConverter()
-	versionConverter := version.NewConverter()
-	frConverter := fetchrequest.NewConverter(authConverter)
-	webhookConverter := webhook.NewConverter(authConverter)
-	specConverter := spec.NewConverter(frConverter)
-	apiConverter := api.NewConverter(versionConverter, specConverter)
-	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
-	docConverter := document.NewConverter(frConverter)
-	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
-	appConverter := application.NewConverter(webhookConverter, bundleConverter)
-	appTemplateConv := apptemplate.NewConverter(appConverter, webhookConverter)
-	appTemplateRepo := apptemplate.NewRepository(appTemplateConv)
-	webhookRepo := webhook.NewRepository(webhookConverter)
-	labelDefConverter := labeldef.NewConverter()
-	labelConverter := label.NewConverter()
-	labelRepo := label.NewRepository(labelConverter)
-	labelDefRepo := labeldef.NewRepository(labelDefConverter)
-
-	uidSvc := uid.NewService()
-	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo)
-
-	tx, err := transact.Begin()
-	if err != nil {
-		return errors.Wrap(err, "failed to begin transaction")
-	}
-	defer transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	var region interface{}
-	region = cfg.TemplateConfig.TemplateRegion
-	if region == "" {
-		region = nil
-	}
-	for index, tm := range systemToTemplateMappings {
-		appTemplate, err := appTemplateSvc.GetByNameAndRegion(ctx, tm.Name, region)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("failed to retrieve application template with name %q and region %v", tm.Name, region))
-		}
-		systemToTemplateMappings[index].ID = appTemplate.ID
-	}
-	err = tx.Commit()
-	if err != nil {
-		return errors.Wrap(err, "failed to commit transaction")
-	}
-
-	systemfetcher.Mappings = systemToTemplateMappings
-	return nil
-}
-
-func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient *http.Client, certCache certloader.Cache) (*systemfetcher.SystemFetcher, error) {
+func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient *http.Client, certCache certloader.Cache) (*systemfetcher.SystemFetcher, error) {
 	uidSvc := uid.NewService()
 
 	tenantConv := tenant.NewConverter()
@@ -228,6 +168,7 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
+	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	assignmentConv := scenarioassignment.NewConverter()
 	scenarioAssignmentRepo := scenarioassignment.NewRepository(assignmentConv)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc, cfg.Features.DefaultScenarioEnabled)
@@ -274,6 +215,15 @@ func createSystemFetcher(cfg config, cfgProvider *configprovider.Provider, tx pe
 		Authenticator: pkgAuth.NewServiceAccountTokenAuthorizationProvider(),
 	}
 
+	dataLoader := systemfetcher.NewDataLoader(tx, appTemplateSvc, intSysSvc)
+	if err := dataLoader.LoadData(ctx, ioutil.ReadDir, ioutil.ReadFile); err != nil {
+		return nil, err
+	}
+
+	if err := calculateTemplateMappings(ctx, cfg, tx, appTemplateSvc); err != nil {
+		return nil, errors.Wrap(err, "failed while calculating application templates mappings")
+	}
+
 	var placeholdersMapping []systemfetcher.PlaceholderMapping
 	if err := json.Unmarshal([]byte(cfg.TemplateConfig.PlaceholderToSystemKeyMappings), &placeholdersMapping); err != nil {
 		return nil, errors.Wrapf(err, "while unmarshaling placeholders mapping")
@@ -303,4 +253,38 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 	}).Run(ctx)
 
 	return provider
+}
+
+func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService) error {
+	var systemToTemplateMappings []systemfetcher.TemplateMapping
+	if err := json.Unmarshal([]byte(cfg.TemplateConfig.SystemToTemplateMappingsString), &systemToTemplateMappings); err != nil {
+		return errors.Wrap(err, "failed to read system template mappings")
+	}
+
+	tx, err := transact.Begin()
+	if err != nil {
+		return errors.Wrap(err, "failed to begin transaction")
+	}
+	defer transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	for index, tm := range systemToTemplateMappings {
+		var region interface{}
+		region = tm.Region
+		if region == "" {
+			region = nil
+		}
+		appTemplate, err := appTemplateSvc.GetByNameAndRegion(ctx, tm.Name, region)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("failed to retrieve application template with name %q and region %v", tm.Name, region))
+		}
+		systemToTemplateMappings[index].ID = appTemplate.ID
+	}
+	err = tx.Commit()
+	if err != nil {
+		return errors.Wrap(err, "failed to commit transaction")
+	}
+
+	systemfetcher.Mappings = systemToTemplateMappings
+	return nil
 }
