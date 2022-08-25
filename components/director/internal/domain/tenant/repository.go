@@ -370,27 +370,18 @@ func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceTy
 	return dest.TenantID, nil
 }
 
-func (r *pgRepository) GetBySubscribedRuntimes(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
+func (r *pgRepository) ListBySubscribedRuntimes(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
+	var entityCollection tenant.EntityCollection
+
+	conditions := repo.Conditions{
+		repo.NewInConditionForSubQuery(idColumn, "SELECT tenant_id from tenant_runtime_contexts", []interface{}{}),
+		repo.NewNotNullCondition(parentColumn),
+	}
+
+	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
 		return nil, err
 	}
 
-	var entityCollection tenant.EntityCollection
-
-	query := `
-	SELECT external_tenant
-	FROM business_tenant_mappings
-	WHERE id IN (
-		SELECT tenant_id from tenant_runtime_contexts
-	)
-	AND parent IS NOT NULL
-	`
-
-	err = persist.SelectContext(ctx, &entityCollection, query)
-	if err != nil {
-		return nil, errors.Wrap(err, "while listing tenants from DB")
-	}
 	return r.multipleFromEntities(entityCollection), nil
 }
 

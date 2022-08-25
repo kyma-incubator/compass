@@ -123,6 +123,8 @@ spec:
               value: {{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint | quote }}
             - name: APP_DESTINATIONS_SENSITIVE_DATA_ENDPOINT
               value: {{ .Values.global.destinationFetcher.server.sensitiveDataEndpoint | quote }}
+            - name: APP_DESTINATIONS_SENSITIVE_DATA_QUERY_PARAM
+              value: {{ .Values.global.destinationFetcher.server.sensitiveDataQueryParam | quote }}
             - name: APP_DESTINATION_FETCHER_SCHEDULE
               value: {{ .Values.global.destinationFetcher.jobSchedule | quote }}
             - name: APP_ELECTION_LEASE_LOCK_NAME

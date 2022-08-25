@@ -52,7 +52,7 @@ type BundleRepo interface {
 //go:generate mockery --name=TenantRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
 // TenantRepo missing godoc
 type TenantRepo interface {
-	GetBySubscribedRuntimes(ctx context.Context) ([]*model.BusinessTenantMapping, error)
+	ListBySubscribedRuntimes(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 }
 
 // DestinationService missing godoc
@@ -76,7 +76,7 @@ func (d *DestinationService) GetSubscribedTenantIDs(ctx context.Context) ([]stri
 	}
 	tenantIDs := make([]string, 0, len(tenants))
 	for _, tenant := range tenants {
-		tenantIDs = append(tenantIDs, tenant.ExternalTenant)
+		tenantIDs = append(tenantIDs, tenant.ID)
 	}
 	return tenantIDs, nil
 }
@@ -85,7 +85,7 @@ func (d *DestinationService) getSubscribedTenants(ctx context.Context) ([]*model
 	var tenants []*model.BusinessTenantMapping
 	transactionError := d.transaction(ctx, func(ctxWithTransact context.Context) error {
 		var err error
-		tenants, err = d.TenantRepo.GetBySubscribedRuntimes(ctxWithTransact)
+		tenants, err = d.TenantRepo.ListBySubscribedRuntimes(ctxWithTransact)
 		if err != nil {
 			log.C(ctxWithTransact).WithError(err).Error("An error occurred while getting subscribed tenants")
 			return err

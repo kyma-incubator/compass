@@ -468,17 +468,17 @@ func successfulTenantRepo(tenantIDs []string) func() *automock.TenantRepo {
 		tenants := make([]*model.BusinessTenantMapping, 0, len(tenantIDs))
 		for _, tenantID := range tenantIDs {
 			tenants = append(tenants, &model.BusinessTenantMapping{
-				ExternalTenant: tenantID,
+				ID: tenantID,
 			})
 		}
-		tenantRepo.On("GetBySubscribedRuntimes", mock.Anything).Return(tenants, nil)
+		tenantRepo.On("ListBySubscribedRuntimes", mock.Anything).Return(tenants, nil)
 		return tenantRepo
 	}
 }
 
 func failingTenantRepo() *automock.TenantRepo {
 	tenantRepo := unusedTenantRepo()
-	tenantRepo.On("GetBySubscribedRuntimes", mock.Anything).Return(nil, testErr)
+	tenantRepo.On("ListBySubscribedRuntimes", mock.Anything).Return(nil, testErr)
 	return tenantRepo
 }
 
