@@ -16,23 +16,22 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestHandler_SyncDestinations(t *testing.T) {
-	const (
-		tenantID          = "f09ba084-0e82-49ab-ab2e-b7ecc988312d"
-		userContextHeader = "user_context"
-	)
+const (
+	tenantIDHeaderName = "InternalTenantId"
+	expectedTenantID   = "f09ba084-0e82-49ab-ab2e-b7ecc988312d"
+)
 
+func TestHandler_SyncDestinations(t *testing.T) {
 	target := "/v1/fetch"
 
 	validHandlerConfig := destinationfetchersvc.HandlerConfig{
 		SyncDestinationsEndpoint:      "/v1/fetch",
 		DestinationsSensitiveEndpoint: "/v1/info",
-		UserContextHeader:             userContextHeader,
+		InternalTenantIDHeaderName:    tenantIDHeaderName,
 	}
 
 	reqWithUserContext := httptest.NewRequest(http.MethodPut, target, nil)
-	userContext := `{"subaccountId":"` + tenantID + `"}`
-	reqWithUserContext.Header.Set(userContextHeader, userContext)
+	reqWithUserContext.Header.Set(tenantIDHeaderName, expectedTenantID)
 	testCases := []struct {
 		Name                string
 		Request             *http.Request
@@ -45,13 +44,13 @@ func TestHandler_SyncDestinations(t *testing.T) {
 			Request: reqWithUserContext,
 			DestinationManager: func() *automock.DestinationManager {
 				svc := &automock.DestinationManager{}
-				svc.On("SyncTenantDestinations", mock.Anything, tenantID).Return(nil)
+				svc.On("SyncTenantDestinations", mock.Anything, expectedTenantID).Return(nil)
 				return svc
 			},
 			ExpectedStatusCode: http.StatusOK,
 		},
 		{
-			Name:    "Missing user context header",
+			Name:    "Missing tenant header",
 			Request: httptest.NewRequest(http.MethodPut, target, nil),
 			DestinationManager: func() *automock.DestinationManager {
 				return &automock.DestinationManager{}
@@ -64,11 +63,11 @@ func TestHandler_SyncDestinations(t *testing.T) {
 			DestinationManager: func() *automock.DestinationManager {
 				svc := &automock.DestinationManager{}
 				err := apperrors.NewNotFoundErrorWithMessage(resource.Label,
-					tenantID, fmt.Sprintf("tenant %s not found", tenantID))
-				svc.On("SyncTenantDestinations", mock.Anything, tenantID).Return(err)
+					expectedTenantID, fmt.Sprintf("tenant %s not found", expectedTenantID))
+				svc.On("SyncTenantDestinations", mock.Anything, expectedTenantID).Return(err)
 				return svc
 			},
-			ExpectedErrorOutput: fmt.Sprintf("tenant %s not found", tenantID),
+			ExpectedErrorOutput: fmt.Sprintf("tenant %s not found", expectedTenantID),
 			ExpectedStatusCode:  http.StatusBadRequest,
 		},
 		{
@@ -77,10 +76,10 @@ func TestHandler_SyncDestinations(t *testing.T) {
 			DestinationManager: func() *automock.DestinationManager {
 				svc := &automock.DestinationManager{}
 				err := fmt.Errorf("random error")
-				svc.On("SyncTenantDestinations", mock.Anything, tenantID).Return(err)
+				svc.On("SyncTenantDestinations", mock.Anything, expectedTenantID).Return(err)
 				return svc
 			},
-			ExpectedErrorOutput: fmt.Sprintf("Failed to sync destinations for tenant %s", tenantID),
+			ExpectedErrorOutput: fmt.Sprintf("Failed to sync destinations for tenant %s", expectedTenantID),
 			ExpectedStatusCode:  http.StatusInternalServerError,
 		},
 	}
@@ -113,11 +112,7 @@ func TestHandler_SyncDestinations(t *testing.T) {
 }
 
 func TestHandler_FetchDestinationsSensitiveData(t *testing.T) {
-	const (
-		tenantID           = "f09ba084-0e82-49ab-ab2e-b7ecc988312d"
-		userContextHeader  = "user_context"
-		destQueryParameter = "dest"
-	)
+	const destQueryParameter = "name"
 
 	json := []byte("{}")
 
@@ -126,29 +121,29 @@ func TestHandler_FetchDestinationsSensitiveData(t *testing.T) {
 	validHandlerConfig := destinationfetchersvc.HandlerConfig{
 		SyncDestinationsEndpoint:      "/v1/fetch",
 		DestinationsSensitiveEndpoint: "/v1/info",
-		UserContextHeader:             userContextHeader,
+		DestinationsQueryParameter:    destQueryParameter,
+		InternalTenantIDHeaderName:    tenantIDHeaderName,
 	}
 
-	namesRaw := "[Rand, Mat]"
+	namesQueryRaw := "name=Rand&name=Mat"
 	names := []string{"Rand", "Mat"}
 	reqWithUserContext := httptest.NewRequest(http.MethodPut, target, nil)
-	userContext := `{"subaccountId":"` + tenantID + `"}`
-	reqWithUserContext.Header.Set(userContextHeader, userContext)
+	reqWithUserContext.Header.Set(tenantIDHeaderName, expectedTenantID)
 	testCases := []struct {
 		Name                  string
 		Request               *http.Request
-		DestQueryParameter    string
+		DestQuery             string
 		DestinationFetcherSvc func() *automock.DestinationManager
 		ExpectedErrorOutput   string
 		ExpectedStatusCode    int
 	}{
 		{
-			Name:               "Successful fetch data fetch",
-			Request:            reqWithUserContext,
-			DestQueryParameter: namesRaw,
+			Name:      "Successful fetch data fetch",
+			Request:   reqWithUserContext,
+			DestQuery: namesQueryRaw,
 			DestinationFetcherSvc: func() *automock.DestinationManager {
 				svc := &automock.DestinationManager{}
-				svc.On("FetchDestinationsSensitiveData", mock.Anything, tenantID, names).
+				svc.On("FetchDestinationsSensitiveData", mock.Anything, expectedTenantID, names).
 					Return(
 						func(ctx context.Context, tenantID string, destNames []string) []byte {
 							return json
@@ -162,7 +157,7 @@ func TestHandler_FetchDestinationsSensitiveData(t *testing.T) {
 			ExpectedStatusCode: http.StatusOK,
 		},
 		{
-			Name:    "Missing user context header",
+			Name:    "Missing tenant header",
 			Request: httptest.NewRequest(http.MethodPut, target, nil),
 			DestinationFetcherSvc: func() *automock.DestinationManager {
 				return &automock.DestinationManager{}
@@ -172,42 +167,6 @@ func TestHandler_FetchDestinationsSensitiveData(t *testing.T) {
 		{
 			Name:    "Missing destination query parameter.",
 			Request: reqWithUserContext,
-			DestinationFetcherSvc: func() *automock.DestinationManager {
-				return &automock.DestinationManager{}
-			},
-			ExpectedStatusCode: http.StatusBadRequest,
-		},
-		{
-			Name:               "Invalid destination query parameter. Missing beginning bracket",
-			Request:            reqWithUserContext,
-			DestQueryParameter: "Rand,Mat]",
-			DestinationFetcherSvc: func() *automock.DestinationManager {
-				return &automock.DestinationManager{}
-			},
-			ExpectedStatusCode: http.StatusBadRequest,
-		},
-		{
-			Name:               "Invalid destination query parameter. Missing end bracket",
-			Request:            reqWithUserContext,
-			DestQueryParameter: "[Perin,Mat",
-			DestinationFetcherSvc: func() *automock.DestinationManager {
-				return &automock.DestinationManager{}
-			},
-			ExpectedStatusCode: http.StatusBadRequest,
-		},
-		{
-			Name:               "Invalid destination query parameter. Empty element",
-			Request:            reqWithUserContext,
-			DestQueryParameter: "[Perin,]",
-			DestinationFetcherSvc: func() *automock.DestinationManager {
-				return &automock.DestinationManager{}
-			},
-			ExpectedStatusCode: http.StatusBadRequest,
-		},
-		{
-			Name:               "Invalid destination query parameter. No bracket",
-			Request:            reqWithUserContext,
-			DestQueryParameter: "Rand,Perin",
 			DestinationFetcherSvc: func() *automock.DestinationManager {
 				return &automock.DestinationManager{}
 			},
@@ -223,10 +182,8 @@ func TestHandler_FetchDestinationsSensitiveData(t *testing.T) {
 			req := testCase.Request
 			//req is a pointer and the changes on the previous test are kept
 			req.URL.RawQuery = ""
-			if len(testCase.DestQueryParameter) > 0 {
-				query := req.URL.Query()
-				query.Add(destQueryParameter, testCase.DestQueryParameter)
-				req.URL.RawQuery = query.Encode()
+			if len(testCase.DestQuery) > 0 {
+				req.URL.RawQuery = testCase.DestQuery
 			}
 
 			w := httptest.NewRecorder()

@@ -2,7 +2,7 @@ package label
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -16,12 +16,13 @@ import (
 const (
 	tableName                   string = "public.labels"
 	tenantColumn                string = "tenant_id"
+	keyColumn                   string = "key"
 	runtimeContextTable         string = "public.tenant_runtime_contexts"
 	businessTenantMappingsTable string = `public.business_tenant_mappings`
 )
 
 var (
-	tableColumns       = []string{"id", tenantColumn, "app_id", "runtime_id", "runtime_context_id", "app_template_id", "key", "value", "version"}
+	tableColumns       = []string{"id", tenantColumn, "app_id", "runtime_id", "runtime_context_id", "app_template_id", keyColumn, "value", "version"}
 	updatableColumns   = []string{"value"}
 	idColumns          = []string{"id"}
 	versionedIDColumns = append(idColumns, "version")
@@ -156,7 +157,7 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, objectType mod
 		getter = r.embeddedTenantGetter
 	}
 
-	conds := repo.Conditions{repo.NewEqualCondition("key", key)}
+	conds := repo.Conditions{repo.NewEqualCondition(keyColumn, key)}
 	if objectType != model.TenantLabelableObject {
 		conds = append(conds, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
 	}
@@ -277,7 +278,7 @@ func (r *repository) ListForObjectIDs(ctx context.Context, tenant string, object
 // ListByKey missing godoc
 func (r *repository) ListByKey(ctx context.Context, tenant, key string) ([]*model.Label, error) {
 	var entities Collection
-	if err := r.lister.List(ctx, resource.Label, tenant, &entities, repo.NewEqualCondition("key", key)); err != nil {
+	if err := r.lister.List(ctx, resource.Label, tenant, &entities, repo.NewEqualCondition(keyColumn, key)); err != nil {
 		return nil, err
 	}
 	return r.multipleFromEntity(entities)
@@ -287,7 +288,7 @@ func (r *repository) ListByKey(ctx context.Context, tenant, key string) ([]*mode
 func (r *repository) ListGlobalByKey(ctx context.Context, key string) ([]*model.Label, error) {
 	var entities Collection
 
-	if err := r.listerGlobal.ListGlobal(ctx, &entities, repo.NewEqualCondition("key", key)); err != nil {
+	if err := r.listerGlobal.ListGlobal(ctx, &entities, repo.NewEqualCondition(keyColumn, key)); err != nil {
 		return nil, err
 	}
 
@@ -297,7 +298,7 @@ func (r *repository) ListGlobalByKey(ctx context.Context, key string) ([]*model.
 // ListGlobalByKeyAndObjects lists resources of objectType across tenants (global) which match the given objectIDs and labeled with the provided key
 func (r *repository) ListGlobalByKeyAndObjects(ctx context.Context, objectType model.LabelableObject, objectIDs []string, key string) ([]*model.Label, error) {
 	var entities Collection
-	if err := r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &entities, repo.NewEqualCondition("key", key), repo.NewInConditionForStringValues(labelableObjectField(objectType), objectIDs)); err != nil {
+	if err := r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &entities, repo.NewEqualCondition(keyColumn, key), repo.NewInConditionForStringValues(labelableObjectField(objectType), objectIDs)); err != nil {
 		return nil, err
 	}
 	return r.multipleFromEntity(entities)
@@ -306,7 +307,7 @@ func (r *repository) ListGlobalByKeyAndObjects(ctx context.Context, objectType m
 // Delete missing godoc
 func (r *repository) Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error {
 	deleter := r.deleter
-	conds := repo.Conditions{repo.NewEqualCondition("key", key)}
+	conds := repo.Conditions{repo.NewEqualCondition(keyColumn, key)}
 	if objectType == model.TenantLabelableObject {
 		deleter = r.embeddedTenantDeleter
 	} else {
@@ -336,7 +337,7 @@ func (r *repository) DeleteAll(ctx context.Context, tenant string, objectType mo
 // DeleteByKeyNegationPattern missing godoc
 func (r *repository) DeleteByKeyNegationPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error {
 	deleter := r.deleter
-	conds := repo.Conditions{repo.NewNotRegexConditionString("key", labelKeyPattern)}
+	conds := repo.Conditions{repo.NewNotRegexConditionString(keyColumn, labelKeyPattern)}
 	if objectType == model.TenantLabelableObject {
 		deleter = r.embeddedTenantDeleter
 	} else {
@@ -350,7 +351,7 @@ func (r *repository) DeleteByKeyNegationPattern(ctx context.Context, tenant stri
 
 // DeleteByKey missing godoc
 func (r *repository) DeleteByKey(ctx context.Context, tenant string, key string) error {
-	return r.deleter.DeleteMany(ctx, resource.Label, tenant, repo.Conditions{repo.NewEqualCondition("key", key)})
+	return r.deleter.DeleteMany(ctx, resource.Label, tenant, repo.Conditions{repo.NewEqualCondition(keyColumn, key)})
 }
 
 // GetScenarioLabelsForRuntimes missing godoc
@@ -360,7 +361,7 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 	}
 
 	conditions := repo.Conditions{
-		repo.NewEqualCondition("key", model.ScenariosKey),
+		repo.NewEqualCondition(keyColumn, model.ScenariosKey),
 		repo.NewInConditionForStringValues("runtime_id", runtimesIDs),
 	}
 
@@ -381,30 +382,18 @@ func (r *repository) GetScenarioLabelsForRuntimes(ctx context.Context, tenantID 
 	return labelModels, nil
 }
 
-func (r *repository) GetSubdomainLabelForSubscribedRuntime(ctx context.Context, externalTenant string) (*model.Label, error) {
-	var entity Entity
-
-	persist, err := persistence.FromCtx(ctx)
-	if err != nil {
-		return nil, err
+func (r *repository) GetSubdomainLabelForSubscribedRuntime(ctx context.Context, tenantID string) (*model.Label, error) {
+	conds := repo.Conditions{
+		repo.NewEqualCondition(keyColumn, tenant.SubdomainLabelKey),
+		repo.NewInConditionForSubQuery(tenantColumn,
+			"SELECT DISTINCT tenant_id FROM tenant_runtime_contexts WHERE tenant_id=?", []interface{}{tenantID}),
 	}
 
-	query := `
-	SELECT l.tenant_id, l.value
-	FROM labels l
-	WHERE l.key='subdomain'
-	AND l.tenant_id=(
-		SELECT id
-		FROM business_tenant_mappings
-		WHERE parent IS NOT NULL
-		AND external_tenant=$1)
-	AND l.tenant_id IN (
-		SELECT tenant_id
-		FROM tenant_runtime_contexts)`
-
-	err = persist.GetContext(ctx, &entity, query, externalTenant)
+	var entity Entity
+	err := r.embeddedTenantGetter.Get(
+		ctx, model.TenantLabelableObject.GetResourceType(), tenantID, conds, repo.NoOrderBy, &entity)
 	if err != nil {
-		return nil, persistence.MapSQLError(ctx, err, resource.Label, resource.Get, "while getting label from db")
+		return nil, err
 	}
 
 	labelModel, err := r.conv.FromEntity(&entity)

@@ -15,8 +15,8 @@ type TenantRepo struct {
 	mock.Mock
 }
 
-// GetBySubscribedRuntimes provides a mock function with given fields: ctx
-func (_m *TenantRepo) GetBySubscribedRuntimes(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
+// ListBySubscribedRuntimes provides a mock function with given fields: ctx
+func (_m *TenantRepo) ListBySubscribedRuntimes(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
 	ret := _m.Called(ctx)
 
 	var r0 []*model.BusinessTenantMapping
