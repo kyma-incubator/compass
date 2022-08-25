@@ -139,11 +139,11 @@ global:
       name: compass-operations-controller
     ord_service:
       dir:
-      version: "PR-75"
+      version: "PR-78"
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2575"
+      version: "PR-2582"
       name: compass-schema-migrator
     system_broker:
       dir:
