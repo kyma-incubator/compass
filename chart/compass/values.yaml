@@ -139,11 +139,11 @@ global:
       name: compass-operations-controller
     ord_service:
       dir:
-      version: "PR-75"
+      version: "PR-78"
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2575"
+      version: "PR-2582"
       name: compass-schema-migrator
     system_broker:
       dir:
@@ -638,6 +638,7 @@ global:
   ordAggregator:
     name: ord-aggregator
     enabled: true
+    suspend: true
     schedule: "*/1 * * * *"
     http:
       client:
@@ -651,6 +652,7 @@ global:
     globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8087/.well-known/open-resource-discovery
     maxParallelApplicationProcessors: 4
     maxParallelDocumentsPerApplication: 10
+    containerName: "ord-aggregator"
   systemFetcher:
     enabled: false
     name: "system-fetcher"
