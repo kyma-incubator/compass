@@ -99,8 +99,8 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
             - name: DESTINATION_FETCHER_SENSITIVE_DATA_URL
               value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.sensitiveDataEndpoint }}"
-            - name: DESTINATION_FETCHER_USER_CONTEXT_HEADER
-              value: {{ .Values.global.ordService.userContextHeader }}
+            - name: DESTINATION_FETCHER_SENSITIVE_DATA_QUERY_PARAM
+              value: {{ .Values.global.destinationFetcher.server.sensitiveDataQueryParam | quote }}
             - name: DESTINATION_FETCHER_AUTH_TOKEN_PATH
               value: {{ .Values.global.ordService.authTokenPath | quote }}
             - name: DESTINATION_FETCHER_SKIP_SSL_VALIDATION
