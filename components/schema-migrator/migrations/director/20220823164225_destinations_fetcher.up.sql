@@ -34,10 +34,11 @@ SELECT DISTINCT dst.tenant_id,
                 '__sensitive_data__' || dests.name || '__sensitive_data__'
 FROM destinations dests
          JOIN (SELECT d.id,
-                      d.tenant_id::text AS tenant_id
+                      d.tenant_id AS tenant_id
                FROM destinations d
                UNION ALL
-               SELECT apps_subaccounts_func.id,
-                      apps_subaccounts_func.tenant_id
-               FROM apps_subaccounts_func() apps_subaccounts_func(id, tenant_id)) dst ON dests.id = dst.id;
+               SELECT apps_subaccounts.id,
+                      apps_subaccounts.tenant_id
+               FROM apps_subaccounts) dst ON dests.id = dst.id;
+
 COMMIT;
