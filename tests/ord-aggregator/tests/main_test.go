@@ -40,6 +40,7 @@ type config struct {
 	DirectorExternalCertSecuredURL                        string
 	DirectorGraphqlOauthURL                               string
 	ORDServiceURL                                         string
+	ORDAggregatorContainerName                            string `envconfig:"ORD_AGGREGATOR_CONTAINER_NAME"`
 	AggregatorSchedule                                    string
 	ExternalServicesMockBaseURL                           string
 	ExternalServicesMockUnsecuredURL                      string

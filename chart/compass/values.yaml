@@ -164,7 +164,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2570"
+      version: "PR-2577"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -638,6 +638,7 @@ global:
   ordAggregator:
     name: ord-aggregator
     enabled: true
+    suspend: true
     schedule: "*/1 * * * *"
     http:
       client:
@@ -651,6 +652,7 @@ global:
     globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8087/.well-known/open-resource-discovery
     maxParallelApplicationProcessors: 4
     maxParallelDocumentsPerApplication: 10
+    containerName: "ord-aggregator"
   systemFetcher:
     enabled: false
     name: "system-fetcher"
