@@ -16,17 +16,18 @@ import (
 )
 
 type ExternalCertProviderConfig struct {
-	ExternalClientCertTestSecretName      string `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME"`
-	ExternalClientCertTestSecretNamespace string `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE"`
-	CertSvcInstanceTestSecretName         string `envconfig:"CERT_SVC_INSTANCE_TEST_SECRET_NAME"`
-	CertSvcInstanceTestRegion2SecretName  string `envconfig:"CERT_SVC_INSTANCE_TEST_REGION2_SECRET_NAME"`
-	ExternalCertCronjobContainerName      string `envconfig:"EXTERNAL_CERT_CRONJOB_CONTAINER_NAME"`
-	ExternalCertTestJobName               string `envconfig:"EXTERNAL_CERT_TEST_JOB_NAME"`
-	TestExternalCertSubject               string `envconfig:"TEST_EXTERNAL_CERT_SUBJECT"`
-	TestExternalCertSubjectRegion2        string `envconfig:"TEST_EXTERNAL_CERT_SUBJECT_REGION2"`
-	TestExternalCertCN                    string `envconfig:"TEST_EXTERNAL_CERT_CN"`
-	ExternalClientCertCertKey             string `envconfig:"APP_EXTERNAL_CLIENT_CERT_KEY"`
-	ExternalClientCertKeyKey              string `envconfig:"APP_EXTERNAL_CLIENT_KEY_KEY"`
+	ExternalClientCertTestSecretName      string  `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAME"`
+	ExternalClientCertTestSecretNamespace string  `envconfig:"EXTERNAL_CLIENT_CERT_TEST_SECRET_NAMESPACE"`
+	CertSvcInstanceTestSecretName         string  `envconfig:"CERT_SVC_INSTANCE_TEST_SECRET_NAME"`
+	CertSvcInstanceTestRegion2SecretName  string  `envconfig:"CERT_SVC_INSTANCE_TEST_REGION2_SECRET_NAME"`
+	ExternalCertCronjobContainerName      string  `envconfig:"EXTERNAL_CERT_CRONJOB_CONTAINER_NAME"`
+	ExternalCertTestJobName               string  `envconfig:"EXTERNAL_CERT_TEST_JOB_NAME"`
+	TestExternalCertSubject               string  `envconfig:"TEST_EXTERNAL_CERT_SUBJECT"`
+	TestExternalCertSubjectRegion2        string  `envconfig:"TEST_EXTERNAL_CERT_SUBJECT_REGION2"`
+	TestExternalCertCN                    string  `envconfig:"TEST_EXTERNAL_CERT_CN"`
+	ExternalClientCertCertKey             string  `envconfig:"APP_EXTERNAL_CLIENT_CERT_KEY"`
+	ExternalClientCertKeyKey              string  `envconfig:"APP_EXTERNAL_CLIENT_KEY_KEY"`
+	ExpectedIssuerLocality                *string `envconfig:"-"`
 }
 
 func NewExternalCertFromConfig(t *testing.T, ctx context.Context, testConfig ExternalCertProviderConfig) (*rsa.PrivateKey, [][]byte) {
@@ -77,6 +78,9 @@ func createExtCertJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.C
 					} else if testConfig.CertSvcInstanceTestRegion2SecretName != "" {
 						env.ValueFrom.SecretKeyRef.Name = testConfig.CertSvcInstanceTestRegion2SecretName // external certificate credentials used to execute consumer-provider test
 					}
+				}
+				if env.Name == "EXPECTED_ISSUER_LOCALITY" && testConfig.ExpectedIssuerLocality != nil {
+					env.Value = *testConfig.ExpectedIssuerLocality
 				}
 			}
 			break
