@@ -305,12 +305,15 @@ EOF
 function patchKymaServiceMonitorsForMTLS() {
   kymaSvcMonitors=(
     istio-component-monitor
+    monitoring-alertmanager
     monitoring-kube-state-metrics
     monitoring-operator
     monitoring-prometheus
     monitoring-prometheus-istio-server-server
+    monitoring-prometheus-node-exporter
     monitoring-prometheus-pushgateway
     tracing-metrics
+    ory-oathkeeper-maester
   )
 
   crd="servicemonitors.monitoring.coreos.com"
@@ -359,4 +362,3 @@ function removeKymaPeerAuthsForPrometheus() {
     kubectl delete ${crd} -n ${namespace} "${pa}" || true
   done
 }
-
