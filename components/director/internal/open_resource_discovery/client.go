@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
@@ -21,6 +22,18 @@ import (
 	"github.com/pkg/errors"
 )
 
+// ClientConfig contains configuration for the ORD aggregator client
+type ClientConfig struct {
+	maxParallelDocumentsPerApplication int
+}
+
+// NewClientConfig creates new ClientConfig from the supplied parameters
+func NewClientConfig(maxParallelDocumentsPerApplication int) ClientConfig {
+	return ClientConfig{
+		maxParallelDocumentsPerApplication: maxParallelDocumentsPerApplication,
+	}
+}
+
 // Client represents ORD documents client
 //go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Client interface {
@@ -28,13 +41,15 @@ type Client interface {
 }
 
 type client struct {
+	config ClientConfig
 	*http.Client
 	accessStrategyExecutorProvider accessstrategy.ExecutorProvider
 }
 
 // NewClient creates new ORD Client via a provided http.Client
-func NewClient(httpClient *http.Client, accessStrategyExecutorProvider accessstrategy.ExecutorProvider) *client {
+func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecutorProvider accessstrategy.ExecutorProvider) *client {
 	return &client{
+		config:                         config,
 		Client:                         httpClient,
 		accessStrategyExecutorProvider: accessStrategyExecutorProvider,
 	}
@@ -69,25 +84,57 @@ func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *m
 	}
 
 	docs := make([]*Document, 0)
-	for _, docDetails := range config.OpenResourceDiscoveryV1.Documents {
-		documentURL, err := buildDocumentURL(docDetails.URL, baseURL)
-		if err != nil {
-			return nil, "", errors.Wrap(err, "error building document URL")
-		}
-		strategy, ok := docDetails.AccessStrategies.GetSupported()
-		if !ok {
-			log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", documentURL)
-			continue
-		}
-		doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, tenantValue)
-		if err != nil {
-			return nil, "", errors.Wrapf(err, "error fetching ORD document from: %s", documentURL)
-		}
+	docMutex := sync.Mutex{}
+	wg := sync.WaitGroup{}
+	workers := make(chan struct{}, c.config.maxParallelDocumentsPerApplication)
+	fetchDocErrors := make([]error, 0)
+	errMutex := sync.Mutex{}
 
-		docs = append(docs, doc)
+	for _, docDetails := range config.OpenResourceDiscoveryV1.Documents {
+		wg.Add(1)
+		workers <- struct{}{}
+		go func(docDetails DocumentDetails) {
+			defer func() {
+				wg.Done()
+				<-workers
+			}()
+
+			documentURL, err := buildDocumentURL(docDetails.URL, baseURL)
+			if err != nil {
+				log.C(ctx).Warn(errors.Wrap(err, "error building document URL").Error())
+				addError(&fetchDocErrors, err, &errMutex)
+				return
+			}
+			strategy, ok := docDetails.AccessStrategies.GetSupported()
+			if !ok {
+				log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", documentURL)
+			}
+			doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, tenantValue)
+			if err != nil {
+				log.C(ctx).Warn(errors.Wrapf(err, "error fetching ORD document from: %s", documentURL).Error())
+				addError(&fetchDocErrors, err, &errMutex)
+				return
+			}
+
+			addDocument(&docs, doc, &docMutex)
+		}(docDetails)
 	}
 
-	return docs, baseURL, nil
+	wg.Wait()
+
+	var fetchDocErr error = nil
+	if len(fetchDocErrors) > 0 {
+		stringErrors := convertErrorsToStrings(fetchDocErrors)
+		fetchDocErr = errors.Errorf(strings.Join(stringErrors, "\n"))
+	}
+	return docs, baseURL, fetchDocErr
+}
+
+func convertErrorsToStrings(errors []error) (result []string) {
+	for _, err := range errors {
+		result = append(result, err.Error())
+	}
+	return result
 }
 
 func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type, tenantValue string) (*Document, error) {
@@ -124,6 +171,18 @@ func closeBody(ctx context.Context, body io.ReadCloser) {
 	if err := body.Close(); err != nil {
 		log.C(ctx).WithError(err).Warnf("Got error on closing response body")
 	}
+}
+
+func addDocument(docs *[]*Document, doc *Document, mutex *sync.Mutex) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	*docs = append(*docs, doc)
+}
+
+func addError(fetchDocErrors *[]error, err error, mutex *sync.Mutex) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	*fetchDocErrors = append(*fetchDocErrors, err)
 }
 
 func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhook *model.Webhook, tenantValue string) (*WellKnownConfig, error) {

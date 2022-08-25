@@ -1,4 +1,4 @@
-APP_NAME = compass-tests
+APP_NAME = compass-e2e-tests
 APP_PATH = tests
 LOCAL_PREFIX = k3d-kyma-registry:5001
 BUILDPACK = eu.gcr.io/kyma-project/test-infra/buildpack-golang:go1.18
@@ -28,7 +28,7 @@ e2e-test-clean:
 	@kubectl delete clustertestsuites.testing.kyma-project.io compass-e2e-tests || true
 
 deploy-tests-on-k3d:
-	docker build -t ${LOCAL_PREFIX}/compass-tests:${IMAGE_VERSION} .
-	docker push ${LOCAL_PREFIX}/compass-tests:${IMAGE_VERSION}
+	docker build -t ${LOCAL_PREFIX}/compass-e2e-tests:${IMAGE_VERSION} .
+	docker push ${LOCAL_PREFIX}/compass-e2e-tests:${IMAGE_VERSION}
 	kubectl config use-context k3d-kyma
 	$(INSTALLATION_SCRIPTS_DIR)/patch-test-definitions.sh ${IMAGE_VERSION}
