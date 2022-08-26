@@ -16,7 +16,7 @@ var destinationsSensitiveData = map[string][]byte{
         "HTML5.DynamicDestination": "true",
         "User": "usr",
         "product.name": "SAP S/4HANA Cloud",
-        "Password": "securePass",
+        "Password": "securePass"
       },
       "authTokens": [
         {
