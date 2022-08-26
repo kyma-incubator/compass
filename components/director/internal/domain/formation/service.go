@@ -354,10 +354,13 @@ func (s *service) createWebhookRequest(ctx context.Context, webhook *model.Webho
 }
 
 func (s *service) sendNotifications(ctx context.Context, notifications []*webhookclient.Request) error {
-	for _, notification := range notifications {
+	log.C(ctx).Infof("Sending %d notifications", len(notifications))
+	for i, notification := range notifications {
+		log.C(ctx).Infof("Sending notification %d out of %d for webhook with ID %s", i+1, len(notifications), notification.Webhook.ID)
 		if _, err := s.webhookClient.Do(ctx, notification); err != nil {
-			return errors.Wrapf(err, "while executing webhook with ID %s for Runtime with ID %s", notification.Webhook.ID, *notification.Webhook.RuntimeID)
+			return errors.Wrapf(err, "while executing webhook with ID %s", notification.Webhook.ID)
 		}
+		log.C(ctx).Infof("Successfully sent notification %d out of %d for webhook with %s", i+1, len(notifications), notification.Webhook.ID)
 	}
 	return nil
 }
@@ -440,9 +443,9 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		if err != nil {
 			return nil, err
 		}
-		requests, err := s.generateRuntimeNotificationsForApplicationAssignment(ctx, tnt, objectID, formationFromDB, model.UnassignFormation)
+		requests, err := s.generateNotifications(ctx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
 		if err != nil {
-			return nil, errors.Wrap(err, "while generating notifications for application unassignment")
+			return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 		}
 		err = s.sendNotifications(ctx, requests)
 		if err != nil {
@@ -577,7 +580,17 @@ func (s *service) generateApplicationNotificationsForApplicationAssignment(ctx c
 			return nil, err
 		}
 
+		appsInFormationCountExcludingAppCurrentlyAssigned := len(applicationMappingsToBeNotifiedFor)
+		if operation == model.AssignFormation {
+			appsInFormationCountExcludingAppCurrentlyAssigned -= 1
+		}
+
+		log.C(ctx).Infof("There are %d applications in formation %s. Notification will be sent about them to application with id %s that is being %s.", appsInFormationCountExcludingAppCurrentlyAssigned, formation.Name, appID, operation)
+
 		for _, sourceApp := range applicationMappingsToBeNotifiedFor {
+			if sourceApp.ID == appID {
+				continue // Do not notify about itself
+			}
 			var appTemplate *webhookdir.ApplicationTemplateWithLabels
 			if sourceApp.ApplicationTemplateID != nil {
 				appTemplate = applicationTemplatesMapping[*sourceApp.ApplicationTemplateID]
@@ -623,7 +636,7 @@ func (s *service) generateApplicationNotificationsForApplicationAssignment(ctx c
 
 	listeningAppsLabels, err := s.labelRepository.ListForObjectIDs(ctx, tenant, model.ApplicationLabelableObject, setToSlice(appIDsToBeNotified))
 	if err != nil {
-		return nil, errors.Wrap(err, "while listing runtime labels")
+		return nil, errors.Wrap(err, "while listing application labels")
 	}
 
 	listeningAppsMapping := make(map[string]*webhookdir.ApplicationWithLabels, len(listeningAppsInScenario))
@@ -662,10 +675,10 @@ func (s *service) generateApplicationNotificationsForApplicationAssignment(ctx c
 		if targetApp.ApplicationTemplateID != nil {
 			appTemplate = applicationTemplatesMapping[*targetApp.ApplicationTemplateID]
 		} else {
-			log.C(ctx).Infof("Application %s has no application template. Will proceed without application template for the target application in the input for webhook %s", targetApp.ID, webhooksToCall[appID].ID)
+			log.C(ctx).Infof("Application %s has no application template. Will proceed without application template for the target application in the input for webhook %s", targetApp.ID, webhooksToCall[targetApp.ID].ID)
 		}
 		if appTemplateWithLabels == nil {
-			log.C(ctx).Infof("Application %s has no application template. Will proceed without application template for source application in the input for webhook %s", appID, webhooksToCall[appID].ID)
+			log.C(ctx).Infof("Application %s has no application template. Will proceed without application template for source application in the input for webhook %s", appID, webhooksToCall[targetApp.ID].ID)
 		}
 		input := &webhookdir.ApplicationTenantMappingInput{
 			Operation:                 operation,
@@ -675,12 +688,14 @@ func (s *service) generateApplicationNotificationsForApplicationAssignment(ctx c
 			TargetApplicationTemplate: appTemplate,
 			TargetApplication:         targetApp,
 		}
-		req, err := s.createWebhookRequest(ctx, webhooksToCall[appID], input)
+		req, err := s.createWebhookRequest(ctx, webhooksToCall[targetApp.ID], input)
 		if err != nil {
 			return nil, err
 		}
 		requests = append(requests, req)
 	}
+
+	log.C(ctx).Infof("Total number of app-to-app notifications for application with ID %s that is being %s is %d", appID, operation, len(requests))
 
 	return requests, nil
 }
