@@ -268,6 +268,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Equal(stdT, runtimeInput.Name, rtmExt.Name)
 		stdT.Log("Director claims validation was successful")
 
+		// TODO CREATE DESTINATION (destination) for application "consumerApp" with x-system-type/x-system-id
+
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
@@ -279,6 +281,16 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Equal(stdT, 1, len(gjson.Get(respBody, "value").Array()))
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 		stdT.Log("Successfully fetched consumer application using both provider and consumer credentials")
+
+		// Make a request to the ORD service expanding destinations.
+		stdT.Log("Getting consumer application expanding bundles and destinations...")
+		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+
+			"/systemInstances?$expand=consumptionBundles($expand=destinations)&reload=true&$format=json", headers)
+		require.Equal(stdT, 1, len(gjson.Get(respBody, "value").Array()))
+		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
+		require.NotEmpty(stdT, gjson.Get(respBody, "value.0.consumptionBundles.0.destinations").Raw)
+		require.Equal(stdT, destination.Name, gjson.Get(respBody, "value.0.consumptionBundles.0.destinations.0.sensitiveData.destinationConfiguration.Name").String())
+		stdT.Log("Successfully fetched system with bundles and destinations")
 
 		subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID)
 
