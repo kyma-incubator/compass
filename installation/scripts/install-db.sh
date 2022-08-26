@@ -3,12 +3,13 @@
 set -o errexit
 
 CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
+SCRIPTS_DIR="$( cd ${CURRENT_DIR}/../scripts && pwd )"
 source $SCRIPTS_DIR/utils.sh
 
 TIMEOUT=30m0s
 
-DB_CHARTS="${CURRENT_DIR}/../../chart/localdb"
+DATA_DIR="$( cd ${SCRIPTS_DIR}/../data && pwd )"
+DB_CHARTS="$( cd ${CURRENT_DIR}/../../chart/localdb && pwd )"
 
 function cleanup_trap() {
   if [[ -f mergedOverrides.yaml ]]; then
@@ -52,23 +53,22 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 echo "Install DB"
 helm upgrade --install --wait --debug --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace compass-system localdb "${DB_CHARTS}"
 
-echo "Look for DB migrations in progress ..."
-MIGRATION_JOB_JSON=$(kubectl get job compass-migration -n compass-system --ignore-not-found -o json)
+echo "Look for DB dump in progress ..."
+DBDUMP_JOB_JSON=$(kubectl get job compass-dbdump -n compass-system --ignore-not-found -o json)
 
-if [ ! -z "$MIGRATION_JOB_JSON" ]; then
-    echo "Migration job found. Wait to complete (up to 30 minutes) ..."
-    kubectl wait --for=condition=complete job/compass-migration -n compass-system --timeout="${TIMEOUT}"
-    MIGRATION_JOB_COMPLETION_STATUS=$(kubectl get job compass-migration -n compass-system -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')
+if [ ! -z "$DBDUMP_JOB_JSON" ]; then
+    echo "DB Dump job found. Wait to complete (up to 30 minutes) ..."
+    kubectl wait --for=condition=complete job/compass-dbdump -n compass-system --timeout="${TIMEOUT}"
+    DBDUMP_JOB_COMPLETION_STATUS=$(kubectl get job compass-dbdump -n compass-system -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}')
     
-    if [ "$MIGRATION_JOB_COMPLETION_STATUS" == "True" ]; then
-        echo "Migration job was executed successfully. Cleanup cluster."
-        kubectl delete job compass-migration -n compass-system
-        kubectl delete serviceaccount dbdump-migrator-job -n compass-system
-        kubectl delete persistentvolumeclaim compass-director-migrations -n compass-system
+    if [ "$DBDUMP_JOB_COMPLETION_STATUS" == "True" ]; then
+        echo "DB Dump job was executed successfully. Cleanup cluster."
+        kubectl delete job compass-dbdump -n compass-system
+        kubectl delete serviceaccount dbdump-dbdump-job -n compass-system
     else
-        echo "Migration job was failed. Exitting."
-        MIGRATION_JOB_JSON=$(kubectl get job compass-migration -n compass-system --ignore-not-found -o json)
-        echo "Migration job: $MIGRATION_JOB_JSON"
+        echo "DB Dump job was failed. Exitting."
+        DBDUMP_JOB_JSON=$(kubectl get job compass-dbdump -n compass-system --ignore-not-found -o json)
+        echo "DB Dump job: $DBDUMP_JOB_JSON"
         exit 1
     fi
 fi

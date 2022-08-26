@@ -9,6 +9,8 @@ NC='\033[0m' # No Color
 
 CURRENT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 SCRIPTS_DIR="${CURRENT_DIR}/../scripts"
+DATA_DIR="${CURRENT_DIR}/../data"
+mkdir -p "${DATA_DIR}"
 source $SCRIPTS_DIR/utils.sh
 source $SCRIPTS_DIR/prom-mtls-patch.sh
 
@@ -47,7 +49,6 @@ do
         ;;
         --dump-db)
             DUMP_DB=true
-            DUMP_IMAGE_TAG="dump"
             shift # past argument
         ;;
         --k3d-memory)
@@ -99,8 +100,6 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 function revert_migrator_file() {
-    rm "$ROOT_PATH"/chart/localdb/charts/dbdump/templates/migrator-job.yaml
-    rm "$ROOT_PATH"/chart/localdb/charts/dbdump/templates/migrator-pvc.yaml
     echo "$UPDATE_EXPECTED_SCHEMA_VERSION_FILE" > "$ROOT_PATH"/chart/compass/templates/update-expected-schema-version-job.yaml
 }
 
@@ -122,11 +121,11 @@ function cleanup_trap() {
   fi
   if [[ ${DUMP_DB} ]]; then
       revert_migrator_file
+      rm -f "${DATA_DIR}"/dump.sql || true
   fi
   if [[ ${RESET_VALUES_YAML} ]] ; then
     set_oidc_config "" "" "$DEFAULT_OIDC_ADMIN_GROUPS"
   fi
-
   pkill -P $$ || true # This MUST be at the end of the cleanup_trap function.
 }
 
@@ -179,14 +178,6 @@ fi
 
 if [[ ${DUMP_DB} ]]; then
     echo -e "${GREEN}DB dump will be used to prepopulate installation${NC}"
-    cp ${ROOT_PATH}/chart/compass/templates/migrator-job.yaml ${ROOT_PATH}/chart/localdb/charts/dbdump/templates/migrator-job.yaml
-    cp ${ROOT_PATH}/chart/compass/templates/migrator-pvc.yaml ${ROOT_PATH}/chart/localdb/charts/dbdump/templates/migrator-pvc.yaml
-
-    if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines, reference issue: https://stackoverflow.com/questions/4247068/sed-command-with-i-option-failing-on-mac-but-works-on-linux
-        sed -i '' 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/localdb/charts/dbdump/templates/migrator-job.yaml
-    else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
-        sed -i 's/image\:.*compass-schema-migrator.*/image\: k3d-kyma-registry\:5001\/compass-schema-migrator\:'$DUMP_IMAGE_TAG'/' ${ROOT_PATH}/chart/localdb/charts/dbdump/templates/migrator-job.yaml
-    fi
 
     REMOTE_VERSIONS=($(gsutil ls -R gs://sap-cp-cmp-dev-db-dump/ | grep -o -E '[0-9]+' | sed -e 's/^0\+//' | sort -r))
     LOCAL_VERSIONS=($(ls "$SCHEMA_MIGRATOR_COMPONENT_PATH"/migrations/director | grep -o -E '^[0-9]+' | sed -e 's/^0\+//' | sort -ru))
@@ -216,12 +207,14 @@ if [[ ${DUMP_DB} ]]; then
       exit 1
     fi
 
-    if [[ ! -f ${SCHEMA_MIGRATOR_COMPONENT_PATH}/seeds/dump-${SCHEMA_VERSION}.sql ]]; then
+    if [[ ! -f ${DATA_DIR}/dump-${SCHEMA_VERSION}.sql ]]; then
         echo -e "${YELLOW}There is no dump with number: $SCHEMA_VERSION locally. Will pull the DB dump from GCR bucket...${NC}"
-        gsutil cp gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}".sql "$SCHEMA_MIGRATOR_COMPONENT_PATH"/seeds/dump-"${SCHEMA_VERSION}".sql
+        gsutil cp gs://sap-cp-cmp-dev-db-dump/dump-"${SCHEMA_VERSION}".sql "${DATA_DIR}"/dump-"${SCHEMA_VERSION}".sql
     else
         echo -e "${GREEN}DB dump already exists on the local system, will reuse it${NC}"
     fi
+    rm -f "${DATA_DIR}"/dump.sql || true
+    cp "${DATA_DIR}"/dump-"${SCHEMA_VERSION}".sql "${DATA_DIR}"/dump.sql
 fi
 
 if [[ ! ${SKIP_K3D_START} ]]; then
@@ -231,6 +224,7 @@ if [[ ! ${SKIP_K3D_START} ]]; then
   --k3s-arg '--kube-apiserver-arg=feature-gates=ServiceAccountIssuerDiscovery=true@server:*' \
   --k3d-arg='--servers-memory '"${K3D_MEMORY}" \
   --k3d-arg='--agents-memory '"${K3D_MEMORY}" \
+  --k3d-arg='--volume '"${DATA_DIR}:/dbdata" \
   --timeout "${K3D_TIMEOUT}" \
   --kube-version "${APISERVER_VERSION}"
   echo "Adding k3d registry entry to /etc/hosts..."
@@ -242,12 +236,6 @@ usek3d
 echo "Label k3d node for benchmark execution..."
 NODE=$(kubectl get nodes | grep agent | tail -n 1 | cut -d ' ' -f 1)
 kubectl label --overwrite node "$NODE" benchmark=true || true
-
-if [[ ${DUMP_DB} ]]; then
-    echo -e "${YELLOW}DUMP_DB option is selected. Building an image for the schema-migrator using local files...${NC}"
-    export DOCKER_TAG=$DUMP_IMAGE_TAG
-    make -C ${ROOT_PATH}/components/schema-migrator build-for-k3d
-fi
 
 if [[ ! ${SKIP_KYMA_START} ]]; then
   LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh --kyma-installation ${KYMA_INSTALLATION}

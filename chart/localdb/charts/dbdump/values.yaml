@@ -1,8 +1,1 @@
 global:
-  migratorJob:
-    nodeSelectorEnabled: false
-    pvc:
-      name: "compass-director-migrations"
-      namespace: "compass-system"
-      migrationsPath: "/compass-migrations"
-      storageClass: local-path
