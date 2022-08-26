@@ -544,7 +544,7 @@ func TestORDAggregator(stdT *testing.T) {
 		appTemplateName := createAppTemplateName("ORD-aggregator-test-app-template")
 		appTemplateInput := fixAppTemplateInput(appTemplateName, testConfig.ExternalServicesMockUnsecuredMultiTenantURL)
 		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplate)
 		require.NoError(t, err)
 		require.NotEmpty(t, appTemplate)
 
