@@ -3,6 +3,7 @@ package certprovider
 import (
 	"context"
 	"crypto/rsa"
+	"fmt"
 	"testing"
 	"time"
 
@@ -27,7 +28,8 @@ type ExternalCertProviderConfig struct {
 	TestExternalCertCN                    string  `envconfig:"TEST_EXTERNAL_CERT_CN"`
 	ExternalClientCertCertKey             string  `envconfig:"APP_EXTERNAL_CLIENT_CERT_KEY"`
 	ExternalClientCertKeyKey              string  `envconfig:"APP_EXTERNAL_CLIENT_KEY_KEY"`
-	ExpectedIssuerLocality                *string `envconfig:"-"`
+	ExpectedIssuerLocality                string  `envconfig:"EXTERNAL_CERT_EXPECTED_ISSUER_LOCALITY"`
+	IssuerLocalityRegion2                 *string `envconfig:"-"`
 }
 
 func NewExternalCertFromConfig(t *testing.T, ctx context.Context, testConfig ExternalCertProviderConfig) (*rsa.PrivateKey, [][]byte) {
@@ -79,8 +81,8 @@ func createExtCertJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.C
 						env.ValueFrom.SecretKeyRef.Name = testConfig.CertSvcInstanceTestRegion2SecretName // external certificate credentials used to execute consumer-provider test
 					}
 				}
-				if env.Name == "EXPECTED_ISSUER_LOCALITY" && testConfig.ExpectedIssuerLocality != nil {
-					env.Value = *testConfig.ExpectedIssuerLocality
+				if env.Name == "EXPECTED_ISSUER_LOCALITY" && testConfig.IssuerLocalityRegion2 != nil {
+					env.Value = fmt.Sprintf("%s,%s", testConfig.ExpectedIssuerLocality, *testConfig.IssuerLocalityRegion2)
 				}
 			}
 			break
