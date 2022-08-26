@@ -49,6 +49,12 @@ func UpdateApplicationWithinTenant(t require.TestingT, ctx context.Context, gqlC
 	return app, err
 }
 
+func RegisterApplicationWithApplicationType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, name, applicationTypeKey, applicationType, tenant string) (graphql.ApplicationExt, error) {
+	in := FixSampleApplicationRegisterInputWithName("first", name)
+	in.Labels[applicationTypeKey] = applicationType
+	return RegisterApplicationFromInput(t, ctx, gqlClient, tenant, in)
+}
+
 func RegisterApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, name, tenant string) (graphql.ApplicationExt, error) {
 	in := FixSampleApplicationRegisterInputWithName("first", name)
 	return RegisterApplicationFromInput(t, ctx, gqlClient, tenant, in)

@@ -50,6 +50,9 @@ func TestSensitiveDataStrip(t *testing.T) {
 
 	t.Log(fmt.Sprintf("Registering application %q", appName))
 	appInput := appWithAPIsAndEvents(appName)
+	appInput.Labels = map[string]interface{}{
+		conf.ApplicationTypeLabelKey: "SAP Cloud for Customer",
+	}
 	app, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appInput)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
 	require.NoError(t, err)

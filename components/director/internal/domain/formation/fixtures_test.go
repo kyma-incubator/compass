@@ -71,6 +71,7 @@ const (
 	Application2ID             = "6f5389cf-4f9e-46b3-9870-624d792d94ad"
 	ApplicationTemplateID      = "58963c6f-24f6-4128-a05c-51d5356e7e09"
 	runtimeType                = "runtimeType"
+	applicationType            = "applicationType"
 )
 
 func unusedLabelService() *automock.LabelService {

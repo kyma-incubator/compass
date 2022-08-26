@@ -47,6 +47,7 @@ type DirectorConfig struct {
 	ConsumerSubaccountLabelKey             string
 	SubscriptionLabelKey                   string
 	RuntimeTypeLabelKey                    string
+	ApplicationTypeLabelKey                string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
 	KymaRuntimeTypeLabelValue              string
 	ConsumerTokenURL                       string
 	ProviderClientID                       string

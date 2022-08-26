@@ -111,34 +111,44 @@ global:
       path: eu.gcr.io/kyma-project/incubator
     connector:
       dir:
-      version: "PR-2501"
+      version: "PR-2575"
+      name: compass-connector
     connectivity_adapter:
       dir:
-      version: "PR-2501"
+      version: "PR-2575"
+      name: compass-connectivity-adapter
     pairing_adapter:
       dir:
-      version: "PR-2501"
+      version: "PR-2572"
+      name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2555"
+      version: "PR-2570"
+      name: compass-director
     hydrator:
       dir:
-      version: "PR-2558"
+      version: "PR-2575"
+      name: compass-hydrator
     gateway:
       dir:
-      version: "PR-2501"
+      version: "PR-2575"
+      name: compass-gateway
     operations_controller:
       dir:
-      version: "PR-2501"
+      version: "PR-2575"
+      name: compass-operations-controller
     ord_service:
       dir:
-      version: "PR-72"
+      version: "PR-78"
+      name: compass-ord-service
     schema_migrator:
       dir:
       version: "PR-2568"
+      name: compass-schema-migrator
     system_broker:
       dir:
-      version: "PR-2501"
+      version: "PR-2575"
+      name: compass-system-broker
     certs_setup_job:
       containerRegistry:
         path: eu.gcr.io/kyma-project
@@ -146,13 +156,16 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2554"
+      version: "PR-2584"
+      name: compass-external-services-mock
     console:
       dir:
-      version: "PR-68"
+      version: "PR-71"
+      name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2556"
+      version: "PR-2584"
+      name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
   oauth2:
@@ -249,6 +262,7 @@ global:
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
     runtimeTypeLabelKey: "runtimeType"
+    applicationTypeLabelKey: "applicationType"
     kymaRuntimeTypeLabelValue: "kyma"
     fetchTenantEndpoint: '{{ printf "https://%s.%s%s/v1/fetch" .Values.global.gateway.tls.secure.internal.host .Values.global.ingress.domainName .Values.global.tenantFetcher.prefix }}'
   auditlog:
@@ -523,6 +537,9 @@ global:
     host: compass-tenant-fetcher.compass-system.svc.cluster.local
     prefix: /tenants
     port: 3000
+    xsappNamePath: "xsappname"
+    omitDependenciesParamName: ""
+    omitDependenciesParamValue: ""
     requiredAuthScope: Callback
     fetchTenantAuthScope: fetch_tenant
     authentication:
@@ -543,12 +560,19 @@ global:
       dependenciesEndpoint: "/v1/regional/{region}/dependencies"
       tenantPathParam: "tenantId"
       regionPathParam: "region"
+    dependenciesConfig:
+      secretName: "destination-region-instances"
+      file: "keyConfig"
+      path: "/cfg/dependencies"
     containerName: "tenant-fetcher"
     oauth:
       client: "client_id"
       secret: ""
       tokenURL: '{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'
       tokenPath: "/cert/token"
+    local:
+      templateMappings:
+        xsappMapping: '{{ printf "\"%s\":\"xsappname1\"" .Values.global.tenantFetcher.xsappNamePath }}'
     secret:
       name: "compass-tenant-fetcher-secret"
       clientIdKey: "client-id"
@@ -614,6 +638,7 @@ global:
   ordAggregator:
     name: ord-aggregator
     enabled: true
+    suspend: true
     schedule: "*/1 * * * *"
     http:
       client:
@@ -626,6 +651,8 @@ global:
       maxIdleConnections: 2
     globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8087/.well-known/open-resource-discovery
     maxParallelApplicationProcessors: 4
+    maxParallelDocumentsPerApplication: 10
+    containerName: "ord-aggregator"
   systemFetcher:
     enabled: false
     name: "system-fetcher"
@@ -651,7 +678,7 @@ global:
     systemsAPIFilterCriteria: ""
     # systemToTemplateMappings - how to map system properties to an existing application template
     systemToTemplateMappings: '{}'
-    templateRegion: "eu-1"
+    appTemplates: []
     templatePlaceholderToSystemKeyMappings: '[{"placeholder_name": "name","system_key": "displayName"},{"placeholder_name": "display-name","system_key": "displayName"},{"placeholder_name": "systemNumber","system_key": "systemNumber"},{"placeholder_name": "productId","system_key": "productId"},{"placeholder_name": "ppmsProductVersionId","system_key": "ppmsProductVersionId"},{"placeholder_name": "description","system_key": "productDescription", "optional": true},{"placeholder_name": "baseUrl","system_key": "additionalUrls.mainUrl", "optional":true},{"placeholder_name": "providerName","system_key": "infrastructureProvider", "optional": true}]'
     templateOverrideApplicationInput: '{"name": "{{name}}","description": "{{description}}","providerName": "{{providerName}}","statusCondition": "INITIAL","systemNumber": "{{systemNumber}}","labels": {"managed": "true","productId": "{{productId}}","ppmsProductVersionId": "{{ppmsProductVersionId}}"},"baseUrl": "{{baseUrl}}"}'
     http:
@@ -792,6 +819,8 @@ global:
       externalCertIntSystemCN: "integration-system-test"
     tenantFetcher:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
+      region: "eu-1"
+      region2: "eu-2"
     ordAggregator:
       skipPattern: ""
     ordService:
