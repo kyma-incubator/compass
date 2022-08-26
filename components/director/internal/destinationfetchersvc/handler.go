@@ -3,9 +3,10 @@ package destinationfetchersvc
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"net/http"
 )
 
 // HandlerConfig destination handler configuration
