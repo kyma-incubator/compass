@@ -805,7 +805,8 @@ func createDirectorCertClientForAnotherRegion(t *testing.T, ctx context.Context)
 		TestExternalCertSubject:               conf.ExternalCertProviderConfig.TestExternalCertSubjectRegion2,
 		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
 		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
-		ExpectedIssuerLocality:                &conf.SubscriptionConfig.SelfRegRegion2,
+		ExpectedIssuerLocality:                conf.ExternalCertProviderConfig.ExpectedIssuerLocality,
+		IssuerLocalityRegion2:                 &conf.SubscriptionConfig.SelfRegRegion2,
 	}
 	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig)
 	return gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)

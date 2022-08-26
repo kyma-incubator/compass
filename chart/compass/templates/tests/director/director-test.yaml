@@ -117,6 +117,8 @@ spec:
               value: {{ .Values.global.tests.subscription.certSvcInstanceTestRegion2SecretName }}
             - name: EXTERNAL_CERT_CRONJOB_CONTAINER_NAME
               value: {{ .Values.global.externalCertConfiguration.rotationCronjob.containerName }}
+            - name: EXTERNAL_CERT_EXPECTED_ISSUER_LOCALITY
+              value: {{ .Values.global.externalCertConfiguration.issuerLocality }}
             - name: APP_RUNTIME_TYPE_LABEL_KEY
               value: {{ .Values.global.director.runtimeTypeLabelKey }}
             - name: APP_KYMA_RUNTIME_TYPE_LABEL_VALUE
