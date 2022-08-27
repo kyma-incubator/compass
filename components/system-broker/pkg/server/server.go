@@ -47,11 +47,16 @@ func New(c *Config, middlewares []mux.MiddlewareFunc, routesProvider ...func(rou
 
 	router := mux.NewRouter()
 
-	router.Handle("/healthz", s.livenessHandler())
-	router.Handle("/readyz", s.readinessHandler())
+	const (
+		healthzEndpoint = "/healthz"
+		readyzEndpoint  = "/readyz"
+	)
+
+	router.Handle(healthzEndpoint, s.livenessHandler())
+	router.Handle(readyzEndpoint, s.readinessHandler())
 
 	router.Use(correlation.AttachCorrelationIDToContext())
-	router.Use(log.RequestLogger())
+	router.Use(log.RequestLogger(healthzEndpoint, readyzEndpoint))
 	router.Use(panic_recovery.NewRecoveryMiddleware())
 
 	for _, m := range middlewares {

@@ -294,9 +294,14 @@ func stopTenantFetcherJobTicker(ctx context.Context, tenantFetcherJobTicker *tim
 }
 
 func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, transact persistence.Transactioner) http.Handler {
+	const (
+		healthzEndpoint = "/healthz"
+		readyzEndpoint  = "/readyz"
+	)
+
 	logger := log.C(ctx)
 	mainRouter := mux.NewRouter()
-	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
+	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint, readyzEndpoint))
 
 	tenantsAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, tenantsAPIRouter, cfg.SecurityConfig, cfg.SecurityConfig.SubscriptionCallbackScope)
@@ -308,9 +313,9 @@ func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, tr
 
 	healthCheckRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
 	logger.Infof("Registering readiness endpoint...")
-	healthCheckRouter.HandleFunc("/readyz", newReadinessHandler())
+	healthCheckRouter.HandleFunc(readyzEndpoint, newReadinessHandler())
 	logger.Infof("Registering liveness endpoint...")
-	healthCheckRouter.HandleFunc("/healthz", newReadinessHandler())
+	healthCheckRouter.HandleFunc(healthzEndpoint, newReadinessHandler())
 
 	return mainRouter
 }
