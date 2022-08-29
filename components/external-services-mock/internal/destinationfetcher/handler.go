@@ -1,9 +1,10 @@
 package destinationfetcher
 
 import (
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"net/http"
 )
 
 type Handler struct{}
