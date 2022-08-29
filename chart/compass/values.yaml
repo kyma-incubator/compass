@@ -179,6 +179,9 @@ global:
     timeoutSeconds: 1
     periodSeconds: 2
   agentPreconfiguration: false
+  portieris:
+    isEnabled: false
+    imagePullSecretName: "compass"
   nsAdapter:
     external:
       port: 3005

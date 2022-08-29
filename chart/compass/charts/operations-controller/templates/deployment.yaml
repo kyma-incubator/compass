@@ -23,6 +23,10 @@ spec:
         control-plane: controller-manager
     spec:
       serviceAccountName: {{ template "fullname" . }}
+      {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+        - name: .Values.global.portieris.imagePullSecretName
+      {{ end }}
       containers:
       - args:
         - --secure-listen-address=0.0.0.0:8443
