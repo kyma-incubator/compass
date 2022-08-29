@@ -7,11 +7,6 @@ metadata:
     app: {{ .Chart.Name }}
     reqlimit: big
     release: {{ .Release.Name }}
-  {{- if .Values.global.isLocalEnv }}
-  annotations:
-    "helm.sh/hook": post-install,post-upgrade
-    "helm.sh/hook-weight": "0"
-  {{- end }}
 spec:
   replicas: {{ .Values.deployment.minReplicas }}
   selector:

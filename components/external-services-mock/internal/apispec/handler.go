@@ -11,6 +11,13 @@ import (
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 )
 
+const (
+	JSONFormat       = "json"
+	YAMLFormat       = "yaml"
+	XMLFormat        = "xml"
+	formatQueryParam = "format"
+)
+
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 func randString(n int) []byte {
@@ -21,16 +28,12 @@ func randString(n int) []byte {
 	return b
 }
 
-func randSpec() []byte {
-	return []byte(fmt.Sprintf(specTemplate, randString(10)))
+func randSpec(spec string) []byte {
+	return []byte(fmt.Sprintf(spec, randString(10)))
 }
 
 func HandleFunc(rw http.ResponseWriter, req *http.Request) {
-	rw.WriteHeader(http.StatusOK)
-	_, err := rw.Write(randSpec())
-	if err != nil {
-		httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
-	}
+	handleResp(rw, req)
 }
 
 func FlappingHandleFunc() func(rw http.ResponseWriter, req *http.Request) {
@@ -49,11 +52,30 @@ func FlappingHandleFunc() func(rw http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		rw.WriteHeader(http.StatusOK)
-		_, err := rw.Write(randSpec())
-		if err != nil {
-			httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
-		}
+		handleResp(rw, req)
+	}
+}
 
+func handleResp(rw http.ResponseWriter, req *http.Request) {
+	formatQueryParamValue := req.URL.Query().Get(formatQueryParam)
+
+	var err error
+	switch formatQueryParamValue {
+	case JSONFormat:
+		rw.WriteHeader(http.StatusOK)
+		_, err = rw.Write(randSpec(specJSONTemplate))
+	case XMLFormat:
+		rw.WriteHeader(http.StatusOK)
+		_, err = rw.Write(randSpec(specXMLTemplate))
+	case YAMLFormat:
+		rw.WriteHeader(http.StatusOK)
+		_, err = rw.Write(randSpec(specYAMLTemplate))
+	default:
+		httphelpers.WriteError(rw, errors.Errorf("Request query parameter %q is not provided. Provide one of the following: %q, %q, %q", formatQueryParam, JSONFormat, YAMLFormat, XMLFormat), http.StatusInternalServerError)
+		return
+	}
+
+	if err != nil {
+		httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
 	}
 }

@@ -8,6 +8,7 @@ global:
 #   imagePullSecrets:
 #     - myRegistryKeySecretName
 
+
 ## Bitnami PostgreSQL image version
 ## ref: https://hub.docker.com/r/bitnami/postgresql/tags/
 ##

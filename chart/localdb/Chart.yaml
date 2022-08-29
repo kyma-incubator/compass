@@ -1,0 +1,4 @@
+apiVersion: v1
+description: Local DB
+name: localdb
+version: 0.1.0
