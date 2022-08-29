@@ -201,4 +201,4 @@ spec:
       volumes:
         - name: instances
           secret:
-            secretName: {{ .Values.global.destinationFetcher.dependenciesConfig.secretName }}
+            secretName: {{ .Values.global.destinationRegionSecret.secretName }}
