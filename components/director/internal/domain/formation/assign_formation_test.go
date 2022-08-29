@@ -3442,7 +3442,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "error while generation app-to-app notifications: webhook convertion fails",
+			Name: "error while generation app-to-app notifications: webhook conversion fails",
 			UIDServiceFn: func() *automock.UuidService {
 				uidService := &automock.UuidService{}
 				uidService.On("Generate").Return(fixUUID())
@@ -3788,7 +3788,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "error while generation app-to-app notifications: self webhook convertion fails",
+			Name: "error while generation app-to-app notifications: self webhook conversion fails",
 			UIDServiceFn: func() *automock.UuidService {
 				uidService := &automock.UuidService{}
 				uidService.On("Generate").Return(fixUUID())
