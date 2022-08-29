@@ -22,7 +22,7 @@ spec:
         reqlimit: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit2MBLabel }}
         release: {{ .Release.Name }}
     spec:
-      {{ if eq .Values.global.portieris.isEnabled true}}
+      {{ if eq .Values.global.portieris.isEnabled true }}
       imagePullSecrets:
       - name: .Values.global.portieris.imagePullSecretName
       {{ end }}
