@@ -1,0 +1,8 @@
+global:
+  tests:
+    namespace: kyma-system
+  database:
+    embedded:
+      director:
+        name: "postgres"
+      directorDBName: "postgres"
