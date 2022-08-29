@@ -29,7 +29,7 @@ helm-broker:
     resources:
       limits:
         memory: 256Mi
-istio-configuration:
+istio:
   components:
     egressGateways:
       enabled: false
@@ -106,7 +106,6 @@ istio-configuration:
       enabled: true
   helmValues:
     global:
-      jwtPolicy: first-party-jwt
       proxy:
         resources:
           limits:
