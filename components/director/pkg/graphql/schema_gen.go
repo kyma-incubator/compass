@@ -185,6 +185,7 @@ type ComplexityRoot struct {
 	Bundle struct {
 		APIDefinition                  func(childComplexity int, id string) int
 		APIDefinitions                 func(childComplexity int, group *string, first *int, after *PageCursor) int
+		CorrelationIDs                 func(childComplexity int) int
 		CreatedAt                      func(childComplexity int) int
 		DefaultInstanceAuth            func(childComplexity int) int
 		DeletedAt                      func(childComplexity int) int
@@ -657,6 +658,7 @@ type BundleResolver interface {
 	Documents(ctx context.Context, obj *Bundle, first *int, after *PageCursor) (*DocumentPage, error)
 	APIDefinition(ctx context.Context, obj *Bundle, id string) (*APIDefinition, error)
 	EventDefinition(ctx context.Context, obj *Bundle, id string) (*EventDefinition, error)
+	CorrelationIDs(ctx context.Context, obj *Bundle) ([]string, error)
 	Document(ctx context.Context, obj *Bundle, id string) (*Document, error)
 }
 type DocumentResolver interface {
@@ -1414,6 +1416,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Bundle.APIDefinitions(childComplexity, args["group"].(*string), args["first"].(*int), args["after"].(*PageCursor)), true
+
+	case "Bundle.correlationIDs":
+		if e.complexity.Bundle.CorrelationIDs == nil {
+			break
+		}
+
+		return e.complexity.Bundle.CorrelationIDs(childComplexity), true
 
 	case "Bundle.createdAt":
 		if e.complexity.Bundle.CreatedAt == nil {
@@ -4589,6 +4598,7 @@ input BundleCreateInput {
 	apiDefinitions: [APIDefinitionInput!]
 	eventDefinitions: [EventDefinitionInput!]
 	documents: [DocumentInput!]
+	correlationIDs: [String!]
 }
 
 input BundleInstanceAuthRequestInput {
@@ -5091,6 +5101,7 @@ type Bundle {
 	documents(first: Int = 200, after: PageCursor): DocumentPage
 	apiDefinition(id: ID!): APIDefinition
 	eventDefinition(id: ID!): EventDefinition
+	correlationIDs: [String!]
 	document(id: ID!): Document
 	createdAt: Timestamp
 	updatedAt: Timestamp
@@ -11831,6 +11842,37 @@ func (ec *executionContext) _Bundle_eventDefinition(ctx context.Context, field g
 	res := resTmp.(*EventDefinition)
 	fc.Result = res
 	return ec.marshalOEventDefinition2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐEventDefinition(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Bundle_correlationIDs(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Bundle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Bundle().CorrelationIDs(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Bundle_document(ctx context.Context, field graphql.CollectedField, obj *Bundle) (ret graphql.Marshaler) {
@@ -26747,6 +26789,12 @@ func (ec *executionContext) unmarshalInputBundleCreateInput(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
+		case "correlationIDs":
+			var err error
+			it.CorrelationIDs, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -28746,6 +28794,17 @@ func (ec *executionContext) _Bundle(ctx context.Context, sel ast.SelectionSet, o
 					}
 				}()
 				res = ec._Bundle_eventDefinition(ctx, field, obj)
+				return res
+			})
+		case "correlationIDs":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Bundle_correlationIDs(ctx, field, obj)
 				return res
 			})
 		case "document":
