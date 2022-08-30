@@ -62,6 +62,10 @@ spec:
       serviceAccountName: update-expected-schema-version
       restartPolicy: Never
       shareProcessNamespace: true
+    {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+      - name: .Values.global.portieris.imagePullSecretName
+    {{ end }}
       containers:
       - name: editor
         image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.schema_migrator.dir }}compass-schema-migrator:{{ .Values.global.images.schema_migrator.version }}
