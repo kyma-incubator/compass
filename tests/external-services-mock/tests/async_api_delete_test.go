@@ -132,7 +132,7 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
 		registerTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplateInputGQL)
 		appTemplate := graphql.ApplicationTemplate{}
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, registerTemplateRequest, &appTemplate)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplate)
 		require.NoError(t, err)
 
 		require.Len(t, appTemplate.Webhooks, 1)
@@ -157,7 +157,7 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
 		registerAppRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTemplateInputGQL)
 		app := graphql.ApplicationExt{}
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, registerAppRequest, &app)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplate)
 		require.NoError(t, err)
 
 		require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
@@ -206,7 +206,7 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 		registerTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplateInputGQL)
 		appTemplate := graphql.ApplicationTemplate{}
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, registerTemplateRequest, &appTemplate)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &appTemplate)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appTemplate)
 		require.NoError(t, err)
 
 		require.Len(t, appTemplate.Webhooks, 1)

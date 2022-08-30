@@ -102,7 +102,7 @@ func TestIntegrationSystemAccess(t *testing.T) {
 			appTemplateName := createAppTemplateName(name)
 			appTmplInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
 			at, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertSecuredClient, test.tenant, appTmplInput)
-			defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, test.tenant, &at)
+			defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, test.tenant, at)
 			if test.expectErr {
 				require.Error(t, err)
 			} else {

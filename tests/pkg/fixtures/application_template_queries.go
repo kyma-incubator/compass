@@ -43,8 +43,8 @@ func DeleteApplicationTemplate(t require.TestingT, ctx context.Context, gqlClien
 	require.NoError(t, err)
 }
 
-func CleanupApplicationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, appTemplate *graphql.ApplicationTemplate) {
-	if appTemplate == nil || appTemplate.ID == "" {
+func CleanupApplicationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, appTemplate graphql.ApplicationTemplate) {
+	if appTemplate.ID == "" {
 		return
 	}
 	req := FixDeleteApplicationTemplateRequest(appTemplate.ID)

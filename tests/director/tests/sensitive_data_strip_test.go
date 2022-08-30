@@ -30,7 +30,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 	appTmpInput := fixAppTemplateWithWebhookInput(appTemplateName)
 
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmpInput)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTemplate)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate)
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplate.ID)
 

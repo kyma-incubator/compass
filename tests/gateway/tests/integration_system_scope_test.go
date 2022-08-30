@@ -73,7 +73,7 @@ func TestIntegrationSystemScenario(t *testing.T) {
 			AccessLevel:  "GLOBAL",
 		}
 		appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appTplInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, &appTpl)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, appTpl)
 		require.NoError(t, err)
 		require.NotEmpty(t, appTpl.ID)
 
