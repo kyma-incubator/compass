@@ -21,6 +21,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/compass/tests/pkg/destination"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
@@ -66,6 +67,8 @@ type config struct {
 	TestConsumerSubaccountID         string
 	TestConsumerTenantID             string
 	ApplicationTypeLabelKey          string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
+	DestinationAPIConfig             destination.APIConfig
+	DestinationConfig                destination.Config
 }
 
 var conf config
@@ -74,6 +77,12 @@ func TestMain(m *testing.M) {
 	err := envconfig.Init(&conf)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while initializing envconfig"))
+	}
+
+	err = conf.DestinationConfig.MapInstanceConfigs()
+	if err != nil {
+		log.D().Fatal(errors.Wrap(err, "while loading destination instances config"))
+
 	}
 
 	tenant.TestTenants.Init()
