@@ -48,8 +48,8 @@ spec:
           secretName: {{ .Values.global.tenantFetcher.dependenciesConfig.secretName }}
       containers:
         - name: {{ .Chart.Name }}
-          image: k3d-kyma-registry:5001/compass-director:latest
-          imagePullPolicy: Always
+          image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
+          imagePullPolicy: {{ .Values.deployment.image.pullPolicy }}
           command:
             - "/bin/sh"
           args:
