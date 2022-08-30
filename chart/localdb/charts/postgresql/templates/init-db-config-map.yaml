@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "fullname" . }}-db-init
+  name: {{ template "postgresql.fullname" . }}-db-init
 data:
   init-director-db.sql: |
-    CREATE DATABASE {{ .Values.global.database.embedded.director.name }};
+    CREATE DATABASE postgres;

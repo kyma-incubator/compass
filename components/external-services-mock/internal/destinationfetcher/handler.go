@@ -119,7 +119,10 @@ func (h *Handler) GetSubaccountDestinationsPage(writer http.ResponseWriter, req 
 	}
 
 	if len(destinations) == 0 {
-		writer.Write([]byte("[]"))
+		if _, err := writer.Write([]byte("[]")); err != nil {
+			log.C(ctx).WithError(err).Errorf("Failed to write data")
+			http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
+		}
 		return
 	}
 

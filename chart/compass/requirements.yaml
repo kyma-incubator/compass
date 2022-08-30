@@ -1,6 +1,4 @@
 dependencies:
-- name: postgresql
-  condition: global.database.embedded.enabled
 - name: pairing-adapter
   condition: pairing-adapter.enabled
 - name: external-services-mock

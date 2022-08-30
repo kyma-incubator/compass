@@ -61,7 +61,7 @@ ory:
             config:
               jwks_urls:
                 -  ${IDP_JWKS_URL}
-istio-configuration:
+istio:
    components:
       ingressGateways:
          config:
@@ -102,7 +102,7 @@ global:
       pvc:
          storageClass: ${ANY_SUPPORTED_STORAGE_CLASS}
    kubernetes:
-      serviceAccountTokenIssuer: ${TOKEN_ISSUER} # Default is kubernetes/serviceaccount 
+      serviceAccountTokenIssuer: ${TOKEN_ISSUER} # Default is https://kubernetes.default.svc.cluster.local
       serviceAccountTokenJWKS: ${JWKS_ENDPOINT} # Default is https://kubernetes.default.svc.cluster.local/openid/v1/jwks
    loadBalancerIP: ${LOAD_BALANCER_SERVICE_EXTERNAL_IP}
    cockpit:
@@ -119,7 +119,12 @@ global:
 #      tlsKey: ${TLS_KEY}
 ```
 
-And then start the Compass installation by using the following command:
+Start the Database installation by using the following command:
+
+```bash
+<script from ../../installation/scripts/install-db.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
+```
+Once the Database is provisioned procced and start the Compass installation by using the following command:
 
 ```bash
 <script from ../../installation/scripts/install-compass.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
@@ -318,7 +323,7 @@ ory:
             config:
               jwks_urls:
                 -  ${IDP_JWKS_URL}
-istio-configuration:
+istio:
    components:
       ingressGateways:
          config:
@@ -359,7 +364,7 @@ global:
       pvc:
          storageClass: ${ANY_SUPPORTED_STORAGE_CLASS}
    kubernetes:
-     serviceAccountTokenIssuer: ${TOKEN_ISSUER} # Default is kubernetes/serviceaccount 
+     serviceAccountTokenIssuer: ${TOKEN_ISSUER} # Default is https://kubernetes.default.svc.cluster.local
      serviceAccountTokenJWKS: ${JWKS_ENDPOINT} # Default is https://kubernetes.default.svc.cluster.local/openid/v1/jwks
    loadBalancerIP: ${LOAD_BALANCER_SERVICE_EXTERNAL_IP}
    cockpit:
@@ -375,7 +380,11 @@ global:
 #      tlsCrt: ${TLS_CERT}
 #      tlsKey: ${TLS_KEY}
 ```
-
+Start Database installation:
+```bash
+<script from ../../installation/scripts/install-db.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
+```
+Then, install compass component:
 ```bash
 <script from ../../installation/scripts/install-compass.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
 ```
