@@ -29,7 +29,10 @@ func (h *Handler) GetSensitiveData(writer http.ResponseWriter, req *http.Request
 	}
 }
 
-func (h *Handler) GetSubaccountDestinationsPage(writer http.ResponseWriter, _ *http.Request) {
+func (h *Handler) GetSubaccountDestinationsPage(writer http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
 	writer.Header().Set("Page-Count", "1")
-	writer.Write(destinations)
+	if _, err := writer.Write(destinations); err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to write data")
+	}
 }
