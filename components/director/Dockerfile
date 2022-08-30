@@ -101,7 +101,7 @@ RUN apk --no-cache add curl ca-certificates
 
 COPY --from=director-builder /app/director /app/director
 COPY --from=ns-adapter-builder /app/ns-adapter /app/ns-adapter
-COPY --from=tenantfetcher-builder /app/tenantfetcher /app/tenantfetcher
+COPY --from=tenantfetcher-svc-builder /app/tenantfetcher /app/tenantfetcher
 COPY --from=tenantloader-builder /app/tenantloader /app/tenantloader
 COPY --from=ordaggregator-builder /app/ordaggregator /app/ordaggregator
 COPY --from=scopessynchronizer-builder /app/scopessynchronizer /app/scopessynchronizer
