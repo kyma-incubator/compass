@@ -1528,7 +1528,7 @@ func TestMergeApplications(t *testing.T) {
 
 	// Create Application Template
 	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantId, appTmplInput)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, &appTmpl)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, appTmpl)
 	require.NoError(t, err)
 
 	appFromTmplSrc := graphql.ApplicationFromTemplateInput{
@@ -1710,7 +1710,7 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 
 	// Create Application Template
 	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTmpl)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTmpl)
 	require.NoError(t, err)
 	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
 

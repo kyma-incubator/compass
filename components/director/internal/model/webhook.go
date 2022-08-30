@@ -45,6 +45,8 @@ type WebhookType string
 const (
 	// WebhookTypeConfigurationChanged represents a webhook that is called when a configuration is changed.
 	WebhookTypeConfigurationChanged WebhookType = "CONFIGURATION_CHANGED"
+	// WebhookTypeApplicationTenantMapping represents a webhook that is called for app to app notifications for formation changes.
+	WebhookTypeApplicationTenantMapping WebhookType = "APPLICATION_TENANT_MAPPING"
 	// WebhookTypeRegisterApplication represents a webhook that is called when an application is registered.
 	WebhookTypeRegisterApplication WebhookType = "REGISTER_APPLICATION"
 	// WebhookTypeDeleteApplication represents a webhook that is called when an application is deleted.
