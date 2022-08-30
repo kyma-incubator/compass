@@ -59,7 +59,7 @@ type TenantRepo interface {
 type DestinationService struct {
 	Transactioner      persistence.Transactioner
 	UUIDSvc            UUIDService
-	Repo               DestinationRepo
+	DestinationRepo    DestinationRepo
 	BundleRepo         BundleRepo
 	LabelRepo          LabelRepo
 	DestinationsConfig config.DestinationsConfig
@@ -182,7 +182,7 @@ func (d *DestinationService) transaction(ctx context.Context, dbCalls func(ctxWi
 
 func (d *DestinationService) deleteMissingDestinations(ctx context.Context, revision, tenant string) error {
 	return d.transaction(ctx, func(ctxWithTransact context.Context) error {
-		if err := d.Repo.DeleteOld(ctxWithTransact, revision, tenant); err != nil {
+		if err := d.DestinationRepo.DeleteOld(ctxWithTransact, revision, tenant); err != nil {
 			log.C(ctxWithTransact).WithError(err).Errorf("Failed to delete removed destinations for tenant '%s'", tenant)
 		}
 		return nil
@@ -220,7 +220,7 @@ func (d *DestinationService) mapDestinationsToTenant(ctx context.Context, tenant
 
 			for _, bundle := range bundles {
 				id := d.UUIDSvc.Generate()
-				if err := d.Repo.Upsert(ctxWithTransact, destination, id, tenant, bundle.ID, revision); err != nil {
+				if err := d.DestinationRepo.Upsert(ctxWithTransact, destination, id, tenant, bundle.ID, revision); err != nil {
 					log.C(ctxWithTransact).WithError(err).Errorf(
 						"Failed to insert destination with name '%s' for bundle '%s' and tenant '%s' to DB",
 						destination.Name, bundle.ID, tenant)

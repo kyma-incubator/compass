@@ -169,7 +169,7 @@ func TestService_SyncTenantDestinations(t *testing.T) {
 			destSvc := destinationfetchersvc.DestinationService{
 				Transactioner:      tx,
 				UUIDSvc:            uuidService,
-				Repo:               destRepo,
+				DestinationRepo:    destRepo,
 				BundleRepo:         bundleRepo,
 				LabelRepo:          labelRepo,
 				TenantRepo:         tenantRepo,
@@ -253,7 +253,7 @@ func TestService_FetchDestinationsSensitiveData(t *testing.T) {
 			destSvc := destinationfetchersvc.DestinationService{
 				Transactioner:      tx,
 				UUIDSvc:            uuidService,
-				Repo:               destRepo,
+				DestinationRepo:    destRepo,
 				BundleRepo:         bundleRepo,
 				TenantRepo:         tenantRepo,
 				LabelRepo:          labelRepo,
@@ -341,7 +341,7 @@ func TestService_GetSubscribedTenantIDs(t *testing.T) {
 			destSvc := destinationfetchersvc.DestinationService{
 				Transactioner:      tx,
 				UUIDSvc:            uuidService,
-				Repo:               destRepo,
+				DestinationRepo:    destRepo,
 				BundleRepo:         bundleRepo,
 				TenantRepo:         tenantRepo,
 				LabelRepo:          labelRepo,
