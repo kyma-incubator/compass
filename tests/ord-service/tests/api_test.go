@@ -685,7 +685,7 @@ func TestORDService(t *testing.T) {
 		appTmplInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = []interface{}{conf.SubscriptionConfig.SelfRegDistinguishLabelValue}
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTmplInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, &appTmpl)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTmpl)
 		require.NoError(t, err)
 
 		appFromTmpl := directorSchema.ApplicationFromTemplateInput{

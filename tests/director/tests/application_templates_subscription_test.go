@@ -60,7 +60,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		appTemplateInput := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), &appTmpl)
+		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, appTmpl.ID)
 		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])

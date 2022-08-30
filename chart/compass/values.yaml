@@ -143,7 +143,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2568"
+      version: "PR-2588"
       name: compass-schema-migrator
     system_broker:
       dir:
@@ -164,7 +164,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2584"
+      version: "PR-2588"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false

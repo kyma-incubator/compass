@@ -50,7 +50,7 @@ func TestGettingTokenWithMTLSWorks(t *testing.T) {
 
 		appTemplate = createAppTemplate(t, ctx, defaultTestTenant, newIntSys.ID, templateName, namePlaceholderKey, displayNamePlaceholderKey)
 		defer func() {
-			fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, appTemplate)
+			fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, defaultTestTenant, *appTemplate)
 		}()
 	}
 
