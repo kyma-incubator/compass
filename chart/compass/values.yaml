@@ -181,7 +181,7 @@ global:
   agentPreconfiguration: false
   portieris:
     isEnabled: false
-    imagePullSecretName: "compass"
+    imagePullSecretName: "portieris-dummy-image-pull-secret"
   nsAdapter:
     external:
       port: 3005
