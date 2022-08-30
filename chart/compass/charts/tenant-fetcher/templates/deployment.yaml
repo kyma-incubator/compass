@@ -39,10 +39,10 @@ spec:
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
-      {{ if eq .Values.global.portieris.isEnabled true }}
+    {{ if eq .Values.global.portieris.isEnabled true }}
       imagePullSecrets:
-        - name: .Values.global.portieris.imagePullSecretName
-      {{ end }}
+      - name: .Values.global.portieris.imagePullSecretName
+    {{ end }}
       volumes:
       - name: dependencies-config
         secret:

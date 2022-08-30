@@ -25,7 +25,7 @@ spec:
       serviceAccountName: {{ template "fullname" . }}
       {{ if eq .Values.global.portieris.isEnabled true }}
       imagePullSecrets:
-        - name: .Values.global.portieris.imagePullSecretName
+      - name: .Values.global.portieris.imagePullSecretName
       {{ end }}
       containers:
       - args:
