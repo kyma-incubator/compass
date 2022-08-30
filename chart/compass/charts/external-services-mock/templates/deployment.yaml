@@ -138,6 +138,10 @@ spec:
                 value: {{ .Values.global.hydrator.consumerClaimsKeys.tenantIDKey }}
               - name: APP_TENANT_CONFIG_CONSUMER_CLAIMS_SUBDOMAIN_KEY
                 value: {{ .Values.global.hydrator.consumerClaimsKeys.subdomainKey }}
+              - name: APP_DESTINATION_TENANT_ENDPOINT
+                value: {{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}
+              - name: APP_DESTINATION_SENSITIVE_DATA_ENDPOINT
+                value: {{ .Values.global.destinationFetcher.server.sensitiveDataEndpoint }}
               ports:
               - name: http
                 containerPort: {{ .Values.deployment.port }}
