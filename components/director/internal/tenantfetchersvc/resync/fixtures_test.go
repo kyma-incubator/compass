@@ -16,19 +16,18 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-func fixTenantEventsResponse(events []byte, total, pages int) resync.EventsPage {
+func fixTenantEventsResponse(events []byte, total, pages int, fieldMapping resync.TenantFieldMapping, mvSAFieldMapping resync.MovedSubaccountsFieldMapping, provider string) *resync.EventsPage {
 	response := fmt.Sprintf(`{
 		"events":       %s,
 		"total": %d,
 		"pages":   %d,
 	}`, string(events), total, pages)
-	return resync.EventsPage{
-		FieldMapping:                 resync.TenantFieldMapping{},
-		MovedSubaccountsFieldMapping: resync.MovedSubaccountsFieldMapping{},
-		ProviderName:                 "",
+	return &resync.EventsPage{
+		FieldMapping:                 fieldMapping,
+		MovedSubaccountsFieldMapping: mvSAFieldMapping,
+		ProviderName:                 provider,
 		Payload:                      []byte(response),
 	}
-
 }
 
 func fixEvent(t require.TestingT, eventType, ga string, fields map[string]string) []byte {

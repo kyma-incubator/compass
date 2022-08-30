@@ -49,7 +49,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 	jobCfg := resync.JobConfig{
 		TenantProvider: provider,
 		EventsConfig: resync.EventsConfig{
-			RegionalAPIConfigs: map[string]*resync.RegionalAPIConfig{region: {RegionName: region}},
+			RegionalAPIConfigs: map[string]*resync.EventsAPIConfig{region: {RegionName: region}},
 		},
 		ResyncConfig: resync.ResyncConfig{FullResyncInterval: time.Hour},
 	}
@@ -59,14 +59,14 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 	deletedAccountTenant := model.BusinessTenantMappingInput{ExternalTenant: deletedTenantID}
 	emptyTenantsResult := make([]model.BusinessTenantMappingInput, 0)
 
-	kubeClientWithResyncTsWithUpdateFn := func() *automock.KubeClient {
+	kubeClientFn := func() *automock.KubeClient {
 		client := &automock.KubeClient{}
 		client.On("GetTenantFetcherConfigMapData", ctx).Return(lastConsumedTenantTimestamp, lastResyncTimestamp, nil)
 		client.On("UpdateTenantFetcherConfigMapData", ctx, mock.Anything, mock.Anything).Return(nil)
 		return client
 	}
 
-	kubeClientWithResyncTsFn := func() *automock.KubeClient {
+	kubeClientWithResyncTimestampFn := func() *automock.KubeClient {
 		client := &automock.KubeClient{}
 		client.On("GetTenantFetcherConfigMapData", ctx).Return(lastConsumedTenantTimestamp, lastResyncTimestamp, nil)
 		return client
@@ -117,7 +117,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 				svc.On("DeleteTenants", ctx, []model.BusinessTenantMappingInput{deletedAccountTenant}).Return(nil)
 				return svc
 			},
-			KubeClientFn: kubeClientWithResyncTsWithUpdateFn,
+			KubeClientFn: kubeClientFn,
 		},
 		{
 			Name:               "Success when no new events are present",
@@ -139,7 +139,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
-			KubeClientFn: kubeClientWithResyncTsWithUpdateFn,
+			KubeClientFn: kubeClientFn,
 		},
 		{
 			Name:            "Tenant is not created when both create and delete events are present for the same unknown tenant",
@@ -161,7 +161,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return([]model.BusinessTenantMappingInput{deletedAccountTenant}, nil)
 				return svc
 			},
-			KubeClientFn: kubeClientWithResyncTsWithUpdateFn,
+			KubeClientFn: kubeClientFn,
 		},
 		{
 			Name:            "Parent tenant is also created when tenant from create event has unknown parent",
@@ -198,7 +198,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
-			KubeClientFn: kubeClientWithResyncTsWithUpdateFn,
+			KubeClientFn: kubeClientFn,
 		},
 		{
 			Name:            "Child tenant is correctly associated with internal ID of parent when parent is pre-existing",
@@ -236,7 +236,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
-			KubeClientFn: kubeClientWithResyncTsWithUpdateFn,
+			KubeClientFn: kubeClientFn,
 		},
 		{
 			Name:               "Fails when fetching created tenants returns an error",
@@ -250,7 +250,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 			},
 			TenantMoverFn:   func() *automock.TenantMover { return &automock.TenantMover{} },
 			TenantDeleterFn: func() *automock.TenantDeleter { return &automock.TenantDeleter{} },
-			KubeClientFn:    kubeClientWithResyncTsFn,
+			KubeClientFn:    kubeClientWithResyncTimestampFn,
 			ExpectedErrMsg:  failedToFetchNewTenantsErrMsg,
 		},
 		{
@@ -269,7 +269,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 				return svc
 			},
 			TenantDeleterFn: func() *automock.TenantDeleter { return &automock.TenantDeleter{} },
-			KubeClientFn:    kubeClientWithResyncTsFn,
+			KubeClientFn:    kubeClientWithResyncTimestampFn,
 			ExpectedErrMsg:  failedToFetchMovedTenantsErrMsg,
 		},
 		{
@@ -288,7 +288,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return(nil, errors.New(failedToFetchDeletedTenantsErrMsg))
 				return svc
 			},
-			KubeClientFn:   kubeClientWithResyncTsFn,
+			KubeClientFn:   kubeClientWithResyncTimestampFn,
 			ExpectedErrMsg: failedToFetchDeletedTenantsErrMsg,
 		},
 		{
@@ -312,7 +312,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
-			KubeClientFn:   kubeClientWithResyncTsFn,
+			KubeClientFn:   kubeClientWithResyncTimestampFn,
 			ExpectedErrMsg: failedToCreateTenantsErrMsg,
 		},
 		{
@@ -336,7 +336,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
-			KubeClientFn:   kubeClientWithResyncTsFn,
+			KubeClientFn:   kubeClientWithResyncTimestampFn,
 			ExpectedErrMsg: failedToMoveTenantsErrMsg,
 		},
 		{
@@ -364,7 +364,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 				svc.On("DeleteTenants", ctx, []model.BusinessTenantMappingInput{deletedAccountTenant}).Return(errors.New(failedToDeleteTenantsErrMsg))
 				return svc
 			},
-			KubeClientFn:   kubeClientWithResyncTsFn,
+			KubeClientFn:   kubeClientWithResyncTimestampFn,
 			ExpectedErrMsg: failedToDeleteTenantsErrMsg,
 		},
 		{
@@ -391,7 +391,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
-			KubeClientFn:   kubeClientWithResyncTsFn,
+			KubeClientFn:   kubeClientWithResyncTimestampFn,
 			ExpectedErrMsg: failedToGetExistingTenantsErrMsg,
 		},
 		{
@@ -414,7 +414,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
-			KubeClientFn:   kubeClientWithResyncTsFn,
+			KubeClientFn:   kubeClientWithResyncTimestampFn,
 			ExpectedErrMsg: testErr.Error(),
 		},
 		{
@@ -441,7 +441,7 @@ func TestTenantsSynchronizer_Synchronize(t *testing.T) {
 				svc.On("TenantsToDelete", ctx, region, lastConsumedTenantTimestamp).Return(emptyTenantsResult, nil)
 				return svc
 			},
-			KubeClientFn:   kubeClientWithResyncTsFn,
+			KubeClientFn:   kubeClientWithResyncTimestampFn,
 			ExpectedErrMsg: testErr.Error(),
 		},
 		{

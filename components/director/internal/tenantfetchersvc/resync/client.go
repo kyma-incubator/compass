@@ -25,7 +25,7 @@ const (
 	maxErrMessageLength = 50
 )
 
-// OAuth2Config missing godoc
+// OAuth2Config is the auth configuration used by Tenant Events API clients.
 type OAuth2Config struct {
 	X509Config
 	ClientID           string
@@ -35,6 +35,8 @@ type OAuth2Config struct {
 	SkipSSLValidation  bool
 }
 
+// AuthProviderConfig  is the configuration of the authentication secret used by tenants aggregator.
+// The auth secret contains auth details for different regions. Each region reads its auth config from the secret file by given a specific key.
 type AuthProviderConfig struct {
 	AuthMappingConfig
 
@@ -43,6 +45,7 @@ type AuthProviderConfig struct {
 	SkipSSLValidation bool   `envconfig:"OAUTH_SKIP_SSL_VALIDATION" default:"false"`
 }
 
+// AuthMappingConfig is the mapping configuration between auth details and their paths in the auth secret file.
 type AuthMappingConfig struct {
 	ClientIDPath      string `envconfig:"CLIENT_ID_PATH" required:"true"`
 	ClientSecretPath  string `envconfig:"CLIENT_SECRET_PATH"`
@@ -51,6 +54,8 @@ type AuthMappingConfig struct {
 	KeyPath           string `envconfig:"CERT_KEY_PATH"`
 }
 
+// Validate checks if the configuration is considered valid against the given auth mode.
+// The configuration is considered valid if it contains all needed auth details for the given mode.
 func (c OAuth2Config) Validate(oauthMode oauth.AuthMode) error {
 	missingProperties := make([]string, 0)
 	if len(c.ClientID) == 0 {
@@ -58,9 +63,6 @@ func (c OAuth2Config) Validate(oauthMode oauth.AuthMode) error {
 	}
 	if len(c.OAuthTokenEndpoint) == 0 {
 		missingProperties = append(missingProperties, "OAuthTokenEndpoint")
-	}
-	if len(c.TokenPath) == 0 {
-		missingProperties = append(missingProperties, "TokenPath")
 	}
 
 	switch oauthMode {
@@ -87,8 +89,8 @@ func (c OAuth2Config) Validate(oauthMode oauth.AuthMode) error {
 // X509Config is X509 configuration for getting an OAuth token via mtls
 // same as struct in pkg/oauth but with different envconfig
 type X509Config struct {
-	Cert string `envconfig:"X509_CERT"`
-	Key  string `envconfig:"X509_KEY"`
+	Cert string
+	Key  string
 }
 
 // ParseCertificate parses the TLS certificate contained in the X509Config
@@ -128,6 +130,7 @@ type Client struct {
 	metricsPusher MetricsPusher
 }
 
+// ClientConfig is the client specific configuration of the Events API
 type ClientConfig struct {
 	TenantProvider      string
 	APIConfig           APIEndpointsConfig
@@ -161,7 +164,7 @@ func NewClient(oAuth2Config OAuth2Config, authMode oauth.AuthMode, clientConfig 
 		transport := &http.Transport{
 			TLSClientConfig: &tls.Config{
 				Certificates:       []tls.Certificate{*cert},
-				InsecureSkipVerify: true,
+				InsecureSkipVerify: oAuth2Config.SkipSSLValidation,
 			},
 		}
 
@@ -239,6 +242,10 @@ func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryPar
 		return nil, fmt.Errorf("request to %q returned status code %d and body %q", reqURL, res.StatusCode, bytes)
 	}
 
+	if len(bytes) == 0 {
+		return nil, nil
+	}
+
 	return &EventsPage{
 		FieldMapping:                 c.config.FieldMapping,
 		MovedSubaccountsFieldMapping: c.config.MovedSAFieldMapping,
@@ -247,10 +254,12 @@ func (c *Client) FetchTenantEventsPage(eventsType EventsType, additionalQueryPar
 	}, nil
 }
 
+// SetHTTPClient sets the underlying HTTP client
 func (c *Client) SetHTTPClient(client *http.Client) {
 	c.httpClient = client
 }
 
+// GetHTTPClient returns the underlying HTTP client
 func (c *Client) GetHTTPClient() *http.Client {
 	return c.httpClient
 }

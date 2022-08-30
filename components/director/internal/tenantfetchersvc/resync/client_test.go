@@ -277,195 +277,195 @@ func fixHTTPClient(t *testing.T) (*http.Client, func(), string) {
 
 func fixCreatedTenantsJSON() string {
 	return `{
- "events": [
-   {
-     "id": 5,
-     "type": "GLOBALACCOUNT_CREATION",
-     "timestamp": "1579771215736",
-     "eventData": "{\"id\":\"55\",\"displayName\":\"TEN5\",\"model\":\"default\"}"
-   },
-   {
-     "id": 4,
-     "type": "GLOBALACCOUNT_CREATION",
-     "timestamp": "1579771215636",
-     "eventData": "{\"id\":\"44\",\"displayName\":\"TEN4\",\"model\":\"default\"}"
-   },
+"events": [
+  {
+    "id": 5,
+    "type": "GLOBALACCOUNT_CREATION",
+    "timestamp": "1579771215736",
+    "eventData": "{\"id\":\"55\",\"displayName\":\"TEN5\",\"model\":\"default\"}"
+  },
+  {
+    "id": 4,
+    "type": "GLOBALACCOUNT_CREATION",
+    "timestamp": "1579771215636",
+    "eventData": "{\"id\":\"44\",\"displayName\":\"TEN4\",\"model\":\"default\"}"
+  },
 	{
-     "id": 3,
-     "type": "GLOBALACCOUNT_CREATION",
-     "timestamp": "1579771215536",
-     "eventData": "{\"id\":\"33\",\"displayName\":\"TEN3\",\"model\":\"default\"}"
-   },
+    "id": 3,
+    "type": "GLOBALACCOUNT_CREATION",
+    "timestamp": "1579771215536",
+    "eventData": "{\"id\":\"33\",\"displayName\":\"TEN3\",\"model\":\"default\"}"
+  },
 	{
-     "id": 2,
-     "type": "GLOBALACCOUNT_CREATION",
-     "timestamp": "1579771215436",
-     "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
-   },
+    "id": 2,
+    "type": "GLOBALACCOUNT_CREATION",
+    "timestamp": "1579771215436",
+    "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
+  },
 	{
-     "id": 1,
-     "type": "GLOBALACCOUNT_CREATION",
-     "timestamp": "1579771215336",
-     "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
-   }
- ],
- "totalResults": 5,
- "totalPages": 1
+    "id": 1,
+    "type": "GLOBALACCOUNT_CREATION",
+    "timestamp": "1579771215336",
+    "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
+  }
+],
+"totalResults": 5,
+"totalPages": 1
 }`
 }
 
 func fixUpdatedAccountsJSON() string {
 	return `{
- "events": [
+"events": [
 	{
-     "id": 2,
-     "type": "GLOBALACCOUNT_UPDATE",
-     "timestamp": "1579771215436",
-     "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
-   },
+    "id": 2,
+    "type": "GLOBALACCOUNT_UPDATE",
+    "timestamp": "1579771215436",
+    "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
+  },
 	{
-     "id": 1,
-     "type": "GLOBALACCOUNT_UPDATE",
-     "timestamp": "1579771215336",
-     "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
-   }
- ],
- "totalResults": 2,
- "totalPages": 1
+    "id": 1,
+    "type": "GLOBALACCOUNT_UPDATE",
+    "timestamp": "1579771215336",
+    "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
+  }
+],
+"totalResults": 2,
+"totalPages": 1
 }`
 }
 
 func fixDeletedAccountsJSON() string {
 	return `{
- "events": [
+"events": [
 	{
-     "id": 2,
-     "type": "GLOBALACCOUNT_DELETION",
-     "timestamp": "1579771215436",
-     "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
-   },
+    "id": 2,
+    "type": "GLOBALACCOUNT_DELETION",
+    "timestamp": "1579771215436",
+    "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
+  },
 	{
-     "id": 1,
-     "type": "GLOBALACCOUNT_DELETION",
-     "timestamp": "1579771215336",
-     "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
-   }
- ],
- "totalResults": 2,
- "totalPages": 1
+    "id": 1,
+    "type": "GLOBALACCOUNT_DELETION",
+    "timestamp": "1579771215336",
+    "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
+  }
+],
+"totalResults": 2,
+"totalPages": 1
 }`
 }
 
 func fixCreatedSubaccountsJSON() string {
 	return `{
- "events": [
-   {
-     "id": 5,
-     "type": "SUBACCOUNT_CREATION",
+"events": [
+  {
+    "id": 5,
+    "type": "SUBACCOUNT_CREATION",
 	 "region": "test-region",
-     "timestamp": "1579771215736",
-     "eventData": "{\"id\":\"55\",\"displayName\":\"TEN5\",\"model\":\"default\"}"
-   },
-   {
-     "id": 4,
-     "type": "SUBACCOUNT_CREATION",
+    "timestamp": "1579771215736",
+    "eventData": "{\"id\":\"55\",\"displayName\":\"TEN5\",\"model\":\"default\"}"
+  },
+  {
+    "id": 4,
+    "type": "SUBACCOUNT_CREATION",
 	 "region": "test-region",
-     "timestamp": "1579771215636",
-     "eventData": "{\"id\":\"44\",\"displayName\":\"TEN4\",\"model\":\"default\"}"
-   },
+    "timestamp": "1579771215636",
+    "eventData": "{\"id\":\"44\",\"displayName\":\"TEN4\",\"model\":\"default\"}"
+  },
 	{
-     "id": 3,
-     "type": "SUBACCOUNT_CREATION",
+    "id": 3,
+    "type": "SUBACCOUNT_CREATION",
 	 "region": "test-region",
-     "timestamp": "1579771215536",
-     "eventData": "{\"id\":\"33\",\"displayName\":\"TEN3\",\"model\":\"default\"}"
-   },
+    "timestamp": "1579771215536",
+    "eventData": "{\"id\":\"33\",\"displayName\":\"TEN3\",\"model\":\"default\"}"
+  },
 	{
-     "id": 2,
-     "type": "SUBACCOUNT_CREATION",
+    "id": 2,
+    "type": "SUBACCOUNT_CREATION",
 	 "region": "test-region",
-     "timestamp": "1579771215436",
-     "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
-   },
+    "timestamp": "1579771215436",
+    "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
+  },
 	{
-     "id": 1,
-     "type": "SUBACCOUNT_CREATION",
+    "id": 1,
+    "type": "SUBACCOUNT_CREATION",
 	 "region": "test-region",
-     "timestamp": "1579771215336",
-     "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
-   }
- ],
- "totalResults": 5,
- "totalPages": 1
+    "timestamp": "1579771215336",
+    "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
+  }
+],
+"totalResults": 5,
+"totalPages": 1
 }`
 }
 
 func fixUpdatedSubaccountsJSON() string {
 	return `{
- "events": [
+"events": [
 	{
-     "id": 2,
-     "type": "SUBACCOUNT_UPDATE",
+    "id": 2,
+    "type": "SUBACCOUNT_UPDATE",
 	 "region": "test-region",
-     "timestamp": "1579771215436",
-     "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
-   },
+    "timestamp": "1579771215436",
+    "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
+  },
 	{
-     "id": 1,
-     "type": "SUBACCOUNT_UPDATE",
+    "id": 1,
+    "type": "SUBACCOUNT_UPDATE",
 	 "region": "test-region",
-     "timestamp": "1579771215336",
-     "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
-   }
- ],
- "totalResults": 2,
- "totalPages": 1
+    "timestamp": "1579771215336",
+    "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
+  }
+],
+"totalResults": 2,
+"totalPages": 1
 }`
 }
 
 func fixDeletedSubaccountsJSON() string {
 	return `{
- "events": [
+"events": [
 	{
-     "id": 2,
-     "type": "SUBACCOUNT_DELETION",
+    "id": 2,
+    "type": "SUBACCOUNT_DELETION",
 	 "region": "test-region",
-     "timestamp": "1579771215436",
-     "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
-   },
+    "timestamp": "1579771215436",
+    "eventData": "{\"id\":\"22\",\"displayName\":\"TEN2\",\"model\":\"default\"}"
+  },
 	{
-     "id": 1,
-     "type": "SUBACCOUNT_DELETION",
+    "id": 1,
+    "type": "SUBACCOUNT_DELETION",
 	 "region": "test-region",
-     "timestamp": "1579771215336",
-     "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
-   }
- ],
- "totalResults": 2,
- "totalPages": 1
+    "timestamp": "1579771215336",
+    "eventData": "{\"id\":\"11\",\"displayName\":\"TEN1\",\"model\":\"default\"}"
+  }
+],
+"totalResults": 2,
+"totalPages": 1
 }`
 }
 
 func fixMovedSubaccountsJSON() string {
 	return `{
- "events": [
+"events": [
 	{
-     "id": 2,
-     "type": "SUBACCOUNT_MOVED",
+    "id": 2,
+    "type": "SUBACCOUNT_MOVED",
 	 "region": "test-region",
-     "timestamp": "1579771215436",
-     "eventData": "{\"id\":\"22\",\"source\":\"TEN1\",\"target\":\"TEN2\"}"
-   },
+    "timestamp": "1579771215436",
+    "eventData": "{\"id\":\"22\",\"source\":\"TEN1\",\"target\":\"TEN2\"}"
+  },
 	{
-     "id": 1,
-     "type": "SUBACCOUNT_MOVED",
+    "id": 1,
+    "type": "SUBACCOUNT_MOVED",
 	 "region": "test-region",
-     "timestamp": "1579771215336",
-     "eventData": "{\"id\":\"11\",\"source\":\"TEN3\",\"target\":\"TEN4\"}"
-   }
- ],
- "totalResults": 2,
- "totalPages": 1
+    "timestamp": "1579771215336",
+    "eventData": "{\"id\":\"11\",\"source\":\"TEN3\",\"target\":\"TEN4\"}"
+  }
+],
+"totalResults": 2,
+"totalPages": 1
 }`
 }
 

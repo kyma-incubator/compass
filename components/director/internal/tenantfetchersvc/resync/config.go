@@ -2,6 +2,7 @@ package resync
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"regexp"
@@ -28,6 +29,18 @@ type job struct {
 	jobConfig       *JobConfig
 }
 
+// ResyncConfig holds information about tenant synchronizing intervals
+type ResyncConfig struct {
+	TenantFetcherJobIntervalMins time.Duration `envconfig:"TENANT_FETCHER_JOB_INTERVAL" default:"5m"`
+	FullResyncInterval           time.Duration `envconfig:"FULL_RESYNC_INTERVAL" default:"12h"`
+}
+
+// PagingConfig holds information about Events API pagination
+type PagingConfig struct {
+	TotalPagesField   string `envconfig:"TENANT_TOTAL_PAGES_FIELD" default:"pages"`
+	TotalResultsField string `envconfig:"TENANT_TOTAL_RESULTS_FIELD" default:"totalResults"`
+}
+
 // JobConfig contains tenant fetcher job configuration read from environment
 type JobConfig struct {
 	EventsConfig
@@ -45,14 +58,18 @@ type EventsConfig struct {
 	QueryConfig
 	PagingConfig
 
-	RegionalAuthConfigSecret AuthProviderConfig            `envconfig:"SECRET"`
-	RegionalAPIConfigs       map[string]*RegionalAPIConfig `ignored:"true"`
-	APIConfig                EventsAPIConfig               `envconfig:"API"`
-	TenantOperationChunkSize int                           `envconfig:"TENANT_INSERT_CHUNK_SIZE" default:"500"`
-	RetryAttempts            uint                          `envconfig:"RETRY_ATTEMPTS" default:"7"`
+	RegionalAuthConfigSecret AuthProviderConfig          `envconfig:"SECRET"`
+	RegionalAPIConfigs       map[string]*EventsAPIConfig `ignored:"true"`
+	APIConfig                EventsAPIConfig             `envconfig:"API"`
+	TenantOperationChunkSize int                         `envconfig:"TENANT_INSERT_CHUNK_SIZE" default:"500"`
+	RetryAttempts            uint                        `envconfig:"RETRY_ATTEMPTS" default:"7"`
 }
 
+// Validate checks if the current configuration contains all required information in order to successfully synchronize tenants of the given type
 func (ec EventsConfig) Validate(tenantType tenant.Type) error {
+	if err := ec.APIConfig.Validate(tenantType); err != nil {
+		return err
+	}
 	for region, config := range ec.RegionalAPIConfigs {
 		if err := config.Validate(tenantType); err != nil {
 			return errors.Wrapf(err, "while validating API configuration for region %s", region)
@@ -61,22 +78,20 @@ func (ec EventsConfig) Validate(tenantType tenant.Type) error {
 	return nil
 }
 
-type RegionalAPIConfig struct {
-	EventsAPIConfig
-	RegionName string `envconfig:"REGION_NAME" required:"true"`
-}
-
+// EventsAPIConfig holds information about the Tenant Events API - its endpoints, mappings to Compass tenants, and API client configurations
 type EventsAPIConfig struct {
 	APIEndpointsConfig
 	TenantFieldMapping
 	MovedSubaccountsFieldMapping
 
+	RegionName          string         `envconfig:"REGION_NAME" required:"true"`
 	AuthConfigSecretKey string         `envconfig:"AUTH_CONFIG_SECRET_KEY" required:"true"`
 	AuthMode            oauth.AuthMode `envconfig:"AUTH_MODE" required:"true"`
 	ClientTimeout       time.Duration  `envconfig:"TIMEOUT" default:"1m"`
 	OAuthConfig         OAuth2Config   `ignored:"true"`
 }
 
+// Validate checks if the current configuration contains all required information in order to successfully synchronize tenants of the given type
 func (c EventsAPIConfig) Validate(tenantType tenant.Type) error {
 	missingProperties := make([]string, 0)
 	if tenantType == tenant.Subaccount {
@@ -95,13 +110,13 @@ func (c EventsAPIConfig) Validate(tenantType tenant.Type) error {
 	}
 	if tenantType == tenant.Account {
 		if len(c.APIEndpointsConfig.EndpointTenantCreated) == 0 {
-			missingProperties = append(missingProperties, "EndpointSubaccountCreated")
+			missingProperties = append(missingProperties, "EndpointTenantCreated")
 		}
 		if len(c.APIEndpointsConfig.EndpointTenantUpdated) == 0 {
-			missingProperties = append(missingProperties, "EndpointSubaccountUpdated")
+			missingProperties = append(missingProperties, "EndpointTenantUpdated")
 		}
 		if len(c.APIEndpointsConfig.EndpointTenantDeleted) == 0 {
-			missingProperties = append(missingProperties, "EndpointSubaccountMoved")
+			missingProperties = append(missingProperties, "EndpointTenantDeleted")
 		}
 	}
 	if len(missingProperties) > 0 {
@@ -109,16 +124,6 @@ func (c EventsAPIConfig) Validate(tenantType tenant.Type) error {
 	}
 
 	return c.OAuthConfig.Validate(c.AuthMode)
-}
-
-type ResyncConfig struct {
-	TenantFetcherJobIntervalMins time.Duration `envconfig:"TENANT_FETCHER_JOB_INTERVAL" default:"5m"`
-	FullResyncInterval           time.Duration `envconfig:"FULL_RESYNC_INTERVAL" default:"12h"`
-}
-
-type PagingConfig struct {
-	TotalPagesField   string `envconfig:"TENANT_TOTAL_PAGES_FIELD" default:"pages"`
-	TotalResultsField string `envconfig:"TENANT_TOTAL_RESULTS_FIELD" default:"totalResults"`
 }
 
 // NewTenantFetcherJobEnvironment used for job configuration read from environment
@@ -131,17 +136,9 @@ func NewTenantFetcherJobEnvironment(ctx context.Context, name string, environmen
 	}
 }
 
+// Validate checks if the current configuration contains all required information in order to successfully synchronize tenants of the configured type
 func (jc *JobConfig) Validate() error {
-	if err := jc.APIConfig.Validate(jc.TenantType); err != nil {
-		return err
-	}
-	for region, config := range jc.RegionalAPIConfigs {
-		if err := config.Validate(jc.TenantType); err != nil {
-			return errors.Wrapf(err, "while validating API config for region %s", region)
-		}
-	}
-
-	return nil
+	return jc.EventsConfig.Validate(jc.TenantType)
 }
 
 // ReadJobConfig reads job configuration from environment
@@ -174,7 +171,6 @@ func (j *job) ReadJobConfig() (*JobConfig, error) {
 	jc.APIConfig.OAuthConfig = clientCfg
 
 	for region, regionalCfg := range regionalCfg {
-		// assuming that config keys will match the regions of additional API clients
 		authCfg, ok := authConfigs[regionalCfg.AuthConfigSecretKey]
 		if !ok {
 			return nil, fmt.Errorf("auth config not found for Events API for region %s: secret file does not contain key %s", region, regionalCfg.AuthConfigSecretKey)
@@ -183,20 +179,25 @@ func (j *job) ReadJobConfig() (*JobConfig, error) {
 	}
 
 	jc.RegionalAPIConfigs = regionalCfg
-
 	if err := jc.Validate(); err != nil {
 		return nil, errors.Wrapf(err, "while reading job configuration for job %s", j.name)
 	}
 
 	j.jobConfig = &jc
+
+	configg, err := json.Marshal(jc)
+	if err != nil {
+		log.D().Error(err)
+	}
+	log.D().Infof("CONFIG IS: %s", string(configg))
 	return j.jobConfig, nil
 }
 
-func (j *job) readRegionalEventsConfig() (map[string]*RegionalAPIConfig, error) {
-	regEventsConfig := map[string]*RegionalAPIConfig{}
+func (j *job) readRegionalEventsConfig() (map[string]*EventsAPIConfig, error) {
+	regEventsConfig := map[string]*EventsAPIConfig{}
 	for _, region := range j.jobRegions() {
-		regionalConfigEnvPrefix := fmt.Sprintf("APP_%s_REGIONAL_CONFIG_%s", j.name, strings.ToUpper(region))
-		newCfg := &RegionalAPIConfig{}
+		regionalConfigEnvPrefix := fmt.Sprintf("APP_%s_REGIONAL_CONFIG_%s", strings.ToUpper(j.name), strings.ToUpper(region))
+		newCfg := &EventsAPIConfig{}
 		if err := envconfig.Process(regionalConfigEnvPrefix, newCfg); err != nil {
 			return nil, errors.Wrapf(err, "while reading config for region %s", region)
 		}
@@ -213,9 +214,9 @@ func (j *job) mapClientsAuthConfigs(jc JobConfig) (map[string]OAuth2Config, erro
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting job secret")
 	}
-	log.D().Infof("SECRET IS: %v", secretData)
+
 	if ok := gjson.Valid(secretData); !ok {
-		return nil, errors.New("failed to validate instance configs")
+		return nil, errors.New("failed to validate job auth configs")
 	}
 
 	authConfig := jc.EventsConfig.RegionalAuthConfigSecret
@@ -232,7 +233,7 @@ func (j *job) mapClientsAuthConfigs(jc JobConfig) (map[string]OAuth2Config, erro
 				Cert: gjson.Get(config.String(), authConfig.CertPath).String(),
 				Key:  gjson.Get(config.String(), authConfig.KeyPath).String(),
 			},
-			SkipSSLValidation: true, //TODO
+			SkipSSLValidation: authConfig.SkipSSLValidation,
 		}
 
 		clientsAuthConfig[secretKey] = i
@@ -282,9 +283,9 @@ func GetJobNames(envVars map[string]string) []string {
 	return jobNames
 }
 
-// jobRegions retrieves the names of the tenant fetchers job regions
+// jobRegions retrieves the names of the tenant fetchers' job regions
 func (j *job) jobRegions() []string {
-	searchPattern := regexp.MustCompile(fmt.Sprintf(regionNamePatternFormat, j.name))
+	searchPattern := regexp.MustCompile(fmt.Sprintf(regionNamePatternFormat, strings.ToUpper(j.name)))
 
 	var regionNames []string
 	for key := range j.environmentVars {

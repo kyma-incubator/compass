@@ -191,12 +191,16 @@ spec:
               value: {{ $config.authConfig.tokenURLPath }}
             - name: APP_{{ $tenantFetcherJobName }}_SECRET_OAUTH_SKIP_SSL_VALIDATION
               value: {{ $config.authConfig.skipSSLValidation | quote }}
+            - name: APP_{{ $tenantFetcherJobName }}_API_REGION_NAME
+              value:  {{ $config.api.authConfigSecretKey }}
             - name: APP_{{ $tenantFetcherJobName }}_API_AUTH_MODE
               value: {{ $config.authConfig.oauthMode }}
             # API Config
             - name: APP_{{ $tenantFetcherJobName }}_API_AUTH_CONFIG_SECRET_KEY
               value: {{ $config.api.authConfigSecretKey }}
             # API Config: field mapping
+            - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_ID
+              value: {{ $config.api.fieldMapping.idField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_NAME
               value: {{ $config.api.fieldMapping.nameField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_CUSTOMER_ID
@@ -253,6 +257,8 @@ spec:
             # Regional API Config: field mapping
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_NAME
               value: {{ $regionCfg.api.fieldMapping.nameField }}
+            - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_ID
+              value: {{ $regionCfg.api.fieldMapping.idField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_CUSTOMER_ID
               value: {{ $regionCfg.api.fieldMapping.customerIdField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_SUBDOMAIN
@@ -334,12 +340,8 @@ spec:
             - name: APP_{{ $tenantFetcherJobName }}_TENANT_INSERT_CHUNK_SIZE
               value: {{ default "500" $config.tenantInsertChunkSize | quote }}
             # API Regional config
-            {{- end }}
-            {{- end }}
-          volumeMounts:
-          - name: dependencies-config
-            mountPath: "{{ .Values.global.tenantFetcher.dependenciesConfig.path }}"
-            readOnly: true
+          {{- end }}
+          {{- end }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}
@@ -355,6 +357,9 @@ spec:
             timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}
           volumeMounts:
+            - name: dependencies-config
+              mountPath: "{{ .Values.global.tenantFetcher.dependenciesConfig.path }}"
+              readOnly: true
             - name: credentials-secret
               mountPath: {{ .Values.global.tenantFetcher.k8sSecret.path }}
               readOnly: true

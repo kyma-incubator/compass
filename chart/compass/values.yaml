@@ -711,6 +711,7 @@ global:
         startPage: "0"
         pageSize: "100"
       api:
+        regionName: "central"
         authConfigSecretKey: "central"
         fieldMapping:
           totalPagesField: "totalPages"

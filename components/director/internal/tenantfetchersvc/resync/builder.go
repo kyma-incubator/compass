@@ -39,6 +39,7 @@ type synchronizerBuilder struct {
 	metricsClientTimeout time.Duration
 }
 
+// NewSynchronizerBuilder returns an entity that will use the provided configuration to create a tenant synchronizer.
 func NewSynchronizerBuilder(jobConfig JobConfig, featuresConfig features.Config, transact persistence.Transactioner, directorClient *graphqlclient.Director, metricsPusher MetricsPusher, metricsClientTimeout time.Duration) *synchronizerBuilder {
 	return &synchronizerBuilder{
 		jobConfig:            jobConfig,
@@ -50,6 +51,7 @@ func NewSynchronizerBuilder(jobConfig JobConfig, featuresConfig features.Config,
 	}
 }
 
+// Build returns a tenants synchronizer created with the initially provided configuration of the builder.
 func (b *synchronizerBuilder) Build(ctx context.Context) (*TenantsSynchronizer, error) {
 	kubeClient, err := NewKubernetesClient(ctx, b.jobConfig.KubeConfig)
 	if err != nil {
@@ -62,7 +64,7 @@ func (b *synchronizerBuilder) Build(ctx context.Context) (*TenantsSynchronizer, 
 	}
 
 	tenantSvc, tenantConverter, runtimeSvc, labelRepo := domainServices(b.featuresConfig)
-	tenantManager, err := NewTenantsManager(b.jobConfig, b.directorClient, universalEventAPIClient, regionalDetails(b.jobConfig.RegionalAPIConfigs, additionalRegionalEventAPIClients), tenantConverter)
+	tenantManager, err := NewTenantsManager(b.jobConfig, b.directorClient, universalEventAPIClient, additionalRegionalEventAPIClients, tenantConverter)
 	if err != nil {
 		return nil, err
 	}
@@ -76,18 +78,6 @@ func (b *synchronizerBuilder) Build(ctx context.Context) (*TenantsSynchronizer, 
 
 	ts := NewTenantSynchronizer(b.jobConfig, b.transact, tenantSvc, tenantManager, mover, tenantManager, kubeClient, b.metricsPusher)
 	return ts, nil
-}
-
-func regionalDetails(configs map[string]*RegionalAPIConfig, clients map[string]EventAPIClient) map[string]RegionalClient {
-	details := make(map[string]RegionalClient)
-	for regionName, config := range configs {
-		regionalDetails := RegionalClient{
-			RegionalAPIConfig: *config,
-			RegionalClient:    clients[regionName],
-		}
-		details[regionName] = regionalDetails
-	}
-	return details
 }
 
 func (b *synchronizerBuilder) eventAPIClients() (EventAPIClient, map[string]EventAPIClient, error) {
@@ -167,7 +157,7 @@ func domainServices(featuresConfig features.Config) (TenantStorageService, Tenan
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantStorageRepo, uidSvc, featuresConfig.DefaultScenarioEnabled)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc)
-	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo, runtimeContextRepo, nil, nil, applicationRepo, nil, webhookConverter)
+	formationSvc := formation.NewService(labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo, runtimeContextRepo, nil, nil, applicationRepo, nil, webhookConverter, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, runtimeRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelDefSvc, labelSvc, uidSvc, formationSvc, tenantStorageSvc, webhookSvc, runtimeContextSvc, featuresConfig.ProtectedLabelPattern, featuresConfig.ImmutableLabelPattern, featuresConfig.RuntimeTypeLabelKey, featuresConfig.KymaRuntimeTypeLabelValue)
 

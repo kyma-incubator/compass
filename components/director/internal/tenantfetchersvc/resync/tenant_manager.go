@@ -54,14 +54,16 @@ type externalTenantsManager struct {
 	tenantConverter TenantConverter
 }
 
+// TenantsManager is responsible for creating, updating and deleting tenants associated with an external tenants registry
 type TenantsManager struct {
 	externalTenantsManager
 
-	regionalClients     map[string]RegionalClient
+	regionalClients     map[string]EventAPIClient
 	supportedEventTypes supportedEvents
 }
 
-func NewTenantsManager(jobConfig JobConfig, directorClient DirectorGraphQLClient, universalClient EventAPIClient, regionalDetails map[string]RegionalClient, tenantConverter TenantConverter) (*TenantsManager, error) {
+// NewTenantsManager returns a new tenants manager built with the provided configurations and API clients
+func NewTenantsManager(jobConfig JobConfig, directorClient DirectorGraphQLClient, universalClient EventAPIClient, regionalDetails map[string]EventAPIClient, tenantConverter TenantConverter) (*TenantsManager, error) {
 	supportedEvents, err := supportedEventTypes(jobConfig.TenantType)
 	if err != nil {
 		return nil, err
@@ -81,6 +83,7 @@ func NewTenantsManager(jobConfig JobConfig, directorClient DirectorGraphQLClient
 	return tenantsManager, nil
 }
 
+// TenantsToCreate returns all tenants that are missing in Compass but are present in the external tenants registry
 func (tm *TenantsManager) TenantsToCreate(ctx context.Context, region, fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
 	fetchedTenants, err := tm.fetchTenantsForEventType(ctx, region, fromTimestamp, tm.supportedEventTypes.createdTenantEvent)
 	if err != nil {
@@ -95,6 +98,7 @@ func (tm *TenantsManager) TenantsToCreate(ctx context.Context, region, fromTimes
 	return fetchedTenants, nil
 }
 
+// TenantsToDelete returns all tenants that are no longer associated with their parent tenant and should be moved from one parent tenant to another
 func (tm *TenantsManager) TenantsToDelete(ctx context.Context, region, fromTimestamp string) ([]model.BusinessTenantMappingInput, error) {
 	res, err := tm.fetchTenantsForEventType(ctx, region, fromTimestamp, tm.supportedEventTypes.deletedTenantEvent)
 	if err != nil {
@@ -103,6 +107,7 @@ func (tm *TenantsManager) TenantsToDelete(ctx context.Context, region, fromTimes
 	return res, nil
 }
 
+// FetchTenant retrieves a given tenant from all available regions and updates or creates it in Compass
 func (tm *TenantsManager) FetchTenant(ctx context.Context, externalTenantID string) (*model.BusinessTenantMappingInput, error) {
 	additionalFields := map[string]string{
 		tm.config.QueryConfig.EntityField: externalTenantID,
@@ -119,27 +124,32 @@ func (tm *TenantsManager) FetchTenant(ctx context.Context, externalTenantID stri
 		return &fetchedTenants[0], err
 	}
 
-	log.C(ctx).Infof("Tenant found from central region with universal client")
+	log.C(ctx).Infof("Tenant not found from central region, checking regional APIst")
 
 	tenantChan := make(chan *model.BusinessTenantMappingInput, len(tm.regionalClients))
-	for _, regionDetails := range tm.regionalClients {
-		go func(ctx context.Context, details RegionalClient, ch chan *model.BusinessTenantMappingInput) {
-			createdRegionalTenants, err := fetchCreatedTenantsWithRetries(details.RegionalClient, tm.config.RetryAttempts, tm.supportedEventTypes, configProvider)
+	for region, regionalClient := range tm.regionalClients {
+		go func(ctx context.Context, region string, regionalClient EventAPIClient, ch chan *model.BusinessTenantMappingInput) {
+			createdRegionalTenants, err := fetchCreatedTenantsWithRetries(regionalClient, tm.config.RetryAttempts, tm.supportedEventTypes, configProvider)
 			if err != nil {
 				log.C(ctx).WithError(err).Errorf("Failed to fetch created tenants from")
 			}
 
 			if len(createdRegionalTenants) == 1 {
-				log.C(ctx).Infof("Tenant found in region %s", details.RegionName)
+				log.C(ctx).Infof("Tenant found in region %s", region)
 				ch <- &createdRegionalTenants[0]
 			} else {
-				log.C(ctx).Warnf("Tenant not found in region %s", details.RegionName)
+				log.C(ctx).Warnf("Tenant not found in region %s", region)
 				ch <- nil
 			}
-		}(ctx, regionDetails, tenantChan)
+		}(ctx, region, regionalClient, tenantChan)
 	}
 
 	pendingRegionalInfo := len(tm.regionalClients)
+	if pendingRegionalInfo == 0 {
+		// TODO return error when lazy store is reverted
+		log.C(ctx).Error("no regions are configured")
+		return nil, nil
+	}
 	var tenant *model.BusinessTenantMappingInput
 	for result := range tenantChan {
 		if result != nil {
@@ -157,6 +167,7 @@ func (tm *TenantsManager) FetchTenant(ctx context.Context, externalTenantID stri
 	return tenant, nil
 }
 
+// CreateTenants takes care of creating all missing tenants in Compass by calling Director in chunks
 func (tm *TenantsManager) CreateTenants(ctx context.Context, tenants []model.BusinessTenantMappingInput) error {
 	tenantsToCreateGQL := tm.tenantConverter.MultipleInputToGraphQLInput(tenants)
 	return runInChunks(ctx, tm.config.TenantOperationChunkSize, tenantsToCreateGQL, func(ctx context.Context, chunk []graphql.BusinessTenantMappingInput) error {
@@ -164,6 +175,7 @@ func (tm *TenantsManager) CreateTenants(ctx context.Context, tenants []model.Bus
 	})
 }
 
+// DeleteTenants takes care of deleting all  tenants marked as deleted in the external tenants registry
 func (tm *TenantsManager) DeleteTenants(ctx context.Context, tenantsToDelete []model.BusinessTenantMappingInput) error {
 	tenantsToDeleteGQL := tm.tenantConverter.MultipleInputToGraphQLInput(tenantsToDelete)
 	return runInChunks(ctx, tm.config.TenantOperationChunkSize, tenantsToDeleteGQL, func(ctx context.Context, chunk []graphql.BusinessTenantMappingInput) error {
@@ -178,13 +190,13 @@ func (tm *TenantsManager) fetchTenantsForEventType(ctx context.Context, region, 
 		return nil, errors.Wrap(err, "while fetching tenants with universal client")
 	}
 
-	regionDetails, ok := tm.regionalClients[region]
+	regionClient, ok := tm.regionalClients[region]
 	if !ok {
 		log.C(ctx).Infof("Region %s does not have local events client enabled", region)
 		return fetchedTenants, nil
 	}
 	configProvider = eventsQueryConfigProvider(tm.config, fromTimestamp)
-	createdRegionalTenants, err := fetchTenantsWithRetries(regionDetails.RegionalClient, tm.config.RetryAttempts, eventsType, configProvider)
+	createdRegionalTenants, err := fetchTenantsWithRetries(regionClient, tm.config.RetryAttempts, eventsType, configProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -213,29 +225,26 @@ func supportedEventTypes(tenantType tenantpkg.Type) (supportedEvents, error) {
 }
 
 func eventsQueryConfigProvider(config EventsConfig, fromTimestamp string) func() (QueryParams, PageConfig) {
-	additionalFields := map[string]string{
-		config.TimestampField: fromTimestamp,
-	}
-	return eventsQueryConfigProviderWithAdditionalFields(config, additionalFields)
+	return eventsQueryConfigProviderWithRegion(config, fromTimestamp, "")
 }
 
 func eventsQueryConfigProviderWithRegion(config EventsConfig, fromTimestamp, region string) func() (QueryParams, PageConfig) {
 	additionalFields := map[string]string{
 		config.QueryConfig.TimestampField: fromTimestamp,
 	}
-	if len(region) > 0 {
+	if len(region) > 0 && len(config.QueryConfig.RegionField) > 0 {
 		additionalFields[config.QueryConfig.RegionField] = region
 	}
 	return eventsQueryConfigProviderWithAdditionalFields(config, additionalFields)
 }
 
-func eventsQueryConfigProviderWithAdditionalFields(config EventsConfig, additionalFields map[string]string) func() (QueryParams, PageConfig) {
+func eventsQueryConfigProviderWithAdditionalFields(config EventsConfig, additionalQueryParams map[string]string) func() (QueryParams, PageConfig) {
 	return func() (QueryParams, PageConfig) {
 		qp := QueryParams{
 			config.QueryConfig.PageNumField:  config.QueryConfig.PageStartValue,
 			config.QueryConfig.PageSizeField: config.QueryConfig.PageSizeValue,
 		}
-		for field, value := range additionalFields {
+		for field, value := range additionalQueryParams {
 			qp[field] = value
 		}
 
@@ -288,7 +297,7 @@ func fetchTenantsWithRetries(eventAPIClient EventAPIClient, retryNumber uint, ev
 func fetchTenants(eventAPIClient EventAPIClient, eventsType EventsType, configProvider func() (QueryParams, PageConfig)) ([]model.BusinessTenantMappingInput, error) {
 	tenants := make([]model.BusinessTenantMappingInput, 0)
 	err := walkThroughPages(eventAPIClient, eventsType, configProvider, func(page *EventsPage) error {
-		mappings := page.getTenantMappings(eventsType)
+		mappings := page.GetTenantMappings(eventsType)
 		tenants = append(tenants, mappings...)
 		return nil
 	})

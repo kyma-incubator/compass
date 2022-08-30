@@ -2,7 +2,7 @@ package resync
 
 // TenantFieldMapping missing godoc
 type TenantFieldMapping struct {
-	EventsField       string `envconfig:"TENANT_EVENTS_FIELD" default:"events"`
+	EventsField string `envconfig:"TENANT_EVENTS_FIELD" default:"events"`
 
 	NameField              string `envconfig:"MAPPING_FIELD_NAME" default:"name"`
 	IDField                string `envconfig:"MAPPING_FIELD_ID" default:"id"`
@@ -32,10 +32,10 @@ type MovedSubaccountsFieldMapping struct {
 
 // QueryConfig contains the name of query parameters fields and default/start values
 type QueryConfig struct {
+	RegionField    string `envconfig:"QUERY_REGION_FIELD"`
 	PageNumField   string `envconfig:"QUERY_PAGE_NUM_FIELD" default:"pageNum"`
 	PageSizeField  string `envconfig:"QUERY_PAGE_SIZE_FIELD" default:"pageSize"`
 	TimestampField string `envconfig:"QUERY_TIMESTAMP_FIELD" default:"timestamp"`
-	RegionField    string `envconfig:"QUERY_REGION_FIELD" default:"region"`
 	PageStartValue string `envconfig:"QUERY_PAGE_START" default:"0"`
 	PageSizeValue  string `envconfig:"QUERY_PAGE_SIZE" default:"150"`
 	EntityField    string `envconfig:"QUERY_ENTITY_FIELD" default:"entityId"`
@@ -46,11 +46,6 @@ type PageConfig struct {
 	TotalPagesField   string
 	TotalResultsField string
 	PageNumField      string
-}
-
-type RegionalClient struct {
-	RegionalAPIConfig
-	RegionalClient EventAPIClient
 }
 
 // EventsType missing godoc

@@ -275,8 +275,7 @@ func synchronizeTenants(synchronizer *resync.TenantsSynchronizer, ctx context.Co
 	for {
 		select {
 		case <-ticker.C:
-			resyncCtx := context.Background()
-			resyncCtx = correlation.SaveCorrelationIDHeaderToContext(ctx, str.Ptr(correlation.RequestIDHeaderKey), str.Ptr(uuid.New().String()))
+			resyncCtx := correlation.SaveCorrelationIDHeaderToContext(ctx, str.Ptr(correlation.RequestIDHeaderKey), str.Ptr(uuid.New().String()))
 
 			log.C(resyncCtx).Infof("Scheduled tenant resync job %s will be executed, job interval is %s", synchronizer.Name(), synchronizer.ResyncInterval())
 			if err := synchronizer.Synchronize(resyncCtx); err != nil {

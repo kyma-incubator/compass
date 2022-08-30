@@ -14,11 +14,47 @@ import (
 // GlobalAccountRegex determines whether event entity type is global account
 const GlobalAccountRegex = "^GLOBALACCOUNT_.*|GlobalAccount"
 
+// EventsPage represents a page returned by the Events API - its payload,
+// along with the mappings required for converting the page to a set of tenants
 type EventsPage struct {
 	FieldMapping                 TenantFieldMapping
 	MovedSubaccountsFieldMapping MovedSubaccountsFieldMapping
 	ProviderName                 string
 	Payload                      []byte
+}
+
+// GetMovedSubaccounts parses the data from the page payload to MovedSubaccountMappingInput
+func (ep EventsPage) GetMovedSubaccounts() []model.MovedSubaccountMappingInput {
+	eds := ep.getEventsDetails()
+	mappings := make([]model.MovedSubaccountMappingInput, 0, len(eds))
+	for _, detail := range eds {
+		mapping, err := ep.eventDataToMovedSubaccount(detail)
+		if err != nil {
+			log.D().Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(detail))
+			continue
+		}
+
+		mappings = append(mappings, *mapping)
+	}
+
+	return mappings
+}
+
+// GetTenantMappings parses the data from the page payload to BusinessTenantMappingInput
+func (ep EventsPage) GetTenantMappings(eventsType EventsType) []model.BusinessTenantMappingInput {
+	eds := ep.getEventsDetails()
+	tenants := make([]model.BusinessTenantMappingInput, 0, len(eds))
+	for _, detail := range eds {
+		mapping, err := ep.eventDataToTenant(eventsType, detail)
+		if err != nil {
+			log.D().Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(detail))
+			continue
+		}
+
+		tenants = append(tenants, *mapping)
+	}
+
+	return tenants
 }
 
 func (ep EventsPage) getEventsDetails() [][]byte {
@@ -55,38 +91,6 @@ func (ep EventsPage) getEventsDetails() [][]byte {
 		return true
 	})
 	return tenantDetails
-}
-
-func (ep EventsPage) getMovedSubaccounts() []model.MovedSubaccountMappingInput {
-	eds := ep.getEventsDetails()
-	mappings := make([]model.MovedSubaccountMappingInput, 0, len(eds))
-	for _, detail := range eds {
-		mapping, err := ep.eventDataToMovedSubaccount(detail)
-		if err != nil {
-			log.D().Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(detail))
-			continue
-		}
-
-		mappings = append(mappings, *mapping)
-	}
-
-	return mappings
-}
-
-func (ep EventsPage) getTenantMappings(eventsType EventsType) []model.BusinessTenantMappingInput {
-	eds := ep.getEventsDetails()
-	tenants := make([]model.BusinessTenantMappingInput, 0, len(eds))
-	for _, detail := range eds {
-		mapping, err := ep.eventDataToTenant(eventsType, detail)
-		if err != nil {
-			log.D().Warnf("Error: %s. Could not convert tenant: %s", err.Error(), string(detail))
-			continue
-		}
-
-		tenants = append(tenants, *mapping)
-	}
-
-	return tenants
 }
 
 func (ep EventsPage) eventDataToMovedSubaccount(eventData []byte) (*model.MovedSubaccountMappingInput, error) {

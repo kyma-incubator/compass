@@ -41,6 +41,8 @@ type tenantMover struct {
 	labelRepo             LabelRepo
 }
 
+// NewSubaccountsMover returns a new etity responsible for retrieving moved tenants from one parent tenant to another
+// from an external registry, and proceeding with moving said tenants across parents if possible
 func NewSubaccountsMover(jobConfig JobConfig, transact persistence.Transactioner, directorClient DirectorGraphQLClient, eventAPIClient EventAPIClient, tenantConverter TenantConverter, storageSvc TenantStorageService, runtimeSvc RuntimeService, labelRepo LabelRepo) TenantMover {
 	return &tenantMover{
 		externalTenantsManager: externalTenantsManager{
@@ -57,11 +59,13 @@ func NewSubaccountsMover(jobConfig JobConfig, transact persistence.Transactioner
 	}
 }
 
+// TenantsToMove returns all tenants that should be moved from one parent tenant to another
 func (tmv *tenantMover) TenantsToMove(ctx context.Context, region, fromTimestamp string) ([]model.MovedSubaccountMappingInput, error) {
 	configProvider := eventsQueryConfigProviderWithRegion(tmv.config, fromTimestamp, region)
 	return fetchMovedSubaccountsWithRetries(tmv.eventAPIClient, tmv.config.RetryAttempts, configProvider)
 }
 
+// MoveTenants Moves all eligible tenants from one parent tenant to another.
 func (tmv *tenantMover) MoveTenants(ctx context.Context, movedSubaccountMappings []model.MovedSubaccountMappingInput) error {
 	tx, err := tmv.transact.Begin()
 	if err != nil {
@@ -169,7 +173,7 @@ func (tmv *tenantMover) tenantsToUpsert(ctx context.Context, mappings []model.Mo
 		tenantFromDB, ok := existingTenantsMap[mapping.SubaccountID]
 		if !ok {
 			log.C(ctx).Infof("Subaccount with external id %s does not exist, will be created in the correct parent tenant", mapping.SubaccountID)
-			mapping.TenantMappingInput.Parent = mapping.TargetTenant
+			mapping.TenantMappingInput.Parent = parentTenants[mapping.TargetTenant].ID
 			tenantsToCreate = append(tenantsToCreate, mapping.TenantMappingInput)
 			continue
 		}
@@ -183,7 +187,7 @@ func (tmv *tenantMover) tenantsToUpsert(ctx context.Context, mappings []model.Mo
 			return nil, nil, errors.Wrapf(err, "subaccount with external id %s is part of a scenario and cannot be moved", mapping.SubaccountID)
 		}
 
-		tenantFromDB.Parent = mapping.TargetTenant
+		tenantFromDB.Parent = parentTenants[mapping.TargetTenant].ID
 		tenantsToUpdate = append(tenantsToUpdate, tenantFromDB)
 	}
 
@@ -253,7 +257,7 @@ func fetchMovedSubaccounts(eventAPIClient EventAPIClient, configProvider func() 
 	allMappings := make([]model.MovedSubaccountMappingInput, 0)
 
 	err := walkThroughPages(eventAPIClient, MovedSubaccountType, configProvider, func(page *EventsPage) error {
-		mappings := page.getMovedSubaccounts()
+		mappings := page.GetMovedSubaccounts()
 		allMappings = append(allMappings, mappings...)
 		return nil
 	})

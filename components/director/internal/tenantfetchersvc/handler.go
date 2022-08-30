@@ -120,8 +120,7 @@ func (h *handler) FetchTenantOnDemand(writer http.ResponseWriter, request *http.
 
 	log.C(ctx).Infof("Fetching create event for tenant with ID %s", tenantID)
 
-	err := h.fetcher.SynchronizeTenant(ctx, tenantID, parentTenantID)
-	if err != nil {
+	if err := h.fetcher.SynchronizeTenant(ctx, parentTenantID, tenantID); err != nil {
 		log.C(ctx).WithError(err).Errorf("Error while processing request for creation of tenant %s: %v", tenantID, err)
 		http.Error(writer, InternalServerError, http.StatusInternalServerError)
 		return

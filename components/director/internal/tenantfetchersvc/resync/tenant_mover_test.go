@@ -8,6 +8,7 @@ import (
 	domaintenant "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc/resync"
 	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc/resync/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
@@ -29,6 +30,7 @@ func TestTenantMover_TenantsToMove(t *testing.T) {
 	ctx := context.TODO()
 	tenantConverter := domaintenant.NewConverter()
 	jobConfig := configForTenantType(tenant.Subaccount)
+	jobConfig.EventsConfig.QueryConfig.RegionField = "region"
 
 	movedSubaccount1 := model.MovedSubaccountMappingInput{
 		TenantMappingInput: fixBusinessTenantMappingInput("1", provider, "subdomain-1", "", sourceParentTenantID, tenant.Subaccount),
@@ -43,10 +45,10 @@ func TestTenantMover_TenantsToMove(t *testing.T) {
 		TargetTenant:       targetParentTenantID,
 	}
 
-	event1 := fixEvent(t, "Subaccount", movedSubaccount1.TenantMappingInput.Parent, movedEventFieldsFromTenant(jobConfig.TenantFieldMapping, jobConfig.MovedSubaccountsFieldMapping, movedSubaccount1))
-	event2 := fixEvent(t, "Subaccount", movedSubaccount2.TenantMappingInput.Parent, movedEventFieldsFromTenant(jobConfig.TenantFieldMapping, jobConfig.MovedSubaccountsFieldMapping, movedSubaccount2))
+	event1 := fixEvent(t, "Subaccount", movedSubaccount1.TenantMappingInput.Parent, movedEventFieldsFromTenant(jobConfig.APIConfig.TenantFieldMapping, jobConfig.APIConfig.MovedSubaccountsFieldMapping, movedSubaccount1))
+	event2 := fixEvent(t, "Subaccount", movedSubaccount2.TenantMappingInput.Parent, movedEventFieldsFromTenant(jobConfig.APIConfig.TenantFieldMapping, jobConfig.APIConfig.MovedSubaccountsFieldMapping, movedSubaccount2))
 
-	pageOneQueryParams := QueryParams{
+	pageOneQueryParams := resync.QueryParams{
 		jobConfig.PageSizeField:                        "1",
 		jobConfig.PageNumField:                         "1",
 		jobConfig.TimestampField:                       timestamp,
@@ -55,9 +57,8 @@ func TestTenantMover_TenantsToMove(t *testing.T) {
 
 	testCases := []struct {
 		name               string
-		jobConfigFn        func() JobConfig
 		directorClientFn   func() *automock.DirectorGraphQLClient
-		apiClientFn        func() *automock.EventAPIClient
+		apiClientFn        func(resync.JobConfig) *automock.EventAPIClient
 		runtimeSvcFn       func() *automock.RuntimeService
 		labelRepoFn        func() *automock.LabelRepo
 		tenantStorageSvcFn func() *automock.TenantStorageService
@@ -65,26 +66,20 @@ func TestTenantMover_TenantsToMove(t *testing.T) {
 		expectedErrMsg     string
 	}{
 		{
-			name: "Success when only one page is returned for moved tenants events",
-			jobConfigFn: func() JobConfig {
-				return configForTenantType(tenant.Subaccount)
-			},
+			name:             "Success when only one page is returned for moved tenants events",
 			directorClientFn: func() *automock.DirectorGraphQLClient { return &automock.DirectorGraphQLClient{} },
-			apiClientFn: func() *automock.EventAPIClient {
+			apiClientFn: func(cfg resync.JobConfig) *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1), nil).Once()
+				client.On("FetchTenantEventsPage", resync.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
 				return client
 			},
 			expectedTenants: []model.MovedSubaccountMappingInput{movedSubaccount1},
 		},
 		{
-			name: "Success when two pages are returned for moved tenants events",
-			jobConfigFn: func() JobConfig {
-				return configForTenantType(tenant.Subaccount)
-			},
+			name:             "Success when two pages are returned for moved tenants events",
 			directorClientFn: func() *automock.DirectorGraphQLClient { return &automock.DirectorGraphQLClient{} },
-			apiClientFn: func() *automock.EventAPIClient {
-				pageTwoQueryParams := QueryParams{
+			apiClientFn: func(cfg resync.JobConfig) *automock.EventAPIClient {
+				pageTwoQueryParams := resync.QueryParams{
 					"pageSize":  "1",
 					"pageNum":   "2",
 					"region":    region,
@@ -92,22 +87,19 @@ func TestTenantMover_TenantsToMove(t *testing.T) {
 				}
 
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 2, 2), nil).Once()
-				client.On("FetchTenantEventsPage", MovedSubaccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event2), 2, 2), nil).Once()
+				client.On("FetchTenantEventsPage", resync.MovedSubaccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event1), 2, 2, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
+				client.On("FetchTenantEventsPage", resync.MovedSubaccountType, pageTwoQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event2), 2, 2, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
 
 				return client
 			},
 			expectedTenants: []model.MovedSubaccountMappingInput{movedSubaccount1, movedSubaccount2},
 		},
 		{
-			name: "Fail when fetching moved tenants events returns an error",
-			jobConfigFn: func() JobConfig {
-				return configForTenantType(tenant.Subaccount)
-			},
+			name:             "Fail when fetching moved tenants events returns an error",
 			directorClientFn: func() *automock.DirectorGraphQLClient { return &automock.DirectorGraphQLClient{} },
-			apiClientFn: func() *automock.EventAPIClient {
+			apiClientFn: func(cfg resync.JobConfig) *automock.EventAPIClient {
 				client := &automock.EventAPIClient{}
-				client.On("FetchTenantEventsPage", MovedSubaccountType, pageOneQueryParams).Return(nil, errors.New("failed to get moved")).Once()
+				client.On("FetchTenantEventsPage", resync.MovedSubaccountType, pageOneQueryParams).Return(nil, errors.New("failed to get moved")).Once()
 				return client
 			},
 			expectedErrMsg: "while fetching moved tenants",
@@ -116,9 +108,8 @@ func TestTenantMover_TenantsToMove(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			cfg := tc.jobConfigFn()
 			directorClient := tc.directorClientFn()
-			eventAPIClient := tc.apiClientFn()
+			eventAPIClient := tc.apiClientFn(jobConfig)
 			storageSvc := &automock.TenantStorageService{}
 			runtimeSvc := &automock.RuntimeService{}
 			labelRepo := &automock.LabelRepo{}
@@ -126,7 +117,7 @@ func TestTenantMover_TenantsToMove(t *testing.T) {
 			persist, transact := txGen.ThatDoesntStartTransaction()
 			defer mock.AssertExpectationsForObjects(t, directorClient, eventAPIClient, storageSvc, runtimeSvc, labelRepo, persist, transact)
 
-			mover := NewSubaccountsMover(cfg, transact, directorClient, eventAPIClient, tenantConverter, storageSvc, runtimeSvc, labelRepo)
+			mover := resync.NewSubaccountsMover(jobConfig, transact, directorClient, eventAPIClient, tenantConverter, storageSvc, runtimeSvc, labelRepo)
 			res, err := mover.TenantsToMove(ctx, region, timestamp)
 			if len(tc.expectedErrMsg) > 0 {
 				require.Error(t, err)
@@ -166,7 +157,6 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 			Type:           tenant.Subaccount,
 			Provider:       provider,
 		}
-
 	}
 
 	targetParent := &model.BusinessTenantMapping{
@@ -208,7 +198,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 
 	testCases := []struct {
 		name               string
-		jobConfigFn        func() JobConfig
+		jobConfigFn        func() resync.JobConfig
 		transactionerFn    func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		directorClientFn   func() *automock.DirectorGraphQLClient
 		runtimeSvcFn       func() *automock.RuntimeService
@@ -219,7 +209,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 	}{
 		{
 			name: "Success when subaccount is moved to an existing parent tenant",
-			jobConfigFn: func() JobConfig {
+			jobConfigFn: func() resync.JobConfig {
 				return configForTenantType(tenant.Subaccount)
 			},
 			transactionerFn: txGen.ThatSucceeds,
@@ -247,7 +237,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 		},
 		{
 			name: "Success when subaccount is created in the correct parent tenant",
-			jobConfigFn: func() JobConfig {
+			jobConfigFn: func() resync.JobConfig {
 				return configForTenantType(tenant.Subaccount)
 			},
 			transactionerFn: txGen.ThatSucceeds,
@@ -270,7 +260,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 		},
 		{
 			name: "Success when subaccount is not in a formation",
-			jobConfigFn: func() JobConfig {
+			jobConfigFn: func() resync.JobConfig {
 				return configForTenantType(tenant.Subaccount)
 			},
 			transactionerFn: txGen.ThatSucceeds,
@@ -303,7 +293,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 		},
 		{
 			name: "Success when subaccount is in the default formation",
-			jobConfigFn: func() JobConfig {
+			jobConfigFn: func() resync.JobConfig {
 				return configForTenantType(tenant.Subaccount)
 			},
 			transactionerFn: txGen.ThatSucceeds,
@@ -337,7 +327,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 		},
 		{
 			name: "Success when target parent tenant does not exist: tenant is skipped",
-			jobConfigFn: func() JobConfig {
+			jobConfigFn: func() resync.JobConfig {
 				return configForTenantType(tenant.Subaccount)
 			},
 			transactionerFn:  txGen.ThatSucceeds,
@@ -354,7 +344,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 		},
 		{
 			name: "Success when subaccount is already moved",
-			jobConfigFn: func() JobConfig {
+			jobConfigFn: func() resync.JobConfig {
 				return configForTenantType(tenant.Subaccount)
 			},
 			transactionerFn:  txGen.ThatSucceeds,
@@ -374,7 +364,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 		},
 		{
 			name: "Fail when subaccount is in formation",
-			jobConfigFn: func() JobConfig {
+			jobConfigFn: func() resync.JobConfig {
 				return configForTenantType(tenant.Subaccount)
 			},
 			transactionerFn: txGen.ThatDoesntExpectCommit,
@@ -404,7 +394,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 				svc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), sourceParentTenantID).Return(sourceParent, nil).Once()
 				return svc
 			},
-			tenantsInput: []model.MovedSubaccountMappingInput{movedSubaccount1},
+			tenantsInput:   []model.MovedSubaccountMappingInput{movedSubaccount1},
 			expectedErrMsg: "is in scenario",
 		},
 	}
@@ -421,7 +411,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 			labelRepo := tc.labelRepoFn()
 			defer mock.AssertExpectationsForObjects(t, persist, transact, directorClient, eventAPIClient, storageSvc, runtimeSvc, labelRepo)
 
-			mover := NewSubaccountsMover(cfg, transact, directorClient, eventAPIClient, tenantConverter, storageSvc, runtimeSvc, labelRepo)
+			mover := resync.NewSubaccountsMover(cfg, transact, directorClient, eventAPIClient, tenantConverter, storageSvc, runtimeSvc, labelRepo)
 			err := mover.MoveTenants(ctx, tc.tenantsInput)
 			if len(tc.expectedErrMsg) > 0 {
 				require.Error(t, err)
@@ -433,7 +423,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 	}
 }
 
-func movedEventFieldsFromTenant(tenantFieldMapping TenantFieldMapping, movedSAFieldMapping MovedSubaccountsFieldMapping, tenantInput model.MovedSubaccountMappingInput) map[string]string {
+func movedEventFieldsFromTenant(tenantFieldMapping resync.TenantFieldMapping, movedSAFieldMapping resync.MovedSubaccountsFieldMapping, tenantInput model.MovedSubaccountMappingInput) map[string]string {
 	eventFields := eventFieldsFromTenant(tenant.Subaccount, tenantFieldMapping, tenantInput.TenantMappingInput)
 	eventFields[movedSAFieldMapping.SourceTenant] = tenantInput.SourceTenant
 	eventFields[movedSAFieldMapping.TargetTenant] = tenantInput.TargetTenant

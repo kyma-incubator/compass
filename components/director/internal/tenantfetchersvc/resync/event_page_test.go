@@ -1,4 +1,4 @@
-package resync
+package resync_test
 
 import (
 	"bytes"
@@ -6,6 +6,7 @@ import (
 	"testing"
 	"text/template"
 
+	"github.com/kyma-incubator/compass/components/director/internal/tenantfetchersvc/resync"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -37,7 +38,7 @@ func Test_getMovedSubaccounts(t *testing.T) {
 			Provider:       "",
 		},
 	}
-	fieldMapping := TenantFieldMapping{
+	fieldMapping := resync.TenantFieldMapping{
 		IDField:          idField,
 		NameField:        nameField,
 		SubdomainField:   subdomainField,
@@ -154,17 +155,17 @@ func Test_getMovedSubaccounts(t *testing.T) {
 			for i, detailPair := range test.detailsPairs {
 				events = append(events, fixEventWithDetails(fmt.Sprintf("id%d", i), fmt.Sprintf("foo%d", i), "GlobalAccount", parentID, constructJSONObject(detailPair...), fieldMapping))
 			}
-			page := EventsPage{
+			page := resync.EventsPage{
 				FieldMapping: fieldMapping,
-				MovedSubaccountsFieldMapping: MovedSubaccountsFieldMapping{
+				MovedSubaccountsFieldMapping: resync.MovedSubaccountsFieldMapping{
 					SubaccountID: labelFieldMappingValue,
 					SourceTenant: sourceTenantField,
 					TargetTenant: targetTenantField,
 				},
-				Payload: []byte(fixTenantEventsResponse(eventsToJSONArray(events...), len(test.detailsPairs), 1)),
+				Payload: []byte(fixTenantEventsResponseBytes(eventsToJSONArray(events...), len(test.detailsPairs), 1)),
 			}
 
-			runtimes := page.getMovedSubaccounts()
+			runtimes := page.GetMovedSubaccounts()
 			test.assertRuntimesFunc(t, runtimes)
 		})
 	}
@@ -195,13 +196,13 @@ func Test_getTenantMappings(t *testing.T) {
 	tests := []struct {
 		name                    string
 		detailsPairs            [][]Pair
-		fieldMapping            TenantFieldMapping
+		fieldMapping            resync.TenantFieldMapping
 		errorFunc               func(*testing.T, error)
 		assertTenantMappingFunc func(*testing.T, []model.BusinessTenantMappingInput)
 	}{
 		{
 			name: "successfully gets businessTenantMappingInputs for correct eventPage format",
-			fieldMapping: TenantFieldMapping{
+			fieldMapping: resync.TenantFieldMapping{
 				NameField:              nameField,
 				IDField:                idField,
 				SubdomainField:         subdomainField,
@@ -228,7 +229,7 @@ func Test_getTenantMappings(t *testing.T) {
 		},
 		{
 			name: "successfully gets businessTenantMappingInputs for correct eventPage format with discriminator field",
-			fieldMapping: TenantFieldMapping{
+			fieldMapping: resync.TenantFieldMapping{
 				NameField:              nameField,
 				IDField:                idField,
 				EventsField:            "events",
@@ -259,7 +260,7 @@ func Test_getTenantMappings(t *testing.T) {
 		},
 		{
 			name: "successfully gets businessTenantMappingInputs for eventPage with missing tenant names",
-			fieldMapping: TenantFieldMapping{
+			fieldMapping: resync.TenantFieldMapping{
 				NameField:          nameField,
 				IDField:            idField,
 				EventsField:        "events",
@@ -285,7 +286,7 @@ func Test_getTenantMappings(t *testing.T) {
 		},
 		{
 			name: "empty mappings for get businessTenantMappingInputs when id field is wrong",
-			fieldMapping: TenantFieldMapping{
+			fieldMapping: resync.TenantFieldMapping{
 				NameField:          nameField,
 				IDField:            idField,
 				EventsField:        "events",
@@ -311,7 +312,7 @@ func Test_getTenantMappings(t *testing.T) {
 		},
 		{
 			name: "empty mappings for get businessTenantMappingInputs when discriminator field is wrong",
-			fieldMapping: TenantFieldMapping{
+			fieldMapping: resync.TenantFieldMapping{
 				NameField:          nameField,
 				IDField:            idField,
 				EventsField:        "events",
@@ -341,12 +342,12 @@ func Test_getTenantMappings(t *testing.T) {
 			for i, detailPair := range test.detailsPairs {
 				events = append(events, fixEventWithDetails(fmt.Sprintf("id%d", i), fmt.Sprintf("foo%d", i), "GlobalAccount", fmt.Sprintf("gaID%d", i), constructJSONObject(detailPair...), test.fieldMapping))
 			}
-			page := EventsPage{
+			page := resync.EventsPage{
 				FieldMapping: test.fieldMapping,
 				ProviderName: providerName,
-				Payload:      []byte(fixTenantEventsResponse(eventsToJSONArray(events...), len(test.detailsPairs), 1)),
+				Payload:      []byte(fixTenantEventsResponseBytes(eventsToJSONArray(events...), len(test.detailsPairs), 1)),
 			}
-			tenantMappings := page.getTenantMappings(CreatedAccountType)
+			tenantMappings := page.GetTenantMappings(resync.CreatedAccountType)
 			test.assertTenantMappingFunc(t, tenantMappings)
 		})
 	}
@@ -379,18 +380,18 @@ func constructJSONObject(pairs ...Pair) string {
 	return buffer.String()
 }
 
-func fixEventWithDetails(id, name, entityType, globalAccountGUID, details string, fieldMapping TenantFieldMapping) []byte {
+func fixEventWithDetails(id, name, entityType, globalAccountGUID, details string, fieldMapping resync.TenantFieldMapping) []byte {
 	return []byte(fmt.Sprintf(`{"%s":"%s", "%s":"%s", "%s":"%s","%s":"%s","%s":%s}`, fieldMapping.IDField, id, fieldMapping.NameField, name, fieldMapping.EntityTypeField, entityType, fieldMapping.GlobalAccountGUIDField, globalAccountGUID, fieldMapping.DetailsField, details))
 }
 
-func fixTenantEventsResponse(events []byte, total, pages int) TenantEventsResponse {
-	return TenantEventsResponse(fmt.Sprintf(`{
+func fixTenantEventsResponseBytes(events []byte, total, pages int) resync.TenantEventsResponse {
+	return resync.TenantEventsResponse(fmt.Sprintf(`{
 		"events":       %s,
 		"total": %d,
 		"pages":   %d,
 	}`, string(events), total, pages))
 }
 
-func eventsToJSONArray(events ...[]byte) []byte {
+func eventsToJSONArrayBytes(events ...[]byte) []byte {
 	return []byte(fmt.Sprintf(`[%s]`, bytes.Join(events, []byte(","))))
 }

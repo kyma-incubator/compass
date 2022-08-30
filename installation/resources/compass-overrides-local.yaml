@@ -102,6 +102,7 @@ global:
         tokenEndpointPath: "url"
         tokenURLPath: "/cert/token"
       api:
+        regionName: "central"
         authConfigSecretKey: "central"
         endpoints:
           accountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/global-account-create"
@@ -144,6 +145,7 @@ global:
         maxOpenConnections: "1"
       enabled: true
       api:
+        regionName: "central"
         authConfigSecretKey: "central"
         endpoints:
           subaccountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-create"

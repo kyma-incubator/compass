@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -14,7 +15,6 @@ import (
 
 const (
 	retryDelayMilliseconds = 100
-	centralRegion          = "central"
 	// TenantOnDemandProvider is the name of the business tenant mapping provider used when the tenant is not found in the events service
 	TenantOnDemandProvider = "lazily-tenant-fetcher"
 )
@@ -27,7 +27,7 @@ type TenantStorageService interface {
 	ListsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error)
 }
 
-// TenantCreator takes care of retrieving tenants from external tenant registry and storing them in director
+// TenantCreator takes care of retrieving tenants from external tenant registry and storing them in Director
 //go:generate mockery --name=TenantCreator --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantCreator interface {
 	FetchTenant(ctx context.Context, externalTenantID string) (*model.BusinessTenantMappingInput, error)
@@ -35,19 +35,22 @@ type TenantCreator interface {
 	CreateTenants(ctx context.Context, eventsTenants []model.BusinessTenantMappingInput) error
 }
 
+// TenantDeleter takes care of retrieving no longer used tenants from external tenant registry and delete them from Director
 //go:generate mockery --name=TenantDeleter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantDeleter interface {
 	TenantsToDelete(ctx context.Context, region, fromTimestamp string) ([]model.BusinessTenantMappingInput, error)
 	DeleteTenants(ctx context.Context, eventsTenants []model.BusinessTenantMappingInput) error
 }
 
-// TenantMover takes care of retrieving and storing tenants for moving from one parent tenant to another.
+// TenantMover takes care of moving tenants from one parent tenant to another.
 //go:generate mockery --name=TenantMover --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantMover interface {
 	TenantsToMove(ctx context.Context, region, fromTimestamp string) ([]model.MovedSubaccountMappingInput, error)
 	MoveTenants(ctx context.Context, movedSubaccountMappings []model.MovedSubaccountMappingInput) error
 }
 
+// TenantsSynchronizer takes care of synchronizing tenants with external tenants registry.
+// It creates, updates, deletes and moves tenants that were created, updated, deleted or moved in that external registry.
 type TenantsSynchronizer struct {
 	supportedRegions []string // k=region, v=prefix
 
@@ -64,9 +67,10 @@ type TenantsSynchronizer struct {
 	metricsReporter MetricsPusher
 }
 
+// NewTenantSynchronizer returns a new tenants synchronizer.
 func NewTenantSynchronizer(config JobConfig, transact persistence.Transactioner, tenantStorageService TenantStorageService, creator TenantCreator, mover TenantMover, deleter TenantDeleter, kubeClient KubeClient, metricsReporter MetricsPusher) *TenantsSynchronizer {
 	return &TenantsSynchronizer{
-		supportedRegions:     supportedRegions(config.JobName, config.RegionalAPIConfigs),
+		supportedRegions:     supportedRegions(config),
 		transact:             transact,
 		tenantStorageService: tenantStorageService,
 		creator:              creator,
@@ -78,30 +82,35 @@ func NewTenantSynchronizer(config JobConfig, transact persistence.Transactioner,
 	}
 }
 
-func supportedRegions(jobName string, configs map[string]*RegionalAPIConfig) []string {
+func supportedRegions(config JobConfig) []string {
 	regionNames := make([]string, 0)
-	for _, regionDetails := range configs {
+	for _, regionDetails := range config.RegionalAPIConfigs {
 		regionNames = append(regionNames, regionDetails.RegionName)
 	}
 	if len(regionNames) == 0 {
-		log.D().Infof("Job %s has only one central region", jobName)
-		regionNames = append(regionNames, centralRegion)
+		log.D().Infof("Job %s has only one central region: %s", config.JobName, config.APIConfig.RegionName)
+		regionNames = append(regionNames, config.APIConfig.RegionName)
 	}
 	return regionNames
 }
 
+// Name returns the name set to the tenants synchronizer.
 func (ts *TenantsSynchronizer) Name() string {
 	return ts.config.JobName
 }
 
+// TenantType returns the tenant type the tenants synchronizer is responsible for.
 func (ts *TenantsSynchronizer) TenantType() tenant.Type {
 	return ts.config.TenantType
 }
 
+// ResyncInterval returns the interval that the synchronizer is supposed to make a regular tenants resync with the external tenants registry.
 func (ts *TenantsSynchronizer) ResyncInterval() time.Duration {
 	return ts.config.TenantFetcherJobIntervalMins
 }
 
+// Synchronize is responsible for synchronizing the tenants of the configured type in Compass and the configured external tenants registry.
+// When a tenant is created in the external registry, it is also greated in Compass. Same applies for updated, deleted and moved tenants.
 func (ts *TenantsSynchronizer) Synchronize(ctx context.Context) error {
 	var err error
 	if err = ts.synchronizeTenants(ctx); err != nil {
@@ -177,6 +186,9 @@ func (ts *TenantsSynchronizer) synchronizeTenants(ctx context.Context) error {
 	return ts.kubeClient.UpdateTenantFetcherConfigMapData(ctx, convertTimeToUnixMilliSecondString(*startTime), lastResyncTimestamp)
 }
 
+// SynchronizeTenant is responsible for updating the given tenant with the values available in the external registry,
+// or creating it if it does not exist in Compass.
+// All available regions are checked for the existence of the tenant.
 func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTenantID, tenantID string) error {
 	tnt, err := ts.fetchFromDirector(ctx, tenantID)
 	if err != nil {
@@ -208,7 +220,7 @@ func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTena
 	}
 
 	parentTenantID = fetchedTenant.Parent
-	if len(parentTenantID) <= 0 {
+	if len(parentTenantID) == 0 {
 		return fmt.Errorf("parent tenant not found of tenant with ID %s", tenantID)
 	}
 
@@ -229,15 +241,13 @@ func (ts *TenantsSynchronizer) fetchFromDirector(ctx context.Context, tenantID s
 	defer ts.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	log.C(ctx).Infof("Checking if tenant with external tenant ID %s already exists...", tenantID)
 	tnt, err := ts.tenantStorageService.GetTenantByExternalID(ctx, tenantID)
-	if err != nil {
+	if err != nil && !apperrors.IsNotFoundError(err) {
 		return nil, errors.Wrapf(err, "while checking if tenant with external ID %s already exists", tenantID)
 	}
 
-	if err = tx.Commit(); err != nil {
-		return nil, err
-	}
-	return tnt, nil
+	return tnt, tx.Commit()
 }
 
 func (ts *TenantsSynchronizer) currentTenants(ctx context.Context, tenantsIDs []string) (map[string]string, error) {
