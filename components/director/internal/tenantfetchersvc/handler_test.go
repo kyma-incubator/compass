@@ -487,7 +487,7 @@ func TestService_FetchTenantOnDemand(t *testing.T) {
 			},
 			TenantFetcherSvc: func() *automock.TenantFetcher {
 				svc := &automock.TenantFetcher{}
-				svc.On("SynchronizeTenant", mock.Anything, tenantID, parentID).Return(nil)
+				svc.On("SynchronizeTenant", mock.Anything, parentID, tenantID).Return(nil)
 				return svc
 			},
 			ExpectedStatusCode: http.StatusOK,
@@ -523,7 +523,7 @@ func TestService_FetchTenantOnDemand(t *testing.T) {
 			},
 			TenantFetcherSvc: func() *automock.TenantFetcher {
 				svc := &automock.TenantFetcher{}
-				svc.On("SynchronizeTenant", mock.Anything, tenantID, parentID).Return(errors.New("error"))
+				svc.On("SynchronizeTenant", mock.Anything, parentID, tenantID).Return(errors.New("error"))
 				return svc
 			},
 			ExpectedStatusCode: http.StatusInternalServerError,

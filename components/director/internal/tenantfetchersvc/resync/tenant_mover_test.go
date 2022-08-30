@@ -171,7 +171,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 	movedSubaccountInput := graphql.BusinessTenantMappingInput{
 		Name:           subaccountExternalTenant,
 		ExternalTenant: subaccountExternalTenant,
-		Parent:         str.Ptr(targetParentTenantID),
+		Parent:         str.Ptr(targetParent.ID),
 		Subdomain:      str.Ptr(""),
 		Region:         str.Ptr(""),
 		Type:           string(tenant.Subaccount),
