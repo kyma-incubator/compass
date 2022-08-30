@@ -11,6 +11,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
+	"github.com/kyma-incubator/compass/tests/pkg/k8s"
+
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
@@ -326,6 +329,18 @@ func TestORDAggregator(stdT *testing.T) {
 		seventhApp, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, seventhAppInput)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &seventhApp)
 		require.NoError(t, err)
+
+		k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+		require.NoError(t, err)
+		jobName := "ord-aggregator-test"
+		namespace := "compass-system"
+		k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-ord-aggregator", jobName, namespace)
+		defer func() {
+			k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, testConfig.ORDAggregatorContainerName, false)
+			k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
+		}()
+
+		k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
 
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)
@@ -648,6 +663,18 @@ func TestORDAggregator(stdT *testing.T) {
 
 		require.Len(t, actualAppPage.Data, 1)
 		require.Equal(t, appTemplate.ID, *actualAppPage.Data[0].ApplicationTemplateID)
+
+		k8sClient, err := clients.NewK8SClientSet(ctx, time.Second, time.Minute, time.Minute)
+		require.NoError(t, err)
+		jobName := "ord-aggregator-test"
+		namespace := "compass-system"
+		k8s.CreateJobByCronJob(t, ctx, k8sClient, "compass-ord-aggregator", jobName, namespace)
+		defer func() {
+			k8s.PrintJobLogs(t, ctx, k8sClient, jobName, namespace, testConfig.ORDAggregatorContainerName, false)
+			k8s.DeleteJob(t, ctx, k8sClient, jobName, namespace)
+		}()
+
+		k8s.WaitForJobToSucceed(t, ctx, k8sClient, jobName, namespace)
 
 		scheduleTime, err := parseCronTime(testConfig.AggregatorSchedule)
 		require.NoError(t, err)

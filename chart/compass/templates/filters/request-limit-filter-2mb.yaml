@@ -20,7 +20,7 @@ spec:
       patch:
         operation: INSERT_BEFORE
         value:
-          name: envoy.buffer
+          name: envoy.filters.http.buffer
           typed_config:
             '@type': type.googleapis.com/udpa.type.v1.TypedStruct
             value:
