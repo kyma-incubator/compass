@@ -37,6 +37,12 @@ do
             shift # past argument
             shift
         ;;
+        --compass-charts)
+            checkInputParameterValue "${2}"
+            COMPASS_CHARTS="${2}"
+            shift # past argument
+            shift
+        ;;
         --*)
             echo "Unknown flag ${1}"
             exit 1
