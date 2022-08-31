@@ -3,7 +3,6 @@ package tenantmapping_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/textproto"
 	"strings"
@@ -31,7 +30,6 @@ func TestCertServiceContextProvider(t *testing.T) {
 
 	testError := errors.New("test error")
 	notFoundErr := apperrors.NewNotFoundErrorWithType(resource.Tenant)
-	subaccountRegionNotFoundErr := fmt.Errorf("region label not found for subaccount with ID: %q", tenantID)
 
 	authDetails := oathkeeper.AuthDetails{AuthID: tenantID, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: oathkeeper.ExternalIssuer}
 
@@ -58,9 +56,6 @@ func TestCertServiceContextProvider(t *testing.T) {
 			"region": "eu-1",
 		},
 	}
-
-	testSubaccountWithoutRegion := *testSubaccount
-	testSubaccountWithoutRegion.Labels = nil
 
 	testCases := []struct {
 		Name               string
@@ -147,10 +142,10 @@ func TestCertServiceContextProvider(t *testing.T) {
 			ExpectedErr:        nil,
 		},
 		{
-			Name: "Error when can't extract tenant region",
+			Name: "Returns empty region when tenant is subaccount and tenant region label is missing",
 			DirectorClient: func() *automock.DirectorClient {
 				client := &automock.DirectorClient{}
-				client.On("GetTenantByExternalID", mock.Anything, tenantID).Return(&testSubaccountWithoutRegion, nil).Once()
+				client.On("GetTenantByExternalID", mock.Anything, tenantID).Return(testSubaccount, nil).Once()
 				return client
 			},
 			ScopesGetterFn: func() *automock.ScopesGetter {
@@ -158,10 +153,12 @@ func TestCertServiceContextProvider(t *testing.T) {
 				scopesGetter.On("GetRequiredScopes", "scopesPerConsumerType.external_certificate").Return(scopes, nil)
 				return scopesGetter
 			},
-			ReqDataInput:     reqDataWithInternalConsumerID,
-			AuthDetailsInput: authDetails,
-			ExpectedScopes:   scopesString,
-			ExpectedErr:      subaccountRegionNotFoundErr,
+			ReqDataInput:       reqDataWithInternalConsumerID,
+			AuthDetailsInput:   authDetails,
+			ExpectedScopes:     scopesString,
+			ExpectedInternalID: internalSubaccount,
+			ExpectedConsumerID: internalConsumerID,
+			ExpectedErr:        nil,
 		},
 		{
 			Name:           "Error when can't get required scopes",

@@ -34,7 +34,6 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 	testError := errors.New("test error")
 	notFoundErr := apperrors.NewNotFoundErrorWithType(resource.Tenant)
 	tenantKeyNotFoundErr := apperrors.NewKeyDoesNotExistError(string(resource.Tenant))
-	subaccountRegionNotFoundErr := fmt.Errorf("region label not found for subaccount with ID: %q", consumerTenantID)
 
 	authDetails := oathkeeper.AuthDetails{AuthID: providerTenantID, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: oathkeeper.ExternalIssuer}
 
@@ -65,12 +64,6 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 		InternalID: "externalAccount",
 		Type:       "account",
 		Labels:     labels,
-	}
-
-	testSubaccountWithoutRegion := &graphql.Tenant{
-		ID:         internalSubaccount,
-		InternalID: "externalAccount",
-		Type:       "subaccount",
 	}
 
 	testCases := []struct {
@@ -130,15 +123,16 @@ func TestAccessLevelContextProvider_GetObjectContext(t *testing.T) {
 			ExpectedErr:      tenantKeyNotFoundErr,
 		},
 		{
-			Name: "Error when tenant is subaccount and can't extract tenant region",
+			Name: "Returns empty region when tenant is subaccount and tenant region label is missing",
 			DirectorClient: func() *automock.DirectorClient {
 				client := &automock.DirectorClient{}
-				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(testSubaccountWithoutRegion, nil).Once()
+				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(testSubaccount, nil).Once()
 				return client
 			},
-			ReqDataInput:     reqData,
-			AuthDetailsInput: authDetails,
-			ExpectedErr:      subaccountRegionNotFoundErr,
+			ReqDataInput:       reqData,
+			AuthDetailsInput:   authDetails,
+			ExpectedInternalID: internalSubaccount,
+			ExpectedErr:        nil,
 		},
 		{
 			Name: "Error when consumer don't have access",

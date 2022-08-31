@@ -124,7 +124,7 @@ func getTenantWithRegion(ctx context.Context, directorClient DirectorClient, ext
 
 	region, ok := tenantMapping.Labels["region"]
 	if !ok {
-		return nil, "", fmt.Errorf("region label not found for subaccount with ID: %q", externalTenantID)
+		return tenantMapping, "", nil // If region is not found return empty string. There are tenants without region label
 	}
 	regionStr, ok := region.(string)
 	if !ok {
