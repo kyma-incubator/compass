@@ -103,18 +103,6 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 		Provider: "provider-tenant",
 	}
 
-	// TODO::: delete
-	//testTenantWithoutRegion := &graphql.Tenant{
-	//	ID:         consumerTenantID,
-	//	InternalID: consumerInternalTenantID,
-	//	Name:       &tenantName,
-	//	Type:       "subaccount",
-	//	Labels: map[string]interface{}{
-	//		"subdomain": "consumer-subdomain",
-	//	},
-	//	Provider: "provider-tenant",
-	//}
-
 	testCases := []struct {
 		Name                  string
 		DirectorClient        func() *automock.DirectorClient
