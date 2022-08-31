@@ -151,6 +151,8 @@ spec:
               value: {{ .Values.global.destinationFetcher.request.requestTimeout }}
             - name: APP_ENDPOINT_GET_TENANT_DESTINATIONS
               value: {{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint | quote }}
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
+              value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
             - name: APP_DEFAULT_SCENARIO_ENABLED
               value: {{ .Values.global.enableCompassDefaultScenarioAssignment | quote }}
             - name: TEST_EXTERNAL_CERT_CN

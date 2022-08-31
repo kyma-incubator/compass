@@ -120,7 +120,7 @@ func (d *DestinationService) generateClientBySubdomainLabel(ctx context.Context,
 		return nil, errors.New(fmt.Sprintf("No destination instance credentials found for region '%s'", region))
 	}
 
-	client, err := NewClient(instanceConfig, d.APIConfig, d.DestinationsConfig.OauthTokenPath, subdomain)
+	client, err := NewClient(instanceConfig, d.APIConfig, subdomain)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to create Destination API client")
 		return nil, err

@@ -20,8 +20,7 @@ type DestinationsConfig struct {
 	DestinationSecretPath  string                    `envconfig:"APP_DESTINATION_SECRET_PATH"`
 	RegionToInstanceConfig map[string]InstanceConfig `envconfig:"-"`
 
-	OauthTokenPath string         `envconfig:"APP_DESTINATION_OAUTH_TOKEN_PATH,default=/oauth/token"`
-	OAuthMode      oauth.AuthMode `envconfig:"APP_DESTINATION_OAUTH_MODE,default=oauth-mtls"`
+	OAuthMode oauth.AuthMode `envconfig:"APP_DESTINATION_OAUTH_MODE,default=oauth-mtls"`
 }
 
 // MapInstanceConfigs creates region to destination configuration map

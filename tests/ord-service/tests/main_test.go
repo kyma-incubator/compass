@@ -21,11 +21,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/compass/tests/pkg/destination"
-	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
-
+	"github.com/kyma-incubator/compass/components/director/internal/destinationfetchersvc"
 	"github.com/kyma-incubator/compass/components/director/pkg/certloader"
+	cfg "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
@@ -67,8 +67,9 @@ type config struct {
 	TestConsumerSubaccountID         string
 	TestConsumerTenantID             string
 	ApplicationTypeLabelKey          string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
-	DestinationAPIConfig             destination.APIConfig
-	DestinationConfig                destination.Config
+	DestinationAPIConfig             destinationfetchersvc.DestinationServiceAPIConfig
+	DestinationsConfig               cfg.DestinationsConfig
+	DestinationConsumerSubdomain     string `envcondig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
 }
 
 var conf config
@@ -79,10 +80,9 @@ func TestMain(m *testing.M) {
 		log.D().Fatal(errors.Wrap(err, "while initializing envconfig"))
 	}
 
-	err = conf.DestinationConfig.MapInstanceConfigs()
+	err = cfg.DestinationConfig.MapInstanceConfigs()
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while loading destination instances config"))
-
 	}
 
 	tenant.TestTenants.Init()

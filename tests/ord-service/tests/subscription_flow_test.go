@@ -27,9 +27,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/compass/tests/pkg/destination"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
+	"github.com/kyma-incubator/compass/tests/pkg/destination"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
@@ -281,12 +282,19 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// TODO CREATE DESTINATION (destination) for application "consumerApp" with x-system-type/x-system-id
 		region := conf.SubscriptionConfig.SelfRegRegion
-		instance, ok := conf.DestinationConfig.RegionToInstanceConfig[region]
+		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 		require.True(t, ok)
 
-		subdomain := "where to get the subdomain from?"
-		_, err = destination.NewClient(instance, conf.DestinationAPIConfig, subdomain)
+		subdomain := conf.DestinationConsumerSubdomain
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
 		require.NoError(stdT, err)
+
+		destination := destination.Destination{
+			Name: "test",
+			Type: "HTTP",
+		}
+
+		client.CreateDestination(t, destination)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job

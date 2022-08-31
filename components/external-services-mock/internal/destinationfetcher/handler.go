@@ -221,6 +221,7 @@ func validDestinationType(destinationType string) bool {
 }
 
 func (h *Handler) PostDestination(writer http.ResponseWriter, req *http.Request) {
+	isMultiStatusCodeEnabled := false
 	var destinations []Destination = make([]Destination, 1)
 	ctx := req.Context()
 
@@ -245,8 +246,10 @@ func (h *Handler) PostDestination(writer http.ResponseWriter, req *http.Request)
 	for _, destination := range destinations {
 		if _, ok := h.destinationsSensitive[destination.Name]; ok {
 			responses = append(responses, PostResponse{destination.Name, http.StatusConflict, "Destination name already taken"})
+			isMultiStatusCodeEnabled = true
 		} else if !validDestinationType(destination.Type) {
 			responses = append(responses, PostResponse{destination.Name, http.StatusBadRequest, "Invalid destination type"})
+			isMultiStatusCodeEnabled = true
 		} else {
 			h.destinations = append(h.destinations, destination)
 			h.destinationsSensitive[destination.Name] = []byte(fmt.Sprintf(sensitiveDataTemplate, uuid.NewString(),
@@ -254,6 +257,11 @@ func (h *Handler) PostDestination(writer http.ResponseWriter, req *http.Request)
 
 			responses = append(responses, PostResponse{destination.Name, http.StatusCreated, ""})
 		}
+	}
+
+	if !isMultiStatusCodeEnabled {
+		writer.WriteHeader(http.StatusCreated)
+		return
 	}
 
 	responseJSON, err := json.Marshal(responses)
@@ -268,4 +276,6 @@ func (h *Handler) PostDestination(writer http.ResponseWriter, req *http.Request)
 		http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+
+	writer.WriteHeader(http.StatusMultiStatus)
 }

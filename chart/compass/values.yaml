@@ -881,6 +881,8 @@ global:
     selfRegistration:
       region: "eu-1"
       region2: "eu-2"
+    destination:
+      consumerSubdomain: "compass-external-services-mock-sap-mtls"
     subscription:
       tenants:
         providerAccountID: "5577cf46-4f78-45fa-b55f-a42a3bdba868" # testDefaultTenant from our testing tenants

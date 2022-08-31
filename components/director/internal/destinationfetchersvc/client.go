@@ -37,6 +37,7 @@ type DestinationServiceAPIConfig struct {
 	PagingCountParam              string        `envconfig:"APP_DESTINATIONS_PAGE_COUNT_PARAM,default=$pageCount"`
 	PagingCountHeader             string        `envconfig:"APP_DESTINATIONS_PAGE_COUNT_HEADER,default=Page-Count"`
 	SkipSSLVerify                 bool          `envconfig:"APP_DESTINATIONS_SKIP_SSL_VERIFY,default=false"`
+	OAuthTokenPath                string        `envconfig:"APP_DESTINATION_OAUTH_TOKEN_PATH,default=/oauth/token"`
 }
 
 // Client destination client
@@ -107,7 +108,7 @@ type DestinationResponse struct {
 
 // NewClient returns new destination client
 func NewClient(instanceConfig config.InstanceConfig, apiConfig DestinationServiceAPIConfig,
-	tokenPath, subdomain string) (*Client, error) {
+	subdomain string) (*Client, error) {
 	ctx := context.Background()
 
 	baseTokenURL, err := url.Parse(instanceConfig.TokenURL)
@@ -120,7 +121,7 @@ func NewClient(instanceConfig config.InstanceConfig, apiConfig DestinationServic
 	}
 	originalSubdomain := parts[0]
 
-	tokenURL := strings.Replace(instanceConfig.TokenURL, originalSubdomain, subdomain, 1) + tokenPath
+	tokenURL := strings.Replace(instanceConfig.TokenURL, originalSubdomain, subdomain, 1) + apiConfig.OAuthTokenPath
 	cfg := clientcredentials.Config{
 		ClientID:  instanceConfig.ClientID,
 		TokenURL:  tokenURL,

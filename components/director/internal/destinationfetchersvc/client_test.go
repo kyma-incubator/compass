@@ -52,6 +52,7 @@ func TestClient_TenantEndpoint(t *testing.T) {
 		PagingSizeParam:               "$pageSize",
 		PagingCountParam:              "$pageCount",
 		PagingCountHeader:             "Page-Count",
+		OAuthTokenPath:                tokenPath,
 	}
 
 	cert, key := generateTestCertAndKey(t, "test")
@@ -60,7 +61,7 @@ func TestClient_TenantEndpoint(t *testing.T) {
 	}
 	instanceCfg.Cert = string(cert)
 	instanceCfg.Key = string(key)
-	client, err := destinationfetchersvc.NewClient(instanceCfg, apiConfig, tokenPath, subdomain)
+	client, err := destinationfetchersvc.NewClient(instanceCfg, apiConfig, subdomain)
 
 	require.NoError(t, err)
 	client.SetHTTPClient(mockClient)
@@ -110,6 +111,7 @@ func TestClient_SensitiveDataEndpoint(t *testing.T) {
 	apiConfig.EndpointGetTenantDestinations = endpoint + syncEndpoint
 	apiConfig.RetryAttempts = 3
 	apiConfig.RetryInterval = 100 * time.Millisecond
+	apiConfig.OAuthTokenPath = tokenPath
 
 	cert, key := generateTestCertAndKey(t, "test")
 	instanceCfg := config.InstanceConfig{
@@ -117,7 +119,7 @@ func TestClient_SensitiveDataEndpoint(t *testing.T) {
 	}
 	instanceCfg.Cert = string(cert)
 	instanceCfg.Key = string(key)
-	client, err := destinationfetchersvc.NewClient(instanceCfg, apiConfig, tokenPath, subdomain)
+	client, err := destinationfetchersvc.NewClient(instanceCfg, apiConfig, subdomain)
 
 	require.NoError(t, err)
 	client.SetHTTPClient(mockClient)
@@ -236,7 +238,8 @@ func TestNewClient(t *testing.T) {
 			Key:          string(key),
 		}
 
-		client, err := destinationfetchersvc.NewClient(instanceCfg, destinationfetchersvc.DestinationServiceAPIConfig{}, "/oauth/token", "subdomain")
+		client, err := destinationfetchersvc.NewClient(instanceCfg,
+			destinationfetchersvc.DestinationServiceAPIConfig{OAuthTokenPath: "/oauth/token"}, "subdomain")
 		require.NoError(t, err)
 
 		httpClient := client.GetHTTPClient()
@@ -264,8 +267,8 @@ func TestNewClient(t *testing.T) {
 			TokenURL: "https://nosubdomaintokenurl",
 		}
 
-		_, err := destinationfetchersvc.NewClient(
-			instanceCfg, destinationfetchersvc.DestinationServiceAPIConfig{}, "/oauth/token", "subdomain")
+		_, err := destinationfetchersvc.NewClient(instanceCfg,
+			destinationfetchersvc.DestinationServiceAPIConfig{OAuthTokenPath: "/oauth/token"}, "subdomain")
 		require.Error(t, err, fmt.Sprintf("auth url '%s' should have a subdomain", instanceCfg.TokenURL))
 	})
 
@@ -274,8 +277,8 @@ func TestNewClient(t *testing.T) {
 			TokenURL: ":invalid",
 		}
 
-		_, err := destinationfetchersvc.NewClient(
-			instanceCfg, destinationfetchersvc.DestinationServiceAPIConfig{}, "/oauth/token", "subdomain")
+		_, err := destinationfetchersvc.NewClient(instanceCfg,
+			destinationfetchersvc.DestinationServiceAPIConfig{OAuthTokenPath: "/oauth/token"}, "subdomain")
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "failed to parse auth url")
 	})
