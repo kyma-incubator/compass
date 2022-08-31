@@ -24,7 +24,7 @@ spec:
       serviceAccountName: {{ .Chart.Name }}-director-bench-app
     {{ if eq .Values.global.portieris.isEnabled true }}
       imagePullSecrets:
-      - name: .Values.global.portieris.imagePullSecretName
+      - name: {{ .Values.global.portieris.imagePullSecretName }}
     {{ end }}
       nodeSelector:
         benchmark: "true" # This guarantees that benchmark tests will be executed on one and the same node. The gke-benchamrk job adds the benchmark=true label to the node with the lowest cpu load.
