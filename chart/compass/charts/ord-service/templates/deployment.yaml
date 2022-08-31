@@ -38,6 +38,10 @@ spec:
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
+    {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+      - name: .Values.global.portieris.imagePullSecretName
+    {{ end }}
       containers:
         - name: {{ .Chart.Name }}
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.ord_service.dir }}compass-ord-service:{{ .Values.global.images.ord_service.version }}

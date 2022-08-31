@@ -22,6 +22,10 @@ spec:
         reqlimit: {{ .Values.global.istio.ingressgateway.requestPayloadSizeLimit2MBLabel }}
         release: {{ .Release.Name }}
     spec:
+      {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+      - name: .Values.global.portieris.imagePullSecretName
+      {{ end }}
       containers:
         - name: {{ .Chart.Name }}
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.console.dir }}compass-console:{{ .Values.global.images.console.version }}
