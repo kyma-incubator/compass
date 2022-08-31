@@ -5,13 +5,12 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/destinationfetchersvc"
 	"github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -19,28 +18,31 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
-// TODO Do we need all properties?
+type DestinationServiceAPIConfig struct {
+	EndpointTenantDestinations string        `envconfig:"APP_ENDPOINT_TENANT_DESTINATIONS,default=/destination-configuration/v1/subaccountDestinations"`
+	Timeout                    time.Duration `envconfig:"APP_DESTINATIONS_TIMEOUT,default=30s"`
+	SkipSSLVerify              bool          `envconfig:"APP_DESTINATIONS_SKIP_SSL_VERIFY,default=false"`
+	OAuthTokenPath             string        `envconfig:"APP_DESTINATION_OAUTH_TOKEN_PATH,default=/oauth/token"`
+}
+
 type Destination struct {
-	Name                    string `json:"Name"`
-	Type                    string `json:"Type"`
-	URL                     string `json:"URL"`
-	Authentication          string `json:"Authentication"`
-	XFSystemName            string `json:"XFSystemName"`
-	CommunicationScenarioID string `json:"communicationScenarioId"`
-	ProductName             string `json:"product.name"`
-	XCorrelationID          string `json:"x-correlation-id"`
-	XSystemTenantID         string `json:"x-system-id"`
-	XSystemTenantName       string `json:"x-system-name"`
-	XSystemType             string `json:"x-system-type"`
+	Name              string `json:"Name"`
+	Type              string `json:"Type"`
+	URL               string `json:"URL"`
+	Authentication    string `json:"Authentication"`
+	XCorrelationID    string `json:"x-correlation-id"` // from bundle
+	XSystemTenantID   string `json:"x-system-id"`      // local tenant id
+	XSystemTenantName string `json:"x-system-name"`    // random or application name
+	XSystemType       string `json:"x-system-type"`    // application type
 }
 
 type DestinationClient struct {
 	httpClient *http.Client
-	apiConfig  destinationfetchersvc.DestinationServiceAPIConfig
+	apiConfig  DestinationServiceAPIConfig
 	apiURL     string
 }
 
-func NewDestinationClient(instanceConfig config.InstanceConfig, apiConfig destinationfetchersvc.DestinationServiceAPIConfig,
+func NewDestinationClient(instanceConfig config.InstanceConfig, apiConfig DestinationServiceAPIConfig,
 	subdomain string) (*DestinationClient, error) {
 	ctx := context.Background()
 
@@ -93,7 +95,7 @@ func (c *DestinationClient) CreateDestination(t *testing.T, destination Destinat
 	destinationBytes, err := json.Marshal(destination)
 	require.NoError(t, err)
 
-	url := c.apiURL + c.apiConfig.EndpointGetTenantDestinations
+	url := c.apiURL + c.apiConfig.EndpointTenantDestinations
 	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(destinationBytes))
 	require.NoError(t, err)
 

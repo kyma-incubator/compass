@@ -21,8 +21,14 @@ const (
 )
 
 type Destination struct {
-	Name string
-	Type string
+	Name              string `json:"Name"`
+	Type              string `json:"Type"`
+	URL               string `json:"URL"`
+	Authentication    string `json:"Authentication"`
+	XCorrelationID    string `json:"x-correlation-id"`
+	XSystemTenantID   string `json:"x-system-id"`
+	XSystemTenantName string `json:"x-system-name"`
+	XSystemType       string `json:"x-system-type"`
 }
 
 type DeleteStatus struct {
@@ -148,8 +154,6 @@ func (h *Handler) deleteDestination(name string) {
 			return
 		}
 	}
-
-	return
 }
 
 func (h *Handler) DeleteDestination(writer http.ResponseWriter, req *http.Request) {

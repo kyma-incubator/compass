@@ -30,7 +30,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
-	"github.com/kyma-incubator/compass/tests/pkg/destination"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/ptr"
@@ -289,12 +288,12 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
 		require.NoError(stdT, err)
 
-		destination := destination.Destination{
+		destination := clients.Destination{
 			Name: "test",
 			Type: "HTTP",
 		}
 
-		client.CreateDestination(t, destination)
+		client.CreateDestination(stdT, destination)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job

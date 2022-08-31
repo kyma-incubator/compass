@@ -149,7 +149,7 @@ spec:
               value: {{ .Values.global.destinationFetcher.request.skipSSLValidation | quote }}
             - name: APP_DESTINATIONS_TIMEOUT
               value: {{ .Values.global.destinationFetcher.request.requestTimeout }}
-            - name: APP_ENDPOINT_GET_TENANT_DESTINATIONS
+            - name: APP_ENDPOINT_TENANT_DESTINATIONS
               value: {{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint | quote }}
             - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
               value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
