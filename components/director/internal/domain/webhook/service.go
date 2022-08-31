@@ -21,9 +21,9 @@ type WebhookRepository interface {
 	GetByID(ctx context.Context, tenant, id string, objectType model.WebhookReferenceObjectType) (*model.Webhook, error)
 	GetByIDGlobal(ctx context.Context, id string) (*model.Webhook, error)
 	ListByReferenceObjectID(ctx context.Context, tenant, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error)
-	ListByApplicationIDWithSelectForUpdate(ctx context.Context, tenant, applicationID string) ([]*model.Webhook, error)
+	ListByWebhookTypeWithSelectForUpdate(ctx context.Context, tenant, webhookType string) ([]*model.Webhook, error)
+	ListByApplicationTemplateAndWebhookType(ctx context.Context, webhookType string) ([]*model.Webhook, error)
 	ListByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error)
-	ListByApplicationTemplates(ctx context.Context) ([]*model.Webhook, error)
 	Create(ctx context.Context, tenant string, item *model.Webhook) error
 	Update(ctx context.Context, tenant string, item *model.Webhook) error
 	Delete(ctx context.Context, id string) error
@@ -83,22 +83,23 @@ func (s *service) ListForApplication(ctx context.Context, applicationID string) 
 	return s.webhookRepo.ListByReferenceObjectID(ctx, tnt, applicationID, model.ApplicationWebhookReference)
 }
 
-// ListForApplicationWithSelectForUpdate missing godoc
-func (s *service) ListForApplicationWithSelectForUpdate(ctx context.Context, applicationID string) ([]*model.Webhook, error) {
+// ListByWebhookTypeWithSelectForUpdate missing godoc
+func (s *service) ListByWebhookTypeWithSelectForUpdate(ctx context.Context, webhookType string) ([]*model.Webhook, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return s.webhookRepo.ListByApplicationIDWithSelectForUpdate(ctx, tnt, applicationID)
+	return s.webhookRepo.ListByWebhookTypeWithSelectForUpdate(ctx, tnt, webhookType)
+}
+
+// ListByApplicationTemplateAndWebhookType missing godoc
+func (s *service) ListByApplicationTemplateAndWebhookType(ctx context.Context, webhookType string) ([]*model.Webhook, error) {
+	return s.webhookRepo.ListByApplicationTemplateAndWebhookType(ctx, webhookType)
 }
 
 // ListForApplicationTemplate missing godoc
 func (s *service) ListForApplicationTemplate(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error) {
 	return s.webhookRepo.ListByApplicationTemplateID(ctx, applicationTemplateID)
-}
-
-func (s *service) ListForApplicationTemplates(ctx context.Context) ([]*model.Webhook, error) {
-	return s.webhookRepo.ListByApplicationTemplates(ctx)
 }
 
 // ListAllApplicationWebhooks missing godoc

@@ -166,12 +166,26 @@ func (r *repository) ListByApplicationIDWithSelectForUpdate(ctx context.Context,
 	return convertToWebhooks(entities, r)
 }
 
-// ListByApplicationTemplateID missing godoc
-func (r *repository) ListByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error) {
+func (r *repository) ListByWebhookTypeWithSelectForUpdate(ctx context.Context, tenant, webhookType string) ([]*model.Webhook, error) {
 	var entities Collection
 
 	conditions := repo.Conditions{
-		repo.NewEqualCondition("app_template_id", applicationTemplateID),
+		repo.NewEqualCondition("type", webhookType),
+	}
+
+	if err := r.lister.ListWithSelectForUpdate(ctx, resource.Webhook, tenant, &entities, conditions...); err != nil {
+		return nil, err
+	}
+
+	return convertToWebhooks(entities, r)
+}
+
+func (r *repository) ListByApplicationTemplateAndWebhookType(ctx context.Context, webhookType string) ([]*model.Webhook, error) {
+	var entities Collection
+
+	conditions := repo.Conditions{
+		repo.NewNotNullCondition("app_template_id"),
+		repo.NewEqualCondition("type", webhookType),
 	}
 
 	if err := r.listerGlobal.ListGlobal(ctx, &entities, conditions...); err != nil {
@@ -181,11 +195,12 @@ func (r *repository) ListByApplicationTemplateID(ctx context.Context, applicatio
 	return convertToWebhooks(entities, r)
 }
 
-func (r *repository) ListByApplicationTemplates(ctx context.Context) ([]*model.Webhook, error) {
+// ListByApplicationTemplateID missing godoc
+func (r *repository) ListByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error) {
 	var entities Collection
 
 	conditions := repo.Conditions{
-		repo.NewNotNullCondition("app_template_id"),
+		repo.NewEqualCondition("app_template_id", applicationTemplateID),
 	}
 
 	if err := r.listerGlobal.ListGlobal(ctx, &entities, conditions...); err != nil {

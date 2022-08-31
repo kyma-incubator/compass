@@ -17,15 +17,15 @@ type labelRepository interface {
 //go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookService interface {
 	ListForApplication(ctx context.Context, applicationID string) ([]*model.Webhook, error)
-	ListForApplicationWithSelectForUpdate(ctx context.Context, applicationID string) ([]*model.Webhook, error)
-	ListForApplicationTemplates(ctx context.Context) ([]*model.Webhook, error)
+	ListByWebhookTypeWithSelectForUpdate(ctx context.Context, webhookType string) ([]*model.Webhook, error)
+	ListByApplicationTemplateAndWebhookType(ctx context.Context, webhookType string) ([]*model.Webhook, error)
 }
 
 // ApplicationService is responsible for the service-layer Application operations.
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
-	ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error)
 	GetForUpdate(ctx context.Context, id string) (*model.Application, error)
+	ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error)
 }
 
 // BundleService is responsible for the service-layer Bundle operations.
