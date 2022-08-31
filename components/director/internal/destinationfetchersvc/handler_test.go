@@ -10,6 +10,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/destinationfetchersvc"
 	"github.com/kyma-incubator/compass/components/director/internal/destinationfetchersvc/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/stretchr/testify/assert"
@@ -17,8 +18,7 @@ import (
 )
 
 const (
-	tenantIDHeaderName = "InternalTenantId"
-	expectedTenantID   = "f09ba084-0e82-49ab-ab2e-b7ecc988312d"
+	expectedTenantID = "f09ba084-0e82-49ab-ab2e-b7ecc988312d"
 )
 
 func TestHandler_SyncDestinations(t *testing.T) {
@@ -27,11 +27,12 @@ func TestHandler_SyncDestinations(t *testing.T) {
 	validHandlerConfig := destinationfetchersvc.HandlerConfig{
 		SyncDestinationsEndpoint:      "/v1/fetch",
 		DestinationsSensitiveEndpoint: "/v1/info",
-		InternalTenantIDHeaderName:    tenantIDHeaderName,
 	}
 
 	reqWithUserContext := httptest.NewRequest(http.MethodPut, target, nil)
-	reqWithUserContext.Header.Set(tenantIDHeaderName, expectedTenantID)
+	reqWithUserContext = reqWithUserContext.WithContext(
+		tenant.SaveToContext(reqWithUserContext.Context(), expectedTenantID, ""))
+
 	testCases := []struct {
 		Name                string
 		Request             *http.Request
@@ -122,13 +123,14 @@ func TestHandler_FetchDestinationsSensitiveData(t *testing.T) {
 		SyncDestinationsEndpoint:      "/v1/fetch",
 		DestinationsSensitiveEndpoint: "/v1/info",
 		DestinationsQueryParameter:    destQueryParameter,
-		InternalTenantIDHeaderName:    tenantIDHeaderName,
 	}
 
 	namesQueryRaw := "name=Rand&name=Mat"
 	names := []string{"Rand", "Mat"}
 	reqWithUserContext := httptest.NewRequest(http.MethodPut, target, nil)
-	reqWithUserContext.Header.Set(tenantIDHeaderName, expectedTenantID)
+	reqWithUserContext = reqWithUserContext.WithContext(
+		tenant.SaveToContext(reqWithUserContext.Context(), expectedTenantID, ""))
+
 	testCases := []struct {
 		Name                  string
 		Request               *http.Request
