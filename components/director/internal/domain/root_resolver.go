@@ -1012,11 +1012,6 @@ func (r *runtimeContextResolver) Labels(ctx context.Context, obj *graphql.Runtim
 // BundleResolver missing godoc
 type BundleResolver struct{ *RootResolver }
 
-// CorrelationIDs missing godoc
-func (r *BundleResolver) CorrelationIDs(_ context.Context, obj *graphql.Bundle) ([]string, error) {
-	return obj.CorrelationIDs, nil
-}
-
 // InstanceAuth missing godoc
 func (r *BundleResolver) InstanceAuth(ctx context.Context, obj *graphql.Bundle, id string) (*graphql.BundleInstanceAuth, error) {
 	return r.mpBundle.InstanceAuth(ctx, obj, id)
