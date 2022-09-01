@@ -123,7 +123,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir:
-      version: "PR-2588"
+      version: "PR-2594"
       name: compass-director
     hydrator:
       dir:
@@ -139,11 +139,11 @@ global:
       name: compass-operations-controller
     ord_service:
       dir:
-      version: "PR-78"
+      version: "PR-76"
       name: compass-ord-service
     schema_migrator:
       dir:
-      version: "PR-2588"
+      version: "PR-2594"
       name: compass-schema-migrator
     system_broker:
       dir:
@@ -156,7 +156,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir:
-      version: "PR-2584"
+      version: "PR-2594"
       name: compass-external-services-mock
     console:
       dir:
@@ -446,7 +446,7 @@ global:
     ns_adapter_timeout_ms: 3600000
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
-      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
+      internalClaims: '{"scopes": "application:read application:write application.webhooks:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
         config:
@@ -535,6 +535,58 @@ global:
       clientID: ""
       scopes: "openid profile email"
       path: "/oauth2/certs"
+  destinationFetcher:
+    manageSecrets: true
+    host: compass-destination-fetcher.compass-system.svc.cluster.local
+    prefix: /destination-configuration
+    port: 3000
+    jobSchedule: 10m
+    lease:
+      lockname: destinationlease
+    parallelTenants: 10
+    authentication:
+      jwksEndpoint: "http://ory-oathkeeper-api.kyma-system.svc.cluster.local:4456/.well-known/jwks.json"
+      appDestinationsSyncScope: "destinations:sync"
+      appDetinationsSensitiveDataScope: "destinations_sensitive_data:read"
+    server:
+      tenantDestinationsEndpoint: "/v1/subaccountDestinations"
+      sensitiveDataEndpoint: "/v1/destinations"
+      sensitiveDataQueryParam: "name"
+    request:
+      skipSSLValidation: false
+      retry_interval: "100ms"
+      retry_attempts: 3
+      goroutineLimit: 100
+      requestTimeout: "30s"
+      pageSize: 10
+      pageParam: "\\$page"
+      pageSizeParam: "\\$pageSize"
+      pageCountParam: "\\$pageCount"
+      pageCountHeader: "Page-Count"
+      oauthTokenPath: "/oauth/token"
+    instance:
+      clientIdPath: "clientid"
+      clientSecretPath: "clientsecret"
+      urlPath: "uri"
+      tokenUrlPath: "certurl"
+      clientCertPath: "certificate"
+      clientKeyPath: "key"
+    secretName: destination-region-instances
+    dependenciesConfig:
+      path: "/cfg/dependencies"
+    oauthMode: "oauth-mtls"
+  destinationRegionSecret:
+    secretName: "destination-region-instances"
+    fileName: "keyConfig"
+    local:
+      templateMappings:
+        xsappMapping: '{{ printf "\"%s\":\"xsappname1\"" .Values.global.tenantFetcher.xsappNamePath }}'
+        clientIDMapping: '{{ printf "\"%s\":\"client_id\"" .Values.global.destinationFetcher.instance.clientIdPath }}'
+        clientSecretMapping: '{{ printf "\"%s\":\"client_secret\"" .Values.global.destinationFetcher.instance.clientSecretPath }}'
+        urlMapping: '{{ printf "\"%s\":\"http://compass-external-services-mock.%s.svc.cluster.local:%s\"" .Values.global.destinationFetcher.instance.urlPath .Release.Namespace (.Values.service.port | toString) }}'
+        tokenURLMapping: '{{ printf "\"%s\":\"https://%s.%s:%s\"" .Values.global.destinationFetcher.instance.tokenUrlPath .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName (.Values.service.certPort | toString) }}'
+        x509CertificateMapping: '{{ printf "\"%s\":\"%s\"" .Values.global.destinationFetcher.instance.clientCertPath .Values.global.connector.caCertificate }}'
+        x509KeyMapping: '{{ printf "\"%s\":\"%s\"" .Values.global.destinationFetcher.instance.clientKeyPath .Values.global.connector.caKey }}'
   tenantFetcher:
     manageSecrets: true
     host: compass-tenant-fetcher.compass-system.svc.cluster.local
@@ -564,8 +616,6 @@ global:
       tenantPathParam: "tenantId"
       regionPathParam: "region"
     dependenciesConfig:
-      secretName: "destination-region-instances"
-      file: "keyConfig"
       path: "/cfg/dependencies"
     containerName: "tenant-fetcher"
     oauth:
@@ -573,9 +623,6 @@ global:
       secret: ""
       tokenURL: '{{ printf "https://%s.%s" .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName }}'
       tokenPath: "/cert/token"
-    local:
-      templateMappings:
-        xsappMapping: '{{ printf "\"%s\":\"xsappname1\"" .Values.global.tenantFetcher.xsappNamePath }}'
     secret:
       name: "compass-tenant-fetcher-secret"
       clientIdKey: "client-id"
@@ -638,6 +685,9 @@ global:
     staticPrefix: /open-resource-discovery-static/v0
     port: 3000
     defaultResponseType: "xml"
+    userContextHeader: "user_context"
+    authTokenPath: "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    skipSSLValidation: false
   ordAggregator:
     name: ord-aggregator
     enabled: true
