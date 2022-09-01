@@ -3,11 +3,12 @@ package systemfetcher
 import (
 	"context"
 	"fmt"
-	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"strings"
 	"sync"
 	"time"
+
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"

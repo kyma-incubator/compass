@@ -1277,8 +1277,10 @@ func (s *service) createWebhooksIfNotExist(ctx context.Context, appID, appTenant
 		}
 	}
 
-	if err = s.webhookRepo.CreateMany(ctx, appTenant, webhooksToCreate); err != nil {
-		return errors.Wrapf(err, "while creating webhooks for application with id %q", appID)
+	if len(webhooksToCreate) > 0 {
+		if err = s.webhookRepo.CreateMany(ctx, appTenant, webhooksToCreate); err != nil {
+			return errors.Wrapf(err, "while creating webhooks for application with id %q", appID)
+		}
 	}
 	return nil
 }
