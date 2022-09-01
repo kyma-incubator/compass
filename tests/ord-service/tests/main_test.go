@@ -69,7 +69,7 @@ type config struct {
 	ApplicationTypeLabelKey          string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
 	DestinationAPIConfig             clients.DestinationServiceAPIConfig
 	DestinationsConfig               cfg.DestinationsConfig
-	DestinationConsumerSubdomain     string `envcondig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
+	DestinationConsumerSubdomain     string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
 }
 
 var conf config

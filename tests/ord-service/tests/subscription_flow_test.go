@@ -299,6 +299,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		}
 
 		client.CreateDestination(stdT, destination)
+		defer client.DeleteDestination(stdT, destination.Name)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job

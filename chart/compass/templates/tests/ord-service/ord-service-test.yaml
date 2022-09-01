@@ -142,9 +142,9 @@ spec:
             - name: APP_DESTINATION_INSTANCE_TOKEN_URL_PATH
               value: {{ .Values.global.destinationFetcher.instance.tokenUrlPath }}
             - name: APP_DESTINATION_INSTANCE_X509_CERT_PATH
-              value: {{ .Values.global.destinationFetcher.instance.x509CertPath }}
+              value: {{ .Values.global.destinationFetcher.instance.clientCertPath }}
             - name: APP_DESTINATION_INSTANCE_X509_KEY_PATH
-              value: {{ .Values.global.destinationFetcher.instance.x509KeyPath }}
+              value: {{ .Values.global.destinationFetcher.instance.clientKeyPath }}
             - name: APP_DESTINATION_OAUTH_MODE
               value: {{ .Values.global.destinationFetcher.oauthMode }}
             - name: APP_DESTINATION_OAUTH_TOKEN_PATH

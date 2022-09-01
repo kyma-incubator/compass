@@ -104,3 +104,14 @@ func (c *DestinationClient) CreateDestination(t *testing.T, destination Destinat
 
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
 }
+
+func (c *DestinationClient) DeleteDestination(t *testing.T, destinationName string) {
+	url := c.apiURL + c.apiConfig.EndpointTenantDestinations + "?$filter=Name in(" + destinationName + ")"
+	request, err := http.NewRequest(http.MethodDelete, url, nil)
+	require.NoError(t, err)
+
+	resp, err := c.httpClient.Do(request)
+	require.NoError(t, err)
+
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+}

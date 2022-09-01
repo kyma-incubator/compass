@@ -171,20 +171,14 @@ func (h *Handler) DeleteDestination(writer http.ResponseWriter, req *http.Reques
 	}
 
 	filter = strings.ReplaceAll(filter, " ", "")
-	firstBrackerIndex := strings.IndexByte(filter, '(') + 1
+	firstBracketIndex := strings.IndexByte(filter, '(') + 1
 	secondBracketIndex := strings.IndexByte(filter, ')')
 
-	destinationNames := strings.Split(filter[firstBrackerIndex:secondBracketIndex], ",")
+	destinationNames := strings.Split(filter[firstBracketIndex:secondBracketIndex], ",")
 
 	deleteResponse := DeleteResponse{Count: 0}
 
 	for _, destinationName := range destinationNames {
-		if len(destinationName) < 3 {
-			continue
-		}
-
-		destinationName = destinationName[1 : len(destinationName)-1]
-
 		if _, ok := h.destinationsSensitive[destinationName]; !ok {
 			deleteResponse.Summary = append(deleteResponse.Summary, DeleteStatus{
 				Name:   destinationName,
