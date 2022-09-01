@@ -63,7 +63,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulWebhookList := func() *automock.WebhookService {
 		whSvc := &automock.WebhookService{}
-		whSvc.On("ListByWebhookTypeWithSelectForUpdate", context.TODO(), string(model.WebhookTypeOpenResourceDiscovery)).Return(fixWebhooksForApplication(), nil).Once()
+		whSvc.On("ListByWebhookTypeWithSelectForUpdate", context.TODO(), model.WebhookTypeOpenResourceDiscovery).Return(fixWebhooksForApplication(), nil).Once()
 		return whSvc
 	}
 
@@ -433,7 +433,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			tenantSvcFn: successfulTenantSvc,
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("ListByWebhookTypeWithSelectForUpdate", context.TODO(), string(model.WebhookTypeOpenResourceDiscovery)).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
+				whSvc.On("ListByWebhookTypeWithSelectForUpdate", context.TODO(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
 				return whSvc
 			},
 			bundleSvcFn:    successfulBundleUpdate,
@@ -547,7 +547,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("ListByWebhookTypeWithSelectForUpdate", context.TODO(), string(model.WebhookTypeOpenResourceDiscovery)).Return(nil, testErr).Once()
+				whSvc.On("ListByWebhookTypeWithSelectForUpdate", context.TODO(), model.WebhookTypeOpenResourceDiscovery).Return(nil, testErr).Once()
 				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
@@ -641,7 +641,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("ListByWebhookTypeWithSelectForUpdate", context.TODO(), string(model.WebhookTypeOpenResourceDiscovery)).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
+				whSvc.On("ListByWebhookTypeWithSelectForUpdate", context.TODO(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
 				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
@@ -662,7 +662,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("ListByWebhookTypeWithSelectForUpdate", context.TODO(), string(model.WebhookTypeOpenResourceDiscovery)).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
+				whSvc.On("ListByWebhookTypeWithSelectForUpdate", context.TODO(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
 				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
@@ -684,7 +684,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("ListByWebhookTypeWithSelectForUpdate", context.TODO(), string(model.WebhookTypeOpenResourceDiscovery)).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
+				whSvc.On("ListByWebhookTypeWithSelectForUpdate", context.TODO(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
 				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
@@ -702,7 +702,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			tenantSvcFn: successfulTenantSvc,
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("ListByWebhookTypeWithSelectForUpdate", context.TODO(), string(model.WebhookTypeOpenResourceDiscovery)).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
+				whSvc.On("ListByWebhookTypeWithSelectForUpdate", context.TODO(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
 				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
@@ -728,7 +728,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			tenantSvcFn: successfulTenantSvc,
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("ListByWebhookTypeWithSelectForUpdate", context.TODO(), string(model.WebhookTypeOpenResourceDiscovery)).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
+				whSvc.On("ListByWebhookTypeWithSelectForUpdate", context.TODO(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
 				return whSvc
 			},
 			bundleSvcFn:    successfulBundleUpdate,

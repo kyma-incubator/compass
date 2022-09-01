@@ -96,9 +96,9 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 	wg := &sync.WaitGroup{}
 	wg.Add(s.config.maxParallelApplicationProcessors)
 
-	ordWebhooks, err := s.webhookSvc.ListByWebhookTypeWithSelectForUpdate(ctx, string(model.WebhookTypeOpenResourceDiscovery))
+	ordWebhooks, err := s.webhookSvc.ListByWebhookTypeWithSelectForUpdate(ctx, model.WebhookTypeOpenResourceDiscovery)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("error while fetching webhooks with %s type", model.WebhookTypeOpenResourceDiscovery)
+		log.C(ctx).WithError(err).Errorf("error while fetching webhooks with type %s", model.WebhookTypeOpenResourceDiscovery)
 		return err
 	}
 
@@ -145,15 +145,21 @@ func (s *Service) processWebhook(ctx context.Context, webhook *model.Webhook, gl
 			return err
 		}
 		for _, app := range apps {
-			internalTntID, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, app.ID)
+			ctx , err = s.saveTenantToContext(ctx, app.ID)
 			if err != nil {
 				return err
 			}
-			tnt, err := s.tenantSvc.GetTenantByID(ctx, internalTntID)
-			if err != nil {
-				return err
-			}
-			ctx = tenant.SaveToContext(ctx, internalTntID, tnt.ExternalTenant)
+			//internalTntID, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, app.ID)
+			//if err != nil {
+			//	return err
+			//}
+			//
+			//tnt, err := s.tenantSvc.GetTenantByID(ctx, internalTntID)
+			//if err != nil {
+			//	return err
+			//}
+			//
+			//ctx = tenant.SaveToContext(ctx, internalTntID, tnt.ExternalTenant)
 			if _, err := s.appSvc.GetForUpdate(ctx, app.ID); err != nil {
 				return errors.Wrapf(err, "error while locking app with id %q for update", app.ID)
 			}
@@ -163,17 +169,21 @@ func (s *Service) processWebhook(ctx context.Context, webhook *model.Webhook, gl
 		}
 	} else if webhook.ObjectType == model.ApplicationWebhookReference {
 		appID := webhook.ObjectID
-		internalTntID, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, appID)
+		ctx , err = s.saveTenantToContext(ctx, appID)
 		if err != nil {
 			return err
 		}
-
-		tnt, err := s.tenantSvc.GetTenantByID(ctx, internalTntID)
-		if err != nil {
-			return err
-		}
-
-		ctx = tenant.SaveToContext(ctx, internalTntID, tnt.ExternalTenant)
+		//internalTntID, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, appID)
+		//if err != nil {
+		//	return err
+		//}
+		//
+		//tnt, err := s.tenantSvc.GetTenantByID(ctx, internalTntID)
+		//if err != nil {
+		//	return err
+		//}
+		//
+		//ctx = tenant.SaveToContext(ctx, internalTntID, tnt.ExternalTenant)
 		app, err := s.appSvc.GetForUpdate(ctx, appID)
 		if err != nil {
 			return errors.Wrapf(err, "error while locking app with id %q for update", appID)
@@ -716,6 +726,21 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, tx persistence
 	return nil
 }
 
+func (s *Service) saveTenantToContext(ctx context.Context, appID string) (context.Context, error) {
+	internalTntID, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, appID)
+	if err != nil {
+		return nil, err
+	}
+
+	tnt, err := s.tenantSvc.GetTenantByID(ctx, internalTntID)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx = tenant.SaveToContext(ctx, internalTntID, tnt.ExternalTenant)
+
+	return ctx, nil
+}
 func hashResources(docs Documents) (map[string]uint64, error) {
 	resourceHashes := make(map[string]uint64)
 

@@ -166,7 +166,7 @@ func (r *repository) ListByApplicationIDWithSelectForUpdate(ctx context.Context,
 	return convertToWebhooks(entities, r)
 }
 
-func (r *repository) ListByWebhookTypeWithSelectForUpdate(ctx context.Context, webhookType string) ([]*model.Webhook, error) {
+func (r *repository) ListByWebhookTypeWithSelectForUpdate(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error) {
 	var entities Collection
 
 	conditions := repo.Conditions{
