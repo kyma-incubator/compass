@@ -658,6 +658,7 @@ type BundleResolver interface {
 	Documents(ctx context.Context, obj *Bundle, first *int, after *PageCursor) (*DocumentPage, error)
 	APIDefinition(ctx context.Context, obj *Bundle, id string) (*APIDefinition, error)
 	EventDefinition(ctx context.Context, obj *Bundle, id string) (*EventDefinition, error)
+
 	Document(ctx context.Context, obj *Bundle, id string) (*Document, error)
 }
 type DocumentResolver interface {

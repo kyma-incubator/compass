@@ -179,6 +179,9 @@ global:
     timeoutSeconds: 1
     periodSeconds: 2
   agentPreconfiguration: false
+  portieris:
+    isEnabled: false
+    imagePullSecretName: "portieris-dummy-image-pull-secret"
   nsAdapter:
     external:
       port: 3005
