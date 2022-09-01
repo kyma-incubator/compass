@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationfetcher"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/notification"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/provider"
@@ -200,6 +201,14 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	configChangeRouter := router.PathPrefix("/audit-log/v2/configuration-changes").Subrouter()
 	configChangeRouter.Use(oauthMiddleware(&key.PublicKey, noopClaimsValidator))
 	configurationchange.InitConfigurationChangeHandler(configChangeRouter, configChangeHandler)
+
+	// Destination Service handler
+	destinationsRouter := router.PathPrefix("/destination-configuration/v1").Subrouter()
+	destinationHandler := destinationfetcher.NewHandler()
+	destinationsRouter.HandleFunc("/subaccountDestinations",
+		destinationHandler.GetSubaccountDestinationsPage).Methods(http.MethodGet)
+	destinationsRouter.HandleFunc("/destinations/{name}",
+		destinationHandler.GetSensitiveData).Methods(http.MethodGet)
 
 	// System fetcher handlers
 	systemFetcherHandler := systemfetcher.NewSystemFetcherHandler(cfg.DefaultTenant)

@@ -1,8 +1,6 @@
 package config
 
 import (
-	"io/ioutil"
-	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/oauth"
@@ -38,29 +36,17 @@ type SelfRegConfig struct {
 	RegionToInstanceConfig   map[string]InstanceConfig `envconfig:"-"`
 }
 
-// InstanceConfig is configuration for communication with specific instance in the runtime self-registration flow
-type InstanceConfig struct {
-	ClientID     string
-	ClientSecret string
-	URL          string
-	TokenURL     string
-	Cert         string
-	Key          string
-}
-
 // MapInstanceConfigs parses the InstanceConfigs json string to map with key: region name and value: InstanceConfig for the instance in the region
 func (c *SelfRegConfig) MapInstanceConfigs() error {
-	secretData, err := c.getSelfRegSecret(c.SelfRegisterSecretPath)
+	secretData, err := ReadConfigFile(c.SelfRegisterSecretPath)
 	if err != nil {
-		return errors.Wrapf(err, "while getting self registration secret")
+		return errors.Wrapf(err, "while getting destinations secret")
 	}
 
-	if ok := gjson.Valid(secretData); !ok {
-		return errors.New("failed to validate instance configs")
+	bindingsMap, err := ParseConfigToJSONMap(secretData)
+	if err != nil {
+		return err
 	}
-
-	bindingsResult := gjson.Parse(secretData)
-	bindingsMap := bindingsResult.Map()
 	c.RegionToInstanceConfig = make(map[string]InstanceConfig)
 	for region, config := range bindingsMap {
 		i := InstanceConfig{
@@ -78,55 +64,6 @@ func (c *SelfRegConfig) MapInstanceConfigs() error {
 		}
 
 		c.RegionToInstanceConfig[region] = i
-	}
-
-	return nil
-}
-
-func (c *SelfRegConfig) getSelfRegSecret(path string) (string, error) {
-	if path == "" {
-		return "", errors.New("self registration secret path cannot be empty")
-	}
-	secret, err := ioutil.ReadFile(path)
-	if err != nil {
-		return "", errors.Wrapf(err, "unable to read self registration secret file")
-	}
-
-	return string(secret), nil
-}
-
-// validate checks if all required fields are populated based on Oauth Mode.
-// In the end, the error message is aggregated by joining all error messages.
-func (i *InstanceConfig) validate(oauthMode oauth.AuthMode) error {
-	errorMessages := make([]string, 0)
-
-	if i.ClientID == "" {
-		errorMessages = append(errorMessages, "Client ID is missing")
-	}
-	if i.TokenURL == "" {
-		errorMessages = append(errorMessages, "Token URL is missing")
-	}
-	if i.URL == "" {
-		errorMessages = append(errorMessages, "URL is missing")
-	}
-
-	switch oauthMode {
-	case oauth.Standard:
-		if i.ClientSecret == "" {
-			errorMessages = append(errorMessages, "Client Secret is missing")
-		}
-	case oauth.Mtls:
-		if i.Cert == "" {
-			errorMessages = append(errorMessages, "Certificate is missing")
-		}
-		if i.Key == "" {
-			errorMessages = append(errorMessages, "Key is missing")
-		}
-	}
-
-	errorMsg := strings.Join(errorMessages, ", ")
-	if errorMsg != "" {
-		return errors.New(errorMsg)
 	}
 
 	return nil

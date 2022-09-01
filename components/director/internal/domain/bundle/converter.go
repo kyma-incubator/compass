@@ -124,11 +124,16 @@ func (c *converter) ToGraphQL(in *model.Bundle) (*graphql.Bundle, error) {
 		return nil, errors.Wrap(err, "while converting DefaultInstanceAuth to GraphQL")
 	}
 
+	correlationIDs, err := c.correlationIDsToStringSlice(in.CorrelationIDs)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting CorrelationIDs to GraphQL")
+	}
 	return &graphql.Bundle{
 		Name:                           in.Name,
 		Description:                    in.Description,
 		InstanceAuthRequestInputSchema: c.strPtrToJSONSchemaPtr(in.InstanceAuthRequestInputSchema),
 		DefaultInstanceAuth:            auth,
+		CorrelationIDs:                 correlationIDs,
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
@@ -179,6 +184,10 @@ func (c *converter) CreateInputFromGraphQL(in graphql.BundleCreateInput) (model.
 		return model.BundleCreateInput{}, errors.Wrap(err, "while converting EventDefinitions input")
 	}
 
+	correlationIDs, err := c.correlationIDsToJSONRaw(in.CorrelationIDs)
+	if err != nil {
+		return model.BundleCreateInput{}, errors.Wrap(err, "while converting CorrelationIDs input")
+	}
 	return model.BundleCreateInput{
 		Name:                           in.Name,
 		Description:                    in.Description,
@@ -189,6 +198,7 @@ func (c *converter) CreateInputFromGraphQL(in graphql.BundleCreateInput) (model.
 		EventDefinitions:               eventDefs,
 		EventSpecs:                     eventSpecs,
 		Documents:                      documents,
+		CorrelationIDs:                 correlationIDs,
 	}, nil
 }
 
@@ -263,6 +273,29 @@ func (c *converter) jsonSchemaPtrToStrPtr(in *graphql.JSONSchema) *string {
 	}
 	out := string(*in)
 	return &out
+}
+
+func (c *converter) correlationIDsToStringSlice(in json.RawMessage) ([]string, error) {
+	if in == nil {
+		return nil, nil
+	}
+	var out []string
+	err := json.Unmarshal(in, &out)
+	if err != nil {
+		return nil, errors.Wrap(err, "while unmarshal correlation IDs")
+	}
+	return out, nil
+}
+
+func (c *converter) correlationIDsToJSONRaw(correlationIDs []string) (json.RawMessage, error) {
+	if correlationIDs == nil {
+		return nil, nil
+	}
+	out, err := json.Marshal(correlationIDs)
+	if err != nil {
+		return nil, errors.Wrap(err, "while marshalling correlation IDs")
+	}
+	return out, nil
 }
 
 func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {

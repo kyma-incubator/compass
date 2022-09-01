@@ -227,6 +227,7 @@ type BundleCreateInput struct {
 	APIDefinitions                 []*APIDefinitionInput   `json:"apiDefinitions"`
 	EventDefinitions               []*EventDefinitionInput `json:"eventDefinitions"`
 	Documents                      []*DocumentInput        `json:"documents"`
+	CorrelationIDs                 []string                `json:"correlationIDs"`
 }
 
 type BundleInstanceAuth struct {
