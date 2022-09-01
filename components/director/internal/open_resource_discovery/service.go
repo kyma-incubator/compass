@@ -36,8 +36,6 @@ type Service struct {
 
 	transact persistence.Transactioner
 
-	labelRepo labelRepository
-
 	appSvc             ApplicationService
 	webhookSvc         WebhookService
 	bundleSvc          BundleService
@@ -56,12 +54,11 @@ type Service struct {
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, labelRepo labelRepository, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client) *Service {
+func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client) *Service {
 	return &Service{
 		config:             config,
 		transact:           transact,
 		appSvc:             appSvc,
-		labelRepo:          labelRepo,
 		webhookSvc:         webhookSvc,
 		bundleSvc:          bundleSvc,
 		bundleReferenceSvc: bundleReferenceSvc,
@@ -102,6 +99,7 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 	ordWebhooks, err := s.webhookSvc.ListByWebhookTypeWithSelectForUpdate(ctx, string(model.WebhookTypeOpenResourceDiscovery))
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("error while fetching webhooks with %s type", model.WebhookTypeOpenResourceDiscovery)
+		return err
 	}
 
 	log.C(ctx).Infof("Starting %d workers...", s.config.maxParallelApplicationProcessors)
@@ -163,28 +161,27 @@ func (s *Service) processWebhook(ctx context.Context, webhook *model.Webhook, gl
 				return err
 			}
 		}
-	}
+	} else if webhook.ObjectType == model.ApplicationWebhookReference {
+		appID := webhook.ObjectID
+		internalTntID, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, appID)
+		if err != nil {
+			return err
+		}
 
-	appID := webhook.ObjectID
-	internalTntID, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, appID)
-	if err != nil {
-		return err
-	}
+		tnt, err := s.tenantSvc.GetTenantByID(ctx, internalTntID)
+		if err != nil {
+			return err
+		}
 
-	tnt, err := s.tenantSvc.GetTenantByID(ctx, internalTntID)
-	if err != nil {
-		return err
+		ctx = tenant.SaveToContext(ctx, internalTntID, tnt.ExternalTenant)
+		app, err := s.appSvc.GetForUpdate(ctx, appID)
+		if err != nil {
+			return errors.Wrapf(err, "error while locking app with id %q for update", appID)
+		}
+		if err := s.processWebhookAndDocuments(ctx, tx, webhook, app, globalResourcesOrdIDs); err != nil {
+			return err
+		}
 	}
-
-	ctx = tenant.SaveToContext(ctx, internalTntID, tnt.ExternalTenant)
-	app, err := s.appSvc.GetForUpdate(ctx, appID)
-	if err != nil {
-		return errors.Wrapf(err, "error while locking app with id %q for update", appID)
-	}
-	if err := s.processWebhookAndDocuments(ctx, tx, webhook, app, globalResourcesOrdIDs); err != nil {
-		return err
-	}
-
 	return nil
 }
 

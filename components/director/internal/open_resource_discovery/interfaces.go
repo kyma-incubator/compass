@@ -8,11 +8,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-//go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
-type labelRepository interface {
-	ListGlobalByKeyAndObjects(ctx context.Context, objectType model.LabelableObject, objectIDs []string, key string) ([]*model.Label, error)
-}
-
 // WebhookService is responsible for the service-layer Webhook operations.
 //go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookService interface {
