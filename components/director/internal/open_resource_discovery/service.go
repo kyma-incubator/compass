@@ -96,6 +96,13 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 	wg := &sync.WaitGroup{}
 	wg.Add(s.config.maxParallelApplicationProcessors)
 
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
 	ordWebhooks, err := s.webhookSvc.ListByWebhookTypeWithSelectForUpdate(ctx, model.WebhookTypeOpenResourceDiscovery)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("error while fetching webhooks with type %s", model.WebhookTypeOpenResourceDiscovery)
@@ -108,7 +115,7 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 			defer wg.Done()
 
 			for webhook := range queue {
-				if err := s.processWebhook(ctx, webhook, globalResourcesOrdIDs); err != nil {
+				if err := s.processWebhook(ctx, tx, webhook, globalResourcesOrdIDs); err != nil {
 					log.C(ctx).WithError(err).Errorf("error while processing webhook %q", webhook.ID)
 					atomic.AddInt32(&webhookErrors, 1)
 				}
@@ -129,14 +136,14 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) processWebhook(ctx context.Context, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
+func (s *Service) processWebhook(ctx context.Context, tx persistence.PersistenceTx, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error {
+	//tx, err := s.transact.Begin()
+	//if err != nil {
+	//	return err
+	//}
+	//defer s.transact.RollbackUnlessCommitted(ctx, tx)
+	//
+	//ctx = persistence.SaveToContext(ctx, tx)
 
 	if webhook.ObjectType == model.ApplicationTemplateWebhookReference {
 		appTemplateID := webhook.ObjectID
@@ -145,7 +152,7 @@ func (s *Service) processWebhook(ctx context.Context, webhook *model.Webhook, gl
 			return err
 		}
 		for _, app := range apps {
-			ctx , err = s.saveTenantToContext(ctx, app.ID)
+			ctx, err = s.saveTenantToContext(ctx, app.ID)
 			if err != nil {
 				return err
 			}
@@ -169,7 +176,7 @@ func (s *Service) processWebhook(ctx context.Context, webhook *model.Webhook, gl
 		}
 	} else if webhook.ObjectType == model.ApplicationWebhookReference {
 		appID := webhook.ObjectID
-		ctx , err = s.saveTenantToContext(ctx, appID)
+		ctx, err := s.saveTenantToContext(ctx, appID)
 		if err != nil {
 			return err
 		}
