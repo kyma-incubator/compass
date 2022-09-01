@@ -327,11 +327,11 @@ func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model
 
 func createORDWebhookInput(baseURL string) *model.WebhookInput {
 	url := strings.TrimSuffix(baseURL, "/")
-	ordUrl := fmt.Sprintf("%s%s", url, ord.WellKnownEndpoint)
+	ordURL := fmt.Sprintf("%s%s", url, ord.WellKnownEndpoint)
 
 	return &model.WebhookInput{
 		Type: model.WebhookTypeOpenResourceDiscovery,
-		URL:  str.Ptr(ordUrl),
+		URL:  str.Ptr(ordURL),
 		Auth: &model.AuthInput{
 			AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
 		},
