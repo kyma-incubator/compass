@@ -44,6 +44,8 @@ spec:
                   value: "{{ .Values.global.systemFetcher.directorRequestTimeout }}"
                 - name: APP_ENABLE_SYSTEM_DELETION
                   value: "{{ .Values.global.systemFetcher.enableSystemDeletion }}"
+                - name: APP_OPERATIONAL_MODE
+                  value: {{ .Values.global.systemFetcher.operationalMode }}
                 - name: APP_SYSTEM_INFORMATION_PARALLELLISM
                   value: "{{ .Values.global.systemFetcher.fetchParallellism }}"
                 - name: APP_SYSTEM_INFORMATION_QUEUE_SIZE
