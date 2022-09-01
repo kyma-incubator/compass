@@ -7,11 +7,6 @@ metadata:
     app: {{ .Chart.Name }}
     reqlimit: big
     release: {{ .Release.Name }}
-  {{- if .Values.global.isLocalEnv }}
-  annotations:
-    "helm.sh/hook": post-install,post-upgrade
-    "helm.sh/hook-weight": "0"
-  {{- end }}
 spec:
   replicas: {{ .Values.deployment.minReplicas }}
   selector:
@@ -44,6 +39,10 @@ spec:
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
+      {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+      - name: {{ .Values.global.portieris.imagePullSecretName }}
+      {{ end }}
       containers:
         - name: {{ .Chart.Name }}
           image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}

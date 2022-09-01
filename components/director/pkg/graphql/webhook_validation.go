@@ -37,20 +37,44 @@ var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChan
 	},
 }
 
+var emptyApplicationTenantMappingInput = &webhook.ApplicationTenantMappingInput{
+	SourceApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+		ApplicationTemplate: &model.ApplicationTemplate{},
+		Labels:              map[string]interface{}{},
+	},
+	SourceApplication: &webhook.ApplicationWithLabels{
+		Application: &model.Application{
+			BaseEntity: &model.BaseEntity{},
+		},
+		Labels: map[string]interface{}{},
+	},
+	TargetApplicationTemplate: &webhook.ApplicationTemplateWithLabels{
+		ApplicationTemplate: &model.ApplicationTemplate{},
+		Labels:              map[string]interface{}{},
+	},
+	TargetApplication: &webhook.ApplicationWithLabels{
+		Application: &model.Application{
+			BaseEntity: &model.BaseEntity{},
+		},
+		Labels: map[string]interface{}{},
+	},
+}
+
 var webhookTemplateInputByType = map[WebhookType]webhook.TemplateInput{
-	WebhookTypeRegisterApplication:   emptyApplicationLifecycleWebhookRequestObject,
-	WebhookTypeUnregisterApplication: emptyApplicationLifecycleWebhookRequestObject,
-	WebhookTypeUnpairApplication:     emptyApplicationLifecycleWebhookRequestObject,
-	WebhookTypeConfigurationChanged:  emptyFormationConfigurationChangeInput,
+	WebhookTypeRegisterApplication:      emptyApplicationLifecycleWebhookRequestObject,
+	WebhookTypeUnregisterApplication:    emptyApplicationLifecycleWebhookRequestObject,
+	WebhookTypeUnpairApplication:        emptyApplicationLifecycleWebhookRequestObject,
+	WebhookTypeConfigurationChanged:     emptyFormationConfigurationChangeInput,
+	WebhookTypeApplicationTenantMapping: emptyApplicationTenantMappingInput,
 }
 
 // Validate missing godoc
 func (i WebhookInput) Validate() error {
 	if err := validation.ValidateStruct(&i,
-		validation.Field(&i.Type, validation.Required, validation.In(WebhookTypeConfigurationChanged, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeUnpairApplication)),
+		validation.Field(&i.Type, validation.Required, validation.In(WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeUnpairApplication)),
 		validation.Field(&i.URL, is.URL, validation.RuneLength(0, longStringLengthLimit)),
 		validation.Field(&i.CorrelationIDKey, validation.RuneLength(0, longStringLengthLimit)),
-		validation.Field(&i.Mode, validation.In(WebhookModeSync, WebhookModeAsync)),
+		validation.Field(&i.Mode, validation.In(WebhookModeSync, WebhookModeAsync), validation.When(i.Type == WebhookTypeConfigurationChanged || i.Type == WebhookTypeApplicationTenantMapping, validation.In(WebhookModeSync))),
 		validation.Field(&i.RetryInterval, validation.Min(0)),
 		validation.Field(&i.Timeout, validation.Min(0)),
 		validation.Field(&i.Auth),

@@ -21,6 +21,10 @@ spec:
         app: {{ .Chart.Name }}-ns-adapter-tests-app
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-ns-adapter
+    {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+      - name: {{ .Values.global.portieris.imagePullSecretName }}
+    {{ end }}
       containers:
         - name: ns-adapter-tests
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}

@@ -5,12 +5,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
 spec:
   jwtRules:
-    - issuer: kubernetes/serviceaccount
-      jwksUri: {{ .Values.global.kubernetes.serviceAccountTokenJWKS }}
-      forwardOriginalToken: true
-      fromHeaders:
-        - name: X-Authorization
-          prefix: "Bearer "
     - issuer: {{ .Values.global.kubernetes.serviceAccountTokenIssuer }}
       jwksUri: {{ .Values.global.kubernetes.serviceAccountTokenJWKS }}
       forwardOriginalToken: true
@@ -90,12 +84,6 @@ spec:
     matchLabels:
       app.kubernetes.io/name: hydra
   jwtRules:
-    - issuer: kubernetes/serviceaccount
-      jwksUri: {{ .Values.global.kubernetes.serviceAccountTokenJWKS }}
-      forwardOriginalToken: true
-      fromHeaders:
-        - name: X-Authorization
-          prefix: "Bearer "
     - issuer: {{ .Values.global.kubernetes.serviceAccountTokenIssuer }}
       jwksUri: {{ .Values.global.kubernetes.serviceAccountTokenJWKS }}
       forwardOriginalToken: true

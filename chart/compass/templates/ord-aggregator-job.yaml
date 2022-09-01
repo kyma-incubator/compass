@@ -4,11 +4,6 @@ apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: "{{ $.Chart.Name }}-ord-aggregator"
-  {{ if .Values.global.isLocalEnv }} # ord-aggregator job needs fully initialized DB, so it is installed with helm post hook
-  annotations:
-    "helm.sh/hook": post-install,post-upgrade
-    "helm.sh/hook-weight": "0"
-  {{ end }}
 spec:
   schedule: "{{ .Values.global.ordAggregator.schedule }}"
   failedJobsHistoryLimit: 5
@@ -28,6 +23,10 @@ spec:
             cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         spec:
           serviceAccountName: {{ $.Chart.Name }}-ord-aggregator
+        {{ if eq .Values.global.portieris.isEnabled true }}
+          imagePullSecrets:
+          - name: {{ .Values.global.portieris.imagePullSecretName }}
+        {{ end }}
           containers:
             - name: {{ .Values.global.ordAggregator.containerName }}
               image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}

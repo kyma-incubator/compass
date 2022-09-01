@@ -477,7 +477,7 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 	input := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
 
 	appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, input)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &appTpl)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTpl)
 	require.NoError(t, err)
 	require.NotEmpty(t, appTpl.ID)
 	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTpl.Labels[tenantfetcher.RegionKey])
@@ -512,7 +512,7 @@ func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
 	input := fixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName)
 
 	tmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, input)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, &tmpl)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, tmpl)
 	require.NoError(t, err)
 	require.NotEmpty(t, tmpl.ID)
 	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, tmpl.Labels[tenantfetcher.RegionKey])
