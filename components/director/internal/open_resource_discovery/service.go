@@ -137,14 +137,6 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 }
 
 func (s *Service) processWebhook(ctx context.Context, tx persistence.PersistenceTx, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error {
-	//tx, err := s.transact.Begin()
-	//if err != nil {
-	//	return err
-	//}
-	//defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	//
-	//ctx = persistence.SaveToContext(ctx, tx)
-
 	if webhook.ObjectType == model.ApplicationTemplateWebhookReference {
 		appTemplateID := webhook.ObjectID
 		apps, err := s.appSvc.ListAllByApplicationTemplateID(ctx, appTemplateID)
@@ -156,17 +148,6 @@ func (s *Service) processWebhook(ctx context.Context, tx persistence.Persistence
 			if err != nil {
 				return err
 			}
-			//internalTntID, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, app.ID)
-			//if err != nil {
-			//	return err
-			//}
-			//
-			//tnt, err := s.tenantSvc.GetTenantByID(ctx, internalTntID)
-			//if err != nil {
-			//	return err
-			//}
-			//
-			//ctx = tenant.SaveToContext(ctx, internalTntID, tnt.ExternalTenant)
 			if _, err := s.appSvc.GetForUpdate(ctx, app.ID); err != nil {
 				return errors.Wrapf(err, "error while locking app with id %q for update", app.ID)
 			}
@@ -180,17 +161,6 @@ func (s *Service) processWebhook(ctx context.Context, tx persistence.Persistence
 		if err != nil {
 			return err
 		}
-		//internalTntID, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, appID)
-		//if err != nil {
-		//	return err
-		//}
-		//
-		//tnt, err := s.tenantSvc.GetTenantByID(ctx, internalTntID)
-		//if err != nil {
-		//	return err
-		//}
-		//
-		//ctx = tenant.SaveToContext(ctx, internalTntID, tnt.ExternalTenant)
 		app, err := s.appSvc.GetForUpdate(ctx, appID)
 		if err != nil {
 			return errors.Wrapf(err, "error while locking app with id %q for update", appID)
