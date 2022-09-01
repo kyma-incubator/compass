@@ -159,13 +159,13 @@ func (_m *WebhookRepository) ListByReferenceObjectID(ctx context.Context, tenant
 	return r0, r1
 }
 
-// ListByWebhookTypeWithSelectForUpdate provides a mock function with given fields: ctx, tenant, webhookType
-func (_m *WebhookRepository) ListByWebhookTypeWithSelectForUpdate(ctx context.Context, tenant string, webhookType string) ([]*model.Webhook, error) {
-	ret := _m.Called(ctx, tenant, webhookType)
+// ListByWebhookTypeWithSelectForUpdate provides a mock function with given fields: ctx, webhookType
+func (_m *WebhookRepository) ListByWebhookTypeWithSelectForUpdate(ctx context.Context, webhookType string) ([]*model.Webhook, error) {
+	ret := _m.Called(ctx, webhookType)
 
 	var r0 []*model.Webhook
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.Webhook); ok {
-		r0 = rf(ctx, tenant, webhookType)
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Webhook); ok {
+		r0 = rf(ctx, webhookType)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.Webhook)
@@ -173,8 +173,8 @@ func (_m *WebhookRepository) ListByWebhookTypeWithSelectForUpdate(ctx context.Co
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, tenant, webhookType)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, webhookType)
 	} else {
 		r1 = ret.Error(1)
 	}
