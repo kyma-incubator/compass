@@ -348,3 +348,106 @@ func TestPgRepository_ListByApplicationIDNoPaging(t *testing.T) {
 
 	suite.Run(t)
 }
+
+func TestPgRepository_ListByDestination(t *testing.T) {
+	bndlEntity := fixEntityBundle(bundleID, "foo", "bar")
+	modelBundle := fixBundleModel("foo", "bar")
+
+	destinationWithSystemName := model.DestinationInput{
+		URL:               "http://localhost",
+		XSystemTenantName: "system_name",
+		XCorrelationID:    "correlation_id",
+	}
+
+	suiteBySystemName := testdb.RepoListTestSuite{
+		Name: "List Bundles By Destination with system name",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query: regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema, 
+					default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies,
+					ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM 
+					public.bundles WHERE app_id IN (
+						SELECT id
+						FROM public.applications
+						WHERE id IN (
+							SELECT id
+							FROM tenant_applications
+							WHERE tenant_id=(SELECT parent FROM business_tenant_mappings WHERE id = $1 )
+						)
+						AND name = $2 AND base_url = $3
+				) AND correlation_ids ?| array[$4]`),
+				Args: []driver.Value{tenantID, destinationWithSystemName.XSystemTenantName,
+					destinationWithSystemName.URL, destinationWithSystemName.XCorrelationID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns()).
+						AddRow(fixBundleRow(bundleID, "placeholder")...),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   bundle.NewRepository,
+		ExpectedModelEntities: []interface{}{modelBundle},
+		ExpectedDBEntities:    []interface{}{bndlEntity},
+		MethodArgs:            []interface{}{tenantID, destinationWithSystemName},
+		MethodName:            "ListByDestination",
+	}
+
+	suiteBySystemName.Run(t)
+
+	destinationWithSystemID := model.DestinationInput{
+		XSystemType:     "system_type",
+		XSystemTenantID: "system_id",
+		XCorrelationID:  "correlation_id",
+	}
+
+	suiteBySystemID := testdb.RepoListTestSuite{
+		Name: "List Bundles By Destination with system ID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query: regexp.QuoteMeta(`SELECT id, app_id, name, description, instance_auth_request_json_schema,
+					default_instance_auth, ord_id, short_description, links, labels, credential_exchange_strategies,
+					ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels FROM
+					public.bundles WHERE app_id IN (
+						SELECT DISTINCT pa.id as id
+						FROM public.applications pa JOIN labels l ON pa.id=l.app_id
+						WHERE pa.id IN (
+							SELECT id
+							FROM tenant_applications
+							WHERE tenant_id=(SELECT parent FROM business_tenant_mappings WHERE id = $1 )
+						)
+						AND l.key='applicationType'
+						AND l.value ?| array[$2]
+						AND pa.local_tenant_id = $3
+				) AND correlation_ids ?| array[$4]`),
+				Args: []driver.Value{tenantID, destinationWithSystemID.XSystemType,
+					destinationWithSystemID.XSystemTenantID, destinationWithSystemID.XCorrelationID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns()).
+						AddRow(fixBundleRow(bundleID, "placeholder")...),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   bundle.NewRepository,
+		ExpectedModelEntities: []interface{}{modelBundle},
+		ExpectedDBEntities:    []interface{}{bndlEntity},
+		MethodArgs:            []interface{}{tenantID, destinationWithSystemID},
+		MethodName:            "ListByDestination",
+	}
+
+	suiteBySystemID.Run(t)
+}

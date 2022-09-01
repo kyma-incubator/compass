@@ -36,7 +36,7 @@ spec:
               {{- toYaml $.Values.deployment.nodeSelector | nindent 14 }}
           {{ if eq $.Values.global.portieris.isEnabled true }}
             imagePullSecrets:
-            - name: .Values.global.portieris.imagePullSecretName
+            - name: {{ $.Values.global.portieris.imagePullSecretName }}
           {{ end }}
             containers:
             - name: {{ $.Chart.Name }}

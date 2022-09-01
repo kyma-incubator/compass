@@ -18,7 +18,6 @@ package log
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -73,7 +72,7 @@ func (h *ErrorLocationHook) Fire(entry *logrus.Entry) error {
 
 func getPkgName(trace errors.StackTrace) string {
 	formattedTrace := fmt.Sprintf("%+s", trace[0])
-	split := strings.Split(formattedTrace, string(filepath.Separator))
+	split := strings.Split(formattedTrace, "/") // Even on Windows this should be "/"
 
 	return split[len(split)-2]
 }

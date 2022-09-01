@@ -23,7 +23,7 @@ spec:
           serviceAccountName: {{ $.Chart.Name }}-system-fetcher
         {{ if eq .Values.global.portieris.isEnabled true }}
           imagePullSecrets:
-          - name: .Values.global.portieris.imagePullSecretName
+          - name: {{ .Values.global.portieris.imagePullSecretName }}
         {{ end }}
           containers:
             - name: {{ .Values.global.systemFetcher.containerName }}

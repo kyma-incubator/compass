@@ -25,7 +25,7 @@ spec:
           serviceAccountName: {{ $.Chart.Name }}-ord-aggregator
         {{ if eq .Values.global.portieris.isEnabled true }}
           imagePullSecrets:
-          - name: .Values.global.portieris.imagePullSecretName
+          - name: {{ .Values.global.portieris.imagePullSecretName }}
         {{ end }}
           containers:
             - name: {{ .Values.global.ordAggregator.containerName }}
