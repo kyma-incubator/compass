@@ -63,7 +63,7 @@ type config struct {
 	ParallelTenantSyncs        int64         `envconfig:"APP_DESTINATION_FETCHER_PARALLEL_TENANTS,default=10"`
 	DestinationsRootAPI        string        `envconfig:"APP_ROOT_API,default=/destinations"`
 
-	Handler                     destinationfetcher.HandlerConfig
+	HandlerConfig               destinationfetcher.HandlerConfig
 	DestinationServiceAPIConfig destinationfetcher.DestinationServiceAPIConfig
 	DestinationsConfig          configprovider.DestinationsConfig
 	Database                    persistence.DatabaseConfig
@@ -174,7 +174,7 @@ func getDestinationService(cfg config, transact persistence.Transactioner) *dest
 	return &destinationfetcher.DestinationService{
 		Transactioner:      transact,
 		UUIDSvc:            uuidSvc,
-		Repo:               destRepo,
+		DestinationRepo:    destRepo,
 		BundleRepo:         bundleRepo,
 		LabelRepo:          labelRepo,
 		DestinationsConfig: cfg.DestinationsConfig,
@@ -190,20 +190,20 @@ func initAPIHandler(ctx context.Context, httpClient *http.Client,
 	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger())
 
 	syncDestinationsAPIRouter := mainRouter.PathPrefix(cfg.DestinationsRootAPI).Subrouter()
-	destinationHandler := destinationfetcher.NewDestinationsHTTPHandler(destService, cfg.Handler)
+	destinationHandler := destinationfetcher.NewDestinationsHTTPHandler(destService, cfg.HandlerConfig)
 	sensitiveDataAPIRouter := syncDestinationsAPIRouter
 
-	log.C(ctx).Infof("Registering service destinations endpoint on %s...", cfg.Handler.SyncDestinationsEndpoint)
+	log.C(ctx).Infof("Registering service destinations endpoint on %s...", cfg.HandlerConfig.SyncDestinationsEndpoint)
 	configureAuthMiddleware(ctx, httpClient, syncDestinationsAPIRouter,
 		cfg.SecurityConfig, cfg.SecurityConfig.DestinationsOnDemandScope)
 
-	syncDestinationsAPIRouter.HandleFunc(cfg.Handler.SyncDestinationsEndpoint, destinationHandler.SyncTenantDestinations).
+	syncDestinationsAPIRouter.HandleFunc(cfg.HandlerConfig.SyncDestinationsEndpoint, destinationHandler.SyncTenantDestinations).
 		Methods(http.MethodPut)
 
-	log.C(ctx).Infof("Registering service destinations endpoint on %s...", cfg.Handler.DestinationsSensitiveEndpoint)
+	log.C(ctx).Infof("Registering service destinations endpoint on %s...", cfg.HandlerConfig.DestinationsSensitiveEndpoint)
 	configureAuthMiddleware(ctx, httpClient, sensitiveDataAPIRouter,
 		cfg.SecurityConfig, cfg.SecurityConfig.DestinationsSensitiveDataScope)
-	sensitiveDataAPIRouter.HandleFunc(cfg.Handler.DestinationsSensitiveEndpoint, destinationHandler.FetchDestinationsSensitiveData).
+	sensitiveDataAPIRouter.HandleFunc(cfg.HandlerConfig.DestinationsSensitiveEndpoint, destinationHandler.FetchDestinationsSensitiveData).
 		Methods(http.MethodGet)
 
 	healthCheckRouter := mainRouter.PathPrefix(cfg.DestinationsRootAPI).Subrouter()

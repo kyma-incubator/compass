@@ -266,7 +266,6 @@ func TestNewClient(t *testing.T) {
 		instanceCfg := config.InstanceConfig{
 			TokenURL: "https://nosubdomaintokenurl",
 		}
-
 		_, err := destinationfetchersvc.NewClient(instanceCfg,
 			destinationfetchersvc.DestinationServiceAPIConfig{OAuthTokenPath: "/oauth/token"}, "subdomain")
 		require.Error(t, err, fmt.Sprintf("auth url '%s' should have a subdomain", instanceCfg.TokenURL))
@@ -276,7 +275,6 @@ func TestNewClient(t *testing.T) {
 		instanceCfg := config.InstanceConfig{
 			TokenURL: ":invalid",
 		}
-
 		_, err := destinationfetchersvc.NewClient(instanceCfg,
 			destinationfetchersvc.DestinationServiceAPIConfig{OAuthTokenPath: "/oauth/token"}, "subdomain")
 		require.Error(t, err)

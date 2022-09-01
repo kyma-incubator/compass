@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
@@ -14,7 +15,6 @@ type HandlerConfig struct {
 	SyncDestinationsEndpoint      string `envconfig:"APP_DESTINATIONS_SYNC_ENDPOINT,default=/v1/syncDestinations"`
 	DestinationsSensitiveEndpoint string `envconfig:"APP_DESTINATIONS_SENSITIVE_DATA_ENDPOINT,default=/v1/destinations"`
 	DestinationsQueryParameter    string `envconfig:"APP_DESTINATIONS_SENSITIVE_DATA_QUERY_PARAM,default=name"`
-	InternalTenantIDHeaderName    string `envconfig:"APP_INTERNAL_TENANT_ID_HEADER,default=InternalTenantId"`
 }
 
 type handler struct {
@@ -40,9 +40,8 @@ func NewDestinationsHTTPHandler(destinationManager DestinationManager, config Ha
 func (h *handler) SyncTenantDestinations(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	tenantID := request.Header.Get(h.config.InternalTenantIDHeaderName)
-	if tenantID == "" {
-		err := fmt.Errorf("missing '%s' header", h.config.InternalTenantIDHeaderName)
+	tenantID, err := tenant.LoadFromContext(request.Context())
+	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to sync tenant destinations")
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return
@@ -63,9 +62,8 @@ func (h *handler) SyncTenantDestinations(writer http.ResponseWriter, request *ht
 func (h *handler) FetchDestinationsSensitiveData(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	tenantID := request.Header.Get(h.config.InternalTenantIDHeaderName)
-	if tenantID == "" {
-		err := fmt.Errorf("missing '%s' header", h.config.InternalTenantIDHeaderName)
+	tenantID, err := tenant.LoadFromContext(request.Context())
+	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to fetch sensitive data for destinations")
 		http.Error(writer, err.Error(), http.StatusBadRequest)
 		return

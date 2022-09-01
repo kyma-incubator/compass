@@ -658,7 +658,6 @@ type BundleResolver interface {
 	Documents(ctx context.Context, obj *Bundle, first *int, after *PageCursor) (*DocumentPage, error)
 	APIDefinition(ctx context.Context, obj *Bundle, id string) (*APIDefinition, error)
 	EventDefinition(ctx context.Context, obj *Bundle, id string) (*EventDefinition, error)
-	CorrelationIDs(ctx context.Context, obj *Bundle) ([]string, error)
 	Document(ctx context.Context, obj *Bundle, id string) (*Document, error)
 }
 type DocumentResolver interface {
@@ -11856,13 +11855,13 @@ func (ec *executionContext) _Bundle_correlationIDs(ctx context.Context, field gr
 		Object:   "Bundle",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Bundle().CorrelationIDs(rctx, obj)
+		return obj.CorrelationIDs, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -28798,16 +28797,7 @@ func (ec *executionContext) _Bundle(ctx context.Context, sel ast.SelectionSet, o
 				return res
 			})
 		case "correlationIDs":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Bundle_correlationIDs(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._Bundle_correlationIDs(ctx, field, obj)
 		case "document":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {

@@ -208,7 +208,10 @@ func fixBundleModelWithID(id, name, desc string) *model.Bundle {
 func fixGQLBundle(id, name, desc string) *graphql.Bundle {
 	schema := graphql.JSONSchema(`{"$id":"https://example.com/person.schema.json","$schema":"http://json-schema.org/draft-07/schema#","properties":{"age":{"description":"Age in years which must be equal to or greater than zero.","minimum":0,"type":"integer"},"firstName":{"description":"The person's first name.","type":"string"},"lastName":{"description":"The person's last name.","type":"string"}},"title":"Person","type":"object"}`)
 	var correlationIDsAsSlice []string
-	json.Unmarshal([]byte(correlationIDs), &correlationIDsAsSlice)
+	err := json.Unmarshal([]byte(correlationIDs), &correlationIDsAsSlice)
+	if err != nil {
+		panic(err)
+	}
 	return &graphql.Bundle{
 		Name:                           name,
 		Description:                    &desc,

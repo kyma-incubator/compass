@@ -215,12 +215,9 @@ func initDefaultServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[
 	sensitiveDataEndpoint := cfg.DestinationServiceConfig.SensitiveDataEndpoint + "/{name}"
 	router.HandleFunc(tenantDestinationEndpoint,
 		destinationHandler.GetSubaccountDestinationsPage).Methods(http.MethodGet)
-	router.HandleFunc(tenantDestinationEndpoint,
-		destinationHandler.PostDestination).Methods(http.MethodPost)
-	router.HandleFunc(tenantDestinationEndpoint,
-		destinationHandler.DeleteDestination).Methods(http.MethodDelete)
-	router.HandleFunc(sensitiveDataEndpoint,
-		destinationHandler.GetSensitiveData).Methods(http.MethodGet)
+	router.HandleFunc(tenantDestinationEndpoint, destinationHandler.PostDestination).Methods(http.MethodPost)
+	router.HandleFunc(tenantDestinationEndpoint, destinationHandler.DeleteDestination).Methods(http.MethodDelete)
+	router.HandleFunc(sensitiveDataEndpoint, destinationHandler.GetSensitiveData).Methods(http.MethodGet)
 
 	// System fetcher handlers
 	systemFetcherHandler := systemfetcher.NewSystemFetcherHandler(cfg.DefaultTenant)
