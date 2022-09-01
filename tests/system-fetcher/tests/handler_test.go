@@ -20,11 +20,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 
 	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	testPkg "github.com/kyma-incubator/compass/tests/pkg/webhook"
