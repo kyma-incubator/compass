@@ -422,10 +422,10 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:            "Success when there is ORD webhook on app template",
+			Name: "Success when there is ORD webhook on app template",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(3)
-		},
+			},
 			appSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("ListAllByApplicationTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixApplications(), nil).Once()
@@ -569,8 +569,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:              "Returns error when second transaction begin fails",
-			TransactionerFn:   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+			Name: "Returns error when second transaction begin fails",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				persistTx.On("Commit").Return(nil).Once()
 
@@ -581,12 +581,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				return persistTx, transact
 			},
 			webhookSvcFn:      successfulWebhookList,
-			ExpectedErr:        errors.New("failed to process 1 webhooks"),
+			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:              "Returns error when third transaction begin fails",
-			TransactionerFn:   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+			Name: "Returns error when third transaction begin fails",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				persistTx.On("Commit").Return(nil).Once()
 
@@ -601,12 +601,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				whSvc.On("ListByWebhookTypeWithSelectForUpdate", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
 				return whSvc
 			},
-			ExpectedErr:        errors.New("failed to process 1 webhooks"),
+			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name:              "Returns error when third transaction commit fails",
-			TransactionerFn:   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+			Name: "Returns error when third transaction commit fails",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				persistTx.On("Commit").Return(nil).Once()
 				persistTx.On("Commit").Return(testErr).Once()
@@ -627,7 +627,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				appSvc.On("ListAllByApplicationTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixApplications(), nil).Once()
 				return appSvc
 			},
-			ExpectedErr:        errors.New("failed to process 1 webhooks"),
+			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
