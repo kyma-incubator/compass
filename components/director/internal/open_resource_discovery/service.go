@@ -703,7 +703,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, tx persistence
 	return nil
 }
 
-func(s *Service) getWebhooksWithOrdType(ctx context.Context) ([]*model.Webhook, error) {
+func (s *Service) getWebhooksWithOrdType(ctx context.Context) ([]*model.Webhook, error) {
 	tx, err := s.transact.Begin()
 	if err != nil {
 		return nil, err

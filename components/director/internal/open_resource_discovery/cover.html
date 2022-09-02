@@ -1,0 +1,3266 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>open_resource_discovery: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/client.go (84.7%)</option>
+				
+				<option value="file1">github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/global_registry.go (100.0%)</option>
+				
+				<option value="file2">github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/ord_document.go (85.5%)</option>
+				
+				<option value="file3">github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/service.go (94.7%)</option>
+				
+				<option value="file4">github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/validation.go (90.5%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package ord
+
+import (
+        "context"
+        "encoding/json"
+        "io"
+        "io/ioutil"
+        "net/http"
+        "net/url"
+        "strings"
+        "sync"
+
+        "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+
+        "github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+
+        "github.com/kyma-incubator/compass/components/director/internal/model"
+
+        httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
+        "github.com/kyma-incubator/compass/components/director/pkg/log"
+
+        "github.com/pkg/errors"
+)
+
+// ClientConfig contains configuration for the ORD aggregator client
+type ClientConfig struct {
+        maxParallelDocumentsPerApplication int
+}
+
+// NewClientConfig creates new ClientConfig from the supplied parameters
+func NewClientConfig(maxParallelDocumentsPerApplication int) ClientConfig <span class="cov8" title="1">{
+        return ClientConfig{
+                maxParallelDocumentsPerApplication: maxParallelDocumentsPerApplication,
+        }
+}</span>
+
+// Client represents ORD documents client
+//go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
+type Client interface {
+        FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *model.Application, webhook *model.Webhook) (Documents, string, error)
+}
+
+type client struct {
+        config ClientConfig
+        *http.Client
+        accessStrategyExecutorProvider accessstrategy.ExecutorProvider
+}
+
+// NewClient creates new ORD Client via a provided http.Client
+func NewClient(config ClientConfig, httpClient *http.Client, accessStrategyExecutorProvider accessstrategy.ExecutorProvider) *client <span class="cov8" title="1">{
+        return &amp;client{
+                config:                         config,
+                Client:                         httpClient,
+                accessStrategyExecutorProvider: accessStrategyExecutorProvider,
+        }
+}</span>
+
+// FetchOpenResourceDiscoveryDocuments fetches all the documents for a single ORD .well-known endpoint
+func (c *client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, app *model.Application, webhook *model.Webhook) (Documents, string, error) <span class="cov8" title="1">{
+        var tenantValue string
+
+        if needsTenantHeader := webhook.ObjectType == model.ApplicationTemplateWebhookReference; needsTenantHeader </span><span class="cov0" title="0">{
+                tntFromCtx, err := tenant.LoadTenantPairFromContext(ctx)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, "", errors.Wrapf(err, "while loading tenant from context for application template wenhook flow")
+                }</span>
+
+                <span class="cov0" title="0">tenantValue = tntFromCtx.ExternalID</span>
+        }
+
+        <span class="cov8" title="1">config, err := c.fetchConfig(ctx, app, webhook, tenantValue)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, "", err
+        }</span>
+
+        <span class="cov8" title="1">baseURL, err := calculateBaseURL(*webhook.URL, *config)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, "", errors.Wrap(err, "while calculating baseURL")
+        }</span>
+
+        <span class="cov8" title="1">err = config.Validate(baseURL)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, "", errors.Wrap(err, "while validating ORD config")
+        }</span>
+
+        <span class="cov8" title="1">docs := make([]*Document, 0)
+        docMutex := sync.Mutex{}
+        wg := sync.WaitGroup{}
+        workers := make(chan struct{}, c.config.maxParallelDocumentsPerApplication)
+        fetchDocErrors := make([]error, 0)
+        errMutex := sync.Mutex{}
+
+        for _, docDetails := range config.OpenResourceDiscoveryV1.Documents </span><span class="cov8" title="1">{
+                wg.Add(1)
+                workers &lt;- struct{}{}
+                go func(docDetails DocumentDetails) </span><span class="cov8" title="1">{
+                        defer func() </span><span class="cov8" title="1">{
+                                wg.Done()
+                                &lt;-workers
+                        }</span>()
+
+                        <span class="cov8" title="1">documentURL, err := buildDocumentURL(docDetails.URL, baseURL)
+                        if err != nil </span><span class="cov0" title="0">{
+                                log.C(ctx).Warn(errors.Wrap(err, "error building document URL").Error())
+                                addError(&amp;fetchDocErrors, err, &amp;errMutex)
+                                return
+                        }</span>
+                        <span class="cov8" title="1">strategy, ok := docDetails.AccessStrategies.GetSupported()
+                        if !ok </span><span class="cov8" title="1">{
+                                log.C(ctx).Warnf("Unsupported access strategies for ORD Document %q", documentURL)
+                        }</span>
+                        <span class="cov8" title="1">doc, err := c.fetchOpenDiscoveryDocumentWithAccessStrategy(ctx, documentURL, strategy, tenantValue)
+                        if err != nil </span><span class="cov8" title="1">{
+                                log.C(ctx).Warn(errors.Wrapf(err, "error fetching ORD document from: %s", documentURL).Error())
+                                addError(&amp;fetchDocErrors, err, &amp;errMutex)
+                                return
+                        }</span>
+
+                        <span class="cov8" title="1">addDocument(&amp;docs, doc, &amp;docMutex)</span>
+                }(docDetails)
+        }
+
+        <span class="cov8" title="1">wg.Wait()
+
+        var fetchDocErr error = nil
+        if len(fetchDocErrors) &gt; 0 </span><span class="cov8" title="1">{
+                stringErrors := convertErrorsToStrings(fetchDocErrors)
+                fetchDocErr = errors.Errorf(strings.Join(stringErrors, "\n"))
+        }</span>
+        <span class="cov8" title="1">return docs, baseURL, fetchDocErr</span>
+}
+
+func convertErrorsToStrings(errors []error) (result []string) <span class="cov8" title="1">{
+        for _, err := range errors </span><span class="cov8" title="1">{
+                result = append(result, err.Error())
+        }</span>
+        <span class="cov8" title="1">return result</span>
+}
+
+func (c *client) fetchOpenDiscoveryDocumentWithAccessStrategy(ctx context.Context, documentURL string, accessStrategy accessstrategy.Type, tenantValue string) (*Document, error) <span class="cov8" title="1">{
+        log.C(ctx).Infof("Fetching ORD Document %q with Access Strategy %q", documentURL, accessStrategy)
+        executor, err := c.accessStrategyExecutorProvider.Provide(accessStrategy)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">resp, err := executor.Execute(ctx, c.Client, documentURL, tenantValue)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">defer closeBody(ctx, resp.Body)
+
+        if resp.StatusCode != http.StatusOK </span><span class="cov8" title="1">{
+                return nil, errors.Errorf("error while fetching open resource discovery document %q: status code %d", documentURL, resp.StatusCode)
+        }</span>
+
+        <span class="cov8" title="1">resp.Body = http.MaxBytesReader(nil, resp.Body, 2097152)
+        bodyBytes, err := ioutil.ReadAll(resp.Body)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, errors.Wrap(err, "error reading document body")
+        }</span>
+        <span class="cov8" title="1">result := &amp;Document{}
+        if err := json.Unmarshal(bodyBytes, &amp;result); err != nil </span><span class="cov8" title="1">{
+                return nil, errors.Wrap(err, "error unmarshaling document")
+        }</span>
+        <span class="cov8" title="1">return result, nil</span>
+}
+
+func closeBody(ctx context.Context, body io.ReadCloser) <span class="cov8" title="1">{
+        if err := body.Close(); err != nil </span><span class="cov0" title="0">{
+                log.C(ctx).WithError(err).Warnf("Got error on closing response body")
+        }</span>
+}
+
+func addDocument(docs *[]*Document, doc *Document, mutex *sync.Mutex) <span class="cov8" title="1">{
+        mutex.Lock()
+        defer mutex.Unlock()
+        *docs = append(*docs, doc)
+}</span>
+
+func addError(fetchDocErrors *[]error, err error, mutex *sync.Mutex) <span class="cov8" title="1">{
+        mutex.Lock()
+        defer mutex.Unlock()
+        *fetchDocErrors = append(*fetchDocErrors, err)
+}</span>
+
+func (c *client) fetchConfig(ctx context.Context, app *model.Application, webhook *model.Webhook, tenantValue string) (*WellKnownConfig, error) <span class="cov8" title="1">{
+        var resp *http.Response
+        var err error
+        if webhook.Auth != nil &amp;&amp; webhook.Auth.AccessStrategy != nil &amp;&amp; len(*webhook.Auth.AccessStrategy) &gt; 0 </span><span class="cov8" title="1">{
+                log.C(ctx).Infof("Application %q (id = %q, type = %q) ORD webhook is configured with %q access strategy.", app.Name, app.ID, app.Type, *webhook.Auth.AccessStrategy)
+                executor, err := c.accessStrategyExecutorProvider.Provide(accessstrategy.Type(*webhook.Auth.AccessStrategy))
+                if err != nil </span><span class="cov8" title="1">{
+                        return nil, errors.Wrapf(err, "cannot find executor for access strategy %q as part of webhook processing", *webhook.Auth.AccessStrategy)
+                }</span>
+                <span class="cov8" title="1">resp, err = executor.Execute(ctx, c.Client, *webhook.URL, tenantValue)
+                if err != nil </span><span class="cov8" title="1">{
+                        return nil, errors.Wrapf(err, "error while fetching open resource discovery well-known configuration with access strategy %q", *webhook.Auth.AccessStrategy)
+                }</span>
+        } else<span class="cov8" title="1"> if webhook.Auth != nil </span><span class="cov8" title="1">{
+                log.C(ctx).Infof("Application %q (id = %q, type = %q) configuration endpoint is secured and webhook credentials will be used", app.Name, app.ID, app.Type)
+                resp, err = httputil.GetRequestWithCredentials(ctx, c.Client, *webhook.URL, tenantValue, webhook.Auth)
+                if err != nil </span><span class="cov8" title="1">{
+                        return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration with webhook credentials")
+                }</span>
+        } else<span class="cov8" title="1"> {
+                log.C(ctx).Infof("Application %q (id = %q, type = %q) configuration endpoint is not secured", app.Name, app.ID, app.Type)
+                resp, err = httputil.GetRequestWithoutCredentials(c.Client, *webhook.URL, tenantValue)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, errors.Wrap(err, "error while fetching open resource discovery well-known configuration")
+                }</span>
+        }
+
+        <span class="cov8" title="1">defer closeBody(ctx, resp.Body)
+
+        bodyBytes, err := ioutil.ReadAll(resp.Body)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, errors.Wrap(err, "error reading response body")
+        }</span>
+
+        <span class="cov8" title="1">if resp.StatusCode != http.StatusOK </span><span class="cov8" title="1">{
+                return nil, errors.Errorf("error while fetching open resource discovery well-known configuration: status code %d Body: %s", resp.StatusCode, string(bodyBytes))
+        }</span>
+
+        <span class="cov8" title="1">config := WellKnownConfig{}
+        if err := json.Unmarshal(bodyBytes, &amp;config); err != nil </span><span class="cov8" title="1">{
+                return nil, errors.Wrap(err, "error unmarshaling json body")
+        }</span>
+
+        <span class="cov8" title="1">return &amp;config, nil</span>
+}
+
+func buildDocumentURL(docURL, baseURL string) (string, error) <span class="cov8" title="1">{
+        docURLParsed, err := url.Parse(docURL)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+        <span class="cov8" title="1">if docURLParsed.IsAbs() </span><span class="cov8" title="1">{
+                return docURL, nil
+        }</span>
+        <span class="cov8" title="1">return baseURL + docURL, nil</span>
+}
+
+// if webhookURL is not /well-known, but there is a valid baseURL provided in the config - use it
+// if webhookURL is /well-known, strip the suffix and use it as baseURL. In case both are provided - the config baseURL is used.
+func calculateBaseURL(webhookURL string, config WellKnownConfig) (string, error) <span class="cov8" title="1">{
+        if config.BaseURL != "" </span><span class="cov8" title="1">{
+                return config.BaseURL, nil
+        }</span>
+
+        <span class="cov8" title="1">parsedWebhookURL, err := url.ParseRequestURI(webhookURL)
+        if err != nil </span><span class="cov0" title="0">{
+                return "", errors.New("error while parsing input webhook url")
+        }</span>
+
+        <span class="cov8" title="1">if strings.HasSuffix(parsedWebhookURL.Path, WellKnownEndpoint) </span><span class="cov0" title="0">{
+                strippedPath := strings.ReplaceAll(parsedWebhookURL.Path, WellKnownEndpoint, "")
+                parsedWebhookURL.Path = strippedPath
+                return parsedWebhookURL.String(), nil
+        }</span>
+        <span class="cov8" title="1">return "", nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package ord
+
+import (
+        "context"
+
+        "github.com/kyma-incubator/compass/components/director/pkg/persistence"
+
+        "github.com/kyma-incubator/compass/components/director/internal/model"
+        "github.com/pkg/errors"
+)
+
+// GlobalRegistryService processes global resources (products and vendors) provided via global registry.
+//go:generate mockery --name=GlobalRegistryService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type GlobalRegistryService interface {
+        SyncGlobalResources(ctx context.Context) (map[string]bool, error)
+        ListGlobalResources(ctx context.Context) (map[string]bool, error)
+}
+
+// GlobalRegistryConfig contains configuration for GlobalRegistryService.
+type GlobalRegistryConfig struct {
+        URL string `envconfig:"APP_GLOBAL_REGISTRY_URL"`
+}
+
+type globalRegistryService struct {
+        config GlobalRegistryConfig
+
+        transact persistence.Transactioner
+
+        vendorService  GlobalVendorService
+        productService GlobalProductService
+
+        ordClient Client
+}
+
+// NewGlobalRegistryService creates new instance of GlobalRegistryService.
+func NewGlobalRegistryService(transact persistence.Transactioner, config GlobalRegistryConfig, vendorService GlobalVendorService, productService GlobalProductService, ordClient Client) *globalRegistryService <span class="cov8" title="1">{
+        return &amp;globalRegistryService{
+                transact:       transact,
+                config:         config,
+                vendorService:  vendorService,
+                productService: productService,
+                ordClient:      ordClient,
+        }
+}</span>
+
+// SyncGlobalResources syncs global resources (products and vendors) provided via global registry.
+func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[string]bool, error) <span class="cov8" title="1">{
+        // dummy app used only for logging
+        app := &amp;model.Application{
+                Name: "global-registry",
+                Type: "global-registry",
+                BaseEntity: &amp;model.BaseEntity{
+                        ID: "global-registry",
+                },
+        }
+        documents, _, err := s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, &amp;model.Webhook{
+                Type: model.WebhookTypeOpenResourceDiscovery,
+                URL:  &amp;s.config.URL,
+        })
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.Wrapf(err, "while fetching global registry documents from %s", s.config.URL)
+        }</span>
+
+        <span class="cov8" title="1">if err := documents.Validate(s.config.URL, nil, nil, nil, nil, map[string]bool{}); err != nil </span><span class="cov8" title="1">{
+                return nil, errors.Wrap(err, "while validating global registry documents")
+        }</span>
+
+        <span class="cov8" title="1">vendorsInput := make([]*model.VendorInput, 0)
+        productsInput := make([]*model.ProductInput, 0)
+        packagesInput := make([]*model.PackageInput, 0)
+        bundlesInput := make([]*model.BundleCreateInput, 0)
+        apisInput := make([]*model.APIDefinitionInput, 0)
+        eventsInput := make([]*model.EventDefinitionInput, 0)
+        tombstonesInput := make([]*model.TombstoneInput, 0)
+        for _, doc := range documents </span><span class="cov8" title="1">{
+                vendorsInput = append(vendorsInput, doc.Vendors...)
+                productsInput = append(productsInput, doc.Products...)
+                packagesInput = append(packagesInput, doc.Packages...)
+                bundlesInput = append(bundlesInput, doc.ConsumptionBundles...)
+                apisInput = append(apisInput, doc.APIResources...)
+                eventsInput = append(eventsInput, doc.EventResources...)
+                tombstonesInput = append(tombstonesInput, doc.Tombstones...)
+        }</span>
+
+        <span class="cov8" title="1">if len(packagesInput) &gt; 0 || len(bundlesInput) &gt; 0 || len(apisInput) &gt; 0 || len(eventsInput) &gt; 0 || len(tombstonesInput) &gt; 0 </span><span class="cov8" title="1">{
+                return nil, errors.New("global registry supports only vendors and products")
+        }</span>
+
+        <span class="cov8" title="1">tx, err := s.transact.Begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer s.transact.RollbackUnlessCommitted(ctx, tx)
+        ctx = persistence.SaveToContext(ctx, tx)
+
+        vendorsFromDB, err := s.processVendors(ctx, vendorsInput)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">productsFromDB, err := s.processProducts(ctx, productsInput)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">globalResourceOrdIDs := make(map[string]bool, len(vendorsFromDB)+len(productsFromDB))
+        for _, vendor := range vendorsFromDB </span><span class="cov8" title="1">{
+                globalResourceOrdIDs[vendor.OrdID] = true
+        }</span>
+        <span class="cov8" title="1">for _, product := range productsFromDB </span><span class="cov8" title="1">{
+                globalResourceOrdIDs[product.OrdID] = true
+        }</span>
+
+        <span class="cov8" title="1">return globalResourceOrdIDs, tx.Commit()</span>
+}
+
+func (s *globalRegistryService) ListGlobalResources(ctx context.Context) (map[string]bool, error) <span class="cov8" title="1">{
+        tx, err := s.transact.Begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer s.transact.RollbackUnlessCommitted(ctx, tx)
+        ctx = persistence.SaveToContext(ctx, tx)
+
+        vendorsFromDB, err := s.vendorService.ListGlobal(ctx)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.Wrap(err, "error while listing global vendors")
+        }</span>
+        <span class="cov8" title="1">productsFromDB, err := s.productService.ListGlobal(ctx)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.Wrap(err, "error while listing global products")
+        }</span>
+
+        <span class="cov8" title="1">globalResourceOrdIDs := make(map[string]bool, len(vendorsFromDB)+len(productsFromDB))
+        for _, vendor := range vendorsFromDB </span><span class="cov8" title="1">{
+                globalResourceOrdIDs[vendor.OrdID] = true
+        }</span>
+        <span class="cov8" title="1">for _, product := range productsFromDB </span><span class="cov8" title="1">{
+                globalResourceOrdIDs[product.OrdID] = true
+        }</span>
+
+        <span class="cov8" title="1">return globalResourceOrdIDs, tx.Commit()</span>
+}
+
+func (s *globalRegistryService) processVendors(ctx context.Context, vendors []*model.VendorInput) ([]*model.Vendor, error) <span class="cov8" title="1">{
+        vendorsFromDB, err := s.vendorService.ListGlobal(ctx)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.Wrap(err, "error while listing global vendors")
+        }</span>
+
+        <span class="cov8" title="1">for _, vendor := range vendors </span><span class="cov8" title="1">{
+                if err := s.resyncVendor(ctx, vendorsFromDB, *vendor); err != nil </span><span class="cov8" title="1">{
+                        return nil, errors.Wrapf(err, "error while resyncing vendor with ORD ID %q", vendor.OrdID)
+                }</span>
+        }
+
+        <span class="cov8" title="1">for _, vendor := range vendorsFromDB </span><span class="cov8" title="1">{
+                if _, found := searchInSlice(len(vendors), func(i int) bool </span><span class="cov8" title="1">{
+                        return vendors[i].OrdID == vendor.OrdID
+                }</span>); !found <span class="cov8" title="1">{
+                        if err := s.vendorService.DeleteGlobal(ctx, vendor.ID); err != nil </span><span class="cov8" title="1">{
+                                return nil, errors.Wrapf(err, "error while deleting vendor with ID %q", vendor.ID)
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">return s.vendorService.ListGlobal(ctx)</span>
+}
+
+func (s *globalRegistryService) processProducts(ctx context.Context, products []*model.ProductInput) ([]*model.Product, error) <span class="cov8" title="1">{
+        productsFromDB, err := s.productService.ListGlobal(ctx)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.Wrap(err, "error while listing global products")
+        }</span>
+
+        <span class="cov8" title="1">for _, product := range products </span><span class="cov8" title="1">{
+                if err := s.resyncProduct(ctx, productsFromDB, *product); err != nil </span><span class="cov8" title="1">{
+                        return nil, errors.Wrapf(err, "error while resyncing product with ORD ID %q", product.OrdID)
+                }</span>
+        }
+
+        <span class="cov8" title="1">for _, product := range productsFromDB </span><span class="cov8" title="1">{
+                if _, found := searchInSlice(len(products), func(i int) bool </span><span class="cov8" title="1">{
+                        return products[i].OrdID == product.OrdID
+                }</span>); !found <span class="cov8" title="1">{
+                        if err := s.productService.DeleteGlobal(ctx, product.ID); err != nil </span><span class="cov8" title="1">{
+                                return nil, errors.Wrapf(err, "error while deleting product with ID %q", product.ID)
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">return s.productService.ListGlobal(ctx)</span>
+}
+
+func (s *globalRegistryService) resyncVendor(ctx context.Context, vendorsFromDB []*model.Vendor, vendor model.VendorInput) error <span class="cov8" title="1">{
+        ctx = addFieldToLogger(ctx, "vendor_ord_id", vendor.OrdID)
+        if i, found := searchInSlice(len(vendorsFromDB), func(i int) bool </span><span class="cov8" title="1">{
+                return vendorsFromDB[i].OrdID == vendor.OrdID
+        }</span>); found <span class="cov8" title="1">{
+                return s.vendorService.UpdateGlobal(ctx, vendorsFromDB[i].ID, vendor)
+        }</span>
+        <span class="cov8" title="1">_, err := s.vendorService.CreateGlobal(ctx, vendor)
+        return err</span>
+}
+
+func (s *globalRegistryService) resyncProduct(ctx context.Context, productsFromDB []*model.Product, product model.ProductInput) error <span class="cov8" title="1">{
+        ctx = addFieldToLogger(ctx, "product_ord_id", product.OrdID)
+        if i, found := searchInSlice(len(productsFromDB), func(i int) bool </span><span class="cov8" title="1">{
+                return productsFromDB[i].OrdID == product.OrdID
+        }</span>); found <span class="cov8" title="1">{
+                return s.productService.UpdateGlobal(ctx, productsFromDB[i].ID, product)
+        }</span>
+        <span class="cov8" title="1">_, err := s.productService.CreateGlobal(ctx, product)
+        return err</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package ord
+
+import (
+        "encoding/json"
+        "net/url"
+        "regexp"
+
+        "github.com/hashicorp/go-multierror"
+
+        "github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
+
+        validation "github.com/go-ozzo/ozzo-validation/v4"
+
+        "github.com/kyma-incubator/compass/components/director/internal/model"
+        "github.com/pkg/errors"
+        "github.com/tidwall/gjson"
+        "github.com/tidwall/sjson"
+)
+
+// WellKnownEndpoint is the single entry point for the discovery.
+const WellKnownEndpoint = "/.well-known/open-resource-discovery"
+
+// WellKnownConfig represents the whole config object
+type WellKnownConfig struct {
+        Schema                  string                  `json:"$schema"`
+        BaseURL                 string                  `json:"baseUrl"`
+        OpenResourceDiscoveryV1 OpenResourceDiscoveryV1 `json:"openResourceDiscoveryV1"`
+}
+
+// OpenResourceDiscoveryV1 contains all Documents' details
+type OpenResourceDiscoveryV1 struct {
+        Documents []DocumentDetails `json:"documents"`
+}
+
+// DocumentDetails contains fields related to the fetching of each Document
+type DocumentDetails struct {
+        URL string `json:"url"`
+        // TODO: Currently we cannot differentiate between system instance types reliably, therefore we cannot make use of the systemInstanceAware optimization (store it once per system type and reuse it for each system instance of that type).
+        //  Once we have system landscape discovery and stable system types we can make use of this optimization. Until then we store all the information for a system instance as it is provided in the documents.
+        //  Therefore we treat every resource as SystemInstanceAware = true
+        SystemInstanceAware bool                            `json:"systemInstanceAware"`
+        AccessStrategies    accessstrategy.AccessStrategies `json:"accessStrategies"`
+}
+
+// Document represents an ORD Document
+type Document struct {
+        Schema                string `json:"$schema"`
+        OpenResourceDiscovery string `json:"openResourceDiscovery"`
+        Description           string `json:"description"`
+
+        // TODO: In the current state of ORD and it's implementation we are missing system landscape discovery and an id correlation in the system instances. Because of that in the first phase we will rely on:
+        //  - DescribedSystemInstance is the application in our DB and it's baseURL should match with the one in the webhook.
+        DescribedSystemInstance *model.Application `json:"describedSystemInstance"`
+
+        Packages           []*model.PackageInput         `json:"packages"`
+        ConsumptionBundles []*model.BundleCreateInput    `json:"consumptionBundles"`
+        Products           []*model.ProductInput         `json:"products"`
+        APIResources       []*model.APIDefinitionInput   `json:"apiResources"`
+        EventResources     []*model.EventDefinitionInput `json:"eventResources"`
+        Tombstones         []*model.TombstoneInput       `json:"tombstones"`
+        Vendors            []*model.VendorInput          `json:"vendors"`
+}
+
+// Validate validates if the Config object complies with the spec requirements
+func (c WellKnownConfig) Validate(baseURL string) error <span class="cov8" title="1">{
+        if err := validation.Validate(c.BaseURL, validation.Match(regexp.MustCompile(ConfigBaseURLRegex))); err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">if err := validation.Validate(c.OpenResourceDiscoveryV1.Documents, validation.Required); err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">for _, docDetails := range c.OpenResourceDiscoveryV1.Documents </span><span class="cov8" title="1">{
+                if err := validateDocDetails(docDetails); err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+        }
+
+        <span class="cov8" title="1">areDocsWithRelativeURLs, err := checkForRelativeDocURLs(c.OpenResourceDiscoveryV1.Documents)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">if baseURL == "" &amp;&amp; areDocsWithRelativeURLs </span><span class="cov8" title="1">{
+                return errors.New("there are relative document URls but no baseURL provided neither in config nor through /well-known endpoint")
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// Documents is a slice of Document objects
+type Documents []*Document
+
+// Validate validates all the documents for a system instance
+func (docs Documents) Validate(calculatedBaseURL string, apisFromDB map[string]*model.APIDefinition, eventsFromDB map[string]*model.EventDefinition, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64, globalResourcesOrdIDs map[string]bool) error <span class="cov8" title="1">{
+        var (
+                errs                *multierror.Error
+                baseURL             = calculatedBaseURL
+                isBaseURLConfigured = len(calculatedBaseURL) &gt; 0
+        )
+        for _, doc := range docs </span><span class="cov8" title="1">{
+                if !isBaseURLConfigured &amp;&amp; (doc.DescribedSystemInstance == nil || doc.DescribedSystemInstance.BaseURL == nil) </span><span class="cov8" title="1">{
+                        errs = multierror.Append(errs, errors.New("no baseURL was provided neither from /well-known URL, nor from config, nor from describedSystemInstance"))
+                        continue</span>
+                }
+
+                <span class="cov8" title="1">if len(baseURL) == 0 </span><span class="cov8" title="1">{
+                        baseURL = *doc.DescribedSystemInstance.BaseURL
+                }</span>
+
+                <span class="cov8" title="1">if doc.DescribedSystemInstance != nil </span><span class="cov8" title="1">{
+                        if err := ValidateSystemInstanceInput(doc.DescribedSystemInstance); err != nil </span><span class="cov8" title="1">{
+                                errs = multierror.Append(errs, errors.Wrap(err, "error validating system instance"))
+                        }</span>
+                }
+                <span class="cov8" title="1">if doc.DescribedSystemInstance != nil &amp;&amp; doc.DescribedSystemInstance.BaseURL != nil &amp;&amp; *doc.DescribedSystemInstance.BaseURL != baseURL </span><span class="cov8" title="1">{
+                        errs = multierror.Append(errs, errors.New("describedSystemInstance should be the same as the one providing the documents"))
+                }</span>
+        }
+
+        <span class="cov8" title="1">packageIDs := make(map[string]bool)
+        packagePolicyLevels := make(map[string]string)
+        bundleIDs := make(map[string]bool)
+        productIDs := make(map[string]bool)
+        apiIDs := make(map[string]bool)
+        eventIDs := make(map[string]bool)
+        vendorIDs := make(map[string]bool)
+
+        for _, doc := range docs </span><span class="cov8" title="1">{
+                for _, pkg := range doc.Packages </span><span class="cov8" title="1">{
+                        if _, ok := packageIDs[pkg.OrdID]; ok </span><span class="cov8" title="1">{
+                                errs = multierror.Append(errs, errors.Errorf("found duplicate package with ord id %q", pkg.OrdID))
+                                continue</span>
+                        }
+                        <span class="cov8" title="1">packageIDs[pkg.OrdID] = true
+                        packagePolicyLevels[pkg.OrdID] = pkg.PolicyLevel</span>
+                }
+        }
+
+        <span class="cov8" title="1">for _, doc := range docs </span><span class="cov8" title="1">{
+                if err := validateDocumentInput(doc); err != nil </span><span class="cov8" title="1">{
+                        errs = multierror.Append(errs, errors.Wrap(err, "error validating document"))
+                }</span>
+
+                <span class="cov8" title="1">for _, pkg := range doc.Packages </span><span class="cov8" title="1">{
+                        if err := validatePackageInput(pkg, packagesFromDB, resourceHashes); err != nil </span><span class="cov8" title="1">{
+                                errs = multierror.Append(errs, errors.Wrapf(err, "error validating package with ord id %q", pkg.OrdID))
+                        }</span>
+                }
+                <span class="cov8" title="1">for _, bndl := range doc.ConsumptionBundles </span><span class="cov8" title="1">{
+                        if err := validateBundleInput(bndl); err != nil </span><span class="cov8" title="1">{
+                                errs = multierror.Append(errs, errors.Wrapf(err, "error validating bundle with ord id %q", stringPtrToString(bndl.OrdID)))
+                        }</span>
+                        <span class="cov8" title="1">if bndl.OrdID != nil </span><span class="cov8" title="1">{
+                                if _, ok := bundleIDs[*bndl.OrdID]; ok </span><span class="cov8" title="1">{
+                                        errs = multierror.Append(errs, errors.Errorf("found duplicate bundle with ord id %q", *bndl.OrdID))
+                                }</span>
+                                <span class="cov8" title="1">bundleIDs[*bndl.OrdID] = true</span>
+                        }
+                }
+                <span class="cov8" title="1">for _, product := range doc.Products </span><span class="cov8" title="1">{
+                        if err := validateProductInput(product); err != nil </span><span class="cov8" title="1">{
+                                errs = multierror.Append(errs, errors.Wrapf(err, "error validating product with ord id %q", product.OrdID))
+                        }</span>
+                        <span class="cov8" title="1">if _, ok := productIDs[product.OrdID]; ok </span><span class="cov8" title="1">{
+                                errs = multierror.Append(errs, errors.Errorf("found duplicate product with ord id %q", product.OrdID))
+                        }</span>
+                        <span class="cov8" title="1">productIDs[product.OrdID] = true</span>
+                }
+                <span class="cov8" title="1">for _, api := range doc.APIResources </span><span class="cov8" title="1">{
+                        if err := validateAPIInput(api, packagePolicyLevels, apisFromDB, resourceHashes); err != nil </span><span class="cov8" title="1">{
+                                errs = multierror.Append(errs, errors.Wrapf(err, "error validating api with ord id %q", stringPtrToString(api.OrdID)))
+                        }</span>
+                        <span class="cov8" title="1">if api.OrdID != nil </span><span class="cov8" title="1">{
+                                if _, ok := apiIDs[*api.OrdID]; ok </span><span class="cov8" title="1">{
+                                        errs = multierror.Append(errs, errors.Errorf("found duplicate api with ord id %q", *api.OrdID))
+                                }</span>
+                                <span class="cov8" title="1">apiIDs[*api.OrdID] = true</span>
+                        }
+                }
+                <span class="cov8" title="1">for _, event := range doc.EventResources </span><span class="cov8" title="1">{
+                        if err := validateEventInput(event, packagePolicyLevels, eventsFromDB, resourceHashes); err != nil </span><span class="cov8" title="1">{
+                                errs = multierror.Append(errs, errors.Wrapf(err, "error validating event with ord id %q", stringPtrToString(event.OrdID)))
+                        }</span>
+                        <span class="cov8" title="1">if event.OrdID != nil </span><span class="cov8" title="1">{
+                                if _, ok := eventIDs[*event.OrdID]; ok </span><span class="cov8" title="1">{
+                                        errs = multierror.Append(errs, errors.Errorf("found duplicate event with ord id %q", *event.OrdID))
+                                }</span>
+                                <span class="cov8" title="1">eventIDs[*event.OrdID] = true</span>
+                        }
+                }
+                <span class="cov8" title="1">for _, vendor := range doc.Vendors </span><span class="cov8" title="1">{
+                        if err := validateVendorInput(vendor); err != nil </span><span class="cov8" title="1">{
+                                errs = multierror.Append(errs, errors.Wrapf(err, "error validating vendor with ord id %q", vendor.OrdID))
+                        }</span>
+                        <span class="cov8" title="1">if _, ok := vendorIDs[vendor.OrdID]; ok </span><span class="cov8" title="1">{
+                                errs = multierror.Append(errs, errors.Errorf("found duplicate vendor with ord id %q", vendor.OrdID))
+                        }</span>
+                        <span class="cov8" title="1">vendorIDs[vendor.OrdID] = true</span>
+                }
+                <span class="cov8" title="1">for _, tombstone := range doc.Tombstones </span><span class="cov8" title="1">{
+                        if err := validateTombstoneInput(tombstone); err != nil </span><span class="cov8" title="1">{
+                                errs = multierror.Append(errs, errors.Wrapf(err, "error validating tombstone with ord id %q", tombstone.OrdID))
+                        }</span>
+                }
+        }
+
+        // Validate entity relations
+        <span class="cov8" title="1">for _, doc := range docs </span><span class="cov8" title="1">{
+                for _, pkg := range doc.Packages </span><span class="cov8" title="1">{
+                        if pkg.Vendor != nil &amp;&amp; !vendorIDs[*pkg.Vendor] &amp;&amp; !globalResourcesOrdIDs[*pkg.Vendor] </span><span class="cov8" title="1">{
+                                errs = multierror.Append(errs, errors.Errorf("package with id %q has a reference to unknown vendor %q", pkg.OrdID, *pkg.Vendor))
+                        }</span>
+                        <span class="cov8" title="1">ordIDs := gjson.ParseBytes(pkg.PartOfProducts).Array()
+                        for _, productID := range ordIDs </span><span class="cov8" title="1">{
+                                if !productIDs[productID.String()] &amp;&amp; !globalResourcesOrdIDs[productID.String()] </span><span class="cov8" title="1">{
+                                        errs = multierror.Append(errs, errors.Errorf("package with id %q has a reference to unknown product %q", pkg.OrdID, productID.String()))
+                                }</span>
+                        }
+                }
+                <span class="cov8" title="1">for _, product := range doc.Products </span><span class="cov8" title="1">{
+                        if !vendorIDs[product.Vendor] &amp;&amp; !globalResourcesOrdIDs[product.Vendor] </span><span class="cov8" title="1">{
+                                errs = multierror.Append(errs, errors.Errorf("product with id %q has a reference to unknown vendor %q", product.OrdID, product.Vendor))
+                        }</span>
+                }
+                <span class="cov8" title="1">for _, api := range doc.APIResources </span><span class="cov8" title="1">{
+                        if api.OrdPackageID != nil &amp;&amp; !packageIDs[*api.OrdPackageID] </span><span class="cov8" title="1">{
+                                errs = multierror.Append(errs, errors.Errorf("api with id %q has a reference to unknown package %q", *api.OrdID, *api.OrdPackageID))
+                        }</span>
+                        <span class="cov8" title="1">if api.PartOfConsumptionBundles != nil </span><span class="cov8" title="1">{
+                                for _, apiBndlRef := range api.PartOfConsumptionBundles </span><span class="cov8" title="1">{
+                                        if !bundleIDs[apiBndlRef.BundleOrdID] </span><span class="cov8" title="1">{
+                                                errs = multierror.Append(errs, errors.Errorf("api with id %q has a reference to unknown bundle %q", *api.OrdID, apiBndlRef.BundleOrdID))
+                                        }</span>
+                                }
+                        }
+
+                        <span class="cov8" title="1">ordIDs := gjson.ParseBytes(api.PartOfProducts).Array()
+                        for _, productID := range ordIDs </span><span class="cov8" title="1">{
+                                if !productIDs[productID.String()] &amp;&amp; !globalResourcesOrdIDs[productID.String()] </span><span class="cov8" title="1">{
+                                        errs = multierror.Append(errs, errors.Errorf("api with id %q has a reference to unknown product %q", *api.OrdID, productID.String()))
+                                }</span>
+                        }
+                }
+                <span class="cov8" title="1">for _, event := range doc.EventResources </span><span class="cov8" title="1">{
+                        if event.OrdPackageID != nil &amp;&amp; !packageIDs[*event.OrdPackageID] </span><span class="cov8" title="1">{
+                                errs = multierror.Append(errs, errors.Errorf("event with id %q has a reference to unknown package %q", *event.OrdID, *event.OrdPackageID))
+                        }</span>
+                        <span class="cov8" title="1">if event.PartOfConsumptionBundles != nil </span><span class="cov8" title="1">{
+                                for _, eventBndlRef := range event.PartOfConsumptionBundles </span><span class="cov8" title="1">{
+                                        if !bundleIDs[eventBndlRef.BundleOrdID] </span><span class="cov8" title="1">{
+                                                errs = multierror.Append(errs, errors.Errorf("event with id %q has a reference to unknown bundle %q", *event.OrdID, eventBndlRef.BundleOrdID))
+                                        }</span>
+                                }
+                        }
+
+                        <span class="cov8" title="1">ordIDs := gjson.ParseBytes(event.PartOfProducts).Array()
+                        for _, productID := range ordIDs </span><span class="cov8" title="1">{
+                                if !productIDs[productID.String()] &amp;&amp; !globalResourcesOrdIDs[productID.String()] </span><span class="cov8" title="1">{
+                                        errs = multierror.Append(errs, errors.Errorf("event with id %q has a reference to unknown product %q", *event.OrdID, productID.String()))
+                                }</span>
+                        }
+                }
+        }
+
+        <span class="cov8" title="1">return errs.ErrorOrNil()</span>
+}
+
+// Sanitize performs all the merging and rewriting rules defined in ORD. This method should be invoked after Documents are validated with the Validate method.
+//  - Rewrite all relative URIs using the baseURL from the Described System Instance. If the Described System Instance baseURL is missing the provider baseURL (from the webhook) is used.
+//  - Package's partOfProducts, tags, countries, industry, lineOfBusiness, labels are inherited by the resources in the package.
+//  - Ensure to assign `defaultEntryPoint` if missing and there are available `entryPoints` to API's `PartOfConsumptionBundles`
+func (docs Documents) Sanitize(baseURL string) error <span class="cov8" title="1">{
+        var err error
+
+        // Rewrite relative URIs
+        for _, doc := range docs </span><span class="cov8" title="1">{
+                for _, pkg := range doc.Packages </span><span class="cov8" title="1">{
+                        if pkg.PackageLinks, err = rewriteRelativeURIsInJSON(pkg.PackageLinks, baseURL, "url"); err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+                        <span class="cov8" title="1">if pkg.Links, err = rewriteRelativeURIsInJSON(pkg.Links, baseURL, "url"); err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+                }
+
+                <span class="cov8" title="1">for _, bndl := range doc.ConsumptionBundles </span><span class="cov8" title="1">{
+                        if bndl.Links, err = rewriteRelativeURIsInJSON(bndl.Links, baseURL, "url"); err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+                        <span class="cov8" title="1">if bndl.CredentialExchangeStrategies, err = rewriteRelativeURIsInJSON(bndl.CredentialExchangeStrategies, baseURL, "callbackUrl"); err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+                }
+
+                <span class="cov8" title="1">for _, api := range doc.APIResources </span><span class="cov8" title="1">{
+                        for _, definition := range api.ResourceDefinitions </span><span class="cov8" title="1">{
+                                if !isAbsoluteURL(definition.URL) </span><span class="cov8" title="1">{
+                                        definition.URL = baseURL + definition.URL
+                                }</span>
+                        }
+                        <span class="cov8" title="1">if api.APIResourceLinks, err = rewriteRelativeURIsInJSON(api.APIResourceLinks, baseURL, "url"); err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+                        <span class="cov8" title="1">if api.Links, err = rewriteRelativeURIsInJSON(api.Links, baseURL, "url"); err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+                        <span class="cov8" title="1">if api.ChangeLogEntries, err = rewriteRelativeURIsInJSON(api.ChangeLogEntries, baseURL, "url"); err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+                        <span class="cov8" title="1">if api.TargetURLs, err = rewriteRelativeURIsInJSONArray(api.TargetURLs, baseURL); err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+                        <span class="cov8" title="1">rewriteDefaultTargetURL(api.PartOfConsumptionBundles, baseURL)</span>
+                }
+
+                <span class="cov8" title="1">for _, event := range doc.EventResources </span><span class="cov8" title="1">{
+                        if event.ChangeLogEntries, err = rewriteRelativeURIsInJSON(event.ChangeLogEntries, baseURL, "url"); err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+                        <span class="cov8" title="1">if event.Links, err = rewriteRelativeURIsInJSON(event.Links, baseURL, "url"); err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+                        <span class="cov8" title="1">for _, definition := range event.ResourceDefinitions </span><span class="cov8" title="1">{
+                                if !isAbsoluteURL(definition.URL) </span><span class="cov8" title="1">{
+                                        definition.URL = baseURL + definition.URL
+                                }</span>
+                        }
+                }
+        }
+
+        // Package properties inheritance
+        <span class="cov8" title="1">packages := make(map[string]*model.PackageInput)
+        for _, doc := range docs </span><span class="cov8" title="1">{
+                for _, pkg := range doc.Packages </span><span class="cov8" title="1">{
+                        packages[pkg.OrdID] = pkg
+                }</span>
+        }
+
+        <span class="cov8" title="1">for _, doc := range docs </span><span class="cov8" title="1">{
+                for _, api := range doc.APIResources </span><span class="cov8" title="1">{
+                        referredPkg, ok := packages[*api.OrdPackageID]
+                        if !ok </span><span class="cov0" title="0">{
+                                return errors.Errorf("api with ord id %q has a reference to unknown package %q", *api.OrdID, *api.OrdPackageID)
+                        }</span>
+                        <span class="cov8" title="1">if api.PartOfProducts, err = mergeJSONArraysOfStrings(referredPkg.PartOfProducts, api.PartOfProducts); err != nil </span><span class="cov0" title="0">{
+                                return errors.Wrapf(err, "error while merging partOfProducts for api with ord id %q", *api.OrdID)
+                        }</span>
+                        <span class="cov8" title="1">if api.Tags, err = mergeJSONArraysOfStrings(referredPkg.Tags, api.Tags); err != nil </span><span class="cov0" title="0">{
+                                return errors.Wrapf(err, "error while merging tags for api with ord id %q", *api.OrdID)
+                        }</span>
+                        <span class="cov8" title="1">if api.Countries, err = mergeJSONArraysOfStrings(referredPkg.Countries, api.Countries); err != nil </span><span class="cov0" title="0">{
+                                return errors.Wrapf(err, "error while merging countries for api with ord id %q", *api.OrdID)
+                        }</span>
+                        <span class="cov8" title="1">if api.Industry, err = mergeJSONArraysOfStrings(referredPkg.Industry, api.Industry); err != nil </span><span class="cov0" title="0">{
+                                return errors.Wrapf(err, "error while merging industry for api with ord id %q", *api.OrdID)
+                        }</span>
+                        <span class="cov8" title="1">if api.LineOfBusiness, err = mergeJSONArraysOfStrings(referredPkg.LineOfBusiness, api.LineOfBusiness); err != nil </span><span class="cov0" title="0">{
+                                return errors.Wrapf(err, "error while merging lineOfBusiness for api with ord id %q", *api.OrdID)
+                        }</span>
+                        <span class="cov8" title="1">if api.Labels, err = mergeORDLabels(referredPkg.Labels, api.Labels); err != nil </span><span class="cov0" title="0">{
+                                return errors.Wrapf(err, "error while merging labels for api with ord id %q", *api.OrdID)
+                        }</span>
+                        <span class="cov8" title="1">assignDefaultEntryPointIfNeeded(api.PartOfConsumptionBundles, api.TargetURLs)</span>
+                }
+                <span class="cov8" title="1">for _, event := range doc.EventResources </span><span class="cov8" title="1">{
+                        referredPkg, ok := packages[*event.OrdPackageID]
+                        if !ok </span><span class="cov0" title="0">{
+                                return errors.Errorf("event with ord id %q has a reference to unknown package %q", *event.OrdID, *event.OrdPackageID)
+                        }</span>
+                        <span class="cov8" title="1">if event.PartOfProducts, err = mergeJSONArraysOfStrings(referredPkg.PartOfProducts, event.PartOfProducts); err != nil </span><span class="cov0" title="0">{
+                                return errors.Wrapf(err, "error while merging partOfProducts for event with ord id %q", *event.OrdID)
+                        }</span>
+                        <span class="cov8" title="1">if event.Tags, err = mergeJSONArraysOfStrings(referredPkg.Tags, event.Tags); err != nil </span><span class="cov0" title="0">{
+                                return errors.Wrapf(err, "error while merging tags for event with ord id %q", *event.OrdID)
+                        }</span>
+                        <span class="cov8" title="1">if event.Countries, err = mergeJSONArraysOfStrings(referredPkg.Countries, event.Countries); err != nil </span><span class="cov0" title="0">{
+                                return errors.Wrapf(err, "error while merging countries for event with ord id %q", *event.OrdID)
+                        }</span>
+                        <span class="cov8" title="1">if event.Industry, err = mergeJSONArraysOfStrings(referredPkg.Industry, event.Industry); err != nil </span><span class="cov0" title="0">{
+                                return errors.Wrapf(err, "error while merging industry for event with ord id %q", *event.OrdID)
+                        }</span>
+                        <span class="cov8" title="1">if event.LineOfBusiness, err = mergeJSONArraysOfStrings(referredPkg.LineOfBusiness, event.LineOfBusiness); err != nil </span><span class="cov0" title="0">{
+                                return errors.Wrapf(err, "error while merging lineOfBusiness for event with ord id %q", *event.OrdID)
+                        }</span>
+                        <span class="cov8" title="1">if event.Labels, err = mergeORDLabels(referredPkg.Labels, event.Labels); err != nil </span><span class="cov0" title="0">{
+                                return errors.Wrapf(err, "error while merging labels for event with ord id %q", *event.OrdID)
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">return err</span>
+}
+
+// mergeORDLabels merges labels2 into labels1
+func mergeORDLabels(labels1, labels2 json.RawMessage) (json.RawMessage, error) <span class="cov8" title="1">{
+        if len(labels2) == 0 </span><span class="cov0" title="0">{
+                return labels1, nil
+        }</span>
+        <span class="cov8" title="1">parsedLabels1 := gjson.ParseBytes(labels1)
+        parsedLabels2 := gjson.ParseBytes(labels2)
+        if !parsedLabels1.IsObject() || !parsedLabels2.IsObject() </span><span class="cov0" title="0">{
+                return nil, errors.New("invalid arguments: expected two json objects")
+        }</span>
+
+        <span class="cov8" title="1">labels1Map := parsedLabels1.Map()
+        labels2Map := parsedLabels2.Map()
+
+        for k, v := range labels1Map </span><span class="cov8" title="1">{
+                if v2, ok := labels2Map[k]; ok </span><span class="cov8" title="1">{
+                        mergedValues, err := mergeJSONArraysOfStrings(json.RawMessage(v.Raw), json.RawMessage(v2.Raw))
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, errors.Wrapf(err, "while merging values for key %q", k)
+                        }</span>
+                        <span class="cov8" title="1">labels1Map[k] = gjson.ParseBytes(mergedValues)
+                        delete(labels2Map, k)</span>
+                }
+        }
+
+        <span class="cov8" title="1">for k, v := range labels2Map </span><span class="cov0" title="0">{
+                labels1Map[k] = v
+        }</span>
+
+        <span class="cov8" title="1">result := make(map[string]interface{}, len(labels1Map))
+        for k, v := range labels1Map </span><span class="cov8" title="1">{
+                result[k] = v.Value()
+        }</span>
+
+        <span class="cov8" title="1">return json.Marshal(result)</span>
+}
+
+// mergeJSONArraysOfStrings merges arr2 in arr1
+func mergeJSONArraysOfStrings(arr1, arr2 json.RawMessage) (json.RawMessage, error) <span class="cov8" title="1">{
+        if len(arr2) == 0 </span><span class="cov0" title="0">{
+                return arr1, nil
+        }</span>
+        <span class="cov8" title="1">parsedArr1 := gjson.ParseBytes(arr1)
+        parsedArr2 := gjson.ParseBytes(arr2)
+        if !parsedArr1.IsArray() || !parsedArr2.IsArray() </span><span class="cov0" title="0">{
+                return nil, errors.New("invalid arguments: expected two json arrays")
+        }</span>
+        <span class="cov8" title="1">resultJSONArr := append(parsedArr1.Array(), parsedArr2.Array()...)
+        result := make([]string, 0, len(resultJSONArr))
+        for _, el := range resultJSONArr </span><span class="cov8" title="1">{
+                if el.Type != gjson.String </span><span class="cov0" title="0">{
+                        return nil, errors.New("invalid arguments: expected json array of strings")
+                }</span>
+                <span class="cov8" title="1">result = append(result, el.String())</span>
+        }
+        <span class="cov8" title="1">result = deduplicate(result)
+        return json.Marshal(result)</span>
+}
+
+func validateDocDetails(docDetails DocumentDetails) error <span class="cov8" title="1">{
+        if err := validation.Validate(docDetails.URL, validation.Required); err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">if err := validation.Validate(docDetails.AccessStrategies, validation.Required); err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">for _, as := range docDetails.AccessStrategies </span><span class="cov8" title="1">{
+                if err := as.Validate(); err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+        }
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func checkForRelativeDocURLs(docs []DocumentDetails) (bool, error) <span class="cov8" title="1">{
+        for _, doc := range docs </span><span class="cov8" title="1">{
+                parsedDocURL, err := url.ParseRequestURI(doc.URL)
+                if err != nil </span><span class="cov0" title="0">{
+                        return false, errors.New("error while parsing document url")
+                }</span>
+
+                <span class="cov8" title="1">if parsedDocURL.Host == "" </span><span class="cov8" title="1">{
+                        return true, nil
+                }</span>
+        }
+        <span class="cov8" title="1">return false, nil</span>
+}
+
+func deduplicate(s []string) []string <span class="cov8" title="1">{
+        if len(s) &lt;= 1 </span><span class="cov0" title="0">{
+                return s
+        }</span>
+
+        <span class="cov8" title="1">result := make([]string, 0, len(s))
+        seen := make(map[string]bool)
+        for _, val := range s </span><span class="cov8" title="1">{
+                if !seen[val] </span><span class="cov8" title="1">{
+                        result = append(result, val)
+                        seen[val] = true
+                }</span>
+        }
+        <span class="cov8" title="1">return result</span>
+}
+
+func rewriteRelativeURIsInJSONArray(j json.RawMessage, baseURL string) (json.RawMessage, error) <span class="cov8" title="1">{
+        parsedJSON := gjson.ParseBytes(j)
+
+        items := make([]interface{}, 0)
+        for _, crrURI := range parsedJSON.Array() </span><span class="cov8" title="1">{
+                if !isAbsoluteURL(crrURI.String()) </span><span class="cov0" title="0">{
+                        rewrittenURI := baseURL + crrURI.String()
+
+                        items = append(items, rewrittenURI)
+                }</span> else<span class="cov8" title="1"> {
+                        items = append(items, crrURI.String())
+                }</span>
+        }
+
+        <span class="cov8" title="1">rewrittenJSON, err := json.Marshal(items)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return rewrittenJSON, nil</span>
+}
+
+func rewriteDefaultTargetURL(bundleRefs []*model.ConsumptionBundleReference, baseURL string) <span class="cov8" title="1">{
+        for _, br := range bundleRefs </span><span class="cov8" title="1">{
+                if br.DefaultTargetURL != "" &amp;&amp; !isAbsoluteURL(br.DefaultTargetURL) </span><span class="cov0" title="0">{
+                        br.DefaultTargetURL = baseURL + br.DefaultTargetURL
+                }</span>
+        }
+}
+
+func rewriteRelativeURIsInJSON(j json.RawMessage, baseURL, jsonPath string) (json.RawMessage, error) <span class="cov8" title="1">{
+        parsedJSON := gjson.ParseBytes(j)
+        if parsedJSON.IsArray() </span><span class="cov8" title="1">{
+                items := make([]interface{}, 0)
+                for _, jsonElement := range parsedJSON.Array() </span><span class="cov8" title="1">{
+                        rewrittenElement, err := rewriteRelativeURIsInJSON(json.RawMessage(jsonElement.Raw), baseURL, jsonPath)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, err
+                        }</span>
+                        <span class="cov8" title="1">items = append(items, gjson.ParseBytes(rewrittenElement).Value())</span>
+                }
+                <span class="cov8" title="1">return json.Marshal(items)</span>
+        } else<span class="cov8" title="1"> if parsedJSON.IsObject() </span><span class="cov8" title="1">{
+                uriProperty := gjson.GetBytes(j, jsonPath)
+                if uriProperty.Exists() &amp;&amp; !isAbsoluteURL(uriProperty.String()) </span><span class="cov8" title="1">{
+                        return sjson.SetBytes(j, jsonPath, baseURL+uriProperty.String())
+                }</span>
+        }
+        <span class="cov8" title="1">return j, nil</span>
+}
+
+func assignDefaultEntryPointIfNeeded(bundleReferences []*model.ConsumptionBundleReference, targetURLs json.RawMessage) <span class="cov8" title="1">{
+        lenTargetURLs := len(gjson.ParseBytes(targetURLs).Array())
+        for _, br := range bundleReferences </span><span class="cov8" title="1">{
+                if br.DefaultTargetURL == "" &amp;&amp; lenTargetURLs &gt; 1 </span><span class="cov0" title="0">{
+                        br.DefaultTargetURL = gjson.ParseBytes(targetURLs).Array()[0].String()
+                }</span>
+        }
+}
+
+func isAbsoluteURL(str string) bool <span class="cov8" title="1">{
+        u, err := url.Parse(str)
+        return err == nil &amp;&amp; u.Scheme != "" &amp;&amp; u.Host != ""
+}</span>
+
+func stringPtrToString(p *string) string <span class="cov8" title="1">{
+        if p != nil </span><span class="cov8" title="1">{
+                return *p
+        }</span>
+        <span class="cov8" title="1">return ""</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package ord
+
+import (
+        "context"
+        "sync"
+        "sync/atomic"
+
+        "github.com/kyma-incubator/compass/components/director/pkg/resource"
+
+        "github.com/kyma-incubator/compass/components/director/pkg/str"
+
+        "github.com/tidwall/gjson"
+
+        "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+        "github.com/kyma-incubator/compass/components/director/internal/model"
+        "github.com/kyma-incubator/compass/components/director/pkg/log"
+        "github.com/kyma-incubator/compass/components/director/pkg/persistence"
+        "github.com/pkg/errors"
+)
+
+// ServiceConfig contains configuration for the ORD aggregator service
+type ServiceConfig struct {
+        maxParallelApplicationProcessors int
+}
+
+// NewServiceConfig creates new ServiceConfig from the supplied parameters
+func NewServiceConfig(maxParallelApplicationProcessors int) ServiceConfig <span class="cov8" title="1">{
+        return ServiceConfig{
+                maxParallelApplicationProcessors: maxParallelApplicationProcessors,
+        }
+}</span>
+
+// Service consists of various resource services responsible for service-layer ORD operations.
+type Service struct {
+        config ServiceConfig
+
+        transact persistence.Transactioner
+
+        appSvc             ApplicationService
+        webhookSvc         WebhookService
+        bundleSvc          BundleService
+        bundleReferenceSvc BundleReferenceService
+        apiSvc             APIService
+        eventSvc           EventService
+        specSvc            SpecService
+        packageSvc         PackageService
+        productSvc         ProductService
+        vendorSvc          VendorService
+        tombstoneSvc       TombstoneService
+        tenantSvc          TenantService
+
+        globalRegistrySvc GlobalRegistryService
+        ordClient         Client
+}
+
+// NewAggregatorService returns a new object responsible for service-layer ORD operations.
+func NewAggregatorService(config ServiceConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, eventSvc EventService, specSvc SpecService, packageSvc PackageService, productSvc ProductService, vendorSvc VendorService, tombstoneSvc TombstoneService, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client) *Service <span class="cov8" title="1">{
+        return &amp;Service{
+                config:             config,
+                transact:           transact,
+                appSvc:             appSvc,
+                webhookSvc:         webhookSvc,
+                bundleSvc:          bundleSvc,
+                bundleReferenceSvc: bundleReferenceSvc,
+                apiSvc:             apiSvc,
+                eventSvc:           eventSvc,
+                specSvc:            specSvc,
+                packageSvc:         packageSvc,
+                productSvc:         productSvc,
+                vendorSvc:          vendorSvc,
+                tombstoneSvc:       tombstoneSvc,
+                tenantSvc:          tenantSvc,
+                globalRegistrySvc:  globalRegistrySvc,
+                ordClient:          client,
+        }
+}</span>
+
+// SyncORDDocuments performs resync of ORD information provided via ORD documents for each application
+func (s *Service) SyncORDDocuments(ctx context.Context) error <span class="cov8" title="1">{
+        globalResourcesOrdIDs, err := s.globalRegistrySvc.SyncGlobalResources(ctx)
+        if err != nil </span><span class="cov8" title="1">{
+                log.C(ctx).WithError(err).Errorf("Error while synchronizing global resources: %s. Proceeding with already existing global resources...", err)
+                globalResourcesOrdIDs, err = s.globalRegistrySvc.ListGlobalResources(ctx)
+                if err != nil </span><span class="cov8" title="1">{
+                        log.C(ctx).WithError(err).Errorf("Error while listing existing global resource: %s. Proceeding with empty globalResourceOrdIDs... Validation of Documents relying on global resources might fail.", err)
+                }</span>
+        }
+
+        <span class="cov8" title="1">if globalResourcesOrdIDs == nil </span><span class="cov8" title="1">{
+                globalResourcesOrdIDs = make(map[string]bool)
+        }</span>
+
+        <span class="cov8" title="1">queue := make(chan *model.Webhook)
+        var webhookErrors = int32(0)
+
+        wg := &amp;sync.WaitGroup{}
+        wg.Add(s.config.maxParallelApplicationProcessors)
+
+        ordWebhooks, err := s.getWebhooksWithOrdType(ctx)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">log.C(ctx).Infof("Starting %d workers...", s.config.maxParallelApplicationProcessors)
+        for i := 0; i &lt; s.config.maxParallelApplicationProcessors; i++ </span><span class="cov8" title="1">{
+                go func() </span><span class="cov8" title="1">{
+                        defer wg.Done()
+
+                        for webhook := range queue </span><span class="cov8" title="1">{
+                                if err := s.processWebhook(ctx, webhook, globalResourcesOrdIDs); err != nil </span><span class="cov8" title="1">{
+                                        log.C(ctx).WithError(err).Errorf("error while processing webhook %q", webhook.ID)
+                                        atomic.AddInt32(&amp;webhookErrors, 1)
+                                }</span>
+                        }
+                }()
+        }
+
+        <span class="cov8" title="1">for _, webhook := range ordWebhooks </span><span class="cov8" title="1">{
+                queue &lt;- webhook
+        }</span>
+        <span class="cov8" title="1">close(queue)
+        wg.Wait()
+
+        if webhookErrors != 0 </span><span class="cov8" title="1">{
+                return errors.Errorf("failed to process %d webhooks", webhookErrors)
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s *Service) processWebhook(ctx context.Context, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error <span class="cov8" title="1">{
+        tx, err := s.transact.Begin()
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+        ctx = persistence.SaveToContext(ctx, tx)
+
+        if webhook.ObjectType == model.ApplicationTemplateWebhookReference </span><span class="cov8" title="1">{
+                appTemplateID := webhook.ObjectID
+                apps, err := s.appSvc.ListAllByApplicationTemplateID(ctx, appTemplateID)
+                if err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+                <span class="cov8" title="1">for _, app := range apps </span><span class="cov8" title="1">{
+                        ctx, err = s.saveTenantToContext(ctx, app.ID)
+                        if err != nil </span><span class="cov8" title="1">{
+                                return err
+                        }</span>
+                        <span class="cov8" title="1">if _, err := s.appSvc.GetForUpdate(ctx, app.ID); err != nil </span><span class="cov8" title="1">{
+                                return errors.Wrapf(err, "error while locking app with id %q for update", app.ID)
+                        }</span>
+                        <span class="cov8" title="1">if err := s.processWebhookAndDocuments(ctx, tx, webhook, app, globalResourcesOrdIDs); err != nil </span><span class="cov8" title="1">{
+                                return err
+                        }</span>
+                }
+        } else<span class="cov8" title="1"> if webhook.ObjectType == model.ApplicationWebhookReference </span><span class="cov8" title="1">{
+                appID := webhook.ObjectID
+                ctx, err := s.saveTenantToContext(ctx, appID)
+                if err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+                <span class="cov8" title="1">app, err := s.appSvc.GetForUpdate(ctx, appID)
+                if err != nil </span><span class="cov8" title="1">{
+                        return errors.Wrapf(err, "error while locking app with id %q for update", appID)
+                }</span>
+                <span class="cov8" title="1">if err := s.processWebhookAndDocuments(ctx, tx, webhook, app, globalResourcesOrdIDs); err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s *Service) processDocuments(ctx context.Context, appID string, baseURL string, documents Documents, globalResourcesOrdIDs map[string]bool) error <span class="cov8" title="1">{
+        apiDataFromDB, eventDataFromDB, packageDataFromDB, err := s.fetchResources(ctx, appID)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">resourceHashes, err := hashResources(documents)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">if err := documents.Validate(baseURL, apiDataFromDB, eventDataFromDB, packageDataFromDB, resourceHashes, globalResourcesOrdIDs); err != nil </span><span class="cov8" title="1">{
+                return errors.Wrap(err, "invalid documents")
+        }</span>
+
+        <span class="cov8" title="1">if err := documents.Sanitize(baseURL); err != nil </span><span class="cov0" title="0">{
+                return errors.Wrap(err, "while sanitizing ORD documents")
+        }</span>
+
+        <span class="cov8" title="1">vendorsInput := make([]*model.VendorInput, 0)
+        productsInput := make([]*model.ProductInput, 0)
+        packagesInput := make([]*model.PackageInput, 0)
+        bundlesInput := make([]*model.BundleCreateInput, 0)
+        apisInput := make([]*model.APIDefinitionInput, 0)
+        eventsInput := make([]*model.EventDefinitionInput, 0)
+        tombstonesInput := make([]*model.TombstoneInput, 0)
+        for _, doc := range documents </span><span class="cov8" title="1">{
+                vendorsInput = append(vendorsInput, doc.Vendors...)
+                productsInput = append(productsInput, doc.Products...)
+                packagesInput = append(packagesInput, doc.Packages...)
+                bundlesInput = append(bundlesInput, doc.ConsumptionBundles...)
+                apisInput = append(apisInput, doc.APIResources...)
+                eventsInput = append(eventsInput, doc.EventResources...)
+                tombstonesInput = append(tombstonesInput, doc.Tombstones...)
+        }</span>
+
+        <span class="cov8" title="1">vendorsFromDB, err := s.processVendors(ctx, appID, vendorsInput)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">productsFromDB, err := s.processProducts(ctx, appID, productsInput)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">packagesFromDB, err := s.processPackages(ctx, appID, packagesInput, resourceHashes)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">bundlesFromDB, err := s.processBundles(ctx, appID, bundlesInput)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">apisFromDB, err := s.processAPIs(ctx, appID, bundlesFromDB, packagesFromDB, apisInput, resourceHashes)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">eventsFromDB, err := s.processEvents(ctx, appID, bundlesFromDB, packagesFromDB, eventsInput, resourceHashes)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">tombstonesFromDB, err := s.processTombstones(ctx, appID, tombstonesInput)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">for _, ts := range tombstonesFromDB </span><span class="cov8" title="1">{
+                if i, found := searchInSlice(len(packagesFromDB), func(i int) bool </span><span class="cov8" title="1">{
+                        return packagesFromDB[i].OrdID == ts.OrdID
+                }</span>); found <span class="cov8" title="1">{
+                        if err := s.packageSvc.Delete(ctx, packagesFromDB[i].ID); err != nil </span><span class="cov8" title="1">{
+                                return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+                        }</span>
+                }
+                <span class="cov8" title="1">if i, found := searchInSlice(len(apisFromDB), func(i int) bool </span><span class="cov8" title="1">{
+                        return equalStrings(apisFromDB[i].OrdID, &amp;ts.OrdID)
+                }</span>); found <span class="cov8" title="1">{
+                        if err := s.apiSvc.Delete(ctx, apisFromDB[i].ID); err != nil </span><span class="cov8" title="1">{
+                                return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+                        }</span>
+                }
+                <span class="cov8" title="1">if i, found := searchInSlice(len(eventsFromDB), func(i int) bool </span><span class="cov8" title="1">{
+                        return equalStrings(eventsFromDB[i].OrdID, &amp;ts.OrdID)
+                }</span>); found <span class="cov8" title="1">{
+                        if err := s.eventSvc.Delete(ctx, eventsFromDB[i].ID); err != nil </span><span class="cov8" title="1">{
+                                return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+                        }</span>
+                }
+                <span class="cov8" title="1">if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool </span><span class="cov8" title="1">{
+                        return equalStrings(bundlesFromDB[i].OrdID, &amp;ts.OrdID)
+                }</span>); found <span class="cov8" title="1">{
+                        if err := s.bundleSvc.Delete(ctx, bundlesFromDB[i].ID); err != nil </span><span class="cov8" title="1">{
+                                return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+                        }</span>
+                }
+                <span class="cov8" title="1">if i, found := searchInSlice(len(vendorsFromDB), func(i int) bool </span><span class="cov8" title="1">{
+                        return vendorsFromDB[i].OrdID == ts.OrdID
+                }</span>); found <span class="cov8" title="1">{
+                        if err := s.vendorSvc.Delete(ctx, vendorsFromDB[i].ID); err != nil </span><span class="cov8" title="1">{
+                                return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+                        }</span>
+                }
+                <span class="cov8" title="1">if i, found := searchInSlice(len(productsFromDB), func(i int) bool </span><span class="cov8" title="1">{
+                        return productsFromDB[i].OrdID == ts.OrdID
+                }</span>); found <span class="cov8" title="1">{
+                        if err := s.productSvc.Delete(ctx, productsFromDB[i].ID); err != nil </span><span class="cov8" title="1">{
+                                return errors.Wrapf(err, "error while deleting resource with ORD ID %q based on its tombstone", ts.OrdID)
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s *Service) processVendors(ctx context.Context, appID string, vendors []*model.VendorInput) ([]*model.Vendor, error) <span class="cov8" title="1">{
+        vendorsFromDB, err := s.vendorSvc.ListByApplicationID(ctx, appID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.Wrapf(err, "error while listing vendors for app with id %q", appID)
+        }</span>
+
+        <span class="cov8" title="1">for _, vendor := range vendors </span><span class="cov8" title="1">{
+                if err := s.resyncVendor(ctx, appID, vendorsFromDB, *vendor); err != nil </span><span class="cov8" title="1">{
+                        return nil, errors.Wrapf(err, "error while resyncing vendor with ORD ID %q", vendor.OrdID)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return s.vendorSvc.ListByApplicationID(ctx, appID)</span>
+}
+
+func (s *Service) processProducts(ctx context.Context, appID string, products []*model.ProductInput) ([]*model.Product, error) <span class="cov8" title="1">{
+        productsFromDB, err := s.productSvc.ListByApplicationID(ctx, appID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.Wrapf(err, "error while listing products for app with id %q", appID)
+        }</span>
+
+        <span class="cov8" title="1">for _, product := range products </span><span class="cov8" title="1">{
+                if err := s.resyncProduct(ctx, appID, productsFromDB, *product); err != nil </span><span class="cov8" title="1">{
+                        return nil, errors.Wrapf(err, "error while resyncing product with ORD ID %q", product.OrdID)
+                }</span>
+        }
+        <span class="cov8" title="1">return s.productSvc.ListByApplicationID(ctx, appID)</span>
+}
+
+func (s *Service) processPackages(ctx context.Context, appID string, packages []*model.PackageInput, resourceHashes map[string]uint64) ([]*model.Package, error) <span class="cov8" title="1">{
+        packagesFromDB, err := s.packageSvc.ListByApplicationID(ctx, appID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.Wrapf(err, "error while listing packages for app with id %q", appID)
+        }</span>
+
+        <span class="cov8" title="1">for _, pkg := range packages </span><span class="cov8" title="1">{
+                pkgHash := resourceHashes[pkg.OrdID]
+                if err := s.resyncPackage(ctx, appID, packagesFromDB, *pkg, pkgHash); err != nil </span><span class="cov8" title="1">{
+                        return nil, errors.Wrapf(err, "error while resyncing package with ORD ID %q", pkg.OrdID)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return s.packageSvc.ListByApplicationID(ctx, appID)</span>
+}
+
+func (s *Service) processBundles(ctx context.Context, appID string, bundles []*model.BundleCreateInput) ([]*model.Bundle, error) <span class="cov8" title="1">{
+        bundlesFromDB, err := s.bundleSvc.ListByApplicationIDNoPaging(ctx, appID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.Wrapf(err, "error while listing bundles for app with id %q", appID)
+        }</span>
+
+        <span class="cov8" title="1">for _, bndl := range bundles </span><span class="cov8" title="1">{
+                if err := s.resyncBundle(ctx, appID, bundlesFromDB, *bndl); err != nil </span><span class="cov8" title="1">{
+                        return nil, errors.Wrapf(err, "error while resyncing bundle with ORD ID %q", *bndl.OrdID)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return s.bundleSvc.ListByApplicationIDNoPaging(ctx, appID)</span>
+}
+
+func (s *Service) processAPIs(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, apis []*model.APIDefinitionInput, resourceHashes map[string]uint64) ([]*model.APIDefinition, error) <span class="cov8" title="1">{
+        apisFromDB, err := s.apiSvc.ListByApplicationID(ctx, appID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.Wrapf(err, "error while listing apis for app with id %q", appID)
+        }</span>
+
+        <span class="cov8" title="1">for _, api := range apis </span><span class="cov8" title="1">{
+                apiHash := resourceHashes[str.PtrStrToStr(api.OrdID)]
+                if err := s.resyncAPI(ctx, appID, apisFromDB, bundlesFromDB, packagesFromDB, *api, apiHash); err != nil </span><span class="cov8" title="1">{
+                        return nil, errors.Wrapf(err, "error while resyncing api with ORD ID %q", *api.OrdID)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return s.apiSvc.ListByApplicationID(ctx, appID)</span>
+}
+
+func (s *Service) processEvents(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, events []*model.EventDefinitionInput, resourceHashes map[string]uint64) ([]*model.EventDefinition, error) <span class="cov8" title="1">{
+        eventsFromDB, err := s.eventSvc.ListByApplicationID(ctx, appID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.Wrapf(err, "error while listing events for app with id %q", appID)
+        }</span>
+
+        <span class="cov8" title="1">for _, event := range events </span><span class="cov8" title="1">{
+                eventHash := resourceHashes[str.PtrStrToStr(event.OrdID)]
+                if err := s.resyncEvent(ctx, appID, eventsFromDB, bundlesFromDB, packagesFromDB, *event, eventHash); err != nil </span><span class="cov8" title="1">{
+                        return nil, errors.Wrapf(err, "error while resyncing event with ORD ID %q", *event.OrdID)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return s.eventSvc.ListByApplicationID(ctx, appID)</span>
+}
+
+func (s *Service) processTombstones(ctx context.Context, appID string, tombstones []*model.TombstoneInput) ([]*model.Tombstone, error) <span class="cov8" title="1">{
+        tombstonesFromDB, err := s.tombstoneSvc.ListByApplicationID(ctx, appID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.Wrapf(err, "error while listing tombstones for app with id %q", appID)
+        }</span>
+
+        <span class="cov8" title="1">for _, tombstone := range tombstones </span><span class="cov8" title="1">{
+                if err := s.resyncTombstone(ctx, appID, tombstonesFromDB, *tombstone); err != nil </span><span class="cov8" title="1">{
+                        return nil, errors.Wrapf(err, "error while resyncing tombstone for resource with ORD ID %q", tombstone.OrdID)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return s.tombstoneSvc.ListByApplicationID(ctx, appID)</span>
+}
+
+func (s *Service) resyncPackage(ctx context.Context, appID string, packagesFromDB []*model.Package, pkg model.PackageInput, pkgHash uint64) error <span class="cov8" title="1">{
+        ctx = addFieldToLogger(ctx, "package_ord_id", pkg.OrdID)
+        if i, found := searchInSlice(len(packagesFromDB), func(i int) bool </span><span class="cov8" title="1">{
+                return packagesFromDB[i].OrdID == pkg.OrdID
+        }</span>); found <span class="cov8" title="1">{
+                return s.packageSvc.Update(ctx, packagesFromDB[i].ID, pkg, pkgHash)
+        }</span>
+        <span class="cov8" title="1">_, err := s.packageSvc.Create(ctx, appID, pkg, pkgHash)
+        return err</span>
+}
+
+func (s *Service) resyncBundle(ctx context.Context, appID string, bundlesFromDB []*model.Bundle, bndl model.BundleCreateInput) error <span class="cov8" title="1">{
+        ctx = addFieldToLogger(ctx, "bundle_ord_id", *bndl.OrdID)
+        if i, found := searchInSlice(len(bundlesFromDB), func(i int) bool </span><span class="cov8" title="1">{
+                return equalStrings(bundlesFromDB[i].OrdID, bndl.OrdID)
+        }</span>); found <span class="cov8" title="1">{
+                return s.bundleSvc.Update(ctx, bundlesFromDB[i].ID, bundleUpdateInputFromCreateInput(bndl))
+        }</span>
+        <span class="cov8" title="1">_, err := s.bundleSvc.Create(ctx, appID, bndl)
+        return err</span>
+}
+
+func (s *Service) resyncProduct(ctx context.Context, appID string, productsFromDB []*model.Product, product model.ProductInput) error <span class="cov8" title="1">{
+        ctx = addFieldToLogger(ctx, "product_ord_id", product.OrdID)
+        if i, found := searchInSlice(len(productsFromDB), func(i int) bool </span><span class="cov8" title="1">{
+                return productsFromDB[i].OrdID == product.OrdID
+        }</span>); found <span class="cov8" title="1">{
+                return s.productSvc.Update(ctx, productsFromDB[i].ID, product)
+        }</span>
+        <span class="cov8" title="1">_, err := s.productSvc.Create(ctx, appID, product)
+        return err</span>
+}
+
+func (s *Service) resyncVendor(ctx context.Context, appID string, vendorsFromDB []*model.Vendor, vendor model.VendorInput) error <span class="cov8" title="1">{
+        ctx = addFieldToLogger(ctx, "vendor_ord_id", vendor.OrdID)
+        if i, found := searchInSlice(len(vendorsFromDB), func(i int) bool </span><span class="cov8" title="1">{
+                return vendorsFromDB[i].OrdID == vendor.OrdID
+        }</span>); found <span class="cov8" title="1">{
+                return s.vendorSvc.Update(ctx, vendorsFromDB[i].ID, vendor)
+        }</span>
+        <span class="cov8" title="1">_, err := s.vendorSvc.Create(ctx, appID, vendor)
+        return err</span>
+}
+
+func (s *Service) resyncAPI(ctx context.Context, appID string, apisFromDB []*model.APIDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, api model.APIDefinitionInput, apiHash uint64) error <span class="cov8" title="1">{
+        ctx = addFieldToLogger(ctx, "api_ord_id", *api.OrdID)
+        i, isAPIFound := searchInSlice(len(apisFromDB), func(i int) bool </span><span class="cov8" title="1">{
+                return equalStrings(apisFromDB[i].OrdID, api.OrdID)
+        }</span>)
+
+        <span class="cov8" title="1">defaultConsumptionBundleID := extractDefaultConsumptionBundle(bundlesFromDB, api.DefaultConsumptionBundle)
+        defaultTargetURLPerBundle := extractAllBundleReferencesForAPI(bundlesFromDB, api)
+
+        var packageID *string
+        if i, found := searchInSlice(len(packagesFromDB), func(i int) bool </span><span class="cov8" title="1">{
+                return equalStrings(&amp;packagesFromDB[i].OrdID, api.OrdPackageID)
+        }</span>); found <span class="cov8" title="1">{
+                packageID = &amp;packagesFromDB[i].ID
+        }</span>
+
+        <span class="cov8" title="1">specs := make([]*model.SpecInput, 0, len(api.ResourceDefinitions))
+        for _, resourceDef := range api.ResourceDefinitions </span><span class="cov8" title="1">{
+                specs = append(specs, resourceDef.ToSpec())
+        }</span>
+
+        <span class="cov8" title="1">if !isAPIFound </span><span class="cov8" title="1">{
+                _, err := s.apiSvc.Create(ctx, appID, nil, packageID, api, specs, defaultTargetURLPerBundle, apiHash, defaultConsumptionBundleID)
+                return err
+        }</span>
+
+        <span class="cov8" title="1">allBundleIDsForAPI, err := s.bundleReferenceSvc.GetBundleIDsForObject(ctx, model.BundleAPIReference, &amp;apisFromDB[i].ID)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        // in case of API update, we need to filter which ConsumptionBundleReferences should be deleted - those that are stored in db but not present in the input anymore
+        <span class="cov8" title="1">bundleIDsForDeletion := extractBundleReferencesForDeletion(allBundleIDsForAPI, defaultTargetURLPerBundle)
+
+        // in case of API update, we need to filter which ConsumptionBundleReferences should be created - those that are not present in db but are present in the input
+        defaultTargetURLPerBundleForCreation := extractAllBundleReferencesForCreation(defaultTargetURLPerBundle, allBundleIDsForAPI)
+
+        if err := s.apiSvc.UpdateInManyBundles(ctx, apisFromDB[i].ID, api, nil, defaultTargetURLPerBundle, defaultTargetURLPerBundleForCreation, bundleIDsForDeletion, apiHash, defaultConsumptionBundleID); err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if api.VersionInput.Value != apisFromDB[i].Version.Value </span><span class="cov8" title="1">{
+                if err := s.resyncSpecs(ctx, model.APISpecReference, apisFromDB[i].ID, specs); err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+        } else<span class="cov8" title="1"> {
+                if err := s.refetchFailedSpecs(ctx, model.APISpecReference, apisFromDB[i].ID); err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s *Service) resyncEvent(ctx context.Context, appID string, eventsFromDB []*model.EventDefinition, bundlesFromDB []*model.Bundle, packagesFromDB []*model.Package, event model.EventDefinitionInput, eventHash uint64) error <span class="cov8" title="1">{
+        ctx = addFieldToLogger(ctx, "event_ord_id", *event.OrdID)
+        i, isEventFound := searchInSlice(len(eventsFromDB), func(i int) bool </span><span class="cov8" title="1">{
+                return equalStrings(eventsFromDB[i].OrdID, event.OrdID)
+        }</span>)
+
+        <span class="cov8" title="1">defaultConsumptionBundleID := extractDefaultConsumptionBundle(bundlesFromDB, event.DefaultConsumptionBundle)
+
+        bundleIDsFromBundleReference := make([]string, 0)
+        for _, br := range event.PartOfConsumptionBundles </span><span class="cov8" title="1">{
+                for _, bndl := range bundlesFromDB </span><span class="cov8" title="1">{
+                        if equalStrings(bndl.OrdID, &amp;br.BundleOrdID) </span><span class="cov8" title="1">{
+                                bundleIDsFromBundleReference = append(bundleIDsFromBundleReference, bndl.ID)
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">var packageID *string
+        if i, found := searchInSlice(len(packagesFromDB), func(i int) bool </span><span class="cov8" title="1">{
+                return equalStrings(&amp;packagesFromDB[i].OrdID, event.OrdPackageID)
+        }</span>); found <span class="cov8" title="1">{
+                packageID = &amp;packagesFromDB[i].ID
+        }</span>
+
+        <span class="cov8" title="1">specs := make([]*model.SpecInput, 0, len(event.ResourceDefinitions))
+        for _, resourceDef := range event.ResourceDefinitions </span><span class="cov8" title="1">{
+                specs = append(specs, resourceDef.ToSpec())
+        }</span>
+
+        <span class="cov8" title="1">if !isEventFound </span><span class="cov8" title="1">{
+                _, err := s.eventSvc.Create(ctx, appID, nil, packageID, event, specs, bundleIDsFromBundleReference, eventHash, defaultConsumptionBundleID)
+                return err
+        }</span>
+
+        <span class="cov8" title="1">allBundleIDsForEvent, err := s.bundleReferenceSvc.GetBundleIDsForObject(ctx, model.BundleEventReference, &amp;eventsFromDB[i].ID)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        // in case of Event update, we need to filter which ConsumptionBundleReferences(bundle IDs) should be deleted - those that are stored in db but not present in the input anymore
+        <span class="cov8" title="1">bundleIDsForDeletion := make([]string, 0)
+        for _, id := range allBundleIDsForEvent </span><span class="cov8" title="1">{
+                if _, found := searchInSlice(len(bundleIDsFromBundleReference), func(i int) bool </span><span class="cov8" title="1">{
+                        return equalStrings(&amp;bundleIDsFromBundleReference[i], &amp;id)
+                }</span>); !found <span class="cov0" title="0">{
+                        bundleIDsForDeletion = append(bundleIDsForDeletion, id)
+                }</span>
+        }
+
+        // in case of Event update, we need to filter which ConsumptionBundleReferences should be created - those that are not present in db but are present in the input
+        <span class="cov8" title="1">bundleIDsForCreation := make([]string, 0)
+        for _, id := range bundleIDsFromBundleReference </span><span class="cov8" title="1">{
+                if _, found := searchInSlice(len(allBundleIDsForEvent), func(i int) bool </span><span class="cov8" title="1">{
+                        return equalStrings(&amp;allBundleIDsForEvent[i], &amp;id)
+                }</span>); !found <span class="cov0" title="0">{
+                        bundleIDsForCreation = append(bundleIDsForCreation, id)
+                }</span>
+        }
+
+        <span class="cov8" title="1">if err := s.eventSvc.UpdateInManyBundles(ctx, eventsFromDB[i].ID, event, nil, bundleIDsFromBundleReference, bundleIDsForCreation, bundleIDsForDeletion, eventHash, defaultConsumptionBundleID); err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if event.VersionInput.Value != eventsFromDB[i].Version.Value </span><span class="cov8" title="1">{
+                if err := s.resyncSpecs(ctx, model.EventSpecReference, eventsFromDB[i].ID, specs); err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+        } else<span class="cov8" title="1"> {
+                if err := s.refetchFailedSpecs(ctx, model.EventSpecReference, eventsFromDB[i].ID); err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s *Service) resyncSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string, specs []*model.SpecInput) error <span class="cov8" title="1">{
+        if err := s.specSvc.DeleteByReferenceObjectID(ctx, objectType, objectID); err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">for _, spec := range specs </span><span class="cov8" title="1">{
+                if spec == nil </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+                <span class="cov8" title="1">if _, err := s.specSvc.CreateByReferenceObjectID(ctx, *spec, objectType, objectID); err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s *Service) resyncTombstone(ctx context.Context, appID string, tombstonesFromDB []*model.Tombstone, tombstone model.TombstoneInput) error <span class="cov8" title="1">{
+        if i, found := searchInSlice(len(tombstonesFromDB), func(i int) bool </span><span class="cov8" title="1">{
+                return tombstonesFromDB[i].OrdID == tombstone.OrdID
+        }</span>); found <span class="cov8" title="1">{
+                return s.tombstoneSvc.Update(ctx, tombstonesFromDB[i].ID, tombstone)
+        }</span>
+        <span class="cov8" title="1">_, err := s.tombstoneSvc.Create(ctx, appID, tombstone)
+        return err</span>
+}
+
+func (s *Service) refetchFailedSpecs(ctx context.Context, objectType model.SpecReferenceObjectType, objectID string) error <span class="cov8" title="1">{
+        specsFromDB, err := s.specSvc.ListByReferenceObjectID(ctx, objectType, objectID)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+        <span class="cov8" title="1">for _, spec := range specsFromDB </span><span class="cov8" title="1">{
+                fr, err := s.specSvc.GetFetchRequest(ctx, spec.ID, objectType)
+                if err != nil </span><span class="cov8" title="1">{
+                        return err
+                }</span>
+                <span class="cov8" title="1">if fr.Status != nil &amp;&amp; fr.Status.Condition == model.FetchRequestStatusConditionFailed </span><span class="cov8" title="1">{
+                        if _, err := s.specSvc.RefetchSpec(ctx, spec.ID, objectType); err != nil </span><span class="cov8" title="1">{
+                                return errors.Wrapf(err, "while refetching spec %s", spec.ID)
+                        }</span>
+                }
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (s *Service) fetchAPIDefFromDB(ctx context.Context, appID string) (map[string]*model.APIDefinition, error) <span class="cov8" title="1">{
+        apisFromDB, err := s.apiSvc.ListByApplicationID(ctx, appID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.Wrapf(err, "while listing apis for app with id %s", appID)
+        }</span>
+
+        <span class="cov8" title="1">apiDataFromDB := make(map[string]*model.APIDefinition, len(apisFromDB))
+
+        for _, api := range apisFromDB </span><span class="cov8" title="1">{
+                apiOrdID := str.PtrStrToStr(api.OrdID)
+                apiDataFromDB[apiOrdID] = api
+        }</span>
+
+        <span class="cov8" title="1">return apiDataFromDB, nil</span>
+}
+
+func (s *Service) fetchPackagesFromDB(ctx context.Context, appID string) (map[string]*model.Package, error) <span class="cov8" title="1">{
+        packagesFromDB, err := s.packageSvc.ListByApplicationID(ctx, appID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, errors.Wrapf(err, "while listing packages for app with id %s", appID)
+        }</span>
+
+        <span class="cov8" title="1">packageDataFromDB := make(map[string]*model.Package)
+
+        for _, pkg := range packagesFromDB </span><span class="cov8" title="1">{
+                packageDataFromDB[pkg.OrdID] = pkg
+        }</span>
+
+        <span class="cov8" title="1">return packageDataFromDB, nil</span>
+}
+
+func (s *Service) fetchEventDefFromDB(ctx context.Context, appID string) (map[string]*model.EventDefinition, error) <span class="cov8" title="1">{
+        eventsFromDB, err := s.eventSvc.ListByApplicationID(ctx, appID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, errors.Wrapf(err, "while listing events for app with id %s", appID)
+        }</span>
+
+        <span class="cov8" title="1">eventDataFromDB := make(map[string]*model.EventDefinition)
+
+        for _, event := range eventsFromDB </span><span class="cov8" title="1">{
+                eventOrdID := str.PtrStrToStr(event.OrdID)
+                eventDataFromDB[eventOrdID] = event
+        }</span>
+
+        <span class="cov8" title="1">return eventDataFromDB, nil</span>
+}
+
+func (s *Service) fetchResources(ctx context.Context, appID string) (map[string]*model.APIDefinition, map[string]*model.EventDefinition, map[string]*model.Package, error) <span class="cov8" title="1">{
+        apiDataFromDB, err := s.fetchAPIDefFromDB(ctx, appID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, nil, nil, errors.Wrapf(err, "while fetching apis for app with id %s", appID)
+        }</span>
+
+        <span class="cov8" title="1">eventDataFromDB, err := s.fetchEventDefFromDB(ctx, appID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, nil, nil, errors.Wrapf(err, "while fetching events for app with id %s", appID)
+        }</span>
+
+        <span class="cov8" title="1">packageDataFromDB, err := s.fetchPackagesFromDB(ctx, appID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, nil, nil, errors.Wrapf(err, "while fetching packages for app with id %s", appID)
+        }</span>
+
+        <span class="cov8" title="1">return apiDataFromDB, eventDataFromDB, packageDataFromDB, nil</span>
+}
+
+func (s *Service) processWebhookAndDocuments(ctx context.Context, tx persistence.PersistenceTx, webhook *model.Webhook, app *model.Application, globalResourcesOrdIDs map[string]bool) error <span class="cov8" title="1">{
+        var documents Documents
+        var baseURL string
+        var err error
+
+        if webhook.Type == model.WebhookTypeOpenResourceDiscovery &amp;&amp; webhook.URL != nil </span><span class="cov8" title="1">{
+                ctx = addFieldToLogger(ctx, "app_id", app.ID)
+                documents, baseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, app, webhook)
+                if err != nil </span><span class="cov8" title="1">{
+                        log.C(ctx).WithError(err).Errorf("error fetching ORD document for webhook with id %q: %v", webhook.ID, err)
+                }</span>
+        }
+
+        <span class="cov8" title="1">if len(documents) &gt; 0 </span><span class="cov8" title="1">{
+                log.C(ctx).Info("Processing ORD documents")
+                if err = s.processDocuments(ctx, app.ID, baseURL, documents, globalResourcesOrdIDs); err != nil </span><span class="cov8" title="1">{
+                        log.C(ctx).WithError(err).Errorf("error processing ORD documents: %v", err)
+                }</span> else<span class="cov8" title="1"> {
+                        log.C(ctx).Info("Successfully processed ORD documents")
+                        return tx.Commit()
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func(s *Service) getWebhooksWithOrdType(ctx context.Context) ([]*model.Webhook, error) <span class="cov8" title="1">{
+        tx, err := s.transact.Begin()
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+        ctx = persistence.SaveToContext(ctx, tx)
+        ordWebhooks, err := s.webhookSvc.ListByWebhookTypeWithSelectForUpdate(ctx, model.WebhookTypeOpenResourceDiscovery)
+        if err != nil </span><span class="cov8" title="1">{
+                log.C(ctx).WithError(err).Errorf("error while fetching webhooks with type %s", model.WebhookTypeOpenResourceDiscovery)
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">if err := tx.Commit(); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return ordWebhooks, nil</span>
+}
+func (s *Service) saveTenantToContext(ctx context.Context, appID string) (context.Context, error) <span class="cov8" title="1">{
+        internalTntID, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, appID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">tnt, err := s.tenantSvc.GetTenantByID(ctx, internalTntID)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">ctx = tenant.SaveToContext(ctx, internalTntID, tnt.ExternalTenant)
+
+        return ctx, nil</span>
+}
+func hashResources(docs Documents) (map[string]uint64, error) <span class="cov8" title="1">{
+        resourceHashes := make(map[string]uint64)
+
+        for _, doc := range docs </span><span class="cov8" title="1">{
+                for _, apiInput := range doc.APIResources </span><span class="cov8" title="1">{
+                        normalizedAPIDef, err := normalizeAPIDefinition(apiInput)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, err
+                        }</span>
+
+                        <span class="cov8" title="1">hash, err := HashObject(normalizedAPIDef)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, errors.Wrapf(err, "while hashing api definition with ORD ID: %s", str.PtrStrToStr(normalizedAPIDef.OrdID))
+                        }</span>
+
+                        <span class="cov8" title="1">resourceHashes[str.PtrStrToStr(apiInput.OrdID)] = hash</span>
+                }
+
+                <span class="cov8" title="1">for _, eventInput := range doc.EventResources </span><span class="cov8" title="1">{
+                        normalizedEventDef, err := normalizeEventDefinition(eventInput)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, err
+                        }</span>
+
+                        <span class="cov8" title="1">hash, err := HashObject(normalizedEventDef)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, errors.Wrapf(err, "while hashing event definition with ORD ID: %s", str.PtrStrToStr(normalizedEventDef.OrdID))
+                        }</span>
+
+                        <span class="cov8" title="1">resourceHashes[str.PtrStrToStr(eventInput.OrdID)] = hash</span>
+                }
+
+                <span class="cov8" title="1">for _, packageInput := range doc.Packages </span><span class="cov8" title="1">{
+                        normalizedPkg, err := normalizePackage(packageInput)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, err
+                        }</span>
+
+                        <span class="cov8" title="1">hash, err := HashObject(normalizedPkg)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, errors.Wrapf(err, "while hashing package with ORD ID: %s", normalizedPkg.OrdID)
+                        }</span>
+
+                        <span class="cov8" title="1">resourceHashes[packageInput.OrdID] = hash</span>
+                }
+        }
+
+        <span class="cov8" title="1">return resourceHashes, nil</span>
+}
+
+func bundleUpdateInputFromCreateInput(in model.BundleCreateInput) model.BundleUpdateInput <span class="cov8" title="1">{
+        return model.BundleUpdateInput{
+                Name:                           in.Name,
+                Description:                    in.Description,
+                InstanceAuthRequestInputSchema: in.InstanceAuthRequestInputSchema,
+                DefaultInstanceAuth:            in.DefaultInstanceAuth,
+                OrdID:                          in.OrdID,
+                ShortDescription:               in.ShortDescription,
+                Links:                          in.Links,
+                Labels:                         in.Labels,
+                DocumentationLabels:            in.DocumentationLabels,
+                CredentialExchangeStrategies:   in.CredentialExchangeStrategies,
+                CorrelationIDs:                 in.CorrelationIDs,
+        }
+}</span>
+
+// extractDefaultConsumptionBundle converts the defaultConsumptionBundle which is bundle ORD_ID into internal bundle_id
+func extractDefaultConsumptionBundle(bundlesFromDB []*model.Bundle, defaultConsumptionBundle *string) string <span class="cov8" title="1">{
+        var bundleID string
+        if defaultConsumptionBundle == nil </span><span class="cov8" title="1">{
+                return bundleID
+        }</span>
+
+        <span class="cov0" title="0">for _, bndl := range bundlesFromDB </span><span class="cov0" title="0">{
+                if equalStrings(bndl.OrdID, defaultConsumptionBundle) </span><span class="cov0" title="0">{
+                        bundleID = bndl.ID
+                        break</span>
+                }
+        }
+        <span class="cov0" title="0">return bundleID</span>
+}
+
+func extractAllBundleReferencesForAPI(bundlesFromDB []*model.Bundle, api model.APIDefinitionInput) map[string]string <span class="cov8" title="1">{
+        defaultTargetURLPerBundle := make(map[string]string)
+        lenTargetURLs := len(gjson.ParseBytes(api.TargetURLs).Array())
+        for _, br := range api.PartOfConsumptionBundles </span><span class="cov8" title="1">{
+                for _, bndl := range bundlesFromDB </span><span class="cov8" title="1">{
+                        if equalStrings(bndl.OrdID, &amp;br.BundleOrdID) </span><span class="cov8" title="1">{
+                                if br.DefaultTargetURL == "" &amp;&amp; lenTargetURLs == 1 </span><span class="cov8" title="1">{
+                                        defaultTargetURLPerBundle[bndl.ID] = gjson.ParseBytes(api.TargetURLs).Array()[0].String()
+                                }</span> else<span class="cov8" title="1"> {
+                                        defaultTargetURLPerBundle[bndl.ID] = br.DefaultTargetURL
+                                }</span>
+                        }
+                }
+        }
+        <span class="cov8" title="1">return defaultTargetURLPerBundle</span>
+}
+
+func extractAllBundleReferencesForCreation(defaultTargetURLPerBundle map[string]string, allBundleIDsForAPI []string) map[string]string <span class="cov8" title="1">{
+        defaultTargetURLPerBundleForCreation := make(map[string]string)
+        for bndlID, defaultEntryPoint := range defaultTargetURLPerBundle </span><span class="cov8" title="1">{
+                if _, found := searchInSlice(len(allBundleIDsForAPI), func(i int) bool </span><span class="cov8" title="1">{
+                        return equalStrings(&amp;allBundleIDsForAPI[i], &amp;bndlID)
+                }</span>); !found <span class="cov0" title="0">{
+                        defaultTargetURLPerBundleForCreation[bndlID] = defaultEntryPoint
+                        delete(defaultTargetURLPerBundle, bndlID)
+                }</span>
+        }
+        <span class="cov8" title="1">return defaultTargetURLPerBundleForCreation</span>
+}
+
+func extractBundleReferencesForDeletion(allBundleIDsForAPI []string, defaultTargetURLPerBundle map[string]string) []string <span class="cov8" title="1">{
+        bundleIDsToBeDeleted := make([]string, 0)
+
+        for _, bndlID := range allBundleIDsForAPI </span><span class="cov8" title="1">{
+                if _, ok := defaultTargetURLPerBundle[bndlID]; !ok </span><span class="cov0" title="0">{
+                        bundleIDsToBeDeleted = append(bundleIDsToBeDeleted, bndlID)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return bundleIDsToBeDeleted</span>
+}
+
+func equalStrings(first, second *string) bool <span class="cov8" title="1">{
+        return first != nil &amp;&amp; second != nil &amp;&amp; *first == *second
+}</span>
+
+func searchInSlice(length int, f func(i int) bool) (int, bool) <span class="cov8" title="1">{
+        for i := 0; i &lt; length; i++ </span><span class="cov8" title="1">{
+                if f(i) </span><span class="cov8" title="1">{
+                        return i, true
+                }</span>
+        }
+        <span class="cov8" title="1">return -1, false</span>
+}
+
+func addFieldToLogger(ctx context.Context, fieldName, fieldValue string) context.Context <span class="cov8" title="1">{
+        logger := log.LoggerFromContext(ctx)
+        logger = logger.WithField(fieldName, fieldValue)
+        return log.ContextWithLogger(ctx, logger)
+}</span>
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package ord
+
+import (
+        "encoding/json"
+        "fmt"
+        "regexp"
+        "strconv"
+        "strings"
+        "time"
+
+        "golang.org/x/mod/semver"
+
+        "github.com/google/go-cmp/cmp"
+        "github.com/mitchellh/hashstructure/v2"
+
+        "github.com/kyma-incubator/compass/components/director/pkg/str"
+
+        validation "github.com/go-ozzo/ozzo-validation/v4"
+        "github.com/go-ozzo/ozzo-validation/v4/is"
+        "github.com/kyma-incubator/compass/components/director/internal/model"
+        "github.com/pkg/errors"
+        "github.com/tidwall/gjson"
+)
+
+// Disclaimer: All regexes below are provided by the ORD spec itself.
+const (
+        // SemVerRegex represents the valid structure of the field
+        SemVerRegex = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
+        // PackageOrdIDRegex represents the valid structure of the ordID of the Package
+        PackageOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+        // VendorOrdIDRegex represents the valid structure of the ordID of the Vendor
+        VendorOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(vendor):([a-zA-Z0-9._\\-]+):()$"
+        // ProductOrdIDRegex represents the valid structure of the ordID of the Product
+        ProductOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(product):([a-zA-Z0-9._\\-]+):()$"
+        // BundleOrdIDRegex represents the valid structure of the ordID of the ConsumptionBundle
+        BundleOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(consumptionBundle):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+        // TombstoneOrdIDRegex represents the valid structure of the ordID of the Tombstone
+        TombstoneOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package|consumptionBundle|product|vendor|apiResource|eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
+        // SystemInstanceBaseURLRegex represents the valid structure of the field
+        SystemInstanceBaseURLRegex = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?(\\/[a-zA-Z0-9-\\._~]+)?$"
+        // ConfigBaseURLRegex represents the valid structure of the field
+        ConfigBaseURLRegex = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?(\\/[a-zA-Z0-9-\\._~]+)?$"
+        // StringArrayElementRegex represents the valid structure of the field
+        StringArrayElementRegex = "^[a-zA-Z0-9-_.\\/ ]*$"
+        // CountryRegex represents the valid structure of the field
+        CountryRegex = "^[A-Z]{2}$"
+        // APIOrdIDRegex represents the valid structure of the ordID of the API
+        APIOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(apiResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+        // EventOrdIDRegex represents the valid structure of the ordID of the Event
+        EventOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(eventResource):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+)$"
+        // CorrelationIDsRegex represents the valid structure of the field
+        CorrelationIDsRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-\\/]+):([a-zA-Z0-9._\\-\\/]+)$"
+        // LabelsKeyRegex represents the valid structure of the field
+        LabelsKeyRegex = "^[a-zA-Z0-9-_.]*$"
+        // DocumentationLabelsKeyRegex represents the valid structure of the field
+        DocumentationLabelsKeyRegex = "^[^\\n]*$"
+        // CustomImplementationStandardRegex represents the valid structure of the field
+        CustomImplementationStandardRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+        // VendorPartnersRegex represents the valid structure of the field
+        VendorPartnersRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(vendor):([a-zA-Z0-9._\\-]+):()$"
+        // CustomPolicyLevelRegex represents the valid structure of the field
+        CustomPolicyLevelRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+        // CustomTypeCredentialExchangeStrategyRegex represents the valid structure of the field
+        CustomTypeCredentialExchangeStrategyRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+        // SAPProductOrdIDNamespaceRegex represents the valid structure of a SAP Product OrdID Namespace part
+        SAPProductOrdIDNamespaceRegex = "^(sap)((\\.)([a-z0-9-]+(?:[.][a-z0-9-]+)*))*$"
+
+        // MinDescriptionLength represents the minimal accepted length of the Description field
+        MinDescriptionLength = 1
+        // MaxDescriptionLength represents the minimal accepted length of the Description field
+        MaxDescriptionLength = 5000
+)
+
+const (
+        custom string = "custom"
+
+        // PolicyLevelSap is one of the available policy options
+        PolicyLevelSap string = "sap:core:v1"
+        // PolicyLevelSapPartner is one of the available policy options
+        PolicyLevelSapPartner string = "sap:partner:v1"
+        // PolicyLevelCustom is one of the available policy options
+        PolicyLevelCustom = custom
+
+        // ReleaseStatusBeta is one of the available release status options
+        ReleaseStatusBeta string = "beta"
+        // ReleaseStatusActive is one of the available release status options
+        ReleaseStatusActive string = "active"
+        // ReleaseStatusDeprecated is one of the available release status options
+        ReleaseStatusDeprecated string = "deprecated"
+
+        // APIProtocolODataV2 is one of the available api protocol options
+        APIProtocolODataV2 string = "odata-v2"
+        // APIProtocolODataV4 is one of the available api protocol options
+        APIProtocolODataV4 string = "odata-v4"
+        // APIProtocolSoapInbound is one of the available api protocol options
+        APIProtocolSoapInbound string = "soap-inbound"
+        // APIProtocolSoapOutbound is one of the available api protocol options
+        APIProtocolSoapOutbound string = "soap-outbound"
+        // APIProtocolRest is one of the available api protocol options
+        APIProtocolRest string = "rest"
+        // APIProtocolSapRfc is one of the available api protocol options
+        APIProtocolSapRfc string = "sap-rfc"
+
+        // APIVisibilityPublic is one of the available api visibility options
+        APIVisibilityPublic string = "public"
+        // APIVisibilityPrivate is one of the available api visibility options
+        APIVisibilityPrivate string = "private"
+        // APIVisibilityInternal is one of the available api visibility options
+        APIVisibilityInternal string = "internal"
+
+        // APIImplementationStandardDocumentAPI is one of the available api implementation standard options
+        APIImplementationStandardDocumentAPI string = "sap:ord-document-api:v1"
+        // APIImplementationStandardServiceBroker is one of the available api implementation standard options
+        APIImplementationStandardServiceBroker string = "cff:open-service-broker:v2"
+        // APIImplementationStandardCsnExposure is one of the available api implementation standard options
+        APIImplementationStandardCsnExposure string = "sap:csn-exposure:v1"
+        // APIImplementationStandardCustom is one of the available api implementation standard options
+        APIImplementationStandardCustom = custom
+
+        // SapVendor is a valid Vendor ordID
+        SapVendor = "sap:vendor:SAP:"
+        // PartnerVendor is a valid partner Vendor ordID
+        PartnerVendor = "partner:vendor:SAP:"
+)
+
+var (
+        // LineOfBusinesses contain all valid values for this field from the spec
+        LineOfBusinesses = map[string]bool{
+                "Asset Management":                 true,
+                "Commerce":                         true,
+                "Finance":                          true,
+                "Human Resources":                  true,
+                "Manufacturing":                    true,
+                "Marketing":                        true,
+                "R&amp;D Engineering":                  true,
+                "Sales":                            true,
+                "Service":                          true,
+                "Sourcing and Procurement":         true,
+                "Supply Chain":                     true,
+                "Sustainability":                   true,
+                "Metering":                         true,
+                "Grid Operations and Maintenance":  true,
+                "Plant Operations and Maintenance": true,
+                "Maintenance and Engineering":      true,
+        }
+        // Industries contain all valid values for this field from the spec
+        Industries = map[string]bool{
+                "Aerospace and Defense": true,
+                "Automotive":            true,
+                "Banking":               true,
+                "Chemicals":             true,
+                "Consumer Products":     true,
+                "Defense and Security":  true,
+                "Engineering Construction and Operations": true,
+                "Healthcare":                          true,
+                "Higher Education and Research":       true,
+                "High Tech":                           true,
+                "Industrial Machinery and Components": true,
+                "Insurance":                           true,
+                "Life Sciences":                       true,
+                "Media":                               true,
+                "Mill Products":                       true,
+                "Mining":                              true,
+                "Oil and Gas":                         true,
+                "Professional Services":               true,
+                "Public Sector":                       true,
+                "Retail":                              true,
+                "Sports and Entertainment":            true,
+                "Telecommunications":                  true,
+                "Travel and Transportation":           true,
+                "Utilities":                           true,
+                "Wholesale Distribution":              true,
+        }
+)
+
+var shortDescriptionRules = []validation.Rule{
+        validation.Required, validation.Length(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
+}
+
+var optionalShortDescriptionRules = []validation.Rule{
+        validation.NilOrNotEmpty, validation.Length(1, 256), validation.NewStringRule(noNewLines, "short description should not contain line breaks"),
+}
+
+// ValidateSystemInstanceInput validates the given SystemInstance
+func ValidateSystemInstanceInput(app *model.Application) error <span class="cov8" title="1">{
+        return validation.ValidateStruct(app,
+                validation.Field(&amp;app.CorrelationIDs, validation.By(func(value interface{}) error </span><span class="cov8" title="1">{
+                        return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
+                }</span>)),
+                validation.Field(&amp;app.BaseURL, is.RequestURI, validation.Match(regexp.MustCompile(SystemInstanceBaseURLRegex))),
+                validation.Field(&amp;app.OrdLabels, validation.By(validateORDLabels)),
+                validation.Field(&amp;app.DocumentationLabels, validation.By(validateDocumentationLabels)),
+        )
+}
+
+func validateDocumentInput(doc *Document) error <span class="cov8" title="1">{
+        return validation.ValidateStruct(doc, validation.Field(&amp;doc.OpenResourceDiscovery, validation.Required, validation.Match(regexp.MustCompile("^1.*$"))))
+}</span>
+
+func validatePackageInput(pkg *model.PackageInput, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error <span class="cov8" title="1">{
+        return validation.ValidateStruct(pkg,
+                validation.Field(&amp;pkg.OrdID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
+                validation.Field(&amp;pkg.Title, validation.Required),
+                validation.Field(&amp;pkg.ShortDescription, shortDescriptionRules...),
+                validation.Field(&amp;pkg.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
+                validation.Field(&amp;pkg.SupportInfo, validation.NilOrNotEmpty),
+                validation.Field(&amp;pkg.Version, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error </span><span class="cov8" title="1">{
+                        return validatePackageVersionInput(value, *pkg, packagesFromDB, resourceHashes)
+                }</span>)),
+                validation.Field(&amp;pkg.PolicyLevel, validation.Required, validation.In(PolicyLevelSap, PolicyLevelSapPartner, PolicyLevelCustom), validation.When(pkg.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
+                validation.Field(&amp;pkg.CustomPolicyLevel, validation.When(pkg.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
+                validation.Field(&amp;pkg.PackageLinks, validation.By(validatePackageLinks)),
+                validation.Field(&amp;pkg.Links, validation.By(validateORDLinks)),
+                validation.Field(&amp;pkg.Vendor, validation.Required, validation.When(pkg.PolicyLevel == PolicyLevelSap, validation.In(SapVendor)), validation.When(pkg.PolicyLevel == PolicyLevelSapPartner, validation.NotIn(SapVendor)), validation.Match(regexp.MustCompile(VendorOrdIDRegex))),
+                validation.Field(&amp;pkg.PartOfProducts, validation.Required, validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
+                }</span>)),
+                validation.Field(&amp;pkg.Tags, validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+                }</span>)),
+                validation.Field(&amp;pkg.Labels, validation.By(validateORDLabels)),
+                validation.Field(&amp;pkg.Countries, validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CountryRegex))
+                }</span>)),
+                validation.Field(&amp;pkg.LineOfBusiness,
+                        validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                                if pkg.PolicyLevel == PolicyLevelCustom </span><span class="cov8" title="1">{
+                                        return nil
+                                }</span>
+                                <span class="cov8" title="1">return validateJSONArrayOfStringsContainsInMap(value, LineOfBusinesses)</span>
+                        }),
+                        validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                                return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+                        }</span>),
+                ),
+                validation.Field(&amp;pkg.Industry,
+                        validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                                if pkg.PolicyLevel == PolicyLevelCustom </span><span class="cov8" title="1">{
+                                        return nil
+                                }</span>
+                                <span class="cov8" title="1">return validateJSONArrayOfStringsContainsInMap(value, Industries)</span>
+                        }),
+                        validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                                return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+                        }</span>),
+                ),
+                validation.Field(&amp;pkg.DocumentationLabels, validation.By(validateDocumentationLabels)),
+        )
+}
+
+func validateBundleInput(bndl *model.BundleCreateInput) error <span class="cov8" title="1">{
+        return validation.ValidateStruct(bndl,
+                validation.Field(&amp;bndl.OrdID, validation.Required, validation.Match(regexp.MustCompile(BundleOrdIDRegex))),
+                validation.Field(&amp;bndl.Name, validation.Required),
+                validation.Field(&amp;bndl.ShortDescription, optionalShortDescriptionRules...),
+                validation.Field(&amp;bndl.Description, validation.NilOrNotEmpty, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
+                validation.Field(&amp;bndl.Links, validation.By(validateORDLinks)),
+                validation.Field(&amp;bndl.Labels, validation.By(validateORDLabels)),
+                validation.Field(&amp;bndl.CredentialExchangeStrategies, validation.By(func(value interface{}) error </span><span class="cov8" title="1">{
+                        return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
+                                "type": {
+                                        validation.Required,
+                                        validation.In(custom),
+                                },
+                                "callbackUrl": {
+                                        is.RequestURI,
+                                },
+                        }, validateCustomType, validateCustomDescription)
+                }</span>)),
+                validation.Field(&amp;bndl.CorrelationIDs, validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
+                }</span>)),
+                validation.Field(&amp;bndl.DocumentationLabels, validation.By(validateDocumentationLabels)),
+        )
+}
+
+func validateAPIInput(api *model.APIDefinitionInput, packagePolicyLevels map[string]string, apisFromDB map[string]*model.APIDefinition, apiHashes map[string]uint64) error <span class="cov8" title="1">{
+        return validation.ValidateStruct(api,
+                validation.Field(&amp;api.OrdID, validation.Required, validation.Match(regexp.MustCompile(APIOrdIDRegex))),
+                validation.Field(&amp;api.Name, validation.Required),
+                validation.Field(&amp;api.ShortDescription, shortDescriptionRules...),
+                validation.Field(&amp;api.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
+                validation.Field(&amp;api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error </span><span class="cov8" title="1">{
+                        return validateAPIDefinitionVersionInput(value, *api, apisFromDB, apiHashes)
+                }</span>)),
+                validation.Field(&amp;api.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
+                validation.Field(&amp;api.APIProtocol, validation.Required, validation.In(APIProtocolODataV2, APIProtocolODataV4, APIProtocolSoapInbound, APIProtocolSoapOutbound, APIProtocolRest, APIProtocolSapRfc)),
+                validation.Field(&amp;api.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
+                validation.Field(&amp;api.PartOfProducts, validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
+                }</span>)),
+                validation.Field(&amp;api.Tags, validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+                }</span>)),
+                validation.Field(&amp;api.Countries, validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CountryRegex))
+                }</span>)),
+                validation.Field(&amp;api.LineOfBusiness,
+                        validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                                return validateWhenPolicyLevelIsNotCustom(api.OrdPackageID, packagePolicyLevels, func() error </span><span class="cov8" title="1">{
+                                        return validateJSONArrayOfStringsContainsInMap(value, LineOfBusinesses)
+                                }</span>)
+                        }),
+                        validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                                return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+                        }</span>),
+                ),
+                validation.Field(&amp;api.Industry,
+                        validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                                return validateWhenPolicyLevelIsNotCustom(api.OrdPackageID, packagePolicyLevels, func() error </span><span class="cov8" title="1">{
+                                        return validateJSONArrayOfStringsContainsInMap(value, Industries)
+                                }</span>)
+                        }),
+                        validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                                return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+                        }</span>),
+                ),
+                validation.Field(&amp;api.ResourceDefinitions, validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateAPIResourceDefinitions(value, *api, packagePolicyLevels)
+                }</span>)),
+                validation.Field(&amp;api.APIResourceLinks, validation.By(validateAPILinks)),
+                validation.Field(&amp;api.Links, validation.By(validateORDLinks)),
+                validation.Field(&amp;api.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
+                validation.Field(&amp;api.SunsetDate, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate))),
+                validation.Field(&amp;api.Successors, validation.When(*api.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(APIOrdIDRegex))
+                }</span>)),
+                validation.Field(&amp;api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
+                validation.Field(&amp;api.TargetURLs, validation.By(validateEntryPoints), validation.When(api.TargetURLs == nil, validation.By(notPartOfConsumptionBundles(api.PartOfConsumptionBundles)))),
+                validation.Field(&amp;api.Labels, validation.By(validateORDLabels)),
+                validation.Field(&amp;api.ImplementationStandard, validation.In(APIImplementationStandardDocumentAPI, APIImplementationStandardServiceBroker, APIImplementationStandardCsnExposure, APIImplementationStandardCustom)),
+                validation.Field(&amp;api.CustomImplementationStandard, validation.When(api.ImplementationStandard != nil &amp;&amp; *api.ImplementationStandard == APIImplementationStandardCustom, validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
+                validation.Field(&amp;api.CustomImplementationStandardDescription, validation.When(api.ImplementationStandard != nil &amp;&amp; *api.ImplementationStandard == APIImplementationStandardCustom, validation.Required).Else(validation.Empty)),
+                validation.Field(&amp;api.PartOfConsumptionBundles, validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateAPIPartOfConsumptionBundles(value, api.TargetURLs, regexp.MustCompile(BundleOrdIDRegex))
+                }</span>)),
+                validation.Field(&amp;api.DefaultConsumptionBundle, validation.Match(regexp.MustCompile(BundleOrdIDRegex)), validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateDefaultConsumptionBundle(value, api.PartOfConsumptionBundles)
+                }</span>)),
+                validation.Field(&amp;api.Extensible, validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateExtensibleField(value, api.OrdPackageID, packagePolicyLevels)
+                }</span>)),
+                validation.Field(&amp;api.DocumentationLabels, validation.By(validateDocumentationLabels)),
+        )
+}
+
+func validateEventInput(event *model.EventDefinitionInput, packagePolicyLevels map[string]string, eventsFromDB map[string]*model.EventDefinition, eventHashes map[string]uint64) error <span class="cov8" title="1">{
+        return validation.ValidateStruct(event,
+                validation.Field(&amp;event.OrdID, validation.Required, validation.Match(regexp.MustCompile(EventOrdIDRegex))),
+                validation.Field(&amp;event.Name, validation.Required),
+                validation.Field(&amp;event.ShortDescription, shortDescriptionRules...),
+                validation.Field(&amp;event.Description, validation.Required, validation.Length(MinDescriptionLength, MaxDescriptionLength)),
+                validation.Field(&amp;event.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(SemVerRegex)), validation.By(func(value interface{}) error </span><span class="cov8" title="1">{
+                        return validateEventDefinitionVersionInput(value, *event, eventsFromDB, eventHashes)
+                }</span>)),
+                validation.Field(&amp;event.OrdPackageID, validation.Required, validation.Match(regexp.MustCompile(PackageOrdIDRegex))),
+                validation.Field(&amp;event.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
+                validation.Field(&amp;event.PartOfProducts, validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(ProductOrdIDRegex))
+                }</span>)),
+                validation.Field(&amp;event.Tags, validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+                }</span>)),
+                validation.Field(&amp;event.Countries, validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CountryRegex))
+                }</span>)),
+                validation.Field(&amp;event.LineOfBusiness,
+                        validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                                return validateWhenPolicyLevelIsNotCustom(event.OrdPackageID, packagePolicyLevels, func() error </span><span class="cov8" title="1">{
+                                        return validateJSONArrayOfStringsContainsInMap(value, LineOfBusinesses)
+                                }</span>)
+                        }),
+                        validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                                return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+                        }</span>),
+                ),
+                validation.Field(&amp;event.Industry,
+                        validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                                return validateWhenPolicyLevelIsNotCustom(event.OrdPackageID, packagePolicyLevels, func() error </span><span class="cov8" title="1">{
+                                        return validateJSONArrayOfStringsContainsInMap(value, Industries)
+                                }</span>)
+                        }),
+                        validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                                return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(StringArrayElementRegex))
+                        }</span>),
+                ),
+                validation.Field(&amp;event.ResourceDefinitions, validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateEventResourceDefinition(value, *event, packagePolicyLevels)
+                }</span>)),
+                validation.Field(&amp;event.Links, validation.By(validateORDLinks)),
+                validation.Field(&amp;event.ReleaseStatus, validation.Required, validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated)),
+                validation.Field(&amp;event.SunsetDate, validation.When(*event.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.When(event.SunsetDate != nil, validation.By(isValidDate))),
+                validation.Field(&amp;event.Successors, validation.When(*event.ReleaseStatus == ReleaseStatusDeprecated, validation.Required), validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(EventOrdIDRegex))
+                }</span>)),
+                validation.Field(&amp;event.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
+                validation.Field(&amp;event.Labels, validation.By(validateORDLabels)),
+                validation.Field(&amp;event.PartOfConsumptionBundles, validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateEventPartOfConsumptionBundles(value, regexp.MustCompile(BundleOrdIDRegex))
+                }</span>)),
+                validation.Field(&amp;event.DefaultConsumptionBundle, validation.Match(regexp.MustCompile(BundleOrdIDRegex)), validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateDefaultConsumptionBundle(value, event.PartOfConsumptionBundles)
+                }</span>)),
+                validation.Field(&amp;event.Extensible, validation.By(func(value interface{}) error <span class="cov8" title="1">{
+                        return validateExtensibleField(value, event.OrdPackageID, packagePolicyLevels)
+                }</span>)),
+                validation.Field(&amp;event.DocumentationLabels, validation.By(validateDocumentationLabels)),
+        )
+}
+
+func validateProductInput(product *model.ProductInput) error <span class="cov8" title="1">{
+        productOrdIDNamespace := strings.Split(product.OrdID, ":")[0]
+
+        return validation.ValidateStruct(product,
+                validation.Field(&amp;product.OrdID, validation.Required, validation.Match(regexp.MustCompile(ProductOrdIDRegex))),
+                validation.Field(&amp;product.Title, validation.Required),
+                validation.Field(&amp;product.ShortDescription, shortDescriptionRules...),
+                validation.Field(&amp;product.Vendor, validation.Required,
+                        validation.Match(regexp.MustCompile(VendorOrdIDRegex)),
+                        validation.When(regexp.MustCompile(SAPProductOrdIDNamespaceRegex).MatchString(productOrdIDNamespace), validation.In(SapVendor)).Else(validation.NotIn(SapVendor)),
+                ),
+                validation.Field(&amp;product.Parent, validation.When(product.Parent != nil, validation.Match(regexp.MustCompile(ProductOrdIDRegex)))),
+                validation.Field(&amp;product.CorrelationIDs, validation.By(func(value interface{}) error </span><span class="cov8" title="1">{
+                        return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(CorrelationIDsRegex))
+                }</span>)),
+                validation.Field(&amp;product.Labels, validation.By(validateORDLabels)),
+                validation.Field(&amp;product.DocumentationLabels, validation.By(validateDocumentationLabels)),
+        )
+}
+
+func validateVendorInput(vendor *model.VendorInput) error <span class="cov8" title="1">{
+        return validation.ValidateStruct(vendor,
+                validation.Field(&amp;vendor.OrdID, validation.Required, validation.Match(regexp.MustCompile(VendorOrdIDRegex))),
+                validation.Field(&amp;vendor.Title, validation.Required),
+                validation.Field(&amp;vendor.Labels, validation.By(validateORDLabels)),
+                validation.Field(&amp;vendor.Partners, validation.By(func(value interface{}) error </span><span class="cov8" title="1">{
+                        return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(VendorPartnersRegex))
+                }</span>)),
+                validation.Field(&amp;vendor.DocumentationLabels, validation.By(validateDocumentationLabels)),
+        )
+}
+
+func validateTombstoneInput(tombstone *model.TombstoneInput) error <span class="cov8" title="1">{
+        return validation.ValidateStruct(tombstone,
+                validation.Field(&amp;tombstone.OrdID, validation.Required, validation.Match(regexp.MustCompile(TombstoneOrdIDRegex))),
+                validation.Field(&amp;tombstone.RemovalDate, validation.Required, validation.By(isValidDate)))
+}</span>
+
+func validateORDLabels(val interface{}) error <span class="cov8" title="1">{
+        return validateLabels(val, LabelsKeyRegex)
+}</span>
+
+func validateDocumentationLabels(val interface{}) error <span class="cov8" title="1">{
+        return validateLabels(val, DocumentationLabelsKeyRegex)
+}</span>
+
+func validateLabels(val interface{}, regex string) error <span class="cov8" title="1">{
+        if val == nil </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">labels, ok := val.(json.RawMessage)
+        if !ok </span><span class="cov0" title="0">{
+                return errors.New("labels should be json")
+        }</span>
+
+        <span class="cov8" title="1">if len(labels) == 0 </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">if !gjson.ValidBytes(labels) </span><span class="cov8" title="1">{
+                return errors.New("labels should be valid json")
+        }</span>
+
+        <span class="cov8" title="1">parsedLabels := gjson.ParseBytes(labels)
+        if !parsedLabels.IsObject() </span><span class="cov8" title="1">{
+                return errors.New("labels should be json object")
+        }</span>
+
+        <span class="cov8" title="1">var err error
+        parsedLabels.ForEach(func(key, value gjson.Result) bool </span><span class="cov8" title="1">{
+                if err = validation.Validate(key.String(), validation.Match(regexp.MustCompile(regex))); err != nil </span><span class="cov8" title="1">{
+                        return false
+                }</span>
+                <span class="cov8" title="1">if !value.IsArray() </span><span class="cov8" title="1">{
+                        err = errors.New("label value should be array")
+                        return false
+                }</span>
+                <span class="cov8" title="1">for _, el := range value.Array() </span><span class="cov8" title="1">{
+                        if el.Type != gjson.String </span><span class="cov8" title="1">{
+                                err = errors.New("label value should be array of strings")
+                                return false
+                        }</span>
+                }
+                <span class="cov8" title="1">return true</span>
+        })
+        <span class="cov8" title="1">return err</span>
+}
+
+func validateEntryPoints(val interface{}) error <span class="cov8" title="1">{
+        if val == nil </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">entryPoints, ok := val.(json.RawMessage)
+        if !ok </span><span class="cov0" title="0">{
+                return errors.New("entryPoints should be json")
+        }</span>
+
+        <span class="cov8" title="1">if len(entryPoints) == 0 </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">if !gjson.ValidBytes(entryPoints) </span><span class="cov8" title="1">{
+                return errors.New("entryPoints should be valid json")
+        }</span>
+
+        <span class="cov8" title="1">parsedArr := gjson.ParseBytes(entryPoints)
+        if !parsedArr.IsArray() </span><span class="cov8" title="1">{
+                return errors.New("should be json array")
+        }</span>
+
+        <span class="cov8" title="1">if len(parsedArr.Array()) == 0 </span><span class="cov8" title="1">{
+                return errors.New("entryPoints should not be empty if present")
+        }</span>
+
+        <span class="cov8" title="1">if areThereEntryPointDuplicates(parsedArr.Array()) </span><span class="cov8" title="1">{
+                return errors.New("entryPoints should not contain duplicates")
+        }</span>
+
+        <span class="cov8" title="1">for _, el := range parsedArr.Array() </span><span class="cov8" title="1">{
+                if el.Type != gjson.String </span><span class="cov8" title="1">{
+                        return errors.New("should be array of strings")
+                }</span>
+
+                <span class="cov8" title="1">err := validation.Validate(el.String(), is.RequestURI)
+                if err != nil </span><span class="cov8" title="1">{
+                        return errors.New("entryPoint should be a valid URI")
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func validateORDChangeLogEntries(value interface{}) error <span class="cov8" title="1">{
+        return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
+                "version": {
+                        validation.Required,
+                        validation.Match(regexp.MustCompile(SemVerRegex)),
+                },
+                "releaseStatus": {
+                        validation.Required,
+                        validation.In(ReleaseStatusBeta, ReleaseStatusActive, ReleaseStatusDeprecated),
+                },
+                "date": {
+                        validation.Required,
+                        validation.By(isValidDate),
+                },
+                "description": {
+                        validation.NilOrNotEmpty,
+                        validation.Length(MinDescriptionLength, MaxDescriptionLength),
+                },
+                "url": {
+                        is.RequestURI,
+                },
+        })
+}</span>
+
+func validateORDLinks(value interface{}) error <span class="cov8" title="1">{
+        return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
+                "title": {
+                        validation.Required,
+                },
+                "url": {
+                        validation.Required,
+                        is.RequestURI,
+                },
+                "description": {
+                        validation.NilOrNotEmpty,
+                        validation.Length(MinDescriptionLength, MaxDescriptionLength),
+                },
+        })
+}</span>
+
+func validatePackageLinks(value interface{}) error <span class="cov8" title="1">{
+        return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
+                "type": {
+                        validation.Required,
+                        validation.In("terms-of-service", "license", "client-registration", "payment", "sandbox", "service-level-agreement", "support", "custom"),
+                },
+                "url": {
+                        validation.Required,
+                        is.RequestURI,
+                },
+        }, func(el gjson.Result) error </span><span class="cov8" title="1">{
+                if el.Get("customType").Exists() &amp;&amp; el.Get("type").String() != custom </span><span class="cov8" title="1">{
+                        return errors.New("if customType is provided, type should be set to 'custom'")
+                }</span>
+                <span class="cov8" title="1">return nil</span>
+        })
+}
+
+func validateAPILinks(value interface{}) error <span class="cov8" title="1">{
+        return validateJSONArrayOfObjects(value, map[string][]validation.Rule{
+                "type": {
+                        validation.Required,
+                        validation.In("api-documentation", "authentication", "client-registration", "console", "payment", "service-level-agreement", "support", "custom"),
+                },
+                "url": {
+                        validation.Required,
+                        is.RequestURI,
+                },
+        }, func(el gjson.Result) error </span><span class="cov8" title="1">{
+                if el.Get("customType").Exists() &amp;&amp; el.Get("type").String() != custom </span><span class="cov8" title="1">{
+                        return errors.New("if customType is provided, type should be set to 'custom'")
+                }</span>
+                <span class="cov8" title="1">return nil</span>
+        })
+}
+
+func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionInput, packagePolicyLevels map[string]string) error <span class="cov8" title="1">{
+        if value == nil </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">pkgOrdID := str.PtrStrToStr(api.OrdPackageID)
+        policyLevel := packagePolicyLevels[pkgOrdID]
+        apiVisibility := str.PtrStrToStr(api.Visibility)
+        apiProtocol := str.PtrStrToStr(api.APIProtocol)
+        resourceDefinitions := api.ResourceDefinitions
+
+        isResourceDefinitionMandatory := !(policyLevel == PolicyLevelSap &amp;&amp; apiVisibility == APIVisibilityPrivate)
+        if len(resourceDefinitions) == 0 &amp;&amp; isResourceDefinitionMandatory </span><span class="cov8" title="1">{
+                return errors.New("when api resource visibility is public or internal, resource definitions must be provided")
+        }</span>
+
+        <span class="cov8" title="1">if len(resourceDefinitions) == 0 &amp;&amp; !isResourceDefinitionMandatory </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">resourceDefinitionTypes := make(map[model.APISpecType]bool)
+
+        for _, rd := range resourceDefinitions </span><span class="cov8" title="1">{
+                resourceDefinitionType := rd.Type
+                resourceDefinitionTypes[resourceDefinitionType] = true
+        }</span>
+
+        <span class="cov8" title="1">isPolicyCoreOrPartner := policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner
+        wsdlTypeExists := resourceDefinitionTypes[model.APISpecTypeWsdlV1] || resourceDefinitionTypes[model.APISpecTypeWsdlV2]
+        if isPolicyCoreOrPartner &amp;&amp; (apiProtocol == APIProtocolSoapInbound || apiProtocol == APIProtocolSoapOutbound) &amp;&amp; !wsdlTypeExists </span><span class="cov8" title="1">{
+                return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='soap-inbound' or 'soap-outbound' it is mandatory to provide either WSDL V2 or WSDL V1 definitions")
+        }</span>
+
+        <span class="cov8" title="1">edmxTypeExists := resourceDefinitionTypes[model.APISpecTypeEDMX]
+        openAPITypeExists := resourceDefinitionTypes[model.APISpecTypeOpenAPIV2] || resourceDefinitionTypes[model.APISpecTypeOpenAPIV3]
+        if isPolicyCoreOrPartner &amp;&amp; (apiProtocol == APIProtocolODataV2 || apiProtocol == APIProtocolODataV4) &amp;&amp; !(edmxTypeExists &amp;&amp; openAPITypeExists) </span><span class="cov8" title="1">{
+                return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='odata-v2' or 'odata-v4' it is mandatory to not only provide edmx definitions, but also OpenAPI definitions")
+        }</span>
+
+        <span class="cov8" title="1">if isPolicyCoreOrPartner &amp;&amp; apiProtocol == APIProtocolRest &amp;&amp; !openAPITypeExists </span><span class="cov8" title="1">{
+                return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='rest' it is mandatory to provide either OpenAPI 3 or OpenAPI 2 definitions")
+        }</span>
+
+        <span class="cov8" title="1">rfcMetadataTypeExists := resourceDefinitionTypes[model.APISpecTypeRfcMetadata]
+        if isPolicyCoreOrPartner &amp;&amp; apiProtocol == APIProtocolSapRfc &amp;&amp; !rfcMetadataTypeExists </span><span class="cov8" title="1">{
+                return errors.New("for APIResources of policyLevel='sap' or 'sap-partner' and with apiProtocol='sap-rfc' it is mandatory to provide SAP RFC definitions")
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func validateEventResourceDefinition(value interface{}, event model.EventDefinitionInput, packagePolicyLevels map[string]string) error <span class="cov8" title="1">{
+        if value == nil </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">pkgOrdID := str.PtrStrToStr(event.OrdPackageID)
+        policyLevel := packagePolicyLevels[pkgOrdID]
+        apiVisibility := str.PtrStrToStr(event.Visibility)
+
+        if policyLevel == PolicyLevelSap &amp;&amp; apiVisibility == APIVisibilityPrivate </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">eventResourceDef, ok := value.([]*model.EventResourceDefinition)
+        if !ok </span><span class="cov0" title="0">{
+                return errors.New("error while casting to EventResourceDefinition")
+        }</span>
+
+        <span class="cov8" title="1">if len(eventResourceDef) == 0 </span><span class="cov8" title="1">{
+                return errors.New("when event resource visibility is public or internal, resource definitions must be provided")
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func validatePackageVersionInput(value interface{}, pkg model.PackageInput, pkgsFromDB map[string]*model.Package, resourceHashes map[string]uint64) error <span class="cov8" title="1">{
+        if value == nil </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">if len(pkgsFromDB) == 0 </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">pkgFromDB, ok := pkgsFromDB[pkg.OrdID]
+        if !ok || isResourceHashMissing(pkgFromDB.ResourceHash) </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">hashDB := str.PtrStrToStr(pkgFromDB.ResourceHash)
+        hashDoc := strconv.FormatUint(resourceHashes[pkg.OrdID], 10)
+
+        return checkHashEquality(pkgFromDB.Version, pkg.Version, hashDB, hashDoc)</span>
+}
+
+func validateEventDefinitionVersionInput(value interface{}, event model.EventDefinitionInput, eventsFromDB map[string]*model.EventDefinition, eventHashes map[string]uint64) error <span class="cov8" title="1">{
+        if value == nil </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">if len(eventsFromDB) == 0 </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">eventFromDB, ok := eventsFromDB[str.PtrStrToStr(event.OrdID)]
+        if !ok || isResourceHashMissing(eventFromDB.ResourceHash) </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">hashDB := str.PtrStrToStr(eventFromDB.ResourceHash)
+        hashDoc := strconv.FormatUint(eventHashes[str.PtrStrToStr(event.OrdID)], 10)
+
+        return checkHashEquality(eventFromDB.Version.Value, event.VersionInput.Value, hashDB, hashDoc)</span>
+}
+
+func validateAPIDefinitionVersionInput(value interface{}, api model.APIDefinitionInput, apisFromDB map[string]*model.APIDefinition, apiHashes map[string]uint64) error <span class="cov8" title="1">{
+        if value == nil </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">if len(apisFromDB) == 0 </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">apiFromDB, ok := apisFromDB[str.PtrStrToStr(api.OrdID)]
+        if !ok || isResourceHashMissing(apiFromDB.ResourceHash) </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">hashDB := str.PtrStrToStr(apiFromDB.ResourceHash)
+        hashDoc := strconv.FormatUint(apiHashes[str.PtrStrToStr(api.OrdID)], 10)
+
+        return checkHashEquality(apiFromDB.Version.Value, api.VersionInput.Value, hashDB, hashDoc)</span>
+}
+
+func normalizeAPIDefinition(api *model.APIDefinitionInput) (model.APIDefinitionInput, error) <span class="cov8" title="1">{
+        bytes, err := json.Marshal(api)
+        if err != nil </span><span class="cov0" title="0">{
+                return model.APIDefinitionInput{}, errors.Wrapf(err, "error while marshalling api definition with ID %s", str.PtrStrToStr(api.OrdID))
+        }</span>
+
+        <span class="cov8" title="1">var normalizedAPIDefinition model.APIDefinitionInput
+        if err := json.Unmarshal(bytes, &amp;normalizedAPIDefinition); err != nil </span><span class="cov0" title="0">{
+                return model.APIDefinitionInput{}, errors.Wrapf(err, "error while unmarshalling api definition with ID %s", str.PtrStrToStr(api.OrdID))
+        }</span>
+
+        <span class="cov8" title="1">return normalizedAPIDefinition, nil</span>
+}
+
+func normalizeEventDefinition(event *model.EventDefinitionInput) (model.EventDefinitionInput, error) <span class="cov8" title="1">{
+        bytes, err := json.Marshal(event)
+        if err != nil </span><span class="cov0" title="0">{
+                return model.EventDefinitionInput{}, errors.Wrapf(err, "error while marshalling event definition with ID %s", str.PtrStrToStr(event.OrdID))
+        }</span>
+
+        <span class="cov8" title="1">var normalizedEventDefinition model.EventDefinitionInput
+        if err := json.Unmarshal(bytes, &amp;normalizedEventDefinition); err != nil </span><span class="cov0" title="0">{
+                return model.EventDefinitionInput{}, errors.Wrapf(err, "error while unmarshalling event definition with ID %s", str.PtrStrToStr(event.OrdID))
+        }</span>
+
+        <span class="cov8" title="1">return normalizedEventDefinition, nil</span>
+}
+
+func normalizePackage(pkg *model.PackageInput) (model.PackageInput, error) <span class="cov8" title="1">{
+        bytes, err := json.Marshal(pkg)
+        if err != nil </span><span class="cov0" title="0">{
+                return model.PackageInput{}, errors.Wrapf(err, "error while marshalling package definition with ID %s", pkg.OrdID)
+        }</span>
+
+        <span class="cov8" title="1">var normalizedPkgDefinition model.PackageInput
+        if err := json.Unmarshal(bytes, &amp;normalizedPkgDefinition); err != nil </span><span class="cov0" title="0">{
+                return model.PackageInput{}, errors.Wrapf(err, "error while unmarshalling package definition with ID %s", pkg.OrdID)
+        }</span>
+
+        <span class="cov8" title="1">return normalizedPkgDefinition, nil</span>
+}
+
+func isResourceHashMissing(hash *string) bool <span class="cov8" title="1">{
+        hashStr := str.PtrStrToStr(hash)
+        return hashStr == ""
+}</span>
+
+func noNewLines(s string) bool <span class="cov8" title="1">{
+        return !strings.Contains(s, "\\n")
+}</span>
+
+func validateWhenPolicyLevelIsNotCustom(apiOrdID *string, packagePolicyLevels map[string]string, validationFunc func() error) error <span class="cov8" title="1">{
+        pkgOrdID := str.PtrStrToStr(apiOrdID)
+        policyLevel := packagePolicyLevels[pkgOrdID]
+
+        if policyLevel == PolicyLevelCustom </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">return validationFunc()</span>
+}
+
+func validateJSONArrayOfStringsContainsInMap(arr interface{}, validValues map[string]bool) error <span class="cov8" title="1">{
+        if arr == nil </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">jsonArr, ok := arr.(json.RawMessage)
+        if !ok </span><span class="cov0" title="0">{
+                return errors.New("should be json")
+        }</span>
+
+        <span class="cov8" title="1">if len(jsonArr) == 0 </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">if !gjson.ValidBytes(jsonArr) </span><span class="cov8" title="1">{
+                return errors.New("should be valid json")
+        }</span>
+
+        <span class="cov8" title="1">parsedArr := gjson.ParseBytes(jsonArr)
+        if !parsedArr.IsArray() </span><span class="cov8" title="1">{
+                return errors.New("should be json array")
+        }</span>
+
+        <span class="cov8" title="1">for _, el := range parsedArr.Array() </span><span class="cov8" title="1">{
+                if el.Type != gjson.String </span><span class="cov0" title="0">{
+                        return errors.New("should be array of strings")
+                }</span>
+
+                <span class="cov8" title="1">exists, ok := validValues[el.String()]
+
+                if !exists || !ok </span><span class="cov8" title="1">{
+                        return errors.New("array element is not in the list of valid values")
+                }</span>
+        }
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func validateJSONArrayOfStringsMatchPattern(arr interface{}, regexPattern *regexp.Regexp) error <span class="cov8" title="1">{
+        if arr == nil </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">jsonArr, ok := arr.(json.RawMessage)
+        if !ok </span><span class="cov0" title="0">{
+                return errors.New("should be json")
+        }</span>
+
+        <span class="cov8" title="1">if len(jsonArr) == 0 </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">if !gjson.ValidBytes(jsonArr) </span><span class="cov8" title="1">{
+                return errors.New("should be valid json")
+        }</span>
+        <span class="cov8" title="1">parsedArr := gjson.ParseBytes(jsonArr)
+
+        if !parsedArr.IsArray() </span><span class="cov8" title="1">{
+                return errors.New("should be json array")
+        }</span>
+
+        <span class="cov8" title="1">if len(parsedArr.Array()) == 0 </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">for _, el := range parsedArr.Array() </span><span class="cov8" title="1">{
+                if el.Type != gjson.String </span><span class="cov8" title="1">{
+                        return errors.New("should be array of strings")
+                }</span>
+                <span class="cov8" title="1">if !regexPattern.MatchString(el.String()) </span><span class="cov8" title="1">{
+                        return errors.Errorf("elements should match %q", regexPattern.String())
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func validateJSONArrayOfObjects(arr interface{}, elementFieldRules map[string][]validation.Rule, crossFieldRules ...func(gjson.Result) error) error <span class="cov8" title="1">{
+        if arr == nil </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">jsonArr, ok := arr.(json.RawMessage)
+        if !ok </span><span class="cov0" title="0">{
+                return errors.New("should be json")
+        }</span>
+
+        <span class="cov8" title="1">if len(jsonArr) == 0 </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">if !gjson.ValidBytes(jsonArr) </span><span class="cov8" title="1">{
+                return errors.New("should be valid json")
+        }</span>
+
+        <span class="cov8" title="1">parsedArr := gjson.ParseBytes(jsonArr)
+        if !parsedArr.IsArray() </span><span class="cov8" title="1">{
+                return errors.New("should be json array")
+        }</span>
+
+        <span class="cov8" title="1">if len(parsedArr.Array()) == 0 </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">for _, el := range parsedArr.Array() </span><span class="cov8" title="1">{
+                for field, rules := range elementFieldRules </span><span class="cov8" title="1">{
+                        if err := validation.Validate(el.Get(field).Value(), rules...); err != nil </span><span class="cov8" title="1">{
+                                return errors.Wrapf(err, "error validating field %s", field)
+                        }</span>
+                        <span class="cov8" title="1">for _, f := range crossFieldRules </span><span class="cov8" title="1">{
+                                if err := f(el); err != nil </span><span class="cov8" title="1">{
+                                        return err
+                                }</span>
+                        }
+                }
+        }
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func validateJSONObjects(obj interface{}, elementFieldRules map[string][]validation.Rule, crossFieldRules ...func(gjson.Result) error) error <span class="cov8" title="1">{
+        if obj == nil </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">jsonObj, ok := obj.(json.RawMessage)
+        if !ok </span><span class="cov0" title="0">{
+                return errors.New("should be json")
+        }</span>
+
+        <span class="cov8" title="1">if len(jsonObj) == 0 </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">if !gjson.ValidBytes(jsonObj) </span><span class="cov8" title="1">{
+                return errors.New("should be valid json")
+        }</span>
+
+        <span class="cov8" title="1">parsedObj := gjson.ParseBytes(jsonObj)
+        if !parsedObj.IsObject() </span><span class="cov0" title="0">{
+                return errors.New("should be json object")
+        }</span>
+
+        <span class="cov8" title="1">for field, rules := range elementFieldRules </span><span class="cov8" title="1">{
+                if err := validation.Validate(parsedObj.Get(field).Value(), rules...); err != nil </span><span class="cov8" title="1">{
+                        return errors.Wrapf(err, "error validating field %s", field)
+                }</span>
+                <span class="cov8" title="1">for _, f := range crossFieldRules </span><span class="cov8" title="1">{
+                        if err := f(parsedObj); err != nil </span><span class="cov8" title="1">{
+                                return err
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func validateCustomType(el gjson.Result) error <span class="cov8" title="1">{
+        if el.Get("customType").Exists() &amp;&amp; el.Get("type").String() != custom </span><span class="cov0" title="0">{
+                return errors.New("if customType is provided, type should be set to 'custom'")
+        }</span>
+        <span class="cov8" title="1">return validation.Validate(el.Get("customType").String(), validation.Match(regexp.MustCompile(CustomTypeCredentialExchangeStrategyRegex)))</span>
+}
+
+func validateCustomDescription(el gjson.Result) error <span class="cov8" title="1">{
+        if el.Get("customDescription").Exists() &amp;&amp; el.Get("type").String() != custom </span><span class="cov0" title="0">{
+                return errors.New("if customDescription is provided, type should be set to 'custom'")
+        }</span>
+        <span class="cov8" title="1">if el.Get("customDescription").Exists() &amp;&amp; el.Get("type").String() == custom &amp;&amp; (len(el.Get("customDescription").String()) &lt; MinDescriptionLength || len(el.Get("customDescription").String()) &gt; MaxDescriptionLength) </span><span class="cov8" title="1">{
+                return errors.New(fmt.Sprintf("if customDescription is provided and type is 'custom', then the accepted length of customDescription is between %d - %d characters", MinDescriptionLength, MaxDescriptionLength))
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+func validateEventPartOfConsumptionBundles(value interface{}, regexPattern *regexp.Regexp) error <span class="cov8" title="1">{
+        bundleReferences, ok := value.([]*model.ConsumptionBundleReference)
+        if !ok </span><span class="cov0" title="0">{
+                return errors.New("error while casting to ConsumptionBundleReference")
+        }</span>
+
+        <span class="cov8" title="1">if bundleReferences != nil &amp;&amp; len(bundleReferences) == 0 </span><span class="cov8" title="1">{
+                return errors.New("bundleReference should not be empty if present")
+        }</span>
+
+        <span class="cov8" title="1">bundleIDsPerEvent := make(map[string]bool)
+        for _, br := range bundleReferences </span><span class="cov8" title="1">{
+                if br.BundleOrdID == "" </span><span class="cov8" title="1">{
+                        return errors.New("bundleReference ordId is mandatory field")
+                }</span>
+
+                <span class="cov8" title="1">if !regexPattern.MatchString(br.BundleOrdID) </span><span class="cov8" title="1">{
+                        return errors.Errorf("ordId should match %q", regexPattern.String())
+                }</span>
+
+                <span class="cov8" title="1">if isPresent := bundleIDsPerEvent[br.BundleOrdID]; !isPresent </span><span class="cov8" title="1">{
+                        bundleIDsPerEvent[br.BundleOrdID] = true
+                }</span> else<span class="cov8" title="1"> {
+                        return errors.Errorf("event can not reference the same bundle with ordId %q more than once", br.BundleOrdID)
+                }</span>
+
+                <span class="cov8" title="1">if br.DefaultTargetURL != "" </span><span class="cov8" title="1">{
+                        return errors.New("events are not supposed to have defaultEntryPoint")
+                }</span>
+        }
+        <span class="cov8" title="1">return nil</span>
+}
+
+func validateAPIPartOfConsumptionBundles(value interface{}, targetURLs json.RawMessage, regexPattern *regexp.Regexp) error <span class="cov8" title="1">{
+        bundleReferences, ok := value.([]*model.ConsumptionBundleReference)
+        if !ok </span><span class="cov0" title="0">{
+                return errors.New("error while casting to ConsumptionBundleReference")
+        }</span>
+
+        <span class="cov8" title="1">if bundleReferences != nil &amp;&amp; len(bundleReferences) == 0 </span><span class="cov8" title="1">{
+                return errors.New("bundleReference should not be empty if present")
+        }</span>
+
+        <span class="cov8" title="1">bundleIDsPerAPI := make(map[string]bool)
+        for _, br := range bundleReferences </span><span class="cov8" title="1">{
+                if br.BundleOrdID == "" </span><span class="cov8" title="1">{
+                        return errors.New("bundleReference ordId is mandatory field")
+                }</span>
+
+                <span class="cov8" title="1">if !regexPattern.MatchString(br.BundleOrdID) </span><span class="cov8" title="1">{
+                        return errors.Errorf("ordId should match %q", regexPattern.String())
+                }</span>
+
+                <span class="cov8" title="1">if isPresent := bundleIDsPerAPI[br.BundleOrdID]; !isPresent </span><span class="cov8" title="1">{
+                        bundleIDsPerAPI[br.BundleOrdID] = true
+                }</span> else<span class="cov8" title="1"> {
+                        return errors.Errorf("api can not reference the same bundle with ordId %q more than once", br.BundleOrdID)
+                }</span>
+
+                <span class="cov8" title="1">err := validation.Validate(br.DefaultTargetURL, is.RequestURI)
+                if err != nil </span><span class="cov8" title="1">{
+                        return errors.New("defaultEntryPoint should be a valid URI")
+                }</span>
+
+                <span class="cov8" title="1">lenTargetURLs := len(gjson.ParseBytes(targetURLs).Array())
+                if br.DefaultTargetURL != "" &amp;&amp; lenTargetURLs &lt;= 1 </span><span class="cov8" title="1">{
+                        return errors.New("defaultEntryPoint must only be provided if an API has more than one entry point")
+                }</span>
+
+                <span class="cov8" title="1">if br.DefaultTargetURL != "" &amp;&amp; lenTargetURLs &gt; 1 </span><span class="cov8" title="1">{
+                        if isDefaultTargetURLMissingFromTargetURLs(br.DefaultTargetURL, targetURLs) </span><span class="cov8" title="1">{
+                                return errors.New("defaultEntryPoint must be in the list of entryPoints for the given API")
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func validateDefaultConsumptionBundle(value interface{}, partOfConsumptionBundles []*model.ConsumptionBundleReference) error <span class="cov8" title="1">{
+        defaultConsumptionBundle, ok := value.(*string)
+        if !ok </span><span class="cov0" title="0">{
+                return errors.New(fmt.Sprintf("expected string value for defaultConsumptionBundle, found %T", value))
+        }</span>
+
+        <span class="cov8" title="1">if defaultConsumptionBundle == nil </span><span class="cov8" title="1">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">var isFound bool
+        for _, bundleRef := range partOfConsumptionBundles </span><span class="cov8" title="1">{
+                if *defaultConsumptionBundle == bundleRef.BundleOrdID </span><span class="cov0" title="0">{
+                        isFound = true
+                        break</span>
+                }
+        }
+
+        <span class="cov8" title="1">if !isFound </span><span class="cov8" title="1">{
+                return errors.New("defaultConsumptionBundle must be an existing option in the corresponding partOfConsumptionBundles array")
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+func isDefaultTargetURLMissingFromTargetURLs(defaultTargetURL string, targetURLs json.RawMessage) bool <span class="cov8" title="1">{
+        for _, targetURL := range gjson.ParseBytes(targetURLs).Array() </span><span class="cov8" title="1">{
+                if targetURL.String() == defaultTargetURL </span><span class="cov8" title="1">{
+                        return false
+                }</span>
+        }
+        <span class="cov8" title="1">return true</span>
+}
+
+func areThereEntryPointDuplicates(entryPoints []gjson.Result) bool <span class="cov8" title="1">{
+        if len(entryPoints) &lt;= 1 </span><span class="cov8" title="1">{
+                return false
+        }</span>
+
+        <span class="cov8" title="1">seen := make(map[string]bool)
+        for _, val := range entryPoints </span><span class="cov8" title="1">{
+                if seen[val.String()] </span><span class="cov8" title="1">{
+                        return true
+                }</span>
+                <span class="cov8" title="1">seen[val.String()] = true</span>
+        }
+        <span class="cov8" title="1">return false</span>
+}
+
+func isValidDate(d interface{}) error <span class="cov8" title="1">{
+        var err error
+        date, err := castDate(d)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">if _, err = time.Parse(time.RFC3339, date); err == nil </span><span class="cov8" title="1">{ // RFC3339 -&gt; "2006-01-02T15:04:05Z" or "2006-01-02T15:04:05+07:00"
+                return nil
+        }</span> else<span class="cov8" title="1"> if _, err = time.Parse("2006-01-02", date); err == nil </span><span class="cov8" title="1">{ // RFC3339 date without time extension
+                return nil
+        }</span> else<span class="cov8" title="1"> if _, err = time.Parse("2006-01-02T15:04:05", date); err == nil </span><span class="cov0" title="0">{ // ISO8601 without Z/00+00
+                return nil
+        }</span> else<span class="cov8" title="1"> if _, err = time.Parse("2006-01-02T15:04:05Z0700", date); err == nil </span><span class="cov8" title="1">{ // ISO8601 with skipped ':' in offset (e.g.: 2006-01-02T15:04:05+0700)
+                return nil
+        }</span>
+        <span class="cov8" title="1">return errors.New("invalid date")</span>
+}
+
+func castDate(d interface{}) (string, error) <span class="cov8" title="1">{
+        datePtr, ok := d.(*string)
+        if ok </span><span class="cov8" title="1">{
+                return *datePtr, nil
+        }</span>
+
+        <span class="cov8" title="1">date, ok := d.(string)
+        if ok </span><span class="cov8" title="1">{
+                return date, nil
+        }</span>
+
+        <span class="cov0" title="0">return "", errors.New(fmt.Sprintf("expected string or *string value for date, found %T", d))</span>
+}
+
+func notPartOfConsumptionBundles(partOfConsumptionBundles []*model.ConsumptionBundleReference) validation.RuleFunc <span class="cov8" title="1">{
+        return func(value interface{}) error </span><span class="cov8" title="1">{
+                if len(partOfConsumptionBundles) &gt; 0 </span><span class="cov8" title="1">{
+                        return errors.New("api without entry points can not be part of consumption bundle")
+                }</span>
+                <span class="cov8" title="1">return nil</span>
+        }
+}
+
+func validateExtensibleField(value interface{}, ordPackageID *string, packagePolicyLevels map[string]string) error <span class="cov8" title="1">{
+        pkgOrdID := str.PtrStrToStr(ordPackageID)
+        policyLevel := packagePolicyLevels[pkgOrdID]
+
+        if (policyLevel == PolicyLevelSap || policyLevel == PolicyLevelSapPartner) &amp;&amp; (value == nil || value.(json.RawMessage) == nil) </span><span class="cov8" title="1">{
+                return errors.Errorf("`extensible` field must be provided when `policyLevel` is either `%s` or `%s`", PolicyLevelSap, PolicyLevelSapPartner)
+        }</span>
+
+        <span class="cov8" title="1">return validateJSONObjects(value, map[string][]validation.Rule{
+                "supported": {
+                        validation.Required,
+                        validation.In("no", "manual", "automatic"),
+                },
+                "description": {},
+        }, validateExtensibleInnerFields)</span>
+}
+
+func validateExtensibleInnerFields(el gjson.Result) error <span class="cov8" title="1">{
+        supportedProperty := el.Get("supported")
+        supportedValue, ok := supportedProperty.Value().(string)
+        if !ok </span><span class="cov8" title="1">{
+                return errors.New("`supported` value not provided")
+        }</span>
+
+        <span class="cov8" title="1">descriptionProperty := el.Get("description")
+        descriptionValue, ok := descriptionProperty.Value().(string)
+        validLength := len(descriptionValue) &gt;= MinDescriptionLength &amp;&amp; len(descriptionValue) &lt;= MaxDescriptionLength
+
+        if supportedProperty.Exists() &amp;&amp; (supportedValue == "manual" || supportedValue == "automatic") &amp;&amp; (!validLength || !ok) </span><span class="cov8" title="1">{
+                return errors.New(fmt.Sprintf("if supported field is either 'manual' or 'automatic', description should be provided with length of %d - %d characters", MinDescriptionLength, MaxDescriptionLength))
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// HashObject hashes the given object
+func HashObject(obj interface{}) (uint64, error) <span class="cov8" title="1">{
+        hash, err := hashstructure.Hash(obj, hashstructure.FormatV2, &amp;hashstructure.HashOptions{SlicesAsSets: true})
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, errors.New("failed to hash the given object")
+        }</span>
+
+        <span class="cov8" title="1">return hash, nil</span>
+}
+
+func checkHashEquality(rdFromDBVersion, rdFromDocVersion, hashFromDB, hashFromDoc string) error <span class="cov8" title="1">{
+        rdFromDBVersion = fmt.Sprintf("v%s", rdFromDBVersion)
+        rdFromDocVersion = fmt.Sprintf("v%s", rdFromDocVersion)
+
+        areVersionsEqual := semver.Compare(rdFromDocVersion, rdFromDBVersion)
+        if areHashesEqual := cmp.Equal(hashFromDB, hashFromDoc); !areHashesEqual &amp;&amp; areVersionsEqual &lt;= 0 </span><span class="cov8" title="1">{
+                return errors.New("there is a change in the resource; version value should be incremented")
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
