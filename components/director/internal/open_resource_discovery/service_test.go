@@ -423,7 +423,9 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Success when there is ORD webhook on app template",
-			TransactionerFn: txGen.ThatSucceedsTwice,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+		},
 			appSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("ListAllByApplicationTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixApplications(), nil).Once()
@@ -560,6 +562,75 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
+			Name:              "Returns error when first transaction commit fails",
+			TransactionerFn:   txGen.ThatFailsOnCommit,
+			webhookSvcFn:      successfulWebhookList,
+			ExpectedErr:       testErr,
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+		},
+		{
+			Name:              "Returns error when second transaction begin fails",
+			TransactionerFn:   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("Begin").Return(persistTx, testErr).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				return persistTx, transact
+			},
+			webhookSvcFn:      successfulWebhookList,
+			ExpectedErr:        errors.New("failed to process 1 webhooks"),
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+		},
+		{
+			Name:              "Returns error when third transaction begin fails",
+			TransactionerFn:   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("Begin").Return(persistTx, testErr).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
+				return persistTx, transact
+			},
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whSvc.On("ListByWebhookTypeWithSelectForUpdate", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
+				return whSvc
+			},
+			ExpectedErr:        errors.New("failed to process 1 webhooks"),
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+		},
+		{
+			Name:              "Returns error when third transaction commit fails",
+			TransactionerFn:   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+				persistTx.On("Commit").Return(testErr).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Times(3)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
+			webhookSvcFn: func() *automock.WebhookService {
+				whSvc := &automock.WebhookService{}
+				whSvc.On("ListByWebhookTypeWithSelectForUpdate", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
+				return whSvc
+			},
+			appSvcFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				appSvc.On("ListAllByApplicationTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixApplications(), nil).Once()
+				return appSvc
+			},
+			ExpectedErr:        errors.New("failed to process 1 webhooks"),
+			globalRegistrySvc: successfulGlobalRegistrySvc,
+		},
+		{
 			Name: "Returns error when get internal tenant id fails",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
@@ -682,8 +753,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				persistTx.On("Commit").Return(nil).Once()
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Twice()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("Begin").Return(persistTx, nil).Times(3)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -704,11 +775,11 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			Name: "Returns error when get internal tenant id fails for ORD webhook for app template",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
+				persistTx.On("Commit").Return(nil).Twice()
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Twice()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("Begin").Return(persistTx, nil).Times(3)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -734,11 +805,11 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			Name: "Returns error when get tenant id fails for ORD webhook for app template",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
+				persistTx.On("Commit").Return(nil).Twice()
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Twice()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("Begin").Return(persistTx, nil).Times(3)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -765,11 +836,11 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			Name: "Returns error when application locking fails for ORD webhook for app template",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
+				persistTx.On("Commit").Return(nil).Twice()
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Twice()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("Begin").Return(persistTx, nil).Times(3)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -792,13 +863,13 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			Name: "Returns error when processing webhooks for ORD webhook for app template",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
+				persistTx.On("Commit").Return(nil).Twice()
 				persistTx.On("Commit").Return(testErr).Once()
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("Begin").Return(persistTx, nil).Times(3)
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Twice()
 				return persistTx, transact
 			},
 			appSvcFn: func() *automock.ApplicationService {

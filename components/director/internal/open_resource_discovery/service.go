@@ -139,7 +139,7 @@ func (s *Service) processWebhook(ctx context.Context, webhook *model.Webhook, gl
 
 	if webhook.ObjectType == model.ApplicationTemplateWebhookReference {
 		appTemplateID := webhook.ObjectID
-		apps, err := s.appSvc.ListAllByApplicationTemplateID(ctx, appTemplateID)
+		apps, err := s.getApplicationsForAppTemplate(ctx, appTemplateID)
 		if err != nil {
 			return err
 		}
@@ -723,6 +723,28 @@ func (s *Service) getWebhooksWithOrdType(ctx context.Context) ([]*model.Webhook,
 
 	return ordWebhooks, nil
 }
+
+func (s *Service) getApplicationsForAppTemplate(ctx context.Context, appTemplateID string) ([]*model.Application, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	apps, err := s.appSvc.ListAllByApplicationTemplateID(ctx, appTemplateID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return apps, err
+}
+
 func (s *Service) saveTenantToContext(ctx context.Context, appID string) (context.Context, error) {
 	internalTntID, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, appID)
 	if err != nil {
