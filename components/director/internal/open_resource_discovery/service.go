@@ -724,13 +724,6 @@ func(s *Service) getWebhooksWithOrdType(ctx context.Context) ([]*model.Webhook, 
 	return ordWebhooks, nil
 }
 func (s *Service) saveTenantToContext(ctx context.Context, appID string) (context.Context, error) {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
 	internalTntID, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, appID)
 	if err != nil {
 		return nil, err
@@ -742,10 +735,6 @@ func (s *Service) saveTenantToContext(ctx context.Context, appID string) (contex
 	}
 
 	ctx = tenant.SaveToContext(ctx, internalTntID, tnt.ExternalTenant)
-
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
 
 	return ctx, nil
 }

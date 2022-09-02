@@ -321,7 +321,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 	}{
 		{
 			Name:            "Success when resources are already in db and APIs/Events versions are incremented should Update them and resync API/Event specs",
-			TransactionerFn: txGen.ThatSucceeds,
+			TransactionerFn: txGen.ThatSucceedsTwice,
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -353,7 +353,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Success when resources are already in db and APIs/Events versions are NOT incremented should Update them and refetch only failed API/Event specs",
-			TransactionerFn: txGen.ThatSucceeds,
+			TransactionerFn: txGen.ThatSucceedsTwice,
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -392,7 +392,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Success when resources are not in db should Create them",
-			TransactionerFn: txGen.ThatSucceeds,
+			TransactionerFn: txGen.ThatSucceedsTwice,
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -423,7 +423,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Success when there is ORD webhook on app template",
-			TransactionerFn: txGen.ThatSucceeds,
+			TransactionerFn: txGen.ThatSucceedsTwice,
 			appSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("ListAllByApplicationTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixApplications(), nil).Once()
@@ -469,7 +469,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Error when synchronizing global resources from global registry should get them from DB and proceed with the rest of the sync",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceeds()
+				return txGen.ThatSucceedsTwice()
 			},
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
@@ -507,7 +507,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Error when synchronizing global resources from global registry and get them from DB should proceed with the rest of the sync",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceeds()
+				return txGen.ThatSucceedsTwice()
 			},
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
@@ -561,7 +561,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when get internal tenant id fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			tenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetLowestOwnerForResource", txtest.CtxWithDBMatcher(), resource.Application, appID).Return("", testErr).Once()
@@ -573,7 +582,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when get tenant fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			tenantSvcFn: func() *automock.TenantService {
 				tenantSvc := &automock.TenantService{}
 				tenantSvc.On("GetLowestOwnerForResource", txtest.CtxWithDBMatcher(), resource.Application, appID).Return(tenantID, nil).Once()
@@ -586,7 +604,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when application locking fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			tenantSvcFn:     successfulTenantSvc,
 			appSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
@@ -599,7 +626,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources when event list fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			webhookSvcFn:    successfulWebhookList,
 			clientFn:        successfulClientFetch,
 			appSvcFn:        successfulAppGet,
@@ -618,7 +654,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources when api list fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			webhookSvcFn:    successfulWebhookList,
 			clientFn:        successfulClientFetch,
 			appSvcFn:        successfulAppGet,
@@ -632,7 +677,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when list all applications by app template id fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("ListAllByApplicationTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(nil, testErr).Once()
@@ -648,7 +702,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when get internal tenant id fails for ORD webhook for app template",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("ListAllByApplicationTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixApplications(), nil).Once()
@@ -669,7 +732,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when get tenant id fails for ORD webhook for app template",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("ListAllByApplicationTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixApplications(), nil).Once()
@@ -691,7 +763,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when application locking fails for ORD webhook for app template",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
 				appSvc.On("ListAllByApplicationTemplateID", txtest.CtxWithDBMatcher(), appTemplateID).Return(fixApplications(), nil).Once()
@@ -711,10 +792,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			Name: "Returns error when processing webhooks for ORD webhook for app template",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
 				persistTx.On("Commit").Return(testErr).Once()
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -765,10 +848,12 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			Name: "Returns error when processing webhooks",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
 				persistTx.On("Commit").Return(testErr).Once()
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -804,7 +889,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Skips webhook when ORD documents fetch fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -817,7 +911,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources for invalid ORD documents",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -835,7 +938,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if vendor list fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -852,7 +964,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if vendor update fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -870,7 +991,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if vendor create fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -888,7 +1018,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if product list fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -906,7 +1045,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if product update fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -925,7 +1073,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if product create fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -944,7 +1101,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if package list fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -963,7 +1129,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if package update fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -983,7 +1158,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if package create fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1003,7 +1187,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if bundle list fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+			persistTx := &persistenceautomock.PersistenceTx{}
+			persistTx.On("Commit").Return(nil).Once()
+
+			transact := &persistenceautomock.Transactioner{}
+			transact.On("Begin").Return(persistTx, nil).Twice()
+			transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+			transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+			return persistTx, transact
+		},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1022,7 +1215,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if bundle update fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1042,7 +1244,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if bundle create fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1062,7 +1273,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if api list fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1082,7 +1302,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if fetching bundle ids for api fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1109,7 +1338,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if api update fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1131,7 +1369,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if api create fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1152,7 +1399,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if api spec delete fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1179,7 +1435,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if api spec create fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1207,7 +1472,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if api spec list fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1233,7 +1507,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if api spec get fetch request fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1260,7 +1543,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if api spec refetch fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1288,7 +1580,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if event list fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1310,7 +1611,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if fetching bundle ids for event fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1341,7 +1651,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if event update fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1364,7 +1683,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if event create fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1386,7 +1714,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if event spec delete fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1421,7 +1758,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if event spec create fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1459,7 +1805,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if event spec list fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1494,7 +1849,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if event spec get fetch request fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1530,7 +1894,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if event spec refetch fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1568,7 +1941,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if tombstone list fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1590,7 +1972,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if tombstone update fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1613,7 +2004,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if tombstone create fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1634,7 +2034,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if api resource deletion due to tombstone fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1665,7 +2074,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if package resource deletion due to tombstone fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1705,7 +2123,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if event resource deletion due to tombstone fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1746,7 +2173,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if vendor resource deletion due to tombstone fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1786,7 +2222,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if product resource deletion due to tombstone fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1825,7 +2270,16 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Does not resync resources if bundle resource deletion due to tombstone fails",
-			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
+				return persistTx, transact
+			},
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1864,7 +2318,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Success when resources are not in db and no SAP Vendor is declared in Documents should Create them as SAP Vendor is coming from the Global Registry",
-			TransactionerFn: txGen.ThatSucceeds,
+			TransactionerFn: txGen.ThatSucceedsTwice,
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
@@ -1901,7 +2355,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		},
 		{
 			Name:            "Success when resources are already in db and no SAP Vendor is declared in Documents should Update them as SAP Vendor is coming from the Global Registry",
-			TransactionerFn: txGen.ThatSucceeds,
+			TransactionerFn: txGen.ThatSucceedsTwice,
 			appSvcFn:        successfulAppGet,
 			tenantSvcFn:     successfulTenantSvc,
 			webhookSvcFn:    successfulWebhookList,
