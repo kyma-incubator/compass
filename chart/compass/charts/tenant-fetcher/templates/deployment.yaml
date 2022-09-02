@@ -41,12 +41,12 @@ spec:
         {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
     {{ if eq .Values.global.portieris.isEnabled true }}
       imagePullSecrets:
-      - name: .Values.global.portieris.imagePullSecretName
+      - name: {{ .Values.global.portieris.imagePullSecretName }}
     {{ end }}
       volumes:
       - name: dependencies-config
         secret:
-          secretName: {{ .Values.global.tenantFetcher.dependenciesConfig.secretName }}
+          secretName: {{ .Values.global.destinationRegionSecret.secretName }}
       containers:
         - name: {{ .Chart.Name }}
           image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}
@@ -100,7 +100,7 @@ spec:
             - name: APP_REGIONAL_DEPENDENCIES_ENDPOINT
               value: "{{ .Values.global.tenantFetcher.server.dependenciesEndpoint }}"
             - name: APP_TENANT_REGION_DEPENDENCIES_CONFIG_PATH
-              value: "{{ .Values.global.tenantFetcher.dependenciesConfig.path }}/{{ .Values.global.tenantFetcher.dependenciesConfig.file }}"
+              value: "{{ .Values.global.tenantFetcher.dependenciesConfig.path }}/{{ .Values.global.destinationRegionSecret.fileName }}"
             - name: APP_TENANT_PATH_PARAM
               value: "{{ .Values.global.tenantFetcher.server.tenantPathParam }}"
             - name: APP_REGION_PATH_PARAM

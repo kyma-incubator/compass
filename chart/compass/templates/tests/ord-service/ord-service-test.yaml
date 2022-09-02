@@ -23,7 +23,7 @@ spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-ord-service
     {{ if eq .Values.global.portieris.isEnabled true }}
       imagePullSecrets:
-      - name: .Values.global.portieris.imagePullSecretName
+      - name: {{ .Values.global.portieris.imagePullSecretName }}
     {{ end }}
       containers:
         - name: ord-service-tests
