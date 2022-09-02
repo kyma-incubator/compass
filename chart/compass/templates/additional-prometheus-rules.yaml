@@ -144,6 +144,7 @@ spec:
             > 0.3
           labels:
             severity: warning
+      {{- if eq .Values.global.portieris.isEnabled true }}
         - alert: CompassPortierisDeniedImage
           annotations:
             description: Portieris has denied image
@@ -151,3 +152,4 @@ spec:
           for: 0m
           labels:
             severity: warning
+      {{- end }}
