@@ -370,6 +370,21 @@ func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceTy
 	return dest.TenantID, nil
 }
 
+func (r *pgRepository) ListBySubscribedRuntimes(ctx context.Context) ([]*model.BusinessTenantMapping, error) {
+	var entityCollection tenant.EntityCollection
+
+	conditions := repo.Conditions{
+		repo.NewInConditionForSubQuery(idColumn, "SELECT tenant_id from tenant_runtime_contexts", []interface{}{}),
+		repo.NewNotNullCondition(parentColumn),
+	}
+
+	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entityCollection), nil
+}
+
 func (r *pgRepository) multipleFromEntities(entities tenant.EntityCollection) []*model.BusinessTenantMapping {
 	items := make([]*model.BusinessTenantMapping, 0, len(entities))
 

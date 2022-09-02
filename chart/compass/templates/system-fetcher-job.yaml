@@ -21,6 +21,10 @@ spec:
             cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
         spec:
           serviceAccountName: {{ $.Chart.Name }}-system-fetcher
+        {{ if eq .Values.global.portieris.isEnabled true }}
+          imagePullSecrets:
+          - name: {{ .Values.global.portieris.imagePullSecretName }}
+        {{ end }}
           containers:
             - name: {{ .Values.global.systemFetcher.containerName }}
               image: {{ $.Values.global.images.containerRegistry.path }}/{{ $.Values.global.images.director.dir }}compass-director:{{ $.Values.global.images.director.version }}

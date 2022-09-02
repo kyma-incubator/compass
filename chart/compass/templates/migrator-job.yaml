@@ -21,6 +21,10 @@ spec:
         {{- end }}
         restartPolicy: Never
         shareProcessNamespace: true
+      {{ if eq .Values.global.portieris.isEnabled true }}
+        imagePullSecrets:
+        - name: {{ .Values.global.portieris.imagePullSecretName }}
+      {{ end }}
         containers:
           {{ if eq .Values.global.database.embedded.enabled false }}
           - name: cloudsql-proxy
