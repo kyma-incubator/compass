@@ -96,16 +96,8 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 	wg := &sync.WaitGroup{}
 	wg.Add(s.config.maxParallelApplicationProcessors)
 
-	tx, err := s.transact.Begin()
+	ordWebhooks, err := s.getWebhooksWithOrdType(ctx)
 	if err != nil {
-		return err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-	ordWebhooks, err := s.webhookSvc.ListByWebhookTypeWithSelectForUpdate(ctx, model.WebhookTypeOpenResourceDiscovery)
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("error while fetching webhooks with type %s", model.WebhookTypeOpenResourceDiscovery)
 		return err
 	}
 
@@ -115,7 +107,7 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 			defer wg.Done()
 
 			for webhook := range queue {
-				if err := s.processWebhook(ctx, tx, webhook, globalResourcesOrdIDs); err != nil {
+				if err := s.processWebhook(ctx, webhook, globalResourcesOrdIDs); err != nil {
 					log.C(ctx).WithError(err).Errorf("error while processing webhook %q", webhook.ID)
 					atomic.AddInt32(&webhookErrors, 1)
 				}
@@ -136,7 +128,15 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) processWebhook(ctx context.Context, tx persistence.PersistenceTx, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error {
+func (s *Service) processWebhook(ctx context.Context, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	if webhook.ObjectType == model.ApplicationTemplateWebhookReference {
 		appTemplateID := webhook.ObjectID
 		apps, err := s.appSvc.ListAllByApplicationTemplateID(ctx, appTemplateID)
@@ -703,7 +703,34 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, tx persistence
 	return nil
 }
 
+func(s *Service) getWebhooksWithOrdType(ctx context.Context) ([]*model.Webhook, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+	ordWebhooks, err := s.webhookSvc.ListByWebhookTypeWithSelectForUpdate(ctx, model.WebhookTypeOpenResourceDiscovery)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("error while fetching webhooks with type %s", model.WebhookTypeOpenResourceDiscovery)
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return ordWebhooks, nil
+}
 func (s *Service) saveTenantToContext(ctx context.Context, appID string) (context.Context, error) {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
 	internalTntID, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, appID)
 	if err != nil {
 		return nil, err
@@ -715,6 +742,10 @@ func (s *Service) saveTenantToContext(ctx context.Context, appID string) (contex
 	}
 
 	ctx = tenant.SaveToContext(ctx, internalTntID, tnt.ExternalTenant)
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
 
 	return ctx, nil
 }
