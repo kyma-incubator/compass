@@ -10,7 +10,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20220327143459-11b81bddcce9
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20220420124254-ee69592dca21
-	github.com/kyma-incubator/compass/components/director v0.0.0-20220830101818-23b837ad0d09
+	github.com/kyma-incubator/compass/components/director v0.0.0-20220903103826-396a7d5cd1a5
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20220327143459-11b81bddcce9 // indirect
 	github.com/lestrrat-go/iter v1.0.1
 	github.com/lestrrat-go/jwx v1.2.19
