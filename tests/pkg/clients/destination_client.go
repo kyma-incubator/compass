@@ -106,12 +106,14 @@ func (c *DestinationClient) CreateDestination(t *testing.T, destination Destinat
 }
 
 func (c *DestinationClient) DeleteDestination(t *testing.T, destinationName string) {
-	url := c.apiURL + c.apiConfig.EndpointTenantDestinations + "?$filter=Name in(" + destinationName + ")"
+	url := c.apiURL + c.apiConfig.EndpointTenantDestinations
 	request, err := http.NewRequest(http.MethodDelete, url, nil)
+	query := request.URL.Query()
+	query.Add("$filter", "Name in(" + destinationName + ")")
+	request.URL.RawQuery = query.Encode()
 	require.NoError(t, err)
 
 	resp, err := c.httpClient.Do(request)
 	require.NoError(t, err)
-
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
