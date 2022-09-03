@@ -301,7 +301,8 @@ func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, tr
 
 	logger := log.C(ctx)
 	mainRouter := mux.NewRouter()
-	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint, readyzEndpoint))
+	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(
+		cfg.TenantsRootAPI+healthzEndpoint, cfg.TenantsRootAPI+readyzEndpoint))
 
 	tenantsAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, tenantsAPIRouter, cfg.SecurityConfig, cfg.SecurityConfig.SubscriptionCallbackScope)
