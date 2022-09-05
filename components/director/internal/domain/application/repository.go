@@ -42,6 +42,7 @@ type pgRepository struct {
 	globalGetter          repo.SingleGetterGlobal
 	globalDeleter         repo.DeleterGlobal
 	lister                repo.Lister
+	listerGlobal       	  repo.ListerGlobal
 	deleter               repo.Deleter
 	pageableQuerier       repo.PageableQuerier
 	globalPageableQuerier repo.PageableQuerierGlobal
@@ -235,13 +236,13 @@ func (r *pgRepository) ListAllByFilter(ctx context.Context, tenant string, filte
 	return r.multipleFromEntities(entities)
 }
 
-func (r *pgRepository) ListAllByApplicationTemplateID(ctx context.Context, tenant, applicationTemplateID string) ([]*model.Application, error) {
+func (r *pgRepository) ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error) {
 	var appsCollection EntityCollection
 
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("app_template_id", applicationTemplateID),
 	}
-	if err := r.lister.List(ctx, resource.Application, tenant, &appsCollection, conditions...); err != nil {
+	if err := r.listerGlobal.ListGlobal(ctx, &appsCollection, conditions...); err != nil {
 		return nil, err
 	}
 
