@@ -58,7 +58,7 @@ type ApplicationRepository interface {
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListAll(ctx context.Context, tenant string) ([]*model.Application, error)
 	ListAllByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Application, error)
-	ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error)
+	ListAllByApplicationTemplateID(ctx context.Context, tenant, applicationTemplateID string) ([]*model.Application, error)
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, tenant string, item *model.Application) error
 	Update(ctx context.Context, tenant string, item *model.Application) error
@@ -198,7 +198,11 @@ func (s *service) ListAll(ctx context.Context) ([]*model.Application, error) {
 
 // ListAllByApplicationTemplateID missing godoc
 func (s *service) ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error) {
-	apps, err := s.appRepo.ListAllByApplicationTemplateID(ctx, applicationTemplateID)
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+	apps, err := s.appRepo.ListAllByApplicationTemplateID(ctx, tenantID, applicationTemplateID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting getting applications for app template with id %s", applicationTemplateID)
 	}

@@ -235,13 +235,13 @@ func (r *pgRepository) ListAllByFilter(ctx context.Context, tenant string, filte
 	return r.multipleFromEntities(entities)
 }
 
-func (r *pgRepository) ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error) {
+func (r *pgRepository) ListAllByApplicationTemplateID(ctx context.Context, tenant, applicationTemplateID string) ([]*model.Application, error) {
 	var appsCollection EntityCollection
 
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("app_template_id", applicationTemplateID),
 	}
-	if err := r.globalGetter.GetGlobal(ctx, conditions, repo.NoOrderBy, &appsCollection); err != nil {
+	if err := r.lister.List(ctx,resource.Application, tenant, &appsCollection, conditions...); err != nil {
 		return nil, err
 	}
 
