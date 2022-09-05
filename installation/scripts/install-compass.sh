@@ -59,5 +59,5 @@ echo "Install Compass"
 echo "Path to compass charts: " ${COMPASS_CHARTS}
 CRDS_FOLDER="${CURRENT_DIR}/../resources/crds"
 kubectl apply -f "${CRDS_FOLDER}"
-helm upgrade --install --wait --debug --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace compass-system compass "${COMPASS_CHARTS}"
+helm upgrade --install --wait --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace compass-system compass "${COMPASS_CHARTS}"
 trap "cleanup_trap" RETURN EXIT INT TERM
