@@ -241,7 +241,7 @@ func (r *pgRepository) ListAllByApplicationTemplateID(ctx context.Context, tenan
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("app_template_id", applicationTemplateID),
 	}
-	if err := r.lister.List(ctx,resource.Application, tenant, &appsCollection, conditions...); err != nil {
+	if err := r.lister.List(ctx, resource.Application, tenant, &appsCollection, conditions...); err != nil {
 		return nil, err
 	}
 
