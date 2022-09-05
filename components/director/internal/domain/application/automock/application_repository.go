@@ -244,13 +244,13 @@ func (_m *ApplicationRepository) ListAll(ctx context.Context, tenant string) ([]
 	return r0, r1
 }
 
-// ListAllByApplicationTemplateID provides a mock function with given fields: ctx, tenant, applicationTemplateID
-func (_m *ApplicationRepository) ListAllByApplicationTemplateID(ctx context.Context, tenant string, applicationTemplateID string) ([]*model.Application, error) {
-	ret := _m.Called(ctx, tenant, applicationTemplateID)
+// ListAllByApplicationTemplateID provides a mock function with given fields: ctx, applicationTemplateID
+func (_m *ApplicationRepository) ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error) {
+	ret := _m.Called(ctx, applicationTemplateID)
 
 	var r0 []*model.Application
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.Application); ok {
-		r0 = rf(ctx, tenant, applicationTemplateID)
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Application); ok {
+		r0 = rf(ctx, applicationTemplateID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.Application)
@@ -258,8 +258,8 @@ func (_m *ApplicationRepository) ListAllByApplicationTemplateID(ctx context.Cont
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, tenant, applicationTemplateID)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, applicationTemplateID)
 	} else {
 		r1 = ret.Error(1)
 	}
