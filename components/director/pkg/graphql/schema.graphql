@@ -399,6 +399,7 @@ input BundleCreateInput {
 	apiDefinitions: [APIDefinitionInput!]
 	eventDefinitions: [EventDefinitionInput!]
 	documents: [DocumentInput!]
+	correlationIDs: [String!]
 }
 
 input BundleInstanceAuthRequestInput {
@@ -901,6 +902,7 @@ type Bundle {
 	documents(first: Int = 200, after: PageCursor): DocumentPage
 	apiDefinition(id: ID!): APIDefinition
 	eventDefinition(id: ID!): EventDefinition
+	correlationIDs: [String!]
 	document(id: ID!): Document
 	createdAt: Timestamp
 	updatedAt: Timestamp

@@ -19,6 +19,10 @@ spec:
                 app: {{ .Chart.Name }}
                 release: {{ .Release.Name }}
         spec:
+            {{ if eq .Values.global.portieris.isEnabled true }}
+            imagePullSecrets:
+            - name: {{ .Values.global.portieris.imagePullSecretName }}
+            {{ end }}
             containers:
             - name: {{ .Chart.Name }}
               image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.external_services_mock.dir }}compass-external-services-mock:{{ .Values.global.images.external_services_mock.version }}
