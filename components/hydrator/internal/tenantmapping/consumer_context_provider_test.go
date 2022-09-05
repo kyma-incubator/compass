@@ -103,17 +103,6 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 		Provider: "provider-tenant",
 	}
 
-	testTenantWithoutRegion := &graphql.Tenant{
-		ID:         consumerTenantID,
-		InternalID: consumerInternalTenantID,
-		Name:       &tenantName,
-		Type:       "subaccount",
-		Labels: map[string]interface{}{
-			"subdomain": "consumer-subdomain",
-		},
-		Provider: "provider-tenant",
-	}
-
 	testCases := []struct {
 		Name                  string
 		DirectorClient        func() *automock.DirectorClient
@@ -165,15 +154,14 @@ func TestConsumerContextProvider_GetObjectContext(t *testing.T) {
 			ExpectedObjectContext: expectedObjectContextFunc(consumerTenantID, "", ""),
 		},
 		{
-			Name: "Returns error when region label is missing from the fetched tenant",
+			Name: "Returns empty region when tenant is subaccount and tenant region label is missing",
 			DirectorClient: func() *automock.DirectorClient {
 				client := &automock.DirectorClient{}
-				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(testTenantWithoutRegion, nil).Once()
+				client.On("GetTenantByExternalID", mock.Anything, consumerTenantID).Return(testTenant, nil).Once()
 				return client
 			},
 			ReqDataInput:          reqDataFunc(userCtxHeaderWithAllProperties),
-			ExpectedObjectContext: tenantmapping.ObjectContext{},
-			ExpectedErrMsg:        fmt.Sprintf("region label not found for subaccount with ID: %q", consumerTenantID),
+			ExpectedObjectContext: expectedObjectContextFunc(consumerTenantID, consumerInternalTenantID, ""),
 		},
 		{
 			Name: "Returns error when region label type is not the expected one",
