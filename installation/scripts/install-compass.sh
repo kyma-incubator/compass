@@ -37,6 +37,12 @@ do
             shift # past argument
             shift
         ;;
+        --compass-charts)
+            checkInputParameterValue "${2}"
+            COMPASS_CHARTS="${2}"
+            shift # past argument
+            shift
+        ;;
         --*)
             echo "Unknown flag ${1}"
             exit 1
@@ -50,5 +56,6 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 echo "Install Compass"
+echo "Path to compass charts: " ${COMPASS_CHARTS}
 helm upgrade --install --wait --timeout "${TIMEOUT}" -f ./mergedOverrides.yaml --create-namespace --namespace compass-system compass "${COMPASS_CHARTS}"
 trap "cleanup_trap" RETURN EXIT INT TERM
