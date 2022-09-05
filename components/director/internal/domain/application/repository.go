@@ -42,7 +42,7 @@ type pgRepository struct {
 	globalGetter          repo.SingleGetterGlobal
 	globalDeleter         repo.DeleterGlobal
 	lister                repo.Lister
-	listerGlobal       	  repo.ListerGlobal
+	listerGlobal          repo.ListerGlobal
 	deleter               repo.Deleter
 	pageableQuerier       repo.PageableQuerier
 	globalPageableQuerier repo.PageableQuerierGlobal
