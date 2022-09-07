@@ -78,9 +78,9 @@ spec:
             - name: APP_DESTINATION_SECRET_PATH
               value: "{{ .Values.global.destinationFetcher.dependenciesConfig.path }}/{{ .Values.global.destinationRegionSecret.fileName }}"
             - name: APP_ENDPOINT_GET_TENANT_DESTINATIONS
-              value: {{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint | quote }}
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationsEndpoint }}"
             - name: APP_ENDPOINT_FIND_DESTINATION
-              value: {{ .Values.global.destinationFetcher.server.sensitiveDataEndpoint | quote }}
+              value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.sensitiveDataEndpoint }}"
             - name: APP_DESTINATION_OAUTH_MODE
               value: {{ .Values.global.destinationFetcher.oauthMode }}
             - name: APP_DESTINATIONS_SKIP_SSL_VERIFY
@@ -89,14 +89,6 @@ spec:
               value: {{ .Values.global.destinationFetcher.request.requestTimeout }}
             - name: APP_DESTINATIONS_PAGE_SIZE
               value: {{ .Values.global.destinationFetcher.request.pageSize | quote }}
-            - name: APP_DESTINATIONS_PAGE_PARAM
-              value: {{ .Values.global.destinationFetcher.request.pageParam }}
-            - name: APP_DESTINATIONS_PAGE_SIZE_PARAM
-              value: {{ .Values.global.destinationFetcher.request.pageSizeParam }}
-            - name: APP_DESTINATIONS_PAGE_COUNT_PARAM
-              value: {{ .Values.global.destinationFetcher.request.pageCountParam }}
-            - name: APP_DESTINATIONS_PAGE_COUNT_HEADER
-              value: {{ .Values.global.destinationFetcher.request.pageCountHeader }}
             - name: APP_DESTINATION_OAUTH_TOKEN_PATH
               value: {{ .Values.global.destinationFetcher.request.oauthTokenPath }}
             - name: APP_DESTINATIONS_SENSITIVE_GOROUTINE_LIMIT
