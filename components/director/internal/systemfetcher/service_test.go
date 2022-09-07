@@ -105,7 +105,7 @@ func TestSyncSystems(t *testing.T) {
 						},
 					},
 				}
-				systems[0].TemplateID = appTemplateID
+				systems[0].TemplateID = "type1"
 				systems[0].ProductID = "TEST"
 				return systems
 			},
