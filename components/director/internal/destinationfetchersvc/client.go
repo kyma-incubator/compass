@@ -97,10 +97,8 @@ func (d *destinationFromService) setDefaults(result *model.DestinationInput) err
 		return fmt.Errorf(
 			"%s destination has invalid URL '%s'. Expected at least 2 subdomains", s4HANAType, result.URL)
 	}
-	firstSubdomain := subdomains[0]
-	if !strings.HasSuffix(firstSubdomain, s4HANABaseURLSuffix) {
-		subdomains[0] = firstSubdomain + s4HANABaseURLSuffix
-	}
+	subdomains[0] = strings.TrimSuffix(subdomains[0], s4HANABaseURLSuffix)
+
 	result.XSystemBaseURL = fmt.Sprintf("%s://%s", baseURL.Scheme, strings.Join(subdomains, "."))
 	return nil
 }
