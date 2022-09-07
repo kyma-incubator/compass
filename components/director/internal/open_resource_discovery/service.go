@@ -725,21 +725,21 @@ func (s *Service) getWebhooksWithOrdType(ctx context.Context) ([]*model.Webhook,
 }
 
 func (s *Service) getApplicationsForAppTemplate(ctx context.Context, appTemplateID string) ([]*model.Application, error) {
-	//tx, err := s.transact.Begin()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//defer s.transact.RollbackUnlessCommitted(ctx, tx)
-	//
-	//ctx = persistence.SaveToContext(ctx, tx)
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
 	apps, err := s.appSvc.ListAllByApplicationTemplateID(ctx, appTemplateID)
 	if err != nil {
 		return nil, err
 	}
 
-	//if err := tx.Commit(); err != nil {
-	//	return nil, err
-	//}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
 
 	return apps, err
 }
