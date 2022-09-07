@@ -559,10 +559,6 @@ global:
       goroutineLimit: 100
       requestTimeout: "30s"
       pageSize: 10
-      pageParam: "\\$page"
-      pageSizeParam: "\\$pageSize"
-      pageCountParam: "\\$pageCount"
-      pageCountHeader: "Page-Count"
       oauthTokenPath: "/oauth/token"
     instance:
       clientIdPath: "clientid"
