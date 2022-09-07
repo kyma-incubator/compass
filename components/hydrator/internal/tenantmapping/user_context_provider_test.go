@@ -2,7 +2,6 @@ package tenantmapping_test
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/textproto"
 
@@ -303,7 +302,7 @@ func TestUserContextProvider(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, staticGroupRepoMock, directorClientMock)
 	})
 
-	t.Run("returns error when tenant is subaccount and region cannot be found", func(t *testing.T) {
+	t.Run("Returns empty region when tenant is subaccount and tenant region label is missing", func(t *testing.T) {
 		reqData := oathkeeper.ReqData{
 			Body: oathkeeper.ReqBody{
 				Extra: map[string]interface{}{
@@ -329,8 +328,7 @@ func TestUserContextProvider(t *testing.T) {
 
 		_, err := provider.GetObjectContext(context.TODO(), reqData, jwtAuthDetails)
 
-		require.Error(t, err)
-		require.Contains(t, err.Error(), fmt.Sprintf("region label not found for subaccount with ID: %q", expectedExternalTenantID))
+		require.NoError(t, err)
 
 		mock.AssertExpectationsForObjects(t, staticGroupRepoMock, directorClientMock)
 	})
