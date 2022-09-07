@@ -827,11 +827,13 @@ func TestRuntimeTypeImmutability(t *testing.T) {
 	}
 	runtimeUpdateInGQL, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(updateRuntimeInput)
 	require.NoError(t, err)
+
 	updateRuntimeReq := fixtures.FixUpdateRuntimeRequest(runtime.ID, runtimeUpdateInGQL)
 	t.Logf("Updating runtime with labels %q and %q...", conf.RuntimeTypeLabelKey, tenantfetcher.RegionKey)
-
 	updatedRuntime := graphql.RuntimeExt{}
 	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, updateRuntimeReq, &updatedRuntime)
+	defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, certSecuredGraphQLClient, &updatedRuntime)
+
 	require.NoError(t, err)
 	require.Equal(t, "updated-runtime", updatedRuntime.Name)
 	require.Equal(t, "updated-runtime-description", *updatedRuntime.Description)
