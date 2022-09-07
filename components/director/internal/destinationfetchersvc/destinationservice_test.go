@@ -16,7 +16,7 @@ const (
 	exampleDestination1 = `{
         "Name": "mys4_1",
         "Type": "HTTP",
-        "URL": "https://localhost:443",
+        "URL": "https://my54321-api.s4.com:443",
         "Authentication": "BasicAuthentication",
         "ProxyType": "Internet",
         "XFSystemName": "Test S4HANA system",
@@ -29,19 +29,16 @@ const (
         "WebIDEUsage": "odata_gen"
     }`
 	exampleDestination2 = `{
-        "Name": "mys4_2",
+        "Name": "mysystem_2",
         "Type": "HTTP",
-        "URL": "https://localhost:443",
+        "URL": "https://mysystem.com",
         "Authentication": "BasicAuthentication",
         "ProxyType": "Internet",
-        "XFSystemName": "Test S4HANA system",
         "HTML5.DynamicDestination": "true",
         "User": "SOME_USER",
-        "product.name": "SAP S/4HANA Cloud",
-        "WebIDEEnabled": "true",
-        "communicationScenarioId": "SAP_COM_0109",
         "Password": "SecretPassword",
-        "WebIDEUsage": "odata_gen"
+		"x-system-id": "system-id",
+		"x-system-type": "mysystem"
     }`
 )
 

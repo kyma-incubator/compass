@@ -225,7 +225,7 @@ func (r *pgRepository) ListByDestination(ctx context.Context, tenantID string, d
 				WHERE tenant_id=(SELECT parent FROM business_tenant_mappings WHERE id = ? )
 			)
 			AND name = ? AND base_url = ?
-		`, []interface{}{tenantID, destination.XSystemTenantName, destination.URL})
+		`, []interface{}{tenantID, destination.XSystemTenantName, destination.XSystemBaseURL})
 	} else {
 		appIDInCondition = repo.NewInConditionForSubQuery(appIDColumn, `
 			SELECT DISTINCT pa.id as id
