@@ -89,14 +89,6 @@ spec:
               value: {{ .Values.global.destinationFetcher.request.requestTimeout }}
             - name: APP_DESTINATIONS_PAGE_SIZE
               value: {{ .Values.global.destinationFetcher.request.pageSize | quote }}
-            - name: APP_DESTINATIONS_PAGE_PARAM
-              value: {{ .Values.global.destinationFetcher.request.pageParam }}
-            - name: APP_DESTINATIONS_PAGE_SIZE_PARAM
-              value: {{ .Values.global.destinationFetcher.request.pageSizeParam }}
-            - name: APP_DESTINATIONS_PAGE_COUNT_PARAM
-              value: {{ .Values.global.destinationFetcher.request.pageCountParam }}
-            - name: APP_DESTINATIONS_PAGE_COUNT_HEADER
-              value: {{ .Values.global.destinationFetcher.request.pageCountHeader }}
             - name: APP_DESTINATION_OAUTH_TOKEN_PATH
               value: {{ .Values.global.destinationFetcher.request.oauthTokenPath }}
             - name: APP_DESTINATIONS_SENSITIVE_GOROUTINE_LIMIT
