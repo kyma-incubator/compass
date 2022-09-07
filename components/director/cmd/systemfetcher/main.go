@@ -53,6 +53,8 @@ import (
 	"github.com/vrischmann/envconfig"
 )
 
+const discoverSystemsOpMode = "DISCOVER_SYSTEMS"
+
 type config struct {
 	APIConfig      systemfetcher.APIConfig
 	OAuth2Config   oauth.Config
@@ -117,6 +119,11 @@ func main() {
 	sf, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, certCache)
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "failed to initialize System Fetcher"))
+	}
+
+	if cfg.SystemFetcher.OperationalMode != discoverSystemsOpMode {
+		log.C(ctx).Infof("The operatioal mode is set to %q, skipping systems discovery.", cfg.SystemFetcher.OperationalMode)
+		return
 	}
 
 	if err = sf.SyncSystems(ctx); err != nil {

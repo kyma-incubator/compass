@@ -58,6 +58,7 @@ global:
       subaccountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-create"
   systemFetcher:
     enabled: true
+    operationalMode: "DISCOVER_SYSTEMS"
     http:
       client:
         skipSSLValidation: true
