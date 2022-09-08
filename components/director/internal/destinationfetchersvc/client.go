@@ -187,7 +187,7 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, page string) (
 
 	pageCount := res.Header.Get(c.apiConfig.PagingCountHeader)
 	if pageCount == "" {
-		return nil, errors.Errorf("failed to extract header '%s' from destinations response", c.apiConfig.PagingCountParam)
+		return nil, errors.Errorf("failed to extract header '%s' from destinations response", c.apiConfig.PagingCountHeader)
 	}
 
 	return &DestinationResponse{
