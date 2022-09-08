@@ -47,6 +47,10 @@ do
             SKIP_KYMA_START=true
             shift # past argument
         ;;
+        --skip-db-install)
+            SKIP_DB_INSTALL=true
+            shift # past argument
+        ;;
         --dump-db)
             DUMP_DB=true
             shift # past argument
@@ -264,11 +268,13 @@ function patchJWKS() {
 }
 patchJWKS&
 
-echo 'Installing DB'
-DB_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
-bash "${ROOT_PATH}"/installation/scripts/install-db.sh --overrides-file "${DB_OVERRIDES}" --timeout 30m0s
-STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
-echo "DB installation status ${STATUS}"
+if [[ ! ${SKIP_DB_INSTALL} ]]; then
+  echo 'Installing DB'
+  DB_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
+  bash "${ROOT_PATH}"/installation/scripts/install-db.sh --overrides-file "${DB_OVERRIDES}" --timeout 30m0s
+  STATUS=$(helm status localdb -n compass-system -o json | jq .info.status)
+  echo "DB installation status ${STATUS}"
+fi
 
 echo 'Installing Compass'
 COMPASS_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
