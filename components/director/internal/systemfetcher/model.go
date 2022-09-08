@@ -20,6 +20,7 @@ type TemplateMapping struct {
 	ID          string
 	SourceKey   []string
 	SourceValue []string
+	OrdReady    bool
 }
 
 // AdditionalURLs missing godoc
