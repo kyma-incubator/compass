@@ -15,6 +15,7 @@ type DestinationInput struct {
 	XSystemBaseURL    string `json:"x-system-base-url"`
 }
 
+// Validate returns error if system doesn't have the required properties
 func (d *DestinationInput) Validate() error {
 	if d.XCorrelationID == "" {
 		return errors.New("missing destination correlation id")
