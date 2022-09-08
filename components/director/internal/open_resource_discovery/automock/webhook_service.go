@@ -16,8 +16,8 @@ type WebhookService struct {
 	mock.Mock
 }
 
-// ListByWebhookTypeWithSelectForUpdate provides a mock function with given fields: ctx, webhookType
-func (_m *WebhookService) ListByWebhookTypeWithSelectForUpdate(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error) {
+// ListByWebhookType provides a mock function with given fields: ctx, webhookType
+func (_m *WebhookService) ListByWebhookType(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error) {
 	ret := _m.Called(ctx, webhookType)
 
 	var r0 []*model.Webhook
