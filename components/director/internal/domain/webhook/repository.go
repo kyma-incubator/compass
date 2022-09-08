@@ -166,25 +166,11 @@ func (r *repository) ListByApplicationIDWithSelectForUpdate(ctx context.Context,
 	return convertToWebhooks(entities, r)
 }
 
-func (r *repository) ListByWebhookTypeWithSelectForUpdate(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error) {
+// ListByWebhookType retrieves all webhooks which have the given webhook type
+func (r *repository) ListByWebhookType(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error) {
 	var entities Collection
 
 	conditions := repo.Conditions{
-		repo.NewEqualCondition("type", webhookType),
-	}
-
-	if err := r.listerGlobal.ListGlobalWithSelectForUpdate(ctx, &entities, conditions...); err != nil {
-		return nil, err
-	}
-
-	return convertToWebhooks(entities, r)
-}
-
-func (r *repository) ListByApplicationTemplateAndWebhookType(ctx context.Context, webhookType string) ([]*model.Webhook, error) {
-	var entities Collection
-
-	conditions := repo.Conditions{
-		repo.NewNotNullCondition("app_template_id"),
 		repo.NewEqualCondition("type", webhookType),
 	}
 

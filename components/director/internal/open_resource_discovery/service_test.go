@@ -63,7 +63,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 
 	successfulWebhookList := func() *automock.WebhookService {
 		whSvc := &automock.WebhookService{}
-		whSvc.On("ListByWebhookTypeWithSelectForUpdate", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixWebhooksForApplication(), nil).Once()
+		whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixWebhooksForApplication(), nil).Once()
 		return whSvc
 	}
 
@@ -320,13 +320,15 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		ExpectedErr       error
 	}{
 		{
-			Name:            "Success when resources are already in db and APIs/Events versions are incremented should Update them and resync API/Event specs",
-			TransactionerFn: txGen.ThatSucceedsTwice,
-			appSvcFn:        successfulAppGet,
-			tenantSvcFn:     successfulTenantSvc,
-			webhookSvcFn:    successfulWebhookList,
-			bundleSvcFn:     successfulBundleUpdate,
-			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
+			Name: "Success when resources are already in db and APIs/Events versions are incremented should Update them and resync API/Event specs",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(2)
+			},
+			appSvcFn:       successfulAppGet,
+			tenantSvcFn:    successfulTenantSvc,
+			webhookSvcFn:   successfulWebhookList,
+			bundleSvcFn:    successfulBundleUpdate,
+			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()
@@ -352,13 +354,15 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:            "Success when resources are already in db and APIs/Events versions are NOT incremented should Update them and refetch only failed API/Event specs",
-			TransactionerFn: txGen.ThatSucceedsTwice,
-			appSvcFn:        successfulAppGet,
-			tenantSvcFn:     successfulTenantSvc,
-			webhookSvcFn:    successfulWebhookList,
-			bundleSvcFn:     successfulBundleUpdate,
-			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
+			Name: "Success when resources are already in db and APIs/Events versions are NOT incremented should Update them and refetch only failed API/Event specs",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(2)
+			},
+			appSvcFn:       successfulAppGet,
+			tenantSvcFn:    successfulTenantSvc,
+			webhookSvcFn:   successfulWebhookList,
+			bundleSvcFn:    successfulBundleUpdate,
+			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIsNoVersionBump(), nil).Once()
@@ -391,12 +395,14 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			clientFn:          successfulClientFetch,
 		},
 		{
-			Name:            "Success when resources are not in db should Create them",
-			TransactionerFn: txGen.ThatSucceedsTwice,
-			appSvcFn:        successfulAppGet,
-			tenantSvcFn:     successfulTenantSvc,
-			webhookSvcFn:    successfulWebhookList,
-			bundleSvcFn:     successfulBundleCreate,
+			Name: "Success when resources are not in db should Create them",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(2)
+			},
+			appSvcFn:     successfulAppGet,
+			tenantSvcFn:  successfulTenantSvc,
+			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -435,7 +441,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			tenantSvcFn: successfulTenantSvc,
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("ListByWebhookTypeWithSelectForUpdate", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
+				whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
 				return whSvc
 			},
 			bundleSvcFn:    successfulBundleUpdate,
@@ -471,7 +477,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Error when synchronizing global resources from global registry should get them from DB and proceed with the rest of the sync",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsTwice()
+				return txGen.ThatSucceedsMultipleTimes(2)
 			},
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
@@ -509,7 +515,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 		{
 			Name: "Error when synchronizing global resources from global registry and get them from DB should proceed with the rest of the sync",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsTwice()
+				return txGen.ThatSucceedsMultipleTimes(2)
 			},
 			appSvcFn:     successfulAppGet,
 			tenantSvcFn:  successfulTenantSvc,
@@ -549,7 +555,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("ListByWebhookTypeWithSelectForUpdate", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(nil, testErr).Once()
+				whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(nil, testErr).Once()
 				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
@@ -585,41 +591,41 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name: "Returns error when third transaction begin fails",
+			Name: "Returns error when second transaction begin fails when there is app template ord webhook",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				persistTx.On("Commit").Return(nil).Once()
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Twice()
+				transact.On("Begin").Return(persistTx, nil).Once()
 				transact.On("Begin").Return(persistTx, testErr).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
 				return persistTx, transact
 			},
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("ListByWebhookTypeWithSelectForUpdate", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
+				whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
 				return whSvc
 			},
 			ExpectedErr:       errors.New("failed to process 1 webhooks"),
 			globalRegistrySvc: successfulGlobalRegistrySvc,
 		},
 		{
-			Name: "Returns error when third transaction commit fails",
+			Name: "Returns error when second transaction commit fails when there is app template ord webhook",
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				persistTx.On("Commit").Return(nil).Once()
 				persistTx.On("Commit").Return(testErr).Once()
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(3)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
+				transact.On("Begin").Return(persistTx, nil).Times(2)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("ListByWebhookTypeWithSelectForUpdate", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
+				whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
 				return whSvc
 			},
 			appSvcFn: func() *automock.ApplicationService {
@@ -753,8 +759,8 @@ func TestService_SyncORDDocuments(t *testing.T) {
 				persistTx.On("Commit").Return(nil).Once()
 
 				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Times(3)
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
+				transact.On("Begin").Return(persistTx, nil).Times(2)
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
 				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(true).Once()
 				return persistTx, transact
 			},
@@ -765,7 +771,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("ListByWebhookTypeWithSelectForUpdate", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
+				whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
 				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
@@ -795,7 +801,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("ListByWebhookTypeWithSelectForUpdate", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
+				whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
 				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
@@ -826,7 +832,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("ListByWebhookTypeWithSelectForUpdate", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
+				whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
 				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
@@ -853,7 +859,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			tenantSvcFn: successfulTenantSvc,
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("ListByWebhookTypeWithSelectForUpdate", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
+				whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
 				return whSvc
 			},
 			globalRegistrySvc: successfulGlobalRegistrySvc,
@@ -881,7 +887,7 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			tenantSvcFn: successfulTenantSvc,
 			webhookSvcFn: func() *automock.WebhookService {
 				whSvc := &automock.WebhookService{}
-				whSvc.On("ListByWebhookTypeWithSelectForUpdate", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
+				whSvc.On("ListByWebhookType", txtest.CtxWithDBMatcher(), model.WebhookTypeOpenResourceDiscovery).Return(fixOrdWebhooksForAppTemplate(), nil).Once()
 				return whSvc
 			},
 			bundleSvcFn:    successfulBundleUpdate,
@@ -2388,12 +2394,14 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 		},
 		{
-			Name:            "Success when resources are not in db and no SAP Vendor is declared in Documents should Create them as SAP Vendor is coming from the Global Registry",
-			TransactionerFn: txGen.ThatSucceedsTwice,
-			appSvcFn:        successfulAppGet,
-			tenantSvcFn:     successfulTenantSvc,
-			webhookSvcFn:    successfulWebhookList,
-			bundleSvcFn:     successfulBundleCreate,
+			Name: "Success when resources are not in db and no SAP Vendor is declared in Documents should Create them as SAP Vendor is coming from the Global Registry",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(2)
+			},
+			appSvcFn:     successfulAppGet,
+			tenantSvcFn:  successfulTenantSvc,
+			webhookSvcFn: successfulWebhookList,
+			bundleSvcFn:  successfulBundleCreate,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(nil, nil).Once()
@@ -2425,13 +2433,15 @@ func TestService_SyncORDDocuments(t *testing.T) {
 			},
 		},
 		{
-			Name:            "Success when resources are already in db and no SAP Vendor is declared in Documents should Update them as SAP Vendor is coming from the Global Registry",
-			TransactionerFn: txGen.ThatSucceedsTwice,
-			appSvcFn:        successfulAppGet,
-			tenantSvcFn:     successfulTenantSvc,
-			webhookSvcFn:    successfulWebhookList,
-			bundleSvcFn:     successfulBundleUpdate,
-			bundleRefSvcFn:  successfulBundleReferenceFetchingOfBundleIDs,
+			Name: "Success when resources are already in db and no SAP Vendor is declared in Documents should Update them as SAP Vendor is coming from the Global Registry",
+			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(2)
+			},
+			appSvcFn:       successfulAppGet,
+			tenantSvcFn:    successfulTenantSvc,
+			webhookSvcFn:   successfulWebhookList,
+			bundleSvcFn:    successfulBundleUpdate,
+			bundleRefSvcFn: successfulBundleReferenceFetchingOfBundleIDs,
 			apiSvcFn: func() *automock.APIService {
 				apiSvc := &automock.APIService{}
 				apiSvc.On("ListByApplicationID", txtest.CtxWithDBMatcher(), appID).Return(fixAPIs(), nil).Once()

@@ -20,13 +20,13 @@ import (
 
 // ServiceConfig contains configuration for the ORD aggregator service
 type ServiceConfig struct {
-	maxParallelApplicationProcessors int
+	maxParallelWebhookProcessors int
 }
 
 // NewServiceConfig creates new ServiceConfig from the supplied parameters
-func NewServiceConfig(maxParallelApplicationProcessors int) ServiceConfig {
+func NewServiceConfig(maxParallelWebhookProcessors int) ServiceConfig {
 	return ServiceConfig{
-		maxParallelApplicationProcessors: maxParallelApplicationProcessors,
+		maxParallelWebhookProcessors: maxParallelWebhookProcessors,
 	}
 }
 
@@ -94,15 +94,15 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 	var webhookErrors = int32(0)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(s.config.maxParallelApplicationProcessors)
+	wg.Add(s.config.maxParallelWebhookProcessors)
 
 	ordWebhooks, err := s.getWebhooksWithOrdType(ctx)
 	if err != nil {
 		return err
 	}
 
-	log.C(ctx).Infof("Starting %d workers...", s.config.maxParallelApplicationProcessors)
-	for i := 0; i < s.config.maxParallelApplicationProcessors; i++ {
+	log.C(ctx).Infof("Starting %d workers...", s.config.maxParallelWebhookProcessors)
+	for i := 0; i < s.config.maxParallelWebhookProcessors; i++ {
 		go func() {
 			defer wg.Done()
 
@@ -129,46 +129,25 @@ func (s *Service) SyncORDDocuments(ctx context.Context) error {
 }
 
 func (s *Service) processWebhook(ctx context.Context, webhook *model.Webhook, globalResourcesOrdIDs map[string]bool) error {
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
 	if webhook.ObjectType == model.ApplicationTemplateWebhookReference {
 		appTemplateID := webhook.ObjectID
 		apps, err := s.getApplicationsForAppTemplate(ctx, appTemplateID)
 		if err != nil {
 			return err
 		}
+
 		for _, app := range apps {
-			ctx, err = s.saveTenantToContext(ctx, app.ID)
-			if err != nil {
-				return err
-			}
-			if _, err := s.appSvc.GetForUpdate(ctx, app.ID); err != nil {
-				return errors.Wrapf(err, "error while locking app with id %q for update", app.ID)
-			}
-			if err := s.processWebhookAndDocuments(ctx, tx, webhook, app, globalResourcesOrdIDs); err != nil {
+			if err := s.lockAndProcessApplicationWebhook(ctx, webhook, app.ID, globalResourcesOrdIDs); err != nil {
 				return err
 			}
 		}
 	} else if webhook.ObjectType == model.ApplicationWebhookReference {
 		appID := webhook.ObjectID
-		ctx, err := s.saveTenantToContext(ctx, appID)
-		if err != nil {
-			return err
-		}
-		app, err := s.appSvc.GetForUpdate(ctx, appID)
-		if err != nil {
-			return errors.Wrapf(err, "error while locking app with id %q for update", appID)
-		}
-		if err := s.processWebhookAndDocuments(ctx, tx, webhook, app, globalResourcesOrdIDs); err != nil {
+		if err := s.lockAndProcessApplicationWebhook(ctx, webhook, appID, globalResourcesOrdIDs); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -711,7 +690,7 @@ func (s *Service) getWebhooksWithOrdType(ctx context.Context) ([]*model.Webhook,
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
-	ordWebhooks, err := s.webhookSvc.ListByWebhookTypeWithSelectForUpdate(ctx, model.WebhookTypeOpenResourceDiscovery)
+	ordWebhooks, err := s.webhookSvc.ListByWebhookType(ctx, model.WebhookTypeOpenResourceDiscovery)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("error while fetching webhooks with type %s", model.WebhookTypeOpenResourceDiscovery)
 		return nil, err
@@ -744,7 +723,7 @@ func (s *Service) getApplicationsForAppTemplate(ctx context.Context, appTemplate
 	return apps, err
 }
 
-func (s *Service) saveTenantToContext(ctx context.Context, appID string) (context.Context, error) {
+func (s *Service) saveLowestOwnerForAppToContext(ctx context.Context, appID string) (context.Context, error) {
 	internalTntID, err := s.tenantSvc.GetLowestOwnerForResource(ctx, resource.Application, appID)
 	if err != nil {
 		return nil, err
@@ -759,6 +738,31 @@ func (s *Service) saveTenantToContext(ctx context.Context, appID string) (contex
 
 	return ctx, nil
 }
+
+func (s *Service) lockAndProcessApplicationWebhook(ctx context.Context, webhook *model.Webhook, appID string, globalResourcesOrdIDs map[string]bool) error {
+	tx, err := s.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer s.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	ctx, err = s.saveLowestOwnerForAppToContext(ctx, appID)
+	if err != nil {
+		return err
+	}
+	app, err := s.appSvc.GetForUpdate(ctx, appID)
+	if err != nil {
+		return errors.Wrapf(err, "error while locking app with id %q for update", appID)
+	}
+	if err := s.processWebhookAndDocuments(ctx, tx, webhook, app, globalResourcesOrdIDs); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func hashResources(docs Documents) (map[string]uint64, error) {
 	resourceHashes := make(map[string]uint64)
 

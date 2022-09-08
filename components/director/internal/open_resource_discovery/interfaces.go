@@ -11,7 +11,7 @@ import (
 // WebhookService is responsible for the service-layer Webhook operations.
 //go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type WebhookService interface {
-	ListByWebhookTypeWithSelectForUpdate(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error)
+	ListByWebhookType(ctx context.Context, webhookType model.WebhookType) ([]*model.Webhook, error)
 }
 
 // ApplicationService is responsible for the service-layer Application operations.

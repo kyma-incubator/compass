@@ -237,6 +237,7 @@ func (r *pgRepository) ListAllByFilter(ctx context.Context, tenant string, filte
 	return r.multipleFromEntities(entities)
 }
 
+// ListAllByApplicationTemplateID retrieves all applications which have the given app template id
 func (r *pgRepository) ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error) {
 	var appsCollection EntityCollection
 
@@ -275,6 +276,28 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 	}
 
 	page, totalCount, err := r.pageableQuerier.List(ctx, resource.Application, tenant, pageSize, cursor, "id", &appsCollection, conditions...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]*model.Application, 0, len(appsCollection))
+
+	for _, appEnt := range appsCollection {
+		m := r.conv.FromEntity(&appEnt)
+		items = append(items, m)
+	}
+	return &model.ApplicationPage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page}, nil
+}
+
+// ListGlobal missing godoc
+func (r *pgRepository) ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	var appsCollection EntityCollection
+
+	page, totalCount, err := r.globalPageableQuerier.ListGlobal(ctx, pageSize, cursor, "id", &appsCollection)
 
 	if err != nil {
 		return nil, err

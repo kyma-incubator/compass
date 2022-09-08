@@ -58,6 +58,7 @@ type ApplicationRepository interface {
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListAll(ctx context.Context, tenant string) ([]*model.Application, error)
 	ListAllByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Application, error)
+	ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error)
 	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
 	Create(ctx context.Context, tenant string, item *model.Application) error
@@ -196,11 +197,20 @@ func (s *service) ListAll(ctx context.Context) ([]*model.Application, error) {
 	return s.appRepo.ListAll(ctx, appTenant)
 }
 
-// ListAllByApplicationTemplateID missing godoc
+// ListGlobal missing godoc
+func (s *service) ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
+	}
+
+	return s.appRepo.ListGlobal(ctx, pageSize, cursor)
+}
+
+// ListAllByApplicationTemplateID lists all applications which have the given app template id
 func (s *service) ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error) {
 	apps, err := s.appRepo.ListAllByApplicationTemplateID(ctx, applicationTemplateID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting getting applications for app template with id %s", applicationTemplateID)
+		return nil, errors.Wrapf(err, "while getting applications for app template with id %q", applicationTemplateID)
 	}
 
 	if len(apps) == 0 {

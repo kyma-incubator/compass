@@ -703,7 +703,7 @@ global:
       maxOpenConnections: 2
       maxIdleConnections: 2
     globalRegistryUrl: http://compass-external-services-mock.compass-system.svc.cluster.local:8087/.well-known/open-resource-discovery
-    maxParallelApplicationProcessors: 4
+    maxParallelWebhookProcessors: 4
     maxParallelDocumentsPerApplication: 10
     containerName: "ord-aggregator"
   systemFetcher:
