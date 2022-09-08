@@ -144,3 +144,12 @@ spec:
             > 0.3
           labels:
             severity: warning
+      {{- if eq .Values.global.portieris.isEnabled true }}
+        - alert: CompassPortierisDeniedImage
+          annotations:
+            description: Portieris has denied image
+          expr: delta(portieris_pod_admission_decision_deny_count[5m]) >= 1
+          for: 0m
+          labels:
+            severity: warning
+      {{- end }}
