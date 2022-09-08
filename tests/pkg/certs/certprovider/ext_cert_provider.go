@@ -66,8 +66,8 @@ func createExtCertJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.C
 		if container.Name == testConfig.ExternalCertCronjobContainerName {
 			for eIndex := range container.Env {
 				env := &container.Env[eIndex]
-				if env.Name == "EXPECTED_ISSUER_LOCALITY" && testConfig.ExternalClientCertExpectedIssuerLocality {
-					env.Value = testConfig.ExternalClientCertExpectedIssuerLocality
+				if env.Name == "EXPECTED_ISSUER_LOCALITY" && testConfig.ExternalClientCertExpectedIssuerLocality != nil {
+					env.Value = *testConfig.ExternalClientCertExpectedIssuerLocality
 				}
 				if env.Name == "CLIENT_CERT_SECRET_NAME" {
 					env.Value = testConfig.ExternalClientCertTestSecretName
