@@ -164,7 +164,7 @@ global:
       name: compass-console
     e2e_tests:
       dir:
-      version: "PR-2608"
+      version: "PR-2612"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -863,6 +863,7 @@ global:
         skipSSLValidation: false
     externalCertConfiguration:
       ouCertSubaccountID: "bad76f69-e5c2-4d55-bca5-240944824b83"
+      issuerLocalityRegion2: "local"
     director:
       skipPattern: ""
       externalCertIntSystemCN: "integration-system-test"
