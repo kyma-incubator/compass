@@ -2,13 +2,11 @@ package tests
 
 import (
 	"context"
-	"fmt"
-	"testing"
-
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 
@@ -75,7 +73,7 @@ func TestCreateLabel(t *testing.T) {
 	assert.Equal(t, labelKey, delLabel.Key)
 }
 
-func TestCreateScenariosLabel(t *testing.T) {
+func TestLachoCreateScenariosLabel(t *testing.T) {
 	// GIVEN
 	t.Log("Create application")
 	ctx := context.Background()
@@ -94,8 +92,6 @@ func TestCreateScenariosLabel(t *testing.T) {
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getLabelDefinition, &ld)
 	require.NoError(t, err)
 
-	t.Log("Check if app was labeled with scenarios=default")
-
 	getApp := fixtures.FixGetApplicationRequest(app.ID)
 	actualApp := graphql.ApplicationExt{}
 	// WHEN
@@ -104,21 +100,9 @@ func TestCreateScenariosLabel(t *testing.T) {
 	//THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, actualApp)
-	if conf.DefaultScenarioEnabled {
-		assert.Contains(t, actualApp.Labels, labelKey)
-		scenariosLabel, ok := actualApp.Labels[labelKey].([]interface{})
-		require.True(t, ok)
-
-		var scenariosEnum []string
-		for _, v := range scenariosLabel {
-			scenariosEnum = append(scenariosEnum, v.(string))
-		}
-
-		assert.Contains(t, scenariosEnum, "DEFAULT")
-	}
 }
 
-func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
+func TestLachoUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
@@ -132,14 +116,26 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	require.NotEmpty(t, app.ID)
 
 	labelKey := "scenarios"
-	defaultValue := conf.DefaultScenario
 	additionalValue := "ADDITIONAL"
+
+	t.Log("Create Label Definition")
+	scenarioSchema := map[string]interface{}{
+		"type":        "array",
+		"minItems":    1,
+		"uniqueItems": true,
+		"items": map[string]interface{}{
+			"type": "string",
+			"enum": []string{testScenario},
+		},
+	}
+	var schema interface{} = scenarioSchema
+	fixtures.CreateLabelDefinitionWithinTenant(t, ctx, certSecuredGraphQLClient, ScenariosLabel, schema, tenantId)
 
 	t.Logf("Update Label Definition scenarios enum with additional value %s", additionalValue)
 
 	jsonSchema := map[string]interface{}{
 		"items": map[string]interface{}{
-			"enum": []string{defaultValue, additionalValue},
+			"enum": []string{testScenario, additionalValue},
 			"type": "string",
 		},
 		"type":        "array",
@@ -147,7 +143,7 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 		"uniqueItems": true,
 	}
 
-	var schema interface{} = jsonSchema
+	schema = jsonSchema
 	ldInput := graphql.LabelDefinitionInput{
 		Key:    labelKey,
 		Schema: json.MarshalJSONSchema(t, schema),
@@ -164,13 +160,10 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	require.NoError(t, err)
 
 	scenarios := []string{additionalValue}
-	if conf.DefaultScenarioEnabled {
-		scenarios = []string{defaultValue, additionalValue}
-	}
-	var labelValue interface{} = scenarios
 
 	t.Logf("Set scenario label value %s on application", additionalValue)
-	fixtures.SetApplicationLabel(t, ctx, certSecuredGraphQLClient, app.ID, labelKey, labelValue)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: additionalValue}, app.ID, tenantId)
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: additionalValue}, app.ID, tenantId)
 
 	t.Log("Check if new scenario label value was set correctly")
 	appRequest := fixtures.FixGetApplicationRequest(app.ID)
@@ -189,56 +182,7 @@ func TestUpdateScenariosLabelDefinitionValue(t *testing.T) {
 	assert.Equal(t, scenarios, actualScenariosEnum)
 }
 
-func TestDeleteDefaultValueInScenariosLabelDefinition(t *testing.T) {
-	// GIVEN
-	ctx := context.Background()
-
-	tenantId := tenant.TestTenants.GetDefaultTenantID()
-
-	t.Log("Create application")
-	app, err := fixtures.RegisterApplication(t, ctx, certSecuredGraphQLClient, "app", tenantId)
-	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &app)
-	defer fixtures.UnassignApplicationFromScenarios(t, ctx, certSecuredGraphQLClient, tenantId, app.ID)
-	require.NoError(t, err)
-	require.NotEmpty(t, app.ID)
-
-	labelKey := "scenarios"
-	defaultValue := conf.DefaultScenario
-
-	t.Log("Try to update Label Definition with scenarios enum without DEFAULT value")
-
-	jsonSchema := map[string]interface{}{
-		"items": map[string]interface{}{
-			"enum": []string{"NOTDEFAULT"},
-			"type": "string",
-		},
-		"type":        "array",
-		"minItems":    1,
-		"uniqueItems": true,
-	}
-
-	var schema interface{} = jsonSchema
-	ldInput := graphql.LabelDefinitionInput{
-		Key:    labelKey,
-		Schema: json.MarshalJSONSchema(t, schema),
-	}
-
-	ldInputGQL, err := testctx.Tc.Graphqlizer.LabelDefinitionInputToGQL(ldInput)
-	require.NoError(t, err)
-
-	updateLabelDefinitionRequest := fixtures.FixUpdateLabelDefinitionRequest(ldInputGQL)
-	labelDefinition := graphql.LabelDefinition{}
-
-	// WHEN
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateLabelDefinitionRequest, &labelDefinition)
-	errMsg := fmt.Sprintf(`rule.validSchema=while validating schema for key %s: items.enum: At least one of the items must match, items.enum.0: items.enum.0 does not match: "%s"`, labelKey, defaultValue)
-
-	// THEN
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), errMsg)
-}
-
-func TestSearchApplicationsByLabels(t *testing.T) {
+func TestLachoSearchApplicationsByLabels(t *testing.T) {
 	// GIVEN
 	//Create first application
 	ctx := context.Background()
@@ -322,7 +266,7 @@ func TestSearchApplicationsByLabels(t *testing.T) {
 	saveExampleInCustomDir(t, applicationRequest.Query(), queryApplicationsCategory, "query applications with label filter")
 }
 
-func TestSearchRuntimesByLabels(t *testing.T) {
+func TestLachoSearchRuntimesByLabels(t *testing.T) {
 	// GIVEN
 	//Create first runtime
 	ctx := context.Background()
@@ -408,7 +352,7 @@ func TestSearchRuntimesByLabels(t *testing.T) {
 	saveExampleInCustomDir(t, runtimesRequest.Query(), QueryRuntimesCategory, "query runtimes with label filter")
 }
 
-func TestListLabelDefinitions(t *testing.T) {
+func TestLachoListLabelDefinitions(t *testing.T) {
 	//GIVEN
 	tenantID := tenant.TestTenants.GetIDByName(t, tenant.ListLabelDefinitionsTenantName)
 	defer tenant.TestTenants.CleanupTenant(tenantID)
@@ -417,7 +361,7 @@ func TestListLabelDefinitions(t *testing.T) {
 
 	jsonSchema := map[string]interface{}{
 		"items": map[string]interface{}{
-			"enum": []string{"DEFAULT", "test"},
+			"enum": []string{testScenario},
 			"type": "string",
 		},
 		"type":        "array",
@@ -452,13 +396,13 @@ func TestListLabelDefinitions(t *testing.T) {
 	assert.Contains(t, labelDefinitions, firstLabelDefinition)
 }
 
-func TestDeleteLastScenarioForApplication(t *testing.T) {
+func TestLachoDeleteLastScenarioForApplication(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 
 	tenantID := tenant.TestTenants.GetIDByName(t, tenant.DeleteLastScenarioForApplicationTenantName)
 	name := "deleting-last-scenario-for-app-fail"
-	scenarios := []string{conf.DefaultScenario, "Christmas", "New Year"}
+	scenarios := []string{"Christmas", "New Year"}
 
 	scenarioSchema := map[string]interface{}{
 		"type":        "array",
@@ -496,23 +440,5 @@ func TestDeleteLastScenarioForApplication(t *testing.T) {
 
 	//THEN
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), `must be one of the following: "DEFAULT", "Christmas", "New Year"`)
-}
-
-func TestGetScenariosLabelDefinitionCreatesOneIfNotExists(t *testing.T) {
-	// GIVEN
-	ctx := context.TODO()
-
-	tenantID := tenant.TestTenants.GetIDByName(t, "TestGetScenariosLabelDefinitionCreatesOneIfNotExists")
-	getLabelDefinitionRequest := fixtures.FixLabelDefinitionRequest(ScenariosLabel)
-	labelDefinition := graphql.LabelDefinition{}
-
-	// WHEN
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, getLabelDefinitionRequest, &labelDefinition)
-
-	// THEN
-	require.NoError(t, err)
-	require.NotEmpty(t, labelDefinition)
-	assert.Equal(t, ScenariosLabel, labelDefinition.Key)
-	assert.NotEmpty(t, labelDefinition.Schema)
+	assert.Contains(t, err.Error(), `must be one of the following: "Christmas", "New Year"`)
 }

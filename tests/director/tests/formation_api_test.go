@@ -105,7 +105,6 @@ func TestListFormations(t *testing.T) {
 func TestApplicationFormationFlow(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	defaultValue := conf.DefaultScenario
 	newFormation := "ADDITIONAL"
 	unusedFormationName := "UNUSED"
 
@@ -160,9 +159,6 @@ func TestApplicationFormationFlow(t *testing.T) {
 	require.True(t, ok)
 
 	formations := []string{newFormation}
-	if conf.DefaultScenarioEnabled {
-		formations = []string{defaultValue, newFormation}
-	}
 
 	var actualScenariosEnum []string
 	for _, v := range scenariosLabel {
@@ -185,14 +181,6 @@ func TestApplicationFormationFlow(t *testing.T) {
 	require.Equal(t, newFormation, unassignFormation.Name)
 
 	saveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign application from formation")
-
-	if conf.DefaultScenarioEnabled {
-		unassignDefaultReq := fixtures.FixUnassignFormationRequest(app.ID, "APPLICATION", defaultValue)
-		var unassignDefaultFormation graphql.Formation
-		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unassignDefaultReq, &unassignDefaultFormation)
-		require.NoError(t, err)
-		require.Equal(t, defaultValue, unassignDefaultFormation.Name)
-	}
 
 	t.Log("Should be able to delete formation after application is unassigned")
 	deleteRequest = fixtures.FixDeleteFormationRequest(newFormation)
@@ -500,18 +488,12 @@ func TestTenantFormationFlow(t *testing.T) {
 	subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 
 	ctx := context.Background()
-	defaultValue := conf.DefaultScenario
 	assignment := graphql.AutomaticScenarioAssignmentSetInput{
 		ScenarioName: firstFormation,
 		Selector: &graphql.LabelSelectorInput{
 			Key:   "global_subaccount_id",
 			Value: subaccountID,
 		},
-	}
-
-	expectedFormations := []string{firstFormation, secondFormation}
-	if conf.DefaultScenarioEnabled {
-		expectedFormations = append(expectedFormations, defaultValue)
 	}
 
 	t.Logf("Should create formation: %s", firstFormation)
